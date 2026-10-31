@@ -31,7 +31,7 @@
   @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="t('dossiq', 'Change type or version')"
 		size="normal"
 		data-testid="case-rebind-dialog"
@@ -124,16 +124,16 @@
 				{{ t('dossiq', 'Change the type') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import CaseRebindImpact from '../components/case/CaseRebindImpact.vue'
@@ -149,7 +149,7 @@ export default {
 	components: {
 		CaseRebindImpact,
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcSelect,
 		NcTextArea,
 	},

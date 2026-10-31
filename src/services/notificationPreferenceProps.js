@@ -17,13 +17,14 @@
  * layer the screen displays. It is left false and corrected by the next read,
  * which is what happens the moment anybody clears their own value.
  *
- * 🔴 THE CHANNEL AXIS IS THE PLATFORM'S, NOT THIS FILE'S. dossiq's preferences
- * are one switch per notification today, not per notification and channel.
- * When the platform answers with channels, they are the columns. When it does
- * not, there is ONE column and it is called what it is. Fabricating a mail and
- * a push column would tell a handler they can choose between them when the
- * platform stores no such choice, and their click would be silently collapsed
- * onto the single value that does exist.
+ * 🔴 THE CHANNEL AXIS IS THE PLATFORM'S, NOT THIS FILE'S. Each entry says
+ * which channels its rule can deliver on (`availableChannels`, the default
+ * ones then the opt-in ones such as e-mail); those are the columns, and a
+ * cell is on when the entry's effective `channels` hold it. A platform that
+ * answers without them gets ONE column, called what it is. Fabricating a mail
+ * column would tell a handler they can choose when the platform stores no
+ * such choice, and their click would be silently collapsed onto the single
+ * value that does exist.
  *
  * Pure: no axios, no Vue, no store.
  *
@@ -88,24 +89,78 @@ export function channelsFrom({
 }
 
 /**
+ * The channels the entries can deliver on, in the order the platform names
+ * them: every entry's default channels, then its opt-in ones.
+ *
+ * @param {Array<object>} entries - The platform's entries.
+ * @return {Array<string>} The channel ids, or none when the platform answered without them.
+ * @spec openspec/specs/case-management/spec.md#requirement-a-person-can-switch-e-mail-on-per-notification
+ */
+export function channelAxisFrom(entries = []) {
+	const ids = []
+	for (const entry of entries) {
+		for (const id of Array.isArray(entry?.availableChannels) ? entry.availableChannels : []) {
+			if (typeof id === 'string' && id !== '' && ids.includes(id) === false) {
+				ids.push(id)
+			}
+		}
+	}
+	return ids
+}
+
+/**
+ * The channels one entry delivers on now: none while it is off, else its
+ * effective channels, else its default (non-opt-in) ones.
+ *
+ * @param {object} entry - One entry.
+ * @return {Array<string>} The channel ids that are on.
+ * @spec openspec/specs/case-management/spec.md#requirement-a-person-can-switch-e-mail-on-per-notification
+ */
+export function channelsOnFor(entry) {
+	if (entry?.enabled !== true) {
+		return []
+	}
+	if (Array.isArray(entry?.channels) === true) {
+		return entry.channels.map(String)
+	}
+	const optIn = Array.isArray(entry?.optInChannels) ? entry.optInChannels : []
+	const available = Array.isArray(entry?.availableChannels) ? entry.availableChannels : []
+	return available.filter((id) => optIn.includes(id) === false).map(String)
+}
+
+/**
+ * One boolean per channel.
+ *
+ * @param {Array<string>} channelIds - The columns.
+ * @param {(id: string) => boolean} on - Whether a column is on.
+ * @return {object} `{ [channelId]: boolean }`.
+ */
+function perChannel(channelIds, on) {
+	return Object.fromEntries(channelIds.map((id) => [id, on(id)]))
+}
+
+/**
  * The rows to render.
  *
  * @param {object} options - The call.
  * @param {Array<object>} [options.entries] - The platform's entries.
  * @param {(entry: object) => string} [options.label] - What to call one entry on screen.
+ * @param {(title: string) => string} [options.groupLabel] - What to call a group on screen,
+ *   given the schema's title; the title as it is when absent.
+ * @param {Array<string>} [options.channelIds] - The columns, when the platform names its channels.
  *
  * @return {Array<object>} `{ id, label, group, groupLabel, appDefault, immediate }`.
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
-export function eventsFrom({ entries = [], label = (entry) => keyFor(entry) } = {}) {
+export function eventsFrom({ entries = [], label = (entry) => keyFor(entry), groupLabel = (title) => title, channelIds = [] } = {}) {
 	return entries.map((entry) => ({
 		id: keyFor(entry),
 		label: String(label(entry)),
 		group: String(entry?.schema ?? ''),
-		groupLabel: String(entry?.schemaTitle ?? entry?.schema ?? ''),
+		groupLabel: String(groupLabel(String(entry?.schemaTitle ?? entry?.schema ?? ''))),
 		// Only when the platform says so. See the header: an effective value
 		// is not the shipped default, and a guess would render as one.
-		appDefault: appDefaultOf(entry),
+		appDefault: channelIds.length > 0 ? appDefaultPerChannel(entry, channelIds) : appDefaultOf(entry),
 		immediate: entry?.immediate === true,
 	}))
 }
@@ -131,16 +186,32 @@ function appDefaultOf(entry) {
 }
 
 /**
+ * The shipped default per channel. An opt-in channel is off by default; a
+ * default channel follows the shipped on/off, when that is knowable.
+ *
+ * @param {object} entry - One entry.
+ * @param {Array<string>} channelIds - The columns.
+ * @return {object} `{ [channelId]: boolean }`.
+ */
+function appDefaultPerChannel(entry, channelIds) {
+	const optIn = Array.isArray(entry?.optInChannels) ? entry.optInChannels : []
+	const available = Array.isArray(entry?.availableChannels) ? entry.availableChannels : []
+	const on = appDefaultOf(entry)
+	return perChannel(channelIds, (id) => on && available.includes(id) && optIn.includes(id) === false)
+}
+
+/**
  * The four levels, and the refusals, keyed the way the screen wants them.
  *
  * @param {object} options - The call.
  * @param {Array<object>} [options.entries] - The platform's entries.
- * @param {string} [options.channelId] - The column these values sit in.
+ * @param {string} [options.channelId] - The column these values sit in, with one column.
+ * @param {Array<string>} [options.channelIds] - The columns, one per channel, when the platform names them.
  *
  * @return {object} `{ groupValues, personalValues, forcedValues, refusals }`.
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
-export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID } = {}) {
+export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID, channelIds = [] } = {}) {
 	const groupValues = {}
 	const personalValues = {}
 	const forcedValues = {}
@@ -150,10 +221,13 @@ export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID } = {})
 		const id = keyFor(entry)
 		const source = String(entry?.source ?? '')
 
+		const on = channelIds.length > 0
+			? perChannel(channelIds, (channel) => channelsOnFor(entry).includes(channel))
+			: { [channelId]: entry?.enabled === true }
 		if (source === SOURCE_PERSONAL) {
-			personalValues[id] = { [channelId]: entry?.enabled === true }
+			personalValues[id] = on
 		} else if (source === SOURCE_GROUP) {
-			groupValues[id] = { [channelId]: entry?.enabled === true }
+			groupValues[id] = on
 		}
 
 		const forced = entry?.forced
@@ -161,18 +235,17 @@ export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID } = {})
 			// FORCED CAN FORCE A CHANNEL OFF. Reading a forced row as "on"
 			// would switch on a channel an administrator forbade, so the
 			// value is taken from the row and never assumed.
-			forcedValues[id] = {
-				[channelId]: {
-					value: forced?.value === true,
-					by: String(forced?.by ?? ''),
-					reason: String(forced?.reason ?? ''),
-				},
+			const cell = {
+				value: forced?.value === true,
+				by: String(forced?.by ?? ''),
+				reason: String(forced?.reason ?? ''),
 			}
+			forcedValues[id] = perChannel(channelIds.length > 0 ? channelIds : [channelId], () => ({ ...cell }))
 		}
 
 		const refused = entry?.refused
 		if (refused !== undefined && refused !== null) {
-			refusals[id] = { [channelId]: { reason: String(refused?.reason ?? '') } }
+			refusals[id] = perChannel(channelIds.length > 0 ? channelIds : [channelId], () => ({ reason: String(refused?.reason ?? '') }))
 		}
 	}
 
@@ -186,7 +259,9 @@ export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID } = {})
  * @param {Array<object>} [options.entries] - The platform's entries.
  * @param {Array<object>} [options.channels] - The platform's channels, if any.
  * @param {(entry: object) => string} [options.label] - What to call one entry.
+ * @param {(title: string) => string} [options.groupLabel] - What to call a group.
  * @param {string} [options.singleChannelLabel] - The one column's name.
+ * @param {(id: string) => string} [options.channelLabel] - What to call a channel column.
  *
  * @return {object} The component's props.
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
@@ -195,14 +270,21 @@ export function propsFor({
 	entries = [],
 	channels = [],
 	label,
+	groupLabel,
 	singleChannelLabel,
+	channelLabel = (id) => id,
 } = {}) {
-	const columns = channelsFrom({ channels, singleChannelLabel })
+	const axis = channelAxisFrom(entries)
+	const declared = axis.length > 0 && (Array.isArray(channels) === false || channels.length === 0)
+		? axis.map((id) => ({ id, label: channelLabel(id) }))
+		: channels
+	const columns = channelsFrom({ channels: declared, singleChannelLabel })
+	const channelIds = axis.length > 0 ? columns.map((column) => column.id) : []
 
 	return {
-		events: eventsFrom({ entries, label }),
+		events: eventsFrom({ entries, label, groupLabel, channelIds }),
 		channels: columns,
-		...valuesFrom({ entries, channelId: columns[0].id }),
+		...valuesFrom({ entries, channelId: columns[0].id, channelIds }),
 	}
 }
 
@@ -224,13 +306,15 @@ export function propsFor({
  * @param {string} options.eventId - The row's id, as `keyFor` made it.
  * @param {string} [options.scope] - The domain, or the empty string.
  * @param {boolean} options.value - The new value.
+ * @param {string} [options.channelId] - The column the cell is in.
+ * @param {?Array<string>} [options.current] - The row's channels that are on now, with several columns.
  *
- * @return {?object} `{ schema, notification, enabled, scope }`, or null when
+ * @return {?object} `{ schema, notification, enabled, scope, channels? }`, or null when
  *   the id is not one this screen made.
  *
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
-export function writeFor({ eventId, scope = '', value } = {}) {
+export function writeFor({ eventId, scope = '', value, channelId = SINGLE_CHANNEL_ID, current = null } = {}) {
 	const at = String(eventId ?? '').indexOf('-')
 	if (at < 1) {
 		// Not an id this file produced. Returning null rather than writing a
@@ -243,6 +327,14 @@ export function writeFor({ eventId, scope = '', value } = {}) {
 		schema: String(eventId).slice(0, at),
 		notification: String(eventId).slice(at + 1),
 		enabled: value === true,
+	}
+
+	// One cell of several channels: the write is the row's whole channel set
+	// with this one switched, and the row is on while any channel is.
+	if (channelId !== SINGLE_CHANNEL_ID && Array.isArray(current) === true) {
+		const others = current.filter((id) => id !== channelId)
+		write.channels = value === true ? [...others, channelId] : others
+		write.enabled = write.channels.length > 0
 	}
 
 	if (scope !== '') {

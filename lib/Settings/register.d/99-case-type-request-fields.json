@@ -1,0 +1,24 @@
+{
+  "_note": "Which case fields the request card on a case's Overview shows, per case type (procedure configuration). Each entry is a facts entry (path, as, label, format, map, template). Empty shows the case description. caseType moves to 1.43.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.43.0",
+        "properties": {
+          "requestFields": {
+            "type": "array",
+            "title": "Request fields",
+            "description": "The case fields the request card shows for a case of this type, in order, as facts entries ({ path, as, label, format, map, template }). Empty shows the case description.",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    }
+  }
+}

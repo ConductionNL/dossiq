@@ -88,6 +88,9 @@ class CaseActsOverviewTest extends TestCase {
 
 		$endings = $this->createMock(originalClassName: CaseEndingActs::class);
 		$endings->method('endingOf')->willReturn(['act' => 'abort', 'reason' => 'Ingetrokken']);
+		$endings->method('resultChoicesOn')->willReturnCallback(
+			static fn (array $case): array => (($case['caseType'] ?? '') === 'ct-1') ? [['id' => 'rt-1', 'name' => 'Deels toegewezen']] : []
+		);
 
 		$processStatus = $this->createMock(originalClassName: ProcessOwnedStatusRule::class);
 		$processStatus->method('allowsHandSet')->willReturn(false);
@@ -148,6 +151,38 @@ class CaseActsOverviewTest extends TestCase {
 		self::assertSame([['on' => 'fatima']], $answer['awaitingApproval']);
 		self::assertSame('finish', $answer['acts'][0]['act']);
 	}//end testTheReadCarriesTheStateAndTheMenuInOneAnswer()
+
+	/**
+	 * The read carries the results a finish or abort of THIS case may name,
+	 * read off the case's own case type, so the form can offer a picker
+	 * instead of a free field.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
+	 */
+	public function testTheReadCarriesTheResultsTheCaseCanCloseWith(): void {
+		$answer = $this->overview()->overview(caseId: 'case-1');
+
+		self::assertSame([['id' => 'rt-1', 'name' => 'Deels toegewezen']], $answer['resultTypes']);
+	}//end testTheReadCarriesTheResultsTheCaseCanCloseWith()
+
+	/**
+	 * Control: a case of a case type without results reads an empty list, so
+	 * the answer above came from the case's type and not from a constant.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
+	 */
+	public function testACaseTypeWithoutResultsReadsAnEmptyList(): void {
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->method('loadCase')->willReturn(array_merge(self::CASE, ['caseType' => 'ct-2']));
+
+		$answer = $this->overview()->overview(caseId: 'case-1');
+
+		self::assertSame([], $answer['resultTypes']);
+	}//end testACaseTypeWithoutResultsReadsAnEmptyList()
 
 	/**
 	 * 🔑 THE ARCHIVE MARKER DECIDES WHETHER THE MENU OFFERS RESTORE. Two

@@ -16,6 +16,7 @@
 import { describe, expect, it } from 'vitest'
 import {
 	blueprintSections,
+	blueprintSummary,
 	parentTitleOf,
 } from '../../src/utils/caseTypeBlueprint.js'
 
@@ -95,6 +96,16 @@ describe('blueprintSections', () => {
 		})
 
 		expect(section(sections, 'statuses').rows[0].badge).toBe('')
+	})
+
+	it('reads a language-tagged name in a language, never as [object Object]', () => {
+		const sections = blueprintSections({
+			statusTypes: [{ id: 's1', name: { nl: 'In behandeling', en: 'In progress' } }],
+		})
+
+		const name = section(sections, 'statuses').rows[0].name
+		expect(typeof name).toBe('string')
+		expect(['In behandeling', 'In progress']).toContain(name)
 	})
 
 	it('uses the labels it is handed, already translated', () => {
@@ -180,5 +191,23 @@ describe('parentTitleOf', () => {
 	it('is empty for a type that stands on its own', () => {
 		expect(parentTitleOf({ parents: [] })).toBe('')
 		expect(parentTitleOf(null)).toBe('')
+	})
+})
+
+describe('blueprintSummary (DqZaaktypeStatussen "Statussen, resultaten en kenmerken")', () => {
+	it('counts statuses with their final ones, results, and attributes with the inherited ones and their parent', () => {
+		const summary = blueprintSummary({
+			statusTypes: [{ name: 'Ontvangen' }, { name: 'Verleend', isFinal: true }, { name: 'Geweigerd', isFinal: true }],
+			resultTypes: [{ name: 'Verleend' }, { name: 'Geweigerd' }],
+			propertyDefinitions: [{ name: 'Bouwkosten' }],
+			counts: { propertyDefinitions: { total: 14, inherited: 6 } },
+			parents: [{ title: 'Omgevingsvergunning' }],
+		})
+		expect(summary).toEqual({ statuses: 3, finalStatuses: 2, results: 2, attributes: 14, inheritedAttributes: 6, parent: 'Omgevingsvergunning' })
+	})
+
+	it('counts the lists themselves when the answer carries no counts, and survives nothing', () => {
+		expect(blueprintSummary({ propertyDefinitions: [{ name: 'A' }, { name: 'B' }] }).attributes).toBe(2)
+		expect(blueprintSummary(null)).toEqual({ statuses: 0, finalStatuses: 0, results: 0, attributes: 0, inheritedAttributes: 0, parent: '' })
 	})
 })

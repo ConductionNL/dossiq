@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
+use OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\CaseType\PublicationChecks;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
@@ -64,6 +65,7 @@ class CaseTypePublishService {
 	 * @param CaseFieldRoleProjector  $fieldRoles       What each role may see and change on the case.
 	 * @param CaseTypeVersionWindow   $window           When a version starts and stops being offered.
 	 * @param LoggerInterface         $logger           The logger.
+	 * @param CaseTypeRuleProjector|null $rules         What the case type's conditional rules do, on the engines that own the actions.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -73,6 +75,7 @@ class CaseTypePublishService {
 		private readonly CaseFieldRoleProjector $fieldRoles,
 		private readonly CaseTypeVersionWindow $window,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseTypeRuleProjector $rules = null,
 	) {
 	}//end __construct()
 
@@ -127,6 +130,7 @@ class CaseTypePublishService {
 	 * @return array<string, mixed> `{published: bool, findings: string[], warnings: string[], version: ?int}`.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function publish(string $caseTypeId, string $changeNote): array {
 		$findings = $this->validate(caseTypeId: $caseTypeId);
@@ -149,6 +153,9 @@ class CaseTypePublishService {
 		}
 
 		$caseType = $this->window->open(caseType: $caseType);
+		if ($this->rules !== null) {
+			$caseType['entryRequirements'] = $this->rules->entryRequirements(caseType: $caseType);
+		}
 
 		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
 			return [
@@ -180,6 +187,10 @@ class CaseTypePublishService {
 		// lifecycle rule to apply, and the property block is what keeps the field
 		// from the role there. It never fails the publish either.
 		$this->fieldRoles->publish(caseTypeId: $caseTypeId);
+
+		if ($this->rules !== null) {
+			$warnings = array_merge($warnings, $this->rules->publish(caseTypeId: $caseTypeId));
+		}
 
 		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
 

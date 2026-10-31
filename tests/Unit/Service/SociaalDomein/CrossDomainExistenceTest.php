@@ -257,6 +257,93 @@ class CrossDomainExistenceTest extends TestCase {
 	}//end testTheContactFallsBackToTheTeam()
 
 	/**
+	 * A case of a social-domain case type, as a procedure that moved onto a case type is.
+	 *
+	 * @param string $id       The case id.
+	 * @param string $category The case type's category.
+	 * @param bool   $final    Whether the case is in a final status.
+	 *
+	 * @return void
+	 */
+	private function seedCase(string $id, string $category, bool $final = false): void {
+		$this->objects->seed('caseType', ['id' => 'type-' . $id, 'category' => $category]);
+		$this->objects->seed(
+			'case',
+			[
+				'id' => $id,
+				'caseType' => 'type-' . $id,
+				'subjectBsn' => self::BSN,
+				'isFinalStatus' => $final,
+				'assignee' => 'pieter',
+				'assignedGroup' => 'dossiq-sociaal-domein',
+				'title' => 'Bijstandsaanvraag, inkomen 480 euro',
+			]
+		);
+	}//end seedCase()
+
+	/**
+	 * 🔴 An open case of a social-domain case type answers for its domain,
+	 * read as the system: a consulent who cannot open that confidential case
+	 * must still hear that it exists, and nothing more.
+	 *
+	 * @return void
+	 */
+	public function testAnOpenCaseOfTheDomainAnswersReadAsTheSystem(): void {
+		$this->seedCase(id: 'case-pw', category: 'Werk en inkomen');
+
+		$found = $this->existence->lookUp(bsn: self::BSN, ownDomain: 'Wmo', ground: 'wettelijke-taak', requester: 'anna');
+
+		self::assertSame(
+			expected: [
+				['exists' => true, 'domain' => 'Jeugdwet', 'contact' => 'bram'],
+				['exists' => true, 'domain' => 'Participatiewet', 'contact' => 'pieter'],
+			],
+			actual: $found
+		);
+		self::assertContains(needle: ['schema' => 'case', 'rbac' => false], haystack: $this->objects->scopes);
+	}//end testAnOpenCaseOfTheDomainAnswersReadAsTheSystem()
+
+	/**
+	 * A closed case, or a case outside the three domains, answers nothing.
+	 *
+	 * @return void
+	 */
+	public function testAClosedOrUnrelatedCaseAnswersNothing(): void {
+		$this->seedCase(id: 'case-closed', category: 'Werk en inkomen', final: true);
+		$this->seedCase(id: 'case-woo', category: 'Transparantie');
+
+		$found = $this->existence->lookUp(bsn: self::BSN, ownDomain: 'Jeugdwet', ground: 'wettelijke-taak', requester: 'anna');
+
+		self::assertSame(expected: [], actual: $found);
+	}//end testAClosedOrUnrelatedCaseAnswersNothing()
+
+	/**
+	 * A record that moved onto a case answers through its case, once.
+	 *
+	 * @return void
+	 */
+	public function testAMovedRecordAnswersThroughItsCaseOnly(): void {
+		$this->objects->store['jeugdwetZaak']['jw-1']['migratedTo'] = 'case-jw';
+		$this->seedCase(id: 'case-jw', category: 'Jeugdhulp', final: true);
+
+		$found = $this->existence->lookUp(bsn: self::BSN, ownDomain: 'Wmo', ground: 'wettelijke-taak', requester: 'anna');
+
+		self::assertSame(expected: [], actual: $found, message: 'the moved record no longer answers, and its case is closed');
+	}//end testAMovedRecordAnswersThroughItsCaseOnly()
+
+	/**
+	 * An unreadable case store refuses rather than answering "nothing exists".
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableCaseStoreRefuses(): void {
+		$this->objects->brokenSchemas = ['case'];
+
+		$this->expectException(exception: RefusedException::class);
+		$this->existence->lookUp(bsn: self::BSN, ownDomain: 'Wmo', ground: 'wettelijke-taak', requester: 'anna');
+	}//end testAnUnreadableCaseStoreRefuses()
+
+	/**
 	 * A lookup naming no person is refused before it reads anything.
 	 *
 	 * @return void

@@ -29,17 +29,19 @@
 				:options="statusOptions"
 				:inputLabel="t('dossiq', 'Status')"
 				clearable />
-			<NcButton type="primary" :disabled="loading" @click="reload">
+		</div>
+		<div class="stuf-audit-log__buttons">
+			<NcButton variant="secondary" :disabled="loading" @click="reload">
 				<template v-if="loading" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
 				{{ loading ? t('dossiq', 'Reloading…') : t('dossiq', 'Reload') }}
 			</NcButton>
-			<NcButton type="tertiary" @click="exportCsv">
+			<NcButton variant="secondary" @click="exportCsv">
 				{{ t('dossiq', 'Export CSV') }}
 			</NcButton>
 		</div>
-		<table class="stuf-audit-log__table" data-testid="stuf-audit-log-table">
+		<table v-if="messages.length" class="stuf-audit-log__table" data-testid="stuf-audit-log-table">
 			<thead>
 				<tr>
 					<th scope="col">{{ t('dossiq', 'Sent at') }}</th>
@@ -68,18 +70,22 @@
 					<td>{{ row.httpStatus || '—' }}</td>
 					<td>{{ row.durationMs || '—' }}</td>
 					<td class="stuf-audit-log__actions">
-						<NcButton type="tertiary" @click="inspect(row)">
+						<NcButton variant="tertiary" @click="inspect(row)">
 							{{ t('dossiq', 'Inspect') }}
 						</NcButton>
 					</td>
 				</tr>
-				<tr v-if="!messages.length">
-					<td colspan="8" class="stuf-audit-log__empty">
-						{{ t('dossiq', 'No StUF messages match the filters.') }}
-					</td>
-				</tr>
 			</tbody>
 		</table>
+		<!-- No message matches: the board's empty state, not an empty table. -->
+		<NcEmptyContent
+			v-else
+			:name="t('dossiq', 'No StUF messages match the filters.')"
+			data-testid="stuf-audit-log-empty">
+			<template #icon>
+				<EmailSearchOutline :size="48" />
+			</template>
+		</NcEmptyContent>
 		<StufEnvelopeDialog
 			v-if="inspectRow"
 			:row="inspectRow"
@@ -92,14 +98,17 @@
 
 <script>
 import { showError } from '@nextcloud/dialogs'
-import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
 import StufEnvelopeDialog from '../../dialogs/StufEnvelopeDialog.vue'
 import { listMessages } from '../../services/stufApi.js'
 
 export default {
 	name: 'StufAuditLog',
 	components: {
+		EmailSearchOutline,
 		NcButton,
+		NcEmptyContent,
 		NcLoadingIcon,
 		NcSelect,
 		NcTextField,
@@ -248,11 +257,17 @@ export default {
 
 <style scoped>
 .stuf-audit-log__filters {
-	display: flex;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 12px;
-	margin-bottom: 12px;
 	align-items: end;
+}
+
+.stuf-audit-log__buttons {
+	display: flex;
 	flex-wrap: wrap;
+	gap: 10px;
+	margin: 16px 0;
 }
 
 .stuf-audit-log__table {
@@ -265,11 +280,6 @@ export default {
 	padding: 6px 8px;
 	border-bottom: 1px solid var(--color-border);
 	text-align: left;
-}
-
-.stuf-audit-log__empty {
-	color: var(--color-text-maxcontrast);
-	font-style: italic;
 }
 
 .stuf-audit-log__actions {

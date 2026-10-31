@@ -8,7 +8,7 @@
  * which stops counting once `settledField` is truthy; the initiator type is
  * an enum the data widget labels through `x-enum-labels` and the l10n files.
  *
- * @spec openspec/changes/case-page-reads-in-words/specs/case-management/spec.md#requirement-the-case-page-shows-words-not-raw-values
+ * @spec openspec/specs/case-management/spec.md#requirement-the-case-page-shows-words-not-raw-values
  */
 
 import fs from 'fs'

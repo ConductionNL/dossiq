@@ -39,7 +39,7 @@ class RequiredDocumentGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenDocumentTypeMissing(): void {
-		$guard = new RequiredDocumentGuard();
+		$guard = new RequiredDocumentGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u');
 
 		self::assertFalse($result->passed);
@@ -50,7 +50,7 @@ class RequiredDocumentGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenNoMatchingDocument(): void {
-		$guard = new RequiredDocumentGuard();
+		$guard = new RequiredDocumentGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['documentType' => 'Besluit'],
 			case: ['documents' => [['documentType' => 'Aanvraag']]],
@@ -65,7 +65,7 @@ class RequiredDocumentGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testPassesOnDocumentTypeField(): void {
-		$guard = new RequiredDocumentGuard();
+		$guard = new RequiredDocumentGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['documentType' => 'Besluit'],
 			case: ['documents' => [['documentType' => 'Besluit']]],
@@ -80,7 +80,7 @@ class RequiredDocumentGuardTest extends TestCase {
 	 */
 	public function testPassesOnGenericTypeField(): void {
 		// Some schemas use `type` rather than `documentType`.
-		$guard = new RequiredDocumentGuard();
+		$guard = new RequiredDocumentGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['documentType' => 'Besluit'],
 			case: ['files' => [['type' => 'Besluit']]],
@@ -94,7 +94,7 @@ class RequiredDocumentGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testScansAllAttachmentFields(): void {
-		$guard = new RequiredDocumentGuard();
+		$guard = new RequiredDocumentGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['documentType' => 'Bewijs'],
 			case: [
@@ -113,7 +113,7 @@ class RequiredDocumentGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testHandlesMissingAttachmentFieldsGracefully(): void {
-		$guard = new RequiredDocumentGuard();
+		$guard = new RequiredDocumentGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['documentType' => 'Besluit'],
 			case: ['id' => 'c'],

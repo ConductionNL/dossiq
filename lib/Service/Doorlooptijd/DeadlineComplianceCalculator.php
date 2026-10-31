@@ -47,6 +47,13 @@ use DateTimeImmutable;
  */
 class DeadlineComplianceCalculator {
 	/**
+	 * The groupings a throughput summary takes.
+	 *
+	 * @var array<int, string>
+	 */
+	public const GRANULARITIES = ['week', 'month', 'quarter', 'year'];
+
+	/**
 	 * Compute the four headline KPIs.
 	 *
 	 * @param array<int, array<string, mixed>> $cases Enriched cases.
@@ -256,6 +263,89 @@ class DeadlineComplianceCalculator {
 
 		return $rows;
 	}//end buildCaseList()
+
+	/**
+	 * The throughput summary over closed cases: the average days a case took
+	 * in the last twelve months, how many closed this calendar year, and the
+	 * average days per month over the requested period as parallel arrays.
+	 *
+	 * The averages over the period are grouped per `granularity`: per month
+	 * (`YYYY-MM`, the default), per quarter (`YYYY-Qn`), per year (`YYYY`) or
+	 * per ISO week (`YYYY-Www`), oldest first, today's last. They keep the key
+	 * `monthlyAvgDays`, which the processing-time chart reads.
+	 *
+	 * @param array<int, array<string, mixed>> $cases       Enriched cases.
+	 * @param string                           $period      Period spec (e.g. `12m`).
+	 * @param DateTimeImmutable|null           $today       The day the figures are read on; now when absent.
+	 * @param string                           $granularity `month`, `quarter`, `year` or `week`.
+	 *
+	 * @return array<string, mixed> `avgDays`, `closedThisYear`, `granularity` and `monthlyAvgDays` (`labels`, `values`).
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function computeSummary(array $cases, string $period, ?DateTimeImmutable $today = null, string $granularity = 'month'): array {
+		$today = ($today ?? new DateTimeImmutable());
+		$cutoff = $today->modify('-12 months')->format('Y-m-d');
+		$year = $today->format('Y');
+		$months = $this->parseMonths(period: $period);
+		if (in_array($granularity, self::GRANULARITIES, true) === false) {
+			$granularity = 'month';
+		}
+
+		$grouping = new ThroughputBuckets();
+		$buckets = $grouping->emptyBuckets(
+			start: $today->modify('first day of this month')->modify('-' . ($months - 1) . ' month'),
+			today: $today,
+			granularity: $granularity
+		);
+
+		$recent = [];
+		$closedThisYear = 0;
+		foreach ($cases as $caseData) {
+			$end = $caseData['_endDate'];
+			$days = $caseData['_throughputDays'];
+			if ($caseData['_isOpen'] === true || $end === null || $days === null) {
+				continue;
+			}
+
+			if (str_starts_with($end, $year) === true) {
+				$closedThisYear++;
+			}
+
+			if ($end >= $cutoff) {
+				$recent[] = $days;
+			}
+
+			$bucket = $grouping->bucketOf(day: new DateTimeImmutable(substr($end, 0, 10)), granularity: $granularity);
+			if (isset($buckets[$bucket]) === true) {
+				$buckets[$bucket][] = $days;
+			}
+		}//end foreach
+
+		$values = array_map(fn (array $list): ?int => $this->average(values: $list), array_values($buckets));
+
+		return [
+			'avgDays' => $this->average(values: $recent),
+			'closedThisYear' => $closedThisYear,
+			'granularity' => $granularity,
+			'monthlyAvgDays' => ['labels' => array_map('strval', array_keys($buckets)), 'values' => $values],
+		];
+	}//end computeSummary()
+
+	/**
+	 * The rounded average of a list of day counts, or null for an empty list.
+	 *
+	 * @param array<int, int> $values Day counts.
+	 *
+	 * @return int|null
+	 */
+	private function average(array $values): ?int {
+		if ($values === []) {
+			return null;
+		}
+
+		return (int)round(array_sum($values) / count($values));
+	}//end average()
 
 	/**
 	 * Translate a period string into a month count (`12m` → 12, `6m` → 6).

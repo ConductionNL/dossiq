@@ -1,0 +1,2 @@
+- [x] 1.1 kinds and status title (TimelineKinds)
+- [x] 1.2 tests (TimelineKindsHistoryChipsTest, CaseTimelineTest)

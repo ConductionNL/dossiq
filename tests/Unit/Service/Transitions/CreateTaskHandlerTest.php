@@ -58,12 +58,13 @@ class CreateTaskHandlerTest extends TestCase {
 	 *
 	 * @return EngineTaskGateway&\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private static function recordingGateway(&$recorded, TestCase $test, string $taskId = 'task-uuid', string $reason = ''): EngineTaskGateway {
+	private static function recordingGateway(&$recorded, TestCase $test, string $taskId = 'task-uuid', string $reason = '', ?bool $keyTaken = false): EngineTaskGateway {
 		$gateway = $test->getMockBuilder(EngineTaskGateway::class)
 			->disableOriginalConstructor()
 			->getMock();
 		$gateway->method('unavailableReason')->willReturn($reason);
 		$gateway->method('lastError')->willReturn('the engine said no');
+		$gateway->method('keyTaken')->willReturn($keyTaken);
 		$gateway->method('mirrorImport')->willReturnCallback(
 			static function (array $task, string $caseId, ?string $actor) use (&$recorded, $taskId): string {
 				$recorded = ['object' => $task, 'case' => $caseId, 'actor' => $actor];
@@ -572,4 +573,75 @@ class CreateTaskHandlerTest extends TestCase {
 
 		self::assertSame('behandelaars', $recorded['object']['assignee']);
 	}//end testALiteralAssigneeSurvivesResolution()
+	/**
+	 * An action with a once-key adds its task with that key, once per case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	public function testAOnceKeyedTaskCarriesItsKey(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
+
+		$result = $handler->handle(
+			actionConfig: ['title' => 'Welstandsadvies vragen', 'onceKey' => 'rule:type-1:welstand'],
+			case: ['id' => 'case-9'],
+			transitionContext: [],
+		);
+
+		self::assertTrue($result->succeeded);
+		self::assertSame('dossiq:once:rule:type-1:welstand:case-9', $recorded['object']['onceKey']);
+	}//end testAOnceKeyedTaskCarriesItsKey()
+
+	/**
+	 * A case saved again with the condition still true gets no second task.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	public function testAOnceKeyedTaskIsNotAddedTwice(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler(
+			new AssigneeResolver(new NullLogger()),
+			self::recordingGateway($recorded, $this, keyTaken: true),
+			new NullLogger()
+		);
+
+		$result = $handler->handle(
+			actionConfig: ['title' => 'Welstandsadvies vragen', 'onceKey' => 'rule:type-1:welstand'],
+			case: ['id' => 'case-9'],
+			transitionContext: [],
+		);
+
+		self::assertTrue($result->succeeded);
+		self::assertNull($recorded);
+	}//end testAOnceKeyedTaskIsNotAddedTwice()
+
+	/**
+	 * When the engine cannot say whether the task is there, none is added and the step fails.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	public function testAnUnanswerableOnceKeyAddsNothing(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler(
+			new AssigneeResolver(new NullLogger()),
+			self::recordingGateway($recorded, $this, keyTaken: null),
+			new NullLogger()
+		);
+
+		$result = $handler->handle(
+			actionConfig: ['title' => 'Welstandsadvies vragen', 'onceKey' => 'rule:type-1:welstand'],
+			case: ['id' => 'case-9'],
+			transitionContext: [],
+		);
+
+		self::assertFalse($result->succeeded);
+		self::assertSame('once_key_unverifiable', $result->error);
+		self::assertNull($recorded);
+	}//end testAnUnanswerableOnceKeyAddsNothing()
 }//end class

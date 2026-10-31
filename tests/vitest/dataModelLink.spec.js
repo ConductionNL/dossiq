@@ -55,8 +55,10 @@ const readJson = (...parts) => JSON.parse(read(...parts))
 const manifest = readJson('src', 'manifest.json')
 const menuLayout = readJson('src', 'menu-layout.json')
 const iconsSource = read('src', 'icons.js')
+const libraryDir = ['node_modules', '@conduction', 'nextcloud-vue', 'src']
+const dispatchSource = read(...libraryDir, 'utils', 'widgetDispatch.js')
+const builtInSource = read(...libraryDir, 'components', 'CnWidgetGrid', 'builtInWidgets.js')
 const mainSource = read('src', 'main.js')
-const registerSource = read('src', 'components', 'case', 'registerNavCardGrid.js')
 
 /** OpenRegister's schema list for the dossiq register. One target, two doors. */
 const TARGET = '/apps/openregister/#/registers/dossiq'
@@ -232,12 +234,15 @@ describe('Manage object types', () => {
 		expect(page('CaseDetail').widgets).toBeUndefined()
 	})
 
-	it('resolves on the case page, because the shared catalog carries the type', () => {
-		// CnDetailWidgetHost reads the shared catalog only. Without this
-		// registration the section renders nothing and logs nothing.
+	it('resolves on the case page through the library built-in fallback', () => {
+		// CnDetailWidgetHost resolves a type through resolveRegistryRenderer,
+		// which falls back to the library's BUILT_IN_WIDGETS, and that map
+		// carries nav-card-grid. A type that resolves to nothing renders
+		// nothing and logs nothing. Read from source: the library's Vue
+		// components do not load in this environment.
 		expect(caseObjectTypesSection().widget.type).toBe('nav-card-grid')
-		expect(registerSource).toContain("registerDashboardWidget('nav-card-grid'")
-		expect(registerSource).toContain('renderer: CnNavCardGrid')
+		expect(dispatchSource).toMatch(/export function resolveRegistryRenderer[\s\S]*?return BUILT_IN_WIDGETS\[/)
+		expect(builtInSource).toContain("'nav-card-grid': CnNavCardGrid")
 	})
 
 	it('has a runtime to resolve user.isAdmin against', () => {

@@ -2,10 +2,11 @@
  * Bulk job API wrapper (bulk-actions-report-progress).
  *
  * dossiq starts a bulk act on its own endpoint, which applies the case policy
- * and hands the act to OpenRegister's job. Everything after that is read
- * straight from OpenRegister: the progress, the per-row outcome, the CSV, the
- * commit, the cancel and the retry. dossiq proxies none of it, because a proxy
- * would be a second job model that can disagree with the first.
+ * and hands the act to OpenRegister's job. Everything after that (the
+ * progress, the per-row outcome, the CSV, the commit, the cancel and the
+ * retry) is read straight from OpenRegister by the library's
+ * CnBulkJobProgress. dossiq proxies none of it, because a proxy would be a
+ * second job model that can disagree with the first.
  *
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
@@ -25,14 +26,7 @@ export const ACTION_REASSIGN = 'dossiq:reassign-cases'
 /** The dossiq action that writes one field across cases. */
 export const ACTION_SET_ATTRIBUTE = 'dossiq:set-case-attribute'
 
-/** The job states that mean the job is still moving. */
-export const ACTIVE_STATES = ['previewed', 'running', 'cancelling']
-
-/** The job states that mean the job has stopped for good. */
-export const FINAL_STATES = ['completed', 'failed', 'cancelled']
-
 const dossiq = (suffix = '') => generateUrl(`/apps/dossiq${suffix}`)
-const openregister = (suffix = '') => generateUrl(`/apps/openregister${suffix}`)
 
 /**
  * Start a bulk act over cases and read back what it would do.
@@ -63,132 +57,6 @@ export async function previewBulkJob({
 		justification: justification || '',
 	})
 	return data
-}
-
-/**
- * Read a job's current position.
- *
- * @param {string|number} jobId The job id.
- *
- * @return {Promise<object>} The job, with `processed`, `total` and `counts`.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
- */
-export async function fetchBulkJob(jobId) {
-	const { data } = await axios.get(
-		openregister(`/api/bulk-jobs/${encodeURIComponent(jobId)}`),
-	)
-	return data
-}
-
-/**
- * Read a page of a job's rows, optionally only the rows with one outcome.
- *
- * The skip list is this call with `outcome: 'skipped'`, and the refusals are
- * the same call with `refused`. They are asked for separately on purpose:
- * "12 skipped" and "3 you may not write" are two different things a handler
- * does two different things about.
- *
- * @param {string|number} jobId      The job id.
- * @param {object}        [options]  Paging and filtering.
- * @param {string}        [options.outcome] applied, skipped, refused or failed.
- * @param {number}        [options.limit]   Page size.
- * @param {number}        [options.offset]  Page offset.
- *
- * @return {Promise<{results: Array, total: number}>} The rows and how many there are.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
- */
-export async function fetchBulkJobMembers(
-	jobId,
-	{ outcome, limit = 50, offset = 0 } = {},
-) {
-	const params = { limit, offset }
-	if (outcome) {
-		params.outcome = outcome
-	}
-
-	const { data } = await axios.get(
-		openregister(`/api/bulk-jobs/${encodeURIComponent(jobId)}/members`),
-		{ params },
-	)
-	return {
-		results: (data && data.results) || [],
-		total: Number((data && data.total) || 0),
-	}
-}
-
-/**
- * Commit a previewed job. This is the call that writes.
- *
- * @param {string|number} jobId           The job id.
- * @param {string}        [justification] A reason given at commit time.
- *
- * @return {Promise<object>} The running job.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
- */
-export async function commitBulkJob(jobId, justification) {
-	const { data } = await axios.post(
-		openregister(`/api/bulk-jobs/${encodeURIComponent(jobId)}/commit`),
-		justification ? { justification } : {},
-	)
-	return data
-}
-
-/**
- * Stop a running job before the next case.
- *
- * @param {string|number} jobId The job id.
- *
- * @return {Promise<object>} The job, cancelling or cancelled.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
- */
-export async function cancelBulkJob(jobId) {
-	const { data } = await axios.post(
-		openregister(`/api/bulk-jobs/${encodeURIComponent(jobId)}/cancel`),
-	)
-	return data
-}
-
-/**
- * Run the cases a stopped job did not reach.
- *
- * @param {string|number} jobId The job id.
- *
- * @return {Promise<object>} The running job.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
- */
-export async function retryBulkJob(jobId) {
-	const { data } = await axios.post(
-		openregister(`/api/bulk-jobs/${encodeURIComponent(jobId)}/retry`),
-	)
-	return data
-}
-
-/**
- * Where the report of a job downloads from.
- *
- * A URL rather than a fetch: the browser has to navigate to it for the file to
- * land in the downloads folder, and an axios read of a CSV gives you a string
- * in memory and no file.
- *
- * @param {string|number} jobId The job id.
- *
- * @return {string} The download URL.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
- */
-export function bulkJobReportUrl(jobId) {
-	return openregister(`/api/bulk-jobs/${encodeURIComponent(jobId)}/download`)
-}
-
-/**
- * Whether a job has stopped for good.
- *
- * @param {object} job The job.
- *
- * @return {boolean} True when nothing more will happen to it.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
- */
-export function isFinished(job) {
-	return FINAL_STATES.includes(String((job && job.state) || ''))
 }
 
 /**

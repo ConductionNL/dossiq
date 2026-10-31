@@ -180,6 +180,80 @@ class DeadlinePauseService {
 	}//end registerPauze()
 
 	/**
+	 * The pause reasons the case's case type declares, as a picker offers them,
+	 * each with the days it usually gives when it declares them.
+	 *
+	 * @param string $caseId Case UUID
+	 *
+	 * @return array<int, array{key: string, name: string, legalBasis: string, defaultDays?: int}> Empty when none are declared.
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	public function offeredReasons(string $caseId): array {
+		if ($this->reasons === null) {
+			return [];
+		}
+
+		return array_map(
+			static function (array $reason): array {
+				$offered = [
+					'key' => (string)$reason['key'],
+					'name' => (string)$reason['name'],
+					'legalBasis' => (string)$reason['legalBasis'],
+				];
+				if (is_int($reason['defaultDays'] ?? null) === true) {
+					$offered['defaultDays'] = $reason['defaultDays'];
+				}
+
+				return $offered;
+			},
+			$this->reasons->forCase(caseId: $caseId)
+		);
+	}//end offeredReasons()
+
+	/**
+	 * The rationale a suspension from the case page is registered with.
+	 *
+	 * Without a pause reason, the handler's text is the rationale and must not
+	 * be empty. With one, it must be a reason the case type declares, and its
+	 * name stands in when no text was given.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $reason The handler's text
+	 * @param string $pauseReason The picked reason key, or ''
+	 *
+	 * @return string The rationale.
+	 *
+	 * @throws RuntimeException `reason_required` without a reason, `pause_reason_not_declared`
+	 *                          for a key the case type does not declare.
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	public function suspendRationale(string $caseId, string $reason, string $pauseReason): string {
+		if ($pauseReason === '') {
+			if (trim($reason) === '') {
+				throw new RuntimeException('reason_required');
+			}
+
+			return $reason;
+		}
+
+		foreach ($this->offeredReasons(caseId: $caseId) as $declared) {
+			if ($declared['key'] !== $pauseReason) {
+				continue;
+			}
+
+			if (trim($reason) === '') {
+				return $declared['name'];
+			}
+
+			return $reason;
+		}
+
+		throw new RuntimeException('pause_reason_not_declared');
+	}//end suspendRationale()
+
+	/**
 	 * Refuse a suspension the case type does not allow, or does not allow this
 	 * long (REQ-TERM-066).
 	 *

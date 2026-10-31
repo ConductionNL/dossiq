@@ -400,6 +400,7 @@ class StatutoryTermParityTest extends TestCase {
 			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
 			logger: $this->createMock(LoggerInterface::class),
 			l10n: $this->createMock(IL10N::class),
+			handlerActs: $this->createMock(\OCA\Dossiq\Service\Cases\HandlerActsAsSystem::class),
 		);
 	}//end extendController()
 

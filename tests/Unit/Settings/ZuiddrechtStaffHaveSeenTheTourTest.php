@@ -68,7 +68,11 @@ class ZuiddrechtStaffHaveSeenTheTourTest extends TestCase {
 		$users = [];
 		foreach ($fragment['userPreferences'] as $entry) {
 			$this->assertArrayNotHasKey('app', $entry, 'the loader writes the fragment\'s own app');
-			$this->assertSame($key, $entry['key']);
+			if ($entry['key'] !== $key) {
+				// Other preferences, such as a menu of saved views, are not the tour's.
+				continue;
+			}
+
 			$this->assertSame($manifest['version'], $entry['value'], 'the tour compares the seen version against the manifest version');
 			$users[] = $entry['user'];
 		}

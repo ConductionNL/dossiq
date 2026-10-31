@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ namespace OCA\Dossiq\Service\Access;
 /**
  * Builds the case schema's authorization block from the shipped block and the case types.
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 class CaseTeamAccessRules {
 
@@ -58,8 +58,11 @@ class CaseTeamAccessRules {
 	 * The verbs a handling team holds on the cases of its case type.
 	 *
 	 * Delete is not one of them: it stays with administrators (Ruben, 2026-10-11).
+	 * The file verbs keep what a team could do with a case's files before the
+	 * case schema named them (case-type-rights-enforced): read, add and delete,
+	 * as reading and updating the case allowed.
 	 */
-	public const TEAM_ACTIONS = ['read', 'update'];
+	public const TEAM_ACTIONS = ['read', 'update', 'readFiles', 'addFiles', 'deleteFiles'];
 
 	/**
 	 * The case property the rule matches on.
@@ -74,7 +77,7 @@ class CaseTeamAccessRules {
 	 *
 	 * @return array<string, mixed> The block.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function block(array $shipped, array $caseTypes): array {
 		$entries = $this->teamEntries(caseTypes: $caseTypes);
@@ -102,7 +105,7 @@ class CaseTeamAccessRules {
 	 *
 	 * @return array<int, array<string, mixed>> The entries, sorted by group.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function teamEntries(array $caseTypes): array {
 		$byTeam = [];

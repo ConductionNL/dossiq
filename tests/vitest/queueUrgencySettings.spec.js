@@ -2,87 +2,40 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The queue urgency form: defaults, bounds, and that a refused value sends
- * nothing.
+ * The queue urgency bounds: the server's, shared by the admin section
+ * (adminFields.js) and the case type override, and a value outside them is
+ * refused with the bounds named.
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
 
 import { describe, expect, it } from 'vitest'
 import {
-	buildQueueUrgencyPayload,
-	initialQueueUrgencyValues,
+	checkQueueValue,
 	QUEUE_URGENCY_FIELDS,
 } from '../../src/utils/queueUrgencySettings.js'
 
-describe('initialQueueUrgencyValues', () => {
-	it('starts from the defaults when nothing was provided', () => {
-		expect(initialQueueUrgencyValues({})).toEqual({
-			criticalDays: 3,
-			warningDays: 7,
-			priorityWeight: 10,
-			idleWeight: 0.5,
-		})
-	})
+const spec = (field) => QUEUE_URGENCY_FIELDS.find((entry) => entry.field === field)
 
-	it('reads the stored values', () => {
-		expect(
-			initialQueueUrgencyValues({
-				criticalDays: 5,
-				warningDays: 10,
-				priorityWeight: 20,
-				idleWeight: 1,
-			}),
-		).toEqual({
-			criticalDays: 5,
-			warningDays: 10,
-			priorityWeight: 20,
-			idleWeight: 1,
-		})
-	})
-})
-
-describe('buildQueueUrgencyPayload', () => {
-	it('writes the four app config keys as strings, accepting a decimal comma', () => {
-		const { errors, payload } = buildQueueUrgencyPayload({
-			criticalDays: '5',
-			warningDays: 10,
-			priorityWeight: '12',
-			idleWeight: '0,75',
-		})
-		expect(errors).toEqual({})
-		expect(payload).toEqual({
-			queue_critical_days: '5',
-			queue_warning_days: '10',
-			queue_priority_weight: '12',
-			queue_idle_weight: '0.75',
-		})
+describe('checkQueueValue', () => {
+	it('reads a number, accepting a decimal comma', () => {
+		expect(checkQueueValue('5', spec('criticalDays'))).toEqual({ value: 5, error: '' })
+		expect(checkQueueValue('0,75', spec('idleWeight'))).toEqual({ value: 0.75, error: '' })
 	})
 
 	// @spec openspec/specs/admin-settings/spec.md#scenario-an-out-of-bounds-weight-is-refused-in-the-form
-	it('refuses a weight out of bounds, names the bounds and sends nothing', () => {
-		const { errors, payload } = buildQueueUrgencyPayload({
-			criticalDays: 3,
-			warningDays: 7,
-			priorityWeight: 80,
-			idleWeight: 0.5,
-		})
-		expect(payload).toBeNull()
-		expect(errors).toEqual({ priorityWeight: 'Enter a number from 0 to 50.' })
+	it('refuses a weight out of bounds and names the bounds', () => {
+		expect(checkQueueValue(80, spec('priorityWeight')).error).toBe('Enter a number from 0 to 50.')
 	})
 
 	it('refuses a fraction of a day and an empty field', () => {
-		const { errors } = buildQueueUrgencyPayload({
-			criticalDays: 2.5,
-			warningDays: '',
-			priorityWeight: 10,
-			idleWeight: 0.5,
-		})
-		expect(errors.criticalDays).toBe('Enter a whole number from 0 to 60.')
-		expect(errors.warningDays).toBe('Enter a whole number from 0 to 120.')
+		expect(checkQueueValue(2.5, spec('criticalDays')).error).toBe('Enter a whole number from 0 to 60.')
+		expect(checkQueueValue('', spec('warningDays')).error).toBe('Enter a whole number from 0 to 120.')
 	})
+})
 
-	it('uses the server bounds', () => {
+describe('the bounds', () => {
+	it('are the server\'s', () => {
 		expect(QUEUE_URGENCY_FIELDS.map((f) => [f.key, f.max])).toEqual([
 			['queue_critical_days', 60],
 			['queue_warning_days', 120],

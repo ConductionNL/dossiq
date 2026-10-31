@@ -34,10 +34,10 @@ test.describe('Gather documents on a Woo case', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/specs/woo-case-type/spec.md#a-source-that-is-not-connected
-	// @e2e openspec/specs/woo-case-type/spec.md#search-files-and-other-cases-at-once
-	// @e2e openspec/specs/woo-case-type/spec.md#two-files-added-one-refused
-	// @e2e openspec/specs/woo-case-type/spec.md#provenance-is-on-the-document
+	// @e2e openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#a-source-that-is-not-connected
+	// @e2e openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#search-files-and-other-cases-at-once
+	// @e2e openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#two-files-added-one-refused
+	// @e2e openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#provenance-is-on-the-document
 	test('a handler searches files, adds two, and finds them outstanding for assessment', async ({
 		page,
 		request,

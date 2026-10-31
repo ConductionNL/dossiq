@@ -53,6 +53,11 @@ use Psr\Log\LoggerInterface;
 class CaseRemedy {
 
 	/**
+	 * The case field holding the day its decision was sent.
+	 */
+	public const SENT_FIELD = 'decisionSentOn';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseStatusStore         $store       Reads the case the decision is about.
@@ -141,6 +146,34 @@ class CaseRemedy {
 			extra: ['decision' => $decisionId],
 		);
 	}//end bindTerm()
+
+	/**
+	 * Write the day a decision went out on its case.
+	 *
+	 * The portal reads it as the start of the bezwaar window on the case page,
+	 * so a resident sees the action close without anybody counting days.
+	 *
+	 * @param string            $caseId The case UUID; '' writes nothing.
+	 * @param DateTimeImmutable $sentOn When the decision went out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
+	 */
+	public function recordSent(string $caseId, DateTimeImmutable $sentOn): void {
+		$caseId = trim($caseId);
+		if ($caseId === '') {
+			return;
+		}
+
+		$case = $this->store->loadCase(caseId: $caseId);
+		if ($case === null) {
+			return;
+		}
+
+		$case[self::SENT_FIELD] = $sentOn->format('Y-m-d');
+		$this->store->saveCase(case: $case);
+	}//end recordSent()
 
 	/**
 	 * The effective case type of a case, or an empty array.

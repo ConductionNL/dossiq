@@ -30,14 +30,12 @@ import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it, vi } from 'vitest'
-import { saveMenuStructure } from '../../src/services/menuStructureSetting.js'
 import {
 	applyPageOverlay,
 	buildProfiledManifest,
 	overlayItemName,
 	resolveStructureProfile,
 	STRUCTURE_FULL,
-	STRUCTURE_SETTING,
 	STRUCTURE_SIMPLE,
 } from '../../src/utils/structureProfile.js'
 
@@ -85,19 +83,36 @@ function section(menu, section) {
 }
 
 describe('the full profile', () => {
-	it('is exactly what buildManifest made before profiles existed', () => {
+	it('is exactly what buildManifest made before profiles existed, but for the team queue view', () => {
 		const before = buildManifest(manifest(), fragments, fullFile)
-		expect(build(fullFile)).toEqual(before)
+		const built = build(fullFile)
+		const others = (result) => ({ ...result, pages: result.pages.filter((page) => page.id !== 'Cases') })
+		expect(others(built)).toEqual(others(before))
+		const views = (result) => result.pages.find((page) => page.id === 'Cases').config.defaultSavedViews
+		expect(views(built).filter((view) => view.slug !== 'team-queue')).toEqual(views(before).filter((view) => view.slug !== 'team-queue'))
 	})
 
-	it('still counts 36 entries: 13 main, 5 footer, 15 settings, 3 integrations', () => {
+	it('keeps the Queue page it had as the team queue view: title and priority columns, case type folders', () => {
+		const views = build(fullFile).pages.find((page) => page.id === 'Cases').config.defaultSavedViews
+		const overrides = views.find((view) => view.slug === 'team-queue').overrides
+		expect(overrides.title).toBe('Queue')
+		expect(overrides.columns.map((column) => (typeof column === 'string' ? column : column.key))).toEqual(
+			['identifier', 'title', 'caseType', 'status', 'priorityOrder', 'deadline'],
+		)
+		expect(overrides.folderSidebar).toMatchObject({ schema: 'caseType', filterField: 'caseType' })
+		// The deep merge keeps what the patch does not name.
+		expect(overrides.statRow).toHaveLength(3)
+		expect(overrides.sidePanel).toHaveLength(2)
+	})
+
+	it('counts 39 entries: 12 main, 5 footer, 19 settings, 3 integrations (Case objects is settings-only; re-integration pathways is a Cases view, not a menu entry)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(36)
-		expect(count('main')).toBe(13)
+		expect(flat(menu)).toHaveLength(39)
+		expect(count('main')).toBe(12)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(15)
+		expect(count('settings')).toBe(19)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -115,7 +130,6 @@ describe('the simple profile', () => {
 			'Cases',
 			'WorkflowBoard',
 			'Tasks',
-			'MyCaseTypesCaption',
 			'RelationsCaption',
 			'Contacts',
 			'OrganisationsMenu',
@@ -123,7 +137,6 @@ describe('the simple profile', () => {
 		const captions = main.filter((entry) => entry.type === 'caption')
 		expect(captions.map((entry) => entry.label)).toEqual([
 			'Cases',
-			'My case types',
 			'Relations',
 		])
 		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(8)
@@ -144,7 +157,7 @@ describe('the simple profile', () => {
 			withRelocations.menu
 				.filter((entry) => entry.type === 'caption')
 				.map((entry) => entry.id),
-		).toEqual(['CasesCaption', 'MyCaseTypesCaption', 'RelationsCaption'])
+		).toEqual(['CasesCaption', 'RelationsCaption'])
 	})
 
 	it('gives every entry a label, an icon the app registers and a page that exists', () => {
@@ -178,26 +191,26 @@ describe('the simple profile', () => {
 			expect(shown.icon).toBe(original.icon)
 			expect(shown.route).toBe(original.route)
 		}
-		// Two entries are worded for the simple menu. Their page is the same.
+		// The team queue is worded for the simple menu; it opens its view of Cases.
 		expect(main.find((entry) => entry.id === 'Queue')).toMatchObject({
 			label: 'Team queue',
-			route: 'Queue',
+			route: 'Cases',
+			query: { savedView: 'default:team-queue' },
 		})
+		// The Werkbord is the Cases list in its board view (board DqWerkbord).
 		expect(main.find((entry) => entry.id === 'WorkflowBoard')).toMatchObject({
 			label: 'Board',
-			route: 'WorkflowBoard',
+			route: 'Cases',
+			query: { _view: 'board' },
 		})
 	})
 
-	it('names no case type itself: My case types holds what each user chose', () => {
-		// The fixed Woo requests entry is gone. The entries under My case types
-		// come from the /api/manifest delta at orders 31 to 60, so the caption
-		// sits at 30 and Relations starts at 80, leaving room for all thirty.
+	it('names no case type itself: a pinned case type is a view, listed under My views', () => {
+		// No Woo requests entry and no My case types heading: the case types a
+		// user pins are views of the case list (case-type-pins-are-views), which
+		// the library's My views section lists at the bottom of the menu.
 		expect(main.some((entry) => entry.query?.caseType)).toBe(false)
-		const caption = main.find((entry) => entry.id === 'MyCaseTypesCaption')
-		expect(caption).toMatchObject({ type: 'caption', order: 30 })
-		const relations = main.find((entry) => entry.id === 'RelationsCaption')
-		expect(relations.order).toBeGreaterThan(60)
+		expect(main.some((entry) => entry.id === 'MyCaseTypesCaption')).toBe(false)
 
 		// And the list reads `?caseType=` from the address: the library merges
 		// the query into the fetch (useSelfFetchList.resolveQueryFilters), with
@@ -219,7 +232,7 @@ describe('the simple profile', () => {
 		// The profile asks the instance's theming for the name and the logo;
 		// the app only puts its own name there.
 		expect(simpleFile.nav.brand).toEqual({
-			name: 'dossiq',
+			name: '@theming.staffAppName|Dossiq',
 			caption: '@theming.name',
 			logo: '@theming.emblem|@theming.logo',
 		})
@@ -250,13 +263,22 @@ describe('the simple profile', () => {
 			{ theming },
 		)
 		expect(withTheming.nav.brand).toEqual({
-			name: 'dossiq',
+			name: 'Dossiq',
 			caption: 'Gemeente Voorbeeld',
 			logo: '/core/img/logo.svg',
 		})
 		// An instance that answers nothing gets no caption and no logo: the
 		// profile invents no municipality.
-		expect(built.nav.brand).toEqual({ name: 'dossiq', caption: '', logo: '' })
+		expect(built.nav.brand).toEqual({ name: 'Dossiq', caption: '', logo: '' })
+		// The name an administrator gives the app for staff replaces Dossiq.
+		const named = buildProfiledManifest(
+			buildManifest,
+			manifest(),
+			fragments,
+			simpleFile,
+			{ theming: { staffAppName: 'Zaken' } },
+		)
+		expect(named.nav.brand.name).toBe('Zaken')
 		// The full profile declares no brand and gets none.
 		expect(build(fullFile).nav).toBeUndefined()
 		// main.js hands the theming capabilities over.
@@ -294,11 +316,11 @@ describe('the simple profile', () => {
 		// beside an entry is the number of rows behind it.
 		const entry = (entryId) =>
 			flat(built.menu).find((item) => item.id === entryId)
-		const queuePage = built.pages.find((page) => page.id === 'Queue')
+		const teamQueue = built.pages.find((page) => page.id === 'Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue')
 		expect(entry('Queue').count).toEqual({
 			register: 'dossiq',
 			schema: 'case',
-			filter: queuePage.config.filter,
+			filter: { ...teamQueue.filters, ...teamQueue.overrides.lockedFilters },
 		})
 		expect(entry('WorkGroup').count).toEqual({
 			register: 'dossiq',
@@ -346,7 +368,7 @@ describe('the simple profile', () => {
 				'CasesDeletedMenu',
 				'CaseObjectsMenu',
 				'MailIntakeLogMenu',
-				'WooReportsMenu',
+				'DocumentReviewReportsMenu',
 			]),
 		)
 		// Everything the full profile has in settings is still there.
@@ -362,7 +384,7 @@ describe('the simple profile', () => {
 		expect(ids(built.menu, 'integrations')).toEqual(ids(full, 'integrations'))
 		expect(ids(built.menu, 'footer')).toEqual(
 			ids(full, 'footer').filter(
-				(id) => id !== 'MailIntakeLogMenu' && id !== 'WooReportsMenu',
+				(id) => id !== 'MailIntakeLogMenu' && id !== 'DocumentReviewReportsMenu',
 			),
 		)
 	})
@@ -399,7 +421,7 @@ describe('the simple profile', () => {
 			// The My work page draws its links as pills on the view-switch
 			// row (`viewLinks`, nextcloud-vue 2.79.0), as DqMijnWerk does.
 			for (const link of page.config?.viewLinks ?? []) {
-				linked.add(link.route)
+				linked.add(typeof link.route === 'string' ? link.route : link.route?.name)
 			}
 		}
 		const lost = flat(build(fullFile).menu)
@@ -410,10 +432,10 @@ describe('the simple profile', () => {
 
 		// The control: the three entries this profile takes out are really out,
 		// so the check above is passing on the links and not on the menu.
-		for (const id of ['PersonalQueueMenu', 'MyWork', 'EndOfDayMenu']) {
+		for (const id of ['PersonalQueueMenu', 'EndOfDayMenu']) {
 			expect(shown.has(id), id).toBe(false)
 		}
-		expect([...linked].sort()).toEqual(['EndOfDay', 'MyWork', 'PersonalQueue'])
+		expect([...linked].sort()).toEqual(['Cases', 'EndOfDay', 'PersonalQueue'])
 	})
 
 	it('adds the links to My work and the dashboard without changing the manifest or the full profile', () => {
@@ -429,10 +451,11 @@ describe('the simple profile', () => {
 			built.pages
 				.find((page) => page.id === 'MyWorkHome')
 				.config.viewLinks.map((link) => link.route),
-		).toEqual(['PersonalQueue', 'MyWork', 'EndOfDay'])
+		).toEqual(['PersonalQueue', { name: 'Cases', query: { savedView: 'default:my-work' } }, 'EndOfDay'])
+		// DqDashboard: Close out your day leads, the primary New case ends the row.
 		expect(actionIds(built, 'Dashboard')).toEqual([
-			'new-case',
 			'open-end-of-day',
+			'new-case',
 		])
 		expect(actionIds(build(fullFile), 'MyWorkHome')).toEqual(['new-case'])
 		expect(actionIds(build(fullFile), 'Dashboard')).toEqual(['new-case'])
@@ -440,7 +463,10 @@ describe('the simple profile', () => {
 		// Each link names a page that exists and an icon the app registers.
 		const pageIds = new Set(built.pages.map((page) => page.id))
 		for (const overlay of simpleFile.pages) {
-			for (const action of overlay.configAppend?.headerActions ?? []) {
+			const links = (overlay.configAppend?.headerActions ?? []).filter(
+				(action) => action.type === 'open-page',
+			)
+			for (const action of links) {
 				expect(pageIds.has(action.target), action.id).toBe(true)
 				expect(iconsSource).toContain(`\n\t${action.icon},\n`)
 			}
@@ -449,10 +475,26 @@ describe('the simple profile', () => {
 
 	// 69 -> 67: tenancy step 5 retires the Tenants and TenantDetail pages.
 	// 67 -> 68: woo-delivered-set-is-a-record adds one page.
-	it('builds the same 68 pages as the full profile, so every route stays', () => {
+	// 68 -> 67: the Workflow board page retires; `/workflow-board` redirects to the Cases board.
+	// 67 -> 70: data subject requests, contracts and suppliers get their lists (DqPrivacy, DqContracten).
+	// 70 -> 71: the Postvak (board DqPostvak) adds one page.
+	// 71 -> 72: the catalogue gets a page (DqCatalogus).
+	// 72 -> 73: the field inspection view (DqInspectie).
+	// 73 -> 74: search results over cases, objects and documents (DqZoekresultaten).
+	// 74 -> 76: the organisations on this environment get a list and a page (DqTenant).
+	// 76 -> 77: the departments and staff get a page (DqAfdelingen).
+	// 77 -> 78: the redaction page of a case (DqLakken).
+	// 78 -> 82: the parts of a case type without an editor of their own (result, role, document and decision type) get a page each.
+	// 82 -> 81: the CaseMap page retires; `/map` redirects to the Cases map view.
+	// 81 -> 78: Queue, MyWork and PrivacyRequests became views of Cases.
+	// 78 -> 77: Subsidies became a view of Cases.
+	// 77 -> 75: DeelzaakList and DeelzaakDetail retire; their addresses redirect to CaseDetail.
+	// 75 -> 74: SubstitutionAdmin retires; `/substitution-admin` goes to the admin settings.
+	// 75 -> 74: ReIntegratieTrajecten retires; re-integration pathways are cases of their own case type.
+	it('builds the same 74 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(68)
+		expect(built.pages).toHaveLength(74)
 	})
 })
 
@@ -519,7 +561,7 @@ describe('a page overlay', () => {
 		expect(page.config.list).toHaveLength(3)
 	})
 
-	it('names a list item by id, then key, then label, and a bare string by itself', () => {
+	it('names a list item by id, then key, then slug, then label, and a bare string by itself', () => {
 		const page = {
 			id: 'P',
 			config: {
@@ -547,6 +589,29 @@ describe('a page overlay', () => {
 			{ label: 'All' },
 			{ label: 'Closed' },
 		])
+	})
+
+	it('names a default view by its slug and merges a patch into it deeply, arrays replaced', () => {
+		const page = {
+			id: 'P',
+			config: {
+				defaultSavedViews: [
+					{ slug: 'queue', name: 'Queue', filters: { a: 1 }, overrides: { title: 'Team', columns: ['x', 'y'], header: { meta: 'm', notice: 'n' } } },
+					{ slug: 'other', name: 'Other', filters: {} },
+				],
+			},
+		}
+		const out = applyPageOverlay(page, {
+			id: 'P',
+			configPatch: {
+				defaultSavedViews: { queue: { overrides: { title: 'Queue', columns: ['z'], header: { meta: 'M' } } } },
+			},
+		})
+		expect(out.config.defaultSavedViews).toEqual([
+			{ slug: 'queue', name: 'Queue', filters: { a: 1 }, overrides: { title: 'Queue', columns: ['z'], header: { meta: 'M', notice: 'n' } } },
+			{ slug: 'other', name: 'Other', filters: {} },
+		])
+		expect(page.config.defaultSavedViews[0].overrides.title).toBe('Team')
 	})
 
 	it('adds slots to the page and leaves a page without the key as it was', () => {
@@ -608,70 +673,5 @@ describe('the structure setting', () => {
 		expect(mainSource).toContain(
 			'buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {',
 		)
-	})
-
-	it('is saved under its own key, through the settings write', async () => {
-		const calls = []
-		const fetchImpl = async (url, init) => {
-			calls.push({ url, init })
-			return {
-				ok: true,
-				status: 200,
-				json: async () => ({
-					success: true,
-					config: { [STRUCTURE_SETTING]: 'full' },
-				}),
-			}
-		}
-		const stored = await saveMenuStructure('full', {
-			url: '/apps/dossiq/api/settings',
-			requestToken: 'token',
-			fetchImpl,
-		})
-		expect(stored).toBe('full')
-		expect(calls).toHaveLength(1)
-		expect(calls[0].init.method).toBe('POST')
-		expect(calls[0].init.headers.requesttoken).toBe('token')
-		expect(JSON.parse(calls[0].init.body)).toEqual({ menu_structure: 'full' })
-	})
-
-	it('does not report a refused save as saved', async () => {
-		const refused = async () => ({
-			ok: false,
-			status: 403,
-			json: async () => ({}),
-		})
-		await expect(
-			saveMenuStructure('full', {
-				url: '/x',
-				requestToken: 't',
-				fetchImpl: refused,
-			}),
-		).rejects.toThrow('403')
-	})
-
-	it('does not report a save the server dropped as saved', async () => {
-		// The settings write answers success for a key it does not know.
-		const dropped = async () => ({
-			ok: true,
-			status: 200,
-			json: async () => ({ success: true, config: {} }),
-		})
-		await expect(
-			saveMenuStructure('full', {
-				url: '/x',
-				requestToken: 't',
-				fetchImpl: dropped,
-			}),
-		).rejects.toThrow('did not store')
-		// Simple is the default, so a dropped save of it would read back as
-		// simple by accident. The stored word itself has to come back.
-		await expect(
-			saveMenuStructure('simple', {
-				url: '/x',
-				requestToken: 't',
-				fetchImpl: dropped,
-			}),
-		).rejects.toThrow('did not store')
 	})
 })

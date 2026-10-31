@@ -4,7 +4,7 @@
             "wmoZaak": {
                 "slug": "wmoZaak",
                 "icon": "HumanWheelchair",
-                "version": "1.2.1",
+                "version": "1.3.0",
                 "searchable": false,
                 "title": "Social support act case",
                 "description": "Sociaal-domein zaaktype wmo-melding (Wmo 2015, art. 2.3.2-2.3.6). Maatschappelijke ondersteuning voor volwassenen. Volledig OpenRegister-backed; status-lifecycle als configuratie, geen custom state machine.",
@@ -145,6 +145,18 @@
                         "title": "Indication ID",
                         "type": "string",
                         "description": "A reference to the needs assessment this belongs to"
+                    },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Wmo-melding this report moved onto. Written once by the record import, which leaves the report itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the report moved onto its case."
                     },
                     "gdprClassification": {
                         "title": "GDPR classification",
@@ -306,7 +318,7 @@
             "jeugdwetZaak": {
                 "slug": "jeugdwetZaak",
                 "icon": "HumanMaleChild",
-                "version": "1.2.1",
+                "version": "1.3.0",
                 "searchable": false,
                 "title": "Youth act case",
                 "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
@@ -440,6 +452,18 @@
                         "items": {"type": "string"},
                         "description": "The history of earlier family plans, which is the extension chain"
                     },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Melding Jeugdwet this report moved onto. Written once by the record import, which leaves the report itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the report moved onto its case."
+                    },
                     "gdprClassification": {
                         "title": "GDPR classification",
                         "type": "object",
@@ -504,7 +528,7 @@
             "gezinsplan": {
                 "slug": "gezinsplan",
                 "icon": "FileTreeOutline",
-                "version": "1.2.1",
+                "version": "1.3.0",
                 "searchable": false,
                 "title": "Family plan",
                 "description": "Jeugdwet gezinsplan met doelen, trajecten, evaluaties en expliciete toestemming per gezinslid (16+ jeugdige tekent zelfstandig). OpenRegister-backed.",
@@ -526,6 +550,13 @@
                         "type": "string",
                         "format": "date",
                         "description": "The date the plan was drawn up"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": ["draft", "determined", "evaluated"],
+                        "x-enum-labels": {"draft": "Being drawn up", "determined": "Adopted", "evaluated": "Evaluated"},
+                        "description": "Where the plan stands: being drawn up with the household, adopted, or evaluated. Optional; a plan without one has not been given a status yet."
                     },
                     "gezinsleden": {
                         "authorization": {
@@ -624,17 +655,22 @@
             "casePlanGoal": {
                 "slug": "casePlanGoal",
                 "icon": "TargetVariant",
-                "version": "1.1.1",
+                "version": "1.2.0",
                 "searchable": false,
-                "title": "Goal in the family plan",
-                "description": "Een doel van het gezinsplan, dat benoemt wat als behaald telt. \"De thuissituatie verbeteren\" kan niemand afsluiten; het waarneembare ding benoemen geeft een evaluatie iets om over te beslissen en laat het gezin zelf meekijken of het gehaald is (REQ-CPN-01, D-3). OpenRegister-backed.",
+                "title": "Goal",
+                "description": "Een doel van een zaak of van het gezinsplan, dat benoemt wat als behaald telt. \"De thuissituatie verbeteren\" kan niemand afsluiten; het waarneembare ding benoemen geeft een evaluatie iets om over te beslissen en laat het gezin zelf meekijken of het gehaald is (REQ-CPN-01, D-3). OpenRegister-backed.",
                 "type": "object",
-                "required": ["plan", "title", "metWhen"],
+                "required": ["title", "metWhen"],
                 "properties": {
                     "plan": {
                         "title": "Family plan",
                         "type": "string",
-                        "description": "A reference to the family plan"
+                        "description": "A reference to the family plan, for a goal of a family plan"
+                    },
+                    "case": {
+                        "title": "Case",
+                        "type": "string",
+                        "description": "A reference to the case, for a goal that belongs to a case directly. A goal names a case or a plan (CasePlanGoals refuses one with neither)."
                     },
                     "title": {
                         "title": "Goal",
@@ -836,7 +872,7 @@
             "participatiewetZaak": {
                 "slug": "participatiewetZaak",
                 "icon": "BriefcaseAccountOutline",
-                "version": "1.2.1",
+                "version": "1.3.0",
                 "searchable": false,
                 "title": "Participation act case",
                 "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
@@ -999,6 +1035,18 @@
                         "type": "boolean",
                         "description": "Set when assets exceed the exemption, which proposes a refusal"
                     },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Bijstandsaanvraag this application moved onto. Written once by the record import, which leaves the application itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the application moved onto its case."
+                    },
                     "gdprClassification": {
                         "title": "GDPR classification",
                         "type": "object",
@@ -1063,7 +1111,7 @@
             "reIntegratieTraject": {
                 "slug": "reIntegratieTraject",
                 "icon": "StairsUp",
-                "version": "1.1.1",
+                "version": "1.2.0",
                 "searchable": false,
                 "title": "Return to work trajectory",
                 "description": "Participatiewet re-integratietraject met instrumenten (loonkostensubsidie, scholing, jobcoaching), tegenprestatie en vrijstellingen. OpenRegister-backed.",
@@ -1173,6 +1221,18 @@
                                 "format": "date"
                             }
                         }
+                    },
+                    "migratedTo": {
+                        "title": "Moved to case",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The case of type Re-integratietraject this trajectory moved onto. Written once by the record import, which leaves the trajectory itself as it was."
+                    },
+                    "migratedAt": {
+                        "title": "Moved at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the trajectory moved onto its case."
                     }
                 }
             },

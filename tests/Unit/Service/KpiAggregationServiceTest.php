@@ -38,10 +38,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\KpiAggregationService;
+use OCA\Dossiq\Service\Queue\QueueFigures;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Team\PrimaryTeamService;
+use OCA\Dossiq\Service\Team\ReaderTeamCases;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IL10N;
+use OCP\IUser;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -210,6 +216,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		$this->assertSame(0, $kpis['openCount']);
 		$this->assertNull($kpis['avgProcessingDays']);
 		$this->assertSame([], $kpis['statusBreakdown']);
+		$this->assertSame(expected: 'the oldest case in the queue', actual: $kpis['queueOldestNote']);
 	}
 
 	/**
@@ -224,6 +231,64 @@ final class KpiAggregationServiceTest extends TestCase {
 			[['status' => 'in-behandeling', 'count' => 2], ['status' => 'ontvangen', 'count' => 1]],
 			$kpis['statusBreakdown'],
 			'the breakdown groups by status, most frequent first.'
+		);
+	}
+
+	/**
+	 * The queue figures count the reader's teams only, as the team queue list
+	 * and its menu badge do; a reader in no team counts every case, as the list
+	 * drops its team filter then.
+	 *
+	 * @return void
+	 */
+	public function testQueueFiguresCountTheReadersTeamsOnly(): void {
+		$rows = [
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'woo', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'vergunningen', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => '', 'assignedGroup' => 'handhaving', 'startDate' => $this->today],
+			['caseType' => 'woo', 'assignee' => 'pieter', 'assignedGroup' => 'woo', 'startDate' => $this->today],
+		];
+		$teams = [['groupId' => 'woo', 'name' => 'Woo'], ['groupId' => 'vergunningen', 'name' => 'Vergunningen']];
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows), teams: $teams)->computeKpis('pieter');
+		$this->assertSame(2, $kpis['queueCount'], 'only the unassigned cases of the reader\'s two teams.');
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows), teams: [])->computeKpis('pieter');
+		$this->assertSame(3, $kpis['queueCount'], 'a reader in no team counts every unassigned case, as the list.');
+	}//end testQueueFiguresCountTheReadersTeamsOnly()
+
+	/**
+	 * The queue figures count the open cases without a handler, and group every open case by type.
+	 *
+	 * @return void
+	 */
+	public function testQueueFiguresFoldTheUnassignedCases(): void {
+		$today = new \DateTimeImmutable($this->today);
+		$rows = [
+			['caseType' => 'woo', 'assignee' => '', 'startDate' => $today->modify('-6 days')->format('Y-m-d'), 'deadline' => $today->modify('+4 days')->format('Y-m-d')],
+			['caseType' => 'woo', 'assignee' => '', 'startDate' => $this->today, 'deadline' => $today->modify('+20 days')->format('Y-m-d')],
+			['caseType' => 'woo', 'assignee' => 'pieter', 'startDate' => $today->modify('-30 days')->format('Y-m-d')],
+			['caseType' => 'bezwaar', 'startDate' => $today->modify('-2 days')->format('Y-m-d'), 'deadline' => $this->today],
+		];
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows))->computeKpis('admin');
+
+		$this->assertSame(3, $kpis['queueCount'], 'a case without a handler is in the queue.');
+		$this->assertSame(1, $kpis['queueNewToday']);
+		$this->assertSame(2, $kpis['queueDueSoon'], 'due today and due in four days fall in the coming week.');
+		$this->assertSame(6, $kpis['queueOldestDays'], 'the oldest case IN the queue, not the oldest open case.');
+		$this->assertSame(
+			expected: 'Woo-verzoek, deadline in 4 days',
+			actual: $kpis['queueOldestNote'],
+			message: 'DqTeamwachtrij: the oldest case\'s type and the days to its deadline.'
+		);
+		$this->assertSame(
+			[
+				['caseType' => 'woo', 'title' => 'Woo-verzoek', 'open' => 3, 'waiting' => 2],
+				['caseType' => 'bezwaar', 'title' => 'Bezwaar', 'open' => 1, 'waiting' => 1],
+			],
+			$kpis['queueByType'],
+			'every open case counts per type under its title, the unassigned ones also as waiting.'
 		);
 	}
 
@@ -419,6 +484,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		bool $openRegisterInstalled = true,
 		bool $containerThrows = false,
 		array $engineTaskCounts = [23, 2],
+		?array $teams = null,
 	): KpiAggregationService {
 		$objectService = ($objectService ?? $this->objectService(closedCases: $closedCases));
 
@@ -433,6 +499,7 @@ final class KpiAggregationServiceTest extends TestCase {
 					'register' => self::IDS['register'],
 					'case_schema' => self::IDS['case'],
 					'task_schema' => self::IDS['caseTask'],
+					'case_type_schema' => '174',
 					default => $default,
 				};
 			}
@@ -468,9 +535,30 @@ final class KpiAggregationServiceTest extends TestCase {
 		// The app catalogue: the month names are keys, so an identity
 		// translator is the English reader's view.
 		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters)
+		);
+		$l10n->method('n')->willReturnCallback(
+			static function (string $one, string $many, int $count, array $parameters = []): string {
+				$text = $many;
+				if ($count === 1) {
+					$text = $one;
+				}
 
-		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, $l10n, new NullLogger());
+				return vsprintf(str_replace('%n', (string)$count, $text), $parameters);
+			}
+		);
+
+		$teamCases = null;
+		if ($teams !== null) {
+			$teamService = $this->createMock(PrimaryTeamService::class);
+			$teamService->method('teamsOf')->willReturn($teams);
+			$users = $this->createMock(IUserManager::class);
+			$users->method('get')->willReturn($this->createMock(IUser::class));
+			$teamCases = new ReaderTeamCases(teams: $teamService, users: $users);
+		}
+
+		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new QueueFigures(new DayCount(), $teamCases), $l10n, new NullLogger());
 	}
 
 	/**
@@ -635,6 +723,10 @@ final class KpiAggregationServiceTest extends TestCase {
 				$rows = $this->open;
 				if (isset($f['endDate']) === true) {
 					$rows = $this->closed;
+				}
+
+				if ($this->schema === '174') {
+					$rows = [['id' => 'woo', 'title' => 'Woo-verzoek'], ['@self' => ['id' => 'bezwaar'], 'title' => 'Bezwaar'], ['title' => 'No id']];
 				}
 
 				if ($this->malformedEnvelope === true) {

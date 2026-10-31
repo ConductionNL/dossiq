@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Termijn;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -53,12 +54,14 @@ class TermInstanceStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register and schema ids, and the object service.
-	 * @param LoggerInterface $logger          Logger.
+	 * @param SettingsService   $settingsService Register and schema ids, and the object service.
+	 * @param LoggerInterface   $logger          Logger.
+	 * @param IUserSession|null $userSession     Whether anybody is signed in; nobody means a write runs as the system.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
 
@@ -204,10 +207,18 @@ class TermInstanceStore {
 	/**
 	 * Persist an object to a configured schema.
 	 *
+	 * A write with nobody signed in (an install, an example set, a cron job)
+	 * runs as the system: OpenRegister refuses a create by "Anonymous", and
+	 * every case such a run made got no term (rehearsal R3, twelve times
+	 * "TermInstanceStore persist failed" during the example set install). A
+	 * write by a signed-in user keeps that user's rights.
+	 *
 	 * @param string $schemaConfigKey The schema config key (e.g. 'termijn_instance_schema').
 	 * @param array<string, mixed> $object The payload.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function save(string $schemaConfigKey, array $object): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -222,11 +233,15 @@ class TermInstanceStore {
 		}
 
 		try {
-			return $this->saveObjectAsArray(
+			return $this->asSystemWithoutUser(
 				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $object
+				userSession: $this->userSession,
+				operation: fn (): ?array => $this->saveObjectAsArray(
+					objectService: $objectService,
+					register: $register,
+					schema: $schema,
+					object: $object
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(

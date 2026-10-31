@@ -1,0 +1,122 @@
+{
+  "caseType": {
+    "id": "d2b26387-ec33-533a-bd75-4ded3719a932",
+    "identifier": "aanbesteding",
+    "title": "Aanbesteding",
+    "category": "Inkoop en leveranciers",
+    "description": "Aanbesteding van een opdracht: voorbereiding, publicatie, inschrijving, beoordeling en gunning.",
+    "purpose": "Een opdracht rechtmatig en transparant gunnen aan de inschrijver met de beste prijs-kwaliteitverhouding.",
+    "trigger": "Een inkoopbehoefte boven de drempel voor de gekozen procedure.",
+    "subject": "Aanbesteding",
+    "processingDeadline": "P26W",
+    "extensionAllowed": false,
+    "suspensionAllowed": true,
+    "internalOrExternal": "intern",
+    "publicationRequired": true,
+    "isDraft": false,
+    "confidentiality": "zaakvertrouwelijk",
+    "initialStatus": "775cbdfe-31e7-5ec8-8405-f2ff35d32fa4",
+    "sideCards": [
+      "case-tile-deadline",
+      "case-banner-stack"
+    ]
+  },
+  "statusTypes": [
+    {
+      "id": "775cbdfe-31e7-5ec8-8405-f2ff35d32fa4",
+      "phase": "Beoordeling",
+      "name": "Voorbereiding",
+      "description": "Behoefte, raming, drempel en procedure worden vastgesteld.",
+      "order": 1,
+      "isFinal": false,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "role": "intake",
+      "colour": "blue"
+    },
+    {
+      "id": "82c84a55-e40e-5860-9dbf-12cfdc7d5b90",
+      "phase": "Verzending",
+      "name": "Publicatie",
+      "description": "De aankondiging staat op TenderNed en, boven de drempel, op TED.",
+      "order": 2,
+      "isFinal": false,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "role": "in-progress",
+      "colour": "green"
+    },
+    {
+      "id": "e533aa01-968c-5407-98af-c870c79a71df",
+      "phase": "Beoordeling",
+      "name": "Inschrijving",
+      "description": "Inschrijvers dienen hun inschrijving in tot de sluitingsdatum.",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "colour": "purple"
+    },
+    {
+      "id": "f7d821cb-59f6-52b4-bc18-772734ad5336",
+      "phase": "Beoordeling",
+      "name": "Beoordeling",
+      "description": "De inschrijvingen worden beoordeeld op prijs en kwaliteit.",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "role": "review",
+      "colour": "purple"
+    },
+    {
+      "id": "c6314335-bd99-5577-af9a-4520bf3bfa15",
+      "phase": "Besluit",
+      "name": "Gunning",
+      "description": "De gunningsbeslissing is verstuurd; de opschortende termijn loopt.",
+      "order": 5,
+      "isFinal": false,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "colour": "teal"
+    },
+    {
+      "id": "6545bbed-3022-56e6-a4c0-4e241d6cbd72",
+      "name": "Gegund",
+      "description": "Het contract is gegund en getekend.",
+      "order": 6,
+      "isFinal": true,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "role": "closed",
+      "colour": "green"
+    },
+    {
+      "id": "75d3e370-0966-5da7-9a89-e2da989ce41f",
+      "offPath": true,
+      "name": "Ingetrokken",
+      "description": "De aanbesteding is ingetrokken.",
+      "order": 90,
+      "isFinal": true,
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932",
+      "colour": "grey"
+    }
+  ],
+  "roleTypes": [
+    {
+      "id": "09102496-66b2-5b57-a0a1-d54ffc7d42fe",
+      "name": "Inkoopadviseur",
+      "description": "Begeleidt de procedure",
+      "genericRole": "handler",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
+    },
+    {
+      "id": "9cd5c1d0-7481-5195-913b-3c0d3954d940",
+      "name": "Beoordelaar",
+      "description": "Beoordeelt de inschrijvingen",
+      "genericRole": "advisor",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
+    },
+    {
+      "id": "e5cc697f-6951-55b5-9db6-63c0b7eab93d",
+      "name": "Budgethouder",
+      "description": "Neemt de gunningsbeslissing",
+      "genericRole": "decision_maker",
+      "caseType": "d2b26387-ec33-533a-bd75-4ded3719a932"
+    }
+  ]
+}

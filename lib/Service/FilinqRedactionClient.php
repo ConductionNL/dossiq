@@ -3,41 +3,27 @@
 /**
  * Dossiq Filinq Redaction Client.
  *
- * The one place this app hands a Woo document to filinq's anonymisation
- * pipeline, and the reason it exists is that the hand-off used to be a
- * comment. `WOORedactionService::queueViaDocuDesk()` recorded
- * `status: 'queued'`, logged a line saying the document had been queued, and
- * made no call at all: the comment beside it read "let Docudesk poll", and
- * filinq has no polling ingestion to do so. Every document assessed as deels
- * openbaar on an instance WITH filinq installed came back queued and stayed
- * exactly as it was. The manual fallback, on an instance WITHOUT filinq, was
- * the only branch that ever produced a redaction, because it asks a person to
- * do it.
+ * The one place this app hands a document to filinq's anonymisation
+ * pipeline. Filinq owns detection and redaction for the fleet, so this class
+ * carries no detection or redaction logic of its own. It resolves filinq's
+ * services through {@see FleetAppId}, because both the app id and the PHP
+ * namespace moved when docudesk became filinq.
  *
- * Filinq owns anonymisation for the fleet, so this class carries no detection
- * or redaction logic. It resolves filinq's `AnonymizationService` through
- * {@see FleetAppId} — both the app id and the PHP namespace moved when
- * docudesk became filinq, and either stale half resolves to null without
- * erroring — runs filinq's own entity extraction over the file, and then asks
- * filinq to anonymise it.
+ * The hand-off is three calls, in the order filinq's own gate requires:
+ * detect, mark the run checked by a named person, then anonymise. Filinq
+ * refuses to write a redacted copy for a detection run nobody checked
+ * (`RedactionOutputGuard::assertMayWrite`), and the run is named by the exact
+ * entity set, so the set that is marked is the set that is anonymised.
  *
- * WHAT THIS DELIBERATELY DOES NOT DO: invent a status. A document filinq
- * accepted reports what filinq returned; a document it refused reports the
- * refusal; a document whose bytes this app cannot locate falls to manual
- * redaction with the reason attached. None of those three is `queued`.
- *
- * `redacted` is read off the EFFECT, not off the run. Filinq can detect
- * entities and still name no output file, and a status computed from the
- * entity count alone would call that a redaction — the same shape as the
- * `queued` it replaced. So the outcome is `redacted` only when filinq handed
- * back an anonymised file id.
+ * WHAT THIS DELIBERATELY DOES NOT DO: invent a status. `redacted` is read off
+ * the EFFECT: filinq handed back an anonymised file id for a run that removed
+ * something. A refusal for want of a live detector is the outcome
+ * `detection_unavailable` (dossiq#3191) and a refusal for want of a check is
+ * `not_checked`; neither is an exception, because each has its own repair.
  *
  * Each outcome also carries the detection backend that was actually in force:
  * the one filinq's own detection report names when it carries one, else read
- * from OpenRegister rather than from filinq's status. See
- * {@see detectionBackend()} for why that distinction matters. A run filinq
- * refuses because no detector is live is the outcome `detection_unavailable`,
- * not an exception (dossiq#3191).
+ * from OpenRegister. See {@see detectionBackend()}.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -54,6 +40,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/woo-case-type/spec.md
+ * @spec openspec/specs/document-redaction/spec.md
  */
 
 declare(strict_types=1);
@@ -62,16 +49,13 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Support\FleetAppId;
-use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
 
 /**
- * Sends a Woo document to filinq's anonymisation pipeline.
- *
- * @psalm-suppress UnusedClass Injected into WOORedactionService.
+ * Hands one document to filinq's anonymisation pipeline.
  *
  * @spec openspec/specs/woo-case-type/spec.md
  */
@@ -98,47 +82,91 @@ class FilinqRedactionClient {
 		= 'OCA\OpenRegister\Service\Anonymisation\AnonymisationBackendService';
 
 	/**
+	 * Filinq's review gate, below its app namespace root.
+	 *
+	 * @var string
+	 */
+	private const OUTPUT_GUARD = 'Service\Redaction\RedactionOutputGuard';
+
+	/**
 	 * Constructor.
 	 *
-	 * @param ContainerInterface $container Resolves filinq's service across the rename.
-	 * @param ZgwDocumentService $documents Resolves a document UUID to its Nextcloud file id.
-	 * @param IUserSession $userSession The acting user, recorded on filinq's override audit.
+	 * @param ContainerInterface $container Resolves filinq's services across the rename.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly ZgwDocumentService $documents,
-		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
 	/**
-	 * Redact one document through filinq.
+	 * Run filinq's entity detection over one file.
 	 *
-	 * @param string $caseId The case UUID, for the log line only.
-	 * @param array<string, mixed> $document The document record; needs `fileId`, or `id`/`uuid`
-	 *                                       together with `fileName`.
+	 * @param int $fileId The Nextcloud file id.
 	 *
-	 * @return array<string, mixed> `{documentId, caseId, status, ...}` describing what filinq did.
+	 * @return array<int, array<string, mixed>> The entities filinq detected, each `{type, value, ...}`.
 	 *
-	 * @throws RuntimeException When filinq is absent, the file cannot be located, or filinq refuses.
+	 * @throws RuntimeException When filinq is absent or the detection fails.
 	 *
-	 * @spec openspec/specs/woo-case-type/spec.md
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
 	 */
-	public function redact(string $caseId, array $document): array {
-		$service = FleetAppId::getService($this->container, 'filinq', self::ANONYMIZATION_SERVICE);
-		if ($service === null) {
-			throw new RuntimeException('filinq_unavailable: AnonymizationService did not resolve');
-		}
-
-		$fileId = $this->resolveFileId(document: $document);
-		$userId = $this->actingUserId();
-		$entities = [];
+	public function detect(int $fileId): array {
+		$service = $this->service(relative: self::ANONYMIZATION_SERVICE);
 
 		try {
 			$extraction = (array)$service->extractAndDetectEntities($fileId);
-			$entities = (array)($extraction['entities'] ?? []);
+		} catch (Throwable $e) {
+			throw new RuntimeException('filinq_detection_failed: ' . $e->getMessage(), 0, $e);
+		}
+
+		return array_values(array_filter((array)($extraction['entities'] ?? []), 'is_array'));
+	}//end detect()
+
+	/**
+	 * Record in filinq that a named person checked this entity set for this file.
+	 *
+	 * @param int $fileId The Nextcloud file id.
+	 * @param array<int, array<string, mixed>> $entities The entity set the person checked.
+	 * @param string $checkedBy The uid of the person who checked it.
+	 *
+	 * @return array<string, mixed> Filinq's mark.
+	 *
+	 * @throws RuntimeException When filinq is absent, nobody is named, or the mark is not written.
+	 *
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 */
+	public function markChecked(int $fileId, array $entities, string $checkedBy): array {
+		if (trim($checkedBy) === '') {
+			throw new RuntimeException('checked_by_missing: a check names the person who made it');
+		}
+
+		$guard = $this->service(relative: self::OUTPUT_GUARD);
+
+		try {
+			return (array)$guard->markChecked($fileId, $entities, $checkedBy);
+		} catch (Throwable $e) {
+			throw new RuntimeException('filinq_mark_failed: ' . $e->getMessage(), 0, $e);
+		}
+	}//end markChecked()
+
+	/**
+	 * Ask filinq to write the redacted copy of one file.
+	 *
+	 * @param int $fileId The Nextcloud file id.
+	 * @param array<int, array<string, mixed>> $entities The checked entity set.
+	 * @param string $userId The acting user, recorded on filinq's audit.
+	 *
+	 * @return array<string, mixed> `{status, sourceFileId, entityCount, anonymizedFileId, detectionBackend, ...}`.
+	 *
+	 * @throws RuntimeException When filinq is absent or fails for a reason that is not an outcome.
+	 *
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-a-redacted-copy-is-written-only-after-a-named-officer-checked-the-entities-req-drd-002
+	 */
+	public function anonymize(int $fileId, array $entities, string $userId): array {
+		$service = $this->service(relative: self::ANONYMIZATION_SERVICE);
+
+		try {
 			$result = (array)$service->anonymizeDocument(
 				$fileId,
 				$entities,
@@ -148,58 +176,28 @@ class FilinqRedactionClient {
 				$userId
 			);
 		} catch (Throwable $e) {
-			$refusal = $this->detectorRefusal(error: $e);
+			$refusal = ($this->detectorRefusal(error: $e) ?? $this->reviewRefusal(error: $e));
 			if ($refusal !== null) {
-				// No live detector: filinq wrote nothing. Not a broken filinq
-				// and not a clean document, so it is an outcome with its own
-				// repair (switch detection on), not an exception (dossiq#3191).
 				$this->logger->warning(
-					'Filinq refused a Woo redaction: no live entity detector',
-					['app' => Application::APP_ID, 'caseId' => $caseId, 'fileId' => $fileId, 'reason' => $refusal['detectionUnavailable']]
+					'Filinq refused a redaction',
+					['app' => Application::APP_ID, 'fileId' => $fileId, 'status' => $refusal['status']]
 				);
 				return $refusal + ['sourceFileId' => $fileId, 'entityCount' => count($entities)];
 			}
 
 			$this->logger->warning(
-				'Filinq refused a Woo redaction',
-				[
-					'app' => Application::APP_ID,
-					'caseId' => $caseId,
-					'fileId' => $fileId,
-					'exception' => $e->getMessage(),
-				]
+				'Filinq failed a redaction',
+				['app' => Application::APP_ID, 'fileId' => $fileId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('filinq_redaction_failed: ' . $e->getMessage(), 0, $e);
-		}
+		}//end try
 
 		$anonymisedFileId = ($result['anonymizedFileId'] ?? ($result['fileId'] ?? null));
 		$detection = $this->detectionReport(result: $result);
 		$backend = ($detection['backend'] ?? $this->detectionBackend());
 
-		$this->logger->info(
-			'Filinq processed a Woo document',
-			[
-				'app' => Application::APP_ID,
-				'caseId' => $caseId,
-				'fileId' => $fileId,
-				'entityCount' => count($entities),
-				'detectionBackend' => $backend,
-			]
-		);
-
-		$status = $this->statusOf(entities: $entities, anonymisedFileId: $anonymisedFileId, detection: $detection);
-
 		return [
-			// A run that detected nothing produced a file whose content is the
-			// original's. Calling that `redacted` is the same failure as the
-			// `queued` this class replaced, one step further down: a Woo
-			// officer would be told a document had been cleaned when every
-			// name and BSN in it survived. A human assessed this document as
-			// deels openbaar, so it HAS something to remove; zero detections
-			// means the detection backend answered nothing, not that the
-			// document is clean. It is named as its own outcome and the caller
-			// fails closed on it.
-			'status' => $status,
+			'status' => $this->statusOf(entities: $entities, anonymisedFileId: $anonymisedFileId, detection: $detection),
 			'sourceFileId' => $fileId,
 			'entityCount' => count($entities),
 			'anonymizedFileId' => $anonymisedFileId,
@@ -207,7 +205,25 @@ class FilinqRedactionClient {
 			'detectionOutcome' => ($detection['outcome'] ?? null),
 			'warning' => ($result['warning'] ?? null),
 		];
-	}//end redact()
+	}//end anonymize()
+
+	/**
+	 * One of filinq's services, or a refusal naming that filinq is absent.
+	 *
+	 * @param string $relative The class below filinq's namespace root.
+	 *
+	 * @return object The service.
+	 *
+	 * @throws RuntimeException When filinq is not installed.
+	 */
+	private function service(string $relative): object {
+		$service = FleetAppId::getService($this->container, 'filinq', $relative);
+		if ($service === null) {
+			throw new RuntimeException('filinq_unavailable: ' . $relative . ' did not resolve');
+		}
+
+		return $service;
+	}//end service()
 
 	/**
 	 * The outcome word for a run filinq completed.
@@ -300,6 +316,33 @@ class FilinqRedactionClient {
 	}//end detectorRefusal()
 
 	/**
+	 * The outcome for filinq's review refusal, or null for any other error.
+	 *
+	 * Recognised by name for the same reason as {@see detectorRefusal()}. The
+	 * refusal carries `getReason()` (`never_checked`, `checked_an_older_run`,
+	 * `unattributed`) and filinq's own sentence as the message.
+	 *
+	 * @param Throwable $error What filinq threw.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function reviewRefusal(Throwable $error): ?array {
+		$class = get_class($error);
+		$short = substr($class, (int)strrpos($class, '\\') + 1);
+		if ($short !== 'RedactionNotReviewedException' || method_exists($error, 'getReason') === false) {
+			return null;
+		}
+
+		return [
+			'status' => 'not_checked',
+			'notChecked' => (string)$error->getReason(),
+			'message' => $error->getMessage(),
+			'anonymizedFileId' => null,
+			'warning' => null,
+		];
+	}//end reviewRefusal()
+
+	/**
 	 * The detection backend that was actually in force for this run.
 	 *
 	 * Read from OpenRegister, which owns detection for the fleet, and NOT from
@@ -347,48 +390,4 @@ class FilinqRedactionClient {
 
 		return $method;
 	}//end detectionBackend()
-
-	/**
-	 * The Nextcloud file id filinq must anonymise.
-	 *
-	 * @param array<string, mixed> $document The document record.
-	 *
-	 * @return int The file id.
-	 *
-	 * @throws RuntimeException When the record carries nothing that resolves to a file.
-	 */
-	private function resolveFileId(array $document): int {
-		$explicit = ($document['fileId'] ?? null);
-		if (is_int($explicit) === true || (is_string($explicit) === true && ctype_digit($explicit) === true)) {
-			return (int)$explicit;
-		}
-
-		$uuid = (string)($document['id'] ?? ($document['uuid'] ?? ''));
-		$fileName = (string)($document['fileName'] ?? '');
-		if ($uuid === '' || $fileName === '') {
-			throw new RuntimeException(
-				'file_unresolved: the document carries no fileId, and no id/fileName pair to find one'
-			);
-		}
-
-		try {
-			return $this->documents->getFileId(uuid: $uuid, fileName: $fileName);
-		} catch (Throwable $e) {
-			throw new RuntimeException('file_unresolved: ' . $e->getMessage(), 0, $e);
-		}
-	}//end resolveFileId()
-
-	/**
-	 * The acting user's uid, for filinq's override audit trail.
-	 *
-	 * @return string The uid, or an empty string when nothing is logged in.
-	 */
-	private function actingUserId(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
-	}//end actingUserId()
 }//end class

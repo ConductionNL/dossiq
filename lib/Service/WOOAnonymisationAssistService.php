@@ -4,10 +4,10 @@
  * Dossiq WOO Anonymisation Assist Service
  *
  * LLM-ASSISTED redaction-span proposal for WOO document disclosure review.
- * This service is an ASSIST layered on top of the existing, unchanged
- * `WOORedactionService` (Docudesk hand-off / manual fallback) — it never
- * replaces it, never marks anything "anonymised" itself, and never publishes
- * anything. It:
+ * This service is an ASSIST: it never marks anything "anonymised" itself
+ * and never publishes anything. The redacted copy is written by the
+ * redaction panel ({@see \OCA\Dossiq\Service\Redaction\DocumentRedactionService}),
+ * which takes the same merged spans as entities. It:
  *
  *   1. Runs `AiService::detectDeterministicPiiSpans()` — the deterministic
  *      regex "rules floor" — over the caller-supplied document text.
@@ -21,8 +21,7 @@
  *      remove or shrink a rule-detected one (`mergeSpansRulesFloor()`).
  *   4. Persists the merged proposal on the document's existing wooAssessment
  *      record with `status: 'pending_review'` — a human MUST review and
- *      explicitly approve/reject it (`reviewProposal()`) before it can flow
- *      into `WOORedactionService::queueForRedaction()`. Nothing here is
+ *      explicitly approve/reject it (`reviewProposal()`). Nothing here is
  *      auto-applied or auto-published (EU AI Act Art.14 human-in-the-loop
  *      posture dossiq already takes for every other AI suggestion).
  *
@@ -90,11 +89,6 @@ class WOOAnonymisationAssistService {
 	 *                                                detect-pii surface.
 	 * @param WOODocumentAssessmentService $assessmentService Reads/writes the wooAssessment
 	 *                                                        record a proposal attaches to.
-	 * @param WOORedactionService $redactionService The EXISTING, unchanged
-	 *                                              Docudesk/manual
-	 *                                              redaction hand-off this
-	 *                                              assist feeds an
-	 *                                              approved proposal into.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
@@ -102,7 +96,6 @@ class WOOAnonymisationAssistService {
 		private readonly AiAuditService $auditService,
 		private readonly HermiqAnonymisationClient $hermiqClient,
 		private readonly WOODocumentAssessmentService $assessmentService,
-		private readonly WOORedactionService $redactionService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -166,6 +159,8 @@ class WOOAnonymisationAssistService {
 		$proposal['proposedAt'] = date('c');
 		$proposal['status'] = 'pending_review';
 
+		$this->reportSupersededProposal(caseId: $caseId, documentRef: $documentRef, userId: $userId);
+
 		$saved = $this->assessmentService->saveRedactionProposal(
 			caseId: $caseId,
 			documentRef: $documentRef,
@@ -199,13 +194,10 @@ class WOOAnonymisationAssistService {
 	/**
 	 * Record a human reviewer's decision on a pending proposal.
 	 *
-	 * On `approve`, the proposal's spans are handed to the EXISTING,
-	 * UNCHANGED `WOORedactionService::queueForRedaction()` as guidance
-	 * metadata — the actual redaction execution (Docudesk pipeline or
-	 * manual upload) is entirely unaffected by this feature; this assist
-	 * only informs it. On `reject`, the proposal is marked `rejected` and
-	 * discarded — the pre-existing manual/Docudesk fallback proceeds exactly
-	 * as it always has.
+	 * On `approve`, the proposal is marked `approved` with the reviewed spans;
+	 * on `reject`, it is marked `rejected`. Neither writes a redacted copy:
+	 * that is the redaction panel's, after an officer checked the entities
+	 * filinq will act on.
 	 *
 	 * @param string $caseId The case UUID.
 	 * @param string $documentRef The document UUID.
@@ -254,10 +246,16 @@ class WOOAnonymisationAssistService {
 				proposal: $proposal
 			);
 
+			$this->reportDecision(caseId: $caseId, documentRef: $documentRef, proposal: $proposal, userAction: 'rejected', userId: $reviewerId);
+
 			return ($saved['redactionProposal'] ?? $proposal);
 		}
 
 		$approvedSpans = ($editedSpans ?? $proposal['spans']);
+		$userAction = 'accepted';
+		if ($approvedSpans !== $proposal['spans']) {
+			$userAction = 'modified';
+		}
 
 		$proposal['status'] = 'approved';
 		$proposal['approvedSpans'] = $approvedSpans;
@@ -270,21 +268,105 @@ class WOOAnonymisationAssistService {
 			proposal: $proposal
 		);
 
-		// Hand off to the EXISTING, unchanged redaction pipeline — this assist
-		// only carries the approved spans along as guidance; it never performs
-		// the redaction itself and never marks the document "anonymised".
-		$this->redactionService->queueForRedaction(
-			caseId: $caseId,
-			documents: [
-				[
-					'id' => $documentRef,
-					'redactionProposal' => ['spans' => $approvedSpans, 'reviewedBy' => $reviewerId],
-				],
-			]
-		);
+		$this->reportDecision(caseId: $caseId, documentRef: $documentRef, proposal: $proposal, userAction: $userAction, userId: $reviewerId);
 
 		return ($saved['redactionProposal'] ?? $proposal);
 	}//end reviewProposal()
+
+	/**
+	 * Report a person's decision on a proposal to the AI oversight trail.
+	 *
+	 * @param string               $caseId      The case UUID.
+	 * @param string               $documentRef The document UUID.
+	 * @param array<string, mixed> $proposal    The proposal as decided.
+	 * @param string               $userAction  accepted, modified, rejected or ignored.
+	 * @param string               $userId      The person.
+	 * @param string               $because     Why an ignored proposal went unused.
+	 *
+	 * @return void
+	 */
+	private function reportDecision(
+		string $caseId,
+		string $documentRef,
+		array $proposal,
+		string $userAction,
+		string $userId,
+		string $because = '',
+	): void {
+		$actualValue = null;
+		if ($userAction === 'modified') {
+			$actualValue = ['spans' => ($proposal['approvedSpans'] ?? [])];
+		}
+
+		$this->auditService->recordUserAction(
+			caseId: $caseId,
+			type: 'extraction',
+			userAction: $userAction,
+			suggestion: ['spans' => ($proposal['spans'] ?? [])],
+			actualValue: $actualValue,
+			reason: null,
+			userId: $userId,
+			context: [
+				'unusedBecause' => $because,
+				'model' => 'hermiq',
+				'documentId' => $documentRef,
+				'suggestionId' => $documentRef . '@' . (string)($proposal['proposedAt'] ?? ''),
+			],
+		);
+	}//end reportDecision()
+
+	/**
+	 * Report a still-pending proposal that a new one is about to replace.
+	 *
+	 * @param string $caseId      The case UUID.
+	 * @param string $documentRef The document UUID.
+	 * @param string $userId      The person asking for the new proposal.
+	 *
+	 * @return void
+	 */
+	private function reportSupersededProposal(string $caseId, string $documentRef, string $userId): void {
+		$existing = $this->assessmentService->findAssessment(caseId: $caseId, documentRef: $documentRef);
+		$previous = ($existing['redactionProposal'] ?? null);
+		if (is_array($previous) === false || ($previous['status'] ?? null) !== 'pending_review') {
+			return;
+		}
+
+		$this->reportDecision(
+			caseId: $caseId,
+			documentRef: $documentRef,
+			proposal: $previous,
+			userAction: 'ignored',
+			userId: (string)($previous['proposedBy'] ?? $userId),
+			because: 'superseded'
+		);
+	}//end reportSupersededProposal()
+
+	/**
+	 * The rules floor and Hermiq's spans for a document's text, merged, without saving a proposal.
+	 *
+	 * The redaction panel asks this for the names and other personal data the
+	 * entity detector behind filinq may miss. Text past the length cap is not
+	 * scanned. Fails closed to the rules floor exactly as a proposal does.
+	 *
+	 * @param string $text        The document text.
+	 * @param string $documentRef The document, for Hermiq's audit context.
+	 *
+	 * @return array<string, mixed> `{spans, source, llmAvailable, llmError?}`.
+	 *
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 */
+	public function spansFor(string $text, string $documentRef): array {
+		$text = mb_substr($text, 0, self::MAX_TEXT_LENGTH);
+		if (trim($text) === '') {
+			return ['spans' => [], 'source' => 'rules_only', 'llmAvailable' => $this->isLlmAssistAvailable()];
+		}
+
+		return $this->buildProposal(
+			ruleSpans: $this->aiService->detectDeterministicPiiSpans(text: $text),
+			text: $text,
+			context: ['app' => Application::APP_ID, 'objectType' => 'document', 'objectRef' => $documentRef]
+		);
+	}//end spansFor()
 
 	/**
 	 * Validate the `text` field.

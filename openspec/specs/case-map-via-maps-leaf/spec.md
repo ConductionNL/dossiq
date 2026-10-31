@@ -52,7 +52,8 @@ parallel location store or write map-UI state to its register.
 - **AND** the case detail SHALL surface the maps leaf tab instead
 
 > NOTE (scope): RESOLVED (issue #112, change `migrate-cases-on-map-to-maps-overview-leaf`).
-> The **multi-object** cases-on-map overview (`CasesOnMapView`, the `/map` page)
+> The **multi-object** cases-on-map overview (then `CasesOnMapView` on `/map`; since
+> 2026-10-19 the Cases index in map view, `/cases?_view=map`, with `/map` redirecting there)
 > now consumes OpenRegister's page-level **maps-overview** surface (openregister
 > PR #154) — RBAC-scoped marker points + a declarative base layer, rendered
 > through the library's `CnMapWidget`. The bespoke Leaflet stack

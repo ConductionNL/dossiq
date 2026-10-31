@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -56,6 +57,7 @@ class CaseStatusStore {
 	 * @param StatusTypeLookup  $statusTypeLookup Reads a statusType, by id or by name.
 	 * @param LoggerInterface   $logger           The logger.
 	 * @param StatusMoveEntry|null $moveEntry    The timeline entry a recorded move writes.
+	 * @param TranslatedText       $text         Reads a translatable status description as text, in the reader's language.
 	 *
 	 * @return void
 	 */
@@ -64,6 +66,7 @@ class CaseStatusStore {
 		private readonly StatusTypeLookup $statusTypeLookup,
 		private readonly LoggerInterface $logger,
 		private readonly ?StatusMoveEntry $moveEntry = null,
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -363,7 +366,7 @@ class CaseStatusStore {
 	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
 	 */
 	public function lookupStatusDescription(string $statusTypeId): string {
-		return trim((string)($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));
+		return $this->text->forReader(value: ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));
 	}//end lookupStatusDescription()
 
 	/**

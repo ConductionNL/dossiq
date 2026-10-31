@@ -102,7 +102,7 @@ class AiOversightDelegationServiceTest extends TestCase {
 
 		$record = $this->dispatched->getRecord();
 		$this->assertSame('overridden', $record['humanAction']);
-		$this->assertSame('procest', $record['originApp']);
+		$this->assertSame('dossiq', $record['originApp']);
 		$this->assertSame('case', $record['subjectType']);
 		$this->assertSame('case-1', $record['subjectId']);
 		$this->assertSame('alice', $record['userId']);
@@ -136,9 +136,36 @@ class AiOversightDelegationServiceTest extends TestCase {
 			'accepted' => ['accepted', 'accepted'],
 			'rejected' => ['rejected', 'rejected'],
 			'modified' => ['modified', 'overridden'],
+			'ignored' => ['ignored', 'ignored'],
 		];
 
 	}//end actionProvider()
+
+	/**
+	 * A suggestion nobody acted on carries why it went unused.
+	 *
+	 * @return void
+	 */
+	public function testIgnoredCarriesUnusedBecause(): void {
+		$this->service()->delegate($this->entry(['userAction' => 'ignored', 'unusedBecause' => 'expired']));
+
+		$record = $this->dispatched->getRecord();
+		$this->assertSame('ignored', $record['humanAction']);
+		$this->assertSame('expired', $record['unusedBecause']);
+
+	}//end testIgnoredCarriesUnusedBecause()
+
+	/**
+	 * A suggestion reference from the surface becomes the hermiq reference.
+	 *
+	 * @return void
+	 */
+	public function testSuggestionRefIsUsedAsTheReference(): void {
+		$this->service()->delegate($this->entry(['suggestionRef' => 'qa:case-1:s-9']));
+
+		$this->assertSame('dossiq:suggestion:qa:case-1:s-9', $this->dispatched->getRecord()['externalRef']);
+
+	}//end testSuggestionRefIsUsedAsTheReference()
 
 	/**
 	 * A suggestion-only entry is NOT an oversight decision.

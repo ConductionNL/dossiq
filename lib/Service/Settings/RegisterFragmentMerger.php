@@ -108,6 +108,12 @@ class RegisterFragmentMerger {
 	 * overwrite the base. Disjoint fragments therefore union cleanly without
 	 * collision.
 	 *
+	 * The one exception is a `version` both sides give as a version string:
+	 * the higher one stays. A schema's version is OpenRegister's per-schema
+	 * import gate, so a fragment that sorts later with a lower version would
+	 * otherwise lower it and keep an earlier fragment's properties from ever
+	 * reaching an instance that has the higher one.
+	 *
 	 * @param array<int|string,mixed> $base The base array.
 	 * @param array<int|string,mixed> $override The override array.
 	 *
@@ -128,11 +134,36 @@ class RegisterFragmentMerger {
 				continue;
 			}
 
+			if ($key === 'version' && $this->keepsHigherVersion(current: $base[$key] ?? null, incoming: $value) === true) {
+				continue;
+			}
+
 			$base[$key] = $value;
 		}//end foreach
 
 		return $base;
 	}//end deepMerge()
+
+	/**
+	 * Whether the version already merged is higher than the incoming one, so
+	 * the incoming one must not replace it. Only two version strings
+	 * (`1.29.0`) compare; anything else is overwritten as before.
+	 *
+	 * @param mixed $current The version merged so far, or null.
+	 * @param mixed $incoming The fragment's version.
+	 *
+	 * @return bool True when the current version stays.
+	 */
+	private function keepsHigherVersion(mixed $current, mixed $incoming): bool {
+		$pattern = '/^\d+(\.\d+)*$/';
+		if (is_string($current) === false || is_string($incoming) === false
+			|| preg_match($pattern, $current) !== 1 || preg_match($pattern, $incoming) !== 1
+		) {
+			return false;
+		}
+
+		return version_compare($current, $incoming, '>');
+	}//end keepsHigherVersion()
 
 	/**
 	 * Determine whether an array is a sequential list (vs. an associative map).

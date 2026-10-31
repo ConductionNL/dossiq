@@ -14,6 +14,10 @@ on:
 
 jobs:
   deploy:
+    # The callee's deploy job pushes gh-pages and its image job pushes to GHCR.
+    permissions:
+      contents: write
+      packages: write
     uses: ConductionNL/.github/.github/workflows/documentation.yml@main
     # A reusable workflow receives NO secrets by default. Without this block the
     # callee's publish step finds CF_API_TOKEN empty, skips itself on its own

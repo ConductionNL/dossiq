@@ -1,0 +1,14 @@
+{
+  "_note": "handoff-case-type (PQ-L3): the ns#Case handoff contract's optional caseType maps onto the case's own caseType reference (handoffContract in dossiq_register.json), so a case handed off from another app takes its case type. The base case schema stays at 1.53.0 (the case fragments must stay above it); case moves to 1.60.0 here so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.60.0"
+      }
+    }
+  }
+}

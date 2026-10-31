@@ -133,13 +133,38 @@ export function extensionNotice(body, translate) {
 }
 
 /**
+ * Whether the requester was told that the archived case is completed, as one sentence.
+ *
+ * @param {object|null} body The archive answer (`{..., notice: {noticeStatus, noticeReason}}`).
+ * @param {(key: string) => string} translate The bound t(), taking one string.
+ * @return {{told: boolean, text: string}|null} The sentence, or null when the answer carries no notice.
+ * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+ */
+export function archiveNotice(body, translate) {
+	const t = typeof translate === 'function' ? translate : (s) => s
+	const notice = body?.notice
+	if (!notice || typeof notice !== 'object') {
+		return null
+	}
+
+	if (String(notice.noticeStatus ?? '') === 'sent') {
+		return { told: true, text: t('The case is archived. The requester was told.') }
+	}
+
+	const reason = String(notice.noticeReason ?? '').trim()
+	const text = t('The case is archived. The requester was not told.')
+
+	return { told: false, text: reason === '' ? text : text + ' ' + t(reason) }
+}
+
+/**
  * Turn a server refusal into a sentence.
  *
  * @param {object} body The refusal body ({message, error, code, failedGuards, errors}).
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {string} What to show the handler.
  * @spec openspec/specs/status-transition-engine/spec.md
- * @spec openspec/changes/dutch-copy-on-the-case-page/specs/frontend-locale-completeness/spec.md
+ * @spec openspec/specs/frontend-locale-completeness/spec.md
  */
 export function refusalMessage(body, translate) {
 	const t = typeof translate === 'function' ? translate : (s) => s
@@ -199,6 +224,8 @@ export function refusalMessage(body, translate) {
 			return t('This case could not be found.')
 		case 'reason_required':
 			return t('Give a reason first.')
+		case 'pause_reason_not_declared':
+			return t('This case type has no such pause reason. Pick one of its reasons.')
 		// A gesture the server could not save answers this code with an
 		// English `error` beside it. The code is what is translated, so a
 		// Dutch handler does not read "The case could not be changed." in

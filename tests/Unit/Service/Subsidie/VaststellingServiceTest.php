@@ -104,7 +104,7 @@ class VaststellingFakeObjectService {
  * @uses \OCA\Dossiq\Service\Subsidie\TerugvorderingService
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-20
- * @spec openspec/changes/subsidie-settlement-case-costs/specs/subsidie-settlement-case-costs/spec.md
+ * @spec openspec/specs/subsidie-settlement-case-costs/spec.md#requirement-settling-a-grant-records-the-settled-amount-on-the-vaststelling-and-writes-nothing-to-the-linked-case-req-ssc-005
  */
 class VaststellingServiceTest extends TestCase {
 
@@ -219,9 +219,24 @@ class VaststellingServiceTest extends TestCase {
 	}//end testOverpaymentAndTrigger()
 
 	/**
-	 * subsidie-settlement-case-costs: no linked case — finalize() still
-	 * succeeds (vaststelling is patched) and simply does not append kosten
-	 * anywhere, rather than throwing.
+	 * A settlement with a linked case records the amount on the vaststelling
+	 * and leaves the case unchanged (REQ-SSC-005).
+	 *
+	 * @return void
+	 */
+	public function testFinalizeLeavesTheLinkedCaseUnchanged(): void {
+		$this->seedChain(determinationId: 'vst-1', uitvoeringId: 'uitv-1', requestId: 'aanv-1', caseId: 'case-1');
+
+		$result = $this->service->finalize(determinationId: 'vst-1', grantedAmount: 400000.0, actualCost: 330000.0, totalAdvances: 330000.0);
+
+		$this->assertSame('determined', $result['determination']['status']);
+		$this->assertSame(330000.0, $result['determination']['determinedAmount']);
+		$this->assertSame(['id' => 'case-1', 'title' => 'Test case'], $this->objects->store['case']['case-1']);
+	}//end testFinalizeLeavesTheLinkedCaseUnchanged()
+
+	/**
+	 * A settlement with no linked case still completes and writes no case
+	 * (REQ-SSC-005).
 	 *
 	 * @return void
 	 */

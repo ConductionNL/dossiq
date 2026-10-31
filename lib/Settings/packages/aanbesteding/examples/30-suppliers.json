@@ -1,0 +1,33 @@
+{
+  "schema": {
+    "app": "dossiq",
+    "register": "dossiq",
+    "slug": "supplier"
+  },
+  "rows": [
+    {
+      "id": "21dd1f91-6680-52a4-8cb5-d415b3095060",
+      "kvkNumber": "90000011",
+      "legalName": "Stichting Kindzorg Drechtsteden",
+      "status": "active"
+    },
+    {
+      "id": "634af839-44a0-55e7-b92c-f14cb928aeb5",
+      "kvkNumber": "90000012",
+      "legalName": "Jeugdhulp Zuid-Holland Zuid",
+      "status": "active"
+    },
+    {
+      "id": "0d6aae87-bda6-5f39-996b-2e8276c2d165",
+      "kvkNumber": "90000013",
+      "legalName": "Samen Opgroeien BV",
+      "status": "active"
+    },
+    {
+      "id": "a7d3aa0c-91f7-594d-a2c2-d53c0c90dd96",
+      "kvkNumber": "90000014",
+      "legalName": "Gezinskracht Coöperatie",
+      "status": "active"
+    }
+  ]
+}

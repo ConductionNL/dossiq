@@ -177,6 +177,39 @@ final class TimelineKinds {
 	public const STOPPING_RULE_MET = 'stopregel-gehaald';
 
 	/**
+	 * A document linked to, reviewed on or removed from the case.
+	 * The board's history chip "Documenten". One kind for every document act,
+	 * as the AVG kind is one for its acts: `act` says which it was.
+	 * @var string
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	public const DOCUMENT = 'document';
+
+	/**
+	 * A message sent or received in a channel no writer of its own covers,
+	 * such as a message logged afterwards. The board's chip "Berichten". The
+	 * mail and portal writers keep their own kinds, which carry a follow-up
+	 * where every entry needs an answer; this kind never does.
+	 * @var string
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	public const MESSAGE = 'bericht';
+
+	/**
+	 * A task on the case created, finished or handed on. The board's chip "Taken".
+	 * @var string
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	public const TASK = 'taak';
+
+	/**
+	 * The case picked up, handed over or put with a team. The board's chip "Toewijzing".
+	 * @var string
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	public const ASSIGNMENT = 'toewijzing';
+
+	/**
 	 * Every declaration, in the shape `TimelineKindService::declareKind()` takes.
 	 *
 	 * @var array<int, array<string, mixed>>
@@ -189,7 +222,7 @@ final class TimelineKinds {
 			'properties' => [
 				'channel' => [
 					'type' => 'string',
-					'enum' => ['phone', 'email', 'webformulier', 'chat', 'social_media', 'balie'],
+					'enum' => ['phone', 'email', 'webformulier', 'chat', 'social_media', 'balie', 'brief'],
 				],
 				'direction' => [
 					'type' => 'string',
@@ -271,7 +304,7 @@ final class TimelineKinds {
 		],
 		[
 			'slug' => self::STATUS_CHANGE,
-			'title' => 'Statuswijziging',
+			'title' => 'Status',
 			'description' => 'A move from one status to another, who made it and why. The audit sidebar still holds the change history.',
 			'properties' => [
 				'from' => ['type' => 'string'],
@@ -370,6 +403,68 @@ final class TimelineKinds {
 				'k' => ['type' => 'integer'],
 			],
 			'required' => ['sample', 'targetRecall', 'recallLowerBound'],
+			'followUp' => false,
+		],
+		[
+			'slug' => self::DOCUMENT,
+			'title' => 'Documenten',
+			'description' => 'A document linked to, reviewed on or removed from the case.',
+			'properties' => [
+				'act' => [
+					'type' => 'string',
+					'enum' => ['linked', 'reviewed', 'removed', 'added'],
+				],
+				'documentId' => ['type' => 'string'],
+				'title' => ['type' => 'string'],
+				'count' => ['type' => 'integer'],
+			],
+			'required' => ['act'],
+			'followUp' => false,
+		],
+		[
+			'slug' => self::MESSAGE,
+			'title' => 'Berichten',
+			'description' => 'A message sent or received in a channel no writer of its own covers.',
+			'properties' => [
+				'direction' => [
+					'type' => 'string',
+					'enum' => ['inbound', 'outbound'],
+				],
+				'channel' => ['type' => 'string'],
+				'subject' => ['type' => 'string'],
+				'counterpart' => ['type' => 'string'],
+			],
+			'required' => ['direction'],
+			'followUp' => false,
+		],
+		[
+			'slug' => self::TASK,
+			'title' => 'Taken',
+			'description' => 'A task on the case created, finished or handed on.',
+			'properties' => [
+				'act' => [
+					'type' => 'string',
+					'enum' => ['created', 'completed', 'reassigned', 'cancelled'],
+				],
+				'taskId' => ['type' => 'string'],
+				'title' => ['type' => 'string'],
+			],
+			'required' => ['act'],
+			'followUp' => false,
+		],
+		[
+			'slug' => self::ASSIGNMENT,
+			'title' => 'Toewijzing',
+			'description' => 'The case picked up, handed over or put with a team.',
+			'properties' => [
+				'act' => [
+					'type' => 'string',
+					'enum' => ['picked-up', 'handed-over', 'team'],
+				],
+				'from' => ['type' => 'string'],
+				'to' => ['type' => 'string'],
+			],
+			'required' => ['act'],
 			'followUp' => false,
 		],
 	];

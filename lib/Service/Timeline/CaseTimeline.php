@@ -48,6 +48,8 @@ namespace OCA\Dossiq\Service\Timeline;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -58,6 +60,8 @@ use Throwable;
  * @spec openspec/specs/case-history-surface/spec.md
  */
 class CaseTimeline {
+
+	use SearchesObjects;
 
 	/**
 	 * OpenRegister's timeline writer, as a class name so this app never
@@ -94,11 +98,14 @@ class CaseTimeline {
 	 * @param SettingsService    $settings  Resolves the register, the case schema and the object service.
 	 * @param ContainerInterface $container The DI container, for the lazy resolve.
 	 * @param LoggerInterface    $logger    Logger for the failures that stay soft.
+	 * @param IUserSession|null  $userSession Who is signed in; nobody means a background
+	 *                                        run, which writes as the system.
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
 
@@ -159,47 +166,76 @@ class CaseTimeline {
 
 		[$objectService, $register, $schema] = $coordinates;
 
+		$data = [
+			'message' => $message,
+			'kind' => $kind,
+			'fields' => $fields,
+			'visibility' => $visibility,
+			'register' => (string)$register,
+			'schema' => (string)$schema,
+		];
+
 		try {
-			$writer = $this->writer();
-
-			$object = $objectService->find($caseId, register: $register, schema: $schema);
-			if ($object === null) {
-				$this->soften(caseId: $caseId, kind: $kind, reason: 'the case could not be read');
-				return '';
-			}
-
-			$data = [
-				'message' => $message,
-				'kind' => $kind,
-				'fields' => $fields,
-				'visibility' => $visibility,
-				'register' => (string)$register,
-				'schema' => (string)$schema,
-			];
-
-			$related = $this->relatedObjects(
+			// An entry written during an install, an import or a cron run has
+			// nobody signed in, and OpenRegister refuses the case read to
+			// "Anonymous"; a signed-in caller keeps their own rights.
+			return (string)$this->asSystemWithoutUser(
 				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				caseId: $caseId,
-				relatedCaseIds: $relatedCaseIds,
+				userSession: $this->userSession,
+				operation: fn (): string => $this->writeEntry(
+					coordinates: $coordinates,
+					caseId: $caseId,
+					data: $data,
+					relatedCaseIds: $relatedCaseIds,
+				),
 			);
-
-			if ($related === []) {
-				return (string)$writer->write(object: $object, data: $data)->getUuid();
-			}
-
-			$written = $writer->writeToMany(objects: array_merge([$object], $related), data: $data);
-			if ($written === []) {
-				return '';
-			}
-
-			return (string)$written[0]->getUuid();
 		} catch (Throwable $e) {
 			$this->soften(caseId: $caseId, kind: $kind, reason: $e->getMessage());
 			return '';
 		}//end try
 	}//end record()
+
+	/**
+	 * Write one entry on a case and its related cases.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $coordinates    The object service, register and case schema.
+	 * @param string                                 $caseId         The case the entry hangs on.
+	 * @param array<string, mixed>                   $data           The entry.
+	 * @param array<int, string>                     $relatedCaseIds Further cases the same entry belongs on.
+	 *
+	 * @return string The entry uuid, or '' when nothing was written.
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	private function writeEntry(array $coordinates, string $caseId, array $data, array $relatedCaseIds): string {
+		[$objectService, $register, $schema] = $coordinates;
+		$writer = $this->writer();
+
+		$object = $objectService->find($caseId, register: $register, schema: $schema);
+		if ($object === null) {
+			$this->soften(caseId: $caseId, kind: (string)$data['kind'], reason: 'the case could not be read');
+			return '';
+		}
+
+		$related = $this->relatedObjects(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			caseId: $caseId,
+			relatedCaseIds: $relatedCaseIds,
+		);
+
+		if ($related === []) {
+			return (string)$writer->write(object: $object, data: $data)->getUuid();
+		}
+
+		$written = $writer->writeToMany(objects: array_merge([$object], $related), data: $data);
+		if ($written === []) {
+			return '';
+		}
+
+		return (string)$written[0]->getUuid();
+	}//end writeEntry()
 
 	/**
 	 * The entries on a case that the applicant may read.

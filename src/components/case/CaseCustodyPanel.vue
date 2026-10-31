@@ -25,7 +25,7 @@
 	@spec openspec/specs/case-management/spec.md
 -->
 <template>
-	<div class="case-custody" data-testid="case-custody">
+	<div class="case-custody cn-rule-above" data-testid="case-custody">
 		<NcLoadingIcon v-if="loading" :size="24" />
 
 		<NcEmptyContent
@@ -47,7 +47,7 @@
 
 		<template v-else>
 			<section class="case-custody__section">
-				<h4 class="case-custody__heading">
+				<h4 class="case-custody__heading hidden-visually">
 					{{ t('dossiq', 'Who has held this case') }}
 				</h4>
 
@@ -70,25 +70,33 @@
 							'case-custody__holding--open': holding.open === true,
 						}"
 						data-testid="case-custody-holding">
-						<span class="case-custody__unit">{{
-							holding.organisationUnit
+						<span class="case-custody__mark" aria-hidden="true">{{
+							initialsOf(holding.organisationUnit)
 						}}</span>
-						<span v-if="holding.handler" class="case-custody__handler">
-							{{ holding.handler }}
+						<span class="case-custody__text">
+							<span class="case-custody__unit">{{
+								holding.organisationUnit
+							}}</span>
+							<span class="case-custody__meta">{{
+								metaOf(holding)
+							}}</span>
 						</span>
-						<span class="case-custody__period">{{
-							periodOf(holding)
-						}}</span>
-						<span v-if="holding.reason" class="case-custody__reason">
-							{{ holding.reason }}
-						</span>
+						<span
+							class="case-custody__pill"
+							:class="{
+								'case-custody__pill--holder': holding.open === true,
+							}">{{
+								holding.open === true
+									? t('dossiq', 'Holder now')
+									: t('dossiq', 'Handed over')
+							}}</span>
 					</li>
 				</ol>
 			</section>
 
 			<section class="case-custody__section">
 				<h4 class="case-custody__heading">
-					{{ t('dossiq', 'Who is asking for it') }}
+					{{ t('dossiq', 'Request for this case') }}
 				</h4>
 
 				<NcEmptyContent
@@ -125,7 +133,7 @@
 
 						<span v-if="isOpen(request)" class="case-custody__answer">
 							<NcButton
-								variant="primary"
+								variant="secondary"
 								:disabled="answering"
 								data-testid="case-custody-accept"
 								@click="accept(request)">
@@ -169,6 +177,9 @@ import {
 	readTakeovers,
 	refuseTakeover,
 } from '../../services/custodyApi.js'
+
+/** The reason the custody backfill writes on the holdings it opens (lib/Repair/BackfillCaseCustody.php). */
+const BACKFILL_REASON = 'Opened by the custody backfill from the case as it stood'
 
 export default {
 	name: 'CaseCustodyPanel',
@@ -387,15 +398,53 @@ export default {
 		 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 		 */
 		periodOf(holding) {
-			const from = this.dateOf(holding?.from)
 			if (holding?.open === true) {
-				return t('dossiq', 'Since {date}', { date: from })
+				return t('dossiq', 'In hand since {date}', {
+					date: this.dateOf(holding?.from),
+				})
 			}
 
 			return t('dossiq', 'From {from} to {to}', {
-				from,
-				to: this.dateOf(holding?.until),
+				from: this.momentOf(holding?.from),
+				to: this.momentOf(holding?.until),
 			})
+		},
+
+		/**
+		 * The line under a holding's unit: its period, the handler and the
+		 * reason it was opened, as far as they are known.
+		 *
+		 * @param {object} holding The holding row.
+		 * @return {string} The line.
+		 *
+		 * @spec openspec/changes/custody-board-rows/specs/case-management/spec.md
+		 */
+		metaOf(holding) {
+			const reason = String(holding?.reason ?? '')
+			return [
+				this.periodOf(holding),
+				String(holding?.handler ?? ''),
+				// A stored reason is shown as written; the backfill's own
+				// sentence is a source string with a translation.
+				reason === BACKFILL_REASON ? t('dossiq', BACKFILL_REASON) : reason,
+			].filter((part) => part !== '').join(' · ')
+		},
+
+		/**
+		 * Up to two initials of a unit's name, for its round mark.
+		 *
+		 * @param {string} name The unit.
+		 * @return {string} The initials.
+		 *
+		 * @spec openspec/changes/custody-board-rows/specs/case-management/spec.md
+		 */
+		initialsOf(name) {
+			return String(name ?? '')
+				.split(/[\s_-]+/)
+				.filter((word) => /^[A-Za-zÀ-ÿ]/.test(word) && !/^(team|en|of|van|de|het|and|the)$/i.test(word))
+				.slice(0, 2)
+				.map((word) => word.charAt(0).toUpperCase())
+				.join('')
 		},
 
 		/**
@@ -439,9 +488,28 @@ export default {
 			}
 
 			return moment.toLocaleDateString(undefined, {
-				year: 'numeric',
 				month: 'short',
 				day: 'numeric',
+			})
+		},
+
+		/**
+		 * One moment, readable: the day and the time.
+		 *
+		 * @param {string} raw The stored moment.
+		 * @return {string} The moment, or the raw value when it cannot be read.
+		 *
+		 * @spec openspec/changes/custody-board-rows/specs/case-management/spec.md
+		 */
+		momentOf(raw) {
+			const moment = new Date(raw)
+			if (!raw || Number.isNaN(moment.getTime())) {
+				return this.dateOf(raw)
+			}
+
+			return this.dateOf(raw) + ' ' + moment.toLocaleTimeString(undefined, {
+				hour: '2-digit',
+				minute: '2-digit',
 			})
 		},
 	},
@@ -453,8 +521,13 @@ export default {
 	margin-bottom: calc(var(--default-grid-baseline, 4px) * 4);
 }
 
+/* The card title already names the holdings, so their heading is for
+   screen readers only; the request heading sits as the board's subhead. */
 .case-custody__heading {
-	margin: 0 0 var(--default-grid-baseline, 4px) 0;
+	margin: 6px 0 8px;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.2;
 }
 
 .case-custody__chain,
@@ -467,7 +540,69 @@ export default {
 	padding: 0;
 }
 
-.case-custody__holding,
+.case-custody__chain {
+	gap: 0;
+}
+
+/* A holding is a row as DqZaakArchivering draws it: a round mark with the
+   unit's initials, the unit over its period, a pill at the end. */
+.case-custody__holding {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 0;
+	border-top: 1px solid var(--color-border);
+}
+
+.case-custody__mark {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--color-background-dark);
+	color: var(--cn-board-text-soft, var(--color-main-text));
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.case-custody__text {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.case-custody__unit {
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.case-custody__meta {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
+.case-custody__pill {
+	flex: none;
+	padding: 3px 10px;
+	border-radius: 12px;
+	background: var(--color-background-dark);
+	color: var(--cn-board-text-soft, var(--color-main-text));
+	font-size: 13px;
+	font-weight: 600;
+	line-height: normal;
+	white-space: nowrap;
+}
+
+.case-custody__pill--holder {
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-light-text);
+}
+
 .case-custody__request {
 	display: flex;
 	flex-wrap: wrap;
@@ -475,15 +610,8 @@ export default {
 	gap: calc(var(--default-grid-baseline, 4px) * 2);
 }
 
-.case-custody__holding--open .case-custody__unit {
-	font-weight: bold;
-}
-
-.case-custody__period,
-.case-custody__reason,
 .case-custody__status,
-.case-custody__refusal,
-.case-custody__handler {
+.case-custody__refusal {
 	color: var(--color-text-maxcontrast);
 	font-size: 0.9em;
 }

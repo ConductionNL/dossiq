@@ -1,0 +1,2 @@
+- [x] 1.1 x-enum-labels on paymentState (register.d/99-case-payment-state-labels.json), l10n
+- [x] 1.2 test (CasePaymentStateLabelsTest)

@@ -22,8 +22,8 @@
   @spec openspec/changes/case-merge/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Merge this case into another')"
+	<CnDialog
+		:name="t('dossiq', 'Merge with another case')"
 		data-testid="case-merge-dialog"
 		@closing="$emit('close')">
 		<div class="case-merge-dialog">
@@ -31,7 +31,7 @@
 				{{
 					t(
 						'dossiq',
-						'The parties, documents and objects move to the case you pick. This case keeps its number and points at the one it became part of, so a reply quoting the old number still arrives.',
+						'Parties, documents and objects move to the case you pick.',
 					)
 				}}
 			</p>
@@ -92,16 +92,16 @@
 				{{ t('dossiq', 'Merge') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 
@@ -112,7 +112,7 @@ export default {
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcTextArea,
 		NcTextField,
 	},

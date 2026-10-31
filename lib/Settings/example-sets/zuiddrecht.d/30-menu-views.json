@@ -1,0 +1,40 @@
+{
+	"$comment": "Pieter's second view in his menu, as DqPersoonlijkeInstellingen draws it under Weergaven in mijn menu: Woo-verzoeken (every open Woo request) before Termijn deze week. The case type is quoted from a Woo case of this fragment, because a view row takes no lookups.",
+	"views": [
+		{
+			"key": "pieter-woo-verzoeken",
+			"data": {
+				"name": "Woo-verzoeken",
+				"description": "Zaaktype Woo-verzoek, status open",
+				"owner": "{{cast:pieter.uid}}",
+				"isPublic": false,
+				"query": {
+					"filters": {
+						"caseType": "{{object:woo-afvalinzameling-oosthaven.caseType}}",
+						"isFinalStatus": false,
+						"statusHiddenInLists": false,
+						"isDraft": false
+					},
+					"search": "",
+					"sort": [
+						{
+							"key": "deadline",
+							"order": "asc"
+						},
+						{
+							"key": "receivedAt",
+							"order": "asc"
+						}
+					],
+					"scope": "dossiq/case",
+					"registers": [
+						"dossiq"
+					],
+					"schemas": [
+						"case"
+					]
+				}
+			}
+		}
+	]
+}

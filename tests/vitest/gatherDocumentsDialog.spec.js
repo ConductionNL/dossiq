@@ -217,9 +217,11 @@ describe('GatherDocumentsDialog', () => {
 		)
 		expect(action.type).toBe('open-modal')
 		expect(action.target).toBe('GatherDocumentsDialog')
-		expect(JSON.stringify(action.visibleWhen)).toContain(
-			'3c0f5a00-0000-4000-a000-00000000a001',
-		)
+		expect(action.visibleWhen.all).toContainEqual({
+			field: 'caseTypeIdentifier',
+			op: 'eq',
+			value: 'woo-verzoek',
+		})
 		expect(registrySource).toMatch(/GatherDocumentsDialog: \{\s*kind: 'modal'/)
 	})
 

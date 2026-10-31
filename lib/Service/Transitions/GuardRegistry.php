@@ -56,6 +56,11 @@ class GuardRegistry {
 	public const STATUS_CAPACITY = 'statusCapacity';
 
 	/**
+	 * The documents a status requires before a case enters it, appended by the engine.
+	 */
+	public const STATUS_ENTRY_REQUIREMENTS = 'statusEntryRequirements';
+
+	/**
 	 * The guard type every transition is checked against for a walked approval.
 	 *
 	 * The case type decides which acts it gates, so a transition that never
@@ -90,8 +95,10 @@ class GuardRegistry {
 	 *                                          registry built before it existed builds as it did.
 	 * @param DocumentAssessmentGuard|null $documentAssessment Whether a case's documents are gathered
 	 *                                          and assessed. Optional for the same reason.
+	 * @param StatusEntryRequirementsGuard|null $entryRequirements The documents the status being entered
+	 *                                          requires. Optional for the same reason.
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten: one evaluator per guard kind, which is
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Eleven: one evaluator per guard kind, which is
 	 *   what this registry is. The container builds it, and nothing calls registerEvaluator(),
 	 *   so a guard kind that is not a parameter is not registered at all.
 	 */
@@ -106,6 +113,7 @@ class GuardRegistry {
 		private readonly LoggerInterface $logger,
 		?ApprovalGuard $approvalGuard = null,
 		?DocumentAssessmentGuard $documentAssessment = null,
+		?StatusEntryRequirementsGuard $entryRequirements = null,
 	) {
 		$this->evaluators = [
 			'checklist' => $checklist,
@@ -131,6 +139,10 @@ class GuardRegistry {
 
 		if ($documentAssessment !== null) {
 			$this->evaluators[self::DOCUMENT_ASSESSMENT] = $documentAssessment;
+		}
+
+		if ($entryRequirements !== null) {
+			$this->evaluators[self::STATUS_ENTRY_REQUIREMENTS] = $entryRequirements;
 		}
 	}//end __construct()
 

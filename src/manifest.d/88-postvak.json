@@ -1,0 +1,168 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"board": "DqPostvak",
+		"note": "The organisation's mailbox of messages that belong to no case yet: the intake triage queue (outcome inbox or quarantined, sleeping items left out), read through dossiq's own /api/intake/triage, which holds the intake-role check. The generic object endpoint would apply the register's permissions instead and show the originals to anyone the register lets read, so the list is an endpoint source (`entitySource: endpoint`) over that route and never the schema's own endpoint. Each row carries the case its subject quotes (`suggestion`, CaseMatchSuggestion) and the channel it came in on (`channel`, `email` for the mailbox; TriageChannel). The channel is a filter of the endpoint (`searchFields.channel`, so `?channel=portal` narrows the list on the server) and the answer counts every channel of the lens in `channels`, the facet the endpoint counts (`sourceConfig.facets`, nextcloud-vue feat/endpoint-facet-select); `picker: false` keeps it out of the toolbar, because the board filters the channel in the Filter panel only; a channel id without a label shows as its id. The default lens is every channel, which the Active line names `Channel: all` (board DqPostvak). The endpoint source (nextcloud-vue #1750) and the `actions` cell widget are nextcloud-vue keys in progress (L25); until they land the page lists nothing rather than the wrong rows."
+	},
+	"pages": [
+		{
+			"id": "Postvak",
+			"route": "/postvak",
+			"type": "index",
+			"title": "Mailbox",
+			"config": {
+				"sidebar": {
+					"enabled": true,
+					"_note": "DqPostvak: the Filter button opens the index side panel. Its one filter is the channel the triage endpoint already takes (`sourceConfig.searchFields.channel`), so the panel narrows the server's answer rather than the rows on screen.",
+					"fields": {
+						"channel": {
+							"type": "string",
+							"title": "Channel",
+							"facetable": true,
+							"order": 1,
+							"inputControl": "select",
+							"enum": ["email", "portal", "webform"],
+							"enumLabels": { "email": "E-mail", "portal": "Portal", "webform": "Web form" }
+						}
+					}
+				},
+				"entitySource": "endpoint",
+				"sourceConfig": {
+					"url": "/apps/dossiq/api/intake/triage",
+					"rowsPath": "results",
+					"searchFields": {
+						"channel": {
+							"param": "channel",
+							"single": true
+						}
+					},
+					"facets": [
+						{
+							"field": "channel",
+							"path": "channels",
+							"picker": false,
+							"label": "Channel",
+							"allLabel": "all",
+							"labels": {
+								"email": "E-mail",
+								"portal": "Portal",
+								"webform": "Web form"
+							}
+						}
+					]
+				},
+				"showTitle": true,
+				"_breadcrumbNote": "DqPostvak: \"Postvak · berichten van de hele organisatie ...\", the page as its one crumb before the note (nextcloud-vue header-trail-current-once draws a crumb naming the page once).",
+				"breadcrumb": { "label": "Mailbox", "route": "Postvak" },
+				"headerMeta": "messages for the whole organisation that belong to no case yet",
+				"countText": "{shown} of {total} messages",
+				"footerNote": "{shown} of {total} · 20 per page",
+				"searchPlaceholder": "Search sender or subject",
+				"showAdd": false,
+				"showViewAction": false,
+				"allowSavedViews": false,
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions",
+						"items": ["refresh", "separator", "documentation"]
+					}
+				],
+				"quickFilters": [
+					{
+						"label": "All",
+						"activeLabel": "Channel: all",
+						"filter": {},
+						"default": true,
+						"showCount": true
+					},
+					{
+						"label": "Looks like a case",
+						"filter": {
+							"suggestion": "IS NOT NULL"
+						},
+						"showCount": true
+					},
+					{
+						"label": "No case",
+						"filter": {
+							"suggestion": "IS NULL"
+						},
+						"showCount": true
+					}
+				],
+				"columns": [
+					{
+						"key": "subject",
+						"label": "Message",
+						"width": "300px",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{sender} · {receivedAt|relativetime}"
+					},
+					{
+						"key": "channel",
+						"label": "Came in via",
+						"width": "230px",
+						"widget": "label",
+						"enum": ["email", "portal", "webform"],
+						"enumLabels": { "email": "E-mail", "portal": "Portal", "webform": "Web form" },
+						"widgetProps": { "textTemplate": "{value}, {recipient|mailbox}" }
+					},
+					{
+						"key": "suggestion.identifier",
+						"label": "Proposal",
+						"width": "186px",
+						"widget": "badge",
+						"widgetProps": {
+							"variant": "info",
+							"textTemplate": "Looks like {value}"
+						}
+					},
+					{
+						"key": "actions",
+						"label": "Do",
+						"widget": "actions",
+						"widgetProps": {
+							"actions": [
+								"link-to-case",
+								"new-case-from-message"
+							]
+						}
+					}
+				],
+				"actions": [
+					{
+						"id": "link-to-case",
+						"label": "Link to case",
+						"variant": "secondary",
+						"visibleWhen": {
+							"field": "suggestion.case",
+							"op": "notEmpty"
+						},
+						"type": "handler",
+						"handler": "navigate",
+						"route": "CaseDetail",
+						"params": {
+							"id": "@row.suggestion.case"
+						}
+					},
+					{
+						"id": "new-case-from-message",
+						"label": "New case",
+						"variant": "secondary",
+						"type": "handler",
+						"handler": "navigate",
+						"route": "Cases"
+					}
+				],
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		}
+	]
+}

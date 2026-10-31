@@ -171,6 +171,12 @@ class CaseEnricher {
 		$caseData['_daysRemaining'] = $daysRemaining;
 		$caseData['_throughputDays'] = $throughputDays;
 		$caseData['_caseTypeTitle'] = $caseTypeTitle;
+		// The term the case had, start to deadline: the norm the
+		// processing-time chart draws.
+		$caseData['_normDays'] = null;
+		if ($startDate !== null && $deadline !== null) {
+			$caseData['_normDays'] = $this->days->between(from: new DateTimeImmutable($startDate), to: new DateTimeImmutable($deadline));
+		}
 
 		return $caseData;
 	}//end enrichCase()

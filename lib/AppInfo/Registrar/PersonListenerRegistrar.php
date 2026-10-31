@@ -13,14 +13,21 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\CaseSchemaVocabularyListener;
 use OCA\Dossiq\Listener\PersonLinkListener;
+use OCA\Dossiq\Listener\RoleTypeVocabularyListener;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectDeletedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\PersonLinkedEvent;
 use OCA\OpenRegister\Event\PersonLinkUpdatedEvent;
 use OCA\OpenRegister\Event\PersonUnlinkedEvent;
+use OCA\OpenRegister\Event\SchemaUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
- * Hears OpenRegister's person links, so a person on a case becomes a role record.
+ * Hears OpenRegister's person links, so a person on a case becomes a role record,
+ * and the role type saves, so the roles a person can hold stay current.
  *
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
  */
@@ -36,7 +43,17 @@ class PersonListenerRegistrar {
 	];
 
 	/**
-	 * Register the listener for all three.
+	 * The events after which a role type may have changed the link vocabulary.
+	 */
+	public const ROLE_TYPE_EVENTS = [
+		ObjectCreatedEvent::class,
+		ObjectUpdatedEvent::class,
+		ObjectDeletedEvent::class,
+	];
+
+	/**
+	 * Register the person-link listener for all three, and the vocabulary
+	 * listener for every role type save and delete.
 	 *
 	 * @param IRegistrationContext $context The registration context.
 	 *
@@ -48,5 +65,12 @@ class PersonListenerRegistrar {
 		foreach (self::PERSON_EVENTS as $event) {
 			$context->registerEventListener(event: $event, listener: PersonLinkListener::class);
 		}
+
+		foreach (self::ROLE_TYPE_EVENTS as $event) {
+			$context->registerEventListener(event: $event, listener: RoleTypeVocabularyListener::class);
+		}
+
+		// A register import rewrites the case schema's link roles to the generic ones; this puts the role types back.
+		$context->registerEventListener(event: SchemaUpdatedEvent::class, listener: CaseSchemaVocabularyListener::class);
 	}//end register()
 }//end class

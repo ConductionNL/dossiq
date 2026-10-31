@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "description": "Template voor toezichtzaken inclusief inspectiefasen (VTH module)",
   "statusTypes": [
-    {"name": "Gepland", "order": 1, "isFinal": false},
-    {"name": "In uitvoering", "order": 2, "isFinal": false},
-    {"name": "Rapport", "order": 3, "isFinal": false},
-    {"name": "Opvolging", "order": 4, "isFinal": false},
-    {"name": "Afgehandeld", "order": 5, "isFinal": true}
+    {"name": "Gepland", "colour": "orange", "order": 1, "isFinal": false},
+    {"name": "In uitvoering", "colour": "purple", "order": 2, "isFinal": false},
+    {"name": "Rapport", "colour": "purple", "order": 3, "isFinal": false},
+    {"name": "Opvolging", "colour": "purple", "order": 4, "isFinal": false},
+    {"name": "Afgehandeld", "colour": "green", "order": 5, "isFinal": true}
   ],
   "inspectionPhases": [
     {"name": "Fase 1 - Fundering", "order": 1},

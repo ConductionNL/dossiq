@@ -1,0 +1,226 @@
+{
+	"$comment": "The flow of the case type Omgevingsvergunning regulier, as DqFlow draws it: a draft (not published, so the canvas is editable) that starts when a case is made, sets Ontvangen, asks the intaker to check completeness, sends the receipt, and asks OpenRegister's decision table Welstandsgebieden Zuiddrecht whether the location needs a design review: yes opens a sub-case for the review, no goes on to publishing the decision. The table is a stored OpenRegister decision table, so the step's inspector names it. Like every set flow it is written switched off: on, it would run on every new case.",
+	"objects": [
+		{
+			"key": "beslistabel-welstandsgebieden-zuiddrecht",
+			"register": "decision-tables",
+			"schema": "decision-table",
+			"data": {
+				"key": "dossiq.welstandsgebieden-zuiddrecht",
+				"name": "Welstandsgebieden Zuiddrecht",
+				"description": "Of een bouwwerk op deze locatie een welstandsadvies nodig heeft, volgens de welstandsnota van Zuiddrecht.",
+				"hitPolicy": "FIRST",
+				"owner": "dossiq",
+				"inputs": [
+					{
+						"name": "locatie",
+						"label": "Locatie van de zaak",
+						"type": "string"
+					}
+				],
+				"outputs": [
+					{
+						"name": "welstand",
+						"label": "Welstand nodig",
+						"type": "string"
+					}
+				],
+				"rules": [
+					{
+						"id": "binnenstad",
+						"inputEntries": [
+							"in (\"Binnenstad\", \"Kerkplein\", \"Markt\")"
+						],
+						"outputEntries": [
+							"ja"
+						]
+					},
+					{
+						"id": "beschermd-dorpsgezicht",
+						"inputEntries": [
+							"\"Oosthaven dorpskern\""
+						],
+						"outputEntries": [
+							"ja"
+						]
+					},
+					{
+						"id": "overig",
+						"inputEntries": [
+							"-"
+						],
+						"outputEntries": [
+							"nee"
+						]
+					}
+				]
+			}
+		}
+	],
+	"flows": [
+		{
+			"key": "flow-omgevingsvergunning-regulier",
+			"data": {
+				"name": "Omgevingsvergunning regulier",
+				"description": "De werkwijze van het zaaktype Omgevingsvergunning regulier: ontvangen, volledigheid toetsen, ontvangstbericht, welstand toetsen en het besluit publiceren.",
+				"trigger": "object.created",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"publish": false,
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Zaak aangemaakt",
+						"position": {
+							"x": 30,
+							"y": 30
+						},
+						"config": {
+							"event": "object.created",
+							"register": "dossiq",
+							"schema": "case"
+						}
+					},
+					{
+						"id": "status-ontvangen",
+						"type": "dossiq.setStatus",
+						"name": "Status: ontvangen",
+						"position": {
+							"x": 30,
+							"y": 130
+						},
+						"config": {
+							"status": "Ontvangen",
+							"role": "intake"
+						}
+					},
+					{
+						"id": "volledigheid",
+						"type": "dossiq.askPerson",
+						"name": "Volledigheid toetsen",
+						"position": {
+							"x": 30,
+							"y": 230
+						},
+						"config": {
+							"question": "Volledigheid toetsen",
+							"details": "Kijk of de aanvraag compleet is: aanvraagformulier, bouwtekening en situatieschets.",
+							"assignee": "{{cast:vergunningen.gid}}",
+							"dueInDays": "5"
+						}
+					},
+					{
+						"id": "ontvangstbericht",
+						"type": "dossiq.sendMessage",
+						"name": "Ontvangstbericht",
+						"position": {
+							"x": 30,
+							"y": 340
+						},
+						"config": {
+							"emailTemplate": "{{object:mailsjabloon-regulier-v4-ontvangen.id}}"
+						}
+					},
+					{
+						"id": "welstand",
+						"type": "openregister.decision-table",
+						"name": "Welstand nodig?",
+						"position": {
+							"x": 290,
+							"y": 230
+						},
+						"config": {
+							"tableRef": "dossiq.welstandsgebieden-zuiddrecht"
+						},
+						"exits": [
+							{
+								"id": "ja",
+								"condition": {
+									"==": [
+										{
+											"var": "json.welstand"
+										},
+										"ja"
+									]
+								}
+							},
+							{
+								"id": "nee"
+							}
+						]
+					},
+					{
+						"id": "welstandsadvies",
+						"type": "dossiq.createSubCase",
+						"name": "Deelzaak welstandsadvies",
+						"position": {
+							"x": 290,
+							"y": 340
+						},
+						"config": {
+							"caseType": "{{object:zaaktype-adviesaanvraag.id}}",
+							"title": "Welstandsadvies"
+						}
+					},
+					{
+						"id": "besluit-publiceren",
+						"type": "dossiq.besluitvormingPublish",
+						"name": "Besluit publiceren",
+						"position": {
+							"x": 290,
+							"y": 450
+						},
+						"config": {}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"name": "Einde",
+						"position": {
+							"x": 290,
+							"y": 560
+						},
+						"config": {}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "status-ontvangen"
+					},
+					{
+						"from": "status-ontvangen",
+						"to": "volledigheid"
+					},
+					{
+						"from": "volledigheid",
+						"to": "ontvangstbericht"
+					},
+					{
+						"from": "volledigheid",
+						"to": "welstand"
+					},
+					{
+						"from": "welstand",
+						"to": "welstandsadvies",
+						"fromExit": "ja"
+					},
+					{
+						"from": "welstand",
+						"to": "besluit-publiceren",
+						"fromExit": "nee"
+					},
+					{
+						"from": "welstandsadvies",
+						"to": "besluit-publiceren"
+					},
+					{
+						"from": "besluit-publiceren",
+						"to": "end"
+					}
+				]
+			}
+		}
+	]
+}

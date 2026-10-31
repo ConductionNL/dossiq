@@ -195,6 +195,31 @@ class SettingsServiceTest extends TestCase {
 	}//end testGetFileServiceReturnsNullWhenTheContainerCannotResolveIt()
 
 	/**
+	 * The Kadaster and WOZ API keys are written and never read back: an admin
+	 * read and a non-admin read both say only whether one is stored.
+	 *
+	 * @return void
+	 */
+	public function testTheKadasterAndWozApiKeysAreNeverReadBack(): void {
+		$this->appConfig
+			->method('getValueString')
+			->willReturnCallback(
+				static fn (string $app, string $key, string $default): string => match ($key) {
+					'integration.brk.apiKey' => 'secret-brk-key',
+					default => '',
+				}
+			);
+
+		foreach ([$this->service->getSettings(), $this->service->getPublicSettings()] as $read) {
+			$this->assertArrayNotHasKey(key: 'integration.brk.apiKey', array: $read);
+			$this->assertArrayNotHasKey(key: 'integration.woz.apiKey', array: $read);
+			$this->assertTrue(condition: $read['integration.brk.apiKeySet']);
+			$this->assertFalse(condition: $read['integration.woz.apiKeySet']);
+			$this->assertNotContains(needle: 'secret-brk-key', haystack: $read);
+		}
+	}//end testTheKadasterAndWozApiKeysAreNeverReadBack()
+
+	/**
 	 * Test that getSettings returns all config keys with their values.
 	 *
 	 * @return void
@@ -226,7 +251,7 @@ class SettingsServiceTest extends TestCase {
 		$this->assertArrayHasKey('result_schema', $settings);
 		$this->assertArrayHasKey('decision_schema', $settings);
 		$this->assertArrayHasKey('case_type_schema', $settings);
-		$this->assertArrayHasKey('default_case_type', $settings);
+		$this->assertArrayNotHasKey('default_case_type', $settings);
 
 		$this->assertSame('42', $settings['register']);
 		$this->assertSame('101', $settings['case_schema']);
@@ -269,6 +294,29 @@ class SettingsServiceTest extends TestCase {
 		$this->service->updateSettings($data);
 
 	}//end testUpdateSettingsOnlyUpdatesRecognizedKeys()
+
+	/**
+	 * A renamed money key reads its legacy key until the repair carried it, and only then (REQ-DQM-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 */
+	public function testARenamedMoneyKeyFallsBackToItsLegacyKey(): void {
+		$stored = ['dwangsom_uitbetaling_schema' => '42'];
+		$this->appConfig->method('hasKey')->willReturnCallback(static function (string $app, string $key) use (&$stored): bool {
+			return array_key_exists($key, $stored);
+		});
+		$this->appConfig->method('getValueString')->willReturnCallback(static function (string $app, string $key, string $default = '') use (&$stored): string {
+			return ($stored[$key] ?? $default);
+		});
+
+		$this->assertSame(expected: '42', actual: $this->service->getConfigValue('payout_schema'));
+
+		$stored['payout_schema'] = '';
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('payout_schema'), message: 'A current key an admin cleared is not overridden by the legacy one.');
+		$this->assertSame(expected: '', actual: $this->service->getConfigValue('case_schema'), message: 'A key with no legacy name reads only itself.');
+	}//end testARenamedMoneyKeyFallsBackToItsLegacyKey()
 
 	/**
 	 * Test that getConfigValue delegates to appConfig correctly.
@@ -457,11 +505,11 @@ class SettingsServiceTest extends TestCase {
 
 		$settings = $this->service->getSettings();
 
-		$this->assertArrayHasKey('wooReviewerThroughputReport', $settings);
-		$this->assertArrayHasKey('wooCollectionPartiesReport', $settings);
-		$this->assertArrayHasKey('wooReviewerThroughputReaders', $settings);
-		$this->assertSame('', $settings['wooReviewerThroughputReport']);
-		$this->assertSame('', $settings['wooCollectionPartiesReport']);
+		$this->assertArrayHasKey('reviewerThroughputReport', $settings);
+		$this->assertArrayHasKey('collectionPartiesReport', $settings);
+		$this->assertArrayHasKey('reviewerThroughputReaders', $settings);
+		$this->assertSame('', $settings['reviewerThroughputReport']);
+		$this->assertSame('', $settings['collectionPartiesReport']);
 
 		$switches = new \OCA\Dossiq\Woo\WooReportSwitches(
 			$this->appConfig,
@@ -495,9 +543,15 @@ class SettingsServiceTest extends TestCase {
 		$this->appConfig->method('getValueString')->willReturn('');
 		$this->appConfig->expects($this->never())->method('setValueString');
 
-		foreach ([[], ['wooReviewerThroughputReaders' => 'nobody']] as $readers) {
+		$saves = [
+			['reviewerThroughputReport' => 'true'],
+			['reviewerThroughputReport' => 'true', 'reviewerThroughputReaders' => 'nobody'],
+			// A client that still posts the earlier keys is checked the same way.
+			['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'nobody'],
+		];
+		foreach ($saves as $save) {
 			try {
-				$this->service->updateSettings(['wooReviewerThroughputReport' => 'true'] + $readers);
+				$this->service->updateSettings($save);
 				$this->fail('The throughput report went on without an existing reader group');
 			} catch (\OCA\Dossiq\Exception\RefusedException $e) {
 				$this->assertSame('woo-throughput-needs-reader-group', $e->getRule());
@@ -527,9 +581,15 @@ class SettingsServiceTest extends TestCase {
 			}
 		);
 
-		$this->service->updateSettings(['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding']);
+		$this->service->updateSettings(['reviewerThroughputReport' => 'true', 'reviewerThroughputReaders' => 'woo-leiding']);
 
-		$this->assertSame(['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding'], $written);
+		$this->assertSame(['reviewerThroughputReport' => 'true', 'reviewerThroughputReaders' => 'woo-leiding'], $written);
+
+		// The earlier keys still save, and land under the current keys too.
+		$written = [];
+		$this->service->updateSettings(['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding']);
+		$this->assertSame('true', $written['reviewerThroughputReport']);
+		$this->assertSame('woo-leiding', $written['reviewerThroughputReaders']);
 	}//end testThroughputGoesOnWithAnExistingReaderGroup()
 }//end class
 

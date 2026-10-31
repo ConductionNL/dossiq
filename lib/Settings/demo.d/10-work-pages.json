@@ -1,0 +1,399 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"description": "Curated example data for the work pages: my work, assigned to me, end of day, the dashboard, the Woo decision and redaction, and the data subject requests. Loaded with the generated set by the setup wizard's example data step. @me is the user who loads the set and @myGroup that user's first group other than admin; @today and @now are relative to the moment of loading. Every person, address and document is fictional."
+	},
+	"components": {
+		"objects": [
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "voorbeeld-woo-marktplein"
+				},
+				"title": "Woo-verzoek: stukken herinrichting Marktplein",
+				"description": "Verzoek om de stukken over de herinrichting van het Marktplein in 2025: notities, e-mails en het raadsvoorstel.",
+				"caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+				"status": "3c0f5a00-0000-4000-a000-00000000b006",
+				"assignee": "@me",
+				"priority": "high",
+				"startDate": "@today-28d",
+				"receivedAt": "@now-28d",
+				"deadline": "@today+2d",
+				"confidentiality": "openbaar",
+				"intakeChannel": "email",
+				"initiatorDisplayName": "J. de Vries (fictief)"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "voorbeeld-woo-sportsubsidies"
+				},
+				"title": "Woo-verzoek: subsidies sportverenigingen 2025",
+				"description": "Verzoek om de subsidiebesluiten voor sportverenigingen in 2025.",
+				"caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+				"status": "3c0f5a00-0000-4000-a000-00000000b005",
+				"assignee": "@me",
+				"priority": "normal",
+				"startDate": "@today-21d",
+				"receivedAt": "@now-21d",
+				"deadline": "@today+5d",
+				"confidentiality": "openbaar",
+				"intakeChannel": "website",
+				"initiatorDisplayName": "Stichting Open Zuiddrecht (fictief)"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "voorbeeld-woo-parkeerbeleid"
+				},
+				"title": "Woo-verzoek: e-mails over het parkeerbeleid",
+				"description": "Verzoek om de e-mailwisseling over het nieuwe parkeerbeleid in het centrum.",
+				"caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+				"status": "3c0f5a00-0000-4000-a000-00000000b004",
+				"assignee": "@me",
+				"priority": "normal",
+				"startDate": "@today",
+				"receivedAt": "@now",
+				"deadline": "@today+9d",
+				"confidentiality": "openbaar",
+				"intakeChannel": "email",
+				"initiatorDisplayName": "M. Jansen (fictief)"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "voorbeeld-woo-bomenkap"
+				},
+				"title": "Woo-verzoek: bomenkap Parklaan",
+				"description": "Verzoek om het advies en de vergunning voor de bomenkap aan de Parklaan.",
+				"caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+				"status": "3c0f5a00-0000-4000-a000-00000000b003",
+				"assignee": "@me",
+				"priority": "urgent",
+				"startDate": "@today-40d",
+				"receivedAt": "@now-40d",
+				"deadline": "@today-3d",
+				"confidentiality": "openbaar",
+				"intakeChannel": "post",
+				"initiatorDisplayName": "Bewonersgroep Parklaan (fictief)"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "voorbeeld-woo-afvalinzameling"
+				},
+				"title": "Woo-verzoek: aanbesteding afvalinzameling",
+				"description": "Verzoek om de stukken van de aanbesteding van de afvalinzameling.",
+				"caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+				"status": "3c0f5a00-0000-4000-a000-00000000b001",
+				"assignedGroup": "@myGroup",
+				"priority": "normal",
+				"startDate": "@today",
+				"receivedAt": "@now",
+				"deadline": "@today+28d",
+				"confidentiality": "openbaar",
+				"intakeChannel": "website",
+				"initiatorDisplayName": "A. Bakker (fictief)"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "informatieobjecttype",
+					"slug": "voorbeeld-iot-woo-document"
+				},
+				"description": "Woo-document",
+				"informatieobjectcategorie": "internal",
+				"vertrouwelijkheidaanduiding": "intern",
+				"schema": "informatieobject",
+				"startValidity": "2026-01-01"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "informatieobject",
+					"slug": "voorbeeld-doc-marktplein-notitie"
+				},
+				"title": "Notitie overleg wethouder Marktplein",
+				"fileName": "notitie-overleg-wethouder-marktplein.pdf",
+				"bestandsomvang": 120000,
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "@ref:informatieobjecttype:voorbeeld-iot-woo-document",
+				"direction": "internal",
+				"creatiedatum": "@today-20d",
+				"taal": "nld",
+				"description": "Fictief voorbeelddocument."
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "zaakinformatieobject",
+					"slug": "voorbeeld-zio-marktplein-notitie"
+				},
+				"case": "@ref:case:voorbeeld-woo-marktplein",
+				"informatieobject": "@ref:informatieobject:voorbeeld-doc-marktplein-notitie",
+				"registrationDate": "@now-20d"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "wooDocumentAssessment",
+					"slug": "voorbeeld-beoordeling-marktplein-notitie"
+				},
+				"caseRef": "@ref:case:voorbeeld-woo-marktplein",
+				"documentRef": "@ref:informatieobject:voorbeeld-doc-marktplein-notitie",
+				"classification": "openbaar",
+				"assessedBy": "@me",
+				"assessedAt": "@now-2d"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "informatieobject",
+					"slug": "voorbeeld-doc-marktplein-mails"
+				},
+				"title": "E-mails met omwonenden Marktplein",
+				"fileName": "emails-omwonenden-marktplein.pdf",
+				"bestandsomvang": 120000,
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "@ref:informatieobjecttype:voorbeeld-iot-woo-document",
+				"direction": "internal",
+				"creatiedatum": "@today-20d",
+				"taal": "nld",
+				"description": "Fictief voorbeelddocument."
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "zaakinformatieobject",
+					"slug": "voorbeeld-zio-marktplein-mails"
+				},
+				"case": "@ref:case:voorbeeld-woo-marktplein",
+				"informatieobject": "@ref:informatieobject:voorbeeld-doc-marktplein-mails",
+				"registrationDate": "@now-20d"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "wooDocumentAssessment",
+					"slug": "voorbeeld-beoordeling-marktplein-mails"
+				},
+				"caseRef": "@ref:case:voorbeeld-woo-marktplein",
+				"documentRef": "@ref:informatieobject:voorbeeld-doc-marktplein-mails",
+				"classification": "deels_openbaar",
+				"assessedBy": "@me",
+				"assessedAt": "@now-2d",
+				"weigeringsgronden": [
+					"5.1.2.e"
+				]
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "informatieobject",
+					"slug": "voorbeeld-doc-marktplein-offerte"
+				},
+				"title": "Offerte bestratingsbedrijf",
+				"fileName": "offerte-bestrating-marktplein.pdf",
+				"bestandsomvang": 120000,
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "@ref:informatieobjecttype:voorbeeld-iot-woo-document",
+				"direction": "internal",
+				"creatiedatum": "@today-20d",
+				"taal": "nld",
+				"description": "Fictief voorbeelddocument."
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "zaakinformatieobject",
+					"slug": "voorbeeld-zio-marktplein-offerte"
+				},
+				"case": "@ref:case:voorbeeld-woo-marktplein",
+				"informatieobject": "@ref:informatieobject:voorbeeld-doc-marktplein-offerte",
+				"registrationDate": "@now-20d"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "wooDocumentAssessment",
+					"slug": "voorbeeld-beoordeling-marktplein-offerte"
+				},
+				"caseRef": "@ref:case:voorbeeld-woo-marktplein",
+				"documentRef": "@ref:informatieobject:voorbeeld-doc-marktplein-offerte",
+				"classification": "deels_openbaar",
+				"assessedBy": "@me",
+				"assessedAt": "@now-2d",
+				"weigeringsgronden": [
+					"5.1.2.f",
+					"5.1.2.e"
+				]
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "informatieobject",
+					"slug": "voorbeeld-doc-marktplein-advies"
+				},
+				"title": "Juridisch advies aansprakelijkheid",
+				"fileName": "juridisch-advies-marktplein.pdf",
+				"bestandsomvang": 120000,
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "@ref:informatieobjecttype:voorbeeld-iot-woo-document",
+				"direction": "internal",
+				"creatiedatum": "@today-20d",
+				"taal": "nld",
+				"description": "Fictief voorbeelddocument."
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "zaakinformatieobject",
+					"slug": "voorbeeld-zio-marktplein-advies"
+				},
+				"case": "@ref:case:voorbeeld-woo-marktplein",
+				"informatieobject": "@ref:informatieobject:voorbeeld-doc-marktplein-advies",
+				"registrationDate": "@now-20d"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "wooDocumentAssessment",
+					"slug": "voorbeeld-beoordeling-marktplein-advies"
+				},
+				"caseRef": "@ref:case:voorbeeld-woo-marktplein",
+				"documentRef": "@ref:informatieobject:voorbeeld-doc-marktplein-advies",
+				"classification": "niet_openbaar",
+				"assessedBy": "@me",
+				"assessedAt": "@now-2d",
+				"weigeringsgronden": [
+					"5.1.2.i"
+				]
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "caseType",
+					"slug": "voorbeeld-avg-verzoek"
+				},
+				"title": "AVG-verzoek",
+				"colour": "purple",
+				"icon": "ShieldAccountOutline",
+				"description": "Behandeling van een verzoek van een betrokkene onder de AVG.",
+				"processingDeadline": "P1M",
+				"confidentiality": "vertrouwelijk",
+				"internalOrExternal": "extern",
+				"isDraft": false
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "statusType",
+					"slug": "voorbeeld-avg-status-1"
+				},
+				"name": "Ontvangen",
+				"caseType": "@ref:caseType:voorbeeld-avg-verzoek",
+				"order": 1,
+				"isFinal": false,
+				"role": "intake",
+				"colour": "blue"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "statusType",
+					"slug": "voorbeeld-avg-status-2"
+				},
+				"name": "In behandeling",
+				"caseType": "@ref:caseType:voorbeeld-avg-verzoek",
+				"order": 2,
+				"isFinal": false,
+				"role": "in-progress",
+				"colour": "purple"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "statusType",
+					"slug": "voorbeeld-avg-status-3"
+				},
+				"name": "Afgerond",
+				"caseType": "@ref:caseType:voorbeeld-avg-verzoek",
+				"order": 3,
+				"isFinal": true,
+				"role": "closed",
+				"colour": "green"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "voorbeeld-avg-inzage"
+				},
+				"title": "Inzageverzoek: welke gegevens verwerkt de gemeente over mij",
+				"caseType": "@ref:caseType:voorbeeld-avg-verzoek",
+				"status": "@ref:statusType:voorbeeld-avg-status-2",
+				"startDate": "@today-10d",
+				"receivedAt": "@now-10d",
+				"deadline": "@today+20d",
+				"confidentiality": "vertrouwelijk",
+				"intakeChannel": "email",
+				"dataSubjectRequestType": "inzage",
+				"dataSubject": "e.visser@voorbeeld.invalid",
+				"dataSubjectType": "email",
+				"assignee": "@me"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "voorbeeld-avg-correctie"
+				},
+				"title": "Correctieverzoek: verkeerd adres in de basisregistratie",
+				"caseType": "@ref:caseType:voorbeeld-avg-verzoek",
+				"status": "@ref:statusType:voorbeeld-avg-status-1",
+				"startDate": "@today-10d",
+				"receivedAt": "@now-10d",
+				"deadline": "@today+27d",
+				"confidentiality": "vertrouwelijk",
+				"intakeChannel": "email",
+				"dataSubjectRequestType": "correctie",
+				"dataSubject": "p.smit@voorbeeld.invalid",
+				"dataSubjectType": "email",
+				"assignedGroup": "@myGroup"
+			},
+			{
+				"@self": {
+					"register": "dossiq",
+					"schema": "case",
+					"slug": "voorbeeld-avg-verwijdering"
+				},
+				"title": "Verwijderverzoek: gegevens na beëindigde inschrijving",
+				"caseType": "@ref:caseType:voorbeeld-avg-verzoek",
+				"status": "@ref:statusType:voorbeeld-avg-status-2",
+				"startDate": "@today-10d",
+				"receivedAt": "@now-10d",
+				"deadline": "@today+6d",
+				"confidentiality": "vertrouwelijk",
+				"intakeChannel": "email",
+				"dataSubjectRequestType": "verwijdering",
+				"dataSubject": "r.dekker@voorbeeld.invalid",
+				"dataSubjectType": "email",
+				"assignee": "@me"
+			}
+		]
+	}
+}

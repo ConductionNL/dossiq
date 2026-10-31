@@ -147,10 +147,11 @@ describe('CaseDetail — the audit log is not also a body tab (task 4.1)', () =>
 		const pane = config.widgets.find(
 			(widget) => widget.id === 'case-timeline-panel',
 		)
-		expect(pane.type).toBe('case-timeline-pane')
+		// The library timeline in manage mode reads OpenRegister's timeline
+		// (`/timeline`), never the audit trail.
+		expect(pane.type).toBe('timeline')
 		expect(pane.type).not.toBe('audit-trail')
-		// And the renderer behind that type exists, so the tab is not an empty
-		// panel wearing the right name.
-		expect(registrySource).toContain("'case-timeline-pane': {")
+		expect(pane.content.manage).toBe(true)
+		expect(pane.content.auditTrail).toBeUndefined()
 	})
 })

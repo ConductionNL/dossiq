@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+ * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use OCA\Dossiq\Service\SettingsService;
 /**
  * Counts open cases per current case type in one facet query.
  *
- * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+ * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
  */
 class OpenCaseCounts {
 
@@ -71,7 +71,7 @@ class OpenCaseCounts {
 	 *
 	 * @param SettingsService $settingsService Register, case schema and ObjectService.
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -87,7 +87,7 @@ class OpenCaseCounts {
 	 *
 	 * @throws \Throwable When OpenRegister's facet query fails; the caller decides what the reader sees.
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function byCaseType(array $supersededBy): ?array {
 		$buckets = $this->buckets();
@@ -146,8 +146,10 @@ class OpenCaseCounts {
 	 * @param array<string, string> $supersededBy The superseded links.
 	 *
 	 * @return string The uuid of the version that is not superseded, or where a cycle stopped.
+	 *
+	 * @spec openspec/changes/woo-five-steps/specs/case-type-version-chain/spec.md#requirement-a-chosen-case-type-follows-its-version-chain
 	 */
-	private function currentVersionOf(string $uuid, array $supersededBy): string {
+	public function currentVersionOf(string $uuid, array $supersededBy): string {
 		$hops = 0;
 		while (isset($supersededBy[$uuid]) === true && $hops < self::MAX_HOPS) {
 			$uuid = $supersededBy[$uuid];

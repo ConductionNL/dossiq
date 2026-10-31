@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
+use OCA\Dossiq\Service\Termijn\PenaltyPaymentRows;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -586,4 +587,80 @@ class DeadlineReportingControllerContractTest extends TestCase {
 		$this->assertSame(2, $data['perType']['woo-verzoek']['totaal']);
 		$this->assertSame([], $data['metadata']['unresolvedInstances']);
 	}//end testTheQuarterlyRouteGroupsByCaseType()
+
+	/**
+	 * The penalty payment route answers the year's rows for a caller in the audience.
+	 *
+	 * Contract coverage for `deadlineReporting#penaltyPayments`.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsAnswersTheYearsRows(): void {
+		$this->signIn();
+		$rows = $this->createMock(PenaltyPaymentRows::class);
+		$rows->expects($this->once())->method('forYear')->with(2026)
+			->willReturn(['year' => 2026, 'rows' => [['caseIdentifier' => '2026-0018']], 'summary' => ['count' => 1, 'totalEuros' => 1260.0, 'disputedCount' => 0]]);
+
+		$response = $this->paymentsController(rows: $rows)->penaltyPayments(year: 2026);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('2026-0018', $response->getData()['rows'][0]['caseIdentifier']);
+	}//end testPenaltyPaymentsAnswersTheYearsRows()
+
+	/**
+	 * The penalty payment route refuses an anonymous caller and a year out of range.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsRefusesAnonymousAndOutOfRange(): void {
+		$rows = $this->createMock(PenaltyPaymentRows::class);
+		$rows->expects($this->never())->method('forYear');
+
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->paymentsController(rows: $rows)->penaltyPayments(year: 2026)->getStatus());
+	}//end testPenaltyPaymentsRefusesAnonymousAndOutOfRange()
+
+	/**
+	 * A year outside 2020..2100 is a 400.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsRefusesAYearOutOfRange(): void {
+		$this->signIn();
+		$rows = $this->createMock(PenaltyPaymentRows::class);
+		$rows->expects($this->never())->method('forYear');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->paymentsController(rows: $rows)->penaltyPayments(year: 2019)->getStatus());
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->paymentsController(rows: $rows)->penaltyPayments()->getStatus());
+	}//end testPenaltyPaymentsRefusesAYearOutOfRange()
+
+	/**
+	 * Without the payment rows the route says it is not available.
+	 *
+	 * @return void
+	 */
+	public function testPenaltyPaymentsIsUnavailableWithoutTheRows(): void {
+		$this->signIn();
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $this->controller->penaltyPayments(year: 2026)->getStatus());
+	}//end testPenaltyPaymentsIsUnavailableWithoutTheRows()
+
+	/**
+	 * A controller holding the given payment rows.
+	 *
+	 * @param PenaltyPaymentRows $rows The payment rows.
+	 *
+	 * @return DeadlineReportingController
+	 */
+	private function paymentsController(PenaltyPaymentRows $rows): DeadlineReportingController {
+		return new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: $this->service,
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+			penaltyPayments: $rows,
+		);
+	}//end paymentsController()
 }//end class

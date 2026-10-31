@@ -80,7 +80,32 @@ vi.mock('@nextcloud/l10n', () => ({
 vi.mock('@nextcloud/router', () => ({ generateUrl: (path) => path }))
 vi.mock('@nextcloud/event-bus', () => ({ emit: vi.fn() }))
 
-vi.mock('@nextcloud/vue/components/NcDialog', () => ({ default: box('NcDialog') }))
+vi.mock('@conduction/nextcloud-vue', async (importOriginal) => ({
+	...(await importOriginal()),
+	CnDialog: box('CnDialog'),
+	// The library's settings field: an input carrying the value, and the
+	// error under it under its own test id, as CnSettingsField draws them.
+	CnSettingsField: {
+		name: 'CnSettingsField',
+		props: {
+			field: { type: Object, required: true },
+			modelValue: { type: null, default: null },
+			error: { type: String, default: '' },
+		},
+		emits: ['update:modelValue'],
+		render() {
+			return h('div', [
+				h('input', {
+					value: String(this.modelValue ?? ''),
+					onInput: (event) => this.$emit('update:modelValue', event.target.value),
+				}),
+				this.error
+					? h('p', { 'data-testid': `cn-settings-field-error-${this.field.key}` }, this.error)
+					: null,
+			])
+		},
+	},
+}))
 vi.mock('@nextcloud/vue/components/NcSelect', () => ({
 	default: field('NcSelect'),
 }))
@@ -276,7 +301,7 @@ describe('CaseRebindDialog property impact', () => {
 		).toBe(true)
 		expect(
 			wrapper
-				.find('[data-testid="case-rebind-required-bouwjaar-problem"]')
+				.find('[data-testid="case-rebind-required-bouwjaar"] [data-testid="cn-settings-field-error-bouwjaar"]')
 				.text(),
 		).toBe('Fill this in to continue.')
 
@@ -294,7 +319,7 @@ describe('CaseRebindDialog property impact', () => {
 		await flush(400)
 		expect(
 			wrapper
-				.find('[data-testid="case-rebind-required-bouwjaar-problem"]')
+				.find('[data-testid="case-rebind-required-bouwjaar"] [data-testid="cn-settings-field-error-bouwjaar"]')
 				.text(),
 		).toBe('This value does not fit this field.')
 		expect(confirmDisabled(wrapper)).toBe(true)
@@ -368,5 +393,38 @@ describe('CaseRebindImpact', () => {
 			.find('[data-testid="case-rebind-unmove-boomsoort"]')
 			.trigger('click')
 		expect(wrapper.emitted('update:remap')[1][0]).toEqual({})
+	})
+})
+
+describe('one required field, asked in the control its kind needs', () => {
+	const { requiredField, answerText } = CaseRebindImpact.methods
+
+	it('asks each kind the server reports in its own settings field type', () => {
+		const typeOf = (kind) => requiredField({ name: 'f', kind }).type
+
+		expect(typeOf('choice')).toBe('select')
+		expect(typeOf('boolean')).toBe('switch')
+		expect(typeOf('integer')).toBe('number')
+		expect(typeOf('date')).toBe('date')
+		expect(typeOf('date-time')).toBe('datetime-local')
+		expect(typeOf('email')).toBe('email')
+		expect(typeOf('url')).toBe('url')
+		expect(typeOf('object')).toBe('text')
+	})
+
+	it('offers a choice from the list the server sent', () => {
+		expect(requiredField({ name: 'soort', kind: 'choice', choices: ['a', 'b'] })).toEqual({
+			key: 'soort',
+			label: 'soort',
+			type: 'select',
+			options: ['a', 'b'],
+		})
+	})
+
+	it('stores every answer as the text the case keeps, a yes/no as true or false', () => {
+		expect(answerText({ kind: 'boolean' }, true)).toBe('true')
+		expect(answerText({ kind: 'boolean' }, false)).toBe('false')
+		expect(answerText({ kind: 'integer' }, 1974)).toBe('1974')
+		expect(answerText({ kind: 'choice' }, null)).toBe('')
 	})
 })

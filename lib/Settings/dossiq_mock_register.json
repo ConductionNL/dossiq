@@ -2416,6 +2416,9 @@
             "channels": [
               "nc-notification"
             ],
+            "optInChannels": [
+              "email"
+            ],
             "recipients": [
               {
                 "kind": "field",
@@ -2442,6 +2445,9 @@
             "channels": [
               "nc-notification"
             ],
+            "optInChannels": [
+              "email"
+            ],
             "recipients": [
               {
                 "kind": "field",
@@ -2455,7 +2461,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.12.0",
+        "version": "1.13.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -5010,7 +5016,7 @@
       "contactmoment": {
         "slug": "contactmoment",
         "icon": "PhoneInTalk",
-        "version": "1.5.0",
+        "version": "1.9.0",
         "configuration": {
           "x-openregister-processing": {
             "logReads": true,
@@ -5043,8 +5049,18 @@
               "webformulier",
               "chat",
               "social_media",
-              "balie"
+              "balie",
+              "brief"
             ],
+            "x-enum-labels": {
+              "phone": "Phone",
+              "email": "Email",
+              "webformulier": "Web form",
+              "chat": "Chat",
+              "social_media": "Social media",
+              "balie": "Desk",
+              "brief": "Letter"
+            },
             "description": "Communication channel"
           },
           "direction": {
@@ -5166,6 +5182,53 @@
             "type": "string",
             "title": "Summary",
             "description": "Summary of the contact"
+          },
+          "message": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
+            "type": "string",
+            "title": "Message",
+            "description": "The full text of the message the contact was, where the summary is a short line about it"
+          },
+          "subject": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
+            "type": "string",
+            "title": "Subject",
+            "description": "Subject line of the message the contact was about (an e-mail subject), shown above the summary"
+          },
+          "note": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
+            "type": "string",
+            "title": "Note",
+            "description": "A short remark shown under the contact, such as how it arrived or who summarised it"
+          },
+          "attachmentCount": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Attachments",
+            "description": "How many attachments came with the contact"
+          },
+          "automatic": {
+            "type": "boolean",
+            "title": "Sent automatically",
+            "description": "True on a message the system sent by itself, such as a receipt. It stays in the conversation and the history, and the contact log leaves it out. Absent on a contact a person recorded."
           },
           "accordingToIntent": {
             "type": "string",
@@ -13249,7 +13312,7 @@
       "substitution": {
         "slug": "substitution",
         "icon": "AccountSwitchOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Substitution",
         "description": "Vervanging/waarneming registration: who covers an absent handler's workload, when, and for what scope. Domain data on top of OpenRegister RBAC; grants no permissions of its own (handler-vervanging-waarneming spec).",
         "type": "object",
@@ -13354,6 +13417,9 @@
             "enabled": true,
             "channels": [
               "nc-notification"
+            ],
+            "optInChannels": [
+              "email"
             ],
             "recipients": [
               {
@@ -14078,7 +14144,8 @@
               "storage_increment",
               "api_burst",
               "quota_exceeded",
-              "case_refund"
+              "case_refund",
+              "subscription_fee"
             ],
             "description": "Type of billable event",
             "title": "Event Type"
@@ -22057,108 +22124,6 @@
         ],
         "isRequired": false,
         "defaultValue": "Voorbeeld Defaultvalue 3"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "reIntegratieTraject",
-          "slug": "reintegratietraject-reintegratietraject-1-1",
-          "id": "a239e40e-4603-453c-83fc-01cd6cf00ca7"
-        },
-        "caseId": "Voorbeeld Caseid 1",
-        "caseManagerId": "Voorbeeld Casemanagerid 1",
-        "startDate": "2026-03-01",
-        "trajectKind": "Voorbeeld Trajectkind 1",
-        "distanceToLabourMarket": "klein",
-        "instrumenten": [
-          {
-            "kind": "Voorbeeld Kind 1",
-            "omschrijving": "Voorbeeld Omschrijving 1",
-            "startDate": "2026-03-01",
-            "endDate": "2026-03-01",
-            "budget": 1.0
-          }
-        ],
-        "collaboratingParties": [
-          "Voorbeeld Collaboratingparties 1"
-        ],
-        "evaluationMoments": [
-          "2026-03-01"
-        ],
-        "considerationMandatory": true,
-        "exemptionWorkObligation": {
-          "actief": true,
-          "reason": "Voorbeeld Reason 1",
-          "reassessmentDate": "2026-03-01"
-        }
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "reIntegratieTraject",
-          "slug": "reintegratietraject-reintegratietraject-2-2",
-          "id": "3c66a106-9cf7-4a65-aed6-452021f890ec"
-        },
-        "caseId": "Voorbeeld Caseid 2",
-        "caseManagerId": "Voorbeeld Casemanagerid 2",
-        "startDate": "2026-03-02",
-        "trajectKind": "Voorbeeld Trajectkind 2",
-        "distanceToLabourMarket": "average",
-        "instrumenten": [
-          {
-            "kind": "Voorbeeld Kind 2",
-            "omschrijving": "Voorbeeld Omschrijving 2",
-            "startDate": "2026-03-02",
-            "endDate": "2026-03-02",
-            "budget": 2.0
-          }
-        ],
-        "collaboratingParties": [
-          "Voorbeeld Collaboratingparties 2"
-        ],
-        "evaluationMoments": [
-          "2026-03-02"
-        ],
-        "considerationMandatory": false,
-        "exemptionWorkObligation": {
-          "actief": false,
-          "reason": "Voorbeeld Reason 2",
-          "reassessmentDate": "2026-03-02"
-        }
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "reIntegratieTraject",
-          "slug": "reintegratietraject-reintegratietraject-3-3",
-          "id": "ecd39b8a-4bd8-4da3-9976-5820c30d9d46"
-        },
-        "caseId": "Voorbeeld Caseid 3",
-        "caseManagerId": "Voorbeeld Casemanagerid 3",
-        "startDate": "2026-03-03",
-        "trajectKind": "Voorbeeld Trajectkind 3",
-        "distanceToLabourMarket": "groot",
-        "instrumenten": [
-          {
-            "kind": "Voorbeeld Kind 3",
-            "omschrijving": "Voorbeeld Omschrijving 3",
-            "startDate": "2026-03-03",
-            "endDate": "2026-03-03",
-            "budget": 3.0
-          }
-        ],
-        "collaboratingParties": [
-          "Voorbeeld Collaboratingparties 3"
-        ],
-        "evaluationMoments": [
-          "2026-03-03"
-        ],
-        "considerationMandatory": true,
-        "exemptionWorkObligation": {
-          "actief": true,
-          "reason": "Voorbeeld Reason 3",
-          "reassessmentDate": "2026-03-03"
-        }
       },
       {
         "@self": {

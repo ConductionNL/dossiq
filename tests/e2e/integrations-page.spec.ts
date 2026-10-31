@@ -207,10 +207,14 @@ test.describe('Integrations', () => {
 
 	test('offers a settings link that lands on the section', async ({ page }) => {
 		const byKey = await integrationsByKey(api)
-		expect(byKey.stuf.settingsUrl).toBe('/settings/admin/dossiq#section-stuf')
+		expect(byKey.stuf.settingsUrl).toBe(
+			'/settings/admin/dossiq?tab=advanced#section-stuf',
+		)
 
 		await openIntegrations(page)
-		const link = page.locator('a[href="/settings/admin/dossiq#section-stuf"]')
+		const link = page.locator(
+			'a[href="/settings/admin/dossiq?tab=advanced#section-stuf"]',
+		)
 		await expect(link).toBeVisible({ timeout: 30_000 })
 
 		// The cell renderer sets `target="_blank"`, so the settings page opens
@@ -222,7 +226,9 @@ test.describe('Integrations', () => {
 			page.waitForEvent('popup'),
 			link.click(),
 		])
-		await expect(settings).toHaveURL(/\/settings\/admin\/dossiq#section-stuf$/)
+		await expect(settings).toHaveURL(
+			/\/settings\/admin\/dossiq\?tab=advanced#section-stuf$/,
+		)
 		await expect(settings.locator('#section-stuf')).toBeVisible({
 			timeout: 30_000,
 		})
@@ -250,7 +256,7 @@ test.describe('Integrations', () => {
 			await expect(row).toBeVisible({ timeout: 30_000 })
 			// The whole point: the affordance is ABSENT, not disabled.
 			await expect(
-				row.locator('a[href^="/settings/admin/dossiq#"]'),
+				row.locator('a[href^="/settings/admin/dossiq?tab="]'),
 			).toHaveCount(0)
 		}
 	})
@@ -509,9 +515,9 @@ test.describe('Integrations', () => {
 		// either, so the count alone cannot tell a working guard from a broken
 		// bundle. See the docblock.
 		await expect(page).not.toHaveURL(/\/settings\/integrations$/)
-		await expect(page.locator('a[href^="/settings/admin/dossiq#"]')).toHaveCount(
-			0,
-		)
+		await expect(
+			page.locator('a[href^="/settings/admin/dossiq?tab="]'),
+		).toHaveCount(0)
 		await expect(
 			page.getByRole('row', { name: /ZGW APIs/i }),
 			'no integration row survives the redirect',

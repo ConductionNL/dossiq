@@ -23,19 +23,9 @@
  * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
  */
 
-import axios from '@nextcloud/axios'
-import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import CaseAttentionPanel from '../../src/components/case/CaseAttentionPanel.vue'
-
-const mockShowError = vi.fn()
-
-vi.mock('@nextcloud/dialogs', () => ({
-	showSuccess: vi.fn(),
-	showError: (...a) => mockShowError(...a),
-}))
+import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -46,86 +36,30 @@ const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'u
 const caseDetail = manifest.pages.find((p) => p.id === 'CaseDetail')
 const cases = manifest.pages.find((p) => p.id === 'Cases')
 
-/** Stubs that let the strip render and still expose what was clicked. */
-const stubs = {
-	NcButton: { template: '<button v-bind="$attrs"><slot /></button>' },
-	NcTextField: {
-		props: ['value'],
-		template:
-			'<input v-bind="$attrs" :value="value" @input="$emit(\'update:value\', $event.target.value)">',
-	},
-}
-
-/**
- * Mount the strip over a flag the endpoint answers.
- *
- * @param {object} flag       What the attention endpoint answers.
- * @param {object} objectData The case as the page read it.
- * @return {Promise<object>} The mounted wrapper.
- */
-async function mountStrip(flag, objectData = {}) {
-	axios.get.mockResolvedValue({ data: flag })
-
-	const wrapper = mount(CaseAttentionPanel, {
-		props: { objectId: 'case-7', objectData },
-		global: { stubs },
-	})
-
-	await wrapper.vm.$nextTick()
-	await Promise.resolve()
-	await Promise.resolve()
-	await wrapper.vm.$nextTick()
-
-	return wrapper
-}
 
 describe('the strip is declared on the case page', () => {
-	it('sits under the unread strip, above the panels', () => {
-		// The strips share ONE grid row now (CaseBannerStack): three of the four
-		// are a root v-if, so four rows reserved three empty ones on an ordinary
-		// case. The ORDER that used to be gridY is the component's child order.
-		const banners = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-banner-stack',
-		)
-		const panels = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-panels',
-		)
-		const stack = fs.readFileSync(
-			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
-			'utf8',
-		)
+	const attention = caseDetail.config.widgets.find((w) => w.id === 'case-attention')
 
-		expect(banners, 'the banner row is missing from the layout').toBeTruthy()
-		expect(banners.gridY).toBeLessThan(panels.gridY)
-		expect(banners.gridWidth).toBe(12)
-		expect(stack.indexOf('<CaseUnreadPanel')).toBeLessThan(
-			stack.indexOf('<CaseAttentionPanel'),
-		)
+	it('rides the banner row above the panels', () => {
+		const stack = caseDetail.config.widgets.find((w) => w.id === 'case-banner-stack')
+		expect(stack.content.sections.map((section) => section.widgetId)).toContain('case-attention')
+		const row = caseDetail.config.layout.find((cell) => cell.widgetId === 'case-banner-stack')
+		const panels = caseDetail.config.layout.find((cell) => cell.widgetId === 'case-panels')
+		expect(row.gridY).toBeLessThan(panels.gridY)
 	})
 
-	it('declares a widget whose type the registry answers', () => {
-		// A layout grid item falls through to CnDetailWidgetHost, which
-		// resolves a renderer from `cnRegistry[widget.type]` and renders
-		// NOTHING, silently, when no key answers.
-		const widget = caseDetail.config.widgets.find(
-			(w) => w.id === 'case-banner-stack',
-		)
-		expect(widget).toBeTruthy()
-		expect(widget.type).toBe('case-banner-stack')
-		expect(registrySource).toContain("'case-banner-stack': {")
-		// The strip's own type stays registered: still a valid placement, just
-		// not the one this page uses.
-		expect(registrySource).toContain("'case-attention': {")
-		expect(registrySource).toContain('component: CaseAttentionPanel,')
+	it('is the library attention flag over dossiq\'s endpoint, not an object write', () => {
+		// Raising needs a reason both ways and the refusal is the server's
+		// (CaseAttentionFlagService): what the strip does with them is
+		// nextcloud-vue CnAttentionFlagWidget's, with these cases ported there.
+		expect(attention.type).toBe('attention-flag')
+		expect(attention.content).toMatchObject({ endpoint: '/apps/dossiq/api/case/@objectId/attention', raisePath: '/raise', clearPath: '/clear' })
+		expect(attention.content.labels.reasonRaise).toBe('Why this case needs attention')
+		expect(registrySource).not.toContain("'case-attention': {")
 	})
 
-	it('carries the reason gate 29 asks a custom widget for', () => {
-		const entry = registrySource.slice(
-			registrySource.indexOf("'case-attention': {"),
-			registrySource.indexOf("'case-notes-pane': {"),
-		)
-		expect(entry).toContain('_note:')
-		expect(entry).toMatch(/@custom-widget-ratchet exclude \S+ \S+/)
+	it('reads the assessment off the case, so a reader without the permission sees none', () => {
+		expect(attention.content.assessment).toEqual({ path: 'riskAssessment', reviewDateField: 'reviewDate' })
 	})
 })
 
@@ -160,276 +94,5 @@ describe('the work list finds the flagged ones', () => {
 		const keys = cases.config.columns.map((c) => c.key)
 		expect(keys).not.toContain('riskLevel')
 		expect(keys).not.toContain('riskAssessment')
-	})
-})
-
-describe('raising and clearing go through dossiq, never through an object write', () => {
-	beforeEach(() => {
-		axios.get.mockReset()
-		axios.post.mockReset()
-		axios.put.mockReset()
-		axios.patch.mockReset()
-		mockShowError.mockReset()
-	})
-
-	it('raises with the reason that was written', async () => {
-		const wrapper = await mountStrip({
-			raised: false,
-			flag: {},
-			history: [],
-			raisings: 0,
-			clearings: 0,
-		})
-
-		axios.post.mockResolvedValue({
-			data: {
-				raised: true,
-				flag: { reason: 'The applicant is in hospital', raisedBy: 'ahmed' },
-				history: [
-					{
-						act: 'raised',
-						reason: 'The applicant is in hospital',
-						actor: 'ahmed',
-						moment: '2026-03-01T09:00:00+00:00',
-					},
-				],
-				raisings: 1,
-				clearings: 0,
-			},
-		})
-
-		await wrapper
-			.find('[data-testid="case-attention-reason"]')
-			.setValue('The applicant is in hospital')
-		await wrapper.find('[data-testid="case-attention-raise"]').trigger('click')
-		await Promise.resolve()
-		await wrapper.vm.$nextTick()
-
-		expect(axios.post).toHaveBeenCalledTimes(1)
-		expect(axios.post.mock.calls[0][0]).toBe(
-			'/index.php/apps/dossiq/api/case/case-7/attention/raise',
-		)
-		expect(axios.post.mock.calls[0][1]).toEqual({
-			reason: 'The applicant is in hospital',
-		})
-		expect(axios.put).not.toHaveBeenCalled()
-		expect(axios.patch).not.toHaveBeenCalled()
-	})
-
-	it('offers clearing on a flagged case, and sends its own reason', async () => {
-		const wrapper = await mountStrip({
-			raised: true,
-			flag: { reason: 'The applicant is in hospital', raisedBy: 'ahmed' },
-			history: [
-				{
-					act: 'raised',
-					reason: 'The applicant is in hospital',
-					actor: 'ahmed',
-					moment: '2026-03-01T09:00:00+00:00',
-				},
-			],
-			raisings: 1,
-			clearings: 0,
-		})
-
-		expect(wrapper.find('[data-testid="case-attention-raised"]').exists()).toBe(
-			true,
-		)
-		expect(wrapper.text()).toContain('The applicant is in hospital')
-
-		axios.post.mockResolvedValue({
-			data: {
-				raised: false,
-				flag: {},
-				history: [],
-				raisings: 1,
-				clearings: 1,
-			},
-		})
-
-		await wrapper
-			.find('[data-testid="case-attention-reason"]')
-			.setValue('They are home and the file is complete')
-		await wrapper.find('[data-testid="case-attention-clear"]').trigger('click')
-		await Promise.resolve()
-		await wrapper.vm.$nextTick()
-
-		expect(axios.post.mock.calls[0][0]).toBe(
-			'/index.php/apps/dossiq/api/case/case-7/attention/clear',
-		)
-		expect(axios.post.mock.calls[0][1]).toEqual({
-			reason: 'They are home and the file is complete',
-		})
-	})
-
-	it('will not send an act with nothing written', async () => {
-		const wrapper = await mountStrip({
-			raised: false,
-			flag: {},
-			history: [],
-			raisings: 0,
-			clearings: 0,
-		})
-
-		await wrapper.find('[data-testid="case-attention-reason"]').setValue('   ')
-		await wrapper.find('[data-testid="case-attention-raise"]').trigger('click')
-		await Promise.resolve()
-
-		expect(axios.post).not.toHaveBeenCalled()
-	})
-
-	it('shows the server refusal rather than a sentence of its own', async () => {
-		const wrapper = await mountStrip({
-			raised: false,
-			flag: {},
-			history: [],
-			raisings: 0,
-			clearings: 0,
-		})
-
-		axios.post.mockRejectedValue({
-			response: {
-				status: 400,
-				data: {
-					error: 'Write down why, and the flag will change.',
-					code: 'reason_required',
-				},
-			},
-		})
-
-		await wrapper.find('[data-testid="case-attention-reason"]').setValue('x')
-		await wrapper.find('[data-testid="case-attention-raise"]').trigger('click')
-		await Promise.resolve()
-		await wrapper.vm.$nextTick()
-
-		expect(mockShowError).toHaveBeenCalledWith(
-			'Write down why, and the flag will change.',
-		)
-	})
-
-	it('shows every raising and every clearing, oldest first', async () => {
-		const wrapper = await mountStrip({
-			raised: false,
-			flag: {},
-			history: [
-				{
-					act: 'raised',
-					reason: 'Round one',
-					actor: 'ahmed',
-					moment: '2026-01-01T09:00:00+00:00',
-				},
-				{
-					act: 'cleared',
-					reason: 'Round one answered',
-					actor: 'nadia',
-					moment: '2026-01-14T09:00:00+00:00',
-				},
-				{
-					act: 'raised',
-					reason: 'Round two',
-					actor: 'ahmed',
-					moment: '2026-02-01T09:00:00+00:00',
-				},
-				{
-					act: 'cleared',
-					reason: 'Round two answered',
-					actor: 'nadia',
-					moment: '2026-02-14T09:00:00+00:00',
-				},
-			],
-			raisings: 2,
-			clearings: 2,
-		})
-
-		const rows = wrapper.findAll('[data-testid="case-attention-history"] li')
-		expect(rows).toHaveLength(4)
-		expect(rows[0].text()).toContain('Round one')
-		expect(rows[3].text()).toContain('Round two answered')
-		expect(rows.map((r) => r.attributes('data-act'))).toEqual([
-			'raised',
-			'cleared',
-			'raised',
-			'cleared',
-		])
-	})
-
-	it('stays silent rather than erroring where the endpoint does not exist', async () => {
-		axios.get.mockRejectedValue({ response: { status: 404, data: {} } })
-
-		const wrapper = mount(CaseAttentionPanel, {
-			props: { objectId: 'case-7', objectData: {} },
-			global: { stubs },
-		})
-		await Promise.resolve()
-		await Promise.resolve()
-		await wrapper.vm.$nextTick()
-
-		expect(wrapper.find('[data-testid="case-attention"]').exists()).toBe(false)
-		expect(mockShowError).not.toHaveBeenCalled()
-	})
-})
-
-describe('the assessment is absent, not blank, for a reader without the permission', () => {
-	beforeEach(() => {
-		axios.get.mockReset()
-		axios.post.mockReset()
-		mockShowError.mockReset()
-	})
-
-	const flag = { raised: false, flag: {}, history: [], raisings: 0, clearings: 0 }
-
-	it('draws the level and its ground for a reader who may see it', async () => {
-		const wrapper = await mountStrip(flag, {
-			riskAssessment: {
-				level: 'high',
-				ground: 'Two incidents at the address in twelve months',
-				assessor: 'nadia',
-				reviewDate: '2027-01-15',
-			},
-		})
-
-		const block = wrapper.find('[data-testid="case-attention-risk"]')
-		expect(block.exists()).toBe(true)
-		expect(wrapper.find('[data-risk-level="high"]').exists()).toBe(true)
-		expect(block.text()).toContain(
-			'Two incidents at the address in twelve months',
-		)
-		expect(
-			wrapper.find('[data-testid="case-attention-risk-stale"]').exists(),
-		).toBe(false)
-	})
-
-	it('draws nothing at all where OpenRegister filtered the property out', async () => {
-		// What arrives for a reader without the group is a case with no
-		// `riskAssessment` key, which is the same thing a case nobody assessed
-		// carries. There is deliberately no third state.
-		const filtered = await mountStrip(flag, { title: 'Melding geluidsoverlast' })
-		const never = await mountStrip(flag, {
-			title: 'Melding geluidsoverlast',
-			riskAssessment: {},
-		})
-
-		expect(filtered.find('[data-testid="case-attention-risk"]').exists()).toBe(
-			false,
-		)
-		expect(never.find('[data-testid="case-attention-risk"]').exists()).toBe(
-			false,
-		)
-		expect(filtered.text()).not.toContain('Assessed risk')
-	})
-
-	it('says an assessment past its review date is due for review', async () => {
-		const wrapper = await mountStrip(flag, {
-			riskAssessment: {
-				level: 'medium',
-				ground: 'One incident',
-				assessor: 'nadia',
-				reviewDate: '2020-01-01',
-			},
-		})
-
-		expect(
-			wrapper.find('[data-testid="case-attention-risk-stale"]').exists(),
-		).toBe(true)
 	})
 })

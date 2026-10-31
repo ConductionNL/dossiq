@@ -149,11 +149,14 @@ class RequesterNoticeSender {
 	 * @param array<string, mixed> $rendered `subject` and `body`.
 	 * @param string               $moment   The moment (REQ-WRN-006).
 	 * @param array<string, mixed> $options  `recipient` (an address the caller holds), `instanceId`,
-	 *                                       `dedupeKey`, `recordExtras` (more keys for the record).
+	 *                                       `dedupeKey`, `recordExtras` (more keys for the record),
+	 *                                       `channels` (the channels to try, in the declared order;
+	 *                                       all of them when absent).
 	 *
 	 * @return array<string, mixed> The delivery result, with the `record` it appended.
 	 *
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-channel-follows-the-requester-in-a-declared-order-req-wrn-002
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function send(array $case, string $template, array $rendered, string $moment, array $options = []): array {
 		$attemptedAt = (new DateTimeImmutable())->format('c');
@@ -169,7 +172,8 @@ class RequesterNoticeSender {
 
 		$tried = [];
 		$sent = null;
-		foreach ([self::CHANNEL_PORTAL, self::CHANNEL_DIGITAL_POST, self::CHANNEL_EMAIL] as $channel) {
+		$order = [self::CHANNEL_PORTAL, self::CHANNEL_DIGITAL_POST, self::CHANNEL_EMAIL];
+		foreach (array_intersect($order, (array)($options['channels'] ?? $order)) as $channel) {
 			$answer = $this->through(channel: $channel, case: $case, notice: $notice);
 			if ($answer === null) {
 				continue;

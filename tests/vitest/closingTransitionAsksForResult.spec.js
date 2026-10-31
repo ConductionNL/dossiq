@@ -31,7 +31,13 @@ const CaseLifecycleMenuDialog = (
 ).default
 
 const DIALOG_RENDERS_ITS_SLOT = {
+	CnChoiceCards: {
+		props: ['options', 'modelValue'],
+		template:
+			'<div><div v-for="option in options" :key="option.value"><slot v-if="option.value === modelValue" name="option-details" :option="option" /></div></div>',
+	},
 	NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
+	CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 	NcButton: {
 		props: ['disabled'],
 		template:
@@ -89,6 +95,29 @@ async function formFor(id) {
 	return wrapper
 }
 
+/**
+ * The result picker the open form declares.
+ *
+ * @param {object} fields The CnTransitionInputFields wrapper.
+ * @return {object|undefined} The declaration.
+ */
+function resultInput(fields) {
+	return fields.props('inputs').find((input) => input.field === 'resultTypeId')
+}
+
+/**
+ * Type into the open form the way the library does: one changed values object.
+ *
+ * @param {object} wrapper The dialog wrapper.
+ * @param {object} change The values that change.
+ * @return {Promise<void>}
+ */
+async function type(wrapper, change) {
+	const fields = wrapper.findComponent({ name: 'CnTransitionInputFields' })
+	fields.vm.$emit('update:modelValue', { ...fields.props('modelValue'), ...change })
+	await wrapper.vm.$nextTick()
+}
+
 describe('the menu copies what the engine says about a closing move', () => {
 	it('carries closesCase and the result types on the transition entry', () => {
 		const [start, close] = buildActsMenu({ transitions: [START, CLOSE] })
@@ -119,31 +148,25 @@ describe('the lifecycle dialog on a closing move', () => {
 	it('offers the case type result types in a picker', async () => {
 		const wrapper = await formFor('tr-close')
 
-		const picker = wrapper.findComponent({ name: 'NcSelect' })
-		expect(picker.exists()).toBe(true)
-		expect(picker.props('options')).toEqual(RESULTS)
-		expect(wrapper.find('[data-testid="case-act-result-input"]').exists()).toBe(
-			false,
-		)
+		const fields = wrapper.findComponent({ name: 'CnTransitionInputFields' })
+		expect(resultInput(fields)).toMatchObject({ optionsSource: 'resultTypes', optionValue: 'id', optionLabel: 'name', required: true })
+		expect(fields.props('context').resultTypes).toEqual(RESULTS)
+		expect(fields.props('inputs').some((input) => input.field === 'result')).toBe(false)
 	})
 
 	it('offers no picker on a move that does not close the case', async () => {
 		const wrapper = await formFor('tr-start')
 
-		expect(wrapper.findComponent({ name: 'NcSelect' }).exists()).toBe(false)
+		expect(resultInput(wrapper.findComponent({ name: 'CnTransitionInputFields' }))).toBeUndefined()
 	})
 
 	it('keeps confirm closed until a result is picked, then sends it', async () => {
 		axios.post.mockResolvedValue({ data: { status: 'ok' } })
 		const wrapper = await formFor('tr-close')
-		wrapper.vm.reason = 'Klaar.'
-		await wrapper.vm.$nextTick()
+		await type(wrapper, { reason: 'Klaar.' })
 		expect(wrapper.vm.canConfirm).toBe(false)
 
-		wrapper
-			.findComponent({ name: 'NcSelect' })
-			.vm.$emit('update:modelValue', RESULTS[1])
-		await wrapper.vm.$nextTick()
+		await type(wrapper, { resultTypeId: RESULTS[1].id })
 		expect(wrapper.vm.canConfirm).toBe(true)
 
 		await wrapper.vm.confirm()
@@ -166,8 +189,7 @@ describe('the lifecycle dialog on a closing move', () => {
 				}),
 		)
 		const wrapper = await formFor('tr-start')
-		wrapper.vm.reason = 'Door.'
-		await wrapper.vm.$nextTick()
+		await type(wrapper, { reason: 'Door.' })
 
 		const pending = wrapper.vm.confirm()
 		await wrapper.vm.$nextTick()

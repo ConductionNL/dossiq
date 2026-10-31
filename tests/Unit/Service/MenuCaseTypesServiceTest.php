@@ -200,7 +200,7 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-titles-in-the-readers-language/specs/case-type-navigation/spec.md
+	 * @spec openspec/specs/case-type-navigation/spec.md
 	 */
 	public function testATranslatableTitleIsReadInTheReadersLanguage(): void {
 		$rows = [
@@ -343,6 +343,29 @@ class MenuCaseTypesServiceTest extends TestCase {
 	}//end testNeverChoseDefaultsToWoo()
 
 	/**
+	 * The default and a saved choice name a version that was superseded since:
+	 * the menu lists the version in use, once.
+	 *
+	 * @return void
+	 */
+	public function testAChosenSupersededVersionFoldsToTheVersionInUse(): void {
+		$rows = [
+			['id' => 'b', 'title' => 'Bezwaar'],
+			['id' => self::WOO, 'title' => 'Woo-verzoek', 'supersededBy' => 'woo-v2'],
+			['id' => 'woo-v2', 'title' => 'Woo-verzoek'],
+		];
+
+		$service = $this->service(rows: $rows);
+		$this->assertSame(expected: [['id' => 'woo-v2', 'title' => 'Woo-verzoek']], actual: $service->chosen('u', $service->visibleCaseTypes()));
+
+		$saved = $this->service(rows: $rows, stored: (string)json_encode([self::WOO, 'woo-v2', 'b']));
+		$this->assertSame(
+			expected: [['id' => 'woo-v2', 'title' => 'Woo-verzoek'], ['id' => 'b', 'title' => 'Bezwaar']],
+			actual: $saved->chosen('u', $saved->visibleCaseTypes())
+		);
+	}//end testAChosenSupersededVersionFoldsToTheVersionInUse()
+
+	/**
 	 * A user who never chose and may not see Woo gets nothing.
 	 *
 	 * @return void
@@ -415,7 +438,7 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testEachCaseTypeShowsItsOpenCasesFromOneQuery(): void {
 		$store = new FakeMenuCaseTypeObjectService();
@@ -455,7 +478,7 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testACaseOnAnOlderVersionCountsForTheVersionInUse(): void {
 		$store = new FakeMenuCaseTypeObjectService();
@@ -505,7 +528,7 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testAnUnreadableCountIsNullNotZero(): void {
 		$noFacet = new FakeMenuCaseTypeObjectService();

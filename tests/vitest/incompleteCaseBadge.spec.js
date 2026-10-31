@@ -11,28 +11,25 @@
  * to, so the marker is asserted in the LIST, which is where the coming back
  * starts.
  *
- * One column carries all three markers. Three columns empty on nine rows in
- * ten push the case title off the screen for nothing, and the three states are
- * read together anyway: what a handler wants to know is whether this row needs
- * something before it can be worked.
+ * The three states are row indicators the Cases page declares: icons on the
+ * title cell, each with its word as hidden text and tooltip. Three columns
+ * empty on nine rows in ten would push the case title off the screen for
+ * nothing, and the three states are read together anyway: what a handler wants
+ * to know is whether this row needs something before it can be worked.
  *
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 
-import { mount } from '@vue/test-utils'
+import { resolveRowIndicators } from '@conduction/nextcloud-vue/src/utils/rowIndicators.js'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import CaseStateMarkersCell from '../../src/components/cells/CaseStateMarkersCell.vue'
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const cellWidgetsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
-	'utf8',
-)
+const cases = manifest.pages.find((page) => page.id === 'Cases')
 
 /**
  * A date relative to today, as the case stores it.
@@ -54,26 +51,23 @@ function day(days) {
  * @return {Array<string>} The marker keys, in render order.
  */
 function markersOf(row) {
-	const wrapper = mount(CaseStateMarkersCell, { props: { row } })
-
-	return wrapper
-		.findAll('.case-state__marker')
-		.map((node) => node.attributes('data-marker'))
+	return resolveRowIndicators(cases.config.rowIndicators, row).shown.map(
+		(indicator) => indicator.id,
+	)
 }
 
-describe('the state column on the case list', () => {
-	it('is declared on the Cases index and resolves to the widget', () => {
-		const cases = manifest.pages.find((page) => page.id === 'Cases')
-		const column = cases.config.columns.find(
-			(entry) =>
-				typeof entry === 'object' && entry.widget === 'caseStateMarkers',
-		)
-
-		expect(column, 'the Cases index declares the state column').toBeTruthy()
-		expect(column.sortable).toBe(false)
-		expect(cellWidgetsSource).toContain(
-			'caseStateMarkers: CaseStateMarkersCell,',
-		)
+describe('the state markers on the case list', () => {
+	it('are declared on the Cases index as row indicators, with no column of their own', () => {
+		expect(cases.config.rowIndicators.map((indicator) => indicator.id)).toEqual([
+			'incomplete',
+			'held',
+			'draft',
+		])
+		expect(
+			cases.config.columns.find(
+				(entry) => typeof entry === 'object' && entry.widget === 'caseStateMarkers',
+			),
+		).toBeUndefined()
 	})
 })
 
@@ -98,12 +92,11 @@ describe('an incomplete case is marked wherever it is listed', () => {
 
 	it('carries a word and not only a colour', () => {
 		// WCAG 2.2 SC 1.4.1. A reader who cannot separate the hues still gets
-		// the state, because the state is written in the cell.
-		const wrapper = mount(CaseStateMarkersCell, {
-			props: { row: { isIncomplete: true } },
-		})
-
-		expect(wrapper.text().trim()).not.toBe('')
+		// the state, because every indicator carries its word as text.
+		for (const indicator of cases.config.rowIndicators) {
+			expect(indicator.text.trim()).not.toBe('')
+			expect(indicator.icon).toBeTruthy()
+		}
 	})
 })
 

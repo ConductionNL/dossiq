@@ -118,6 +118,8 @@ class WOODecisionService {
 	 *
 	 * @param string $caseId The case UUID
 	 * @param array<string, mixed> $decisionData Optional override data (besluitdatum, samenvatting)
+	 * @param string $letter The letter the caller chose for the decision; empty drafts one
+	 *                       from the case type's `documentDrafts.decision`.
 	 *
 	 * @return array<string, mixed> Created decision with ID and assessment summary
 	 *
@@ -128,7 +130,7 @@ class WOODecisionService {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
-	public function assembleDecision(string $caseId, array $decisionData = []): array {
+	public function assembleDecision(string $caseId, array $decisionData = [], string $letter = ''): array {
 		// Guard: all documents must be assessed before a besluit can be created.
 		$this->assertAllDocumentsAssessed(caseId: $caseId);
 
@@ -171,12 +173,22 @@ class WOODecisionService {
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
-		$this->readiness->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId);
+		$this->readiness->markCaseReady(
+			objectService: $objectService,
+			register: $register,
+			caseId: $caseId,
+			decisionId: (string)$decision->getUuid(),
+		);
 
 		$this->logger->info(
 			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),
 			['app' => Application::APP_ID],
 		);
+
+		$draft = null;
+		if ($letter === '') {
+			$draft = $this->drafts?->draft(caseId: $caseId, purpose: self::DRAFT_PURPOSE);
+		}
 
 		return [
 			'decisionId' => $decision->getUuid(),
@@ -184,7 +196,7 @@ class WOODecisionService {
 			'summary' => $summary,
 			'weigeringsgronden' => $weigeringsgronden,
 			'assessmentCount' => $record['assessmentCount'],
-			'draft' => $this->drafts?->draft(caseId: $caseId, purpose: self::DRAFT_PURPOSE),
+			'draft' => $draft,
 			'inventoryDraft' => $this->drafts?->draft(caseId: $caseId, purpose: self::INVENTORY_PURPOSE),
 		];
 	}//end assembleDecision()

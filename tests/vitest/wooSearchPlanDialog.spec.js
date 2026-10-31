@@ -172,9 +172,11 @@ describe('WooSearchPlanDialog', () => {
 			(a) => a.id === 'woo-search-plan',
 		)
 		expect(action.target).toBe('WooSearchPlanDialog')
-		expect(JSON.stringify(action.visibleWhen)).toContain(
-			'3c0f5a00-0000-4000-a000-00000000a001',
-		)
+		expect(action.visibleWhen.all).toContainEqual({
+			field: 'caseTypeIdentifier',
+			op: 'eq',
+			value: 'woo-verzoek',
+		})
 		expect(registrySource).toMatch(/WooSearchPlanDialog: \{\s*kind: 'modal'/)
 	})
 
@@ -223,11 +225,22 @@ describe('WooSearchPlanDialog', () => {
 	it('testANewRequestStartsFromANamedTemplate', async () => {
 		const { wrapper, axios } = await mountDialog()
 
-		expect(axios.get).toHaveBeenCalledWith(
-			expect.stringContaining('/apps/openregister/api/record-templates'),
-			{ params: { schema: '42' } },
-		)
-		await wrapper.find('.template').trigger('click')
+		// The select and its read of /api/record-templates are the library's
+		// CnTemplateSelect; the dialog hands it the schema and takes what it applies.
+		const select = wrapper.findComponent({ name: 'CnTemplateSelect' })
+		expect(select.props('schema')).toBe('42')
+		expect(select.props('inputLabel')).toBe('Start from a template')
+		select.vm.$emit('apply', {
+			id: TEMPLATE,
+			name: 'Ruimtelijke verzoeken',
+			values: {
+				custodians: [{ name: 'Wethouder Ruimte', function: 'College' }],
+				systems: ['files'],
+				terms: 'Stationsweg',
+				triageRules: ['kept by the server'],
+			},
+		})
+		await flushPromises()
 
 		expect(
 			wrapper.find('[data-testid="woo-plan-custodian-name-0"]').element.value,

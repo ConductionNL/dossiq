@@ -122,14 +122,15 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 	//
 	// The same scenario through the page a handler actually opens, because the
 	// endpoint answering correctly and the lens rendering are two facts. The
-	// page is `CasesDeleted` (src/views/cases/DeletedCasesView.vue), a custom
-	// page on dossiq's history-mode router, so the URL is a PATH: `#/cases/deleted`
-	// would render the Dashboard under this assertion.
-	test('CasesDeleted (DeletedCasesView) renders the case and the date its window ends', async ({
+	// page is `CasesDeleted`, an index over dossiq's /api/cases/deleted on the
+	// history-mode router, so the URL is a PATH: `#/cases/deleted` would render
+	// the Dashboard under this assertion.
+	test('CasesDeleted renders the case and the date its window ends', async ({
 		page,
 	}) => {
+		const title = `${RUN_PREFIX} shown in the lens`
 		const seeded = await seedCase(api, token, {
-			title: `${RUN_PREFIX} shown in the lens`,
+			title,
 			caseType: caseTypeId,
 		})
 		const caseId = objectId(seeded)
@@ -137,14 +138,14 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		await tryDeleteObject(api, token, 'case', caseId)
 
 		await page.goto('/index.php/apps/dossiq/cases/deleted')
-		const row = page.getByTestId(`deleted-case-${caseId}`)
+		const row = page.getByRole('row').filter({ hasText: title })
 
 		await expect(row).toBeVisible({ timeout: 30_000 })
 		await expect(
-			row.getByTestId('window-ends-on'),
+			row,
 			'the row must carry the date the window ends, not an empty cell',
 		).toContainText(/\d{4}-\d{2}-\d{2}/)
-		await expect(row.getByTestId(`restore-${caseId}`)).toBeVisible()
+		await expect(row.getByRole('button', { name: 'Restore' })).toBeVisible()
 	})
 
 	// @e2e openspec/specs/case-management/spec.md#the-guard-still-refuses-what-it-refused-before

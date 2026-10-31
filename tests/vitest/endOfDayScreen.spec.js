@@ -1,143 +1,188 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
-
 /**
- * The end-of-day screen lists what you opened, and time is humaniq's.
+ * "Close out your day" is manifest config over library widgets
+ * (end-of-day-manifest), and keeps what the custom screen held.
  *
- * Two silent failures are held here and neither looks like one on screen.
+ * Three silent failures are held here and none looks like one on screen.
  *
- * 🔴 "CHANGED TODAY" IS NOT "YOU TOUCHED IT". A list built from the object's
- * own updated timestamp shows a colleague's afternoon as the reader's, and it
- * looks exactly right: a plausible number of plausible cases. So the filter is
- * the register's per-reader read state, and the spec below fails if it ever
- * goes back to reading the object.
+ * 🔴 "CHANGED TODAY" IS NOT "YOU TOUCHED IT". The lists come from the server,
+ * which reads the register's per-reader read state (EndOfDayServiceTest holds
+ * that); the page must read that endpoint and nothing that lists objects by
+ * their own update time.
  *
- * 🔴 A DOSSIQ TIME FIELD WOULD LOOK LIKE THE HOURS LEAF. It would accept
- * numbers, show them back, and record hours nowhere humaniq can find them. So
- * there is no time field of dossiq's own, on any instance, and the screen
- * offers none at all when humaniq is absent.
+ * 🔴 A DOSSIQ TIME FIELD WOULD LOOK LIKE THE HOURS LEAF. The only time box is
+ * humaniq's leaf, per row, and nothing at all without humaniq.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * 🔴 A NOTE ON THE WRONG THING IS LOST. Each note goes to the row's own notes
+ * endpoint, which the server names: a case's on the case, a task's on the task.
+ *
+ * @spec openspec/specs/end-of-day-manifest/spec.md
  */
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@nextcloud/l10n', () => ({
-	translate: (app, text) => text,
-	t: (app, text) => text,
-}))
+import { describe, expect, it } from 'vitest'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+const manifest = JSON.parse(readFileSync(resolve(root, 'src/manifest.json'), 'utf8'))
+const page = manifest.pages.find((item) => item.id === 'EndOfDay')
+const widget = (id) => page.config.widgets.find((item) => item.id === id)
+const DAY = '/apps/dossiq/api/personal-queue/end-of-day'
 
-const { HOURS_LEAF_ID, humaniqIsPresent, todayOf, touchedToday } =
-	await import('../../src/utils/personalQueueHelpers.js')
+describe('the end-of-day page', () => {
+	it('is a manifest dashboard on the same route, without a custom view', () => {
+		expect(page.type).toBe('dashboard')
+		expect(page.route).toBe('/end-of-day')
+		expect(page.component).toBeUndefined()
+		expect(readFileSync(resolve(root, 'src/registry.js'), 'utf8')).not.toContain('EndOfDayView')
+	})
 
-const { notesUrlFor } = await import('../../src/utils/endOfDayHelpers.js')
+	it('reads every list from the server\'s day, so Recorded today survives a reload', () => {
+		const lists = page.config.widgets.filter((item) => item.type === 'record-list')
+		expect(lists.map((item) => item.content.endpointSource.url)).toEqual([DAY, DAY, DAY])
+		expect(lists.map((item) => item.content.endpointSource.responsePath)).toEqual(['open', 'recorded', 'tomorrow'])
+		expect(widget('eod-figures').content.endpointSource).toEqual({ url: DAY })
+	})
 
-const screen = readFileSync(
-	resolve(root, 'src/views/queue/EndOfDayView.vue'),
-	'utf8',
-)
+	it('records each note on the row\'s own notes endpoint', () => {
+		const open = widget('eod-open').content
+		expect(open.presentation).toBe('notes')
+		expect(open.noteAction.urlField).toBe('notesUrl')
+		expect(open.noteAction.recordAll.label).toBe('Close out your day')
+	})
 
-afterEach(() => {
-	delete globalThis.OC
-})
+	it('keeps typed notes in the browser as the ready figure inside the notes list', () => {
+		const action = widget('eod-open').content.noteAction
+		expect(action.draftsKey).toBe('dossiq-end-of-day')
+		expect(action.readyLabel).toBe('filled in, not recorded yet')
+	})
 
-describe('what the reader touched today', () => {
-	const items = [
-		{ id: 'assigned-cases:case:a', subjectId: 'a', subjectType: 'case' },
-		{ id: 'assigned-cases:case:b', subjectId: 'b', subjectType: 'case' },
-		{ id: 'tasks:task:c', subjectId: 'c', subjectType: 'task' },
-	]
+	it('places humaniq\'s hours leaf per row and offers no time field of its own', () => {
+		const leaf = widget('eod-open').content.rowLeaf
+		expect(leaf).toMatchObject({ id: 'humaniq-hours', app: 'humaniq', objectIdField: 'subjectId', schemaField: 'subjectType' })
+		const text = JSON.stringify(page.config.widgets).toLowerCase()
+		expect(text).not.toMatch(/"(hours|time)field"|"key":\s*"hours"/)
+	})
 
-	it('keeps the items this reader opened today', () => {
-		const states = {
-			'assigned-cases:case:a': { lastSeenAt: '2026-09-15T09:14:00+02:00' },
-			'assigned-cases:case:b': { lastSeenAt: '2026-09-14T17:02:00+02:00' },
-			'tasks:task:c': { lastSeenAt: '2026-09-15T16:40:00+02:00' },
+	it('draws its icons from the ones the app registers', () => {
+		const icons = readFileSync(resolve(root, 'src/icons.js'), 'utf8')
+		expect(icons).toContain(`\n\t${widget('eod-recorded').content.icon},\n`)
+		expect(icons).toContain(`\n\t${widget('eod-open').content.noteAction.recordAll.icon},\n`)
+	})
+
+	it('keeps the side column the board\'s 300px, the lists filling the rest', () => {
+		// DqDagAfsluiten: Uw dag, Morgen eerst and Hoe dit werkt 300px wide.
+		expect(page.config.gridSideColumn).toEqual({ width: 300 })
+		const tracks = Object.fromEntries(page.config.layout.map((cell) => [cell.widgetId, cell.track]))
+		expect(tracks).toEqual({
+			'eod-unavailable': undefined,
+			'eod-open': 'main',
+			'eod-recorded': 'main',
+			'eod-ready': 'main',
+			'eod-figures': 'side',
+			'eod-tomorrow': 'side',
+			'eod-how': 'side',
+		})
+	})
+
+	it('packs its fitted cards upward, so a short list leaves no band under it', () => {
+		// DqDagAfsluiten: Vandaag vastgelegd starts under Nog open van vandaag,
+		// and Morgen eerst under Uw dag, whatever their length. Every card
+		// sizes to its content; a floating grid would keep each on its row.
+		expect(page.config.gridFloat).toBe(false)
+		for (const cell of page.config.layout) {
+			expect(cell.sizeToContent, cell.widgetId).toBe(true)
 		}
-
-		expect(touchedToday(items, states, '2026-09-15').map((i) => i.id)).toEqual([
-			'assigned-cases:case:a',
-			'tasks:task:c',
-		])
 	})
 
-	it('lists nothing the reader never opened', () => {
-		// An item with no read state is NOT listed. The alternative reads as
-		// "you worked on this today" about something nobody opened.
-		expect(touchedToday(items, {}, '2026-09-15')).toEqual([])
+	it('opens a case and a task on their own pages', () => {
+		for (const id of ['eod-open', 'eod-recorded', 'eod-tomorrow']) {
+			expect(widget(id).content.rowRouteField, id).toBe('routeName')
+			expect(widget(id).content.rowIdField, id).toBe('routeId')
+		}
 	})
 
-	it('survives a read state that answered nothing', () => {
-		expect(touchedToday(items, null, '2026-09-15')).toEqual([])
-		expect(touchedToday(null, {}, '2026-09-15')).toEqual([])
+	it('says why the open list is empty, and hides First thing tomorrow when nothing is due', () => {
+		expect(widget('eod-open').content.emptyTexts[0].when).toEqual({ endpoint: DAY, field: 'opened', op: 'eq', value: 0 })
+		expect(widget('eod-tomorrow').visibleWhen).toEqual({ endpoint: DAY, field: 'tomorrow', op: 'notEmpty' })
+		// DqDagAfsluiten: the items 10px under the title and 10px apart, unruled.
+		expect(widget('eod-tomorrow').content.density).toBe('stacked')
 	})
 
-	it('reads today in the format the read state answers in', () => {
-		expect(todayOf(new Date(2026, 8, 5))).toBe('2026-09-05')
+	it('heads Your day and How this works as side headings, as board DqDagAfsluiten (nextcloud-vue titleTone)', () => {
+		expect(widget('eod-figures').titleTone).toBe('side')
+		expect(widget('eod-how').titleTone).toBe('side')
+		// "Morgen eerst" is the same side heading on the board (15px, 600).
+		expect(widget('eod-tomorrow').titleTone).toBe('side')
+		// "Naar Mijn werk" ends the card under the items, not in its header
+		// (nextcloud-vue record-list-footer-link).
+		expect(widget('eod-tomorrow').content.footerLink).toEqual({ label: 'To My work', route: 'MyWorkHome' })
+		expect(widget('eod-tomorrow').content.headerLink).toBeUndefined()
+		// "3 dagen te laat" under the item, as DqDagAfsluiten draws it
+		// (nextcloud-vue record-list-due-below).
+		expect(widget('eod-tomorrow').content.duePlacement).toBe('below')
 	})
 
-	it('asks the register for the read state rather than keeping one', () => {
-		expect(screen).toContain('fetchReadState')
-		expect(screen).toContain('touchedToday')
-		expect(screen).not.toContain('lastModified')
-	})
-})
-
-describe('time goes to humaniq, or nowhere', () => {
-	it('knows humaniq by its web root', () => {
-		expect(humaniqIsPresent()).toBe(false)
-
-		globalThis.OC = { appswebroots: { humaniq: '/custom_apps/humaniq' } }
-		expect(humaniqIsPresent()).toBe(true)
-	})
-
-	it('places the leaf humaniq owns, by its id', () => {
-		expect(HOURS_LEAF_ID).toBe('humaniq-hours')
-		expect(screen).toContain('leafTab(HOURS_LEAF_ID)')
-	})
-
-	it('offers no time field of its own', () => {
-		// Not a search for the word "hours": the screen legitimately names
-		// humaniq's leaf. What must not exist is a field dossiq would store.
-		expect(screen).not.toMatch(/v-model="[^"]*hours/i)
-		expect(screen).not.toMatch(/saveHours|recordHours|postHours/)
-	})
-
-	it('shows the time box only when the leaf is really there', () => {
-		expect(screen).toContain('hoursLeafAvailable')
-		expect(screen).toContain(
-			'this.humaniqPresent && this.hoursLeaf !== undefined',
-		)
-	})
-
-	it('says so when humaniq is present and the leaf is not', () => {
-		// A present app whose leaf never registered is the dark-surface case:
-		// without this line the reader sees an empty space and no reason.
-		expect(screen).toContain(
-			'The hours leaf is not available, so time cannot be recorded here.',
-		)
+	it('draws Your day as the board\'s grid of figures, Hours from humaniq among them and gone without it', () => {
+		// DqDagAfsluiten "Uw dag": Geopend, Vastgelegd and Uren, two to a row,
+		// in one card. Uren reads humaniq's day summary of the reader's own
+		// entries; dossiq keeps no hours (ADR-011).
+		const SUMMARY = '/apps/humaniq/api/time-entries/summary'
+		const figures = widget('eod-figures')
+		expect(figures.type).toBe('stat-grid')
+		expect(figures.content.columns).toBe(2)
+		const [opened, recorded, hours] = figures.content.cells
+		expect(opened).toMatchObject({ label: 'Opened', valueField: 'figures.0.value', caption: '{figures.0.note}' })
+		expect(recorded).toMatchObject({ label: 'Notes recorded', valueField: 'figures.1.value', caption: '{figures.1.note}' })
+		expect(hours).toMatchObject({ label: 'Hours', valueField: 'hours', caption: 'already in humaniq', endpointSource: { url: SUMMARY } })
+		expect(hours.format).toEqual({ style: 'decimal', decimals: 2 })
+		expect(hours.visibleWhen).toEqual({ appInstalled: 'humaniq', endpoint: SUMMARY, field: 'hours', op: 'gte', value: 0 })
+		expect(widget('eod-hours')).toBeUndefined()
+		expect(page.config.layout.some((cell) => cell.widgetId === 'eod-hours')).toBe(false)
 	})
 })
 
-describe('an update is recorded on the thing it is about', () => {
-	it('writes a case update onto the case', () => {
-		expect(notesUrlFor({ subjectType: 'case', subjectId: 'case-1' })).toContain(
-			'/apps/openregister/api/objects/dossiq/case/case-1/notes',
-		)
+describe('each row names its case (DqDagAfsluiten r36)', () => {
+	it('templates the server\'s meta lines under the titles', () => {
+		expect(widget('eod-open').content.meta).toBe('{meta}')
+		expect(widget('eod-recorded').content.meta).toBe('{recordedMeta}')
 	})
+})
 
-	it('writes a task update onto the task, which is not an object', () => {
-		expect(notesUrlFor({ subjectType: 'task', subjectId: 'task-1' })).toContain(
-			'/apps/openregister/api/flow-tasks/task-1/notes',
-		)
+describe('Ready for today? as its own card (DqDagAfsluiten r34)', () => {
+	it('is a text card after Recorded today, and the list puts its buttons at its foot', () => {
+		const ready = widget('eod-ready')
+		expect(ready.type).toBe('text')
+		expect(ready.title).toBe('Ready for today?')
+		expect(ready.content.text).toBe(widget('eod-open').content.noteAction.recordAll.text)
+		expect(widget('eod-open').content.noteAction.recordAll.placement).toEqual({ widget: 'eod-ready' })
+		const at = (id) => page.config.layout.find((item) => item.widgetId === id)
+		const recorded = at('eod-recorded')
+		expect(at('eod-ready')).toMatchObject({ gridX: 0, gridWidth: 8, track: 'main', sizeToContent: true })
+		expect(at('eod-ready').gridY).toBe(recorded.gridY + recorded.gridHeight)
 	})
+})
 
-	it('writes nothing for a subject with no notes', () => {
-		expect(notesUrlFor({ subjectType: 'mention', subjectId: 'x' })).toBeNull()
-		expect(notesUrlFor({ subjectType: 'case', subjectId: '' })).toBeNull()
+describe('the kind pill (DqDagAfsluiten r36)', () => {
+	it('draws a task purple and a case in the info tone, in both day lists', () => {
+		for (const id of ['eod-open', 'eod-recorded']) {
+			const pill = widget(id).content.pill
+			expect(pill.field).toBe('kindLabel')
+			expect(pill.variant).toBe('info')
+			expect(pill.variantWhen).toEqual([{ when: { field: 'subjectType', op: 'eq', value: 'task' }, variant: 'purple' }])
+		}
+	})
+})
+
+describe('Recorded today as drawn (DqDagAfsluiten r36)', () => {
+	it('leads each row with a green done mark, the pill, title and meta on one line, the note under it, ruled from the first row', () => {
+		const content = widget('eod-recorded').content
+		expect(content.icon).toBe('Check')
+		expect(content.iconTile).toEqual({ size: 24, tone: 'success' })
+		expect(content.headLine).toBe(true)
+		expect(content.ruleAbove).toBe(true)
+		expect(content.chevron).toBe(false)
+		expect(content.text).toBe('{note}')
 	})
 })

@@ -26,7 +26,7 @@ use Throwable;
  * names in `issuesPermit.changeCaseType`, with the permit and the new plate
  * as its answers. The permit stays as it is until that case is decided.
  *
- * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PermitPlateChange {
 	use SearchesObjects;
@@ -56,7 +56,7 @@ class PermitPlateChange {
 	 * @throws PermitChangeRefused When the request is unusable, the permit is not the resident's
 	 *                             or not in force, or the register or case type is missing.
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function request(string $subjectRef, string $permitId, string $plate): array {
 		$plate = self::normalisePlate(plate: $plate);
@@ -123,7 +123,7 @@ class PermitPlateChange {
 	 *
 	 * @return string The plate.
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public static function normalisePlate(string $plate): string {
 		return strtoupper((string)preg_replace('/[\s-]+/', '', $plate));

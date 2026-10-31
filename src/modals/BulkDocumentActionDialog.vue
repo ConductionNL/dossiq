@@ -43,6 +43,27 @@
 				:clearable="false"
 				:disabled="busy" />
 
+			<NcSelect
+				v-if="mode === 'copy-to-case'"
+				v-model="targetCase"
+				data-testid="bulk-document-target-case"
+				:inputLabel="t('dossiq', 'Case to copy to')"
+				:placeholder="t('dossiq', 'Search by case number or title')"
+				:options="caseOptions"
+				:filterable="false"
+				label="label"
+				:clearable="false"
+				:disabled="busy"
+				@search="searchCases" />
+			<p v-if="mode === 'merge-pdf'" class="bulk-document-dialog__intro">
+				{{
+					t(
+						'dossiq',
+						'The selected documents are merged into one PDF, in this order, and added to the case.',
+					)
+				}}
+			</p>
+
 			<p v-if="mode === 'zip'" class="bulk-document-dialog__intro">
 				{{
 					t(
@@ -77,7 +98,7 @@
 				v-if="results.length === 0"
 				variant="primary"
 				data-testid="bulk-document-confirm"
-				:disabled="busy || (mode === 'confidentiality' && !level)"
+				:disabled="busy || (mode === 'confidentiality' && !level) || (mode === 'copy-to-case' && !targetCase)"
 				@click="onConfirm">
 				{{ confirmLabel }}
 			</NcButton>
@@ -118,24 +139,25 @@ export default {
 			type: String,
 			default: 'mark-final',
 			validator: (value) =>
-				['mark-final', 'confidentiality', 'zip'].includes(value),
+				['mark-final', 'confidentiality', 'zip', 'copy-to-case', 'merge-pdf'].includes(value),
 		},
 
 		/**
 		 * The clicked node's Nextcloud file id, merged onto an `open-modal`
 		 * row action's props by CnFilesBrowser.
-		 *
-		 * The `case-files` leaf is the surface this dialog has now, and it
-		 * names ONE file rather than a selection: CnFilesBrowser carries no
-		 * selection bar, because the Files app's list, its selection bar and
-		 * its inline rename are bound to the Files router and cannot be
-		 * mounted off the Files page. A `bulkActions` prop declared on that
-		 * widget would be read by nothing, which is the same darkness that
-		 * left this dialog with no caller at all from 2026-09-13.
 		 */
 		fileId: {
 			type: [String, Number],
 			default: '',
+		},
+
+		/**
+		 * The Nextcloud file ids of the files ticked in the Files tab, handed
+		 * in by CnFilesBrowser's bulk bar.
+		 */
+		fileIds: {
+			type: Array,
+			default: () => [],
 		},
 
 		/** The clicked node's name, for the dialog's own sentence. */
@@ -156,6 +178,10 @@ export default {
 	data() {
 		return {
 			level: '',
+			/** The case `copy-to-case` copies to: `{ id, label }`. */
+			targetCase: null,
+			/** The cases the search found, this case left out. */
+			caseOptions: [],
 			busy: false,
 			error: '',
 			results: [],
@@ -200,6 +226,9 @@ export default {
 			if (this.mode === 'confidentiality')
 				return this.t('dossiq', 'Change confidentiality')
 			if (this.mode === 'zip') return this.t('dossiq', 'Download ZIP')
+			if (this.mode === 'copy-to-case')
+				return this.t('dossiq', 'Copy to another case')
+			if (this.mode === 'merge-pdf') return this.t('dossiq', 'Merge into PDF')
 			return this.t('dossiq', 'Mark as final')
 		},
 
@@ -211,6 +240,8 @@ export default {
 		 */
 		confirmLabel() {
 			if (this.mode === 'zip') return this.t('dossiq', 'Download')
+			if (this.mode === 'copy-to-case') return this.t('dossiq', 'Copy')
+			if (this.mode === 'merge-pdf') return this.t('dossiq', 'Merge')
 			return this.t('dossiq', 'Apply')
 		},
 
@@ -243,7 +274,68 @@ export default {
 					'/apps/dossiq/api/informatieobjecten/bulk/metadata',
 					{ metadata: { vertrouwelijkheidaanduiding: this.level } },
 				)
+			if (this.mode === 'copy-to-case')
+				return this.runBulk(
+					'/apps/dossiq/api/informatieobjecten/bulk/copy',
+					{ targetCaseId: String(this.targetCase?.id ?? '') },
+				)
+			if (this.mode === 'merge-pdf') return this.mergePdf()
 			return this.downloadZip()
+		},
+
+		/**
+		 * Find cases to copy to by number or title; this case is left out.
+		 *
+		 * @param {string} query What the reader typed.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/documents-copy-to-case/spec.md#requirement-documents-are-copied-to-a-case-the-caller-may-add-to
+		 */
+		async searchCases(query) {
+			const term = String(query ?? '').trim()
+			if (term === '') {
+				this.caseOptions = []
+				return
+			}
+			try {
+				const url = generateUrl('/apps/openregister/api/objects/dossiq/case')
+				const { data } = await axios.get(`${url}?_search=${encodeURIComponent(term)}&_limit=20`)
+				this.caseOptions = (data?.results || [])
+					.filter((row) => row && row.id && String(row.id) !== this.resolvedCaseId)
+					.map((row) => ({
+						id: String(row.id),
+						label: [row.identifier, row.title].filter(Boolean).join(' · '),
+					}))
+			} catch {
+				this.caseOptions = []
+			}
+		},
+
+		/**
+		 * Have the case merge the ticked files, in order, into one PDF.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/documents-merge-pdf/spec.md#requirement-a-cases-documents-are-merged-into-one-pdf-by-filinq
+		 */
+		async mergePdf() {
+			if (this.resolvedCaseId === '') return
+			this.busy = true
+			this.error = ''
+			try {
+				const url = generateUrl(
+					`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier/merge`,
+				)
+				await axios.post(url, { fileIds: [...this.fileIds] })
+				showSuccess(this.t('dossiq', 'The PDF was added to the case'))
+				emit('cn:page:refresh')
+				this.$emit('close')
+			} catch (failure) {
+				this.error =
+					failure?.response?.data?.message
+					|| this.t('dossiq', 'The documents could not be merged')
+				showError(this.error)
+			} finally {
+				this.busy = false
+			}
 		},
 
 		/**
@@ -301,7 +393,8 @@ export default {
 		},
 
 		/**
-		 * The informatieobject id behind a clicked file node.
+		 * The informatieobject ids behind the clicked file node, or behind the
+		 * files ticked in the bulk bar.
 		 *
 		 * The case's dossier listing is the one endpoint that carries every
 		 * record together with its `fileId`, which is how DocumentMetadataDialog
@@ -310,16 +403,14 @@ export default {
 		 * act reports that it changed nothing rather than posting an empty id
 		 * an endpoint would answer as a miss.
 		 *
-		 * @return {Promise<Array<string>>} The one document id, or an empty list.
+		 * @return {Promise<Array<string>>} The document ids, or an empty list.
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async resolveFromFileId() {
-			const fileId = Number(this.fileId)
-			if (
-				!Number.isFinite(fileId)
-				|| fileId <= 0
-				|| this.resolvedCaseId === ''
-			) {
+			const wanted = [...this.fileIds, this.fileId]
+				.map((value) => Number(value))
+				.filter((value) => Number.isFinite(value) && value > 0)
+			if (wanted.length === 0 || this.resolvedCaseId === '') {
 				return []
 			}
 			const url = generateUrl(
@@ -329,9 +420,10 @@ export default {
 			const rows = Array.isArray(data?.informatieobjecten)
 				? data.informatieobjecten
 				: []
-			const record = rows.find((row) => Number(row.fileId) === fileId) || null
-			const id = record === null ? '' : String(record.id || '')
-			return id === '' ? [] : [id]
+			return rows
+				.filter((row) => wanted.includes(Number(row.fileId)))
+				.map((row) => String(row.id || ''))
+				.filter((id) => id !== '')
 		},
 
 		/**

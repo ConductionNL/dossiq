@@ -1,12 +1,13 @@
 {
   "id": "bezwaar-beroep",
   "title": "Bezwaar en beroep",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "requires": [],
   "parts": [
     "case-type",
-    "flows"
+    "flows",
+    "examples"
   ],
   "install": "on-request",
-  "description": "Bezwaar (Awb hoofdstuk 6 en 7) and beroep case types with their statuses, roles and flows. Installed on request: the setup action seed, or occ dossiq:package:install bezwaar-beroep. Converted by scripts/packages/seed-to-package.py from the seed that SeedDataService used to write."
+  "description": "Bezwaar (Awb hoofdstuk 6 en 7) and beroep case types with their statuses, roles and flows. Installed on request: the setup action seed, or occ dossiq:package:install bezwaar-beroep. Converted by scripts/packages/seed-to-package.py from the seed that SeedDataService used to write. Ships an example case in flight (`examples/`), written with the package, its dates relative to the install day."
 }

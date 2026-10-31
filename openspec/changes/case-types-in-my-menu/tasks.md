@@ -39,11 +39,15 @@ Kind: code. Board canon: DqZijbalk and DqPersoonlijkeInstellingen
 
 ## 4. Follow-ups (not in this change)
 
-- [ ] 4.1 nextcloud-vue: CnAppNav draws a caption's `href` as a pencil link in
+- [x] 4.1 nextcloud-vue: CnAppNav draws a caption's `href` as a pencil link in
   `NcAppNavigationCaption`'s actions slot. Until then the caption's `href` is
   inert and the section is reached from the user menu.
   (10 Oct, L3: still open on nextcloud-vue 2.76.0; written to
   for-ruben/dossiq-sibling-asks.md. Another repo, not built here.)
+  Built 2026-10-10 in nextcloud-vue#1419 (`CnAppNav` draws a caption's
+  `href` as a pencil `NcActionLink`, `cn-nav-caption-edit-<id>`), released
+  before 2.100.0; dossiq requires ^2.126.0, so the "My case types" caption's
+  `href` from `ManifestController` is the pencil link now.
 - [ ] 4.2 The open-case count beside each case type on the board
   (DqPersoonlijkeInstellingen draws "Zaaktype Woo-verzoek · 19 open zaken").
   (not run: a case holds the uuid of the case type VERSION it was opened on, and

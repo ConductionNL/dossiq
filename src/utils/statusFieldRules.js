@@ -194,63 +194,6 @@ export function conditionKindLabels() {
 }
 
 /**
- * What OpenRegister decided about the fields of one case, for this reader.
- *
- * Read straight off the object. `@self.fieldRules` is computed per user and per
- * state on the render path, so what arrives is the answer and not the
- * declaration. Recomputing it here would be a second evaluator, which is
- * exactly what this change exists to avoid: two evaluators disagree, and the
- * one on screen is the one that is wrong.
- *
- * @param {object} caseObject The case as OpenRegister answered it.
- * @return {{state: string, hidden: Array<string>, readOnly: Array<string>, required: Array<string>}} The answer.
- *
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function fieldRulesOf(caseObject) {
-	const published = caseObject?.['@self']?.fieldRules
-
-	return {
-		state: String(published?.state ?? ''),
-		hidden: asNames(published?.hidden),
-		readOnly: asNames(published?.readOnly),
-		required: asNames(published?.required),
-	}
-}
-
-/**
- * A published list as a list of property names.
- *
- * @param {unknown} names The published list.
- * @return {Array<string>} The names.
- *
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-function asNames(names) {
-	if (Array.isArray(names) === false) {
-		return []
-	}
-
-	return names.map((name) => String(name)).filter((name) => name !== '')
-}
-
-/**
- * Whether the published answer says anything at all.
- *
- * @param {object} rules The answer, as `fieldRulesOf` shapes it.
- * @return {boolean} True when at least one list has a name in it.
- *
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function hasFieldRules(rules) {
-	return (
-		(rules?.required?.length ?? 0) > 0
-		|| (rules?.readOnly?.length ?? 0) > 0
-		|| (rules?.hidden?.length ?? 0) > 0
-	)
-}
-
-/**
  * The refusal codes OpenRegister answers when a state's field rules stop a save.
  *
  * Read from the answer rather than kept as a switch with a sentence per code:

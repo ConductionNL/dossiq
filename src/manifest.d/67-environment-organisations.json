@@ -1,0 +1,716 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"board": "DqTenant",
+		"why": "The organisations on this environment. A tenant is an OpenRegister organisation (tenancy-onto-openregister-organisation), so the list and the page read OpenRegister's organisations through the library's organisations entity source and keep no tenant store of their own; the tabs list the dossiq satellites that point at the organisation by tenantRef. Not the retired Tenants pages: those administered dossiq's own tenant store."
+	},
+	"menu": [
+		{
+			"id": "EnvironmentOrganisationsMenu",
+			"label": "Organisations on this environment",
+			"icon": "DomainSwitch",
+			"route": "EnvironmentOrganisations",
+			"section": "settings",
+			"order": 98,
+			"permission": "admin"
+		}
+	],
+	"pages": [
+		{
+			"id": "EnvironmentOrganisations",
+			"route": "/settings/organisations",
+			"type": "index",
+			"title": "Organisations on this environment",
+			"permission": "admin",
+			"config": {
+				"entitySource": "organisations",
+				"rowRoute": "EnvironmentOrganisationDetail",
+				"showTitle": true,
+				"breadcrumb": {
+					"label": "Settings",
+					"href": "/index.php/settings/admin/dossiq"
+				},
+				"headerMeta": "{total} organisations",
+				"columns": [
+					{
+						"key": "name",
+						"label": "Organisation",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{slug}"
+					},
+					{
+						"key": "status",
+						"label": "Status"
+					},
+					{
+						"key": "type",
+						"label": "Type"
+					},
+					{
+						"key": "created",
+						"label": "Since"
+					}
+				],
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "EnvironmentOrganisationDetail",
+			"route": "/settings/organisations/:id",
+			"type": "detail",
+			"title": "Organisation",
+			"permission": "admin",
+			"config": {
+				"entitySource": "organisations",
+				"titleField": "name",
+				"showTypeEyebrow": false,
+				"breadcrumb": [
+					{
+						"label": "Settings",
+						"href": "/index.php/settings/admin/dossiq"
+					},
+					{
+						"label": "Organisations",
+						"route": "EnvironmentOrganisations"
+					}
+				],
+				"statusPill": {
+					"field": "status",
+					"labels": {
+						"active": "Active",
+						"suspended": "Suspended",
+						"provisioning": "Setting up",
+						"deprovisioned": "Ended"
+					},
+					"colorMap": {
+						"active": "success",
+						"suspended": "warning",
+						"provisioning": "info",
+						"deprovisioned": "default"
+					}
+				},
+				"headerFields": [
+					{
+						"key": "slug",
+						"format": "pill"
+					}
+				],
+				"headerMeta": "one of {count:organisations} organisations on this environment",
+				"headerMetaCounts": {
+					"organisations": {
+						"entitySource": "organisations"
+					}
+				},
+				"actionsMenu": {
+					"showRefresh": false,
+					"showHelpLinks": false,
+					"label": "More"
+				},
+				"_headerActionsNote": "Board DqTenant: Suspend in the header, End under More, as the Status card says. A tenant is an OpenRegister organisation, so these are OpenRegister's own lifecycle calls (PUT /api/organisations/{uuid}/suspend | activate | deprovision, admin-only, the service refusing a transition the status does not allow). Resume replaces Suspend while the organisation is suspended. Edit is an open-form over OpenRegister's organisation endpoint (GET for the values, PATCH for the save), which nextcloud-vue's endpoint form mode allows. Invoice last month sits under More beside End: it runs dossiq's billing route for the month before this one, which hands one invoice to the finance app per organisation and month and answers 409 when there was nothing left to invoice.",
+				"headerActions": [
+					{
+						"id": "organisation-suspend",
+						"type": "api-call",
+						"label": "Suspend",
+						"icon": "PauseCircleOutline",
+						"url": "/apps/openregister/api/organisations/@objectId/suspend",
+						"method": "PUT",
+						"confirm": true,
+						"successMessage": "The organisation is suspended. Nobody in it can sign in; its data stays.",
+						"errorMessage": "The organisation was not suspended.",
+						"visibleWhen": {
+							"field": "status",
+							"op": "eq",
+							"value": "active"
+						}
+					},
+					{
+						"id": "organisation-resume",
+						"type": "api-call",
+						"label": "Resume",
+						"icon": "Play",
+						"url": "/apps/openregister/api/organisations/@objectId/activate",
+						"method": "PUT",
+						"successMessage": "The organisation is active again.",
+						"errorMessage": "The organisation was not resumed.",
+						"visibleWhen": {
+							"field": "status",
+							"op": "eq",
+							"value": "suspended"
+						}
+					},
+					{
+						"id": "organisation-edit",
+						"type": "open-form",
+						"label": "Edit",
+						"icon": "Pencil",
+						"formTitle": "Edit the organisation",
+						"endpoint": {
+							"url": "/apps/openregister/api/organisations/@objectId",
+							"method": "PATCH",
+							"responsePath": "organisation"
+						},
+						"formProperties": {
+							"name": {
+								"type": "string",
+								"title": "Name"
+							},
+							"description": {
+								"type": "string",
+								"title": "Description",
+								"format": "textarea"
+							}
+						},
+						"successMessage": "The organisation is saved.",
+						"errorMessage": "The organisation was not saved."
+					},
+					{
+						"id": "tenant-billing-run",
+						"type": "api-call",
+						"label": "Invoice last month",
+						"icon": "Cash",
+						"url": "/apps/dossiq/api/saas/tenants/@objectId/billing/previous/run",
+						"method": "POST",
+						"confirm": true,
+						"successMessage": "Last month's invoice is handed to the finance app.",
+						"errorMessage": "No invoice was made for last month. Every billing event of that month may already be invoiced."
+					},
+					{
+						"id": "organisation-end",
+						"type": "api-call",
+						"label": "End the organisation",
+						"icon": "StopCircleOutline",
+						"url": "/apps/openregister/api/organisations/@objectId/deprovision",
+						"method": "PUT",
+						"confirm": true,
+						"successMessage": "The organisation is ended.",
+						"errorMessage": "The organisation was not ended."
+					}
+				],
+				"quickActions": [
+					"organisation-suspend",
+					"organisation-resume",
+					"organisation-edit"
+				],
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"sideColumn": [
+					{
+						"id": "organisation-side-status",
+						"type": "facts",
+						"title": "Status",
+						"content": {
+							"fields": [
+								{
+									"as": "pill",
+									"path": "status",
+									"map": {
+										"active": "Active",
+										"suspended": "Suspended",
+										"provisioning": "Setting up",
+										"deprovisioned": "Ended"
+									},
+									"variantMap": {
+										"active": "success",
+										"suspended": "warning",
+										"provisioning": "info",
+										"deprovisioned": "default"
+									}
+								},
+								{
+									"label": "Since",
+									"path": "created",
+									"format": "date"
+								},
+								{
+									"label": "Reference",
+									"path": "slug"
+								},
+								{
+									"as": "line",
+									"text": "Suspending blocks signing in; the data stays. Ending is under More."
+								}
+							]
+						}
+					},
+					{
+						"id": "organisation-side-admin",
+						"type": "facts",
+						"title": "Administrator",
+						"_note": "Board DqTenant Beheerder: the organisation's admin user (the tenantUser with role tenant_admin, earliest joined) as a person chip, its initials in a 28px teal tile beside the display name, and the organisation's contact address under it.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "tenantUser",
+								"filter": {
+									"tenantRef": "@objectId",
+									"role": "tenant_admin"
+								},
+								"sort": {
+									"field": "joinedAt",
+									"dir": "asc"
+								}
+							},
+							"fields": [
+								{
+									"as": "lead",
+									"key": "administrator",
+									"title": {
+										"path": "userRef",
+										"format": "user"
+									},
+									"initialsFrom": "title",
+									"size": 28,
+									"tone": "teal"
+								},
+								{
+									"as": "line",
+									"key": "email",
+									"path": "contactEmail",
+									"from": "object"
+								}
+							],
+							"emptyText": "No administrator named yet"
+						}
+					},
+					{
+						"id": "organisation-side-history",
+						"type": "record-list",
+						"title": "Record history",
+						"_note": "Board DqTenant Historie side card: the two newest events of the organisation, what, who and when, from the same audit trail the Historie tab lists in full. Its creation is one of those events, as the board draws it; the Status card keeps the start date (Since). Rows ruled above the first and 10px above and below, as drawn.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/openregister/api/audit-trails?object_uuid=@objectId&action=organisation.status_changed,organisation.updated,create&sort=created&order=DESC",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": "{action}",
+							"meta": "{userName} · {created|date}",
+							"valueLabels": {
+								"action": {
+									"organisation.status_changed": "Status changed",
+									"organisation.updated": "Details edited",
+									"create": "Organisation created"
+								}
+							},
+							"limit": 2,
+							"ruleAbove": true,
+							"density": "compact",
+							"emptyText": "Nothing has happened to this organisation yet",
+							"footnote": {
+								"text": "Reference {value}",
+								"source": {
+									"url": "/apps/openregister/api/objects/dossiq/tenantSubscription",
+									"params": {
+										"tenantRef": "@objectId",
+										"_limit": 1
+									},
+									"responsePath": "results.0.reference"
+								}
+							}
+						},
+						"_footnoteNote": "Board DqTenant Historie ends with the contract reference (Kenmerk TEN-0014) of the organisation's subscription record, read on its own; without a subscription the line is left out."
+					}
+				],
+				"widgets": [
+					{
+						"id": "organisation-panels",
+						"type": "tabs",
+						"title": "Organisation parts",
+						"content": {
+							"ariaLabel": "Organisation parts",
+							"tabs": [
+								{
+									"label": "Overview",
+									"widgetIds": [
+										"organisation-onboarding",
+										"organisation-quota",
+										"organisation-mandates",
+										"organisation-billing"
+									]
+								},
+								{
+									"label": "Users",
+									"widgetId": "organisation-users",
+									"countFrom": "widget"
+								},
+								{
+									"label": "Mandates",
+									"widgetId": "organisation-mandates-list",
+									"countFrom": "widget"
+								},
+								{
+									"label": "Billing",
+									"widgetId": "organisation-billing-list",
+									"countFrom": "widget"
+								},
+								{
+									"label": "Record history",
+									"widgetId": "organisation-history"
+								}
+							]
+						}
+					},
+					{
+						"id": "organisation-history",
+						"type": "record-list",
+						"title": "Record history",
+						"_note": "Board DqTenant Historie: what happened to this organisation, newest first. OpenRegister writes an organisation's creation, status changes and edits to the audit trail keyed by its uuid (OrganisationLifecycleAuditor); the admin audit list filters on object_uuid and action. Admin-only, as this page is.",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/openregister/api/audit-trails?object_uuid=@objectId&action=organisation.status_changed,organisation.updated,create&sort=created&order=DESC",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"title": "{action}",
+							"meta": "{userName} · {created|date}",
+							"valueLabels": {
+								"action": {
+									"organisation.status_changed": "Status changed",
+									"organisation.updated": "Details edited",
+									"create": "Organisation created"
+								}
+							},
+							"limit": 25,
+							"emptyText": "Nothing has happened to this organisation yet"
+						}
+					},
+					{
+						"id": "organisation-onboarding",
+						"type": "record-list",
+						"title": "Set up",
+						"icon": "ClipboardCheckOutline",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/saas/tenants/@objectId/onboarding/progress",
+								"responsePath": "progress.steps"
+							},
+							"limit": 7,
+							"presentation": "checklist",
+							"title": "{step}",
+							"valueLabels": {
+								"step": {
+									"contract": "Contract signed",
+									"mandate_import": "Mandates set",
+									"sso_setup": "Sign-in set up",
+									"branding": "House style chosen",
+									"zaaktype_selection": "Case types loaded",
+									"first_user": "Administrator invited",
+									"go_live": "Gone live"
+								}
+							},
+							"emptyText": "Onboarding has not started for this organisation",
+							"done": {
+								"field": "status",
+								"op": "eq",
+								"value": "completed"
+							},
+							"progress": true,
+							"columns": 3,
+							"headerNote": "{count:status=completed} of {total} steps done"
+						}
+					},
+					{
+						"id": "organisation-quota",
+						"type": "facts",
+						"title": "Quota",
+						"_headerActionsNote": "Board DqTenant: Pakket wijzigen in the card head. The quota of a tenant is OpenRegister's organisation quota, edited on OpenRegister's organisation page (Edit organisation, Quota), so the button opens that page.",
+						"headerActions": [
+							{
+								"label": "Change package",
+								"action": {
+									"type": "navigate",
+									"target": "/index.php/apps/openregister/organisation"
+								}
+							}
+						],
+						"content": {
+							"fields": [
+								{
+									"as": "meter",
+									"key": "cases",
+									"label": "Cases",
+									"path": "usage.objects",
+									"limitPath": "quota.objects"
+								},
+								{
+									"as": "meter",
+									"key": "storage",
+									"label": "Storage",
+									"path": "usage.storage",
+									"limitPath": "quota.storage",
+									"format": "bytes"
+								},
+								{
+									"as": "meter",
+									"key": "users",
+									"label": "Users",
+									"path": "usage.users",
+									"limitPath": "quota.users"
+								},
+								{
+									"as": "meter",
+									"key": "requests",
+									"label": "Requests this hour",
+									"path": "usage.requests",
+									"limitPath": "quota.requests"
+								}
+							],
+							"emptyText": "No usage recorded for this organisation",
+							"footnote": "A different package takes effect within a quarter of an hour."
+						},
+						"_footnoteNote": "Board DqTenant Quota footnote. The card reads the quota fresh; OpenRegister enforces the request quota on the active organisation, which a signed-in session keeps for at most 15 minutes (OrganisationService::CACHE_TIMEOUT 900), so a quarter of an hour is the longest a change waits.",
+						"_note": "Board DqTenant Quota: Zaken, Opslag, Gebruikers, each against its limit. OpenRegister counts the organisation's live objects of the schema its object quota names (Waterland: case) and limits its users (openregister#4800). The requests row stays after them."
+					},
+					{
+						"id": "organisation-mandates",
+						"type": "object-list",
+						"title": "Mandates",
+						"subtitle": "Per organisation; dossiq checks them at every decision",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantMandate",
+							"rowTitle": "text",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"limit": 5,
+							"columns": [
+								{
+									"key": "mandateMatrixRef",
+									"label": "Role"
+								},
+								{
+									"key": "terms.plafond",
+									"label": "Decides up to",
+									"format": {
+										"style": "currency",
+										"currency": "EUR",
+										"decimals": 0
+									},
+									"emptyLabel": "Unlimited"
+								},
+								{
+									"key": "terms.decisionTypes",
+									"label": "Decides objections",
+									"formatter": "containsLabel",
+									"formatterOptions": {
+										"token": "bezwaar",
+										"yes": "Yes",
+										"no": "No"
+									}
+								},
+								{
+									"key": "terms.enforcement",
+									"label": "Enforcement",
+									"widget": "label",
+									"enum": ["none", "warning", "full"],
+									"enumLabels": {
+										"none": "No",
+										"warning": "Warning",
+										"full": "Yes"
+									}
+								}
+							],
+							"emptyText": "No mandates for this organisation yet"
+						}
+					},
+					{
+						"id": "organisation-billing",
+						"type": "object-list",
+						"title": "Billing",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantBillingEvent",
+							"rowTitle": "text",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"sort": {
+								"field": "occurredAt",
+								"dir": "desc"
+							},
+							"limit": 5,
+							"columns": [
+								{
+									"key": "occurredAt",
+									"label": "Date",
+									"formatter": "date"
+								},
+								{
+									"key": "eventType",
+									"label": "Event",
+									"widget": "label",
+									"enum": [
+										"case_created",
+										"case_closed",
+										"user_activated",
+										"storage_increment",
+										"api_burst",
+										"quota_exceeded",
+										"case_refund",
+										"subscription_fee"
+									],
+									"enumLabels": {
+										"case_created": "Case created",
+										"case_closed": "Case closed",
+										"user_activated": "User activated",
+										"storage_increment": "Extra storage",
+										"api_burst": "Burst of API use",
+										"quota_exceeded": "Quota exceeded",
+										"case_refund": "Refund",
+										"subscription_fee": "Monthly package fee"
+									}
+								},
+								{
+									"key": "unitPrice",
+									"label": "Amount",
+									"formatter": "currency"
+								}
+							],
+							"emptyText": "No billing events yet",
+							"footnote": "Events never change afterwards; a correction is a new line."
+						}
+					},
+					{
+						"id": "organisation-users",
+						"type": "object-list",
+						"title": "Users",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantUser",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "userRef",
+									"label": "User"
+								},
+								{
+									"key": "role",
+									"label": "Role"
+								},
+								{
+									"key": "lastActiveAt",
+									"label": "Last active"
+								},
+								{
+									"key": "mfaEnabled",
+									"label": "Two-step sign-in"
+								}
+							],
+							"emptyText": "No users in this organisation yet"
+						}
+					},
+					{
+						"id": "organisation-mandates-list",
+						"type": "object-list",
+						"title": "Mandates",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantMandate",
+							"rowTitle": "text",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "mandateMatrixRef",
+									"label": "Mandate"
+								},
+								{
+									"key": "effectiveFrom",
+									"label": "From"
+								},
+								{
+									"key": "effectiveTo",
+									"label": "Until"
+								},
+								{
+									"key": "signedBy",
+									"label": "Signed by"
+								}
+							],
+							"emptyText": "No mandates for this organisation yet"
+						}
+					},
+					{
+						"id": "organisation-billing-list",
+						"type": "object-list",
+						"title": "Billing",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantBillingEvent",
+							"rowTitle": "text",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"sort": {
+								"field": "occurredAt",
+								"dir": "desc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "occurredAt",
+									"label": "Date",
+									"formatter": "date"
+								},
+								{
+									"key": "eventType",
+									"label": "Event",
+									"widget": "label",
+									"enum": [
+										"case_created",
+										"case_closed",
+										"user_activated",
+										"storage_increment",
+										"api_burst",
+										"quota_exceeded",
+										"case_refund",
+										"subscription_fee"
+									],
+									"enumLabels": {
+										"case_created": "Case created",
+										"case_closed": "Case closed",
+										"user_activated": "User activated",
+										"storage_increment": "Extra storage",
+										"api_burst": "Burst of API use",
+										"quota_exceeded": "Quota exceeded",
+										"case_refund": "Refund",
+										"subscription_fee": "Monthly package fee"
+									}
+								},
+								{
+									"key": "quantity",
+									"label": "Quantity"
+								},
+								{
+									"key": "unitPrice",
+									"label": "Amount",
+									"formatter": "currency"
+								}
+							],
+							"emptyText": "No billing events yet",
+							"footnote": "Events never change afterwards; a correction is a new line."
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "organisation-panels",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 24,
+						"showTitle": false
+					}
+				]
+			}
+		}
+	]
+}

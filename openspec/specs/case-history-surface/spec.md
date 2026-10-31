@@ -271,3 +271,22 @@ and SHALL NOT fail the act.
 - **WHEN** a term is suspended
 - **THEN** the TermijnGebeurtenis SHALL be written as before
 - **AND** the failure SHALL be logged
+
+### Requirement: The History tab draws the board's header and chips
+
+The case History tab SHALL draw its title at 17px and 700 with a 1.2 line height, its subtitle at 14px 4px below it,
+16px above the kind chips. A kind chip SHALL be 36px high, 18px rounded, 14px at 600; the chosen chip SHALL be filled
+with the main text colour and no outline, its count a bubble in a lighter ink with light text.
+
+#### Scenario: DqZaakHistorie
+
+- **GIVEN** a case on its History tab
+- **THEN** "Historie van de zaak" is 17px and "Alles" is a filled chip 18px rounded at 600 with no outline
+
+### Requirement: The history chips are declared timeline kinds
+
+dossiq SHALL declare the timeline kinds `statuswijziging` (Status), `document` (Documenten), `bericht` (Berichten), `taak` (Taken) and `toewijzing` (Toewijzing), each with the one field that says what happened, and none with a follow-up.
+
+#### Scenario: case history
+- **GIVEN** entries of those kinds on a case
+- **THEN** the history shows the chips Status, Documenten, Berichten, Taken and Toewijzing with their counts

@@ -375,29 +375,21 @@ describe('the team on the detail forms', () => {
 	})
 
 	it('the task page still names the team the task sits with', () => {
-		// This used to read the manifest: TaskDetail was `type: "detail"` and
-		// its `task-data` widget named no `include`, so every property the
-		// schema gained appeared on the page and `assignedGroup` came for
-		// free. remove-casetask 2.1 retyped the page to `custom` and there is
-		// no widget config left to read, so the fact list is the component's
-		// and has to be checked there.
-		//
 		// The FIELD moved with the store. `caseTask` had one `assignedGroup`;
 		// the engine has `candidateGroups`, a list, because a task can be
 		// offered to more than one team. What has not moved is the reason it
 		// is on the page: a handler deciding whether to pick a task up needs
-		// to know whose queue it is in.
-		//
-		// Asserted on the source rather than by mounting, matching the
-		// registry assertions in manifestCaseTaskPane.spec.js. The BEHAVIOUR
-		// (two groups render as one comma-separated row, no groups renders no
-		// row at all) is `tests/vitest/taskDetailView.spec.js`.
-		const view = fs.readFileSync(
-			path.resolve(__dirname, '../../src/views/tasks/TaskDetailView.vue'),
-			'utf8',
+		// to know whose queue it is in. The page is a manifest detail page
+		// again (task-page-on-the-manifest), so the Task card is read there.
+		const manifest = JSON.parse(
+			fs.readFileSync(path.resolve(__dirname, '../../src/manifest.json'), 'utf8'),
 		)
+		const taskPage = manifest.pages.find((entry) => entry.id === 'TaskDetail')
+		const card = taskPage.config.sideColumn.find((entry) => entry.id === 'side-task')
 
-		expect(view).toContain('candidateGroups')
-		expect(view).toContain("key: 'team'")
+		expect(card.content.fields.find((field) => field.key === 'team')).toMatchObject({
+			path: 'candidateGroups',
+			format: 'list',
+		})
 	})
 })

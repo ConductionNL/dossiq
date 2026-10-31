@@ -53,6 +53,20 @@ use Psr\Log\LoggerInterface;
  */
 class AiController extends Controller {
 	/**
+	 * What a person can do with a suggestion.
+	 *
+	 * @var string[]
+	 */
+	private const USER_ACTIONS = ['accepted', 'rejected', 'modified', 'ignored'];
+
+	/**
+	 * Why a shown suggestion went unused.
+	 *
+	 * @var string[]
+	 */
+	private const UNUSED_BECAUSE = ['closed', 'expired', 'superseded'];
+
+	/**
 	 * Constructor for AiController.
 	 *
 	 * @param string $appName The application name
@@ -271,13 +285,18 @@ class AiController extends Controller {
 	}//end suggestNext()
 
 	/**
-	 * Record a user action on an AI suggestion.
+	 * Record what a person did with an AI suggestion on a case.
+	 *
+	 * `userAction` is accepted, rejected, modified or ignored. An ignored
+	 * suggestion was shown and left: `unusedBecause` says whether its surface
+	 * was closed, it expired, or a newer suggestion replaced it. The caller
+	 * must be able to read the case; the check runs before anything is written.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/specs/ai-oversight-dispatch/spec.md
 	 */
 	public function recordAction(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -285,33 +304,93 @@ class AiController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$caseId = $this->request->getParam('caseId', '');
-		$type = $this->request->getParam('type', '');
-		$userAction = $this->request->getParam('userAction', '');
-		$suggestion = $this->request->getParam('suggestion', []);
-		$actual = $this->request->getParam('actualValue');
-		$reason = $this->request->getParam('reason');
+		$caseId = (string)$this->request->getParam('caseId', '');
+		$type = (string)$this->request->getParam('type', '');
+		$userAction = (string)$this->request->getParam('userAction', '');
+		$unusedBecause = (string)$this->request->getParam('unusedBecause', '');
 
-		if (empty($caseId) === true || empty($type) === true || empty($userAction) === true) {
+		if ($caseId === '' || $type === '' || $userAction === '') {
 			return new JSONResponse(
 				['error' => 'caseId, type, and userAction are required'],
 				Http::STATUS_BAD_REQUEST
 			);
 		}
 
-		$userId = $user->getUID();
+		$refusal = $this->refuseAction(userAction: $userAction, unusedBecause: $unusedBecause);
+		if ($refusal !== null) {
+			return new JSONResponse(['error' => $refusal], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		$reason = $this->request->getParam('reason');
+		if (is_string($reason) === false) {
+			$reason = null;
+		}
+
 		$result = $this->auditService->recordUserAction(
-			$caseId,
-			$type,
-			$userAction,
-			$suggestion,
-			$actual,
-			$reason,
-			$userId,
+			caseId: $caseId,
+			type: $type,
+			userAction: $userAction,
+			suggestion: $this->asPayload(value: $this->request->getParam('suggestion', [])) ?? [],
+			actualValue: $this->asPayload(value: $this->request->getParam('actualValue')),
+			reason: $reason,
+			userId: $user->getUID(),
+			context: [
+				'unusedBecause' => $unusedBecause,
+				'prompt' => (string)$this->request->getParam('prompt', ''),
+				'model' => (string)$this->request->getParam('model', ''),
+				'suggestionId' => (string)$this->request->getParam('suggestionId', ''),
+				'documentId' => (string)$this->request->getParam('documentId', ''),
+			],
 		);
 
 		return new JSONResponse($result);
 	}//end recordAction()
+
+	/**
+	 * Why a reported action is refused, or null when it is accepted.
+	 *
+	 * @param string $userAction    The reported action.
+	 * @param string $unusedBecause Why an ignored suggestion went unused.
+	 *
+	 * @return string|null The refusal, or null.
+	 */
+	private function refuseAction(string $userAction, string $unusedBecause): ?string {
+		if (in_array($userAction, self::USER_ACTIONS, true) === false) {
+			return 'userAction must be one of: ' . implode(', ', self::USER_ACTIONS);
+		}
+
+		if ($userAction === 'ignored' && in_array($unusedBecause, self::UNUSED_BECAUSE, true) === false) {
+			return 'unusedBecause must be one of: ' . implode(', ', self::UNUSED_BECAUSE);
+		}
+
+		return null;
+	}//end refuseAction()
+
+	/**
+	 * A suggestion or applied value as the audit entry stores it.
+	 *
+	 * The schema holds an object; a surface that shows text sends a string,
+	 * which is kept under `text`.
+	 *
+	 * @param mixed $value The request value.
+	 *
+	 * @return array|null The value as an array, or null when absent.
+	 */
+	private function asPayload(mixed $value): ?array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		if (is_string($value) === true && $value !== '') {
+			return ['text' => $value];
+		}
+
+		return null;
+	}//end asPayload()
 
 	/**
 	 * Get AI audit trail entries.

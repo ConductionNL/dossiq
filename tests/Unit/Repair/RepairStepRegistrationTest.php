@@ -65,6 +65,11 @@ class RepairStepRegistrationTest extends TestCase {
 	 */
 	private const INSTALL_EXEMPT = [
 		'RetireUnscheduledBackgroundJobs' => 'removes jobs an earlier version scheduled; a fresh install never schedules them',
+		'PinCaseTypesAsViews' => 'carries pins from the retired My case types menu over; a fresh install has none',
+		'CarryRenamedSettingKeys' => 'carries settings stored under their earlier keys; a fresh install has none',
+		'RewriteRenamedLayoutIds' => 'rewrites renamed ids in stored buildiq arrangements; a fresh install has none',
+		'MigratePayoutRowsToFinance' => 'hands the payout rows dossiq kept to the finance app; a fresh install has none',
+		'RecolourShippedStatusTypes' => 'recolours status rows an earlier version seeded; a fresh install seeds them in their board colour',
 		'RenameDutchDeadlineColumns' => 'renames columns over existing rows',
 		'RenameDutchDirectionValues' => 'rewrites values in existing rows',
 		'RenameDutchColumns' => 'renames columns over existing rows',
@@ -73,8 +78,10 @@ class RepairStepRegistrationTest extends TestCase {
 		'RealignStatutoryVocabulary' => 'repairs rows an earlier rename touched; a fresh install never acquires them',
 		'MigrateArchivalToOpenRegister' => 'one-way migration of existing archival rows',
 		'MoveDocumentsIntoCaseFolders' => 'moves existing document files into their case folders; a fresh install has none',
+		'RemoveDocumentRecordTwins' => 'removes second records of a file an earlier projection made; a fresh install has none',
 		'BackfillPortalParty' => 'fills portalParty on existing portal cases; a fresh install has none',
 		'NormaliseCommunicationChannelValues' => 'turns existing case channels into slugs; a fresh install has none',
+		'MapLegacyArchivalActions' => 'rewrites archival actions the retired admin editor stored; a fresh install has none',
 		'MoveDecisionTablesToOpenRegister' => 'copies existing dossiq decision tables into OpenRegister; a fresh install has none',
 		'CopyMessageAttachmentsIntoMessageFolders' => 'copies existing portal message attachments into the message folder; a fresh install has none',
 		'MigratePartnersToOrganisations' => 'moves existing ketenpartner rows onto Organisation',
@@ -90,6 +97,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'ReconcileCaseDeadlinesWithTerms' => 'writes existing case deadlines from their terms; none exist yet',
 		'RearmBeslistermijnTimers' => 're-arms existing running term timers; none exist yet',
 		'RetireOriRegister' => 'retires a register a fresh install never had',
+		'SupersedeDuplicateSeededCaseTypes' => 'supersedes copies earlier seed runs stored; a fresh install has none',
 		'RewriteRetiredFlowNodes' => 'rewrites stored flows; a fresh install has none',
 		'FoldCasePropertiesOntoCase' => 'backfill over existing cases',
 		'BackfillInformatieobjectMetadata' => 'backfill over existing documents',
@@ -103,6 +111,8 @@ class RepairStepRegistrationTest extends TestCase {
 		'MigrateCaseTeamsToGroups' => 'moves existing cases from an organisation role to its group; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',
+		'BackfillCaseTypeIdentifier' => 'fills caseTypeIdentifier on existing cases; a fresh install has none',
+		'BackfillCaseLastActivity' => 'dates the last activity of existing cases; a fresh install has none',
 		'MigrateCmmnCasePlans' => 'drains existing casePlanState blobs into OpenRegister plan items; a fresh install has none',
 		'CarryInspectionRunsOntoTasks' => 'carries existing inspection reports, runs and results onto tasks; a fresh install has none',
 		'FoldInspectionChecklistTemplates' => 'folds existing inspectieChecklist and inspectionChecklist rows into the one template schema; a fresh install has none',
@@ -225,6 +235,14 @@ class RepairStepRegistrationTest extends TestCase {
 				'InstallShippedPackages',
 				'CaseFlowSeedDataRepairStep',
 			],
+			// It imports onto the installed case types, and the cases it writes then get their team.
+			'RunUpgradeRecordImports' => [
+				'InitializeSettings',
+				'InstallShippedPackages',
+				'PublishSeededCaseTypes',
+				'SeedDeadlineMonitoringData',
+			],
+			'AssignOpenCasesTheirCaseTypeTeam' => ['RunUpgradeRecordImports'],
 			// It reads the imported register, the installed case types and the reviews an upgrade makes.
 			'ReconcileCaseRecordGrants' => [
 				'InitializeSettings',

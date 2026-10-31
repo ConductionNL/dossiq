@@ -46,6 +46,7 @@ class ShippedPackageRules {
 		'case-type' => 'case-type',
 		'flows' => 'flow',
 		'seed' => 'seed',
+		'examples' => 'seed',
 		'settings' => 'settings',
 	];
 
@@ -178,6 +179,7 @@ class ShippedPackageRules {
 				'settings' => $owned['settings.json'] = true,
 				'flows' => $prefixes[] = 'flows/',
 				'seed' => $prefixes[] = 'seed/',
+				'examples' => $prefixes[] = 'examples/',
 				default => null,
 			};
 		}

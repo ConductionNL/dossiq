@@ -1,0 +1,20 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"why": "The workflow canvas of one case type on a page of its own (case-type-page-follows-its-boards). Board DqZaaktype draws Phases and tasks without the canvas, with View as flow and Add a task opening it."
+	},
+	"pages": [
+		{
+			"id": "CaseTypeFlow",
+			"route": "/settings/case-types/:id/flow",
+			"type": "custom",
+			"component": "CaseTypeFlowView",
+			"title": "Flow",
+			"_note": "A custom page because the canvas (WorkflowTab: statuses as nodes, transitions, steps, guards, versions and publishing) is drawn by no declared widget. It reads the case type id from the route, as it did inline on the case type page.",
+			"config": {
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		}
+	]
+}

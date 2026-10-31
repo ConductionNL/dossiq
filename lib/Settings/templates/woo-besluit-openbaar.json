@@ -1,0 +1,9 @@
+{
+  "id": "woo-besluit-openbaar",
+  "title": "Woo-besluit openbaar",
+  "description": "Besluit op een Woo-verzoek waarin alle gevraagde stukken openbaar worden.",
+  "category": "document",
+  "version": "2.0.0",
+  "documentType": "Besluit",
+  "body": "Geachte heer, mevrouw,\n\nU heeft ons gevraagd om informatie over {{case.title}}. Uw verzoek is geregistreerd onder kenmerk {{case.identifier}}.\n\nBesluit\n\nWij maken alle stukken die onder uw verzoek vallen openbaar. U vindt ze bij dit besluit en op de publicatiepagina van de gemeente.\n\nBent u het niet eens met dit besluit, dan kunt u binnen zes weken bezwaar maken.\n\nMet vriendelijke groet,\n\nDe behandelaar"
+}

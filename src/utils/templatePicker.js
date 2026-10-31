@@ -4,30 +4,29 @@
 // Turning what the template library answered into options a picker can render.
 
 /**
- * The options for one kind of template.
+ * One content template as an option for the library's CnTemplateSelect.
  *
- * 🔑 A MALFORMED ANSWER IS AN EMPTY OFFER, NOT A CRASH AND NOT A HALF-LIST. The
- * library answers 503 when the register is unreachable, and a caller that read
- * `data.items` off that body would map over undefined. Every option also
- * carries a `presets` object even when the template has none, so the surface
- * that mounts the picker can spread it without checking.
+ * 🔑 A ROW WITHOUT AN ID IS NO OPTION, NOT A CRASH AND NOT A BLANK ROW. Every
+ * option also carries a `presets` object even when the template has none, so
+ * the surface that mounts the select can spread it without checking. A
+ * malformed or failed answer is the select's to handle: it offers nothing.
  *
- * @param {object} data The body of GET /api/content-templates/{kind}.
- * @return {Array} The options, each with id, name, body and presets.
+ * @param {object} item One row of GET /api/content-templates/{kind}.
+ * @return {object|null} The option with id, name, body and presets, or null.
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
-export function templateOptions(data) {
-	const items = data && Array.isArray(data.items) ? data.items : []
+export function contentTemplateOption(item) {
+	if (!item || !item.id) {
+		return null
+	}
 
-	return items
-		.filter((item) => item && item.id)
-		.map((item) => ({
-			id: String(item.id),
-			name: String(item.name || item.id),
-			body: String(item.body || ''),
-			presets:
-				item.presets && typeof item.presets === 'object' ? item.presets : {},
-		}))
+	return {
+		id: String(item.id),
+		name: String(item.name || item.id),
+		body: String(item.body || ''),
+		presets:
+			item.presets && typeof item.presets === 'object' ? item.presets : {},
+	}
 }
 
-export default { templateOptions }
+export default { contentTemplateOption }

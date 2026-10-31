@@ -46,6 +46,10 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Queue\QueueFigures;
+use OCA\Dossiq\Service\Queue\QueueOldestNote;
+use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -57,6 +61,8 @@ use Psr\Log\LoggerInterface;
  * Dashboard KPI aggregation.
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — one payload for every count tile, the team queue's included, so the open cases are read once.
  */
 class KpiAggregationService {
 	/**
@@ -107,8 +113,11 @@ class KpiAggregationService {
 	 * @param ContainerInterface $container The DI container.
 	 * @param IAppManager $appManager Used to establish that OpenRegister is present.
 	 * @param EngineTaskInbox $engineTasks The engine's task counter.
+	 * @param QueueFigures $queueFigures Folds the team queue's figures.
 	 * @param IL10N $l10n The app's translator, for the month names.
 	 * @param LoggerInterface $logger The logger interface.
+	 * @param LanguageMapText $text Reads a translatable case type title as text.
+	 * @param DayCount $days The one place days between two dates are counted.
 	 *
 	 * @return void
 	 */
@@ -117,8 +126,11 @@ class KpiAggregationService {
 		private ContainerInterface $container,
 		private IAppManager $appManager,
 		private EngineTaskInbox $engineTasks,
+		private QueueFigures $queueFigures,
 		private IL10N $l10n,
 		private LoggerInterface $logger,
+		private LanguageMapText $text = new LanguageMapText(),
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -153,7 +165,19 @@ class KpiAggregationService {
 			filters: self::OPEN_WORK
 		);
 
-		return [
+		$queue = $this->queueFigures->foldFor(
+			userId: $userId,
+			openCases: $openCases,
+			today: $now,
+			typeTitles: $this->caseTypeTitles(ids: $ids)
+		);
+		$oldestNote = (new QueueOldestNote(l10n: $this->l10n))->line(
+			type: (string)$queue['queueOldestType'],
+			dueDays: $queue['queueOldestDueDays']
+		);
+
+		return ($queue + [
+			'queueOldestNote' => $oldestNote,
 			'openCount' => $this->countCases(ids: $ids, filters: self::OPEN_WORK),
 			'newToday' => $this->countCases(ids: $ids, filters: (self::OPEN_WORK + ['startDate' => $today])),
 			'overdueCount' => $this->countCases(
@@ -186,8 +210,32 @@ class KpiAggregationService {
 			'typeBreakdown' => $this->breakdown(rows: $openCases, field: 'caseType', label: 'type'),
 			'avgProcessingDays' => $this->averageProcessingDays(closed: $closed),
 			'slaCompliance' => $this->slaCompliance(closed: $closed),
-		];
+		]);
 	}//end computeKpis()
+
+	/**
+	 * Every case type's title, by id.
+	 *
+	 * @param array<string, string> $ids The register and schema ids.
+	 *
+	 * @return array<string, string> The titles; empty when the case type schema is not configured.
+	 */
+	private function caseTypeTitles(array $ids): array {
+		$schema = $this->appConfig->getValueString(Application::APP_ID, 'case_type_schema', '');
+		if ($schema === '') {
+			return [];
+		}
+
+		$titles = [];
+		foreach ($this->rows(ids: $ids, schema: $schema, filters: []) as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+			if ($id !== '') {
+				$titles[$id] = $this->text->textOr(value: ($row['title'] ?? ''), fallback: $id, language: $this->l10n->getLanguageCode());
+			}
+		}
+
+		return $titles;
+	}//end caseTypeTitles()
 
 	/**
 	 * The shape returned when the app is not configured against a register.
@@ -214,6 +262,14 @@ class KpiAggregationService {
 			'typeBreakdown' => [],
 			'avgProcessingDays' => null,
 			'slaCompliance' => null,
+			'queueCount' => 0,
+			'queueNewToday' => 0,
+			'queueDueSoon' => 0,
+			'queueOldestDays' => 0,
+			'queueOldestType' => '',
+			'queueOldestDueDays' => null,
+			'queueOldestNote' => (new QueueOldestNote(l10n: $this->l10n))->line(type: '', dueDays: null),
+			'queueByType' => [],
 		];
 	}//end emptyKpis()
 
@@ -502,7 +558,7 @@ class KpiAggregationService {
 			return null;
 		}
 
-		return (int)$start->diff($end)->format('%r%a');
+		return $this->days->signed(from: $start, to: $end);
 	}//end daysBetween()
 
 	/**

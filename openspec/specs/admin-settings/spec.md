@@ -789,7 +789,7 @@ making.
 - **GIVEN** the seeded Integrations page
 - **WHEN** the admin reads the KvK card
 - **THEN** it SHALL show Not available
-- **AND** its message SHALL say the adapter is built and bound and that no caller exists
+- **AND** its message SHALL say dossiq ships no KvK client and that integriq holds the KvK source
 - **AND** its message SHALL NOT say the connection is not built
 - **AND** it SHALL NOT offer Open settings
 
@@ -1010,8 +1010,8 @@ SHALL declare its connections in `lib/Settings/connections.json` with the
 twelve keys the page already used: zgw, stuf, kcc, dmn, mailbox, store,
 financial, brp, kvk, pdok, berichtenbox and templates (hydra REQ-CONN-001 and
 REQ-CONN-008). A `settingsUrl` SHALL only point at a section that exists on
-the admin page. KvK SHALL be declared not available with a message saying the
-adapter is built and bound and nothing calls it. Berichtenbox and Document
+the admin page. KvK SHALL be declared not available with a message saying
+dossiq ships no KvK client and integriq holds the KvK source. Berichtenbox and Document
 templates SHALL name their adapter config key and a message that says a mock
 adapter answers. Their `simulatedValues` SHALL list the empty string and the
 mock class the registrar falls back to, so naming the mock class still reads
@@ -1063,7 +1063,7 @@ BRP SHALL be declared with an `unconfiguredMessage` that names
 - **GIVEN** the declaration integriq synced
 - **WHEN** the admin reads the KvK row
 - **THEN** it SHALL read Not available
-- **AND** its message SHALL say the adapter is built and bound
+- **AND** its message SHALL say dossiq ships no KvK client
 - **AND** its message SHALL NOT say the connection is not built
 
 ### Requirement: A probe reports and a save asks integriq to look again (REQ-ADMIN-027)
@@ -1160,6 +1160,297 @@ section is part of the Nextcloud admin settings page, not a route of the app.
 - WHEN they save
 - THEN the form MUST say the weight runs from 0 to 50
 - AND nothing MUST be sent
+
+### Requirement: The search index panel shows when maintenance last ran, readably
+
+The search index section SHALL show each figure with its label above its
+value, and a label SHALL wrap rather than run under the value. "Last run"
+SHALL show the time OpenRegister's last stored run finished (or started, when
+it has no finish time) as a date and time, and "Never" when OpenRegister
+reports no run.
+
+#### Scenario: Maintenance never ran
+<!-- @e2e exclude Read-model normalisation; proven by tests/vitest/searchIndexApi.spec.js (fails on the old String() of the report) and live on :8099. -->
+- **GIVEN** OpenRegister answers `lastRun: []`
+- **WHEN** the admin opens the search index section
+- **THEN** "Last run" reads "Never"
+
+#### Scenario: Maintenance ran
+<!-- @e2e exclude Read-model normalisation; proven by tests/vitest/searchIndexApi.spec.js. -->
+- **GIVEN** OpenRegister answers `lastRun: {startedAt: "2026-10-01T02:00:00+00:00", finishedAt: "2026-10-01T02:03:00+00:00", state: "done"}`
+- **WHEN** the admin opens the search index section
+- **THEN** "Last run" shows 1 October 2026 at the finish time, and never "[object Object]" or an empty value
+
+### Requirement: Status badges are readable in light and dark
+
+A status badge or mark on the admin settings page SHALL take its colours from
+Nextcloud's status variables in matching pairs: `--color-success`,
+`--color-error` or `--color-warning` as fill with `--color-success-text`,
+`--color-error-text` or `--color-warning-text` as ink, or the `-text`
+variable alone on the page background. A badge SHALL NOT use a status fill
+variable as ink, and SHALL NOT put white or `--color-main-background` ink on a
+status fill.
+
+#### Scenario: A present mark
+<!-- @e2e exclude Style contract; proven by tests/vitest/adminSettingsTruth.spec.js, which scans the settings styles, and the live contrast read on :8099. -->
+- **GIVEN** PHP is present
+- **WHEN** the prerequisites section draws its row
+- **THEN** the word "present" is drawn in `--color-success-text`
+
+### Requirement: The Nextcloud prerequisite says whether this instance is in range
+
+`Prerequisites::check()` SHALL report, beside the supported range, the major
+version this instance runs and `present: true` only when it lies within the
+range. The prerequisites section SHALL draw that row with a present or missing
+mark like every other row.
+
+#### Scenario: An instance inside the range
+<!-- @e2e exclude Server read; proven by tests/Unit/PrerequisitesTest.php::testTheNextcloudRowSaysWhetherThisInstanceIsInRange and tests/vitest/prerequisitesBlock.spec.js. -->
+- **GIVEN** the range 32 to 35 and an instance on 34
+- **WHEN** the admin opens the prerequisites section
+- **THEN** the Nextcloud row reads "present", and names 34
+
+### Requirement: An optional app shows its current product name and keeps its lookup id
+
+Every app row SHALL carry a display `name` beside its `id`. The `id` SHALL
+stay the key passed to `IAppManager::isInstalled()` until that app's own
+`<id>` moves. The section SHALL show the `name`.
+
+#### Scenario: A renamed app whose id has not moved
+<!-- @e2e exclude Server read; proven by tests/Unit/PrerequisitesTest.php::testARenamedAppShowsItsNewNameAndKeepsItsLookupId. -->
+- **GIVEN** the optional app with id `docudesk`
+- **WHEN** the admin opens the prerequisites section
+- **THEN** the row reads "filinq"
+- **AND** the instance is asked whether `docudesk` is installed
+
+### Requirement: Case type management shows a small set of columns, title first
+
+The case type list in the admin settings SHALL show title, identifier,
+published or draft, processing deadline and valid from, in that order.
+
+#### Scenario: A schema with 96 properties
+<!-- @e2e exclude Column derivation; proven by tests/vitest/caseTypeColumns.spec.js. -->
+- **GIVEN** the case type schema declares 96 properties
+- **WHEN** the admin opens case type management
+- **THEN** the table has those five columns and the first is the title
+
+### Requirement: A section does not repeat its own name
+
+A tab rendered inside a settings section SHALL NOT start with a heading that
+repeats the section's name. The admin settings page SHALL show one "Case
+email: shared mailbox" section.
+
+#### Scenario: The checklists section
+<!-- @e2e exclude Template contract; proven by tests/vitest/adminSettingsTruth.spec.js and live on :8099. -->
+- **GIVEN** the admin opens the VTH inspection checklists section
+- **THEN** the section name appears once
+
+#### Scenario: The delegated email form
+<!-- @e2e exclude Template contract; proven by tests/Unit/Settings/EmailSettingsTest.php and live on :8099. -->
+- **GIVEN** the `EmailSettings` registration stays for delegated administration
+- **WHEN** the settings page renders its form
+- **THEN** the form draws nothing, and the mailbox settings appear once, in the main page
+
+### Requirement: Headings are in sentence case
+
+Every section name and heading on the admin settings page SHALL be in
+sentence case in English and in Dutch: only the first word, acronyms and
+proper names start with a capital.
+
+#### Scenario: A Title Case heading
+<!-- @e2e exclude Copy contract; proven by tests/vitest/adminSettingsTruth.spec.js. -->
+- **GIVEN** a section named "Case Type Management"
+- **THEN** `tests/vitest/adminSettingsTruth.spec.js` fails
+
+### Requirement: Empty states carry text
+
+An empty state on the admin settings page SHALL say what is empty.
+
+#### Scenario: Tenant onboarding without a tenant
+<!-- @e2e exclude Template contract; proven by tests/vitest/adminSettingsTruth.spec.js and live on :8099. -->
+- **GIVEN** no tenant is selected
+- **THEN** tenant onboarding reads "Select a tenant to view onboarding progress."
+
+### Requirement: What shipped reports objects that did not come from a starter set
+
+When the shipped ledger holds no rows for the chosen kind, "What shipped with
+dossiq" SHALL count the objects of that kind in the register. When there are
+any, it SHALL say how many there are and that none came from a starter set.
+It SHALL say nothing has been seeded only when there are none.
+
+#### Scenario: 24 case types from the register import
+<!-- @e2e exclude Copy and count; proven by tests/vitest/shippedConfiguration.spec.js and live on :8099. -->
+- **GIVEN** the ledger is empty and the register holds 24 case types
+- **WHEN** the admin opens "What shipped with dossiq"
+- **THEN** it says 24 are here and none came from a starter set
+
+### Requirement: The case type list heads itself under its section
+
+The case type list on the admin settings page SHALL carry its heading as an
+`<h3>` under the `<h2>` of the "Case type management" section, and SHALL NOT
+render an `<h1>`. Its Add button SHALL read "Add case type".
+
+#### Scenario: Reading the heading outline
+<!-- @e2e exclude Heading level; proven by tests/vitest/caseTypeListHeading.spec.js (fails on the old h1) and live on :8099. -->
+- **GIVEN** an admin opens the dossiq admin settings
+- **WHEN** a screen reader lists the headings
+- **THEN** "Case types" is a level 3 heading under "Case type management", and the page has no second level 1 heading
+
+### Requirement: Sibling apps are named by product, looked up by id
+
+Each row under "Apps dossiq needs" and "Apps dossiq works with" SHALL show the
+app's product name (OpenRegister, Integriq, Filinq, Humaniq, Decidiq,
+Portaliq, Pipelinq, Hermiq, Thematiq). The id the row is looked up by SHALL
+stay the declared key, until that app's own `<id>` moves.
+
+#### Scenario: Integriq installed under its old id
+<!-- @e2e exclude Server-side declaration; proven by PrerequisitesTest::testEveryAppRowShowsAProductNameAndKeepsItsLookupId. -->
+- **GIVEN** the instance has `openconnector` installed
+- **WHEN** the admin opens the prerequisites block
+- **THEN** the row reads "Integriq", is marked present, and was looked up as `openconnector`
+
+### Requirement: The page-view preference key is accepted
+
+The preferences endpoint SHALL read and write a key of the form
+`cn_page_view:<pageId>`, where the page id uses letters, digits, `.`, `_` and
+`-`, and the whole key is at most 59 characters. A colon anywhere else SHALL
+still be refused with 400.
+
+#### Scenario: Opening the landing page
+<!-- @e2e exclude Controller validation; proven by PreferencesControllerTest::testThePageViewKeyIsAccepted (fails on the old charset) and live on :8099. -->
+- **GIVEN** a signed-in user
+- **WHEN** the landing page reads `GET /apps/dossiq/api/preferences/cn_page_view:MyWorkHome`
+- **THEN** the answer is 200
+
+#### Scenario: Any other colon
+<!-- @e2e exclude Controller validation; proven by PreferencesControllerTest::testAColonOutsideThePageViewPrefixIsRefused. -->
+- **WHEN** a caller reads `other:key` or `cn_page_view:a:b`
+- **THEN** the answer is 400 and nothing is read
+
+### Requirement: Every shipped schema uses only what OpenRegister's import accepts (REQ-ADMIN-041)
+
+Every schema dossiq ships SHALL use only property keys, closed-list modifier
+values and extending-form roles that OpenRegister's schema import accepts, as
+published by OpenRegister's property vocabulary and extending-forms reads. A
+build SHALL fail when a shipped schema uses anything else, because the import
+rejects the whole schema and keeps the one the instance already had.
+
+#### Scenario: a property uses an inputControl OpenRegister refuses
+
+- **GIVEN** a shipped property declaring `inputControl: textarea`
+- **WHEN** the unit suite runs
+- **THEN** the shipped-declarations test fails naming the property and the value
+- @e2e exclude {build-time guard on shipped JSON, covered by a unit test and the live register import}
+
+#### Scenario: the case form maps a role OpenRegister accepts
+
+- **GIVEN** the case form declaration mapping `hideOnCreate`
+- **WHEN** the unit suite runs against the accepted-vocabulary snapshot
+- **THEN** the role is accepted and the test pins that the declaration still maps it
+- @e2e exclude {build-time guard on shipped JSON, covered by a unit test and the live register import}
+
+### Requirement: The Systeem cards read as the board
+
+The Systeem tab SHALL describe each card in one plain line and label its fields as board DqBeheerinstellingen does. A
+field the board does not draw SHALL stay available behind the card's Geavanceerd disclosure, never be removed.
+
+#### Scenario: Zaak-e-mail
+
+- **GIVEN** the Systeem tab
+- **THEN** the card reads "Mail aan de gedeelde mailbox komt binnen als zaak of bij een bestaande zaak."
+- **AND** its fields are Mailaccount voor intake, Map, Ophalen elke (seconden), Berichten per keer, Zaaktype voor mail die niemand oppakt and "Mail op zaaknummer aan zaken koppelen", the rest under Geavanceerd
+
+### Requirement: A connection row opens its settings card
+
+The integrations tab SHALL list Kadaster (BRK) en WOZ as a connection, switched off while its source is None, and each
+connection row SHALL link to its settings card on the same page. The Kadaster card SHALL show only once its row was
+followed, saying it was opened from that row.
+
+#### Scenario: DqInstellingen
+
+- **GIVEN** the integrations tab with the Kadaster source on None
+- **THEN** the Kadaster row reads Uit
+- **WHEN** the row is followed
+- **THEN** "Kadaster (BRK) en WOZ instellen" shows with "Geopend vanuit de rij Kadaster (BRK) en WOZ"
+
+### Requirement: The DSO activity table shows what each activity becomes and when it last arrived
+
+The VTH tab's "Activities from the Omgevingsloket" table SHALL read integriq's DSO activity overview and SHALL show the columns DSO activity, Becomes case type, Variant and Last received. A row integriq marks `unmapped` SHALL read "Not linked yet: %n request(s) waiting" in its case type cell, drawn as an error. A row's note SHALL stay as the activity's second line, and a row that is not active SHALL carry an "Inactive" pill.
+
+#### Scenario: A linked activity and an unlinked one
+- GIVEN integriq maps "Kappen van een houtopstand" to Omgevingsvergunning regulier, variant Regulier, last received 5 October, and one request waits with an activity no row maps
+- WHEN an administrator opens the VTH tab
+- THEN the first row reads Kappen van een houtopstand / Omgevingsvergunning regulier / Regulier / 5 okt
+- AND the last row's case type cell reads "Nog niet gekoppeld: 1 aanvraag wacht" in red
+
+### Requirement: A connection row has a menu with what the row offers
+
+Each row of the Integraties tab's connections table that has a settings card (`settingsUrl`) SHALL end with a row actions menu holding "Open settings", a same-tab link to that card. A row without `settingsUrl` SHALL have no menu.
+
+#### Scenario: Kadaster
+- GIVEN the Kadaster (BRK) en WOZ connection row with settingsUrl `/settings/admin/dossiq?tab=integrations#section-kadaster`
+- WHEN the administrator opens the row's menu and chooses "Instellingen openen"
+- THEN the Kadaster settings card opens on this page, in the same tab
+
+### Requirement: An admin field label reads the same after the library translates it
+
+An admin settings field label SHALL show its intended text after CnSettingsFieldsSection translates it. A label whose translation is itself a catalogue key with another translation SHALL be handed over as its key.
+
+#### Scenario: The shared mailbox folder
+- GIVEN the Dutch locale
+- WHEN the Zaak-e-mail section renders the folder field
+- THEN its label reads "Map", not "Kaart"
+
+### Requirement: The fee table names each rule and its calculation
+
+The VTH settings' fee table SHALL show each shillinq fee rule by its name (its type value when it has none), its
+regulation and article, and its calculation in words.
+
+#### Scenario: Building costs
+
+- **GIVEN** a rule "Bouwen, per euro bouwkosten", percentage 2.35 of `bouwkosten`, minimum 125, Legesverordening 2026 2.3.1
+- **THEN** the row reads "Bouwen, per euro bouwkosten", "Legesverordening 2026, 2.3.1", "2,35 % van de bouwkosten, minimaal € 125,00"
+
+### Requirement: The specialist settings sit on their own tab
+
+The admin page SHALL end its tab strip with "Geavanceerd" (`advanced`), holding the specialist sections listed in the proposal. The System tab SHALL hold Configuratie, Menustructuur, Serviceaccount, Zaak-e-mail, AI-ondersteunde verwerking, Adviseringsbeheer and Zoekindex; the Integrations tab Koppelingen and the Kadaster card. A connection row whose settings card moved SHALL link to that card on the Geavanceerd tab.
+
+#### Scenario: StUF-ZKN from its connection row
+- GIVEN the Integraties tab
+- WHEN the administrator opens the StUF-ZKN row
+- THEN the StUF-ZKN endpoints card opens on the Geavanceerd tab
+
+### Requirement: The decision tables card reads its text as body
+
+The "Decision tables (DMN)" card on the Geavanceerd tab SHALL carry its text as the card's body (15px at 1.5, main
+ink, under the title), not as the card description.
+
+#### Scenario: DqBeheerGeavanceerd
+
+- **GIVEN** the Geavanceerd tab in the board look
+- **THEN** "Beslistabellen staan in het register decision-tables" reads 15px in the main ink under "Beslistabellen (DMN)"
+
+### Requirement: A ZGW mapping row names its resource
+
+Each row of the ZGW API mapping table SHALL show its resource's name in the reader's language, for every resource the default mappings store; a stored key without a name SHALL show as the key.
+
+#### Scenario: Case type
+- GIVEN the mapping stored under `caseType`
+- THEN its row reads "Zaaktype"
+
+### Requirement: The advanced tab's rows read as the board
+
+Tenant onboarding SHALL draw its tenant field and Refresh stacked at the content edge; the shipped configuration picker SHALL be a labelled field at most 560px wide with no second intro; a present prerequisite SHALL keep its success badge.
+
+#### Scenario: Tenant-onboarding
+- THEN the Tenant label starts at the card's content edge
+
+### Requirement: The AWB term definitions are one table
+
+The term definitions SHALL be listed as a table with the columns basis, duration, version, counting, closed day, validity and state, and a New version button per row; a case type column SHALL show when any definition names a case type.
+
+#### Scenario: Two definitions
+- THEN two table rows read Awb 4:13, 8 weken, v1, Kalenderdagen, Verschuift van een gesloten dag, 2026-01-01 → ∞, Actief
 
 ## Non-Functional Requirements
 

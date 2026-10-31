@@ -13,6 +13,12 @@
               "withdrawn"
             ],
             "title": "Woo publication",
+            "x-enum-labels": {
+              "none": "None",
+              "ready": "Ready",
+              "published": "Published",
+              "withdrawn": "Withdrawn"
+            },
             "description": "Whether the Woo decision of this case is ready, published or withdrawn. Set by dossiq, not by hand.",
             "facetable": true,
             "matchType": "exact",

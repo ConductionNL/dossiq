@@ -81,6 +81,75 @@ class TenantBillingServiceTest extends TestCase {
 		$this->assertSame(1, $result['eventCount']);
 	}
 
+	/**
+	 * Running a month twice hands one invoice to the finance app (REQ-TQ-BILL-01).
+	 *
+	 * @return void
+	 */
+	public function testRunningAMonthTwiceExportsOneInvoice(): void {
+		$events = [
+			['uuid' => 'e-1', 'tenantRef' => 't-1', 'eventType' => 'case_created', 'quantity' => 1.0, 'unitPrice' => 1.2, 'currency' => 'EUR', 'occurredAt' => '2026-10-13T10:00:00+00:00', 'invoiceRef' => null],
+		];
+
+		$shillinq = $this->createMock(\OCA\Dossiq\Service\ShillinqIntegrationService::class);
+		$shillinq->method('buildInvoicePayload')->willReturn(['tenantId' => 't-1', 'period' => '2026-10', 'lines' => []]);
+		$shillinq->expects($this->once())
+			->method('exportInvoice')
+			->willReturn(['success' => true, 'invoiceRef' => 'INV-2026-10-t1', 'attempts' => 1]);
+
+		$svc = $this->getMockBuilder(TenantBillingService::class)
+			->setConstructorArgs([
+				$this->createMock(IAppManager::class),
+				$this->createMock(ContainerInterface::class),
+				$this->createMock(LoggerInterface::class),
+				$shillinq,
+			])
+			->onlyMethods(['fetchEventsForMonth', 'markExported'])
+			->getMock();
+		$svc->method('fetchEventsForMonth')->willReturnCallback(static function () use (&$events): array {
+			return $events;
+		});
+		$svc->method('markExported')->willReturnCallback(static function (array $billed, string $invoiceRef) use (&$events): int {
+			foreach (array_keys($events) as $index) {
+				$events[$index]['invoiceRef'] = $invoiceRef;
+			}
+
+			return count($billed);
+		});
+
+		$first = $svc->runInvoicing('t-1', '2026-10');
+		$second = $svc->runInvoicing('t-1', '2026-10');
+
+		$this->assertTrue($first['exported']);
+		$this->assertFalse($second['exported']);
+		$this->assertSame('no unbilled events', $second['error']);
+	}
+
+	/**
+	 * `previous` runs the month before the current one.
+	 *
+	 * @return void
+	 */
+	public function testPreviousRunsLastMonth(): void {
+		$svc = $this->getMockBuilder(TenantBillingService::class)
+			->setConstructorArgs([
+				$this->createMock(IAppManager::class),
+				$this->createMock(ContainerInterface::class),
+				$this->createMock(LoggerInterface::class),
+				$this->createMock(\OCA\Dossiq\Service\ShillinqIntegrationService::class),
+			])
+			->onlyMethods(['fetchEventsForMonth'])
+			->getMock();
+		$svc->expects($this->once())
+			->method('fetchEventsForMonth')
+			->with('t-1', (new \DateTimeImmutable('first day of last month'))->format('Y-m'))
+			->willReturn([]);
+
+		$result = $svc->runInvoicing('t-1', TenantBillingService::PREVIOUS_MONTH);
+
+		$this->assertSame((new \DateTimeImmutable('first day of last month'))->format('Y-m'), $result['month']);
+	}
+
 	public function testEmitEventRejectsUnknownType(): void {
 		$this->expectException(InvalidArgumentException::class);
 		$this->svc->emitEvent('t-1', 'not-a-real-type');
@@ -127,6 +196,21 @@ class TenantBillingServiceTest extends TestCase {
 	public function testAllowedEventTypesIncludesRefund(): void {
 		$this->assertContains('case_refund', TenantBillingService::ALLOWED_EVENT_TYPES);
 	}
+
+	/**
+	 * The monthly package fee is a billing event of its own, in the service and in the schema it writes to.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/tenant-billing/spec.md#requirement-the-monthly-package-fee-is-a-billing-event
+	 */
+	public function testTheMonthlyPackageFeeIsAnEventType(): void {
+		$this->assertContains(needle: 'subscription_fee', haystack: TenantBillingService::ALLOWED_EVENT_TYPES);
+
+		$register = json_decode((string) file_get_contents(__DIR__.'/../../../lib/Settings/dossiq_register.json'), true);
+		$enum     = $register['components']['schemas']['tenantBillingEvent']['properties']['eventType']['enum'];
+		$this->assertSame(expected: TenantBillingService::ALLOWED_EVENT_TYPES, actual: $enum);
+	}//end testTheMonthlyPackageFeeIsAnEventType()
 
 	public function testAnEventWithNoReadablePriceIsCountedNotBilledAtZero(): void {
 		$events = [

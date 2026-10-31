@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Recycle\CaseRecycleService;
 use OCA\Dossiq\Service\Recycle\RetentionClocks;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -139,9 +140,25 @@ class CaseRecycleControllerTest extends TestCase {
 			$this->guard,
 			$this->groupManager,
 			$this->userSession,
-			$this->createMock(originalClassName: LoggerInterface::class)
+			$this->createMock(originalClassName: LoggerInterface::class),
+			$this->l10n()
 		);
 	}//end controller()
+
+	/**
+	 * A translator that answers the text it was given.
+	 *
+	 * @return IL10N
+	 */
+	private function l10n(): IL10N {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('n')->willReturnCallback(
+			fn (string $one, string $many, int $count): string => str_replace('%n', (string)$count, ($count === 1 ? $one : $many))
+		);
+
+		return $l10n;
+	}//end l10n()
 
 	/**
 	 * REQ-CRW-01: the lens answers the deleted cases with the date each window
@@ -164,6 +181,33 @@ class CaseRecycleControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('2034-01-31', $response->getData()['results'][0]['windowEndsOn']);
 	}//end testTheLensAnswersTheDeletedCases()
+
+	/**
+	 * Each row says what is left of its window, in words the list shows under
+	 * the date: the days left, or that the window has passed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function testEachRowSaysWhatIsLeftOfItsWindow(): void {
+		$this->recycle->method('deletedCases')->willReturn(
+			[
+				'results' => [
+					['id' => 'case-1', 'daysRemaining' => 12, 'lapsed' => false],
+					['id' => 'case-2', 'daysRemaining' => 0, 'lapsed' => true],
+					['id' => 'case-3', 'daysRemaining' => null, 'lapsed' => null],
+				],
+				'total' => 3,
+			]
+		);
+
+		$rows = $this->controller()->deleted()->getData()['results'];
+
+		$this->assertSame('12 days left', $rows[0]['windowNote']);
+		$this->assertSame('the window has passed', $rows[1]['windowNote']);
+		$this->assertSame('', $rows[2]['windowNote']);
+	}//end testEachRowSaysWhatIsLeftOfItsWindow()
 
 	/**
 	 * The lens is scoped to the caller. An unscoped one would hand any
@@ -223,6 +267,7 @@ class CaseRecycleControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 		$this->assertSame('destroy_role_missing', $response->getData()['code']);
+		$this->assertSame('You do not hold the role this case type requires to destroy a case.', $response->getData()['message']);
 	}//end testARefusedDestructionAnswersItsRule()
 
 	/**

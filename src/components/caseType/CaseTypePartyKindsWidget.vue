@@ -39,50 +39,15 @@
 			:name="t('dossiq', 'The party kinds could not be read')" />
 
 		<template v-else>
-			<ol class="case-type-party-kinds__list">
-				<li
-					v-for="row in rows"
-					:key="row.code"
-					class="case-type-party-kinds__row"
-					data-testid="case-type-party-kind">
-					<NcCheckboxRadioSwitch
-						:modelValue="row.accepted"
-						:disabled="!editable"
-						:data-testid="'case-type-party-kind-' + row.code"
-						@update:modelValue="toggle(row.code, $event)">
-						{{
-							row.accepted
-								? acceptedIndex(row.code) + 1 + '. ' + row.label
-								: row.label
-						}}
-					</NcCheckboxRadioSwitch>
-					<span v-if="!row.accepted" class="case-type-party-kinds__muted">
-						{{ t('dossiq', 'Not accepted by this case type') }}
-					</span>
-					<span
-						v-if="editable && row.accepted"
-						class="case-type-party-kinds__move">
-						<NcButton
-							:aria-label="
-								t('dossiq', 'Move {kind} up', { kind: row.label })
-							"
-							:disabled="acceptedIndex(row.code) === 0"
-							@click="move(row.code, -1)">
-							↑
-						</NcButton>
-						<NcButton
-							:aria-label="
-								t('dossiq', 'Move {kind} down', { kind: row.label })
-							"
-							:disabled="
-								acceptedIndex(row.code) === accepted.length - 1
-							"
-							@click="move(row.code, 1)">
-							↓
-						</NcButton>
-					</span>
-				</li>
-			</ol>
+			<CnOrderedListField
+				:modelValue="accepted"
+				:options="kindOptions"
+				:label="t('dossiq', 'Accepted kinds, in order')"
+				:addLabel="t('dossiq', 'Accept another kind')"
+				:emptyText="t('dossiq', 'No kind is accepted yet.')"
+				:disabled="!editable"
+				data-testid="case-type-party-kind-list"
+				@update:modelValue="reorder" />
 
 			<p
 				class="case-type-party-kinds__muted"
@@ -124,9 +89,9 @@
 </template>
 
 <script>
+import { CnOrderedListField } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import {
@@ -139,7 +104,7 @@ import {
 export default {
 	name: 'CaseTypePartyKindsWidget',
 
-	components: { NcButton, NcCheckboxRadioSwitch, NcEmptyContent, NcLoadingIcon },
+	components: { CnOrderedListField, NcButton, NcEmptyContent, NcLoadingIcon },
 
 	data() {
 		return {
@@ -167,29 +132,14 @@ export default {
 		},
 
 		/**
-		 * The accepted kinds first, in declared order, then the rest.
+		 * Every kind as a choice for the ordered list: the accepted ones are its
+		 * rows, the rest are offered by its picker.
 		 *
-		 * @return {Array<{code: string, label: string, accepted: boolean}>} The rows.
+		 * @return {Array<{value: string, label: string}>} The choices.
 		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
 		 */
-		rows() {
-			const byCode = new Map(this.kinds.map((kind) => [kindCode(kind), kind]))
-			const first = this.accepted
-				.filter((code) => byCode.has(code))
-				.map((code) => ({
-					code,
-					label: labelOf(byCode.get(code)),
-					accepted: true,
-				}))
-			const rest = this.kinds
-				.filter((kind) => !this.accepted.includes(kindCode(kind)))
-				.map((kind) => ({
-					code: kindCode(kind),
-					label: labelOf(kind),
-					accepted: false,
-				}))
-
-			return [...first, ...rest]
+		kindOptions() {
+			return this.kinds.map((kind) => ({ value: kindCode(kind), label: labelOf(kind) }))
 		},
 	},
 
@@ -239,50 +189,14 @@ export default {
 		},
 
 		/**
-		 * The position of a kind among the accepted ones.
+		 * Take the accepted kinds in their new order: one added, removed or moved.
 		 *
-		 * @param {string} code The kind code.
-		 * @return {number} The index, -1 when not accepted.
-		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
-		 */
-		acceptedIndex(code) {
-			return this.accepted.indexOf(code)
-		},
-
-		/**
-		 * Accept or stop accepting a kind; a newly accepted one goes last.
-		 *
-		 * @param {string} code The kind code.
-		 * @param {boolean} on Whether it is accepted now.
+		 * @param {Array<string>} codes The accepted kind codes, in order.
 		 * @return {void}
 		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
 		 */
-		toggle(code, on) {
-			this.savedNote = ''
-			this.accepted = on
-				? [...this.accepted.filter((c) => c !== code), code]
-				: this.accepted.filter((c) => c !== code)
-		},
-
-		/**
-		 * Move an accepted kind one place up or down.
-		 *
-		 * @param {string} code The kind code.
-		 * @param {number} step -1 for up, 1 for down.
-		 * @return {void}
-		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
-		 */
-		move(code, step) {
-			const from = this.accepted.indexOf(code)
-			const to = from + step
-			if (from < 0 || to < 0 || to >= this.accepted.length) {
-				return
-			}
-
-			const next = [...this.accepted]
-			next.splice(from, 1)
-			next.splice(to, 0, code)
-			this.accepted = next
+		reorder(codes) {
+			this.accepted = (Array.isArray(codes) ? codes : []).map(String)
 			this.savedNote = ''
 		},
 
@@ -338,27 +252,6 @@ function labelOf(kind) {
 	&__muted {
 		margin: 0;
 		color: var(--color-text-maxcontrast);
-	}
-
-	&__list {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	&__row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px 16px;
-		align-items: center;
-		padding: 8px 0;
-		border-top: 1px solid var(--color-border);
-	}
-
-	&__move {
-		display: flex;
-		gap: 6px;
-		margin-inline-start: auto;
 	}
 
 	&__error {

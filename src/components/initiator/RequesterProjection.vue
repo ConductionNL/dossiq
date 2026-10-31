@@ -13,12 +13,18 @@ SPDX-License-Identifier: EUPL-1.2
 </template>
 
 <script>
+import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { companyResult, personResult } from '../../services/initiatorSearch.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 
 /**
- * Fill a case's requester projection from its canonical `requester` uuid.
+ * Derive a case's requester projection from its canonical `requester` uuid.
+ *
+ * A FALLBACK. The server writes the projection in the save that sets the
+ * requester (CaseRequesterProjectionListener), so a case saved since then
+ * already carries the right one and this writes nothing. It still compares and
+ * rewrites, for cases saved before the listener existed.
  *
  * Two writers reach `case.requester`: the picker, which writes the projection
  * (`initiatorType`, `initiatorSourceId`, `initiatorDisplayName`) alongside
@@ -31,6 +37,8 @@ import { initializeStores } from '../../store/store.js'
  *
  * @spec openspec/specs/initiator-display/spec.md
  */
+const PAGE_REFRESH = 'cn:page:refresh'
+
 export default {
 	name: 'RequesterProjection',
 
@@ -50,6 +58,16 @@ export default {
 		'$route.params.id': function () {
 			this.run()
 		},
+	},
+
+	created() {
+		// A case edited in place (the case-core form) is saved without a route
+		// change; the page asks its widgets to read again, and so does this.
+		subscribe(PAGE_REFRESH, this.run)
+	},
+
+	beforeUnmount() {
+		unsubscribe(PAGE_REFRESH, this.run)
 	},
 
 	async mounted() {
@@ -83,7 +101,7 @@ export default {
 				return
 			}
 			const requester = caseObject.requester
-			if (!requester || caseObject.initiatorDisplayName) {
+			if (!requester) {
 				return
 			}
 			// A uuid says nothing about which register set it came from, so
@@ -101,6 +119,22 @@ export default {
 					initiatorType: type,
 					initiatorSourceId: String(result.sourceId || ''),
 					initiatorDisplayName: result.displayName || '',
+				}
+				// A number this reader was shown masked ("*****7609") or not
+				// at all is not the number: the case keeps the one it holds for
+				// the same requester rather than storing the mask over it.
+				const unknownNumber = projection.initiatorSourceId === '' || projection.initiatorSourceId.includes('*')
+				const sameRequester = String(caseObject.initiatorType ?? '') === projection.initiatorType
+					&& String(caseObject.initiatorDisplayName ?? '') === projection.initiatorDisplayName
+				if (unknownNumber && sameRequester) {
+					delete projection.initiatorSourceId
+				} else if (unknownNumber) {
+					projection.initiatorSourceId = ''
+				}
+				// Written only when it differs: a requester replaced in a form
+				// still carries the old one's name and type until this runs.
+				if (Object.keys(projection).every((key) => String(caseObject[key] ?? '') === projection[key])) {
+					return
 				}
 				try {
 					await this.objectStore.saveObject('case', {

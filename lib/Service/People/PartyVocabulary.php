@@ -79,11 +79,19 @@ class PartyVocabulary {
 				'key' => 'person',
 				'label' => $this->l10n->t('Person'),
 				'description' => $this->l10n->t('A natural person, with or without an account on this instance.'),
+				'identityShapes' => ['naturalPerson'],
 			],
 			[
 				'key' => 'organisation',
 				'label' => $this->l10n->t('Organisation'),
 				'description' => $this->l10n->t('A company, authority or other body acting on the case.'),
+				'identityShapes' => ['organization'],
+			],
+			[
+				'key' => 'colleague',
+				'label' => $this->l10n->t('Colleague'),
+				'description' => $this->l10n->t('A colleague of the municipality who takes part in the case, such as an adviser.'),
+				'identityShapes' => ['naturalPerson'],
 			],
 			[
 				'key' => 'address',

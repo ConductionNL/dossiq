@@ -292,7 +292,7 @@ class ConfigurationImport {
 	 * idempotent re-import returns an empty `schemas` list, so the per-schema
 	 * config keys (case_type_schema, status_type_schema, status_record_schema,
 	 * workflow_template_schema, …) were never written — the status-name lookup
-	 * and the WorkflowBoard then silently broke on a fresh deploy.
+	 * and the workflow board then silently broke on a fresh deploy.
 	 *
 	 * This method closes that gap: for each schema slug Dossiq knows about it
 	 * resolves the LIVE schema ID via OpenRegister's SchemaMapper (slug-aware

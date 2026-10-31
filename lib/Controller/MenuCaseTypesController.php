@@ -65,7 +65,7 @@ class MenuCaseTypesController extends Controller {
 	 *                      `openCases` is null when the count could not be read.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {

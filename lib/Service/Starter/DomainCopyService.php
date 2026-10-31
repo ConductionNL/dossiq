@@ -242,7 +242,7 @@ class DomainCopyService {
 				continue;
 			}
 
-			$notCarried[] = ('contentTemplate:' . (string)($template['name'] ?? ''));
+			$notCarried[] = ('contentTemplate:' . $this->text->textOf(value: ($template['name'] ?? '')));
 		}//end foreach
 
 		return $copied;

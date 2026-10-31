@@ -46,6 +46,7 @@
  * @spec openspec/specs/nav-dedup-and-grouping/spec.md
  */
 
+import { mergeManifestDelta } from '@conduction/nextcloud-vue/src/utils/mergeManifestDelta.js'
 import logger from '../logger.js'
 
 /** The profile a fresh instance gets. */
@@ -87,6 +88,10 @@ export function resolveStructureProfile(raw) {
  * @param {object} page The built page.
  * @param {object} overlay `{ id, title?, config?, configPatch?, configAppend?, configOrder? }`.
  *   The order is fixed: replace keys, patch items by name, append, then order.
+ *   A patch replaces the keys it names on its item, except on a default view,
+ *   where it merges deeply as the library's manifest delta does (objects key
+ *   by key, arrays and scalars replace), so a view's `overrides` can be
+ *   patched one key at a time.
  * @return {object} A new page object.
  *
  * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
@@ -111,7 +116,7 @@ export function applyPageOverlay(page, overlay) {
 				const change = byName[overlayItemName(item)]
 				return change === undefined || typeof item !== 'object'
 					? item
-					: { ...item, ...change }
+					: mergePatch(key, item, change)
 			})
 	}
 	const append = overlay.configAppend || {}
@@ -148,12 +153,29 @@ export function applyPageOverlay(page, overlay) {
 	return { ...page, ...titled, config }
 }
 
+/** Config lists whose items a patch merges into deeply. */
+const DEEP_PATCHED_LISTS = ['defaultSavedViews']
+
+/**
+ * One list item with its patch applied.
+ *
+ * @param {string} list The config key of the list.
+ * @param {object} item The item.
+ * @param {object} change The patch.
+ * @return {object} The patched item.
+ */
+function mergePatch(list, item, change) {
+	return DEEP_PATCHED_LISTS.includes(list)
+		? mergeManifestDelta(item, change).manifest
+		: { ...item, ...change }
+}
+
 /**
  * The name an overlay addresses a list item by.
  *
- * Header actions and widgets carry an `id`, columns a `key`, quick filters
- * only a `label`, and a column may be a bare string. The first of those that
- * exists is the name.
+ * Header actions and widgets carry an `id`, columns a `key`, default views a
+ * `slug`, quick filters only a `label`, and a column may be a bare string. The
+ * first of those that exists is the name.
  *
  * @param {unknown} item A list item from a page config.
  * @return {string|undefined} Its name, or undefined when it has none.
@@ -164,7 +186,7 @@ export function overlayItemName(item) {
 	if (typeof item === 'string') {
 		return item
 	}
-	return item?.id ?? item?.key ?? item?.label
+	return item?.id ?? item?.key ?? item?.slug ?? item?.label
 }
 
 /** The prefix of a `nav` value the instance's theming capabilities answer. */
@@ -199,12 +221,14 @@ export function resolveNavPlaceholders(nav, theming) {
 		}
 		// `@theming.emblem|@theming.logo`: the first placeholder the instance
 		// answers wins, so a set with an emblem shows it and one without falls
-		// back to its wordmark.
+		// back to its wordmark. A part that is not a placeholder is a literal
+		// last resort (`@theming.staffAppName|Dossiq`).
 		const answer = value
 			.split('|')
 			.map((part) => part.trim())
-			.filter((part) => part.startsWith(THEMING_PLACEHOLDER))
-			.map(resolveOne)
+			.map((part) =>
+				part.startsWith(THEMING_PLACEHOLDER) ? resolveOne(part) : part,
+			)
 			.find((part) => part !== '')
 		if (answer === undefined) {
 			logger.debug(

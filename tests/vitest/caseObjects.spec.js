@@ -153,9 +153,9 @@ describe('the Objects tab on the case page', () => {
 		}
 	})
 
-	it('sorts on the object type and carries an empty state', () => {
+	it('sorts on the identification, as board DqZaakGerelateerd lists the objects, and carries an empty state', () => {
 		const w = caseWidget('case-objects')
-		expect(w.content.sort).toEqual({ field: 'objectType', dir: 'asc' })
+		expect(w.content.sort).toEqual({ field: 'objectIdentification', dir: 'asc' })
 		expect(w.content.limit).toBe(25)
 		expect(w.content.emptyText).toBe('No objects linked to this case yet')
 	})
@@ -207,7 +207,8 @@ describe('the Objects tab on the case page', () => {
 
 		const map = panels.caseWidget('case-location-map')
 		expect(map, 'the locations map is not on the page').toBeTruthy()
-		expect(map.type).toBe('case-location-map')
+		expect(map.type).toBe('map')
+		expect(map.content.markers.dataSource.filter).toEqual({ case: '@objectId' })
 		expect(panels.caseTabOf('case-location-map').tab).toBe('Data')
 	})
 

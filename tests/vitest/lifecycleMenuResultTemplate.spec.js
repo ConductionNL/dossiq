@@ -42,7 +42,13 @@ const CaseLifecycleMenuDialog = (
  * is absent whether the code works or not.
  */
 const DIALOG_RENDERS_ITS_SLOT = {
+	CnChoiceCards: {
+		props: ['options', 'modelValue'],
+		template:
+			'<div><div v-for="option in options" :key="option.value"><slot v-if="option.value === modelValue" name="option-details" :option="option" /></div></div>',
+	},
 	NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
+	CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 }
 
 /**
@@ -77,6 +83,7 @@ function answers(url) {
 			held: false,
 			draft: false,
 			acts: [{ act: 'finish', allowed: true, role: '', reason: '' }],
+			resultTypes: [{ id: 'rt-nok', name: 'Niet-ontvankelijk' }],
 		},
 	})
 }
@@ -100,6 +107,16 @@ async function formFor(actId) {
 	return wrapper
 }
 
+/**
+ * The template input the open form declares.
+ *
+ * @param {object} wrapper The dialog wrapper.
+ * @return {object|undefined} The declaration.
+ */
+function templateInput(wrapper) {
+	return wrapper.findComponent({ name: 'CnTransitionInputFields' }).props('inputs').find((input) => input.widget === 'template')
+}
+
 describe('a result template on the lifecycle menu', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -108,70 +125,54 @@ describe('a result template on the lifecycle menu', () => {
 	it('offers result templates on an act that carries a result, scoped to the case type', async () => {
 		const wrapper = await formFor('finish')
 
-		const picker = wrapper.findComponent({ name: 'TemplatePicker' })
-		expect(picker.exists()).toBe(true)
-		expect(picker.props('kind')).toBe('result')
-		expect(picker.props('caseType')).toBe('ct-bezwaar')
-		expect(picker.props('caseId')).toBe('case-1')
+		expect(templateInput(wrapper)).toMatchObject({
+			url: '/apps/dossiq/api/content-templates/result',
+			params: { caseType: 'ct-bezwaar', case: 'case-1' },
+			label: 'Result template',
+			placeholder: 'Start from a template',
+			testid: 'template-picker',
+		})
 	})
 
 	it('offers no template on an act without a result', async () => {
 		const wrapper = await formFor('suspend')
 
-		expect(wrapper.findComponent({ name: 'TemplatePicker' }).exists()).toBe(
-			false,
-		)
+		expect(templateInput(wrapper)).toBeUndefined()
 	})
 
-	it('presets the outcome text from the template body on an empty form', async () => {
+	// The library puts the template's body (else presets.body) into the input
+	// a template input names, and never over typed text
+	// (nextcloud-vue tests/utils/transitionInputs.spec.js). What the menu owes
+	// is to name the outcome text, which is what it posts as the reason.
+	it('presets the outcome text, the reason, and reads the content templates as options', async () => {
 		const wrapper = await formFor('finish')
+		const input = templateInput(wrapper)
 
-		wrapper.vm.applyTemplate({
+		expect(input.applyTo).toBe('reason')
+		expect(input.mapOption({ id: 'tpl-1', name: 'Niet-ontvankelijk', body: 'Uw bezwaar is niet-ontvankelijk verklaard.' })).toEqual({
 			id: 'tpl-1',
+			name: 'Niet-ontvankelijk',
 			body: 'Uw bezwaar is niet-ontvankelijk verklaard.',
 			presets: {},
 		})
-
-		expect(wrapper.vm.reason).toBe('Uw bezwaar is niet-ontvankelijk verklaard.')
 	})
 
-	it('reads the body out of the presets when the template carries it there', async () => {
+	it('does not send the template itself', async () => {
 		const wrapper = await formFor('finish')
+		axios.post.mockResolvedValue({ data: {} })
+		wrapper.vm.values = { ...wrapper.vm.values, resultTemplate: 'tpl-1', reason: 'Klaar.', resultTypeId: 'rt-nok' }
 
-		wrapper.vm.applyTemplate({ id: 'tpl-1', presets: { body: 'Toegewezen.' } })
+		await wrapper.vm.confirm()
 
-		expect(wrapper.vm.reason).toBe('Toegewezen.')
-	})
-
-	it('does not overwrite what the handler already typed', async () => {
-		const wrapper = await formFor('finish')
-		wrapper.vm.reason = "Twee alinea's die de behandelaar zelf schreef."
-
-		wrapper.vm.applyTemplate({
-			id: 'tpl-1',
-			body: 'Uw bezwaar is niet-ontvankelijk verklaard.',
-		})
-
-		expect(wrapper.vm.reason).toBe(
-			"Twee alinea's die de behandelaar zelf schreef.",
-		)
-	})
-
-	it('does nothing when the template has no text at all', async () => {
-		const wrapper = await formFor('finish')
-
-		wrapper.vm.applyTemplate({ id: 'tpl-1', body: '', presets: {} })
-		wrapper.vm.applyTemplate(null)
-		wrapper.vm.applyTemplate(undefined)
-
-		expect(wrapper.vm.reason).toBe('')
+		expect(axios.post.mock.calls[0][1]).not.toHaveProperty('resultTemplate')
 	})
 
 	it('posts the preset text as the reason when the act is confirmed', async () => {
 		const wrapper = await formFor('finish')
 		axios.post.mockResolvedValue({ data: {} })
-		wrapper.vm.applyTemplate({ id: 'tpl-1', body: 'Niet-ontvankelijk.' })
-		wrapper.vm.resultTypeId = 'rt-nok'
+		const fields = wrapper.findComponent({ name: 'CnTransitionInputFields' })
+		fields.vm.$emit('update:modelValue', { ...fields.props('modelValue'), reason: 'Niet-ontvankelijk.' })
+		wrapper.vm.values = { ...wrapper.vm.values, resultTypeId: 'rt-nok' }
 
 		await wrapper.vm.confirm()
 

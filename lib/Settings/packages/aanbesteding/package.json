@@ -1,0 +1,12 @@
+{
+  "id": "aanbesteding",
+  "title": "Aanbesteding",
+  "version": "1.5.0",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "examples"
+  ],
+  "install": "on-request",
+  "description": "The Aanbesteding case type: a tender from preparation through publication, bids and evaluation to the award decision, with its statuses and roles. Category 'Inkoop en leveranciers', which is what the case page's bids card and tab gate on. Installed on request: POST /api/packages/aanbesteding/install, or occ dossiq:package:install aanbesteding. Ships an example case in flight (`examples/`), written with the package, its dates relative to the install day."
+}

@@ -18,15 +18,6 @@
 -->
 <template>
 	<div class="first-run-tab">
-		<p class="first-run-tab__description">
-			{{
-				t(
-					'dossiq',
-					'What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.',
-				)
-			}}
-		</p>
-
 		<NcLoadingIcon v-if="loading" :size="32" />
 
 		<NcNoteCard v-else-if="error" type="error">
@@ -39,6 +30,21 @@
 					v-for="item in readiness"
 					:key="item.id"
 					class="first-run-tab__item">
+					<span class="first-run-tab__body">
+						<a
+							v-if="item.screen"
+							:href="item.screen"
+							class="first-run-tab__title">{{ t('dossiq', item.title) }}</a>
+						<span v-else class="first-run-tab__title">{{ t('dossiq', item.title) }}</span>
+						<span class="first-run-tab__hint">{{ t('dossiq', item.body) }}</span>
+						<span v-if="item.failure" class="first-run-tab__failure">
+							{{
+								t('dossiq', 'This could not be read: {reason}', {
+									reason: item.failure,
+								})
+							}}
+						</span>
+					</span>
 					<span
 						class="first-run-tab__state"
 						:class="item.done ? 'is-done' : 'is-open'">
@@ -47,25 +53,6 @@
 								? t('dossiq', 'Done')
 								: t('dossiq', 'Still open')
 						}}
-					</span>
-					<span class="first-run-tab__body">
-						<a
-							v-if="item.screen"
-							:href="item.screen"
-							class="first-run-tab__title"
-							>{{ item.title }}</a
-						>
-						<span v-else class="first-run-tab__title">{{
-							item.title
-						}}</span>
-						<span class="first-run-tab__hint">{{ item.body }}</span>
-						<span v-if="item.failure" class="first-run-tab__failure">
-							{{
-								t('dossiq', 'This could not be read: {reason}', {
-									reason: item.failure,
-								})
-							}}
-						</span>
 					</span>
 				</li>
 			</ul>
@@ -144,45 +131,77 @@ export default {
 </script>
 
 <style scoped>
+.first-run-tab {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* A bordered list with a status badge at the end of each row, as board
+   DqBeheerGeavanceerd "Eerste keer" draws it. */
 .first-run-tab__list {
 	list-style: none;
 	margin: 0;
 	padding: 0;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
 }
 
 .first-run-tab__item {
 	display: flex;
-	gap: calc(var(--default-grid-baseline, 4px) * 3);
-	padding-block: calc(var(--default-grid-baseline, 4px) * 2);
-	border-block-end: 1px solid var(--color-border);
+	align-items: center;
+	gap: 12px;
+	padding: 10px 12px;
 }
 
-.first-run-tab__state {
-	flex: 0 0 auto;
-	min-width: 6em;
-	font-weight: bold;
-}
-
-.first-run-tab__state.is-done {
-	color: var(--color-success-text, var(--color-success));
-}
-
-.first-run-tab__state.is-open {
-	color: var(--color-text-maxcontrast);
+.first-run-tab__item + .first-run-tab__item {
+	border-block-start: 1px solid var(--color-border);
 }
 
 .first-run-tab__body {
+	flex: 1 1 auto;
+	min-width: 0;
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
 }
 
-.first-run-tab__hint,
-.first-run-tab__failure {
+.first-run-tab__title {
+	/* thematiq colours and underlines every link with `!important` from its tokens. */
+	--nldesign-component-link-color: var(--color-main-text);
+	--nldesign-color-on-surface: var(--color-main-text);
+	--nldesign-component-link-text-decoration: none;
+	color: var(--color-main-text);
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+}
+
+a.first-run-tab__title:hover,
+a.first-run-tab__title:focus-visible {
+	text-decoration: underline;
+}
+
+.first-run-tab__hint {
 	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	line-height: 1.45;
 }
 
 .first-run-tab__failure {
 	color: var(--color-error-text, var(--color-error));
+	font-size: 13px;
+}
+
+.first-run-tab__state {
+	flex: none;
+	padding: 2px 8px;
+	border-radius: 10px;
+	background: var(--color-background-hover);
+	color: var(--cn-board-text-soft, var(--color-main-text));
+	font-size: 13px;
+	font-weight: 600;
+	line-height: normal;
 }
 </style>

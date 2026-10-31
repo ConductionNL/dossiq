@@ -1,0 +1,104 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"board": "DqZoekresultaten",
+		"note": "One result list over cases, case objects and documents for the term in the address (`?q=`), each read through the reader's own permissions, so it shows only what the reader may see. A chip per kind with its count. Built on the cross-schema search source (`entitySource: search`, nextcloud-vue #1755). The board's saved-search and exports cards are not part of this page yet: the source does not cover them."
+	},
+	"pages": [
+		{
+			"id": "SearchResults",
+			"route": "/search",
+			"type": "index",
+			"title": "Search",
+			"config": {
+				"entitySource": "search",
+				"sourceConfig": {
+					"termQuery": "q",
+					"kindAsText": true,
+					"kinds": [
+						{
+							"id": "cases",
+							"label": "Cases",
+							"rowLabel": "Case",
+							"register": "dossiq",
+							"schema": "case",
+							"subtitleField": "identifier",
+							"subtitleTemplate": "Case {identifier} · {caseTypeTitle}",
+							"subtitleResolve": { "field": "caseType", "schema": "caseType", "labelField": "title", "as": "caseTypeTitle" },
+							"statusField": "status",
+							"href": "/apps/dossiq/cases/{id}",
+							"statusResolve": {
+								"register": "dossiq",
+								"schema": "statusType",
+								"labelField": "name"
+							},
+							"linkedField": "assignee",
+     "linkedUser": true
+						},
+						{
+							"id": "objects",
+							"label": "Objects",
+							"rowLabel": "{objectType}",
+							"register": "dossiq",
+							"schema": "caseObject"
+						},
+						{
+							"id": "documents",
+							"label": "Documents",
+							"rowLabel": "Document",
+							"files": true
+						}
+					],
+					"linkedLabel": "Linked",
+					"_statusColorMapNote": "DqZoekresultaten r29: the status pill in the tone the case list gives it (statusType colour): In behandeling purple, Ontvangen blue, Afgehandeld green, Besluit teal, Wacht op inwoner amber.",
+					"statusColorMap": { "In behandeling": "purple", "Ontvangen": "info", "Afgehandeld": "success", "Besluit": "teal", "Wacht op inwoner": "warning" },
+					"titleWrap": true,
+    "_columnWidthsNote": "DqZoekresultaten draws Resultaat 275px, Soort 111, Gekoppeld 145 (r32: at 250 'Dakkapel Lindelaan 7, Van der Berg' wrapped and the rows were 118 vs 100); Status takes the rest, so the checkbox column keeps its 60px (r31: a fixed Status width spread the spare width over the checkbox column; nextcloud-vue columnWidths).",
+    "columnWidths": { "title": "275px", "kindText": "111px", "linked": "145px" }
+				},
+				"showTitle": true,
+				"countText": "{total} results in cases, objects and documents, only what you may see",
+				"footerNote": "{shown} of {total} · 20 per page",
+				"searchPlaceholder": "Search cases, objects and documents",
+				"showAdd": false,
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "save-view",
+						"label": "Save search",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"title": "Search: {term}",
+				"allowSavedViews": true,
+				"savedViewChips": false,
+				"quickFilterPlacement": "toolbar",
+				"sidePanel": [
+					{
+						"id": "search-saved",
+						"type": "saved-view-alert",
+						"title": "Saved search",
+						"content": {
+							"noun": {
+								"one": "case",
+								"other": "cases"
+							}
+						}
+					},
+					{
+						"id": "search-exports",
+						"type": "exports",
+						"title": "Your exports"
+					}
+				]
+			}
+		}
+	]
+}

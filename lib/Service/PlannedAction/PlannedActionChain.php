@@ -133,6 +133,7 @@ class PlannedActionChain {
 				->format('Y-m-d'),
 			'state' => 'planned',
 			'plannedFrom' => (string)($completed['id'] ?? ($completed['uuid'] ?? '')),
+			'plannedByRule' => (string)($completed['plannedByRule'] ?? ''),
 		];
 	}//end next()
 

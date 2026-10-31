@@ -29,7 +29,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Consultation;
 
 use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
@@ -156,6 +158,36 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 
 		self::assertSame('https://example.test/l/abc', $invited['url']);
 	}//end testInviteMintsACommentLinkOnTheDeadline()
+
+	/**
+	 * With a response address set in Adviseringsbeheer, the invitation sends
+	 * that address with the link's token, in a message naming the subject
+	 * and the deadline.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-the-external-invitation-uses-the-configured-response-address
+	 *
+	 * @return void
+	 */
+	public function testInviteSendsTheConfiguredResponseAddress(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ($key === 'consultation_external_response_url' ? 'https://loket.zuiddrecht.nl/advies' : $default)
+		);
+		$consultations = $this->createMock(ConsultationService::class);
+		$consultations->method('terms')->willReturn(new ConsultationTerms(settingsService: $settings));
+		$consultations->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'parentCase' => 'case-1', 'adviceAuthority' => 'Welstandscommissie', 'subject' => 'Gevelwijziging', 'latestResponseDate' => '2030-03-01']
+		);
+		$shares = $this->createMock(CaseSharingService::class);
+		$shares->method('createTokenShare')->willReturn(['share' => $this->share(), 'url' => 'https://example.test/l/abc']);
+
+		$invited = $this->makeService([], $consultations, $shares)->invite(consultationId: 'cn-1', userId: 'anja');
+
+		self::assertSame('https://example.test/l/abc', $invited['url']);
+		self::assertSame('https://loket.zuiddrecht.nl/advies/abc', $invited['responseUrl']);
+		self::assertStringContainsString('https://loket.zuiddrecht.nl/advies/abc', $invited['message']);
+		self::assertStringContainsString('2030-03-01', $invited['message']);
+	}//end testInviteSendsTheConfiguredResponseAddress()
 
 	/**
 	 * A consultation that names no advisory body has nobody to invite, and

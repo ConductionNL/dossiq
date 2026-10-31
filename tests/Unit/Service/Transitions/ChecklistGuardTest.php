@@ -102,7 +102,8 @@ class ChecklistGuardTest extends TestCase {
 		return new ChecklistGuard(
 			$this->inbox($caseTasks, $error),
 			$this->gateway($namedTask),
-			new NullLogger()
+			new NullLogger(),
+			l10n: new SourceL10n()
 		);
 	}//end guard()
 
@@ -177,7 +178,7 @@ class ChecklistGuardTest extends TestCase {
 		$result = $this->guard()->evaluate(guardConfig: [], case: [], userId: 'u');
 
 		self::assertFalse($result->passed);
-		self::assertSame('Zaak niet herkend voor checklistcontrole', $result->failureMessage);
+		self::assertSame('Case not recognised for the checklist check', $result->failureMessage);
 	}//end testFailsWhenTheCaseCannotBeIdentified()
 
 	/**
@@ -196,7 +197,7 @@ class ChecklistGuardTest extends TestCase {
 		$result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u');
 
 		self::assertFalse($result->passed);
-		self::assertSame('Taken van de zaak niet gevonden', $result->failureMessage);
+		self::assertSame('Tasks of the case not found', $result->failureMessage);
 	}//end testAnUnreadableEngineFailsTheCaseWideCheck()
 
 	/**
@@ -230,7 +231,7 @@ class ChecklistGuardTest extends TestCase {
 		);
 
 		self::assertFalse($result->passed);
-		self::assertSame('Gekoppelde taak niet gevonden', $result->failureMessage);
+		self::assertSame('Linked task not found', $result->failureMessage);
 	}//end testFailsWhenTheNamedTaskCannotBeRead()
 
 	/**

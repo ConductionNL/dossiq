@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261015100000</version>
+    <version>0.4.47-unstable.20261030121000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -198,6 +198,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
              rungs DsoDeadlineTimerFiredListener acts on
              (termijnbewaking-op-engine-timers 2.3). -->
         <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
+        <job>OCA\Dossiq\BackgroundJob\RaiseDuePayments</job>
+        <!-- Re-verifies stored document checksums once a day and records the check (document-integrity-check). -->
+        <job>OCA\Dossiq\BackgroundJob\DocumentIntegrityCheckJob</job>
         <!--
             The daily termijn scan (DailyDeadlineScanJob) is RETIRED: the
             OpenRegister FlowTimerWorker sweep fires the armed termijn
@@ -361,6 +364,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\NormaliseCommunicationChannelValues</step>
             <!--
+                After the import, so statusType declares teal: the statuses
+                dossiq seeded take the colour their boards draw, unless an
+                administrator chose another (status-type-board-colours).
+            -->
+            <step>OCA\Dossiq\Repair\RecolourShippedStatusTypes</step>
+            <!--
+                After the import, so resultType declares the archival action
+                enum: the retain and destroy the retired admin editor stored
+                become bewaren and vernietigen.
+            -->
+            <step>OCA\Dossiq\Repair\MapLegacyArchivalActions</step>
+            <!--
                 The shipped register data assigns flow steps to Nextcloud
                 groups (task-behandelaar -> "behandelaars"). Provision them
                 before anything imports or runs that data: the completion
@@ -412,6 +427,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\InstallShippedPackages</step>
             <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
             <!--
+                After the case type seeds: an install whose earlier seed runs
+                stored a case type twice keeps the newest copy current and
+                supersedes the older one, so the new case picker offers one.
+                Post-migration only: a fresh install has no copies.
+            -->
+            <step>OCA\Dossiq\Repair\SupersedeDuplicateSeededCaseTypes</step>
+            <!--
                 AFTER EVERY STEP THAT CREATES A CASE TYPE, AND IT USED TO RUN
                 BEFORE THEM ALL. This step projects the implicit lifecycle of a
                 case type that has no workflow yet into a published "basis"
@@ -441,12 +463,19 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
             <!--
+                After the package install and the flows: every case type's import
+                flagged runOnUpgrade moves its source records onto cases, before
+                the open cases get their case type's handling team. After the
+                term definitions, so a moved record's case binds its statutory term.
+            -->
+            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
+            <step>OCA\Dossiq\Repair\RunUpgradeRecordImports</step>
+            <!--
                 After the package install: an open case filed while its case type
                 had no handling block gets the case type's handling team.
             -->
             <step>OCA\Dossiq\Repair\AssignOpenCasesTheirCaseTypeTeam</step>
             <step>OCA\Dossiq\Repair\FoldCasePropertiesOntoCase</step>
-            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
                 Raises each local bezwaaradviescommissie as a GovernanceBody in
                 the decision app and notes the id back on the local row.
@@ -710,6 +739,19 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  and the case differs. Idempotent, counted, non-fatal.
                  Post-migration only: a fresh install has no cases. -->
             <step>OCA\Dossiq\Repair\BackfillCaseStatusRole</step>
+            <!-- woo-five-steps: existing cases get `caseTypeIdentifier`, the
+                 identifier every version of their case type shares, which the
+                 lists and quick filters that mean every version read.
+                 OpenRegister computes it on save, so a case saved before the
+                 field existed has none. Same rules as the statusRole step.
+                 Post-migration only: a fresh install has no cases. -->
+            <step>OCA\Dossiq\Repair\BackfillCaseTypeIdentifier</step>
+            <!-- case-last-activity-at: existing cases without `lastActivityAt`
+                 get the newest activity date they carry, else their creation
+                 date, so the stalled-case lists can show them. Once, behind
+                 app config case_last_activity_backfill. Post-migration only:
+                 a fresh install has no cases. -->
+            <step>OCA\Dossiq\Repair\BackfillCaseLastActivity</step>
             <!-- communication-portal-conversation-on-the-case D-2: each portal
                  message's attachments are copied into the message folder portaliq
                  serves, once, behind a persisted key. Post-migration only: a
@@ -744,6 +786,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!-- documents-live-on-the-case: every document's file moves into the
                  folder of the case that owns it, once, behind a persisted key. -->
             <step>OCA\Dossiq\Repair\MoveDocumentsIntoCaseFolders</step>
+            <!-- document-lookups-stay-in-their-schema: one document record per
+                 file; a later record of a file goes with its joins, once. -->
+            <step>OCA\Dossiq\Repair\RemoveDocumentRecordTwins</step>
             <!-- gemachtigde-role-on-every-case-type: the one role type that names
                  no case type, so every case type can record a representative
                  under Awb 2:1. MUST come before SyncCaseRoleVocabulary, which
@@ -856,6 +901,28 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 Post-migration only: a fresh install has no records.
             -->
             <step>OCA\Dossiq\Repair\ReconcileCaseRecordGrants</step>
+            <!--
+                The case types each user pinned become views in their menu
+                (case-type-pins-are-views), once per user; reads the case
+                types, so it runs after the import.
+            -->
+            <step>OCA\Dossiq\Repair\PinCaseTypesAsViews</step>
+            <!--
+                Renamed UI names (dq-abstract L7). The document review report
+                settings move to their current keys, and the widget, page and
+                menu ids an administrator arranged in buildiq follow their new
+                names. Both never overwrite, never throw, and change nothing on
+                a second run. Post-migration only: a fresh install has no old
+                keys and no stored arrangement.
+            -->
+            <step>OCA\Dossiq\Repair\CarryRenamedSettingKeys</step>
+            <step>OCA\Dossiq\Repair\RewriteRenamedLayoutIds</step>
+            <!--
+                The penalty payouts dossiq kept move to the finance app, linked
+                to their case (case-money-is-configuration, REQ-DQM-004). Rows
+                stay readable; a second run raises nothing new.
+            -->
+            <step>OCA\Dossiq\Repair\MigratePayoutRowsToFinance</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -888,6 +955,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               ReconcileCaseDeadlinesWithTerms   writes existing case deadlines from their terms; none exist yet
               RearmBeslistermijnTimers          re-arms existing running term timers; none exist yet
               RetireOriRegister                 retires a register a fresh install never had
+              SupersedeDuplicateSeededCaseTypes supersedes copies earlier seed runs stored; a fresh install has none
               FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
@@ -900,12 +968,16 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
+              BackfillCaseTypeIdentifier        fills caseTypeIdentifier on existing cases; a fresh install has none
+              BackfillCaseLastActivity          dates the last activity of existing cases; a fresh install has none
               CopyMessageAttachmentsIntoMessageFolders  copies existing message attachments into the message folder; a fresh install has none
               BackfillPortalParty               fills portalParty on existing portal cases; a fresh install has none
               MoveDecisionTablesToOpenRegister  copies existing dossiq decision tables into OpenRegister; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
+              RemoveDocumentRecordTwins         removes second records of a file an earlier projection made; a fresh install has none
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
+              MigratePayoutRowsToFinance        hands payout rows dossiq kept to the finance app; a fresh install has none
 
             THE LIST ABOVE IS NOT PROSE. RepairStepRegistrationTest parses this file,
             sweeps every post-migration step, and fails on any step that is neither
@@ -1018,11 +1090,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
             <!--
+                After the package install and the flows: every case type's import
+                flagged runOnUpgrade moves its source records onto cases, before
+                the open cases get their case type's handling team. After the
+                term definitions, so a moved record's case binds its statutory term.
+            -->
+            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
+            <step>OCA\Dossiq\Repair\RunUpgradeRecordImports</step>
+            <!--
                 After the package install: an open case filed while its case type
                 had no handling block gets the case type's handling team.
             -->
             <step>OCA\Dossiq\Repair\AssignOpenCasesTheirCaseTypeTeam</step>
-            <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
             <!--

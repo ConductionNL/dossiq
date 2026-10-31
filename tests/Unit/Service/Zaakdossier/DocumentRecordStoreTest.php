@@ -278,4 +278,31 @@ class DocumentRecordStoreTest extends TestCase {
 		$store->saveRecord(record: ['title' => 'x']);
 	}//end testTheStoreRefusesToWorkWithoutOpenRegister()
 
+	/**
+	 * OpenRegister's find answers a uuid from any schema of the register, so a
+	 * document's uuid must not pass for a case: a file attached to a document's
+	 * own folder would otherwise be projected as a second record of that file.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/document-projection/spec.md
+	 */
+	public function testALookupAnswersOnlyARowOfTheSchemaItAskedFor(): void {
+		$this->objects->rows['doc-1'] = ['@self' => ['id' => 'doc-1', 'register' => 'dossiq', 'schema' => 'informatieobject'], 'title' => 'Advies'];
+		$this->objects->rows['case-1'] = ['@self' => ['id' => 'case-1', 'register' => 'dossiq', 'schema' => 'case'], 'title' => 'Kapvergunning'];
+		$this->objects->rows['case-2'] = ['@self' => ['id' => 'case-2', 'schema' => '/api/registers/dossiq/schemas/case'], 'title' => 'Path'];
+		$this->objects->rows['case-3'] = ['@self' => ['id' => 'case-3', 'schema' => '172'], 'title' => 'Id against a slug'];
+
+		$this->assertNull(actual: $this->store->findCase(caseId: 'doc-1'), message: 'a document is not a case');
+		$this->assertSame(expected: 'Kapvergunning', actual: $this->store->findCase(caseId: 'case-1')['title']);
+		$this->assertSame(expected: 'Path', actual: $this->store->findCase(caseId: 'case-2')['title']);
+		$this->assertSame(
+			expected: 'Id against a slug',
+			actual: $this->store->findCase(caseId: 'case-3')['title'],
+			message: 'an id cannot be told from a slug, so it is kept'
+		);
+		$this->assertNull(actual: $this->store->findRecord(recordId: 'case-1'), message: 'a case is not a document');
+		$this->assertSame(expected: 'Advies', actual: $this->store->findRecord(recordId: 'doc-1')['title']);
+	}//end testALookupAnswersOnlyARowOfTheSchemaItAskedFor()
+
 }//end class

@@ -1,0 +1,2 @@
+- [x] case-files Scan result and Visible to hidden on the case type's documentReview flag (manifest)
+- [x] vitest: review case hides both by default, plain case shows them, both stay declared

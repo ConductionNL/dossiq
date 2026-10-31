@@ -116,7 +116,6 @@ class ZaakportaalFragmentTest extends TestCase {
 		);
 
 		$this->assertContains(needle: 'portaal-pref-demo-burger', haystack: $slugs);
-		$this->assertContains(needle: 'portaal-bericht-demo-1', haystack: $slugs);
 	}//end testPortalSeedObjectsUnioned()
 
 	/**

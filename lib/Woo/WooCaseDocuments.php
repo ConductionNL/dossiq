@@ -35,8 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FindsFilesById;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -48,6 +48,7 @@ use Throwable;
  */
 class WooCaseDocuments {
 
+	use FindsFilesById;
 	use SearchesObjects;
 
 	/**
@@ -205,11 +206,9 @@ class WooCaseDocuments {
 		}
 
 		try {
-			foreach ($this->rootFolder->getById($fileId) as $node) {
-				if ($node instanceof File) {
-					$document['content'] = base64_encode($node->getContent());
-					break;
-				}
+			$file = $this->fileById(fileService: $this->settingsService->getFileService(), rootFolder: $this->rootFolder, fileId: $fileId);
+			if ($file !== null) {
+				$document['content'] = base64_encode($file->getContent());
 			}
 		} catch (Throwable $e) {
 			$this->logger->warning('WooCaseDocuments: a document file could not be read', ['fileId' => $fileId, 'error' => $e->getMessage()]);

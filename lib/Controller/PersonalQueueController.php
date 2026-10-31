@@ -47,7 +47,7 @@ use OCP\IUserSession;
 use Throwable;
 
 /**
- * The caller's own queue, end of day, planned items and private stages.
+ * The caller's own queue, planned items and private stages; the end of day is EndOfDayController's.
  *
  * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
  */
@@ -171,36 +171,6 @@ class PersonalQueueController extends Controller {
 			),
 		]);
 	}//end setGrouping()
-
-	/**
-	 * The cases and tasks the caller may close their day on.
-	 *
-	 * Dossiq answers WHICH items are candidates. Whether the caller touched
-	 * one today is the register's own per-reader read state, which the screen
-	 * asks for per item; reproducing that answer here would be a second store
-	 * of who has seen what, which `unread-state-on-the-case` exists to stop.
-	 *
-	 * @return JSONResponse The candidates.
-	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
-	 */
-	#[NoAdminRequired]
-	public function endOfDay(): JSONResponse {
-		$userId = $this->caller();
-		if ($userId === '') {
-			return $this->unauthenticated();
-		}
-
-		$queue = $this->queue->forPerson(userId: $userId);
-		$candidates = array_values(
-			array_filter(
-				$queue['items'],
-				static fn (array $item): bool => in_array(($item['subjectType'] ?? ''), ['case', 'task'], true)
-			)
-		);
-
-		return new JSONResponse(['items' => $candidates, 'unavailable' => $queue['unavailable']]);
-	}//end endOfDay()
 
 	/**
 	 * Plan an item on the caller's own agenda.

@@ -82,7 +82,7 @@
       "plannedAction": {
         "slug": "plannedAction",
         "icon": "CalendarClock",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:PlanAction",
         "title": "Planned action",
         "description": "The next piece of work planned on a case, with an owner and a date",
@@ -121,6 +121,13 @@
             "facetable": true,
             "title": "Owner",
             "description": "Who is to do it, resolved from the type's role on the case at the moment it was planned."
+          },
+          "ownerGroup": {
+            "type": "string",
+            "maxLength": 255,
+            "facetable": true,
+            "title": "Owning team",
+            "description": "The team that is to do it when no one person is, as a group id. A row shows it by the team's name."
           },
           "plannedFor": {
             "type": "string",
@@ -164,6 +171,18 @@
             "$ref": "plannedAction",
             "title": "Planned from",
             "description": "The action whose completion planned this one, empty for the first of a chain. It is what makes a chain readable backwards without a separate log."
+          },
+          "plannedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Planned by",
+            "description": "The user who planned it by hand, empty when the case's steps planned it."
+          },
+          "plannedByRule": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Planned by the steps of",
+            "description": "What planned it when no person did, as the row writes it after 'planned by' (the steps of the case type). A successor carries it over from the action whose completion planned it."
           }
         }
       }

@@ -104,7 +104,7 @@ describe('inspection store (stack A)', () => {
 		await store.fetchReports('case-1')
 
 		expect(http.get).toHaveBeenCalledWith(
-			'/apps/dossiq/api/vth/cases/case-1/inspection-results',
+			'/apps/dossiq/api/cases/case-1/checklist-results',
 		)
 		expect(store.nonConformReports.map((r) => r.id)).toEqual(['r2'])
 	})
@@ -122,7 +122,7 @@ describe('inspection store (stack A)', () => {
 		})
 
 		expect(http.post).toHaveBeenCalledWith(
-			'/apps/dossiq/api/vth/cases/case-1/inspection-result',
+			'/apps/dossiq/api/cases/case-1/checklist-results',
 			expect.objectContaining({
 				checklistId: 't-1',
 				items: [{ itemId: 'q1', result: 'pass' }],

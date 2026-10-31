@@ -1,0 +1,86 @@
+{
+  "_note": "case-type-rights-enforced (Ruben, 23 October 2026): a case type's rights rows are enforced by OpenRegister's matrix on the case schema. The matrix keys on assignedGroup, the caller's own values are their groups ({groups: true}), and its rows come from dossiq at check time (rowsFrom dossiq.case-type-rights, CaseTypeRightsRowsListener). The case schema names the file verbs for the assignee and the background service, so case files always follow file rights and a role's document rights are the only other way in; the handling teams carry them too (CaseTeamAccessRules). Rights rows gain $ownTeam, statuses and documentActions. caseType 1.39.0 and case 1.50.0 per the version register in R20/INT-DQ-b27.md. Needs OpenRegister with rbac-matrix-app-rows-and-file-verbs.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.39.0",
+        "properties": {
+          "rightsMatrix": {
+            "items": {
+              "properties": {
+                "department": {
+                  "description": "The department the right is granted to: a department name (matches organisatieRol.department), * for every team, or $ownTeam for the teams the person is in, resolved when access is checked."
+                },
+                "statuses": {
+                  "type": "array",
+                  "title": "Statuses",
+                  "description": "The statuses (phases) in which this row's edit rights hold, as statusType ids. Reading holds in every status. Empty means every status. Outside them the role cannot create, change, handle or delete, nor add or delete documents; the assignee's own rights are not a rights row and stay.",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "documentActions": {
+                  "type": "array",
+                  "title": "Documents",
+                  "description": "What the role may do with the case's files: read, add, delete. Without it the case verbs say it (delete is all, create is add, read is read).",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "read",
+                      "add",
+                      "delete"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "case": {
+        "version": "1.50.0",
+        "authorization": {
+          "matrix": {
+            "field": "assignedGroup",
+            "userSource": {
+              "groups": true
+            },
+            "rowsFrom": "dossiq.case-type-rights"
+          },
+          "readFiles": [
+            {
+              "group": "authenticated",
+              "match": {
+                "assignee": "$userId"
+              }
+            },
+            "dossiq-background-service"
+          ],
+          "addFiles": [
+            {
+              "group": "authenticated",
+              "match": {
+                "assignee": "$userId"
+              }
+            },
+            "dossiq-background-service"
+          ],
+          "deleteFiles": [
+            {
+              "group": "authenticated",
+              "match": {
+                "assignee": "$userId"
+              }
+            },
+            "dossiq-background-service"
+          ]
+        }
+      }
+    }
+  }
+}

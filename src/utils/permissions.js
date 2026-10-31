@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+import { loadState } from '@nextcloud/initial-state'
+
 /**
  * Who the current account is allowed to be, in the vocabulary the manifest
  * uses.
@@ -43,6 +45,13 @@
  */
 
 /**
+ * Every role permission. An administrator holds them all, as OpenRegister
+ * grants `admin` every schema; the list matches
+ * `RolePermissions::ROLE_PERMISSIONS`.
+ */
+export const ROLE_PERMISSIONS = ['privacy', 'sociaal-domein']
+
+/**
  * The permission strings the current account holds.
  *
  * Never empty, and that is the point rather than a detail. `CnAppNav`'s filter
@@ -59,17 +68,40 @@
  * admin-only entry. `user` is what everyone holds and no manifest entry asks
  * for, which keeps the list non-empty for the accounts that hold nothing else.
  *
- * `admin` matches the backend `TenantService::isPlatformAdmin()` check.
+ * `admin` matches the backend `TenantService::isPlatformAdmin()` check. The
+ * role permissions (`privacy`, `sociaal-domein`) come from the server's
+ * `role_permissions` initial state (RolePermissions.php), which reads the
+ * user's groups; they hide pages and tabs whose records OpenRegister would
+ * refuse this user.
  *
  * @return {Array<string>} The permission strings held, always non-empty.
  * @spec openspec/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-data-access/spec.md
  */
 export function currentPermissions() {
 	const isAdmin =
 		typeof window.OC?.isUserAdmin === 'function'
 			? window.OC.isUserAdmin()
 			: false
-	return isAdmin ? ['user', 'admin'] : ['user']
+	if (isAdmin) {
+		return ['user', 'admin', ...ROLE_PERMISSIONS]
+	}
+	return ['user', ...rolePermissions()]
+}
+
+/**
+ * The role permissions the server says this user holds.
+ *
+ * @return {Array<string>} The role permissions, or none when the state is absent.
+ */
+function rolePermissions() {
+	let roles
+	try {
+		roles = loadState('dossiq', 'role_permissions', [])
+	} catch {
+		return []
+	}
+	return Array.isArray(roles) ? roles.filter((role) => ROLE_PERMISSIONS.includes(role)) : []
 }
 
 /**

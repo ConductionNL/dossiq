@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\ProcessMining\PhaseSummary;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
@@ -70,6 +71,7 @@ class ProcessMiningService {
 	 * @param ThroughputTrendCalculator $throughputCalculator Weekly closed-case throughput trend.
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param PhaseSummary $phases The phase matrix and the stuck list the page leads with.
 	 *
 	 * @return void
 	 */
@@ -80,6 +82,7 @@ class ProcessMiningService {
 		private readonly ThroughputTrendCalculator $throughputCalculator,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly PhaseSummary $phases = new PhaseSummary(),
 	) {
 	}//end __construct()
 
@@ -95,6 +98,20 @@ class ProcessMiningService {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(array $params): array {
+		$report = $this->buildReport(params: $params);
+		return [...$report, ...$this->phases->forPage(caseTypes: $report['caseTypes'])];
+	}//end getReport()
+
+	/**
+	 * The report itself: per case type dwell, bottlenecks and transitions, and the throughput trend.
+	 *
+	 * @param array<string, mixed> $params Query parameters (from, to, caseType).
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function buildReport(array $params): array {
 		$to = ($this->dates->tryParse($params['to'] ?? null) ?? $this->dates->today());
 		$from = $to->sub(new DateInterval('P12M'));
 		$fromParam = $this->nonEmptyStringParam(params: $params, key: 'from');
@@ -117,7 +134,7 @@ class ProcessMiningService {
 			}
 		}
 
-		$recordsByCase = $this->groupRecordsByCase(records: $records, caseIds: array_keys($casesById));
+		$recordsByCase = $this->groupRecordsByCase(records: $records, cases: $casesById);
 
 		$statusTypeIndex = $this->dataLoader->indexById(rows: $statusTypes);
 		$caseTypeIndex = $this->dataLoader->indexByIdAndSlug(rows: $caseTypes);
@@ -128,47 +145,16 @@ class ProcessMiningService {
 
 		$caseTypeReports = [];
 		foreach ($caseTypeGroups as $caseTypeId => $group) {
-			$caseIdsInGroup = array_keys($group['cases']);
-			$recordsForThisGroup = array_intersect_key($recordsByCase, array_flip($caseIdsInGroup));
-
-			$intervals = $this->dwellTimeAnalyzer->computeDwellIntervals(
-				recordsByCase: $recordsForThisGroup,
-				casesById: $group['cases'],
+			$caseTypeReports[] = $this->caseTypeReport(
+				caseTypeId: (string)$caseTypeId,
+				group: $group,
+				recordsByCase: $recordsByCase,
+				statusTypeIndex: $statusTypeIndex,
+				from: $from,
+				to: $to,
 				now: $now,
-				periodFrom: $from,
-				periodTo: $to,
 			);
-
-			$dwellStats = $this->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
-			$bottlenecks = $this->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats);
-			$transitions = $this->transitionBuilder->computeTransitionMatrix(
-				recordsByCase: $recordsForThisGroup,
-				statusTypeIndex: $statusTypeIndex
-			);
-
-			$caseTypeReports[] = [
-				'id' => $caseTypeId,
-				'title' => $group['title'],
-				'caseVolume' => count($group['cases']),
-				'dwellTime' => $dwellStats,
-				// The working days the CASES hold, beside the aggregates
-				// reconstructed from the record chain. Published rather than
-				// recomputed, so the page and a handler's work list answer the
-				// same question with the same number.
-				'dwellDaysHeld' => $this->dwellTimeAnalyzer->heldTotalsByStatus(
-					casesById: $group['cases'],
-					now: $now,
-				),
-				// The same intervals keyed by who held them. No second walk
-				// of the records: a by-assignee table computed on its own
-				// would drift from the by-phase one beside it.
-				'dwellByAssignee' => $this->dwellTimeAnalyzer->aggregateDwellStatsByActor(intervals: $intervals),
-				'bottlenecks' => $bottlenecks,
-				'transitionMatrix' => $transitions['matrix'],
-				'reworkPercent' => $transitions['reworkPercent'],
-				'transitionCount' => $transitions['totalCount'],
-			];
-		}//end foreach
+		}
 
 		usort(
 			$caseTypeReports,
@@ -185,10 +171,84 @@ class ProcessMiningService {
 			// than being assumed by the reader.
 			'clock' => $this->dwellTimeAnalyzer->clock(),
 			'caseTypeFilter' => $caseTypeFilter,
+			// The load stops at its limit, so a report that reached it is short.
+			'truncated' => (count($cases) >= ProcessMiningDataLoader::CASE_LIMIT),
 			'caseTypes' => $caseTypeReports,
 			'throughputTrend' => $this->throughputCalculator->computeThroughputTrend(cases: $casesById, from: $from, to: $to),
 		];
-	}//end getReport()
+	}//end buildReport()
+
+	/**
+	 * One case type's part of the report: dwell, bottlenecks and transitions.
+	 *
+	 * @param string                                          $caseTypeId      The case type id.
+	 * @param array{title: mixed, cases: array<string, mixed>}       $group           The case type's title and cases.
+	 * @param array<string, array<int, array<string, mixed>>> $recordsByCase   Status records per case.
+	 * @param array<string, array<string, mixed>>             $statusTypeIndex StatusType rows, keyed by id.
+	 * @param DateTimeImmutable                               $from            Start of the period.
+	 * @param DateTimeImmutable                               $to              End of the period.
+	 * @param DateTimeImmutable                               $now             The moment of reading.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	private function caseTypeReport(
+		string $caseTypeId,
+		array $group,
+		array $recordsByCase,
+		array $statusTypeIndex,
+		DateTimeImmutable $from,
+		DateTimeImmutable $to,
+		DateTimeImmutable $now,
+	): array {
+		$caseIdsInGroup = array_keys($group['cases']);
+		$recordsForThisGroup = array_intersect_key($recordsByCase, array_flip($caseIdsInGroup));
+
+		$intervals = $this->dwellTimeAnalyzer->computeDwellIntervals(
+			recordsByCase: $recordsForThisGroup,
+			casesById: $group['cases'],
+			now: $now,
+			periodFrom: $from,
+			periodTo: $to,
+		);
+
+		$dwellStats = $this->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
+		// Days per phase reads visits that ended only, so it holds still under the same data.
+		$completedStats = $this->dwellTimeAnalyzer->aggregateDwellStats(
+			intervals: array_values(array_filter($intervals, static fn (array $interval): bool => ($interval['open'] ?? false) === false)),
+			statusTypeIndex: $statusTypeIndex
+		);
+		$bottlenecks = $this->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats);
+		$transitions = $this->transitionBuilder->computeTransitionMatrix(
+			recordsByCase: $recordsForThisGroup,
+			statusTypeIndex: $statusTypeIndex
+		);
+
+		return [
+			'id' => $caseTypeId,
+			'title' => $group['title'],
+			'caseVolume' => count($group['cases']),
+			'dwellTime' => $dwellStats,
+			'dwellTimeCompleted' => $completedStats,
+			// The working days the CASES hold, beside the aggregates
+			// reconstructed from the record chain. Published rather than
+			// recomputed, so the page and a handler's work list answer the
+			// same question with the same number.
+			'dwellDaysHeld' => $this->dwellTimeAnalyzer->heldTotalsByStatus(
+				casesById: $group['cases'],
+				now: $now,
+			),
+			// The same intervals keyed by who held them. No second walk
+			// of the records: a by-assignee table computed on its own
+			// would drift from the by-phase one beside it.
+			'dwellByAssignee' => $this->dwellTimeAnalyzer->aggregateDwellStatsByActor(intervals: $intervals),
+			'bottlenecks' => $bottlenecks,
+			'transitionMatrix' => $transitions['matrix'],
+			'reworkPercent' => $transitions['reworkPercent'],
+			'transitionCount' => $transitions['totalCount'],
+		];
+	}//end caseTypeReport()
 
 	/**
 	 * Build dwell-time intervals: one entry per (case, status-visit).
@@ -356,23 +416,31 @@ class ProcessMiningService {
 
 	/**
 	 * Group and chronologically sort statusRecords by their `case` field,
-	 * restricted to the given set of case ids.
+	 * restricted to the cases in scope; a case without records is read from
+	 * its own status history.
 	 *
-	 * @param array<int, array<string, mixed>> $records Raw statusRecord rows.
-	 * @param array<int, string> $caseIds Case ids in scope.
+	 * @param array<int, array<string, mixed>>    $records Raw statusRecord rows.
+	 * @param array<string, array<string, mixed>> $cases   The cases in scope, by id.
 	 *
 	 * @return array<string, array<int, array<string, mixed>>>
 	 */
-	private function groupRecordsByCase(array $records, array $caseIds): array {
-		$allowed = array_flip($caseIds);
+	private function groupRecordsByCase(array $records, array $cases): array {
 		$grouped = [];
 		foreach ($records as $record) {
 			$caseId = (string)($record['case'] ?? '');
-			if ($caseId === '' || isset($allowed[$caseId]) === false) {
+			if ($caseId === '' || isset($cases[$caseId]) === false) {
 				continue;
 			}
 
 			$grouped[$caseId][] = $record;
+		}
+
+		// A case without status records (example data, an imported case) is read from its own status history.
+		foreach (array_diff_key($cases, $grouped) as $caseId => $case) {
+			$fromHistory = $this->recordsFromHistory(caseId: (string)$caseId, case: $case);
+			if ($fromHistory !== []) {
+				$grouped[$caseId] = $fromHistory;
+			}
 		}
 
 		foreach ($grouped as $caseId => $rows) {
@@ -393,6 +461,50 @@ class ProcessMiningService {
 
 		return $grouped;
 	}//end groupRecordsByCase()
+
+	/**
+	 * Status records read off a case's own status history: one per entry, at the moment it entered that status.
+	 *
+	 * @param string               $caseId The case id.
+	 * @param array<string, mixed> $case   The case; `statusHistory` as a list or as JSON text.
+	 *
+	 * Each is held by the person the entry names, else by the case's handler:
+	 * a history entry carries no actor of its own, and time nobody holds would
+	 * read as "not recorded" in the per-handler table.
+	 *
+	 * @return array<int, array{case: string, statusType: string, createdAt: string, actor: string}>
+	 *
+	 * @spec openspec/specs/dwell-from-status-history-actor/spec.md#requirement-time-read-from-the-status-history-has-a-holder
+	 */
+	private function recordsFromHistory(string $caseId, array $case): array {
+		$history = ($case['statusHistory'] ?? []);
+		if (is_string($history) === true) {
+			$history = json_decode($history, true);
+		}
+
+		$holder = trim((string)($case['assignee'] ?? ''));
+		$records = [];
+		foreach ((array)$history as $entry) {
+			if (is_array($entry) === false) {
+				continue;
+			}
+
+			$status = (string)($entry['status'] ?? '');
+			$moment = (string)($entry['enteredAt'] ?? '');
+			if ($status === '' || $moment === '') {
+				continue;
+			}
+
+			$actor = trim((string)($entry['actor'] ?? ($entry['by'] ?? '')));
+			if ($actor === '') {
+				$actor = $holder;
+			}
+
+			$records[] = ['case' => $caseId, 'statusType' => $status, 'createdAt' => $moment, 'actor' => $actor];
+		}
+
+		return $records;
+	}//end recordsFromHistory()
 
 	/**
 	 * Extract a record's creation timestamp — either the flattened

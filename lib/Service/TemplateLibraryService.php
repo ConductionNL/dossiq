@@ -99,11 +99,29 @@ class TemplateLibraryService {
 				'category' => $data['category'] ?? 'general',
 				'version' => $data['version'] ?? '1.0.0',
 				'file' => basename($file),
+				'fills' => $this->fillsOf(data: $data),
 			];
 		}//end foreach
 
 		return $templates;
 	}//end listTemplates()
+
+	/**
+	 * What a template fills in from the case, for the generate dialog.
+	 *
+	 * @param array<string, mixed> $data The template file's content.
+	 *
+	 * @return array<int, mixed> The template's fills, or an empty list.
+	 *
+	 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-a-template-names-what-it-fills-in
+	 */
+	private function fillsOf(array $data): array {
+		if (isset($data['fills']) === false || is_array($data['fills']) === false) {
+			return [];
+		}
+
+		return array_values($data['fills']);
+	}//end fillsOf()
 
 	/**
 	 * Load a template by its ID.

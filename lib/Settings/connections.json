@@ -6,7 +6,7 @@
             "title": "ZGW APIs",
             "description": "Zaken, Documenten, Catalogi, Besluiten, Notificaties and Objecten. Dossiq maps its register onto them as a provider.",
             "order": 10,
-            "settingsUrl": "/settings/admin/dossiq#section-zgw",
+            "settingsUrl": "/settings/admin/dossiq?tab=advanced#section-zgw",
             "requiredConfig": ["register", "case_schema"]
         },
         {
@@ -14,14 +14,14 @@
             "title": "StUF-ZKN",
             "description": "Outbound StUF-ZKN messages to a municipal broker, per endpoint.",
             "order": 20,
-            "settingsUrl": "/settings/admin/dossiq#section-stuf"
+            "settingsUrl": "/settings/admin/dossiq?tab=advanced#section-stuf"
         },
         {
             "key": "kcc",
             "title": "KCC desk",
             "description": "The customer-contact workplace: identification, sentiment and the case context a caller needs.",
             "order": 30,
-            "settingsUrl": "/settings/admin/dossiq#section-kcc",
+            "settingsUrl": "/settings/admin/dossiq?tab=advanced#section-kcc",
             "requiredConfig": ["identification_method"]
         },
         {
@@ -29,7 +29,7 @@
             "title": "Decision tables",
             "description": "DMN decision tables a workflow transition can evaluate.",
             "order": 40,
-            "settingsUrl": "/settings/admin/dossiq#section-dmn",
+            "settingsUrl": "/settings/admin/dossiq?tab=advanced#section-dmn",
             "requiredConfig": ["decision_table_schema"]
         },
         {
@@ -37,22 +37,22 @@
             "title": "Shared mailbox",
             "description": "The IMAP mailbox case email is read from and linked to a case.",
             "order": 50,
-            "settingsUrl": "/settings/admin/dossiq#section-mailbox"
+            "settingsUrl": "/settings/admin/dossiq?tab=system#section-mailbox"
         },
         {
             "key": "store",
             "title": "Store",
             "description": "The registry Dossiq installs case types and templates from.",
             "order": 60,
-            "settingsUrl": "/settings/admin/dossiq#section-store"
+            "settingsUrl": "/settings/admin/dossiq?tab=advanced#section-store"
         },
         {
             "key": "financial",
             "title": "Financial system",
-            "description": "The payout signal for a dwangsom, and the callback that confirms it.",
+            "description": "The payout signal for a settled amount, and the callback that confirms it.",
             "order": 70,
-            "settingsUrl": "/settings/admin/dossiq#section-financial",
-            "requiredConfig": ["dwangsom_callback_secret"]
+            "settingsUrl": "/settings/admin/dossiq?tab=advanced#section-financial",
+            "requiredConfig": ["payout_callback_secret"]
         },
         {
             "key": "brp",
@@ -61,6 +61,17 @@
             "order": 80,
             "unconfiguredMessage": "The conflict-of-interest check reads a case worker's family relations from Integriq's BRP source. That read stays off until an administrator sets relationFields on the source in Integriq.",
             "sourceTemplate": "brp-haalcentraal"
+        },
+        {
+            "key": "kadaster",
+            "title": "Kadaster (BRK) and WOZ",
+            "description": "Parcel, owners as a reference, and the WOZ value.",
+            "order": 85,
+            "settingsUrl": "/settings/admin/dossiq?tab=integrations#section-kadaster",
+            "switch": {
+                "configKey": "integration.brk.mode",
+                "offValues": ["", "log"]
+            }
         },
         {
             "key": "kvk",

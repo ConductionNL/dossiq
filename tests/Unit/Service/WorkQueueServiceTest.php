@@ -608,6 +608,52 @@ class WorkQueueServiceTest extends TestCase {
 	}//end testCaseItemCarriesItsRowAndDeadlineTier()
 
 	/**
+	 * A covered case joins the queue, scored like an own case and marked with whom it is covered for.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	public function testACoveredCaseJoinsTheQueueMarked(): void {
+		$this->seedOpenCase(['id' => 'own-1', 'title' => 'Own']);
+		$coveredFor = ['absentee' => 'anouk', 'name' => 'Anouk Bakker', 'until' => '2026-10-10'];
+
+		$items = $this->service->computeQueue(
+			'jan',
+			new DateTimeImmutable('2026-07-13'),
+			[['id' => 'cov-1', 'title' => 'Covered', 'assignee' => 'anouk', 'endDate' => '', 'deadline' => '2026-07-10', 'coveredFor' => $coveredFor]]
+		);
+
+		$byId = array_column($items, null, 'id');
+		self::assertSame(['cov-1', 'own-1'], array_column($items, 'id'), 'the overdue covered case ranks first');
+		self::assertSame($coveredFor, $byId['cov-1']['coveredFor']);
+		self::assertSame($coveredFor, $byId['cov-1']['case']['coveredFor']);
+		self::assertSame('overdue', $byId['cov-1']['deadlineTier']);
+		self::assertNull($byId['own-1']['coveredFor']);
+	}//end testACoveredCaseJoinsTheQueueMarked()
+
+	/**
+	 * A covered case that is already the caller's own is listed once, as their own.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 */
+	public function testACoveredCaseThatIsAlsoOwnIsListedOnce(): void {
+		$this->seedOpenCase(['id' => 'own-1', 'title' => 'Own']);
+		$coveredFor = ['absentee' => 'anouk', 'name' => 'Anouk Bakker', 'until' => ''];
+
+		$items = $this->service->computeQueue(
+			'jan',
+			new DateTimeImmutable('2026-07-13'),
+			[['id' => 'own-1', 'coveredFor' => $coveredFor]]
+		);
+
+		self::assertSame(['own-1'], array_column($items, 'id'));
+		self::assertNull($items[0]['coveredFor']);
+	}//end testACoveredCaseThatIsAlsoOwnIsListedOnce()
+
+	/**
 	 * A recent save resets the idle days.
 	 *
 	 * @return void

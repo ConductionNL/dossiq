@@ -102,7 +102,7 @@ class DelegatedAuthorityGuardTest extends TestCase {
 			}
 		);
 
-		return new DelegatedAuthorityGuard($container, $this->createMock(LoggerInterface::class));
+		return new DelegatedAuthorityGuard($container, $this->createMock(LoggerInterface::class), l10n: new SourceL10n());
 	}//end guard()
 
 	/**

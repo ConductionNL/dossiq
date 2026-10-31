@@ -1,0 +1,16 @@
+{
+  "schema": "objection_schema",
+  "rows": [
+    {
+      "id": "6643609b-e44c-525c-9ec2-b5ce8ff0ceb2",
+      "case": "b081ad8b-807e-5d5c-afcd-7fa5884428df",
+      "contestedDecision": "dbaadb0c-2acb-5142-8bd4-4644be691384",
+      "grounds": "De indiener vindt de last onder dwangsom onevenredig: de schuur is tijdelijk en zou binnen een jaar weg zijn. Hij vraagt om een langere begunstigingstermijn.",
+      "requestedRelief": "Een begunstigingstermijn van een jaar.",
+      "receivedDate": "{{date:-25}}",
+      "receivedChannel": "brief",
+      "isTimely": true,
+      "timelinessAssessment": "Ontvangen binnen zes weken na bekendmaking van het besluit."
+    }
+  ]
+}

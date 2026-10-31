@@ -41,6 +41,8 @@ use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -244,6 +246,36 @@ class FakeTimelineObjectService {
 	public array $scopes = [];
 
 	/**
+	 * Whether each find ran inside runAsSystem, in order.
+	 *
+	 * @var array<int, bool>
+	 */
+	public array $findsAsSystem = [];
+
+	/**
+	 * Whether the current call runs as the system.
+	 *
+	 * @var boolean
+	 */
+	private bool $inSystem = false;
+
+	/**
+	 * Run an operation as the system, as OpenRegister's ObjectService does.
+	 *
+	 * @param callable $operation The operation.
+	 *
+	 * @return mixed What it returns.
+	 */
+	public function runAsSystem(callable $operation): mixed {
+		$this->inSystem = true;
+		try {
+			return $operation();
+		} finally {
+			$this->inSystem = false;
+		}
+	}//end runAsSystem()
+
+	/**
 	 * Find one object.
 	 *
 	 * @param string $id            The object id.
@@ -262,6 +294,7 @@ class FakeTimelineObjectService {
 		bool $_multitenancy = true,
 	): ?object {
 		$this->scopes[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
+		$this->findsAsSystem[] = $this->inSystem;
 		if (in_array($id, $this->unreadable, true) === true) {
 			return null;
 		}
@@ -343,6 +376,7 @@ class CaseTimelineTest extends TestCase {
 		bool $openRegister = true,
 		bool $writerResolves = true,
 		string $caseSchema = 'case',
+		?IUserSession $userSession = null,
 	): CaseTimeline {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('isOpenRegisterAvailable')->willReturn($openRegister);
@@ -381,8 +415,60 @@ class CaseTimelineTest extends TestCase {
 			settings: $settings,
 			container: $container,
 			logger: $this->logger,
+			userSession: $userSession,
 		);
 	}//end timeline()
+
+	/**
+	 * A session with or without a signed-in user.
+	 *
+	 * @param boolean $signedIn Whether somebody is signed in.
+	 *
+	 * @return IUserSession The session.
+	 */
+	private function session(bool $signedIn): IUserSession {
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($signedIn === true ? $this->createMock(IUser::class) : null);
+
+		return $session;
+	}//end session()
+
+	/**
+	 * An entry written with nobody signed in (an install, an import, cron)
+	 * reads the case as the system, so OpenRegister does not refuse it to
+	 * "Anonymous" (rehearsal R2: twelve entries lost during the example set).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
+	 */
+	public function testAnEntryWrittenWithoutAUserReadsTheCaseAsTheSystem(): void {
+		$id = $this->timeline(userSession: $this->session(signedIn: false))->record(
+			caseId: 'case-1',
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: 'Gebeld',
+		);
+
+		$this->assertNotSame('', $id);
+		$this->assertSame([true], $this->objects->findsAsSystem);
+	}//end testAnEntryWrittenWithoutAUserReadsTheCaseAsTheSystem()
+
+	/**
+	 * Control: a signed-in handler writes with their own rights.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-read-or-write-with-nobody-signed-in-runs-as-the-system-req-cm-83
+	 */
+	public function testASignedInHandlerIsNeverElevated(): void {
+		$this->timeline(userSession: $this->session(signedIn: true))->record(
+			caseId: 'case-1',
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: 'Gebeld',
+		);
+
+		$this->assertSame([false], $this->objects->findsAsSystem);
+	}//end testASignedInHandlerIsNeverElevated()
 
 	/**
 	 * The happy path carries the kind, the visibility and the fields through.
@@ -862,6 +948,10 @@ class CaseTimelineTest extends TestCase {
 			TimelineKinds::DATA_SUBJECT_REQUEST,
 			TimelineKinds::APPLICANT_RESPONSE,
 			TimelineKinds::STOPPING_RULE_MET,
+			TimelineKinds::DOCUMENT,
+			TimelineKinds::MESSAGE,
+			TimelineKinds::TASK,
+			TimelineKinds::ASSIGNMENT,
 		];
 
 		foreach ($named as $slug) {

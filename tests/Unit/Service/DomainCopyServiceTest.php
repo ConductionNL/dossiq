@@ -229,4 +229,31 @@ class DomainCopyServiceTest extends TestCase {
 		self::assertSame(expected: 'not_found', actual: $result['reason']);
 		self::assertSame(expected: '', actual: $result['domain']);
 	}//end testCopyingADomainThatIsNotThereIsRefused()
+	/**
+	 * A template that could not be carried is named by its name as text,
+	 * though the store answers the name as a language map.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	public function testATemplateNotCarriedIsNamedAsText(): void {
+		$this->copier->method('copy')->willReturnCallback(
+			function (string $caseTypeId): ?array {
+				$copy = ($this->harness->register->row(schema: 'caseType', uuid: $caseTypeId) + []);
+				$copy['id'] = ($caseTypeId . '-copy');
+				$this->harness->seed(schema: 'caseType', uuid: $copy['id'], row: $copy);
+
+				return $copy;
+			}
+		);
+		foreach ($this->harness->register->all(schema: 'contentTemplate') as $template) {
+			$this->harness->register->seed(schema: 'contentTemplate', uuid: (string)$template['id'], row: (['name' => ['nl' => 'Vooraankondiging handhaving']] + $template));
+		}
+		$this->harness->register->refusedSchemas = ['contentTemplate'];
+
+		$result = $this->service()->copy(domainId: 'dom-vth', name: 'VTH Bommelerwaard');
+
+		self::assertContains(needle: 'contentTemplate:Vooraankondiging handhaving', haystack: $result['notCarried']);
+	}//end testATemplateNotCarriedIsNamedAsText()
 }//end class

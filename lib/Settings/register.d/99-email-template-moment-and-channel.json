@@ -1,0 +1,26 @@
+{
+  "_note": "case-type-messages-moment-channel: a message template says when it goes out (moment, a case event) and how (channel). The case type page lists a type's messages by them (board DqZaaktype \"Berichten aan de aanvrager\"). Both are configuration: the events are generic case events, never a procedure's own steps.",
+  "components": {
+    "schemas": {
+      "emailTemplate": {
+        "version": "1.3.0",
+        "properties": {
+          "moment": {
+            "type": "string",
+            "enum": ["case-received", "status-changed", "information-requested", "term-extended", "decision-made", "case-closed"],
+            "title": "Moment",
+            "description": "The case event this message goes out on: the case is received, its status changes, information is requested from the applicant, its term is extended, a decision is made, or the case is closed. Empty: the message is only sent by hand.",
+            "facetable": true
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["mailbox-then-email", "mailbox", "email", "portal", "post"],
+            "title": "Channel",
+            "description": "How the message reaches the applicant: the government message box with e-mail as fallback, the message box only, e-mail, the portal, or post.",
+            "facetable": true
+          }
+        }
+      }
+    }
+  }
+}

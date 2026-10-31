@@ -66,31 +66,20 @@ import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 /**
  * The pane's verb buttons, addressed by `data-testid` and NOT by label.
  *
- * 🔴 THE OLD LABELS WERE THE REGISTER'S, AND THE PANE STOPPED ASKING FOR THEM.
- * They were the transition descriptions `caseTask`'s lifecycle declared, which
- * OpenRegister returned verbatim from `/api/objects/{uuid}/available-actions`
- * and `CnLifecycleActions` rendered as button text. An engine task is not an
- * object, so that endpoint answers 500 for one, and `CaseTaskPane` deliberately
- * does not use that component any more: see the 🔴 at
- * src/components/tasks/CaseTaskPane.vue:232. It renders its own pair of verbs
- * at :73 as `case-task-pane-verb-${verb.name}`.
- *
- * So `[data-testid="cn-lifecycle-actions"]` matches nothing here. That testid
- * appears zero times in dossiq's src/; it lives inside the nc-vue component the
- * pane no longer mounts.
- *
- * There are TWO verbs now, not three: `verbs()` returns complete and cancel and
- * lets the engine rule on each press, rather than pre-judging availability
- * client-side, which is the duplicated authorization this migration removes.
- * Their labels go through `t('dossiq', ...)`, and this spec's header explains
- * the instance locale is not forced, so a label match would be a locale
- * dependency. The testids are not.
+ * The case's Tasks section is the library CnTasksWidget in its focus variant:
+ * the first open task as a card with Claim (only where the engine can claim),
+ * Complete and Cancel task, rendered as `cn-tasks-widget-work-{verb}`. It
+ * does not use `CnLifecycleActions`, which asks for an OBJECT's transitions
+ * and answers 500 for an engine task. Complete and Cancel are offered on
+ * every open task and the engine rules on each press. The labels are
+ * translated and the instance locale is not forced, so the testids are what
+ * this spec addresses.
  */
-/** The task page's root, rendered by src/views/tasks/TaskDetailView.vue. */
-const TASK_PAGE = '[data-testid="task-detail-page"]'
+/** The task page's root: the TaskDetail manifest detail page. */
+const TASK_PAGE = '[data-testid="cn-detail-page"]'
 
-const COMPLETE_BUTTON = '[data-testid="case-task-pane-verb-complete"]'
-const CANCEL_BUTTON = '[data-testid="case-task-pane-verb-cancel"]'
+const COMPLETE_BUTTON = '[data-testid="cn-tasks-widget-work-complete"]'
+const CANCEL_BUTTON = '[data-testid="cn-tasks-widget-work-cancel"]'
 
 /** The pane's own empty state, in either language the app ships. */
 const EMPTY_PANE = /No open tasks on this case|Geen open taken op deze zaak/
@@ -225,7 +214,7 @@ async function openTasksTab(page: Page, id: string) {
 	// inside the strip is the handle.
 	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
 	await expect(panel).toBeVisible({ timeout: 20_000 })
-	await expect(panel.locator('[data-testid="case-task-pane"]')).toBeVisible({
+	await expect(panel.locator('.cn-tasks-widget')).toBeVisible({
 		timeout: 20_000,
 	})
 	return panel
@@ -375,7 +364,7 @@ test.describe('Case detail — the task pane', () => {
 
 		// The EARLIEST due open task is the one in the pane.
 		await expect(
-			panel.locator('[data-testid="case-task-pane-title"]'),
+			panel.locator('[data-testid="cn-tasks-widget-work-title"]'),
 		).toHaveText(readFirstTitle, { timeout: 20_000 })
 
 		// The buttons OpenRegister answers for an ACTIVE task. Their presence
@@ -388,7 +377,7 @@ test.describe('Case detail — the task pane', () => {
 
 		// The second open task is listed under the pane, and it is NOT the one
 		// carrying the buttons.
-		const remaining = panel.locator('[data-testid="case-task-pane-remaining"]')
+		const remaining = panel.locator('[data-testid="cn-tasks-widget-others"]')
 		await expect(remaining).toContainText(readSecondTitle, { timeout: 20_000 })
 		await expect(remaining).not.toContainText(readFirstTitle)
 	})
@@ -400,7 +389,7 @@ test.describe('Case detail — the task pane', () => {
 	}) => {
 		const panel = await openTasksTab(page, completeCaseId)
 		await expect(
-			panel.locator('[data-testid="case-task-pane-title"]'),
+			panel.locator('[data-testid="cn-tasks-widget-work-title"]'),
 		).toHaveText(completeFirstTitle, { timeout: 20_000 })
 
 		const before = new URL(page.url()).pathname
@@ -421,18 +410,19 @@ test.describe('Case detail — the task pane', () => {
 		// 🔴 THE BUTTONS NO LONGER FOLLOW THE TASK'S STATE, and this used to
 		// assert that they did: a Pick up button on a task never claimed, and
 		// no Complete beside it. The pane reads the engine now (dossiq#2408)
-		// and offers Complete and Cancel unconditionally, on purpose — the
+		// and offers Complete and Cancel task unconditionally, on purpose — the
 		// engine decides whether a verb is legal and whether the caller may
 		// invoke it, and refuses visibly with a message naming both, so
 		// pre-judging availability client-side would be exactly the
 		// duplicated authorization this migration removes. There is no
-		// "Pick up the task" button on this surface at all, which is why the
-		// old assertion could not pass and could not be repaired in place.
+		// claim button on this surface unless the engine can claim (Claim,
+		// gated on dossiq's capability probe), which is why the old assertion
+		// could not pass and could not be repaired in place.
 		//
 		// The succession is the claim that survives: a DIFFERENT task, named,
 		// with the pane's verbs on it.
 		await expect(
-			panel.locator('[data-testid="case-task-pane-title"]'),
+			panel.locator('[data-testid="cn-tasks-widget-work-title"]'),
 		).toHaveText(completeSecondTitle, { timeout: 30_000 })
 		await expect(panel.locator(COMPLETE_BUTTON)).toBeVisible({
 			timeout: 20_000,
@@ -465,7 +455,7 @@ test.describe('Case detail — the task pane', () => {
 	}) => {
 		const panel = await openTasksTab(page, lastCaseId)
 		await expect(
-			panel.locator('[data-testid="case-task-pane-title"]'),
+			panel.locator('[data-testid="cn-tasks-widget-work-title"]'),
 		).toHaveText(lastTaskTitle, { timeout: 20_000 })
 
 		await panel.locator(COMPLETE_BUTTON).click()
@@ -476,12 +466,12 @@ test.describe('Case detail — the task pane', () => {
 		// A case with nothing open says so, rather than showing the task it
 		// just finished or an empty box with no explanation.
 		await expect(
-			panel.locator('[data-testid="case-task-pane-empty"]'),
+			panel.locator('[data-testid="cn-tasks-widget-empty"]'),
 		).toHaveText(EMPTY_PANE, { timeout: 30_000 })
 
 		// View all still leads to the Tasks list scoped to THIS case, which is
 		// where a finished task remains readable.
-		await panel.locator('[data-testid="case-task-pane-view-all"]').click()
+		await panel.locator('[data-testid="cn-tasks-widget-view-all"]').click()
 		await expect
 			.poll(() => new URL(page.url()).pathname, { timeout: 30_000 })
 			.toMatch(/\/tasks$/)

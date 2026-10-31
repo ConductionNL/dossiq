@@ -49,6 +49,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCP\IL10N;
+
 /**
  * What a case type says about which changes make a case unread.
  *
@@ -57,6 +59,16 @@ namespace OCA\Dossiq\Service;
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
  */
 class UnreadTriggerService {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param IL10N $l10n Words the publication warnings in the reader's language.
+	 */
+	public function __construct(
+		private readonly IL10N $l10n,
+	) {
+	}//end __construct()
 
 	/**
 	 * Every trigger a case type may name.
@@ -254,9 +266,14 @@ class UnreadTriggerService {
 
 		$warnings = [];
 		if ($unknown !== []) {
-			$warnings[] = 'This case type names a change nobody recognises as a reason to '
-				. 'mark a case unread: '.implode(', ', $unknown).'. Nothing watches it, so '
-				. 'the case type behaves as if it had named nothing.';
+			$warnings[] = $this->l10n->n(
+				'This case type names a change nobody recognises as a reason to mark a case unread: %s. '
+				. 'Nothing watches it, so the case type behaves as if it had named nothing.',
+				'This case type names %n changes nobody recognises as a reason to mark a case unread: %s. '
+				. 'Nothing watches them, so the case type behaves as if it had named nothing.',
+				count($unknown),
+				[implode(', ', $unknown)]
+			);
 		}
 
 		// The EFFECTIVE triggers, never the declared names. A case type whose
@@ -264,8 +281,8 @@ class UnreadTriggerService {
 		// watch the status, and warning that it does not would send somebody
 		// looking for a second fault that is not there.
 		if (in_array('status', $this->triggersFor(caseType: $caseType), true) === false) {
-			$warnings[] = 'A case of this type does not read unread when its status moves. '
-				. 'A handler watching the list will not see it change.';
+			$warnings[] = $this->l10n->t('A case of this type does not read unread when its status moves. A handler watching the '
+				. 'list will not see it change.');
 		}
 
 		return $warnings;

@@ -133,7 +133,7 @@ async function openKccSection(page: Page): Promise<void> {
 }
 
 /**
- * Click Save and wait for the POST it sends.
+ * Click Save and wait for the PUT it sends.
  *
  * @param page The page under test.
  */
@@ -141,11 +141,11 @@ async function saveKcc(page: Page): Promise<void> {
 	const posted = page.waitForResponse(
 		(res) =>
 			res.url().includes('/apps/dossiq/api/settings')
-			&& res.request().method() === 'POST',
+			&& res.request().method() === 'PUT',
 		{ timeout: 30_000 },
 	)
 	await page.getByRole('button', { name: 'Save KCC settings' }).click()
-	expect((await posted).status(), 'the KCC save POST /api/settings').toBe(200)
+	expect((await posted).status(), 'the KCC save PUT /api/settings').toBe(200)
 }
 
 test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
@@ -167,8 +167,8 @@ test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
 		const word = `${RUN_PREFIX}-klacht`
 
 		await openKccSection(page)
-		const thresholdField = page.locator('#kcc_identification_score_threshold')
-		const wordsField = page.locator('#kcc_sentiment_trigger_words')
+		const thresholdField = page.getByLabel('Identification score threshold (0.6 - 1.0)')
+		const wordsField = page.getByLabel('Sentiment trigger words (one per line)')
 		await expect(thresholdField).toBeVisible({ timeout: 10000 })
 		await expect(wordsField).toBeVisible({ timeout: 10000 })
 		await expect(thresholdField).toBeEnabled({ timeout: 15000 })
@@ -201,10 +201,8 @@ test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
 		const wachttijd = String(200 + Math.floor(Math.random() * 100))
 
 		await openKccSection(page)
-		const limitField = page.locator('#kcc_max_zaken_voorblad')
-		const overflowField = page.locator(
-			'#kcc_belplan_overflow_threshold_wachttijd',
-		)
+		const limitField = page.getByLabel('Max open zaken in voorblad')
+		const overflowField = page.getByLabel('Belplan overflow threshold: wachttijd (seconds)')
 		await expect(limitField).toBeVisible({ timeout: 10000 })
 		await expect(overflowField).toBeVisible({ timeout: 10000 })
 		await expect(limitField).toBeEnabled({ timeout: 15000 })

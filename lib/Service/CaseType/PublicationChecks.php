@@ -58,6 +58,28 @@ use Throwable;
 class PublicationChecks {
 
 	/**
+	 * The fields a case type must state before it is published, each with the
+	 * words that complete "Give the case type ...".
+	 *
+	 * These are not `required` in the schema on purpose: a draft is authored
+	 * over several sittings, and the shipped templates cannot carry an
+	 * organisation's own responsible unit. Publishing is when they must be
+	 * there.
+	 *
+	 * @var array<string, string>
+	 */
+	public const REQUIRED_FIELDS = [
+		'title'              => 'a title',
+		'purpose'            => 'a purpose',
+		'trigger'            => 'a trigger',
+		'subject'            => 'a subject',
+		'processingDeadline' => 'a processing deadline',
+		'origin'             => 'an origin',
+		'confidentiality'    => 'a confidentiality level',
+		'responsibleUnit'    => 'a responsible unit',
+	];
+
+	/**
 	 * Reads a translatable title or name as one string.
 	 *
 	 * @var LanguageMapText
@@ -162,10 +184,6 @@ class PublicationChecks {
 			$findings[] = 'Pick the status a new case of this type starts in.';
 		}
 
-		if ($this->text->textOf(value: ($caseType['title'] ?? null)) === '') {
-			$findings[] = 'Give the case type a title.';
-		}
-
 		$cycle = $this->cycleFinding(caseTypeId: $caseTypeId, caseType: $caseType);
 		if ($cycle !== '') {
 			$findings[] = $cycle;
@@ -173,6 +191,7 @@ class PublicationChecks {
 
 		return array_merge(
 			$findings,
+			$this->missingFieldFindings(caseType: $caseType),
 			$this->handlingFindings(caseType: $caseType),
 			// A case type naming a mail account Nextcloud Mail does not hold
 			// would send its team's mail nowhere (REQ-IMF-12).
@@ -256,6 +275,28 @@ class PublicationChecks {
 
 		return array_values(array_filter($raw, 'is_array'));
 	}//end moves()
+
+	/**
+	 * One finding per required field this case type leaves empty.
+	 *
+	 * A translatable field counts as filled when any language holds text.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, string> The findings, in the order of REQUIRED_FIELDS.
+	 *
+	 * @spec openspec/specs/case-type-publish-validation/spec.md
+	 */
+	private function missingFieldFindings(array $caseType): array {
+		$findings = [];
+		foreach (self::REQUIRED_FIELDS as $field => $phrase) {
+			if ($this->text->textOf(value: ($caseType[$field] ?? null)) === '') {
+				$findings[] = 'Give the case type ' . $phrase . '.';
+			}
+		}
+
+		return $findings;
+	}//end missingFieldFindings()
 
 	/**
 	 * The findings the handling block produces, if it produces any.

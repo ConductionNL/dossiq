@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\Beschikking\LibresignSigningAdapter;
 use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
 use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
+use OCA\Dossiq\Service\Zaakdossier\RestrictedDocumentReaders;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
@@ -93,6 +94,9 @@ class BeschikkingAdapterRegistrar {
 						rootFolder: $c->get('OCP\\Files\\IRootFolder'),
 						documentService: $c->get(ZgwDocumentService::class),
 						logger: $c->get('Psr\\Log\\LoggerInterface'),
+						signedVersionOf: static fn (string $originalId, int $signedFileId, string $signatory): bool => $c
+							->get(RestrictedDocumentReaders::class)
+							->inheritFromId(originalId: $originalId, fileId: $signedFileId, madeBy: $signatory),
 					);
 				}
 

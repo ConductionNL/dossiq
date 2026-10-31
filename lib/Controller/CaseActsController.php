@@ -53,6 +53,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Lifecycle\ArchiveRequesterNotice;
 use OCA\Dossiq\Service\Lifecycle\CaseActs;
 use OCA\Dossiq\Service\Lifecycle\CaseActsOverview;
 use OCP\AppFramework\Controller;
@@ -97,6 +98,7 @@ class CaseActsController extends Controller {
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
+	 * @param ArchiveRequesterNotice|null $archiveNotice Tells the requester an archived case is completed.
 	 */
 	public function __construct(
 		string $appName,
@@ -106,6 +108,7 @@ class CaseActsController extends Controller {
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?ArchiveRequesterNotice $archiveNotice = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -149,6 +152,38 @@ class CaseActsController extends Controller {
 			run: fn (): array => $this->refusedUnlessHandler(overview: $this->overview->overview(caseId: $caseId), mayAct: $mayAct),
 		);
 	}//end acts()
+
+	/**
+	 * Whether this case is ready to be archived, item by item, for the archive dialog.
+	 *
+	 * Read access is enough, as for the act menu: the checklist tells, the
+	 * archive act itself refuses whoever may not archive.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	#[NoAdminRequired]
+	public function archiveReadiness(string $caseId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'Sign in first.', 'error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(
+				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
+				Http::STATUS_FORBIDDEN,
+			);
+		}
+
+		return $this->answered(
+			caseId: $caseId,
+			run: fn (): array => $this->overview->archiveReadiness(caseId: $caseId),
+		);
+	}//end archiveReadiness()
 
 	/**
 	 * The overview as a reader who may not act sees it: every act listed, none allowed.
@@ -233,22 +268,58 @@ class CaseActsController extends Controller {
 	/**
 	 * Archive a finished case: commit the retention its result type carries.
 	 *
+	 * With `notifyRequester` the requester is told afterwards that the case is
+	 * completed, and the answer carries whether they were, under `notice`.
+	 * A refused archive tells nobody.
+	 *
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	#[NoAdminRequired]
 	public function archive(string $caseId): JSONResponse {
+		$notify = in_array($this->request->getParam('notifyRequester', false), [true, 'true', '1', 1], true);
+
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->acts->archive(
-				caseId: $caseId,
-				reason: (string)$this->request->getParam('reason', ''),
-			),
+			run: function () use ($caseId, $notify): array {
+				$archived = $this->acts->archive(
+					caseId: $caseId,
+					reason: (string)$this->request->getParam('reason', ''),
+				);
+				if ($notify === true) {
+					$archived['notice'] = $this->tellRequester(caseId: $caseId);
+				}
+
+				return $archived;
+			},
 		);
 	}//end archive()
+
+	/**
+	 * Tell the requester that their archived case is completed.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, string> Whether the requester was told, and why not.
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	private function tellRequester(string $caseId): array {
+		if ($this->archiveNotice === null) {
+			return [
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'notice-not-wired',
+				'noticeReason' => 'No sender is wired, so the requester was not told.',
+			];
+		}
+
+		return $this->archiveNotice->tell(caseId: $caseId);
+	}//end tellRequester()
 
 	/**
 	 * Take a case back out of the archive: one act, no wizard.
@@ -419,8 +490,10 @@ class CaseActsController extends Controller {
 				['caseId' => $caseId, 'exception' => $e->getMessage()],
 			);
 
+			$sentence = 'The case could not be changed.';
+
 			return new JSONResponse(
-				['message' => 'The case could not be changed.', 'error' => 'act-failed'],
+				['message' => ($this->refusalTranslator()?->t($sentence) ?? $sentence), 'error' => 'act-failed'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,
 			);
 		}//end try

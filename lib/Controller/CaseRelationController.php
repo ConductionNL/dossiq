@@ -37,6 +37,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseRelationService;
+use OCA\Dossiq\Service\Flow\CaseFlowActions;
+use OCA\Dossiq\Service\Relation\CaseRelationDetails;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -72,12 +74,16 @@ class CaseRelationController extends Controller {
 	 * @param CaseRelationService $caseRelationService Backend service.
 	 * @param IUserSession $userSession Current user session.
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 * @param CaseRelationDetails $caseRelationDetails Number, case type, status and handler per related case.
+	 * @param CaseFlowActions $flowActions The case's planned follow-ups, listed with `?planned=1`.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly CaseRelationService $caseRelationService,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly CaseRelationDetails $caseRelationDetails,
+		private readonly CaseFlowActions $flowActions,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -118,12 +124,34 @@ class CaseRelationController extends Controller {
 			);
 		}
 
-		return new JSONResponse(
-			[
-				'results' => $this->caseRelationService->listRelations(caseId: $caseId),
-			]
+		$rows = $this->caseRelationDetails->describe(
+			rows: $this->caseRelationService->listRelations(caseId: $caseId),
+			canRead: fn (string $relatedId): bool => $this->caseAccessGuard->hasCaseReadAccess(caseId: $relatedId, user: $user),
 		);
+
+		if ((string)$this->request->getParam('planned', '') === '1') {
+			$rows = array_merge($rows, $this->caseRelationDetails->plannedRows(planned: $this->plannedOf(caseId: $caseId)));
+		}
+
+		return new JSONResponse(['results' => $rows]);
 	}//end list()
+
+	/**
+	 * The case's planned follow-ups, or none when flows cannot be read.
+	 *
+	 * @param string $caseId Case UUID, already guarded.
+	 *
+	 * @return array<int, array<string, mixed>> The planned rows.
+	 */
+	private function plannedOf(string $caseId): array {
+		try {
+			$planned = $this->flowActions->planned(caseId: $caseId);
+		} catch (\Throwable $e) {
+			return [];
+		}
+
+		return (array)($planned['results'] ?? []);
+	}//end plannedOf()
 
 	/**
 	 * Create a typed peer relation between two cases.

@@ -12,7 +12,7 @@
             "brpPerson": {
                 "slug": "brpPerson",
                 "icon": "AccountOutline",
-                "version": "1.3.0",
+                "version": "1.7.0",
                 "x-schema-org": "schema:Person",
                 "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
                 "x-openregister-registry": { "registry": "brp", "identity": "citizenServiceNumber", "owned": ["name", "birth", "residence", "indicatieGeheim"] },
@@ -20,7 +20,6 @@
                 "description": "Simplified BRP person register set following Haal Centraal BRP Personen bevragen field naming. NOT a registry connection: seeded exclusively with official fictitious personas from the BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock), which double as the BRP contract-lane fixtures. Live BRP adapters are owned by external-integrations-test-environments.",
                 "type": "object",
                 "required": [
-                    "citizenServiceNumber",
                     "name"
                 ],
                 "properties": {
@@ -30,7 +29,9 @@
                                 {
                                     "group": "dossiq-sensitive"
                                 }
-                            ]
+                            ],
+                            "audit": true,
+                            "reveal": "explicit"
                         },
                         "type": "string",
                         "pattern": "^[0-9]{9}$",
@@ -115,9 +116,46 @@
                         "type": "string",
                         "title": "Description",
                         "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+                    },
+                    "masterEntityRef": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "title": "Master entity ref",
+                        "facetable": true,
+                        "description": "The master entity this party is, shared by the records in other apps that describe the same party (pipelinq's client carries the same value). dossiq reads the party's open pipelinq tickets by it."
+                    },
+                    "contactAddresses": {
+                        "type": "array",
+                        "title": "Contact addresses",
+                        "description": "How to reach this person, as they gave it: each with a kind (correspondence, case, location), a type (email, phone, postal) and the value. Not BRP data. A contact person of an organisation is mailed at their own correspondence address, never at the organisation's mailbox. OpenRegister's party model reads it as the party's addresses.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "kind": { "type": "string" },
+                                "type": { "type": "string" },
+                                "value": { "type": "string" }
+                            }
+                        },
+                        "default": []
+                    },
+                    "indicators": {
+                        "type": "array",
+                        "title": "Indicators",
+                        "description": "Marks on this party that every case it is on reads, each with the effect OpenRegister's party model honours: key, label, effect and note. A secrecy mark refuses publication.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "key": { "type": "string" },
+                                "label": { "type": "string" },
+                                "effect": { "type": "string" },
+                                "note": { "type": "string" }
+                            }
+                        },
+                        "default": []
                     }
                 },
                 "configuration": {
+                    "x-openregister-party": { "kind": "person", "nameProperty": "displayName", "addressesProperty": "contactAddresses" },
                     "objectNameField": "displayName",
                     "objectDescriptionField": "description",
                     "implements": [
@@ -137,7 +175,7 @@
             "kvkCompany": {
                 "slug": "kvkCompany",
                 "icon": "Domain",
-                "version": "1.2.0",
+                "version": "1.6.0",
                 "x-schema-org": "schema:Organization",
                 "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
                 "x-openregister-registry": { "registry": "kvk", "identity": "kvkNumber", "owned": ["tradeName", "legalForm", "address"] },
@@ -196,13 +234,51 @@
                         "type": "string",
                         "title": "Description",
                         "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+                    },
+                    "masterEntityRef": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "title": "Master entity ref",
+                        "facetable": true,
+                        "description": "The master entity this party is, shared by the records in other apps that describe the same party (pipelinq's client carries the same value). dossiq reads the party's open pipelinq tickets by it."
+                    },
+                    "indicators": {
+                        "type": "array",
+                        "title": "Indicators",
+                        "description": "Marks on this party that every case it is on reads, each with the effect OpenRegister's party model honours: key, label, effect and note. A secrecy mark refuses publication.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "key": { "type": "string" },
+                                "label": { "type": "string" },
+                                "effect": { "type": "string" },
+                                "note": { "type": "string" }
+                            }
+                        },
+                        "default": []
                     }
                 },
                 "configuration": {
+                    "x-openregister-party": { "kind": "organisation", "nameProperty": "tradeName" },
                     "objectNameField": "tradeName",
                     "objectDescriptionField": "description",
                     "implements": [
                         "https://openregister.app/ns#Requester"
+                    ],
+                    "partyKinds": [
+                        {
+                            "key": "person",
+                            "label": "Contact person",
+                            "description": "A person who speaks for the organisation. A municipality adds a role by adding it here and to linkRoles.",
+                            "roles": ["chair", "secretary", "treasurer", "contact"],
+                            "identityShapes": ["naturalPerson"]
+                        }
+                    ],
+                    "linkRoles": [
+                        { "key": "chair", "label": "Chair", "description": "Chairs the board of the organisation." },
+                        { "key": "secretary", "label": "Secretary", "description": "Keeps the organisation's minutes and correspondence." },
+                        { "key": "treasurer", "label": "Treasurer", "description": "Keeps the organisation's money." },
+                        { "key": "contact", "label": "Contact person", "description": "Speaks for the organisation without a board role." }
                     ]
                 }
             }

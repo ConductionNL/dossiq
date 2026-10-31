@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ManifestController;
+use OCA\Dossiq\Service\CaseTypeViews;
 use OCA\Dossiq\Service\MenuCaseTypesService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
@@ -141,7 +142,7 @@ class ManifestControllerTest extends TestCase {
 				text: new \OCA\Dossiq\Service\Support\TranslatedText(l10n: $l10n),
 			),
 			userSession: $userSession,
-			l10n: $l10n,
+			caseTypeViews: new CaseTypeViews(),
 		);
 	}//end controller()
 
@@ -169,79 +170,127 @@ class ManifestControllerTest extends TestCase {
 	}//end withCaseTypes()
 
 	/**
-	 * manifest: the caption and the chosen case types, in the user's order.
+	 * The default views the delta adds to the Cases page.
+	 *
+	 * @param array<string, mixed> $data The response data.
+	 *
+	 * @return array<int, array<string, mixed>> The views.
+	 */
+	private static function views(array $data): array {
+		$pages = ($data['pages'] ?? []);
+		self::assertSame(expected: ['Cases'], actual: array_column($pages, 'id'));
+		return $pages[0]['config'][CaseTypeViews::DEFAULT_VIEWS_KEY];
+	}//end views()
+
+	/**
+	 * manifest: one view of the case list per pinned case type, in the user's
+	 * order, and no menu entries of dossiq's own; the Woo request case type
+	 * keeps the view the page ships.
 	 *
 	 * @return void
 	 */
-	public function testManifestReturnsTheChosenCaseTypesInOrder(): void {
+	public function testManifestReturnsAViewPerPinnedCaseTypeAndNoMenuEntries(): void {
 		$this->withCaseTypes(
-			[
-				['id' => 'uuid-w', 'title' => 'Woo-verzoek'],
+			rows: [
+				['id' => MenuCaseTypesService::DEFAULT_CASE_TYPE, 'title' => 'Woo-verzoek'],
 				['id' => 'uuid-b', 'title' => 'Bezwaar'],
 				['id' => 'uuid-k', 'title' => 'Klacht'],
 			]
 		);
 
-		$response = $this->controller(stored: '["uuid-b","uuid-w"]')->manifest();
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$response = $this->controller(stored: '["uuid-k","' . MenuCaseTypesService::DEFAULT_CASE_TYPE . '","uuid-b"]')->manifest();
 
-		$menu = $response->getData()['menu'];
-		$this->assertCount(3, $menu);
-
-		$this->assertSame('MyCaseTypesCaption', $menu[0]['id']);
-		$this->assertSame('caption', $menu[0]['type']);
-		$this->assertSame('My case types', $menu[0]['label']);
-		$this->assertSame(30, $menu[0]['order']);
-		$this->assertSame('#user-settings', $menu[0]['href']);
-
-		$this->assertSame('ct-uuid-b', $menu[1]['id']);
-		$this->assertSame('Bezwaar', $menu[1]['label']);
-		$this->assertSame('Cases', $menu[1]['route']);
-		$this->assertSame(['caseType' => 'uuid-b'], $menu[1]['query']);
-		$this->assertSame(31, $menu[1]['order']);
-
-		$this->assertSame('ct-uuid-w', $menu[2]['id']);
-		$this->assertSame(32, $menu[2]['order']);
-	}//end testManifestReturnsTheChosenCaseTypesInOrder()
-
-	/**
-	 * manifest: a chosen case type the user's team does not handle is left out.
-	 *
-	 * @return void
-	 */
-	public function testManifestLeavesOutAChosenCaseTypeTheTeamDoesNotHandle(): void {
-		$this->withCaseTypes(
-			[
-				['id' => 'uuid-o', 'title' => 'Omgevingsvergunning', 'handling' => ['defaultGroup' => 'vergunningen']],
-				['id' => 'uuid-w', 'title' => 'Woo-verzoek', 'handling' => ['defaultGroup' => 'woo']],
-			]
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: [], actual: $response->getData()['menu']);
+		$views = self::views(data: $response->getData());
+		$this->assertSame(expected: ['case-type-uuid-k', 'case-type-uuid-b'], actual: array_column($views, 'slug'));
+		$this->assertSame(expected: 'Klacht', actual: $views[0]['name']);
+		$this->assertSame(
+			expected: ['caseType' => 'uuid-k', 'statusHiddenInLists' => false, 'isDraft' => false],
+			actual: $views[0]['filters']
 		);
-
-		$menu = $this->controller(stored: '["uuid-w","uuid-o"]', groups: ['vergunningen'])->manifest()->getData()['menu'];
-
-		$this->assertSame(['MyCaseTypesCaption', 'ct-uuid-o'], array_column($menu, 'id'));
-	}//end testManifestLeavesOutAChosenCaseTypeTheTeamDoesNotHandle()
+	}//end testManifestReturnsAViewPerPinnedCaseTypeAndNoMenuEntries()
 
 	/**
-	 * manifest: no case type becomes a child of CasesGroup or any group.
+	 * manifest: a list the instance names by case type identifier (Complaints)
+	 * is a view for every user, ahead of the user's own pinned case types.
 	 *
 	 * @return void
 	 */
-	public function testManifestAddsNoGroupChildren(): void {
+	public function testManifestAddsTheComplaintsViewWhenTheInstanceHasThatCaseType(): void {
 		$this->withCaseTypes(
-			[
-				['id' => 'uuid-a', 'title' => 'Aanvraag'],
+			rows: [
+				['id' => 'uuid-k', 'title' => 'Klacht behandeling', 'identifier' => 'klacht-behandeling'],
 				['id' => 'uuid-b', 'title' => 'Bezwaar'],
 			]
 		);
 
-		$menu = $this->controller(stored: '[]')->manifest()->getData()['menu'];
+		$views = self::views(data: $this->controller(stored: '["uuid-b"]')->manifest()->getData());
 
-		$this->assertSame(['MyCaseTypesCaption'], array_column($menu, 'id'));
-		foreach ($menu as $entry) {
-			$this->assertArrayNotHasKey('children', $entry);
-		}
-	}//end testManifestAddsNoGroupChildren()
+		$this->assertSame(expected: ['complaints', 'case-type-uuid-b'], actual: array_column($views, 'slug'));
+		$this->assertSame(
+			expected: ['caseType' => 'uuid-k', 'statusHiddenInLists' => false, 'isDraft' => false],
+			actual: $views[0]['filters']
+		);
+	}//end testManifestAddsTheComplaintsViewWhenTheInstanceHasThatCaseType()
+
+	/**
+	 * manifest: the case-type views sit under "More default views" (Ruben, 23
+	 * October 2026: the board's three default views first, the rest behind
+	 * that disclosure), each with a description of its own so the panel never
+	 * shows the case type's uuid while it resolves the filter.
+	 *
+	 * @return void
+	 */
+	public function testManifestCaseTypeViewsAreSecondaryWithADescription(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => 'uuid-k', 'title' => 'Klacht behandeling', 'identifier' => 'klacht-behandeling'],
+				['id' => 'uuid-b', 'title' => 'Bezwaar'],
+			]
+		);
+
+		$views = self::views(data: $this->controller(stored: '["uuid-b"]')->manifest()->getData());
+
+		$this->assertSame(expected: [true, true], actual: array_column($views, 'secondary'));
+		$this->assertSame(expected: ['Case type complaint handling', 'Bezwaar'], actual: array_column($views, 'description'));
+	}//end testManifestCaseTypeViewsAreSecondaryWithADescription()
+
+	/**
+	 * manifest: a pinned case type the user's team does not handle gets no view.
+	 *
+	 * @return void
+	 */
+	public function testManifestLeavesOutAPinnedCaseTypeTheTeamDoesNotHandle(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => 'uuid-o', 'title' => 'Omgevingsvergunning', 'handling' => ['defaultGroup' => 'vergunningen']],
+				['id' => 'uuid-x', 'title' => 'Klacht', 'handling' => ['defaultGroup' => 'klachten']],
+			]
+		);
+
+		$data = $this->controller(stored: '["uuid-x","uuid-o"]', groups: ['vergunningen'])->manifest()->getData();
+
+		$this->assertSame(expected: ['case-type-uuid-o'], actual: array_column(self::views(data: $data), 'slug'));
+	}//end testManifestLeavesOutAPinnedCaseTypeTheTeamDoesNotHandle()
+
+	/**
+	 * manifest: a user who pinned nothing, or only the Woo request case type,
+	 * gets a no-op delta.
+	 *
+	 * @return void
+	 */
+	public function testManifestAddsNothingWhenNoViewIsNeeded(): void {
+		$this->withCaseTypes(
+			rows: [
+				['id' => MenuCaseTypesService::DEFAULT_CASE_TYPE, 'title' => 'Woo-verzoek'],
+				['id' => 'uuid-b', 'title' => 'Bezwaar'],
+			]
+		);
+
+		$this->assertSame(expected: ['menu' => []], actual: $this->controller(stored: '[]')->manifest()->getData());
+		$this->assertSame(expected: ['menu' => []], actual: $this->controller(stored: '')->manifest()->getData());
+	}//end testManifestAddsNothingWhenNoViewIsNeeded()
 
 	/**
 	 * manifest: an unauthenticated caller is refused (401), never leaking data.

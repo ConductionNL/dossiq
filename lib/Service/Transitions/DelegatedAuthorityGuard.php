@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Support\FleetAppId;
 use Psr\Container\ContainerInterface;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -53,17 +54,6 @@ use Throwable;
  * @spec openspec/changes/delegated-authority-guard/specs/status-transition-engine/spec.md
  */
 class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
-
-	/**
-	 * The refusal sentence per decidiq reason key.
-	 */
-	private const SENTENCES = [
-		'no-allocation'       => 'De ondertekenende ambtenaar heeft onvoldoende mandaat voor dit besluit. Raadpleeg het mandaatregister.',
-		'over-ceiling'        => 'Het bedrag ligt boven het financiële plafond van het mandaat van de ondertekenaar.',
-		'register-unreadable' => 'Het mandaatregister kan nu niet worden gelezen, dus deze stap kan niet worden goedgekeurd.',
-		'no-actor'            => 'Er is geen ondertekenaar bekend.',
-		'no-act'              => 'Deze stap noemt geen handeling om het mandaat voor te controleren.',
-	];
 
 	/**
 	 * Config defaults merged under every evaluation.
@@ -77,10 +67,12 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	 *
 	 * @param ContainerInterface $container The server container, for the duck-typed decidiq lookup.
 	 * @param LoggerInterface    $logger    The logger.
+	 * @param IL10N              $l10n      Translates the refusals.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -135,7 +127,7 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 			if ($cents !== null && is_numeric($cents) === false) {
 				return new GuardResult(
 					passed: false,
-					failureMessage: 'Het bedrag op de zaak is geen getal, dus het mandaat kan niet worden gecontroleerd.',
+					failureMessage: $this->l10n->t('The amount on the case is not a number, so the mandate cannot be checked.'),
 					details: ['authority' => 'amount-unreadable'],
 				);
 			}
@@ -166,7 +158,7 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 		if ($check === null) {
 			return new GuardResult(
 				passed: false,
-				failureMessage: 'Het mandaatregister (decidiq) is niet geïnstalleerd, dus het mandaat kan niet worden gecontroleerd.',
+				failureMessage: $this->l10n->t('The mandate register (decidiq) is not installed, so the mandate cannot be checked.'),
 				details: ['authority' => 'register-absent'],
 			);
 		}
@@ -207,10 +199,27 @@ class DelegatedAuthorityGuard implements GuardEvaluatorInterface {
 	private function refuse(string $reason): GuardResult {
 		return new GuardResult(
 			passed: false,
-			failureMessage: (self::SENTENCES[$reason] ?? self::SENTENCES['no-allocation']),
+			failureMessage: $this->sentenceFor(reason: $reason),
 			details: ['authority' => $reason],
 		);
 	}//end refuse()
+
+	/**
+	 * The refusal sentence for a decidiq reason key; an unknown key reads as no allocation.
+	 *
+	 * @param string $reason The reason key.
+	 *
+	 * @return string
+	 */
+	private function sentenceFor(string $reason): string {
+		return match ($reason) {
+			'over-ceiling' => $this->l10n->t('The amount is above the financial ceiling of the signatory\'s mandate.'),
+			'register-unreadable' => $this->l10n->t('The mandate register cannot be read right now, so this step cannot be approved.'),
+			'no-actor' => $this->l10n->t('No signatory is known.'),
+			'no-act' => $this->l10n->t('This step names no act to check the mandate for.'),
+			default => $this->l10n->t('The signing official does not hold enough mandate for this decision. Consult the mandate register.'),
+		};
+	}//end sentenceFor()
 
 	/**
 	 * Read a case field, or the case-type property the case answers in `properties[]`.

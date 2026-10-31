@@ -77,16 +77,46 @@ class CaseRoleVocabularyTest extends TestCase {
 			public array $answers = [];
 
 			/**
-			 * Rows matching the filters.
+			 * Every read: its filters and whether it lifted RBAC and tenancy.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $reads = [];
+
+			/**
+			 * Whether the service ignores `_offset`, as an older one might.
+			 *
+			 * @var bool
+			 */
+			public bool $ignoresOffset = false;
+
+			/**
+			 * One page of the rows, as OpenRegister pages them.
 			 *
 			 * @param string $register The register.
 			 * @param string $schema The schema.
 			 * @param array<string, mixed> $filters The filters.
+			 * @param bool $_rbac Whether RBAC applies.
+			 * @param bool $_multitenancy Whether tenancy applies.
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
-				return ($this->answers[$schema] ?? []);
+			public function searchObjectsBySlug(
+				string $register,
+				string $schema,
+				array $filters,
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): array {
+				$this->reads[] = ['filters' => $filters, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
+				$offset = (int)($filters['_offset'] ?? 0);
+				if ($this->ignoresOffset === true) {
+					$offset = 0;
+				}
+
+				$limit = (int)($filters['_limit'] ?? 20);
+
+				return array_slice(($this->answers[$schema] ?? []), $offset, $limit);
 			}
 		};
 
@@ -232,6 +262,63 @@ class CaseRoleVocabularyTest extends TestCase {
 	}//end testTheRoleTypesBecomeTheVocabulary()
 
 	/**
+	 * Every role type is read, however many there are: a set that brings in
+	 * more than one page's worth must not leave the later ones unlabelled.
+	 *
+	 * @return void
+	 */
+	public function testEveryRoleTypeIsReadPastTheFirstPage(): void {
+		$this->objects->answers['roleType'] = array_map(
+			static fn (int $n): array => ['@self' => ['id' => sprintf('rt-%03d', $n)], 'name' => sprintf('Rol %03d', $n)],
+			range(1, 450)
+		);
+
+		$entries = $this->vocabulary->roleEntries();
+
+		$this->assertCount(expectedCount: 450, haystack: $entries);
+		$this->assertSame(expected: 'rt-450', actual: $entries[449]['key']);
+		$this->assertSame(expected: 'Rol 450', actual: $entries[449]['label']);
+	}//end testEveryRoleTypeIsReadPastTheFirstPage()
+
+	/**
+	 * A service that answers the same page whatever the offset ends the read
+	 * instead of looping on it.
+	 *
+	 * @return void
+	 */
+	public function testAServiceIgnoringTheOffsetEndsTheRead(): void {
+		$this->objects->ignoresOffset = true;
+		$this->objects->answers['roleType'] = array_map(
+			static fn (int $n): array => ['@self' => ['id' => 'rt-' . $n], 'name' => 'Rol ' . $n],
+			range(1, 250)
+		);
+
+		$entries = $this->vocabulary->roleEntries();
+
+		$this->assertCount(expectedCount: 200, haystack: $entries);
+		$this->assertLessThanOrEqual(expected: 2, actual: count($this->objects->reads));
+	}//end testAServiceIgnoringTheOffsetEndsTheRead()
+
+	/**
+	 * The vocabulary is the instance's, so it is read regardless of who
+	 * triggered the sync: a save by one user must not write a vocabulary
+	 * limited to what that user may see.
+	 *
+	 * @return void
+	 */
+	public function testTheRoleTypesAreReadUnscoped(): void {
+		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];
+
+		$this->vocabulary->sync();
+
+		$this->assertNotSame(expected: [], actual: $this->objects->reads);
+		foreach ($this->objects->reads as $read) {
+			$this->assertFalse(condition: $read['rbac']);
+			$this->assertFalse(condition: $read['multitenancy']);
+		}
+	}//end testTheRoleTypesAreReadUnscoped()
+
+	/**
 	 * A role type already claiming a generic key is not listed twice.
 	 *
 	 * @return void
@@ -267,15 +354,36 @@ class CaseRoleVocabularyTest extends TestCase {
 		$this->vocabulary->sync();
 
 		$kinds = $this->schema->configuration['partyKinds'];
-		$this->assertSame(expected: ['person', 'organisation', 'address'], actual: array_column($kinds, 'key'));
-		// Person and organisation name NO roles, on purpose: a kind naming
-		// roles holds only those, and a person link carries a role type uuid
-		// as its role, so binding a list to them would refuse every role type
-		// this instance declares.
+		$this->assertSame(expected: ['person', 'organisation', 'colleague', 'address'], actual: array_column($kinds, 'key'));
+		// Person, organisation and colleague name NO roles, on purpose: a kind
+		// naming roles holds only those, and a person link carries a role type
+		// uuid as its role, so binding a list to them would refuse every role
+		// type this instance declares.
 		$this->assertArrayNotHasKey(key: 'roles', array: $kinds[0]);
 		$this->assertArrayNotHasKey(key: 'roles', array: $kinds[1]);
-		$this->assertSame(expected: ['locatie'], actual: $kinds[2]['roles']);
+		$this->assertArrayNotHasKey(key: 'roles', array: $kinds[2]);
+		$this->assertSame(expected: ['locatie'], actual: $kinds[3]['roles']);
 	}//end testTheCaseDeclaresTheKindsOfPartyItTakes()
+
+	/**
+	 * The kinds the sync writes are the kinds the register declares on the case
+	 * schema, so a kind added to one and not the other cannot be written away.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	public function testTheSyncedKindsAreTheRegistersKinds(): void {
+		$register = json_decode((string)file_get_contents(__DIR__ . '/../../../../lib/Settings/dossiq_register.json'), true);
+		$declared = $register['components']['schemas']['case']['configuration']['partyKinds'];
+
+		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];
+		$this->vocabulary->sync();
+		$synced = $this->schema->configuration['partyKinds'];
+
+		$shape = static fn (array $kind): array => [$kind['key'], ($kind['roles'] ?? []), ($kind['identityShapes'] ?? [])];
+		$this->assertSame(expected: array_map($shape, $declared), actual: array_map($shape, $synced));
+	}//end testTheSyncedKindsAreTheRegistersKinds()
 
 	/**
 	 * A vocabulary that has not changed is not written again.

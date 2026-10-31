@@ -225,7 +225,7 @@ class SettingsControllerWriteTest extends TestCase {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function testARefusedThroughputSwitchAnswers422WithTheSentence(): void {
-		$this->request->method('getParams')->willReturn(['wooReviewerThroughputReport' => 'true']);
+		$this->request->method('getParams')->willReturn(['reviewerThroughputReport' => 'true']);
 		$this->settingsService->method('updateSettings')->willThrowException(
 			new \OCA\Dossiq\Exception\RefusedException(
 				rule: 'woo-throughput-needs-reader-group',

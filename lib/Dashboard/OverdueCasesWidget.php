@@ -128,7 +128,7 @@ class OverdueCasesWidget implements IWidget {
 		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).
 		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-vendor');
 		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-nc-vue');
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-overdueCasesWidget');
+		Util::addScript(Application::APP_ID, Application::APP_ID . '-dashboardWidgets');
 		Util::addStyle(Application::APP_ID, 'dashboardWidgets');
 
 	}//end load()

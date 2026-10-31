@@ -2,30 +2,19 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 /**
- * What a status asks of the fields, as the editor holds it and the case reads it.
- *
- * 🔴 THE ASSERTION THAT MATTERS IS THE ROUND TRIP. `formToStatusType` writes
- * back a whitelist, so a schema property missing from it is destroyed on the
- * next save, in silence, including on a drag that only meant to reorder a
- * status. That is how `derivedWhen` shipped: on the schema, read by PHP, and
- * wiped by the editor the first time anybody opened the status. Both of those
- * are asserted here, and neither failure is visible on a screen.
+ * What a status asks of the fields, as the case reads it. The status is
+ * edited through the library's object list, which writes only the keys a
+ * save changed (tests/vitest/caseTypeStatusFieldLists.spec.js).
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import {
 	fieldRule,
-	fieldRulesOf,
-	hasFieldRules,
 	normaliseGroups,
 	pruneFieldRules,
 	stateFieldRefusal,
 } from '../../src/utils/statusFieldRules.js'
-import {
-	formToStatusType,
-	statusTypeToForm,
-} from '../../src/utils/statusTypeForm.js'
 
 describe('the rules a status declares', () => {
 	it('keeps a rule that names a field', () => {
@@ -85,72 +74,6 @@ describe('the rules a status declares', () => {
 
 	it('drops the blank and repeated group names', () => {
 		expect(normaliseGroups(['a', ' a ', '', null, 'b'])).toEqual(['a', 'b'])
-	})
-})
-
-describe('the status form round trip', () => {
-	it('carries the field rules back out of the form', () => {
-		const stored = {
-			id: 's2',
-			name: 'Besluitvorming',
-			order: 2,
-			fieldRules: [{ rule: 'hidden', field: 'qualityScore' }],
-		}
-
-		const saved = formToStatusType(statusTypeToForm(stored))
-
-		expect(saved.fieldRules).toEqual([
-			{ rule: 'hidden', field: 'qualityScore', groups: [], message: '' },
-		])
-	})
-
-	it('does not wipe derivedWhen when a status is opened and saved', () => {
-		const stored = {
-			id: 's2',
-			name: 'Complete',
-			order: 2,
-			derivedWhen: [
-				{
-					kind: 'documentPresent',
-					documentType: 'advies',
-					label: 'the advice',
-				},
-			],
-		}
-
-		const saved = formToStatusType(statusTypeToForm(stored))
-
-		expect(saved.derivedWhen).toEqual(stored.derivedWhen)
-	})
-
-	it('writes no rules for a status that declares none', () => {
-		expect(
-			formToStatusType(statusTypeToForm({ name: 'Received' })).fieldRules,
-		).toEqual([])
-	})
-})
-
-describe('what the platform decided about this case', () => {
-	it('reads the answer off the object rather than deciding again', () => {
-		const rules = fieldRulesOf({
-			'@self': {
-				fieldRules: {
-					state: 's2',
-					hidden: ['qualityScore'],
-					readOnly: ['confidentiality'],
-					required: ['motivering'],
-				},
-			},
-		})
-
-		expect(rules.state).toBe('s2')
-		expect(rules.required).toEqual(['motivering'])
-		expect(hasFieldRules(rules)).toBe(true)
-	})
-
-	it('says nothing about a case whose read carries no answer', () => {
-		expect(hasFieldRules(fieldRulesOf({}))).toBe(false)
-		expect(fieldRulesOf(undefined).state).toBe('')
 	})
 })
 

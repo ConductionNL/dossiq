@@ -48,6 +48,16 @@ class RecordCaseMapping {
 	public const RECORD_ID = '@id';
 
 	/**
+	 * The `statuses` key a record takes whose status is not declared or absent.
+	 */
+	public const ANY_STATUS = '*';
+
+	/**
+	 * The words `as: boolean` reads as true.
+	 */
+	private const TRUE_WORDS = ['1', 'true', 'yes'];
+
+	/**
 	 * The term states a status may declare.
 	 */
 	private const TERM_STATES = [
@@ -59,10 +69,12 @@ class RecordCaseMapping {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseDateNormaliser $dates The one reader of a date and the tenant's time zone.
+	 * @param CaseDateNormaliser $dates  The one reader of a date and the tenant's time zone.
+	 * @param RecordValues       $values Lists, numbers and answers as the case stores them.
 	 */
 	public function __construct(
 		private readonly CaseDateNormaliser $dates,
+		private readonly RecordValues $values = new RecordValues(),
 	) {
 	}//end __construct()
 
@@ -81,11 +93,12 @@ class RecordCaseMapping {
 	 *                                  outside its list, or the status is not declared.
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-a-case-type-declares-how-another-apps-records-become-its-cases-req-cri-001
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-a-declaration-reads-nested-typed-source-values-and-answers-the-case-types-fields-req-cri-005
 	 */
 	public function map(array $import, array $record, string $recordId, string $caseTypeId): array {
 		$statusField = (string)($import['statusField'] ?? 'status');
 		$sourceStatus = trim((string)($record[$statusField] ?? ''));
-		$declared = ($import['statuses'][$sourceStatus] ?? null);
+		$declared = ($import['statuses'][$sourceStatus] ?? ($import['statuses'][self::ANY_STATUS] ?? null));
 		if (is_array($declared) === false) {
 			throw new InvalidArgumentException('The record has a status the case type does not declare: ' . $sourceStatus . '.');
 		}
@@ -97,10 +110,20 @@ class RecordCaseMapping {
 
 		$case = ['caseType' => $caseTypeId];
 		foreach ((array)($import['fields'] ?? []) as $field) {
-			$value = $this->valueOf(field: (array)$field, record: $record, recordId: $recordId);
-			if ($value !== null) {
-				$case = $this->set(target: $case, path: (string)($field['to'] ?? ''), value: $value);
+			$field = (array)$field;
+			$value = $this->valueOf(field: $field, record: $record, recordId: $recordId);
+			if ($value === null) {
+				continue;
 			}
+
+			$path = (string)($field['to'] ?? '');
+			if (is_array($field['property'] ?? null) === true) {
+				$answers = (array)($this->read(case: $case, path: $path) ?? []);
+				$answers[] = $this->values->answer(property: $field['property'], value: $value);
+				$value = $answers;
+			}
+
+			$case = $this->set(target: $case, path: $path, value: $value);
 		}
 
 		$status = trim((string)($declared['status'] ?? ''));
@@ -181,7 +204,7 @@ class RecordCaseMapping {
 		}
 
 		$from = (string)($field['from'] ?? '');
-		$raw = ($record[$from] ?? null);
+		$raw = ($record[$from] ?? $this->read(case: $record, path: $from));
 		if ($from === self::RECORD_ID) {
 			$raw = $recordId;
 		}
@@ -205,6 +228,15 @@ class RecordCaseMapping {
 	 * @throws InvalidArgumentException When a value is outside its declared list.
 	 */
 	private function shaped(array $field, mixed $raw): mixed {
+		$shape = (string)($field['as'] ?? 'text');
+		if ($shape === 'json') {
+			return $this->values->json(raw: $raw);
+		}
+
+		if ($shape === 'boolean' && is_bool($raw) === true) {
+			return $raw;
+		}
+
 		$text = '';
 		if (is_scalar($raw) === true) {
 			$text = trim((string)preg_replace('/\s+/u', ' ', (string)$raw));
@@ -218,10 +250,12 @@ class RecordCaseMapping {
 			return null;
 		}
 
-		return match ((string)($field['as'] ?? 'text')) {
+		return match ($shape) {
 			'date' => $this->dates->toCalendarDateOrNull(value: $text),
 			'dateTime' => $this->dates->tryParse(value: $text)?->format(DateTimeInterface::ATOM),
 			'integer' => (int)$text,
+			'number' => $this->values->number(text: $text),
+			'boolean' => in_array(strtolower($text), self::TRUE_WORDS, true),
 			default => $this->cut(text: $text, length: (int)($field['maxLength'] ?? 0)),
 		};
 	}//end shaped()

@@ -27,7 +27,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
- * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+ * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
  */
 
 declare(strict_types=1);
@@ -103,6 +103,43 @@ class MenuCaseTypesService {
 	}//end __construct()
 
 	/**
+	 * A case type as the menu and its picker see it: id and title, and its
+	 * icon when it names one.
+	 *
+	 * @param array{id: string, title: string, icon: string} $row The case type.
+	 *
+	 * @return array{id: string, title: string, icon?: string} The row.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	 */
+	private static function publicRow(array $row): array {
+		$public = ['id' => $row['id'], 'title' => $row['title']];
+		if ($row['icon'] !== '') {
+			$public['icon'] = $row['icon'];
+		}
+
+		return $public;
+	}//end publicRow()
+
+	/**
+	 * The icon a case type row names (`caseType.icon`), or '' when it names none.
+	 *
+	 * @param array<string, mixed> $row The case type row.
+	 *
+	 * @return string The icon name.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-carries-a-colour-and-an-icon
+	 */
+	private function iconOf(array $row): string {
+		$icon = ($row['icon'] ?? '');
+		if (is_string($icon) === false) {
+			return '';
+		}
+
+		return trim($icon);
+	}//end iconOf()
+
+	/**
 	 * The case types offered to this user for their menu, sorted by title.
 	 *
 	 * The visible case types whose handling teams include a Nextcloud group
@@ -112,10 +149,10 @@ class MenuCaseTypesService {
 	 *
 	 * @param string $userId The user.
 	 *
-	 * @return array<int, array{id: string, title: string}> The offered case types.
+	 * @return array<int, array{id: string, title: string, icon?: string}> The offered case types.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
-	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
 	 */
 	public function offeredCaseTypes(string $userId): array {
 		$rows = $this->currentCaseTypes();
@@ -141,7 +178,7 @@ class MenuCaseTypesService {
 		}
 
 		return array_map(
-			static fn (array $row): array => ['id' => $row['id'], 'title' => $row['title']],
+			static fn (array $row): array => self::publicRow(row: $row),
 			$handled
 		);
 	}//end offeredCaseTypes()
@@ -152,26 +189,51 @@ class MenuCaseTypesService {
 	 * OpenRegister applies RBAC under the user session. A superseded version is
 	 * left out: the list offers one row per case type, not one per version.
 	 *
-	 * @return array<int, array{id: string, title: string}> The case types; empty when
+	 * @return array<int, array{id: string, title: string, icon?: string}> The case types; empty when
 	 *   OpenRegister is unavailable or the register or schema is unconfigured.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 */
 	public function visibleCaseTypes(): array {
 		return array_map(
-			static fn (array $row): array => ['id' => $row['id'], 'title' => $row['title']],
+			static fn (array $row): array => self::publicRow(row: $row),
 			$this->currentCaseTypes()
 		);
 	}//end visibleCaseTypes()
 
 	/**
+	 * The current case types with one of the given identifiers, keyed by
+	 * identifier, for views an instance names by identifier.
+	 *
+	 * @param array<int, string> $identifiers The case type identifiers.
+	 *
+	 * @return array<string, array{id: string, title: string}> The case types found.
+	 *
+	 * @spec openspec/specs/case-lists/spec.md
+	 */
+	public function byIdentifier(array $identifiers): array {
+		if ($identifiers === []) {
+			return [];
+		}
+
+		$found = [];
+		foreach ($this->currentCaseTypes() as $row) {
+			if ($row['identifier'] !== '' && in_array($row['identifier'], $identifiers, true) === true) {
+				$found[$row['identifier']] = ['id' => $row['id'], 'title' => $row['title']];
+			}
+		}
+
+		return $found;
+	}//end byIdentifier()
+
+	/**
 	 * The current visible case types with their handling teams, sorted by title.
 	 *
-	 * @return array<int, array{id: string, title: string, teams: array<int, string>}> The case types.
+	 * @return array<int, array{id: string, title: string, identifier: string, icon: string, teams: array<int, string>}> The case types.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
-	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
-	 * @spec openspec/changes/menu-case-type-titles-in-the-readers-language/specs/case-type-navigation/spec.md
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 * @spec openspec/specs/case-type-navigation/spec.md
 	 */
 	private function currentCaseTypes(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -215,6 +277,8 @@ class MenuCaseTypesService {
 			$caseTypes[$uuid] = [
 				'id' => $uuid,
 				'title' => $title,
+				'identifier' => (string)($row['identifier'] ?? ''),
+				'icon' => $this->iconOf(row: $row),
 				'teams' => $handling->teams(caseType: $row),
 			];
 		}
@@ -250,7 +314,7 @@ class MenuCaseTypesService {
 	 *
 	 * @throws \Throwable When OpenRegister's facet query fails.
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function withOpenCaseCounts(array $caseTypes): array {
 		$counts = (new OpenCaseCounts(settingsService: $this->settingsService))->byCaseType(
@@ -280,7 +344,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return array<int, array{id: string, title: string, openCases: null}> The case types, count unknown.
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function withUnknownOpenCaseCounts(array $caseTypes): array {
 		return array_map(
@@ -350,6 +414,7 @@ class MenuCaseTypesService {
 
 	/**
 	 * Keep the ids that name a visible case type, first occurrence only, up to the cap.
+	 * An id of a superseded version counts as the version in use.
 	 *
 	 * @param array<int, mixed> $ids The ids in order.
 	 * @param array<int, array{id: string, title: string}> $visible The visible case types.
@@ -360,10 +425,17 @@ class MenuCaseTypesService {
 	 */
 	private function keepVisible(array $ids, array $visible): array {
 		$byId = array_column($visible, null, 'id');
+		$versions = new OpenCaseCounts(settingsService: $this->settingsService);
 
 		$kept = [];
 		foreach ($ids as $id) {
-			if (is_string($id) === false || isset($byId[$id]) === false || isset($kept[$id]) === true) {
+			if (is_string($id) === false) {
+				continue;
+			}
+
+			// A choice made on a version superseded since names the version in use.
+			$id = $versions->currentVersionOf(uuid: $id, supersededBy: $this->supersededBy);
+			if (isset($byId[$id]) === false || isset($kept[$id]) === true) {
 				continue;
 			}
 
@@ -383,7 +455,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	private function rememberSuperseded(array $row): void {
 		$old = $this->resolveUuid(object: $row);

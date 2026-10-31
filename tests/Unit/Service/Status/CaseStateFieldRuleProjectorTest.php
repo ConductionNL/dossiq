@@ -149,6 +149,41 @@ class CaseStateFieldRuleProjectorTest extends TestCase {
 	}//end testARoleRuleLandsInEveryState()
 
 	/**
+	 * A role rule limited to statuses lands only in those states; an empty
+	 * list means every status (coordinator, 24 Oct: field rights per role and
+	 * status, DqZaaktypeVelden).
+	 *
+	 * @return void
+	 */
+	public function testARoleRuleLimitedToStatusesLandsOnlyThere(): void {
+		$states = $this->projector(
+			[
+				['id' => 'intake-uuid', 'name' => 'Ontvangen'],
+				['id' => 'work-uuid', 'name' => 'In behandeling'],
+				['id' => 'closed-uuid', 'name' => 'Afgehandeld'],
+			],
+			[],
+			[
+				'fieldRoleRules' => [
+					['field' => 'bouwkosten', 'rule' => 'readOnly', 'groups' => ['intakers'], 'statuses' => ['work-uuid', 'closed-uuid']],
+					['field' => 'welstand', 'rule' => 'hidden', 'groups' => ['intakers'], 'statuses' => []],
+				],
+			]
+		)->statesOf(caseTypeId: 'ct');
+
+		$this->assertSame(['hidden' => [['fields' => ['welstand'], 'groups' => ['intakers']]]], $states['intake-uuid']['fields']);
+		foreach (['work-uuid', 'closed-uuid'] as $key) {
+			$this->assertSame(
+				[
+					'hidden' => [['fields' => ['welstand'], 'groups' => ['intakers']]],
+					'readOnly' => [['fields' => ['bouwkosten'], 'groups' => ['intakers']]],
+				],
+				$states[$key]['fields']
+			);
+		}
+	}//end testARoleRuleLimitedToStatusesLandsOnlyThere()
+
+	/**
 	 * A status rule on the same field and kind keeps the role rule out.
 	 *
 	 * The status rule may carry a condition and a message; the role rule

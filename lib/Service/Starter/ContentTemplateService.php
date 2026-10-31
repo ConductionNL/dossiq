@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Starter;
 
 use OCA\Dossiq\Service\EmailTemplateService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -104,11 +105,13 @@ class ContentTemplateService {
 	 * @param StarterStore         $store  The OpenRegister seam.
 	 * @param EmailTemplateService $mail   The mail templates, which keep their own store.
 	 * @param LoggerInterface      $logger Logger.
+	 * @param TranslatedText       $text   Reads a translatable template name or body as text, in the reader's language.
 	 */
 	public function __construct(
 		private readonly StarterStore $store,
 		private readonly EmailTemplateService $mail,
 		private readonly LoggerInterface $logger,
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -148,7 +151,7 @@ class ContentTemplateService {
 				continue;
 			}
 
-			$name = (string)($row['name'] ?? '');
+			$name = $this->text->forReader(value: ($row['name'] ?? ''));
 			if ($search !== '' && stripos($name, $search) === false) {
 				continue;
 			}
@@ -157,7 +160,7 @@ class ContentTemplateService {
 				'id' => $this->store->idOf(row: $row),
 				'kind' => $kind,
 				'name' => $name,
-				'body' => (string)($row['body'] ?? ''),
+				'body' => $this->text->forReader(value: ($row['body'] ?? '')),
 				'presets' => $this->presets(row: $row),
 			];
 		}//end foreach
@@ -183,7 +186,7 @@ class ContentTemplateService {
 		}
 
 		$presets = $this->presets(row: $row);
-		$body = (string)($row['body'] ?? '');
+		$body = $this->text->forReader(value: ($row['body'] ?? ''));
 		if ($body !== '') {
 			$presets['body'] = $body;
 		}

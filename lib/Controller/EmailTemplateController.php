@@ -171,6 +171,8 @@ class EmailTemplateController extends Controller {
 			'name' => (string)$this->request->getParam('name', ''),
 			'subject' => (string)$this->request->getParam('subject', ''),
 			'body' => (string)$this->request->getParam('body', ''),
+			'moment' => $this->request->getParam('moment'),
+			'channel' => $this->request->getParam('channel'),
 		];
 
 		try {
@@ -209,6 +211,15 @@ class EmailTemplateController extends Controller {
 			'subject' => $this->request->getParam('subject'),
 			'body' => $this->request->getParam('body'),
 		];
+
+		// Only a moment or channel the request names reaches the update: an
+		// explicit null clears it, an absent one keeps the current version's.
+		$params = $this->request->getParams();
+		foreach (['moment', 'channel'] as $field) {
+			if (array_key_exists($field, $params) === true) {
+				$data[$field] = $params[$field];
+			}
+		}
 
 		try {
 			return new JSONResponse($this->templateService->updateTemplate(templateId: $templateId, data: $data));
@@ -292,7 +303,7 @@ class EmailTemplateController extends Controller {
 	 * stored and reports reachability, into an internal port prober. There is
 	 * no per-object guard to add here: the object IS the instance settings, so
 	 * the correct posture is the admin attribute this controller already uses
-	 * for `createTemplate()` / `updateTemplate()` / `seedDefaults()`.
+	 * for `createTemplate()` / `updateTemplate()`.
 	 *
 	 * @return JSONResponse
 	 *
@@ -410,47 +421,4 @@ class EmailTemplateController extends Controller {
 		return new JSONResponse($this->templateService->getAvailableVariables(caseTypeId: $caseTypeId));
 	}//end variables()
 
-	/**
-	 * Seed the three Dutch default templates for a caseType.
-	 *
-	 * Idempotent: the service skips any default whose name already exists, so
-	 * calling this twice creates nothing the second time and returns 0.
-	 *
-	 * The auth posture mirrors createTemplate() deliberately — this endpoint
-	 * is a loop over exactly that call and creates nothing a caller could not
-	 * create one at a time, so a stricter guard here would be inconsistent
-	 * rather than safer.
-	 *
-	 * ⚠️ That argument was sound and the posture it mirrored was not:
-	 * `createTemplate()` was reachable by every authenticated user, so this
-	 * endpoint was too. The reasoning is kept because it is still correct —
-	 * what changed is the posture on the other end. Both are now admin-only.
-	 *
-	 * @param string $caseTypeId Owning caseType id.
-	 *
-	 * @return JSONResponse carrying created, the number created on this run.
-	 *
-	 * @spec openspec/specs/authz-bypass-fixes/spec.md
-	 */
-	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
-	public function seedDefaults(string $caseTypeId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->groupManager->isAdmin($user->getUID()) === false) {
-			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		try {
-			return new JSONResponse(
-				[
-					'created' => $this->templateService->seedDefaultTemplates(caseTypeId: $caseTypeId),
-				]
-			);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-	}//end seedDefaults()
 }//end class

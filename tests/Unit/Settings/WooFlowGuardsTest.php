@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\Status\DerivedStatusEvaluator;
@@ -76,6 +77,13 @@ class WooFlowGuardsTest extends TestCase {
 	private array $outstanding = [];
 
 	/**
+	 * The partly public documents still waiting for a redacted copy.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $waitingForCopy = [];
+
+	/**
 	 * Whether the register cannot be read.
 	 *
 	 * @var bool
@@ -128,6 +136,9 @@ class WooFlowGuardsTest extends TestCase {
 		$assessments->method('getOutstanding')->willReturnCallback(
 			fn (): array => ['count' => count($this->outstanding), 'documents' => $this->outstanding]
 		);
+		$assessments->method('partlyPublicWithoutCopy')->willReturnCallback(
+			fn (): array => ['partlyPublic' => max(1, count($this->waitingForCopy)), 'waiting' => $this->waitingForCopy]
+		);
 
 		$passing = new GuardResult(passed: true);
 		$statusChecklist = $this->createMock(originalClassName: StatusChecklistGuard::class);
@@ -137,15 +148,15 @@ class WooFlowGuardsTest extends TestCase {
 
 		$registry = new GuardRegistry(
 			$this->createMock(originalClassName: ChecklistGuard::class),
-			new RequiredFieldGuard(),
-			new RequiredDocumentGuard(),
+			new RequiredFieldGuard(l10n: new SourceL10n()),
+			new RequiredDocumentGuard(l10n: new SourceL10n()),
 			$this->createMock(originalClassName: RoleGuard::class),
 			$this->createMock(originalClassName: DelegatedAuthorityGuard::class),
 			$statusChecklist,
 			$capacity,
 			new NullLogger(),
 			null,
-			new DocumentAssessmentGuard(assessments: $assessments, logger: new NullLogger()),
+			new DocumentAssessmentGuard(assessments: $assessments, logger: new NullLogger(), l10n: new SourceL10n()),
 		);
 
 		$resultWriter = $this->createMock(originalClassName: CaseResultWriter::class);
@@ -307,11 +318,32 @@ class WooFlowGuardsTest extends TestCase {
 		$move = $this->moveTo(answer: $this->answerIn(order: 3), to: 4);
 		$this->assertNotNull($move);
 		$this->assertFalse(condition: $move['guardsPassed']);
-		$this->assertSame(expected: 'Er zijn nog geen documenten verzameld. Niets gevonden? Leg dat vast met een toelichting', actual: $move['failedGuards'][0]['failureMessage']);
+		$this->assertSame(expected: 'No documents have been collected yet. Found nothing? Record that with an explanation', actual: $move['failedGuards'][0]['failureMessage']);
 
 		$this->underReview = ['doc-1', 'doc-2'];
 		$this->assertTrue(condition: $this->moveTo(answer: $this->answerIn(order: 3), to: 4)['guardsPassed']);
 	}//end testAssessingWaitsForGatheredDocuments()
+
+	/**
+	 * The decision waits until every partly public document has a redacted copy.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+	 */
+	public function testTheDecisionWaitsForEveryRedactedCopy(): void {
+		$this->underReview = ['doc-1', 'doc-2'];
+		$this->waitingForCopy = ['doc-2'];
+		$move = $this->moveTo(answer: $this->answerIn(order: 5), to: 6);
+		$this->assertFalse(condition: $move['guardsPassed']);
+		$this->assertSame(
+			expected: '1 of 1 partly public documents are still waiting for a redacted version',
+			actual: $move['failedGuards'][0]['failureMessage']
+		);
+
+		$this->waitingForCopy = [];
+		$this->assertTrue(condition: $this->moveTo(answer: $this->answerIn(order: 5), to: 6)['guardsPassed']);
+	}//end testTheDecisionWaitsForEveryRedactedCopy()
 
 	/**
 	 * Redaction waits until every gathered document is assessed.
@@ -323,7 +355,7 @@ class WooFlowGuardsTest extends TestCase {
 		$this->outstanding = ['doc-2'];
 		$move = $this->moveTo(answer: $this->answerIn(order: 4), to: 5);
 		$this->assertFalse(condition: $move['guardsPassed']);
-		$this->assertSame(expected: '1 van 2 documenten wachten nog op een beoordeling', actual: $move['failedGuards'][0]['failureMessage']);
+		$this->assertSame(expected: '1 of 2 documents are still waiting for an assessment', actual: $move['failedGuards'][0]['failureMessage']);
 
 		$this->outstanding = [];
 		$this->assertTrue(condition: $this->moveTo(answer: $this->answerIn(order: 4), to: 5)['guardsPassed']);
@@ -379,7 +411,7 @@ class WooFlowGuardsTest extends TestCase {
 		$this->unreadable = true;
 		$move = $this->moveTo(answer: $this->answerIn(order: 3), to: 4);
 		$this->assertFalse(condition: $move['guardsPassed']);
-		$this->assertSame(expected: 'De documenten van deze zaak konden niet worden gelezen', actual: $move['failedGuards'][0]['failureMessage']);
+		$this->assertSame(expected: 'The documents of this case could not be read', actual: $move['failedGuards'][0]['failureMessage']);
 	}//end testAnUnreadableRegisterRefuses()
 
 	/**

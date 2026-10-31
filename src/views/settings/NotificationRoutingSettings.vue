@@ -40,7 +40,8 @@
 				:modelValue="selectedDomain"
 				:options="domainOptions"
 				:aria-label-combobox="t('dossiq', 'Notification domain')"
-				:inputLabel="t('dossiq', 'Show the settings as they apply to')"
+				:inputLabel="t('dossiq', 'Notification domain')"
+				:clearable="false"
 				data-testid="notification-routing-scope"
 				@update:modelValue="chooseDomain" />
 		</div>
@@ -129,6 +130,7 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import {
+	channelsOnFor,
 	keyFor,
 	propsFor,
 	writeFor,
@@ -138,6 +140,7 @@ import {
 	saveGroupDefault,
 	savePreference,
 } from '../../services/notificationRoutingApi.js'
+import { notificationLabels } from '../../utils/notificationLabels.js'
 
 export default {
 	name: 'NotificationRoutingSettings',
@@ -183,7 +186,11 @@ export default {
 				entries: this.entries,
 				channels: this.channels,
 				label: (entry) => this.labelFor(entry),
+				// A schema title is a register key ("Work digest"); the reader
+				// gets it in their language.
+				groupLabel: (title) => t('dossiq', title),
 				singleChannelLabel: t('dossiq', 'Notifications'),
+				channelLabel: (id) => this.channelLabel(id),
 			})
 		},
 
@@ -278,7 +285,8 @@ export default {
 		},
 
 		/**
-		 * What to call this notification on screen.
+		 * What to call this notification on screen: this screen's own words,
+		 * else the app's notification labels, else the schema and the key.
 		 *
 		 * @param {object} entry The entry.
 		 * @return {string} The label.
@@ -300,10 +308,32 @@ export default {
 				workDigestReady: t('dossiq', 'My daily work digest'),
 			}
 
+			const shared = notificationLabels()
+
 			return (
 				known[entry.notification]
+				|| shared[`${entry.schema}.${entry.notification}`]
+				|| shared[entry.notification]
 				|| `${entry.schemaTitle || entry.schema}: ${entry.notification}`
 			)
+		},
+
+		/**
+		 * What to call a channel column, as board DqPersoonlijkeInstellingen
+		 * does: "In Nextcloud" and "Per e-mail".
+		 *
+		 * @param {string} id The channel id.
+		 * @return {string} The label.
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-person-can-switch-e-mail-on-per-notification
+		 */
+		channelLabel(id) {
+			const known = {
+				'nc-notification': t('dossiq', 'In Nextcloud'),
+				email: t('dossiq', 'By e-mail'),
+				activity: t('dossiq', 'In the activity stream'),
+				'web-push': t('dossiq', 'As a push message'),
+			}
+			return known[id] || id
 		},
 
 		/**
@@ -329,12 +359,20 @@ export default {
 		 * @param {object} change What was set.
 		 * @param {string} change.eventId The row's id.
 		 * @param {string} [change.scope] The scope the row was on.
+		 * @param {string} [change.channelId] The column the cell is in.
 		 * @param {boolean} change.value The new value.
 		 * @return {Promise<void>} When the write has finished.
 		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
-		async onChange({ eventId, scope = '', value }) {
-			const write = writeFor({ eventId, scope: scope || this.domain, value })
+		async onChange({ eventId, channelId, scope = '', value }) {
+			const entry = this.entries.find((candidate) => keyFor(candidate) === eventId)
+			const write = writeFor({
+				eventId,
+				scope: scope || this.domain,
+				value,
+				channelId,
+				current: entry ? channelsOnFor(entry) : null,
+			})
 			if (write === null) {
 				return
 			}
@@ -345,6 +383,7 @@ export default {
 					schema: write.schema,
 					notification: write.notification,
 					enabled: write.enabled,
+					...(write.channels ? { channels: write.channels } : {}),
 					scope: write.scope || null,
 				})
 			} catch (error) {
@@ -407,10 +446,13 @@ export default {
 	gap: 16px;
 }
 
-/* The picker's floating label ("Show the settings as they apply to") is longer
-   than NcSelect's default width, so it was cut off and the value squeezed. */
+/* DqPersoonlijkeInstellingen: the domain select runs the section's width and
+   stands 18px above the matrix (its 2px ring and the 16px gap), so NcSelect's
+   4px bottom margin goes. */
 .notification-routing__scope :deep(.v-select.select) {
-	min-width: min(100%, 360px);
+	width: 100%;
+	max-width: none;
+	margin-block-end: 0;
 }
 
 .notification-routing__explainer {

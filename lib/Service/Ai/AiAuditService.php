@@ -60,15 +60,17 @@ class AiAuditService {
 	}//end __construct()
 
 	/**
-	 * Record a user action on an AI suggestion (accept, reject, modify).
+	 * Record a user action on an AI suggestion (accept, reject, modify, ignore).
 	 *
 	 * @param string $caseId The case ID
 	 * @param string $type AI type (classification, extraction, etc.)
-	 * @param string $userAction User action (accepted, rejected, modified)
+	 * @param string $userAction User action (accepted, rejected, modified, ignored)
 	 * @param array $suggestion The original suggestion
 	 * @param array|null $actualValue The value actually applied
 	 * @param string|null $reason Reason for rejection/modification
 	 * @param string $userId The current user ID
+	 * @param array<string, string> $context Optional `unusedBecause` (with ignored), `prompt`, `model`,
+	 *                                       `suggestionId` and `documentId`.
 	 *
 	 * @return array
 	 *
@@ -82,12 +84,18 @@ class AiAuditService {
 		?array $actualValue,
 		?string $reason,
 		string $userId,
+		array $context = [],
 	): array {
+		$model = (string)($context['model'] ?? '');
+		if ($model === '') {
+			$model = $this->modelIdentity->identifier();
+		}
+
 		$entry = [
 			'type' => $type,
 			'action' => $userAction,
 			'caseId' => $caseId,
-			'model' => $this->modelIdentity->identifier(),
+			'model' => $model,
 			'suggestion' => $suggestion,
 			'userAction' => $userAction,
 			'actualValue' => ($actualValue ?? []),
@@ -95,6 +103,13 @@ class AiAuditService {
 			'userId' => $userId,
 			'timestamp' => date('c'),
 		];
+
+		foreach (['unusedBecause', 'prompt', 'documentId'] as $key) {
+			if ((string)($context[$key] ?? '') !== '') {
+				$entry[$key] = (string)$context[$key];
+			}
+		}
+
 
 		$this->recordAuditEntry(entry: $entry);
 
@@ -104,10 +119,31 @@ class AiAuditService {
 		// the presence of an oversight trail depend on which apps are installed.
 		// Delegation never throws — the handler has already acted and the case has
 		// already moved on, so an audit outage must not become a functional one.
-		$delegated = $this->oversight->delegate($entry);
+		$delegated = $this->oversight->delegate(entry: $this->withSuggestionRef(entry: $entry, context: $context));
 
 		return ['success' => true, 'delegated' => $delegated];
 	}//end recordUserAction()
+
+	/**
+	 * Add the reference the surface gave the suggestion, for hermiq only.
+	 *
+	 * It makes the hermiq reference stable, so one decision reported twice is
+	 * recognisable as one. It stays out of the local entry, whose schema has
+	 * no such property.
+	 *
+	 * @param array<string, mixed>  $entry   The audit entry.
+	 * @param array<string, string> $context The caller's context.
+	 *
+	 * @return array<string, mixed> The entry to delegate.
+	 */
+	private function withSuggestionRef(array $entry, array $context): array {
+		$suggestionId = (string)($context['suggestionId'] ?? '');
+		if ($suggestionId !== '') {
+			$entry['suggestionRef'] = (string)$entry['type'] . ':' . (string)$entry['caseId'] . ':' . $suggestionId;
+		}
+
+		return $entry;
+	}//end withSuggestionRef()
 
 	/**
 	 * List recorded AI audit entries from OpenRegister, newest first.

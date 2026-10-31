@@ -1,0 +1,469 @@
+{
+  "caseType": {
+    "id": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+    "identifier": "re-integratietraject",
+    "title": "Re-integratietraject",
+    "category": "Werk en inkomen",
+    "description": "Een re-integratietraject onder de Participatiewet: plan van aanpak, instrumenten, evaluatie en uitstroom.",
+    "purpose": "Iemand met bijstand begeleiden naar werk of opleiding (Participatiewet artikel 7 en 9).",
+    "trigger": "Toekenning van bijstand: wie bijstand krijgt, werkt mee aan re-integratie, tenzij vrijgesteld.",
+    "subject": "Re-integratie",
+    "suspensionAllowed": true,
+    "extensionAllowed": false,
+    "internalOrExternal": "intern",
+    "publicationRequired": false,
+    "isDraft": false,
+    "confidentiality": "vertrouwelijk",
+    "initialStatus": "bcfc8608-2b50-51c5-b7de-a4ef55d45f90",
+    "handling": {
+      "defaultGroup": "dossiq-sociaal-domein"
+    },
+    "workflowDefinition": "2f8c1e90-d5ff-57c3-82d6-7bd563f18a54",
+    "processesPersonalData": true,
+    "personalDataCategories": [
+      "naw",
+      "bsn",
+      "financieel",
+      "gezondheid"
+    ],
+    "specialDataCategories": [
+      "health"
+    ],
+    "sideCards": [
+      "side-special-data-health",
+      "case-banner-stack",
+      "side-social-consent",
+      "side-social-people"
+    ],
+    "overviewCards": [
+      "case-summary"
+    ],
+    "x-index": {
+      "title": "Re-integratietrajecten",
+      "columns": [
+        "identifier",
+        "title",
+        "assignee",
+        "status",
+        "startDate"
+      ],
+      "defaultSort": [
+        {
+          "key": "startDate",
+          "order": "desc"
+        }
+      ],
+      "searchFields": [
+        "title",
+        "identifier"
+      ]
+    },
+    "recordImports": [
+      {
+        "key": "re-integratietrajecten",
+        "sourceApp": "dossiq",
+        "sourceRegister": "dossiq",
+        "sourceSchema": "reIntegratieTraject",
+        "statuses": {
+          "*": {
+            "status": "0f339c0f-64b5-50a6-8bbb-524f2e62e7f1",
+            "term": "running"
+          }
+        },
+        "fields": [
+          {
+            "to": "title",
+            "value": "Re-integratietraject"
+          },
+          {
+            "to": "title",
+            "from": "trajectKind",
+            "maxLength": 120
+          },
+          {
+            "to": "assignee",
+            "from": "caseManagerId"
+          },
+          {
+            "to": "startDate",
+            "from": "startDate",
+            "as": "date"
+          },
+          {
+            "to": "externalReference",
+            "from": "@id"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "9bc4bfe9-8458-58ad-b24b-2205a60e4526",
+              "name": "bijstandszaak"
+            },
+            "from": "caseId",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "f1cd4c91-bd8a-594b-834e-97905320b3f5",
+              "name": "trajectSoort"
+            },
+            "from": "trajectKind",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "6767940e-1c57-5c2c-8d29-7e185d484406",
+              "name": "afstandTotArbeidsmarkt"
+            },
+            "from": "distanceToLabourMarket",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "94d4ebd8-005e-5317-a8f8-1f0eb1504d88",
+              "name": "instrumenten"
+            },
+            "from": "instrumenten",
+            "as": "json"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "5196ff47-4d22-5419-990e-cd8ad1fc3fb3",
+              "name": "samenwerkendePartijen"
+            },
+            "from": "collaboratingParties",
+            "as": "json"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "e72ae4ca-4302-537a-9e4b-2b327f1014c3",
+              "name": "evaluatiemomenten"
+            },
+            "from": "evaluationMoments",
+            "as": "json"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "b00c911d-5298-5d60-87b7-db94e28bba8b",
+              "name": "tegenprestatieVerplicht"
+            },
+            "from": "considerationMandatory",
+            "as": "boolean"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "dfc6be11-636f-51a3-9a2e-d1b201bac6d4",
+              "name": "vrijstellingArbeidsplicht"
+            },
+            "from": "exemptionWorkObligation.actief",
+            "as": "boolean"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "6120f630-7c80-59f9-a238-4f87de5a6f53",
+              "name": "vrijstellingReden"
+            },
+            "from": "exemptionWorkObligation.reason",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "0ac4fd26-596d-520e-bf34-232b2470f691",
+              "name": "herbeoordelingsdatum"
+            },
+            "from": "exemptionWorkObligation.reassessmentDate",
+            "as": "date"
+          }
+        ],
+        "matchField": "externalReference",
+        "stamp": {
+          "caseId": "migratedTo",
+          "at": "migratedAt"
+        },
+        "carriesTerm": false,
+        "runOnUpgrade": true
+      }
+    ]
+  },
+  "propertyDefinitions": [
+    {
+      "id": "9bc4bfe9-8458-58ad-b24b-2205a60e4526",
+      "name": "bijstandszaak",
+      "definition": "Bijstandszaak",
+      "description": "De Participatiewet-zaak waar dit traject bij hoort.",
+      "category": "Re-integratie",
+      "propertyType": "string",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    },
+    {
+      "id": "f1cd4c91-bd8a-594b-834e-97905320b3f5",
+      "name": "trajectSoort",
+      "definition": "Soort traject",
+      "description": "Bijvoorbeeld werkfit maken, naar werk, scholing.",
+      "category": "Re-integratie",
+      "propertyType": "string",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "filterable": true
+    },
+    {
+      "id": "6767940e-1c57-5c2c-8d29-7e185d484406",
+      "name": "afstandTotArbeidsmarkt",
+      "definition": "Afstand tot de arbeidsmarkt",
+      "description": "Hoe ver de deelnemer van werk af staat.",
+      "category": "Re-integratie",
+      "propertyType": "string",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "enumValues": [
+        "klein",
+        "average",
+        "groot",
+        "zeer-groot"
+      ],
+      "filterable": true
+    },
+    {
+      "id": "94d4ebd8-005e-5317-a8f8-1f0eb1504d88",
+      "name": "instrumenten",
+      "definition": "Instrumenten",
+      "description": "De ingezette instrumenten, zoals loonkostensubsidie, scholing of jobcoaching.",
+      "category": "Re-integratie",
+      "propertyType": "array",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Soort"
+          },
+          "omschrijving": {
+            "type": "string",
+            "title": "Omschrijving"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "title": "Startdatum"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "title": "Einddatum"
+          },
+          "budget": {
+            "type": "number",
+            "title": "Budget"
+          }
+        }
+      }
+    },
+    {
+      "id": "5196ff47-4d22-5419-990e-cd8ad1fc3fb3",
+      "name": "samenwerkendePartijen",
+      "definition": "Samenwerkende partijen",
+      "description": "Wie meewerkt: UWV, uitzendbureau, werkgever, opleider.",
+      "category": "Re-integratie",
+      "propertyType": "array",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "items": {
+        "type": "string"
+      }
+    },
+    {
+      "id": "e72ae4ca-4302-537a-9e4b-2b327f1014c3",
+      "name": "evaluatiemomenten",
+      "definition": "Evaluatiemomenten",
+      "description": "De geplande evaluatiemomenten.",
+      "category": "Re-integratie",
+      "propertyType": "array",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "items": {
+        "type": "string",
+        "format": "date"
+      }
+    },
+    {
+      "id": "b00c911d-5298-5d60-87b7-db94e28bba8b",
+      "name": "tegenprestatieVerplicht",
+      "definition": "Tegenprestatie verplicht",
+      "description": "Of een tegenprestatie geldt.",
+      "category": "Re-integratie",
+      "propertyType": "boolean",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    },
+    {
+      "id": "dfc6be11-636f-51a3-9a2e-d1b201bac6d4",
+      "name": "vrijstellingArbeidsplicht",
+      "definition": "Vrijstelling arbeidsplicht",
+      "description": "Of de deelnemer is vrijgesteld van de arbeidsverplichting.",
+      "category": "Re-integratie",
+      "propertyType": "boolean",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "hideOnCreate": true
+    },
+    {
+      "id": "6120f630-7c80-59f9-a238-4f87de5a6f53",
+      "name": "vrijstellingReden",
+      "definition": "Reden vrijstelling",
+      "description": "Waarom de vrijstelling geldt, vaak om medische redenen.",
+      "category": "Re-integratie",
+      "propertyType": "string",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "hideOnCreate": true
+    },
+    {
+      "id": "0ac4fd26-596d-520e-bf34-232b2470f691",
+      "name": "herbeoordelingsdatum",
+      "definition": "Herbeoordelingsdatum",
+      "description": "Wanneer de vrijstelling opnieuw wordt beoordeeld.",
+      "category": "Re-integratie",
+      "propertyType": "date",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "hideOnCreate": true
+    }
+  ],
+  "statusTypes": [
+    {
+      "id": "bcfc8608-2b50-51c5-b7de-a4ef55d45f90",
+      "phase": "Ontvangst",
+      "name": "Aangemeld",
+      "description": "Het traject is aangemeld, bijvoorbeeld nadat bijstand is toegekend.",
+      "order": 1,
+      "isFinal": false,
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "role": "intake",
+      "colour": "blue"
+    },
+    {
+      "id": "aa9bc9b1-5d4b-5311-bdf2-ad36b3dfc681",
+      "phase": "Beoordeling",
+      "name": "Plan van aanpak",
+      "description": "De klantmanager legt met de deelnemer vast welk traject past en hoe ver de arbeidsmarkt is.",
+      "order": 2,
+      "isFinal": false,
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "role": "in-progress",
+      "colour": "purple"
+    },
+    {
+      "id": "0f339c0f-64b5-50a6-8bbb-524f2e62e7f1",
+      "name": "In uitvoering",
+      "description": "De instrumenten lopen: scholing, jobcoaching, loonkostensubsidie of werkfit maken.",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "colour": "purple",
+      "phase": "Uitvoering"
+    },
+    {
+      "id": "576f334f-9157-569e-8f9a-4cf66f23ae8c",
+      "phase": "Beoordeling",
+      "name": "Evaluatie",
+      "description": "Het traject wordt geëvalueerd: werkt het, of is iets anders nodig?",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "colour": "purple"
+    },
+    {
+      "id": "d90754f7-9095-5e58-8de3-8a7ccc7dd56f",
+      "name": "Afgerond",
+      "description": "Het traject is afgerond met een uitkomst.",
+      "order": 5,
+      "isFinal": true,
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "role": "closed",
+      "colour": "green"
+    },
+    {
+      "id": "1b5ba03e-ad75-50f3-8cf6-fa16d2abaafa",
+      "offPath": true,
+      "name": "Beëindigd",
+      "description": "Het traject is voortijdig beëindigd.",
+      "order": 90,
+      "isFinal": true,
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "colour": "grey"
+    }
+  ],
+  "roleTypes": [
+    {
+      "id": "3c320b0c-529d-5221-9b6c-0401721c026d",
+      "name": "Deelnemer",
+      "description": "Wie het traject volgt, meestal iemand met bijstand",
+      "genericRole": "initiator",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    },
+    {
+      "id": "caa4f54b-4087-58a0-a361-17fcdf0ba3dc",
+      "name": "Klantmanager",
+      "description": "De klantmanager werk en inkomen die het traject begeleidt",
+      "genericRole": "handler",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    },
+    {
+      "id": "850f31d0-74ec-5b26-821f-1b5a47b1a3a4",
+      "name": "Jobcoach",
+      "description": "Begeleidt de deelnemer op de werkplek",
+      "genericRole": "advisor",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    },
+    {
+      "id": "2cd94df3-ba32-5076-8147-252907b8bee6",
+      "name": "Werkgever",
+      "description": "De werkgever bij een plaatsing of loonkostensubsidie",
+      "genericRole": "stakeholder",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    },
+    {
+      "id": "4d868193-440c-5f21-ab9e-9572d595b95f",
+      "name": "Teamleider werk",
+      "description": "Besluit over voortzetting, verlenging of beëindiging",
+      "genericRole": "decision_maker",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    }
+  ],
+  "resultTypes": [
+    {
+      "id": "685841ae-c68b-57c6-b54d-8cc3448ee440",
+      "name": "Uitstroom naar werk",
+      "description": "De deelnemer is aan het werk.",
+      "archivalPeriod": "P10Y",
+      "archivalAction": "vernietigen",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    },
+    {
+      "id": "a0125ddf-785b-59f0-9dc7-afc6b35f9459",
+      "name": "Uitstroom naar opleiding",
+      "description": "De deelnemer volgt een opleiding.",
+      "archivalPeriod": "P10Y",
+      "archivalAction": "vernietigen",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    },
+    {
+      "id": "791978f1-fe88-5065-9748-229ebeb1aef7",
+      "name": "Beëindigd zonder uitstroom",
+      "description": "Het traject is beëindigd zonder werk of opleiding.",
+      "archivalPeriod": "P10Y",
+      "archivalAction": "vernietigen",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    },
+    {
+      "id": "610af7b1-cb0a-560c-a591-8f6c992aaea4",
+      "name": "Vrijgesteld",
+      "description": "De deelnemer is vrijgesteld van de arbeidsverplichting.",
+      "archivalPeriod": "P10Y",
+      "archivalAction": "vernietigen",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376"
+    }
+  ]
+}

@@ -66,8 +66,8 @@ export const TERM_GESTURES = [
 	{
 		act: 'reopen',
 		flag: 'canReopen',
-		label: 'Reopen',
-		reason: 'Only a closed case can be reopened.',
+		label: 'Reopen or restore from the archive',
+		reason: 'Only for a finished or archived case.',
 	},
 ]
 
@@ -125,6 +125,12 @@ function gestureReason(gesture, state) {
  * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
  */
 function gestureExplainer(gesture, state) {
+	if (gesture.act === 'suspend') {
+		return 'The term stands still until the answer is in.'
+	}
+	if (gesture.act === 'reopen') {
+		return 'Only for a finished or archived case.'
+	}
 	if (gesture.act !== 'extend') {
 		return ''
 	}
@@ -143,16 +149,16 @@ export const ENDING_ACTS = [
 	{
 		act: 'finish',
 		label: 'Finish',
-		explainer: 'The case reached its result. The result decides what is kept.',
+		explainer: 'Choose the result type. The end date and the archive outcome are recorded.',
 	},
 	{
 		act: 'abort',
-		label: 'Abort',
-		explainer: 'An intrekking. There is a result, and it is not a besluit.',
+		label: 'Break off',
+		explainer: 'The case stops without a decision. Asks for a reason.',
 	},
 	{
 		act: 'archive',
-		label: 'Archive',
+		label: 'Archive it',
 		explainer: 'The case moves to the retention rule its result type carries.',
 	},
 ]
@@ -188,6 +194,7 @@ function transitionEntries(transitions) {
 			disabled: transitionIsBlocked(row),
 			reason: transitionBlockReason(row),
 			toStatus: String(row.toStatus ?? ''),
+			toStatusName: String(row.toStatusName ?? ''),
 			// Copied from the engine's answer, never derived here: whether
 			// the move closes the case, and the results it may close with.
 			closesCase: row.closesCase === true,
@@ -277,6 +284,11 @@ function endingEntries(acts) {
 				? String(verdict.reason ?? '')
 				: 'What you may do with this case could not be read.',
 			role: verdict ? String(verdict.role ?? '') : '',
+			// Finish and abort close with one of the case type's results, the
+			// same list the act refuses against. Archive takes the result the
+			// case already has.
+			resultTypes:
+				ending.act === 'archive' ? [] : resultChoices(acts?.resultTypes),
 		}
 	})
 }
@@ -291,9 +303,8 @@ function endingEntries(acts) {
  * `archiefstatus: gearchiveerd` and no marker is in every working lens, and
  * offering Restore on it would be a button that takes nothing back.
  *
- * It sits with the state acts rather than with the ending acts because it is
- * the one act on this menu that UNDOES something, and the ending acts are
- * ordered last precisely so a hurried handler does not meet them first.
+ * It is its own entry rather than an ending act because it is the one act on
+ * this menu that UNDOES something.
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
@@ -311,9 +322,8 @@ function archiveStateEntries(acts) {
 		{
 			kind: 'state',
 			id: 'unarchive',
-			label: 'Restore from the archive',
-			explainer:
-				'The case comes back into the working lists and can be edited again.',
+			label: 'Reopen or restore from the archive',
+			explainer: 'Only for a finished or archived case.',
 			// Restoring asks the same role archiving does, so the verdict on
 			// `archive` is the verdict on this. An absent verdict disables it
 			// and says so, exactly as the ending acts do: this one writes an
@@ -353,8 +363,7 @@ function stateEntries(acts) {
 			kind: 'state',
 			id: 'hold',
 			label: 'Hold',
-			explainer:
-				'You park the case until a date. The statutory term keeps running.',
+			explainer: 'Park it internally, the term keeps running.',
 			disabled: false,
 			reason: '',
 		})
@@ -375,12 +384,69 @@ function stateEntries(acts) {
 }
 
 /**
+ * The order of the acts after the transitions, as board DqVolgendeStap draws
+ * them: finishing straight after the moves, then the acts on the term and on
+ * the handler's own time, then the acts that end or undo.
+ *
+ * @type {Array<string>}
+ */
+export const ACT_ORDER = [
+	'finish',
+	'suspend',
+	'extend',
+	'hold',
+	'release-hold',
+	'promote',
+	'resume',
+	'abort',
+	'archive',
+	'unarchive',
+	'reopen',
+]
+
+/**
+ * The icon each act shows in the menu, by act id; a transition shows an arrow.
+ *
+ * @type {Object<string, string>}
+ */
+export const ACT_ICONS = {
+	transition: 'ArrowRight',
+	finish: 'FlagOutline',
+	suspend: 'PauseCircleOutline',
+	extend: 'CalendarClock',
+	hold: 'TimerSandEmpty',
+	'release-hold': 'TimerSandEmpty',
+	promote: 'ArrowUpBoldCircle',
+	resume: 'Play',
+	abort: 'StopCircleOutline',
+	archive: 'ArchiveOutline',
+	unarchive: 'Restore',
+	reopen: 'History',
+}
+
+/**
+ * The icon of one menu entry, '' when it has none.
+ *
+ * @param {object} entry One menu entry.
+ * @return {string} A registered icon name.
+ * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ */
+export function iconFor(entry) {
+	if (entry?.kind === 'transition') {
+		return ACT_ICONS.transition
+	}
+	if (entry?.kind === 'always') {
+		return String(entry.icon ?? '')
+	}
+
+	return ACT_ICONS[String(entry?.id ?? '')] ?? ''
+}
+
+/**
  * The whole menu, in the order a handler reads it.
  *
- * Transitions first, because moving the case along is the ordinary act.
- * Then the statutory gestures over the term, then the three ways to end it,
- * then the state acts. Ending last on purpose: the irreversible acts are not
- * the ones a hurried handler should meet at the top of a list.
+ * Transitions first, because moving the case along is the ordinary act, then
+ * the acts the case type allows in every phase, then the rest in ACT_ORDER.
  *
  * @param {object} answers The three server answers.
  * @param {Array<object>} [answers.transitions] The `/available-transitions` list.
@@ -391,13 +457,27 @@ function stateEntries(acts) {
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 export function buildActsMenu({ transitions, state, acts } = {}) {
+	const rank = (entry) => {
+		const at = ACT_ORDER.indexOf(entry.id)
+		return at === -1 ? ACT_ORDER.length : at
+	}
+	// Reopen and Restore are one entry, as board DqVolgendeStap draws it:
+	// an archived case refuses every write until it is restored, so on an
+	// archived case the entry restores, and otherwise it reopens.
+	const restore = archiveStateEntries(acts)
+	const gestures = gestureEntries(state)
+		.filter((entry) => restore.length === 0 || entry.id !== 'reopen')
+	const acting = [
+		...gestures,
+		...endingEntries(acts),
+		...stateEntries(acts),
+		...restore,
+	].sort((a, b) => rank(a) - rank(b))
+
 	return [
 		...transitionEntries(transitions),
 		...alwaysAvailableEntries(acts),
-		...gestureEntries(state),
-		...endingEntries(acts),
-		...stateEntries(acts),
-		...archiveStateEntries(acts),
+		...acting,
 	]
 }
 
@@ -428,6 +508,7 @@ function alwaysAvailableEntries(acts) {
 			id: String(act.id).trim(),
 			label: String(act.label ?? act.id).trim(),
 			explainer: String(act.description ?? '').trim(),
+			icon: String(act.icon ?? '').trim(),
 			// Shown and disabled with the guard's own sentence, never hidden:
 			// an act that vanishes tells the reader the system cannot do it,
 			// where one shown with its reason tells them who to ask.

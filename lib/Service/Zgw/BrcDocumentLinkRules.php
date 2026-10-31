@@ -151,7 +151,7 @@ class BrcDocumentLinkRules extends ZgwRulesBase {
 			return null;
 		}
 
-		return ['uuid' => $docTypeUuid, 'name' => $dtData['name'] ?? ''];
+		return ['uuid' => $docTypeUuid, 'name' => $this->textOf(value: ($dtData['name'] ?? ''))];
 	}//end getDocumentTypeOfDocument()
 
 	/**

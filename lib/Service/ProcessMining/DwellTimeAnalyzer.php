@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\ProcessMining;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Status\StatusDwellService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 
 /**
  * Reconstructs per-status dwell intervals and ranks the resulting bottlenecks.
@@ -59,11 +60,13 @@ class DwellTimeAnalyzer {
 	 *                                      is on. Optional for the same reason:
 	 *                                      a caller that wants wall hours only
 	 *                                      builds the analyzer unchanged.
+	 * @param TranslatedText          $text  Reads a translatable status name as text, in the reader's language.
 	 */
 	public function __construct(
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?StatusDwellService $held = null,
 		private readonly ?WorkingClock $clock = null,
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -157,7 +160,7 @@ class DwellTimeAnalyzer {
 	 * @param DateTimeImmutable $periodFrom Inclusive period start.
 	 * @param DateTimeImmutable $periodTo Inclusive period end.
 	 *
-	 * @return array<int, array{caseId: string, statusId: string, hours: float}>
+	 * @return array<int, array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}>
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
@@ -213,7 +216,7 @@ class DwellTimeAnalyzer {
 	 * @param DateTimeImmutable $windowStart Inclusive window start.
 	 * @param DateTimeImmutable $windowEnd Inclusive window end.
 	 *
-	 * @return array<int, array{caseId: string, statusId: string, hours: float}>
+	 * @return array<int, array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}>
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
@@ -266,6 +269,8 @@ class DwellTimeAnalyzer {
 				'actor' => trim((string)($records[$i]['actor'] ?? '')),
 				'hours' => $measured['wallHours'],
 				'workingHours' => $measured['workingHours'],
+				// The visit a still-open case is in: it ends at "now" and grows every day.
+				'open' => (($i + 1) >= $count && $closedAt === null),
 			];
 		}//end for
 
@@ -332,6 +337,9 @@ class DwellTimeAnalyzer {
 				[
 					'statusId' => $statusId,
 					'statusName' => $this->statusLabel(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
+					'statusPhase' => $this->statusPhase(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
+					'statusFinal' => (($statusTypeIndex[$statusId]['isFinal'] ?? false) === true),
+					'statusOrder' => filter_var(($statusTypeIndex[$statusId]['order'] ?? null), FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE),
 				],
 				$this->summarise(workingHours: $lists['working'], wallHours: $lists['wall'])
 			);
@@ -469,13 +477,34 @@ class DwellTimeAnalyzer {
 		}
 
 		$entry = $statusTypeIndex[$statusId];
-		$label = ($entry['name'] ?? ($entry['title'] ?? ''));
-		if (is_string($label) === true && $label !== '') {
-			return $label;
+
+		// A status name is translatable, so the row carries a language map.
+		$name = $this->text->forReader(value: ($entry['name'] ?? ($entry['title'] ?? '')));
+		if ($name === '') {
+			return $statusId;
 		}
 
-		return $statusId;
+		return $name;
 	}//end statusLabel()
+
+	/**
+	 * The phase a status type belongs to (its optional `phase`, translated
+	 * for the reader), or '' when it names none.
+	 *
+	 * @param string                              $statusId        StatusType UUID.
+	 * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/status-type-phase/specs/process-mining/spec.md#requirement-days-per-phase-groups-statuses-by-their-phase
+	 */
+	private function statusPhase(string $statusId, array $statusTypeIndex): string {
+		if (isset($statusTypeIndex[$statusId]) === false) {
+			return '';
+		}
+
+		return $this->text->forReader(value: ($statusTypeIndex[$statusId]['phase'] ?? ''));
+	}//end statusPhase()
 
 	/**
 	 * Extract a record's creation timestamp — either the flattened

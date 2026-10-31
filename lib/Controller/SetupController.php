@@ -34,6 +34,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCA\Dossiq\Service\DemoDataService;
+use OCA\Dossiq\Service\Setup\ActiveOrganisationProfile;
+use OCA\Dossiq\Service\Setup\CaseTypePackageChoice;
 use OCA\Dossiq\Service\Setup\FirstRunReadiness;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -75,7 +77,7 @@ class SetupController extends Controller {
 	 *
 	 * @var string
 	 */
-	private const DEMO_DATA_DECIDED_KEY = 'demo_data_decided';
+	private const DEMO_DATA_DECIDED_KEY = DemoDataService::DECIDED_KEY;
 
 	/**
 	 * App-config key holding the dataset the operator picked.
@@ -111,6 +113,8 @@ class SetupController extends Controller {
 	 * @param SettingsService $settingsService OpenRegister availability + config import.
 	 * @param PackageInstaller $packages Installs the case definition package the `seed` action asks for.
 	 * @param FirstRunReadiness $readiness The minimum an instance needs, read live.
+	 * @param ActiveOrganisationProfile $organisationProfile The active organisation's name and logo (Organisation step).
+	 * @param CaseTypePackageChoice $caseTypes The on-request case type packages (Case types step).
 	 */
 	public function __construct(
 		string $appName,
@@ -120,6 +124,8 @@ class SetupController extends Controller {
 		private readonly SettingsService $settingsService,
 		private readonly PackageInstaller $packages,
 		private readonly FirstRunReadiness $readiness,
+		private readonly ActiveOrganisationProfile $organisationProfile,
+		private readonly CaseTypePackageChoice $caseTypes,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -137,6 +143,7 @@ class SetupController extends Controller {
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
@@ -161,26 +168,13 @@ class SetupController extends Controller {
 		// OpenRegister is the manifest's dependency gate, not a wizard step.
 		$completed = true;
 
-		// Dwangsom callback signing secret. Only meaningful once the payout
-		// integration is configured at all: with no dwangsom schema there is
-		// no callback to sign, so the step is settled rather than outstanding.
-		//
-		// SETTLED, not "secret present". The step is optional, and the secret
-		// lives permanently under admin settings > Financial integration. While
-		// the step reported "not done" for as long as the secret was empty,
-		// CnAppRoot reopened the wizard at this step on every fresh browser
-		// profile (each Playwright context, every new device), because its
-		// dismissal is only a localStorage key. So the step is done once the
-		// wizard has been completed, which is what skipping it in the wizard
-		// means; a secret configured later settles it just the same. Read
-		// BEFORE the completion marker is written below, so the visit that
-		// finishes the wizard still offers the step once.
-		$dwangsomActive = $this->config(key: 'dwangsom_uitbetaling_schema') !== '';
-		$secretConfigured = $this->config(key: 'dwangsom_callback_secret') !== '';
+		// The payout callback secret is no wizard step: it is set under admin
+		// settings > Financial integration. Its go-live flag is reported below.
+		$payoutActive = $this->config(key: 'payout_schema') !== '';
+		$secretConfigured = $this->config(key: 'payout_callback_secret') !== '';
+		// Read BEFORE the completion marker is written below, so the visit that
+		// finishes the wizard still offers the case types step once.
 		$wizardDoneBefore = $this->config(key: 'setup_completed_version') === (string)self::SETUP_VERSION;
-		$dwangsomSecretDone = $dwangsomActive === false
-			|| $secretConfigured === true
-			|| $wizardDoneBefore === true;
 
 		$this->appConfig->setValueString('dossiq', 'setup_completed_version', (string)self::SETUP_VERSION);
 
@@ -192,17 +186,16 @@ class SetupController extends Controller {
 			// `optionsSource: datasets` and no options of its own, so a dataset
 			// missing from this list is a dataset nobody can pick.
 			'datasets' => $this->demoDataService->listChoices(),
+			'caseTypePackages' => $this->caseTypes->options(),
 			// Exactly the ids of `manifest.setup.steps`: a step the server
 			// never reports stays open and reopens the wizard.
 			'steps' => [
-				'welcome' => ['done' => true],
+				'organisation-details' => ['done' => $this->organisationProfile->isSettled()],
+				'house-style' => ['done' => true],
+				'case-types' => ['done' => ($this->caseTypes->isDecided() === true || $wizardDoneBefore === true)],
 				// A pick without a load still counts: a wizard that predates
 				// `loadAction` can only record the pick.
 				'demo-data' => ['done' => ($demoDecided === true || $pickedDataset !== '')],
-				// Reported unconditionally so the wizard can tell "configured"
-				// from "never mentioned" — an unreported step is UNKNOWN to
-				// CnAppRoot and never prompts.
-				'dwangsom-secret' => ['done' => $dwangsomSecretDone],
 				'done' => ['done' => true],
 			],
 		];
@@ -217,7 +210,7 @@ class SetupController extends Controller {
 			$response['dismissed'] = (int)$dismissedAt;
 		}
 
-		// Financial-integration (dwangsom uitbetaling) capability: surface a
+		// Financial-integration (payout) capability: surface a
 		// missing callback secret before go-live rather than after an
 		// incident (enforce-dwangsom-callback-signature spec).
 		//
@@ -225,10 +218,10 @@ class SetupController extends Controller {
 		// anywhere in the frontend — it was computed, serialised and dropped on
 		// the floor on every request, so the incident it exists to prevent was
 		// never actually being prevented. It is kept for any API consumer that
-		// reads it. It answers a different question from the step: the step
+		// reads it, under its original name. It answers a different question from the step: the step
 		// says whether the wizard still has to ASK, this says whether a secret
 		// IS configured, and only the second one is the go-live warning.
-		if ($dwangsomActive === true) {
+		if ($payoutActive === true) {
 			$response['dwangsom_callback_secret_configured'] = $secretConfigured;
 		}
 
@@ -276,6 +269,7 @@ class SetupController extends Controller {
 	 * @return DataResponse `{ success }`.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function saveConfig(): DataResponse {
@@ -285,28 +279,23 @@ class SetupController extends Controller {
 		// different: the load step reads it back and hands it to the importer,
 		// so an unknown value would surface one step later as a failed import
 		// with no clue why.
-		$dataset = $this->request->getParam(self::DATASET_KEY);
-		if ($dataset !== null) {
-			$submitted = $dataset;
-			if (is_array($dataset) === true) {
-				$submitted = ($dataset[0] ?? null);
-			}
-
-			$named = 'that';
-			if (is_scalar($submitted) === true) {
-				$named = (string)$submitted;
-			}
-
-			$known = array_column($this->demoDataService->listChoices(), 'id');
-			if (is_scalar($submitted) === false || in_array($named, $known, true) === false) {
-				return new DataResponse(
-					['success' => false, 'message' => 'No dataset is called "' . $named . '".']
-				);
-			}
+		$refusal = $this->refuseUnknownDataset();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		foreach ($this->request->getParams() as $key => $value) {
-			if (in_array($key, ['_route'], true) === true) {
+		// The organisation's name and logo live on the OpenRegister
+		// Organisation, not in app config.
+		$params = $this->request->getParams();
+		$organisationFields = [ActiveOrganisationProfile::NAME_FIELD, ActiveOrganisationProfile::LOGO_FIELD];
+		if ($this->organisationProfile->write(fields: array_intersect_key($params, array_flip($organisationFields))) === false) {
+			return new DataResponse(
+				['success' => false, 'message' => 'The organisation name and logo could not be saved. A logo address starts with http:// or https://.']
+			);
+		}
+
+		foreach ($params as $key => $value) {
+			if (in_array($key, array_merge(['_route'], $organisationFields), true) === true) {
 				continue;
 			}
 
@@ -322,17 +311,45 @@ class SetupController extends Controller {
 			);
 		}
 
-		return new DataResponse(['success' => true]);
+		return $this->loadPostedDataset() ?? new DataResponse(['success' => true]);
 	}//end saveConfig()
+
+	/**
+	 * Act on the Example data pick the wizard posted with Next.
+	 *
+	 * The step loads on Next (DqInstellen), not from a button on each
+	 * choice, so the pick posted here is imported at once, or recorded as
+	 * declined. The import is idempotent, so a second Next reports the
+	 * objects as already present. A failure
+	 * answers 422 so the wizard stays on the step and shows the message.
+	 *
+	 * @return DataResponse|null The failure, or null when there was nothing to do or the load succeeded.
+	 *
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 */
+	private function loadPostedDataset(): ?DataResponse {
+		if ($this->request->getParam(self::DATASET_KEY) === null) {
+			return null;
+		}
+
+		$outcome = $this->loadDataset(actionId: 'load-demo-data');
+		if (($outcome->getData()['success'] ?? false) === true) {
+			return null;
+		}
+
+		return new DataResponse($outcome->getData(), Http::STATUS_UNPROCESSABLE_ENTITY);
+	}//end loadPostedDataset()
 
 	/**
 	 * Run a privileged server-side setup action.
 	 *
-	 * @param string $actionId One of `load-demo-data` | `install-demo-data` | `skip-demo-data` | `dismiss-setup` | `init-register` | `seed`.
+	 * @param string $actionId One of `load-demo-data` | `install-demo-data` | `skip-demo-data` | `dismiss-setup` |
+	 *                         `init-register` | `seed` | `install-case-types`.
 	 *
 	 * @return DataResponse `{ success, message, detail }`.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
@@ -365,6 +382,16 @@ class SetupController extends Controller {
 
 		if ($actionId === 'seed') {
 			return $this->installSeedPackage();
+		}
+
+		// The Case types step: a card's Load button posts its package as `dataset`.
+		if ($actionId === 'install-case-types') {
+			$outcome = $this->caseTypes->install(id: (string)$this->request->getParam('dataset', ''));
+			if ($outcome['success'] === false) {
+				return new DataResponse($outcome, Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+
+			return new DataResponse($outcome);
 		}
 
 		return new DataResponse(
@@ -457,7 +484,7 @@ class SetupController extends Controller {
 		// that stored nothing now throws above rather than returning zeroes.
 		// Loading IS choosing the set, so the pick is recorded too.
 		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, $picked);
-		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'installed');
+		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, DemoDataService::DECIDED_INSTALLED);
 
 		// 🔴 THE COUNTS, ALWAYS, AND BOTH OF THEM. "Demo data installed" with no
 		// numbers cannot be told apart from an import that wrote nothing — and
@@ -531,6 +558,35 @@ class SetupController extends Controller {
 
 		return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
 	}//end skipDemoData()
+
+	/**
+	 * Refuse a posted dataset the demo data service does not offer.
+	 *
+	 * @return DataResponse|null The refusal, or null when no dataset was posted or it is known.
+	 */
+	private function refuseUnknownDataset(): ?DataResponse {
+		$dataset = $this->request->getParam(self::DATASET_KEY);
+		if ($dataset !== null) {
+			$submitted = $dataset;
+			if (is_array($dataset) === true) {
+				$submitted = ($dataset[0] ?? null);
+			}
+
+			$named = 'that';
+			if (is_scalar($submitted) === true) {
+				$named = (string)$submitted;
+			}
+
+			$known = array_column($this->demoDataService->listChoices(), 'id');
+			if (is_scalar($submitted) === false || in_array($named, $known, true) === false) {
+				return new DataResponse(
+					['success' => false, 'message' => 'No dataset is called "' . $named . '".']
+				);
+			}
+		}
+
+		return null;
+	}//end refuseUnknownDataset()
 
 	/**
 	 * Read a dossiq app-config string value.

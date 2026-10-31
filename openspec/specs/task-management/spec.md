@@ -1020,8 +1020,11 @@ old spelling `assignee = "IS NULL"` asked one of the two facts, of a column
 this page no longer reads. The scenario below still asks the old question, and
 is left byte-identical for the reason given under REQ-TASK-014.
 
-Saved views are off (`allowSavedViews: false`) and the schema facets are gone
-with the schema. The sidebar itself stays, with `showMetadata: true`. What a
+Saved views are on (`allowSavedViews: true`), as on every index page, and
+scoped to the inbox by `savedViewsScope: "source:tasks"` because the page has
+no register and schema to scope them by. A view keeps the sidebar's fields and
+the search term. The schema facets are gone with the schema. The sidebar
+itself stays, with `showMetadata: true`. What a
 reader lost is the Team facet: it stood on `caseTask.assigneeGroup` being
 `facetable`, and the engine models the same idea as `candidateGroups`, a list,
 with no single value for a facet or a column to read.
@@ -1294,6 +1297,23 @@ number and a lock are not available, and SHALL NOT invent either.
 - **GIVEN** a task with a lead time shorter than the case term
 - **WHEN** the task is shown
 - **THEN** its due date SHALL be its own, not the case deadline
+
+### Requirement: The task page is a manifest detail page
+
+The task page SHALL be a `type: "detail"` manifest page with `entitySource: "tasks"`, on the route `/tasks/:id` with the
+page id `TaskDetail`. Its header SHALL show the task's state and, for a high or urgent task, its priority as pills, a
+breadcrumb back to Tasks, and the engine's verbs read off the task, Finish posted to dossiq's own completion route. Its
+body SHALL have an Overview tab (description, checklist, appointments, notes) and a History tab (the engine's audit
+trail), and its side column the task facts, the case card, the waiting-case card and the task history. A task that is
+missing or may not be read SHALL show one not-found state. The notes, appointments and history leaves and the
+waiting-case section SHALL be detail widgets that read the task the page hands them as `objectId`.
+
+#### Scenario: A notification link opens the task on the manifest page
+@e2e exclude the e2e rig seeds no engine task with a checklist and a waiting run; the unit specs `tests/vitest/taskDetailManifestPage.spec.js` and `tests/vitest/taskLeavesAsDetailWidgets.spec.js` assert the page config and the widgets, and `tests/e2e/case-task-pane.spec.ts` opens `/tasks/:id`
+
+- **GIVEN** a notification that links to `/apps/dossiq/tasks/<uuid>`
+- **WHEN** the handler opens it
+- **THEN** the `TaskDetail` page reads that task from the engine and shows its state, its verbs and its leaves
 
 ## Accessibility
 

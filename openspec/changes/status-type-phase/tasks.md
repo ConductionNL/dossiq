@@ -1,0 +1,5 @@
+- [x] statusType.phase (schema 1.8.0, register 0.20.73)
+- [x] DwellTimeAnalyzer carries statusPhase/statusFinal
+- [x] PhaseSummary groups by phase, falls back to the status name
+- [x] seeded status types get the five phases (register, register.d, packages)
+- [ ] existing installs: re-import (DQ-DATA)

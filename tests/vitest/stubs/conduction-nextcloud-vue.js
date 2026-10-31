@@ -96,6 +96,50 @@ export const CnLifecycleActions = {
 }
 
 /**
+ * Stand-ins for the library components the bulk dialogs, the template
+ * selects and the party kinds editor mount. Each records the props a dossiq
+ * host hands it (rendered as JSON under its own test id), because that hand
+ * over is the part dossiq owns; the components' own behaviour is the
+ * library's and is tested there.
+ *
+ * @param {string} name The component name.
+ * @param {string} testid The test id the stand-in renders under.
+ * @param {Array<string>} props The props it records.
+ * @param {Array<string>} [emits] The events a spec may emit from it.
+ * @return {object} The stand-in.
+ */
+function recordingStub(name, testid, props, emits = []) {
+	return {
+		name,
+		props,
+		emits,
+		render() {
+			const shown = {}
+			props.forEach((key) => {
+				if (typeof this[key] !== 'function') {
+					shown[key] = this[key]
+				}
+			})
+			return h('div', { 'data-testid': testid, 'data-props': JSON.stringify(shown) })
+		},
+	}
+}
+
+export const CnBulkJobProgress = recordingStub('CnBulkJobProgress', 'bulk-job-progress', ['job', 'busy', 'labels', 'source', 'rows'], ['update:job', 'finished'])
+export const CnSelectionScope = recordingStub('CnSelectionScope', 'bulk-selection-scope', ['selectedIds', 'total', 'scope', 'labels'], ['update:scope'])
+export const CnTemplateSelect = recordingStub('CnTemplateSelect', 'cn-template-select', ['schema', 'url', 'params', 'inputLabel', 'placeholder', 'mapOption'], ['apply'])
+export const CnOrderedListField = recordingStub('CnOrderedListField', 'cn-ordered-list-field', ['modelValue', 'options', 'label', 'addLabel', 'emptyText', 'disabled'], ['update:modelValue'])
+export const CnSettingsField = recordingStub('CnSettingsField', 'cn-settings-field', ['field', 'modelValue', 'error', 'hint'], ['update:modelValue'])
+export const CnTransitionInputFields = recordingStub('CnTransitionInputFields', 'cn-transition-input-fields', ['inputs', 'modelValue', 'context', 'columns', 'summary', 'notice', 'disabled', 'markRequired'], ['update:modelValue'])
+
+// The library's own reading of declared inputs, not a stand-in: whether an
+// act may be confirmed is decided there, and a copy here could only agree
+// with itself.
+export { readTransitionInputs } from '@conduction/nextcloud-vue/src/utils/transitionInputs.js'
+export const CnConditionListEditor = recordingStub('CnConditionListEditor', 'cn-condition-list-editor', ['modelValue', 'fields', 'label', 'emptyText'], ['update:modelValue'])
+export { conditionSentence, operatorsForType } from '@conduction/nextcloud-vue/src/components/CnConditionListEditor/conditionOperators.js'
+
+/**
  * Stand-in for `CnRelatedObjectsWidget`.
  *
  * Only the part a dossiq consumer owns is reproduced: the `extraSections`

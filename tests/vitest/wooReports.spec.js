@@ -3,15 +3,18 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The Woo review reports: the admin switches show the server's refusal, and
- * the throughput screen shows the server's rows, or its refusal and no rows.
+ * The Woo review reports: the throughput screen shows the server's rows, or
+ * its refusal and no rows. The admin switches are declared fields
+ * (adminSettingsForms.spec.js).
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
  */
 
-import axios from '@nextcloud/axios'
-import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 
 /**
@@ -89,6 +92,17 @@ vi.mock('@nextcloud/vue', () => ({
 }))
 
 const stored = { config: {} }
+// CnCountTablesReport draws the mail parties report; its behaviour (tables,
+// totals, empty state, refusal) is specified in nextcloud-vue. Here it is a
+// stub that shows the case it was handed, so the page's wiring is asserted.
+vi.mock('@conduction/nextcloud-vue', () => ({
+	CnCountTablesReport: {
+		name: 'CnCountTablesReport',
+		props: ['url', 'objectId', 'lists', 'totals', 'emptyField', 'csvParam', 'emptyText', 'title', 'objectLabel', 'note'],
+		template: '<input data-testid="case-mail-parties-case" :value="objectId">',
+	},
+}))
+
 const offered = { throughput: true, parties: true }
 vi.mock('@nextcloud/initial-state', () => ({
 	loadState: (app, key, fallback) =>
@@ -103,381 +117,97 @@ vi.mock('../../src/store/modules/settings.js', () => ({
 	}),
 }))
 
-/**
- * Flip the throughput switch on the way the real switch does: by emitting its model update.
- *
- * @param {object} wrapper The mounted tab.
- * @return {Promise<void>}
- */
-async function flipThroughputOn(wrapper) {
-	const switches = wrapper.findAllComponents({ name: 'NcCheckboxRadioSwitch' })
-	await switches[0].vm.$emit('update:modelValue', true)
-}
+const { mailPartiesReport } = await import('../../src/views/reports/mailPartiesReport.js')
+const { default: MailPartiesReportWidget } = await import('../../src/views/reports/MailPartiesReportWidget.vue')
+const reportsPage = JSON.parse(
+	readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../src/manifest.d/86-document-review-reports.json'), 'utf8'),
+).pages[0]
+const pageWidget = (id) => reportsPage.config.widgets.find((w) => w.id === id)
 
-const tab = await import('../../src/views/settings/tabs/WooReportsSettingsTab.vue')
-const WooReportsSettingsTab = tab.default
-const { isSwitchedOn } = tab
-const view = await import('../../src/views/woo/WooReportsView.vue')
-const WooReportsView = view.default
-const { throughputUrl } = view
-const parties =
-	await import('../../src/components/reports/CaseMailPartiesReport.vue')
-const CaseMailPartiesReport = parties.default
-const { mailPartiesUrl } = parties
+describe('Woo throughput on the reports page (REQ-WRR-002)', () => {
+	const table = pageWidget('throughput')
+	const source = table.content.endpointSource
 
-describe('Woo report switches (REQ-WRR-001)', () => {
-	beforeEach(() => {
-		vi.clearAllMocks()
-		stored.config = {}
-	})
-
-	it('reads only an explicit yes as on', () => {
-		expect(['', 'false', '0', undefined, null].map(isSwitchedOn)).toEqual([
-			false,
-			false,
-			false,
-			false,
-			false,
-		])
-		expect(['true', '1', 'on', true].map(isSwitchedOn)).toEqual([
-			true,
-			true,
-			true,
-			true,
-		])
-	})
-
-	it('draws both switches off on a fresh install', async () => {
-		const wrapper = mount(WooReportsSettingsTab)
-		await flushPromises()
-		expect(
-			wrapper.find('[data-testid="woo-reports-throughput"]').element.checked,
-		).toBe(false)
-		expect(
-			wrapper.find('[data-testid="woo-reports-parties"]').element.checked,
-		).toBe(false)
-	})
-
-	it('shows the refusal and leaves the switch off when no reader group is named', async () => {
-		axios.post.mockRejectedValue({
-			response: {
-				status: 422,
-				data: {
-					message:
-						'Name an existing reader group before switching the throughput report on.',
-				},
-			},
+	it('reads the period the page shows, from the throughput endpoint', () => {
+		expect(table.type).toBe('object-table')
+		expect(source).toMatchObject({
+			url: '/apps/dossiq/api/document-review/reports/throughput',
+			params: { from: '@workspace.dateFrom', to: '@workspace.dateTo' },
+			responsePath: 'rows',
 		})
-		const wrapper = mount(WooReportsSettingsTab)
-		await flushPromises()
-
-		await flipThroughputOn(wrapper)
-		await flushPromises()
-
-		expect(axios.post).toHaveBeenCalledWith(
-			expect.stringContaining('/apps/dossiq/api/settings'),
-			{
-				wooReviewerThroughputReport: 'true',
-				wooReviewerThroughputReaders: '',
-			},
-		)
-		expect(wrapper.text()).toContain('Name an existing reader group')
-		expect(
-			wrapper.find('[data-testid="woo-reports-throughput"]').element.checked,
-		).toBe(false)
+		expect(reportsPage.type).toBe('dashboard')
+		expect(reportsPage.config.dateRange.enabled).toBe(true)
 	})
 
-	it('sends the reader group with the switch and draws what the server stored', async () => {
-		axios.post.mockResolvedValue({
-			data: {
-				config: {
-					wooReviewerThroughputReport: 'true',
-					wooReviewerThroughputReaders: 'woo-leiding',
-				},
-			},
-		})
-		const wrapper = mount(WooReportsSettingsTab)
-		await flushPromises()
-		await wrapper
-			.find('[data-testid="woo-reports-readers"]')
-			.setValue('woo-leiding')
+	it('reads only when asked, so opening the page records nothing on the audit trail', () => {
+		expect(source.loadOn).toBe('request')
+		expect(source.requestLabel).toBe('Show')
+		expect(source.requestHint).toContain('it is recorded')
+	})
 
-		await flipThroughputOn(wrapper)
-		await flushPromises()
+	it('shows one row per reviewer per day with the three verdicts and the total', () => {
+		expect(table.content.columns.map((c) => c.key)).toEqual(['displayName', 'day', 'openbaar', 'deels_openbaar', 'niet_openbaar', 'total'])
+		expect(table.content.emptyText).toBe('No assessments in this period')
+		expect(source.truncatedText).toBe('This period holds more assessments than one report reads. Choose a shorter period.')
+	})
 
-		expect(axios.post.mock.calls[0][1]).toEqual({
-			wooReviewerThroughputReport: 'true',
-			wooReviewerThroughputReaders: 'woo-leiding',
-		})
-		expect(
-			wrapper.find('[data-testid="woo-reports-throughput"]').element.checked,
-		).toBe(true)
+	it('downloads the CSV of the same period from the header', () => {
+		const csv = reportsPage.config.headerActions.find((a) => a.id === 'throughput-csv')
+		expect(csv.href).toBe('/apps/dossiq/api/document-review/reports/throughput?format=csv&from=@workspace.dateFrom&to=@workspace.dateTo')
 	})
 })
 
-describe('Woo throughput screen (REQ-WRR-002)', () => {
-	beforeEach(() => {
-		vi.clearAllMocks()
-		offered.throughput = true
-		offered.parties = true
+describe('The reports page draws the halves on offer (REQ-WRR-001)', () => {
+	it('shows the throughput table and its CSV only while the throughput report is offered', () => {
+		const gate = { endpoint: '/apps/dossiq/api/reports/offered', field: 'throughput', op: 'eq', value: true }
+		expect(pageWidget('throughput').visibleWhen).toEqual(gate)
+		expect(reportsPage.config.headerActions[0].visibleWhen).toEqual(gate)
 	})
 
-	it('asks for the period, and for the CSV of the same period', () => {
-		expect(throughputUrl('2026-11-01', '2026-11-30')).toContain(
-			'/apps/dossiq/api/woo/reports/throughput?from=2026-11-01&to=2026-11-30',
-		)
-		expect(throughputUrl('2026-11-01', '2026-11-30', true)).toContain(
-			'&format=csv',
-		)
+	it('shows the mail parties report only while it is offered, through its registered widget', () => {
+		expect(pageWidget('mail-parties').visibleWhen).toMatchObject({ field: 'parties', value: true })
+		expect(reportsPage.slots['widget-mail-parties']).toBe('MailPartiesReportWidget')
+		expect(reportsPage.config.layout.map((l) => l.widgetId)).toEqual(['throughput', 'mail-parties'])
 	})
 
-	it('shows one table row per reviewer per day', async () => {
-		axios.get.mockResolvedValue({
-			data: {
-				rows: [
-					{
-						reviewer: 'a',
-						displayName: 'Anna de Wit',
-						day: '2026-11-10',
-						openbaar: 3,
-						deels_openbaar: 0,
-						niet_openbaar: 1,
-						total: 4,
-					},
-					{
-						reviewer: 'b',
-						displayName: 'Bram',
-						day: '2026-11-10',
-						openbaar: 0,
-						deels_openbaar: 2,
-						niet_openbaar: 0,
-						total: 2,
-					},
-				],
-				truncated: false,
-			},
-		})
-		const wrapper = mount(WooReportsView)
-		await wrapper.find('[data-testid="woo-throughput-show"]').trigger('click')
-		await flushPromises()
-
-		const rows = wrapper.findAll('tbody tr')
-		expect(rows).toHaveLength(2)
-		expect(rows[0].text()).toContain('Anna de Wit')
-		expect(rows[0].findAll('td').map((cell) => cell.text())).toEqual([
-			'Anna de Wit',
-			'2026-11-10',
-			'3',
-			'0',
-			'1',
-			'4',
-		])
-	})
-
-	it('shows the refusal and no rows when the server refuses', async () => {
-		axios.get.mockRejectedValue({
-			response: {
-				status: 403,
-				data: {
-					message: 'Your organisation has not switched this report on.',
-				},
-			},
-		})
-		const wrapper = mount(WooReportsView)
-		await wrapper.find('[data-testid="woo-throughput-show"]').trigger('click')
-		await flushPromises()
-
-		expect(wrapper.text()).toContain(
-			'Your organisation has not switched this report on.',
-		)
-		expect(wrapper.findAll('tbody tr')).toHaveLength(0)
-	})
-})
-
-describe('The reports screen draws the halves on offer (REQ-WRR-001)', () => {
-	beforeEach(() => {
-		vi.clearAllMocks()
-		offered.throughput = true
-		offered.parties = true
-	})
-
-	it('draws both halves when both are offered', () => {
-		const wrapper = mount(WooReportsView)
-
-		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(true)
-	})
-
-	it('leaves the throughput half out for somebody outside the reader group', () => {
-		offered.throughput = false
-		const wrapper = mount(WooReportsView)
-
-		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(false)
-		expect(wrapper.find('[data-testid="woo-throughput-show"]').exists()).toBe(
-			false,
-		)
-		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(true)
-	})
-
-	it('leaves the parties half out while that report is off', () => {
-		offered.parties = false
-		const wrapper = mount(WooReportsView)
-
-		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(
-			false,
-		)
-	})
-
-	it('starts the parties half on the case the address names', () => {
-		const wrapper = mount(WooReportsView, {
+	it('starts the parties report on the case the address names', () => {
+		const wrapper = mount(MailPartiesReportWidget, {
 			global: { mocks: { $route: { query: { case: 'case-7' } } } },
 		})
 
-		expect(
-			wrapper.find('[data-testid="case-mail-parties-case"]').element.value,
-		).toBe('case-7')
+		expect(wrapper.findComponent({ name: 'CnCountTablesReport' }).props('objectId')).toBe('case-7')
 	})
 })
 
 describe('Mail parties of a case (REQ-WRR-004)', () => {
-	const answer = {
-		case: 'case-7',
-		mails: 3,
-		unreadable: 1,
-		senders: [
-			{ address: 'a.jansen@gemeente.nl', count: 2 },
-			{ address: 'b@aannemer.nl', count: 1 },
-		],
-		recipients: [
-			{ address: 'b@aannemer.nl', count: 2 },
-			{ address: 'a.jansen@gemeente.nl', count: 1 },
-		],
-		domains: [
-			{ domain: 'aannemer.nl', count: 3 },
-			{ domain: 'gemeente.nl', count: 3 },
-		],
-	}
-
-	/**
-	 * The cells of one list, row by row.
-	 *
-	 * @param {object} wrapper The mounted report.
-	 * @param {string} list senders, recipients or domains.
-	 * @return {Array<Array<string>>} The cell texts.
-	 */
-	function cells(wrapper, list) {
-		return wrapper
-			.findAll('[data-testid="case-mail-parties-' + list + '"] tbody tr')
-			.map((row) => row.findAll('td').map((cell) => cell.text()))
-	}
-
-	beforeEach(() => {
-		vi.clearAllMocks()
+	it('asks the case report endpoint, and its CSV form', () => {
+		expect(mailPartiesReport.url).toBe('/apps/dossiq/api/cases/{id}/reports/mail-parties')
+		expect(mailPartiesReport.csvParam).toBe('format=csv')
 	})
 
-	it('asks for the case, and for the CSV of the same case', () => {
-		expect(mailPartiesUrl('case-7')).toMatch(
-			/\/apps\/dossiq\/api\/cases\/case-7\/reports\/mail-parties$/,
-		)
-		expect(mailPartiesUrl('case-7', true)).toMatch(
-			/\/cases\/case-7\/reports\/mail-parties\?format=csv$/,
-		)
-		expect(mailPartiesUrl('a/b')).toContain('/cases/a%2Fb/reports/')
-	})
-
-	it('cannot be read before a case is named', async () => {
-		const wrapper = mount(CaseMailPartiesReport)
-
-		expect(
-			wrapper
-				.find('[data-testid="case-mail-parties-show"]')
-				.attributes('disabled'),
-		).toBeDefined()
-	})
-
-	it('lists the senders, recipients and domains with their counts', async () => {
-		axios.get.mockResolvedValue({ data: answer })
-		const wrapper = mount(CaseMailPartiesReport, {
-			props: { caseId: 'case-7' },
-		})
-		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
-		await flushPromises()
-
-		expect(axios.get).toHaveBeenCalledWith(
-			expect.stringMatching(/\/cases\/case-7\/reports\/mail-parties$/),
-		)
-		expect(cells(wrapper, 'senders')).toEqual([
-			['a.jansen@gemeente.nl', '2'],
-			['b@aannemer.nl', '1'],
+	it('counts senders and recipients by address and domains by domain', () => {
+		expect(mailPartiesReport.lists).toEqual([
+			{ key: 'senders', label: 'Sender', nameField: 'address' },
+			{ key: 'recipients', label: 'Recipient', nameField: 'address' },
+			{ key: 'domains', label: 'Domain', nameField: 'domain' },
 		])
-		expect(cells(wrapper, 'recipients')).toEqual([
-			['b@aannemer.nl', '2'],
-			['a.jansen@gemeente.nl', '1'],
-		])
-		expect(cells(wrapper, 'domains')).toEqual([
-			['aannemer.nl', '3'],
-			['gemeente.nl', '3'],
-		])
-		const totals = wrapper
-			.find('[data-testid="case-mail-parties-totals"]')
-			.text()
-		expect(totals).toContain('3')
-		expect(totals).toContain('1')
-		expect(wrapper.find('[data-testid="case-mail-parties-csv"]').exists()).toBe(
-			true,
-		)
 	})
 
-	it('says so when the case collected no mail, and offers no CSV', async () => {
-		axios.get.mockResolvedValue({
-			data: {
-				case: 'case-7',
-				mails: 0,
-				unreadable: 0,
-				senders: [],
-				recipients: [],
-				domains: [],
-			},
-		})
-		const wrapper = mount(CaseMailPartiesReport, {
-			props: { caseId: 'case-7' },
-		})
-		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
-		await flushPromises()
-
-		expect(wrapper.findComponent({ name: 'NcEmptyContent' }).exists()).toBe(true)
-		expect(wrapper.findAll('tbody tr')).toHaveLength(0)
-		expect(wrapper.find('[data-testid="case-mail-parties-csv"]').exists()).toBe(
-			false,
-		)
+	it('reads the totals sentence and the empty state from the mail count', () => {
+		expect(mailPartiesReport.totals).toContain('{mails}')
+		expect(mailPartiesReport.totals).toContain('{unreadable}')
+		expect(mailPartiesReport.emptyField).toBe('mails')
+		expect(mailPartiesReport.emptyText).toBe('No mail collected on this case')
 	})
 
-	it('shows the refusal and drops the last answer when the server refuses', async () => {
-		axios.get.mockResolvedValueOnce({ data: answer })
-		const wrapper = mount(CaseMailPartiesReport, {
-			props: { caseId: 'case-7' },
+	it('hands the report its config', () => {
+		const wrapper = mount(MailPartiesReportWidget, {
+			global: { mocks: { $route: { query: { case: 'case-7' } } } },
 		})
-		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
-		await flushPromises()
-		expect(wrapper.findAll('tbody tr').length).toBeGreaterThan(0)
+		const report = wrapper.findComponent({ name: 'CnCountTablesReport' })
 
-		axios.get.mockRejectedValueOnce({
-			response: {
-				status: 403,
-				data: {
-					message:
-						'You cannot read this case, so its report cannot be shown.',
-				},
-			},
-		})
-		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
-		await flushPromises()
-
-		expect(wrapper.text()).toContain('You cannot read this case')
-		expect(wrapper.findAll('tbody tr')).toHaveLength(0)
-		expect(wrapper.find('[data-testid="case-mail-parties-csv"]').exists()).toBe(
-			false,
-		)
+		expect(report.props('url')).toBe(mailPartiesReport.url)
+		expect(report.props('lists')).toEqual(mailPartiesReport.lists)
+		expect(report.props('objectId')).toBe('case-7')
 	})
 })

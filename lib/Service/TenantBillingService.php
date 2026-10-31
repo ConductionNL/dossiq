@@ -41,6 +41,11 @@ use Throwable;
  */
 class TenantBillingService {
 	/**
+	 * The month value that names the month before the current one.
+	 */
+	public const PREVIOUS_MONTH = 'previous';
+
+	/**
 	 * Allowed event types (mirrors the schema enum).
 	 *
 	 * @var array<int, string>
@@ -53,6 +58,7 @@ class TenantBillingService {
 		'api_burst',
 		'quota_exceeded',
 		'case_refund',
+		'subscription_fee',
 	];
 
 	/**
@@ -109,16 +115,24 @@ class TenantBillingService {
 	 * invoice was EUR0 and exportInvoice had zero callers (procest#223
 	 * finding 2 — orphaned billing capability).
 	 *
+	 * Running a month twice hands one invoice to the finance app: the first
+	 * run stamps every event it bills, and a stamped event is never billed
+	 * again.
+	 *
 	 * @param string $tenantId Tenant UUID.
-	 * @param string $month YYYY-MM.
+	 * @param string $month YYYY-MM, or `previous` for the month before this one.
 	 *
 	 * @return array{tenantId:string, month:string, eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
 	 *
 	 * @throws InvalidArgumentException When month is malformed.
 	 *
-	 * @spec openspec/specs/tenant-billing/spec.md
+	 * @spec openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas/spec.md#requirement-an-administrator-sees-and-runs-a-tenants-monthly-billing-req-tq-bill-01
 	 */
 	public function runInvoicing(string $tenantId, string $month): array {
+		if ($month === self::PREVIOUS_MONTH) {
+			$month = (new DateTimeImmutable('first day of last month'))->format('Y-m');
+		}
+
 		if (preg_match('/^[0-9]{4}-(0[1-9]|1[0-2])$/', $month) !== 1) {
 			throw new InvalidArgumentException('Month must be YYYY-MM: ' . $month);
 		}

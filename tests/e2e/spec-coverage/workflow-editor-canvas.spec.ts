@@ -61,8 +61,8 @@ import {
 	RUN_PREFIX,
 	seedStateMachine,
 } from '../helpers/fixtures.ts'
+import { openCaseTypeTab } from '../helpers/nav.ts'
 
-const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
 let api: APIRequestContext
 let token: string
@@ -99,32 +99,7 @@ async function statusTypesOf(caseTypeId: string): Promise<any[]> {
  * @return The `.workflow-editor` root of the seeded type's canvas.
  */
 async function openSeededWorkflowTab(page: Page): Promise<Locator> {
-	await page.goto(ADMIN_SETTINGS_URL)
-	await expect(
-		page.getByRole('heading', { name: 'Case Type Management' }),
-	).toBeVisible({ timeout: 60_000 })
-
-	// By title and by the row's testid. `.first()` on an unfiltered row list
-	// would open whichever case type the server happened to return first.
-	const row = page
-		.locator('[data-testid="cn-object-row"]')
-		.filter({ hasText: machine.caseTypeTitle })
-	await expect(row, 'the seeded case type is listed').toHaveCount(1, {
-		timeout: 120_000,
-	})
-	// On the title cell, not the row centre: the row also holds a checkbox
-	// cell and an actions cell, both of which stop the click from reaching
-	// the row, and which one sits under the centre depends on the columns.
-	await row.getByText(machine.caseTypeTitle).first().click()
-
-	// The detail header names the type, so this proves the RIGHT row opened
-	// rather than that some detail view rendered.
-	await expect(
-		page.locator('.case-type-detail__title'),
-		'a row click opens that case type',
-	).toHaveText(machine.caseTypeTitle, { timeout: 60_000 })
-
-	await page.locator('.case-type-detail__tab', { hasText: 'Workflow' }).click()
+	await openCaseTypeTab(page, machine.caseTypeTitle, /^(Phases and tasks|Fasen en taken)/)
 	const editor = page.locator('.workflow-editor')
 	await expect(editor).toBeVisible({ timeout: 60_000 })
 	return editor

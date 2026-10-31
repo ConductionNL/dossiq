@@ -641,6 +641,10 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }
 
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectDeletedEventStub.php';
+}
+
 // people-on-the-case: OpenRegister's three person-link events, so
 // PersonLinkListenerTest can exercise handle() against the real getLink()
 // shape on a bare container. Declaration-only stubs, shared with psalm and
@@ -670,7 +674,7 @@ foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stub
 // REQ-IPY-005): Money\PayoutRequester raises and withdraws a payout through them.
 // Verbatim copies, loaded only when the real classes are absent, shared with
 // psalm and phpstan.
-foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent'] as $stubEvent) {
+foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent', 'PayablesRequestedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Shillinq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Shillinq/Event/' . $stubEvent . '.php';
 	}
@@ -680,6 +684,19 @@ foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent'] as $stubEvent) {
 // by name, so only the tests need the class.
 if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === false) {
 	include_once __DIR__ . '/Stubs/Filinq/Exception/DetectionUnavailableException.php';
+}
+
+// Filinq's review gate (partly-public-documents-get-a-redacted-copy): the
+// redaction step is tested against filinq's own guard, gate and run identity,
+// with the marks kept in memory.
+if (class_exists('\\OCA\\Filinq\\Exception\\RedactionNotReviewedException') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Exception/RedactionNotReviewedException.php';
+}
+
+foreach (['DetectionRunIdentity', 'RedactionReviewGate', 'RedactionReviewMarkRepository', 'RedactionOutputGuard'] as $stubRedaction) {
+	if (class_exists('\\OCA\\Filinq\\Service\\Redaction\\' . $stubRedaction) === false) {
+		include_once __DIR__ . '/Stubs/Filinq/Service/Redaction/' . $stubRedaction . '.php';
+	}
 }
 
 // case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by

@@ -1,0 +1,490 @@
+{
+  "caseType": {
+    "id": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+    "identifier": "bijstandsaanvraag",
+    "title": "Bijstandsaanvraag",
+    "category": "Werk en inkomen",
+    "description": "Een aanvraag om bijstand onder de Participatiewet: vermogens- en inkomenstoets, besluit, en zo nodig re-integratie.",
+    "purpose": "Vaststellen of iemand recht heeft op bijstand (Participatiewet artikel 11, 31 tot 34).",
+    "trigger": "Een aanvraag om bijstand.",
+    "subject": "Bijstand",
+    "processingDeadline": "P8W",
+    "extensionAllowed": false,
+    "suspensionAllowed": true,
+    "internalOrExternal": "extern",
+    "publicationRequired": false,
+    "isDraft": false,
+    "confidentiality": "vertrouwelijk",
+    "initialStatus": "cadefeea-c887-56e7-826f-b72507a42c5c",
+    "handling": {
+      "defaultGroup": "dossiq-sociaal-domein"
+    },
+    "workflowDefinition": "e924793b-19a5-51ab-bd0f-31e542df804f",
+    "processesPersonalData": true,
+    "personalDataCategories": [
+      "naw",
+      "bsn",
+      "financieel",
+      "gezondheid"
+    ],
+    "sideCards": [
+      "case-banner-stack",
+      "side-social-consent",
+      "side-social-people"
+    ],
+    "overviewCards": [
+      "case-summary"
+    ],
+    "recordImports": [
+      {
+        "key": "participatiewet-zaken",
+        "sourceApp": "dossiq",
+        "sourceRegister": "dossiq",
+        "sourceSchema": "participatiewetZaak",
+        "statusField": "status",
+        "statuses": {
+          "request-received": {
+            "status": "cadefeea-c887-56e7-826f-b72507a42c5c",
+            "term": "running"
+          },
+          "toetsing-loopt": {
+            "status": "64375a79-983a-5932-9c0b-0172fc898a3d",
+            "term": "running"
+          },
+          "toetsing-completed": {
+            "status": "9ef42ab0-8e41-5ba8-b71f-c335f1691b4e",
+            "term": "running"
+          },
+          "decision-voorbereiding": {
+            "status": "62765dda-a2e5-5afa-9129-5807e466e104",
+            "term": "running"
+          },
+          "decision-gereed": {
+            "status": "f6384980-07a9-5c82-bc94-2a13fe8cb610",
+            "term": "closed"
+          },
+          "social-assistance-active": {
+            "status": "0438302f-b6f0-549e-bdcb-735fc5382ed1",
+            "term": "closed"
+          },
+          "re-integration-loopt": {
+            "status": "6865b91e-0f65-5b50-876c-3b043fd1f570",
+            "term": "closed"
+          },
+          "closed": {
+            "status": "ab4e8bee-d1b1-5dd7-8447-d92c47ace21f",
+            "term": "closed"
+          },
+          "*": {
+            "status": "cadefeea-c887-56e7-826f-b72507a42c5c",
+            "term": "running"
+          }
+        },
+        "fields": [
+          {
+            "to": "title",
+            "value": "Bijstandsaanvraag"
+          },
+          {
+            "to": "subjectBsn",
+            "from": "bsn"
+          },
+          {
+            "to": "assignee",
+            "from": "handlerId"
+          },
+          {
+            "to": "startDate",
+            "from": "requestDate",
+            "as": "date"
+          },
+          {
+            "to": "confidentiality",
+            "value": "vertrouwelijk"
+          },
+          {
+            "to": "externalReference",
+            "from": "@id"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "55df1373-602f-5308-a6de-32b279199b53",
+              "name": "aanvraagSoort"
+            },
+            "from": "requestKind",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "cbe5ab6d-f368-545b-9440-8dba6d7e1c80",
+              "name": "gewensteIngangsdatum"
+            },
+            "from": "effectiveDateDesired",
+            "as": "date"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "459cf285-a543-52f9-9581-1f8c47c05132",
+              "name": "leeftijdsgroep"
+            },
+            "from": "ageGroup",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "f06b3224-3a02-5c0e-a4e1-c78a839fd09c",
+              "name": "wijkteam"
+            },
+            "from": "districtTeam",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "d87f3b5f-0dd5-547c-a5c1-af53471be946",
+              "name": "afwijzingsvoorstel"
+            },
+            "from": "afwijzingsvoorstel",
+            "as": "boolean"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "d04336b9-1d59-5754-b239-7ab889d5fed6",
+              "name": "reIntegratietraject"
+            },
+            "from": "reIntegrationTrajectoryId",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "6dae0004-b819-54cb-b7e6-e9cd07f0cd24",
+              "name": "avgClassificatie"
+            },
+            "from": "gdprClassification",
+            "as": "json"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "bd94299a-a94b-55d1-b123-c816652ffa82",
+              "name": "huishoudsituatie"
+            },
+            "from": "householdsSituation",
+            "as": "text"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "ada60202-23b6-521a-a57b-0478ec6bf03b",
+              "name": "vermogenstoets"
+            },
+            "from": "equityAssessment",
+            "as": "json"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "0a958f84-a64f-5162-a9ff-836d7379557f",
+              "name": "inkomenstoets"
+            },
+            "from": "incomeAssessment",
+            "as": "json"
+          }
+        ],
+        "matchField": "externalReference",
+        "formerReference": {
+          "application": "dossiq",
+          "from": "caseNumber"
+        },
+        "dedupeBy": "caseNumber",
+        "references": [
+          {
+            "schema": "toestemming",
+            "field": "caseId"
+          },
+          {
+            "schema": "reIntegratieTraject",
+            "field": "caseId"
+          }
+        ],
+        "stamp": {
+          "caseId": "migratedTo",
+          "at": "migratedAt"
+        },
+        "carriesTerm": true,
+        "runOnUpgrade": true
+      }
+    ]
+  },
+  "propertyDefinitions": [
+    {
+      "id": "55df1373-602f-5308-a6de-32b279199b53",
+      "name": "aanvraagSoort",
+      "definition": "Soort aanvraag",
+      "description": "Welke bijstand wordt aangevraagd.",
+      "category": "Bijstand",
+      "propertyType": "string",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "enumValues": [
+        "general-social-assistance",
+        "inburgering-related-social-assistance",
+        "social-assistance-werkloze-uitkeringontvangers",
+        "noodvoorziening"
+      ],
+      "filterable": true
+    },
+    {
+      "id": "cbe5ab6d-f368-545b-9440-8dba6d7e1c80",
+      "name": "gewensteIngangsdatum",
+      "definition": "Gewenste ingangsdatum",
+      "description": "Vanaf wanneer de aanvrager bijstand wil.",
+      "category": "Bijstand",
+      "propertyType": "date",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    },
+    {
+      "id": "459cf285-a543-52f9-9581-1f8c47c05132",
+      "name": "leeftijdsgroep",
+      "definition": "Leeftijdsgroep",
+      "description": "De leeftijdsgroep van de aanvrager.",
+      "category": "Bijstand",
+      "propertyType": "string",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    },
+    {
+      "id": "f06b3224-3a02-5c0e-a4e1-c78a839fd09c",
+      "name": "wijkteam",
+      "definition": "Werk- en inkomenteam",
+      "description": "Het team dat de aanvraag behandelt.",
+      "category": "Bijstand",
+      "propertyType": "string",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    },
+    {
+      "id": "d87f3b5f-0dd5-547c-a5c1-af53471be946",
+      "name": "afwijzingsvoorstel",
+      "definition": "Afwijzingsvoorstel",
+      "description": "Gezet wanneer het vermogen boven de vrijlating ligt.",
+      "category": "Bijstand",
+      "propertyType": "boolean",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "hideOnCreate": true
+    },
+    {
+      "id": "d04336b9-1d59-5754-b239-7ab889d5fed6",
+      "name": "reIntegratietraject",
+      "definition": "Re-integratietraject",
+      "description": "Verwijzing naar het re-integratietraject.",
+      "category": "Bijstand",
+      "propertyType": "string",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "hideOnCreate": true
+    },
+    {
+      "id": "6dae0004-b819-54cb-b7e6-e9cd07f0cd24",
+      "name": "avgClassificatie",
+      "definition": "AVG-classificatie",
+      "description": "Categorieën persoonsgegevens, grondslag, bewaartermijn en toegangsbeperking van deze zaak.",
+      "category": "Bijstand",
+      "propertyType": "object",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "isRequired": true
+    },
+    {
+      "id": "bd94299a-a94b-55d1-b123-c816652ffa82",
+      "name": "huishoudsituatie",
+      "definition": "Huishoudsituatie",
+      "description": "Alleenstaand, alleenstaande ouder, gehuwd, enzovoort.",
+      "category": "Bijstand",
+      "propertyType": "string",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "sensitive": true
+    },
+    {
+      "id": "ada60202-23b6-521a-a57b-0478ec6bf03b",
+      "name": "vermogenstoets",
+      "definition": "Vermogenstoets",
+      "description": "De vermogenstoets (artikel 34).",
+      "category": "Bijstand",
+      "propertyType": "object",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "sensitive": true,
+      "hideOnCreate": true
+    },
+    {
+      "id": "0a958f84-a64f-5162-a9ff-836d7379557f",
+      "name": "inkomenstoets",
+      "definition": "Inkomenstoets",
+      "description": "De inkomenstoets (artikel 31 tot 33).",
+      "category": "Bijstand",
+      "propertyType": "object",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "sensitive": true,
+      "hideOnCreate": true
+    }
+  ],
+  "statusTypes": [
+    {
+      "id": "cadefeea-c887-56e7-826f-b72507a42c5c",
+      "phase": "Ontvangst",
+      "name": "Aanvraag ontvangen",
+      "description": "De bijstandsaanvraag is binnen en geregistreerd.",
+      "order": 1,
+      "isFinal": false,
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "role": "intake",
+      "colour": "blue"
+    },
+    {
+      "id": "64375a79-983a-5932-9c0b-0172fc898a3d",
+      "phase": "Beoordeling",
+      "name": "Toetsing",
+      "description": "De vermogens- en inkomenstoets lopen.",
+      "order": 2,
+      "isFinal": false,
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "role": "in-progress",
+      "colour": "purple"
+    },
+    {
+      "id": "9ef42ab0-8e41-5ba8-b71f-c335f1691b4e",
+      "phase": "Beoordeling",
+      "name": "Toetsing afgerond",
+      "description": "Beide toetsen zijn uitgevoerd.",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "colour": "purple"
+    },
+    {
+      "id": "62765dda-a2e5-5afa-9129-5807e466e104",
+      "phase": "Besluit",
+      "name": "Besluit in voorbereiding",
+      "description": "Het besluit over de bijstand wordt voorbereid.",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "colour": "purple"
+    },
+    {
+      "id": "f6384980-07a9-5c82-bc94-2a13fe8cb610",
+      "phase": "Besluit",
+      "name": "Besluit genomen",
+      "description": "Het besluit is genomen en verzonden.",
+      "order": 5,
+      "isFinal": false,
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "colour": "teal"
+    },
+    {
+      "id": "0438302f-b6f0-549e-bdcb-735fc5382ed1",
+      "name": "Bijstand loopt",
+      "description": "De bijstand is toegekend en loopt.",
+      "order": 6,
+      "isFinal": false,
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "colour": "purple",
+      "phase": "Uitvoering"
+    },
+    {
+      "id": "6865b91e-0f65-5b50-876c-3b043fd1f570",
+      "name": "Re-integratie loopt",
+      "description": "De bijstand loopt en de aanvrager volgt een re-integratietraject.",
+      "order": 7,
+      "isFinal": false,
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "colour": "purple",
+      "phase": "Uitvoering"
+    },
+    {
+      "id": "ab4e8bee-d1b1-5dd7-8447-d92c47ace21f",
+      "name": "Afgehandeld",
+      "description": "De aanvraag is afgehandeld.",
+      "order": 8,
+      "isFinal": true,
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "role": "closed",
+      "colour": "green"
+    },
+    {
+      "id": "a718e044-d85e-5eae-8f72-713599d99c52",
+      "offPath": true,
+      "name": "Ingetrokken",
+      "description": "De aanvraag is ingetrokken.",
+      "order": 90,
+      "isFinal": true,
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87",
+      "colour": "grey"
+    }
+  ],
+  "roleTypes": [
+    {
+      "id": "aa4e7815-5115-5d81-b720-dd3deb9463e5",
+      "name": "Aanvrager",
+      "description": "Wie bijstand aanvraagt",
+      "genericRole": "initiator",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    },
+    {
+      "id": "b68366b5-c0a9-5c36-bd33-1fa1cabfff0c",
+      "name": "Klantmanager",
+      "description": "De klantmanager werk en inkomen",
+      "genericRole": "handler",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    },
+    {
+      "id": "25b9cded-93d4-57d4-b5a0-0d6bf2907fc9",
+      "name": "Consulent",
+      "description": "Een consulent die meekijkt vanuit een ander domein",
+      "genericRole": "advisor",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    },
+    {
+      "id": "63f8584b-58db-54ab-9def-034e8916fa2a",
+      "name": "Teamleider werk en inkomen",
+      "description": "Neemt het besluit over de bijstand",
+      "genericRole": "decision_maker",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    }
+  ],
+  "resultTypes": [
+    {
+      "id": "df7d9097-6a3c-5339-a329-de7f74d885f4",
+      "name": "Toegekend",
+      "description": "De bijstand is toegekend.",
+      "archivalPeriod": "P10Y",
+      "archivalAction": "vernietigen",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    },
+    {
+      "id": "cf3d0c2a-a1b2-5bda-bcb2-10c707fc9501",
+      "name": "Afgewezen",
+      "description": "De bijstand is afgewezen.",
+      "archivalPeriod": "P10Y",
+      "archivalAction": "vernietigen",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    },
+    {
+      "id": "d144f420-fefa-5507-8806-73802820f58f",
+      "name": "Buiten behandeling",
+      "description": "De aanvraag is buiten behandeling gesteld.",
+      "archivalPeriod": "P10Y",
+      "archivalAction": "vernietigen",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    },
+    {
+      "id": "edf34f2b-f517-5f8e-98ec-4f52f82c8214",
+      "name": "Ingetrokken",
+      "description": "De aanvrager heeft de aanvraag ingetrokken.",
+      "archivalPeriod": "P10Y",
+      "archivalAction": "vernietigen",
+      "caseType": "c39ea4aa-a078-57c4-a2df-8f4ad1507a87"
+    }
+  ]
+}

@@ -333,6 +333,22 @@ class CaseEndingActs {
 	}//end endingOf()
 
 	/**
+	 * The results a finish or an abort of this case may name, as a picker reads them.
+	 *
+	 * The same list the close refuses against, so the form cannot offer a
+	 * result the act then refuses, nor miss one a parent case type contributes.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<int, array{id: string, name: string}> The choices, empty when none.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
+	 */
+	public function resultChoicesOn(array $case): array {
+		return $this->results->resultTypeChoices(caseTypeId: (string)($case['caseType'] ?? ''));
+	}//end resultChoicesOn()
+
+	/**
 	 * The one implementation behind finish and abort.
 	 *
 	 * The two acts differ in their permission, in what the record says, and in
@@ -542,7 +558,7 @@ class CaseEndingActs {
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
-	private function isEnded(array $case): bool {
+	public function isEnded(array $case): bool {
 		return (trim((string)($case[self::ENDING_FIELD] ?? '')) !== '');
 	}//end isEnded()
 

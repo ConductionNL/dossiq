@@ -1,0 +1,12 @@
+{
+  "id": "wmo-melding",
+  "title": "Wmo-melding",
+  "version": "1.1.1",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "flows"
+  ],
+  "install": "auto",
+  "description": "The Wmo-melding case type, completed: the installer adopts the case type register.d/30-beschikking.json seeds (matched by identifier, decision 190) and gives it statuses from the old wmoZaak lifecycle, roles, results, its fields (the support question, the household composition and the needs assessment reference flagged sensitive) and a published flow. Category Wmo, handled by dossiq-sociaal-domein, confidential. Its record import moves every stored wmoZaak onto a case on upgrade: the BSN to subjectBsn, one case per case number, needs assessments, consents and case meetings pointing at the record moved onto the case, the record stamped with migratedTo and migratedAt."
+}

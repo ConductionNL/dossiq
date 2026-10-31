@@ -1,0 +1,2 @@
+- [x] 1.1 config + nl words (tests/vitest/seatsCardBoard.spec.js)
+- [x] 1.2 Footnote under the card (content.footnote, nextcloud-vue feat/data-widget-footnote)

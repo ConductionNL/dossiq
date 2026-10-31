@@ -1,0 +1,73 @@
+{
+  "schema": "case_schema",
+  "rows": [
+    {
+      "id": "59547a3e-c601-58be-8f59-00b354c78575",
+      "title": "Werkfit maken met jobcoaching",
+      "description": "Alleenstaande ouder met bijstand sinds februari. Doel: binnen een jaar aan het werk in de zorg, eerst werkfit maken met een jobcoach en een korte opleiding.",
+      "caseType": "8c831a9f-d7b0-59a7-9bae-60cd6b15f376",
+      "status": "0f339c0f-64b5-50a6-8bbb-524f2e62e7f1",
+      "confidentiality": "vertrouwelijk",
+      "startDate": "{{date:-40}}",
+      "receivedAt": "{{datetime:-42 09:30}}",
+      "currentStatusEnteredAt": "{{datetime:-21 10:00}}",
+      "statusHistory": [
+        {
+          "status": "bcfc8608-2b50-51c5-b7de-a4ef55d45f90",
+          "enteredAt": "{{datetime:-42 09:30}}"
+        },
+        {
+          "status": "aa9bc9b1-5d4b-5311-bdf2-ad36b3dfc681",
+          "enteredAt": "{{datetime:-40 11:00}}"
+        },
+        {
+          "status": "0f339c0f-64b5-50a6-8bbb-524f2e62e7f1",
+          "enteredAt": "{{datetime:-21 10:00}}"
+        }
+      ],
+      "tags": [
+        "voorbeeld"
+      ],
+      "legalBasis": "Participatiewet artikel 9",
+      "initiatorDisplayName": "Klantmanager werk en inkomen, na toekenning van bijstand",
+      "assignedGroup": "dossiq-sociaal-domein",
+      "properties": [
+        {
+          "propertyDefinition": "9bc4bfe9-8458-58ad-b24b-2205a60e4526",
+          "name": "bijstandszaak",
+          "value": "zaak-2026-pw-01278"
+        },
+        {
+          "propertyDefinition": "f1cd4c91-bd8a-594b-834e-97905320b3f5",
+          "name": "trajectSoort",
+          "value": "werkfit-maken"
+        },
+        {
+          "propertyDefinition": "6767940e-1c57-5c2c-8d29-7e185d484406",
+          "name": "afstandTotArbeidsmarkt",
+          "value": "groot"
+        },
+        {
+          "propertyDefinition": "94d4ebd8-005e-5317-a8f8-1f0eb1504d88",
+          "name": "instrumenten",
+          "value": "[{\"kind\":\"jobcoaching\",\"omschrijving\":\"Jobcoach twee uur per week\",\"budget\":1800},{\"kind\":\"scholing\",\"omschrijving\":\"Opleiding helpende zorg en welzijn, niveau 2\",\"budget\":2400}]"
+        },
+        {
+          "propertyDefinition": "5196ff47-4d22-5419-990e-cd8ad1fc3fb3",
+          "name": "samenwerkendePartijen",
+          "value": "[\"Jobcoach Zuiddrecht\",\"ROC Zuiddrecht\"]"
+        },
+        {
+          "propertyDefinition": "b00c911d-5298-5d60-87b7-db94e28bba8b",
+          "name": "tegenprestatieVerplicht",
+          "value": "true"
+        },
+        {
+          "propertyDefinition": "dfc6be11-636f-51a3-9a2e-d1b201bac6d4",
+          "name": "vrijstellingArbeidsplicht",
+          "value": "false"
+        }
+      ]
+    }
+  ]
+}

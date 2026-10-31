@@ -1,0 +1,12 @@
+{
+  "id": "bijstandsaanvraag",
+  "title": "Bijstandsaanvraag",
+  "version": "1.2.0",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "flows"
+  ],
+  "install": "auto",
+  "description": "The Participatiewet benefit application case type: statuses from the old participatiewetZaak lifecycle, roles, results, its fields (the household situation and the asset and income tests flagged sensitive, kept in the case's sensitiveProperties) and a published flow. Handled by dossiq-sociaal-domein, confidential. Installed on every instance, as the participatiewetZaak schema and its seeds were. Its record import moves every stored participatiewetZaak onto a case on upgrade: the BSN to subjectBsn, the case number kept as a former reference and used to join duplicate rows into one case, consents and re-integration trajectories pointing at the record moved onto the case, the record stamped with migratedTo and migratedAt."
+}

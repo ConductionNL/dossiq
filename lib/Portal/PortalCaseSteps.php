@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -45,15 +46,27 @@ class PortalCaseSteps {
 	use SearchesObjects;
 
 	/**
+	 * Reads the case unscoped.
+	 *
+	 * @var UnscopedObjectReader
+	 */
+	private readonly UnscopedObjectReader $reader;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the register, the schemas and the object service.
-	 * @param LoggerInterface $logger The logger.
+	 * @param SettingsService           $settingsService Resolves the register, the schemas and the object service.
+	 * @param LoggerInterface           $logger          The logger.
+	 * @param UnscopedObjectReader|null $reader          Reads unscoped; a fresh one when null.
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		?UnscopedObjectReader $reader = null,
 	) {
+		$this->reader = ($reader ?? new UnscopedObjectReader());
 	}//end __construct()
 
 	/**
@@ -94,6 +107,8 @@ class PortalCaseSteps {
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<int, array<string, string>> The steps.
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
 	private function steps(object $objectService, int|string $register, string $caseId): array {
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
@@ -102,7 +117,11 @@ class PortalCaseSteps {
 			return [];
 		}
 
-		$case = $this->findObjectAsArray(
+		// Unscoped, as the history is: runAsSystem lifts RBAC only for a
+		// request without a Nextcloud user, and a person reading a case
+		// under a mandate is signed in as themselves, not as the case's
+		// party. Portaliq proved the case is theirs to read before asking.
+		$case = $this->reader->find(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,

@@ -30,6 +30,14 @@ approximation.
 
 @e2e exclude The list shell is covered by `case-management/spec.md#cases-index-page-renders-list-shell`, which drives the same `CnIndexPage` over the same register and schema.
 
+#### Scenario: Objections are the Bezwaar folder of the Cases page
+
+- GIVEN cases of the Bezwaar case type and cases of other case types
+- WHEN the user opens Cases and picks the Bezwaar folder in the folder sidebar
+- THEN the list SHALL show only the cases whose `caseType` is the Bezwaar case type
+- AND no page SHALL be registered at `/bezwaren`
+- AND a link to `/bezwaren/<id>` SHALL still open that objection's detail page
+
 **ADDED Requirements**
 
 ### Requirement: Bezwaar Case Type Pre-Seeded Configuration
@@ -218,26 +226,3 @@ The system SHALL store bezwaarschrift (objection letter) details as an OpenRegis
 - **GIVEN** a bezwaar already at status `in-behandeling` from a prior creation event
 - **WHEN** the same `BezwaarCreatedEvent` is dispatched again
 - **THEN** the listener SHALL detect the existing state and SHALL NOT re-trigger status / assignment side effects
-
-### Requirement: SeedBezwaarBeroepData SHALL seed shared reference data for bezwaar + beroep
-
-`OCA\Dossiq\Repair\SeedBezwaarBeroepData` SHALL run on app install/upgrade and create the shared reference data for bezwaar + beroep workflows: status types, role types, decision-type enumerations, and any standing notification templates. The seeder SHALL be idempotent — pre-existing records (matched by slug/code) SHALL be left untouched, and re-running the repair SHALL be safe.
-
-@e2e exclude Backend repair-step seeder; idempotency covered by PHPUnit, not a UI surface.
-
-#### Scenario: Repair re-runs on upgrade
-- **WHEN** a dossiq upgrade triggers repair steps
-- **THEN** `SeedBezwaarBeroepData::run($output)` SHALL skip rows already in the database and only add net-new reference data introduced in this release
-
-### Requirement: SeedBezwaarWorkflowDefinition SHALL seed the canonical bezwaar workflow definition
-
-`OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition` SHALL create the canonical bezwaar workflow definition (status nodes, transitions, role guards, deadline rules) as a published version 1 record. The seeder SHALL be idempotent — if a published bezwaar workflow already exists, the repair SHALL be a no-op rather than creating a competing version. If the existing record is on an older schema version, the seeder SHALL migrate it forward in-place rather than seeding a parallel record.
-
-@e2e exclude Backend repair-step workflow seeder; idempotent no-op covered by PHPUnit, not a UI surface.
-
-#### Scenario: Existing v1 workflow is preserved
-- **GIVEN** a bezwaar workflow already published as v1
-- **WHEN** `SeedBezwaarWorkflowDefinition::run($output)` runs
-- **THEN** no new workflow record SHALL be created and the output SHALL log the no-op
-
-<!-- END retrofit-2026-05-24-bezwaar-lifecycle -->

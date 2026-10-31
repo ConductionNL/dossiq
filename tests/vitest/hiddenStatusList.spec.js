@@ -40,10 +40,6 @@ const kpiSource = fs.readFileSync(
 	path.join(ROOT, 'lib', 'Service', 'KpiAggregationService.php'),
 	'utf8',
 )
-const myWorkSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'views', 'MyWorkCards.vue'),
-	'utf8',
-)
 
 /** The mirror every working surface narrows on. */
 const FLAG = 'statusHiddenInLists'
@@ -90,25 +86,14 @@ describe('a hidden status leaves every working lens', () => {
 		},
 	)
 
-	it('the Queue page narrows on it too, and stays equal to Unclaimed', () => {
-		// Equal, not merely both-filtered. The two answer the same question
-		// and nothing at runtime compares them, so they drift the moment one
-		// side is edited.
-		expect(page('Queue').config.filter[FLAG]).toBe(false)
-		expect(chip('Cases', 'Unclaimed').filter).toEqual(
-			page('Queue').config.filter,
-		)
-	})
-
-	it('My Work narrows on it in the base filter the wrapper injects', () => {
-		// My Work is a custom view rather than a manifest filter, because the
-		// stock index base-filter cannot resolve `@me`. The condition
-		// therefore has to be asserted against the source, and the assertion
-		// is on the RETURNED filter object rather than on the file containing
-		// the word: the word appears in the comment above it either way.
-		expect(myWorkSource).toContain(
-			`return { assignee: uid, ${FLAG}: false, isDraft: false }`,
-		)
+	it('the team queue and Assigned to me views narrow on it too', () => {
+		// The two lists that were pages are views of Cases now. The team
+		// queue stays equal to the Unclaimed chip: both answer the same
+		// question and nothing at runtime compares them.
+		const view = (slug) => page('Cases').config.defaultSavedViews.find((v) => v.slug === slug).overrides.lockedFilters
+		expect(view('team-queue')[FLAG]).toBe(false)
+		expect(view('team-queue')).toEqual(chip('Cases', 'Unclaimed').filter)
+		expect(view('my-work')[FLAG]).toBe(false)
 	})
 })
 

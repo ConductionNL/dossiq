@@ -9,7 +9,7 @@ Give dossiq a first-time setup flow that (a) is rendered by the abstract `CnSetu
 
 dossiq SHALL declare a `setup` block in `src/manifest.json` with steps `welcome` (`info`, optional), `demo-data` (`choice`, optional), `load-demo-data` (`run-action`, optional), `register-check` (`run-action`, **required**), `dwangsom-secret` (`config-fields`, optional) and `done` (`summary`, optional), and SHALL set `completionConfigKey` to `setup_completed_version`.
 
-dossiq SHALL NOT declare a `seed` step. The requirement used to mandate one, and the step was retired: the bezwaar/beroep case types it seeded live under `_caseTypes_disabled` in `bezwaar_seed_data.json`, so the seeder returned success with every counter at zero. Reporting that as done made the affordance one-shot and silently useless, and reporting it honestly left a step whose every click was a 422. The `seed` ACTION stays, for an operator who un-parks the data.
+dossiq SHALL NOT declare a `seed` step. The requirement used to mandate one, and the step was retired while the bezwaar/beroep seed data was parked and every click answered 422. The `seed` ACTION stays and installs the on-request `bezwaar-beroep` package (case-types REQ-CT-50); offering it in the wizard again is a product choice that has not been made.
 
 The declared step list and the reported step list SHALL agree in both directions. A step the manifest renders but the status never reports is a step the wizard cannot gate on; a step the status reports but no manifest renders is one the wizard can never prompt for.
 
@@ -31,32 +31,34 @@ The declared step list and the reported step list SHALL agree in both directions
 
 #### Scenario: No step is offered that the wizard cannot fulfil
 
-- **GIVEN** the bezwaar/beroep seed payload is parked under `_caseTypes_disabled`
+- **GIVEN** the manifest declares no `seed` step
 - **WHEN** the wizard reads `GET /apps/dossiq/api/setup/status`
 - **THEN** the payload SHALL NOT report a `seed` step, so the wizard cannot prompt for one
 - **AND** it SHALL still report the steps the manifest does declare, `register-check` among them
-- **AND** `POST /apps/dossiq/api/setup/action/seed` SHALL refuse with 422 and `success: false` rather than report a success-shaped zero
-- **AND** the refusal SHALL NOT add the step back to the payload
+- **AND** `POST /apps/dossiq/api/setup/action/seed` SHALL answer success when the package installed or was already current, and 422 with `success: false` when the installer refused it, never a success-shaped zero
+- **AND** neither answer SHALL add the step back to the payload
 
 ### Requirement: REQ-SETUP-PRO-002 — Seeding Runs Server-Side With System Privileges
 
-dossiq SHALL expose `POST /apps/dossiq/api/setup/action/{actionId}` (admin-only, CSRF-protected) whose `seed` action runs `SeedDataService::seedBezwaarBeroepData()` and the other `Seed*` repair steps **server-side with system privileges** (admin-context or `_rbac:false`), so OpenRegister `saveObject` succeeds regardless of the requesting user's object-create rights. The wizard SHALL NOT write OpenRegister objects directly from the browser.
+dossiq SHALL expose `POST /apps/dossiq/api/setup/action/{actionId}` (admin-only, CSRF-protected) whose `seed` action installs the on-request case definition package `bezwaar-beroep` through the package installer **server-side**, in the admin's request, so OpenRegister `saveObject` succeeds regardless of what the browser could write. The wizard SHALL NOT write OpenRegister objects directly from the browser.
 
 #### Scenario: Wizard seed action succeeds where a browser write would be denied
 
-@e2e exclude There is no `seed` step to be on, and the action cannot create the case types this scenario names: they are parked under `_caseTypes_disabled` in `lib/Settings/bezwaar_seed_data.json`, so the call answers 422 by design rather than creating anything. See the exclusion on "Optional seed does not gate" above. The privilege claim this requirement is really about, that seeding runs server-side rather than as a browser write, survives the retirement and needs a scenario that does not depend on the parked payload.
+@e2e exclude covered by the package journey tests/e2e/packages/bezwaar-beroep.spec.ts, which cites case-types REQ-CT-50 (bezwaar-beroep-package); this scenario names the same call
 
-- **GIVEN** an admin on the `seed` step and bezwaar/beroep not yet seeded
-- **WHEN** the wizard POSTs `setup/action/seed`
-- **THEN** the server SHALL create the Bezwaar + Beroep caseTypes, their status types and role types
+- **GIVEN** an admin and bezwaar/beroep not yet installed
+- **WHEN** the client POSTs `setup/action/seed`
+- **THEN** the server SHALL create the Bezwaar and Beroep case types, their status types, role types and flows
 - **AND** the call SHALL NOT fail with *"User 'Anonymous' does not have permission to 'create'"*
-- **AND** the action SHALL be idempotent (re-running reports the existing objects as skipped)
+- **AND** the action SHALL be idempotent (re-running reports the package as current and writes nothing)
 
 #### Scenario: occ command remains a CLI fallback
 
-- **GIVEN** the same `SeedDataService` wiring
-- **WHEN** an operator runs `occ dossiq:bezwaar:seed`
-- **THEN** the seed SHALL produce the identical result as the wizard `seed` action
+@e2e exclude a command line, not a screen; the packages workflow runs `occ dossiq:package:install --all` on a clean instance and reads the rows back with Newman
+
+- **GIVEN** the same package installer
+- **WHEN** an operator runs `occ dossiq:package:install bezwaar-beroep`
+- **THEN** the install SHALL produce the identical result as the `seed` action
 
 ### Requirement: REQ-SETUP-PRO-003 — Setup Status Is Reported For The Wizard
 
@@ -268,14 +270,68 @@ administrator set stays as it was. `GET /api/setup/status` SHALL report
 - **WHEN** the status is read
 - **THEN** it SHALL carry no `dismissed` key
 
-### Requirement: The dwangsom secret step explains itself
+### Requirement: The wizard follows the board's steps
 
-The `dwangsom-secret` config-fields step SHALL carry a `body` that the wizard
-draws as the step's intro, in English and Dutch.
+The setup wizard SHALL offer, in this order: Organisation, House style, Case types, Example data, and Done. It SHALL NOT ask for the dwangsom callback secret: that procedure-specific setting is set under admin settings > Financial integration. `GET /api/setup/status` SHALL report each of them.
 
-#### Scenario: The intro shows above the field
-@e2e exclude Rendering belongs to CnSetupWizard in the library; the live check in tasks 4.2 confirms it on dossiq.
+#### Scenario: The status names the board's steps
+@e2e exclude the step contract is the status payload; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testEveryActionableManifestStepIsReported` and `::testTheBoardStepsAreReported`
 
-- **GIVEN** the setup wizard on the dwangsom secret step
-- **WHEN** the step renders
-- **THEN** the intro text SHALL show above the secret field
+- **WHEN** an administrator's wizard asks for the setup status
+- **THEN** `steps` holds `organisation-details`, `house-style`, `case-types`, `demo-data` and `done`
+- **AND** it holds no `dwangsom-secret`
+
+### Requirement: The organisation's name and logo live on the organisation
+
+The Organisation step SHALL write the name and logo address onto the active OpenRegister Organisation and SHALL NOT store them in dossiq's app config. A blank field SHALL keep the current value. A value that cannot be written SHALL be reported, not dropped.
+
+#### Scenario: A name is saved onto the organisation
+@e2e exclude a write to the shared instance's organisation is a data write; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testOrganisationFieldsAreWrittenToTheOrganisation` and `tests/Unit/Service/Setup/ActiveOrganisationProfileTest.php::testABlankFieldKeepsTheCurrentValue`
+
+- **GIVEN** the active organisation is called "Default Organisation"
+- **WHEN** the administrator enters "Gemeente Waterland" and leaves the logo blank
+- **THEN** the organisation is called "Gemeente Waterland" and keeps its logo
+- **AND** no app-config value is written
+
+### Requirement: The house style is handed to Thematiq
+
+The House style step SHALL require the Thematiq app. Where Thematiq is not installed, the wizard SHALL leave the step out and the summary SHALL name it as skipped.
+
+#### Scenario: Without Thematiq the step is skipped
+@e2e exclude the skip is CnSetupWizard's `requires` behaviour, tested in nextcloud-vue; the declaration is checked by `tests/validate-manifest.js`
+
+- **GIVEN** Thematiq is not installed
+- **WHEN** the administrator opens the wizard
+- **THEN** the House style step is not offered and the summary says it needs Thematiq
+
+### Requirement: The case types step installs on-request packages
+
+The Case types step SHALL offer a "None for now" card and one card per valid on-request case definition package. A card's Load button SHALL install that package and record the choice; a refused install SHALL store nothing. A package the step does not offer SHALL be refused before the installer runs.
+
+#### Scenario: A card installs its package
+@e2e exclude installing a package writes case types to the shared instance; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testACaseTypeCardInstallsItsPackage` and `tests/Unit/Service/Setup/CaseTypePackageChoiceTest.php`
+
+- **WHEN** the administrator presses Load on the Subsidie card
+- **THEN** the subsidie package is installed and the step is done
+
+### Requirement: Example data loads on Next
+
+The Example data step SHALL offer "Load example data" first and "Start empty" second. Nothing SHALL load until the administrator presses Next: the pick is posted with `POST /api/setup/config`, which imports the example set or records the decline. A failed import SHALL answer 422 and leave the step open.
+
+#### Scenario: Next loads the picked set
+@e2e exclude loading writes example data to the shared instance; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testAKnownDatasetIsStoredAlongsideTheOtherFields`, `::testNextOnStartEmptyRecordsTheDecline` and `::testAFailedLoadOnNextKeepsTheWizardOnTheStep`
+
+- **WHEN** the administrator keeps "Load example data" and presses Next
+- **THEN** the example set is imported and the step is done
+
+### Requirement: Example data fills the work pages
+
+The example data the setup wizard loads SHALL include curated, fictional work for the user who loads it: assigned cases with deadlines relative to the day of loading, a Woo request with assessed documents and refusal grounds, and data subject requests. Load-time tokens (`@me`, `@myGroup`, `@today±Nd`, `@now±Nd`) SHALL be filled in before the import. `@myGroup` is the loader's first group other than `admin`, by id. With nobody signed in, or with no such group, the property SHALL be left out.
+
+#### Scenario: Loading the example data assigns work to the loader
+@e2e exclude loading writes example data to the shared instance; covered by `tests/Unit/Service/Setup/ExampleDataFragmentsTest.php` and `tests/Unit/Service/DemoDataServiceTest.php::testTheCuratedFragmentsAreImportedWithTheGeneratedSet`
+
+- **GIVEN** a fresh install
+- **WHEN** pieter loads the example data on 19 October
+- **THEN** four Woo requests are assigned to pieter, one with a deadline of 21 October
+- **AND** the Marktplein request holds two partly public documents with refusal grounds

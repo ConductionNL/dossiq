@@ -115,3 +115,9 @@ server's sentence, SHALL NOT read as decided, and the outstanding list SHALL be 
 - **WHEN** the handler records the decision
 - **THEN** the configured decision route SHALL be called once
 - **AND** the page SHALL read the case again
+
+#### Scenario: The next step is named in the reader's language
+- **GIVEN** a case type whose statuses carry language-tagged names (`{ nl, en }`)
+- **WHEN** the handler opens the dialog
+- **THEN** the subtitle SHALL name the next step in the reader's language
+- **AND** it SHALL NOT read as `[object Object]`

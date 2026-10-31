@@ -130,26 +130,41 @@ class CaseLifecycleService {
 			'deadline' => (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? '')),
 			'statusName' => $this->store->lookupStatusName(statusTypeId: (string)($case['status'] ?? '')),
 			'caseType' => (string)($case['caseType'] ?? ''),
+			'pauseReasons' => $this->pauseService->offeredReasons(caseId: $caseId),
 		];
 	}//end state()
 
 	/**
 	 * Suspend the case (opschorting, Awb 4:5).
 	 *
+	 * A pause reason the case type declares may stand in for the free text:
+	 * its key is stored on the pause, and its name is the rationale when no
+	 * text was given. A key the case type does not declare is refused.
+	 *
 	 * @param string $caseId Case UUID
-	 * @param string $reason Why the case is suspended
+	 * @param string $reason Why the case is suspended, in the handler's words
 	 * @param int $days How long the applicant is given, in days
+	 * @param string $pauseReason The key of one of the case type's pause reasons, or ''
 	 *
 	 * @return array<string, mixed> The lifecycle state after the write
 	 *
 	 * @throws RuntimeException When the case type forbids suspension, the case
-	 *                          is already suspended, or the reason is empty
+	 *                          is already suspended, the reason is empty, or the
+	 *                          pause reason is not one the case type declares
 	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
-	public function suspend(string $caseId, string $reason, int $days): array {
+	public function suspend(string $caseId, string $reason, int $days, string $pauseReason = ''): array {
 		$case = $this->requireCase(caseId: $caseId);
-		$this->requireReason(reason: $reason);
+		$key = trim($pauseReason);
+		$rationale = $reason;
+		if ($key === '') {
+			$this->requireReason(reason: $reason);
+		}
+
+		if ($key !== '') {
+			$rationale = $this->pauseService->suspendRationale(caseId: $caseId, reason: $reason, pauseReason: $key);
+		}
 
 		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
 		if ($caseType['suspensionAllowed'] !== true) {
@@ -171,11 +186,16 @@ class CaseLifecycleService {
 			apply: fn (string $instanceId): array => $this->pauseService->registerPauze(
 				termInstanceId: $instanceId,
 				durationDays: $duration,
-				rationale: $reason,
+				rationale: $rationale,
+				pauseReason: $key,
 			),
 		);
 
-		$this->journal(caseId: $caseId, changes: [], entry: ['type' => 'suspend', 'reason' => $reason, 'days' => $duration]);
+		$this->journal(
+			caseId: $caseId,
+			changes: [],
+			entry: ['type' => 'suspend', 'reason' => $rationale, 'days' => $duration, 'pauseReason' => $key],
+		);
 
 		return $this->state(caseId: $caseId);
 	}//end suspend()
@@ -449,7 +469,7 @@ class CaseLifecycleService {
 	 * @throws RuntimeException When the case can no longer be read
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/lifecycle-gesture-saves-the-case-as-stored/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function journal(string $caseId, array $changes, array $entry): void {
 		$case = array_merge($this->requireCase(caseId: $caseId), $changes);

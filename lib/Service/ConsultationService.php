@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
 use OCA\Dossiq\Service\Consultation\ConsultationRepository;
+use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -82,6 +83,13 @@ class ConsultationService {
 	];
 
 	/**
+	 * The Adviseringsbeheer settings.
+	 *
+	 * @var ConsultationTerms
+	 */
+	private ConsultationTerms $terms;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -91,6 +99,7 @@ class ConsultationService {
 	 * @param ConsultationDependencyGraph $dependencyGraph `dependsOn` cycle detection
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param ObligationService $obligations The one mechanism a case waits on.
+	 * @param ConsultationTerms|null $terms The Adviseringsbeheer settings; read from the settings when not given.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -100,8 +109,21 @@ class ConsultationService {
 		private readonly ConsultationDependencyGraph $dependencyGraph,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ObligationService $obligations,
+		?ConsultationTerms $terms = null,
 	) {
+		$this->terms = ($terms ?? new ConsultationTerms(settingsService: $settingsService));
 	}//end __construct()
+
+	/**
+	 * The Adviseringsbeheer settings, read and applied.
+	 *
+	 * @return ConsultationTerms
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md
+	 */
+	public function terms(): ConsultationTerms {
+		return $this->terms;
+	}//end terms()
 
 	/**
 	 * Create a consultation linked to a parent case.
@@ -130,6 +152,9 @@ class ConsultationService {
 		if (empty($register) === true || empty($schema) === true) {
 			throw new RuntimeException('Consultation schema not configured');
 		}
+
+		// A request without a deadline gets the default term (Adviseringsbeheer).
+		$data['latestResponseDate'] = $this->terms->deadlineFor(given: (string)($data['latestResponseDate'] ?? ''));
 
 		// Validate required fields.
 		$this->assertRequiredConsultationFields(data: $data);
@@ -344,12 +369,19 @@ class ConsultationService {
 	/**
 	 * Get overdue consultations (past deadline with open/in_behandeling status).
 	 *
+	 * @param callable|null $mayRead Keeps a request the caller may see; asked of each before the list is built.
+	 *
 	 * @return array<int, array<string, mixed>> List of overdue consultations
 	 *
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
 	 */
-	public function getOverdueConsultations(): array {
-		return $this->repository->getOverdueConsultations();
+	public function getOverdueConsultations(?callable $mayRead = null): array {
+		$overdue = $this->repository->getOverdueConsultations();
+		if ($mayRead === null) {
+			return $overdue;
+		}
+
+		return array_values(array_filter($overdue, $mayRead));
 	}//end getOverdueConsultations()
 
 	/**

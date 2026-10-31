@@ -34,6 +34,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\DoorlooptijdController;
 use OCA\Dossiq\Service\DoorlooptijdService;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\DataDownloadResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
@@ -104,6 +106,7 @@ class DoorlooptijdControllerContractTest extends TestCase {
 			// A double that SAYS YES keeps this file measuring the metrics
 			// contract rather than the gate; the gate has its own test.
 			audience: $this->audience,
+			l10n: $this->l10n(),
 		);
 	}//end setUp()
 
@@ -112,6 +115,94 @@ class DoorlooptijdControllerContractTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Translations that return the source string.
+	 *
+	 * @return IL10N The double.
+	 */
+	private function l10n(): IL10N {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
+		return $l10n;
+	}//end l10n()
+
+	/**
+	 * The CSV download of the figures per case type and month: the same filter
+	 * and period as the page, column labels, the rows, and the BOM.
+	 *
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 *
+	 * @return void
+	 */
+	public function testMetricsDownloadsTheMonthlyFiguresAsCsv(): void {
+		$this->signIn();
+		$this->withQuery(['format' => 'csv', 'period' => '3m', 'caseType' => 'ct-woo']);
+		$this->leadTimeService->expects($this->never())->method('getMetrics');
+		$this->leadTimeService->expects($this->once())->method('getMonthlyRows')
+			->with(['period' => '3m', 'caseType' => 'ct-woo'])
+			->willReturn([
+				['caseType' => 'Woo-verzoek', 'month' => '2026-09', 'closed' => 4, 'avgDays' => 23, 'withinNormPercent' => 75],
+				['caseType' => '=HYPERLINK("x")', 'month' => '2026-10', 'closed' => 1, 'avgDays' => 9, 'withinNormPercent' => null],
+			]);
+
+		$response = $this->controller->metrics();
+
+		$this->assertInstanceOf(DataDownloadResponse::class, $response);
+		$this->assertSame('text/csv; charset=utf-8', $response->getHeaders()['Content-Type']);
+		$this->assertStringContainsString('doorlooptijd.csv', $response->getHeaders()['Content-Disposition']);
+		$this->assertSame(
+			"\u{FEFF}" . '"Case type","Month","Closed cases","Average processing time (days)","Within the norm (%)"' . "\r\n"
+			. '"Woo-verzoek","2026-09","4","23","75"' . "\r\n"
+			. '"\'=HYPERLINK(""x"")","2026-10","1","9",""' . "\r\n",
+			$response->render()
+		);
+	}//end testMetricsDownloadsTheMonthlyFiguresAsCsv()
+
+	/**
+	 * A format the endpoint does not speak is refused, not answered as JSON.
+	 *
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 *
+	 * @return void
+	 */
+	public function testMetricsRejectsAnUnknownFormat(): void {
+		$this->signIn();
+		$this->withQuery(['format' => 'xlsx']);
+		$this->leadTimeService->expects($this->never())->method('getMonthlyRows');
+
+		$response = $this->controller->metrics();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['message' => 'format must be json or csv'], $response->getData());
+	}//end testMetricsRejectsAnUnknownFormat()
+
+	/**
+	 * The download is refused to a reader outside the reporting audience,
+	 * before anything is read.
+	 *
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 *
+	 * @return void
+	 */
+	public function testMetricsRefusesTheCsvOutsideTheReportingAudience(): void {
+		$audience = $this->createMock(ReportingAudience::class);
+		$audience->method('isInAudience')->willReturn(false);
+		$controller = new DoorlooptijdController(
+			request: $this->request,
+			leadTimeService: $this->leadTimeService,
+			userSession: $this->userSession,
+			audience: $audience,
+			l10n: $this->l10n(),
+		);
+		$this->signIn();
+		$this->withQuery(['format' => 'csv']);
+		$this->leadTimeService->expects($this->never())->method('getMonthlyRows');
+
+		$response = $controller->metrics();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testMetricsRefusesTheCsvOutsideTheReportingAudience()
+
 	private function signIn(): void {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn('analist');
@@ -214,7 +305,7 @@ class DoorlooptijdControllerContractTest extends TestCase {
 
 		$this->leadTimeService->expects($this->once())
 			->method('getMetrics')
-			->with(['period' => '12m', 'atRiskDays' => 5])
+			->with(['period' => '12m', 'granularity' => 'month', 'atRiskDays' => 5])
 			->willReturn($payload);
 
 		$response = $this->controller->metrics();
@@ -236,11 +327,44 @@ class DoorlooptijdControllerContractTest extends TestCase {
 
 		$this->leadTimeService->expects($this->once())
 			->method('getMetrics')
-			->with(['period' => '6m', 'atRiskDays' => 10, 'caseType' => 'bezwaar'])
+			->with(['period' => '6m', 'granularity' => 'month', 'atRiskDays' => 10, 'caseType' => 'bezwaar'])
 			->willReturn([]);
 
 		$response = $this->controller->metrics();
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 	}//end testMetricsForwardsTheCaseTypeAndCoercesAtRiskDaysToAnInteger()
+
+	/**
+	 * The grouping is forwarded: week, month, quarter or year.
+	 *
+	 * @return void
+	 */
+	public function testMetricsForwardsTheGranularity(): void {
+		$this->signIn();
+		$this->withQuery(['granularity' => 'quarter']);
+
+		$this->leadTimeService->expects($this->once())
+			->method('getMetrics')
+			->with(['period' => '12m', 'granularity' => 'quarter', 'atRiskDays' => 5])
+			->willReturn([]);
+
+		$this->assertSame(Http::STATUS_OK, $this->controller->metrics()->getStatus());
+	}//end testMetricsForwardsTheGranularity()
+
+	/**
+	 * A grouping other than week, month, quarter or year is rejected with its own message.
+	 *
+	 * @return void
+	 */
+	public function testMetricsRejectsAnUnknownGranularity(): void {
+		$this->signIn();
+		$this->withQuery(['granularity' => 'day']);
+		$this->leadTimeService->expects($this->never())->method('getMetrics');
+
+		$response = $this->controller->metrics();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['message' => 'granularity must be week, month, quarter or year'], $response->getData());
+	}//end testMetricsRejectsAnUnknownGranularity()
 }//end class

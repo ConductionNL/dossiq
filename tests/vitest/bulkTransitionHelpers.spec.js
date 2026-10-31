@@ -3,101 +3,15 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Unit tests for the bulk status-transition helper utilities
- * (case-bulk-status-transition): column-scoped selection toggling
- * (incl. cross-column reset), payload builders, and result summarisation.
+ * (case-bulk-status-transition): the payload builders.
  */
 
 import { describe, expect, it } from 'vitest'
 import {
-	clearSelection,
-	emptySelection,
 	isLifecycleGesture,
-	isSelected,
 	lifecycleParameters,
-	toggleSelection,
 	transitionParameters,
 } from '../../src/utils/bulkTransitionHelpers.js'
-
-describe('emptySelection', () => {
-	it('returns a selection with no column and no cases', () => {
-		expect(emptySelection()).toEqual({ columnId: null, caseIds: [] })
-	})
-})
-
-describe('toggleSelection', () => {
-	it('selects a case into an empty selection', () => {
-		const result = toggleSelection(emptySelection(), 'case-1', 'Received')
-		expect(result).toEqual({ columnId: 'Received', caseIds: ['case-1'] })
-	})
-
-	it('adds a second case within the same column', () => {
-		const first = toggleSelection(emptySelection(), 'case-1', 'Received')
-		const second = toggleSelection(first, 'case-2', 'Received')
-		expect(second).toEqual({
-			columnId: 'Received',
-			caseIds: ['case-1', 'case-2'],
-		})
-	})
-
-	it('removes a case already selected within the same column', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
-		const result = toggleSelection(selection, 'case-1', 'Received')
-		expect(result).toEqual({ columnId: 'Received', caseIds: ['case-2'] })
-	})
-
-	it('clears the column scope when the last case is deselected', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1'] }
-		const result = toggleSelection(selection, 'case-1', 'Received')
-		expect(result).toEqual({ columnId: null, caseIds: [] })
-	})
-
-	it('resets the selection when a case is selected in a different column (cross-column reset)', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
-		const result = toggleSelection(selection, 'case-9', 'In handling')
-		expect(result).toEqual({ columnId: 'In handling', caseIds: ['case-9'] })
-	})
-
-	it('compares case ids as strings so numeric/string mismatches still toggle correctly', () => {
-		const selection = { columnId: 'Received', caseIds: [1, 2] }
-		const result = toggleSelection(selection, '1', 'Received')
-		expect(result).toEqual({ columnId: 'Received', caseIds: [2] })
-	})
-
-	it('tolerates a null/undefined selection as the starting state', () => {
-		expect(toggleSelection(null, 'case-1', 'Received')).toEqual({
-			columnId: 'Received',
-			caseIds: ['case-1'],
-		})
-		expect(toggleSelection(undefined, 'case-1', 'Received')).toEqual({
-			columnId: 'Received',
-			caseIds: ['case-1'],
-		})
-	})
-})
-
-describe('isSelected', () => {
-	it('returns true when the case id is in the selection', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
-		expect(isSelected(selection, 'case-1')).toBe(true)
-	})
-
-	it('returns false when the case id is not in the selection', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1'] }
-		expect(isSelected(selection, 'case-9')).toBe(false)
-	})
-
-	it('returns false for an empty or malformed selection', () => {
-		expect(isSelected(emptySelection(), 'case-1')).toBe(false)
-		expect(isSelected(null, 'case-1')).toBe(false)
-		expect(isSelected({}, 'case-1')).toBe(false)
-	})
-})
-
-describe('clearSelection', () => {
-	it('returns an empty selection', () => {
-		expect(clearSelection()).toEqual({ columnId: null, caseIds: [] })
-	})
-})
 
 describe('isLifecycleGesture', () => {
 	it('names the three gestures that move the clock, not the status', () => {

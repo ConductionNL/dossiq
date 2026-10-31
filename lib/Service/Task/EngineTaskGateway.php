@@ -132,6 +132,33 @@ class EngineTaskGateway {
 
 
     /**
+     * Whether a task with this key exists, or null when the engine cannot say.
+     *
+     * Null is not "no": a caller that adds a task once per case must not add
+     * it when the engine cannot answer whether it is there already.
+     *
+     * @param string $key The engine task key.
+     *
+     * @return bool|null True when taken, false when free, null when the engine has no key lookup.
+     *
+     * @throws Throwable When the engine cannot read the key.
+     *
+     * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+     */
+    public function keyTaken(string $key): ?bool {
+        $service = $this->resolveService();
+        if ($service === null || method_exists($service, 'findByKey') === false) {
+            $this->lastError = 'the task engine cannot look a task up by its key';
+
+            return null;
+        }
+
+        // A failing lookup is not "free": it reaches the caller as an
+        // exception, which refuses to add the task.
+        return $service->findByKey($key) !== [];
+    }//end keyTaken()
+
+    /**
      * The most recent engine failure, for callers that report rather than log.
      *
      * @var string
@@ -423,6 +450,12 @@ class EngineTaskGateway {
         $sourceId = trim((string)($task['id'] ?? $task['uuid'] ?? ''));
         if ($sourceId !== '') {
             $payload['key'] = self::sourceKey(registerTaskId: $sourceId);
+        }
+
+        // A task that may exist once per case carries its once-key instead.
+        $onceKey = trim((string)($task['onceKey'] ?? ''));
+        if ($onceKey !== '') {
+            $payload['key'] = $onceKey;
         }
 
         // The case IS the object. No typed case reference exists engine-side.
@@ -758,6 +791,26 @@ class EngineTaskGateway {
     }//end complete()
 
     /**
+     * Whether an engine task has the column a getter reads. OpenRegister's
+     * Task is a Nextcloud Entity, whose column getters are magic (`__call`),
+     * so a declared method and a declared property both count.
+     *
+     * @param object $task   The engine task.
+     * @param string $getter The accessor, `get<Column>`.
+     *
+     * @return bool
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     */
+    private static function answers(object $task, string $getter): bool {
+        if (method_exists($task, $getter) === true) {
+            return true;
+        }
+
+        return str_starts_with($getter, 'get') === true && property_exists($task, lcfirst(substr($getter, 3))) === true;
+    }//end answers()
+
+    /**
      * One string column of an engine task, or '' when the engine has none.
      *
      * @param object $task   The engine task.
@@ -768,7 +821,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
     private static function stringFrom(object $task, string $getter): string {
-        if (method_exists($task, $getter) === false) {
+        if (self::answers(task: $task, getter: $getter) === false) {
             return '';
         }
 
@@ -786,7 +839,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
     private static function dateFrom(object $task, string $getter): string {
-        if (method_exists($task, $getter) === false) {
+        if (self::answers(task: $task, getter: $getter) === false) {
             return '';
         }
 
@@ -809,7 +862,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
     private static function listFrom(object $task, string $getter): array {
-        if (method_exists($task, $getter) === false) {
+        if (self::answers(task: $task, getter: $getter) === false) {
             return [];
         }
 

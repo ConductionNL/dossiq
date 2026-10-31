@@ -74,33 +74,54 @@ class CaseRelationStore {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function fetchCase(string $caseUuid): ?array {
-		if ($caseUuid === '') {
-			return null;
-		}
+		return $this->findObject(uuid: $caseUuid, schemaKey: 'case_schema', what: 'case');
+	}//end fetchCase()
 
+	/**
+	 * Fetch a case type object by UUID, for the title a related case shows.
+	 *
+	 * @param string $caseTypeUuid Case type UUID.
+	 *
+	 * @return array<string, mixed>|null The case type, or null when it does not resolve.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function fetchCaseType(string $caseTypeUuid): ?array {
+		return $this->findObject(uuid: $caseTypeUuid, schemaKey: 'case_type_schema', what: 'case type');
+	}//end fetchCaseType()
+
+	/**
+	 * One object of the configured register by UUID, as the current user may
+	 * read it; null when it is absent, unreadable or the read fails.
+	 *
+	 * @param string $uuid      The object UUID.
+	 * @param string $schemaKey The setting naming its schema.
+	 * @param string $what      What the object is, for the log line.
+	 *
+	 * @return array<string, mixed>|null The object, or null.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	private function findObject(string $uuid, string $schemaKey, string $what): ?array {
 		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($register === '' || $schema === '') {
+		$register      = $this->settingsService->getConfigValue('register');
+		$schema        = $this->settingsService->getConfigValue($schemaKey);
+		if ($uuid === '' || $objectService === null || $register === '' || $schema === '') {
 			return null;
 		}
 
 		try {
-			$obj = $objectService->find($caseUuid, register: $register, schema: $schema);
+			$obj = $objectService->find($uuid, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
-				'CaseRelationService: case lookup failed',
-				['uuid' => $caseUuid, 'error' => $e->getMessage()]
+				'CaseRelationService: ' . $what . ' lookup failed',
+				['uuid' => $uuid, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
 
 		return $this->normalizeCaseObject(object: $obj);
-	}//end fetchCase()
+	}//end findObject()
 
 	/**
 	 * Persist a relation list back onto a case, JSON-encoding the field
@@ -203,6 +224,11 @@ class CaseRelationStore {
 	/**
 	 * Ask OpenRegister for one direction's rows.
 	 *
+	 * The object service is shared within a request and looks the case up in
+	 * the table of whatever register and schema an earlier call left set; under
+	 * another schema it answers nothing. So the case's own register is set
+	 * first, then its schema, as OpenRegister's own uses/used controllers do.
+	 *
 	 * @param object $objectService OpenRegister's object service.
 	 * @param string $caseUuid Case UUID.
 	 * @param bool $incoming Whether to ask for the reverse direction.
@@ -210,6 +236,13 @@ class CaseRelationStore {
 	 * @return array<string, mixed> The envelope.
 	 */
 	private function askOpenRegister(object $objectService, string $caseUuid, bool $incoming): array {
+		$register = $this->settingsService->getConfigValue('register');
+		$schema   = $this->settingsService->getConfigValue('case_schema');
+		if ($register !== '' && $schema !== '') {
+			$objectService->setRegister($register);
+			$objectService->setSchema($schema);
+		}
+
 		if ($incoming === true) {
 			return $objectService->getObjectUsedBy($caseUuid);
 		}

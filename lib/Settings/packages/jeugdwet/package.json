@@ -1,0 +1,13 @@
+{
+  "id": "jeugdwet",
+  "title": "Jeugdwet",
+  "version": "1.14.0",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "flows",
+    "examples"
+  ],
+  "install": "auto",
+  "description": "The Melding Jeugdwet case type (Jeugdwet artikel 2.3): a report about a child, the investigation, the indication, the case meeting and the youth care that follows, with its statuses, roles and fields (the support question, the family plan and case meeting references and a supervision order flagged sensitive) and a published flow whose guards on the support question and the family plan are checked as the system. Category Jeugdhulp, handled by dossiq-sociaal-domein, decided within eight weeks (td-melding-jeugdwet, Awb 4:13 lid 2). Installed on every instance, as the jeugdwetZaak schema and its seeds were. Its record import moves every stored jeugdwetZaak onto a case on upgrade: the young person's BSN to subjectBsn, one case per case number, family plans, consents and case meetings pointing at the record moved onto the case, the record stamped with migratedTo and migratedAt. Ships an example case in flight (`examples/`), its dates relative to the install day."
+}

@@ -205,7 +205,7 @@ class AdviceTimer {
 				'offsetUnit'     => 'calendarDays',
 				'notifyRole'     => [],
 				'escalateToRole' => [],
-				'priority'       => 'normal',
+				'priority'       => 'medium',
 				'message'        => 'advies-verlopen',
 				'openIncident'   => false,
 			],
@@ -223,7 +223,7 @@ class AdviceTimer {
 				'offsetUnit'     => 'calendarDays',
 				'notifyRole'     => [],
 				'escalateToRole' => [],
-				'priority'       => 'normal',
+				'priority'       => 'medium',
 				'message'        => 'advies-herinnering',
 				'openIncident'   => false,
 			];

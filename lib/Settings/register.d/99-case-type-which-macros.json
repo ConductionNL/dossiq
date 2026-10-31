@@ -1,0 +1,24 @@
+{
+  "_note": "Macros per case type (Ruben, 20 October 2026). The case schema declares its macros (x-openregister-action with macro: true), so every case type would offer every one: Woo-verzoek afronden on an objection. `macros` lists the keys of the macros a case of this type shows on its AI-toezicht tab, in order; the case page's macros card reads it through nextcloud-vue `macrosFrom` (macros-per-record). A case type that lists none shows none. Declared here because OpenRegister stores only declared keys. caseType moves to 1.28.0 so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.28.0",
+        "properties": {
+          "macros": {
+            "type": "array",
+            "title": "Macros",
+            "description": "The macros a case of this type offers, in order, by the key of the case schema's declared action. Empty offers none.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -27,15 +27,13 @@
  * so `"yes"` is how a rule quietly addresses nobody.
  *
  * @spec openspec/changes/case-followers/specs/case-management/spec.md
- * @spec openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-the-case-page-shows-one-follow-control-req-cm-40a
  */
 
 import axios from '@nextcloud/axios'
-import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import CaseFollowersPanel from '../../src/components/case/CaseFollowersPanel.vue'
 import {
 	isFollowing,
 	objectIdOf,
@@ -61,39 +59,11 @@ const register = JSON.parse(
 	),
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
-const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const caseDetail = page('CaseDetail')
 const caseNotifications =
 	register.components.schemas.case['x-openregister-notifications']
-
-/**
- * Mount the Followers panel and let its read settle.
- *
- * @return {Promise<object>} The mounted wrapper.
- */
-async function mountPanel() {
-	const wrapper = mount(CaseFollowersPanel, {
-		props: { objectId: 'case-7' },
-		global: {
-			stubs: {
-				NcLoadingIcon: { template: '<i class="loading" />' },
-				NcEmptyContent: {
-					props: { name: String, description: String },
-					template:
-						'<div class="empty">{{ name }} {{ description }}</div>',
-				},
-			},
-		},
-	})
-
-	await wrapper.vm.$nextTick()
-	await wrapper.vm.$nextTick()
-	await wrapper.vm.$nextTick()
-
-	return wrapper
-}
 
 beforeEach(() => {
 	vi.clearAllMocks()
@@ -142,144 +112,28 @@ describe('the two verbs', () => {
 	})
 })
 
-describe('the Followers section on the People tab', () => {
-	it('lists who follows the case, from the watchers sub-resource', async () => {
-		axios.get.mockResolvedValue({
-			data: {
-				results: [
-					{ userId: 'anna', created: '2026-09-01T09:00:00+00:00' },
-					{ userId: 'teamleider', displayName: 'Ilse Mulder' },
-				],
-				total: 2,
-			},
-		})
-
-		const wrapper = await mountPanel()
-
-		expect(axios.get.mock.calls[0][0]).toContain(
-			'/apps/openregister/api/objects/dossiq/case/case-7/watchers',
-		)
-
-		const people = wrapper.findAll('[data-testid="case-followers-person"]')
-		expect(people).toHaveLength(2)
-		// The display name wins where the platform sends one, so the day
-		// OpenRegister enriches the row this panel needs no change.
-		expect(people[1].text()).toContain('Ilse Mulder')
-		expect(people[1].text()).not.toContain('teamleider')
-		// And the account name is what is left when it does not.
-		expect(people[0].text()).toContain('anna')
-	})
-
-	it('draws a refusal apart from an empty list', async () => {
-		axios.get.mockRejectedValue({ response: { status: 403 } })
-
-		const refused = await mountPanel()
-		expect(refused.text()).toContain('Only a handler of this case sees')
-
-		// The control: the SAME panel over an empty answer says the opposite
-		// thing, so the assertion above is about the 403 and not about the
-		// panel drawing one message for every outcome.
-		axios.get.mockResolvedValue({ data: { results: [], total: 0 } })
-		const empty = await mountPanel()
-		expect(empty.text()).toContain('Nobody follows this case yet')
-	})
-
-	it('says a failed read failed, rather than drawing nobody', async () => {
-		axios.get.mockRejectedValue({ response: { status: 500 } })
-
-		const wrapper = await mountPanel()
-
-		expect(wrapper.text()).toContain('could not be read')
-		expect(wrapper.text()).not.toContain('Nobody follows this case')
-	})
-
-	it('offers no way to unsubscribe a colleague', async () => {
-		axios.get.mockResolvedValue({
-			data: { results: [{ userId: 'anna' }], total: 1 },
-		})
-
-		const wrapper = await mountPanel()
-
-		// Removing somebody else's subscription needs `manage` in OpenRegister,
-		// and a button that 403s on press teaches nobody anything.
-		expect(wrapper.findAll('button')).toHaveLength(0)
-	})
-})
-
 describe('following is declared on the case page', () => {
-	it('rides the banner row, above the panels', () => {
-		// The strips share ONE grid row (case-banner-stack): three of them are
-		// a root v-if, so a row each reserved three empty ones on an ordinary
-		// case. Their ORDER is the component's, asserted below.
-		const banners = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-banner-stack',
-		)
-		const panels = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-panels',
-		)
-
-		expect(banners, 'the banner row is missing from the layout').toBeTruthy()
-		expect(banners.gridY).toBeLessThan(panels.gridY)
-		// The row is only as tall as whatever rendered; without this an empty
-		// stack costs its whole authored height back again.
-		expect(banners.sizeToContent).toBe(true)
-	})
-
-	it('leaves the one Follow control to the header, with no strip in the banner row', () => {
-		// one-follow-control-in-the-header: the case page shows ONE Follow
-		// control, nextcloud-vue's CnFollowToggle beside the title. A dossiq
-		// strip in the banner row drew a second one that did not sync with it.
-		const stack = fs.readFileSync(
-			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
-			'utf8',
-		)
-		const template = stack.slice(
-			stack.indexOf('<template>'),
-			stack.indexOf('<script>'),
-		)
-
-		expect(template).not.toContain('Follow')
-		expect(stack).not.toContain('CaseFavouriteStrip')
-		expect(
-			fs.existsSync(
-				path.join(ROOT, 'src', 'components', 'case', 'CaseFollowStrip.vue'),
-			),
-		).toBe(false)
-		// CnDetailPage draws the toggle unless the page turns it off with
-		// `follow: false`. A control, so the absence above is not explained by
-		// the header toggle being switched off as well.
+	it('is the header control only: the Follow toggle and its popover list the followers', () => {
+		// Ruben, 20 Oct 2026: followers show only in the header popover. The
+		// case page shows ONE Follow control, nextcloud-vue's CnFollowToggle
+		// beside the title, whose popover lists who follows the case (403
+		// closes quietly, managers may remove). A Followers section on the
+		// People tab listed the same people a second time, and a strip in the
+		// banner row once drew a second Follow button that did not sync.
 		expect(caseDetail.config.follow).not.toBe(false)
-		// The banner row still carries the strips that are about the case.
-		expect(template).toContain('<CaseArchivedStrip')
-		expect(template).toContain('<CaseUnreadPanel')
-	})
-
-	it('declares widgets whose types the registry answers', () => {
-		// A tab child renders through CnTabsWidget, which resolves from
-		// `cnRegistry[widget.type]` and renders NOTHING, silently, when no key
-		// answers. There is no `case-follow` type: the header toggle is the
-		// library's own.
+		const people = caseDetail.config.widgets.find((w) => w.id === 'case-people-panel')
+		expect(people.content.sections.some((s) => s.label === 'Followers')).toBe(false)
+		expect(JSON.stringify(manifest)).not.toContain('"type": "case-followers"')
+		expect(JSON.stringify(manifest)).not.toContain('"type":"case-followers"')
+		expect(registrySource).not.toContain("'case-followers': {")
 		expect(registrySource).not.toContain("'case-follow': {")
-
-		const people = caseDetail.config.widgets.find(
-			(w) => w.id === 'case-people-panel',
-		)
-		const section = people.content.sections.find((s) => s.label === 'Followers')
-
-		expect(section, 'the Followers section is missing').toBeTruthy()
-		expect(section.widget.type).toBe('case-followers')
-		expect(registrySource).toContain("'case-followers': {")
-		expect(registrySource).toContain('component: CaseFollowersPanel,')
-		expect(iconsSource).toContain(`\n\t${section.widget.icon},\n`)
 	})
 
-	it('carries the reason gate 29 asks a custom widget for', () => {
-		const panel = registrySource.slice(
-			registrySource.indexOf("'case-followers': {"),
-			registrySource.indexOf("'case-party-roles': {"),
-		)
-
-		expect(panel).toContain('@custom-widget-ratchet exclude')
+	it('leaves no Follow strip in the banner row', () => {
+		const stack = caseDetail.config.widgets.find((w) => w.id === 'case-banner-stack')
+		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-status-declaration', 'case-attention'])
+		expect(fs.existsSync(path.join(ROOT, 'src', 'components', 'case', 'CaseFollowStrip.vue'))).toBe(false)
+		expect(fs.existsSync(path.join(ROOT, 'src', 'components', 'case', 'CaseFollowersPanel.vue'))).toBe(false)
 	})
 })
 

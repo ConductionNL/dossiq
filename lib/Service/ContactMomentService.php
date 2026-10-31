@@ -47,7 +47,7 @@ class ContactMomentService {
 	/**
 	 * Valid contactmoment channels.
 	 */
-	private const VALID_KANALEN = ['phone', 'email', 'webformulier', 'chat', 'social_media', 'balie'];
+	private const VALID_KANALEN = ['phone', 'email', 'webformulier', 'chat', 'social_media', 'balie', 'brief'];
 
 	/**
 	 * Valid contactmoment natures.

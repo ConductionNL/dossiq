@@ -1,7 +1,7 @@
 {
   "id": "vth",
   "title": "Vergunningen, toezicht en handhaving",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "requires": [],
   "parts": [
     "case-type",

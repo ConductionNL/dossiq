@@ -14,23 +14,16 @@
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-one-seam-names-pipelinq-and-an-absent-pipelinq-is-a-different-answer-from-an-empty-one-req-plq-01
  */
 
+import { fillTemplate } from '@conduction/nextcloud-vue/src/utils/fillTemplate.js'
+import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
 import axios from '@nextcloud/axios'
 import { flushPromises, mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it } from 'vitest'
-import CasePartiesWidget from '../../src/components/case/CasePartiesWidget.vue'
-import CasePipelinqContactMoments from '../../src/components/case/CasePipelinqContactMoments.vue'
-import CaseProgrammeSection from '../../src/components/case/CaseProgrammeSection.vue'
 import CaseTypePartyKindsWidget from '../../src/components/caseType/CaseTypePartyKindsWidget.vue'
 import LogContactDialog from '../../src/dialogs/LogContactDialog.vue'
-import {
-	kindCode,
-	languageLine,
-	progressLine,
-	refusalSentence,
-	sharedLine,
-} from '../../src/services/pipelinqCaseApi.js'
+import { kindCode, refusalSentence } from '../../src/services/pipelinqCaseApi.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -69,92 +62,76 @@ beforeEach(() => {
 })
 
 describe('the sentences', () => {
+	const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
+	const all = []
+	const visit = (widget) => {
+		if (widget && typeof widget === 'object') {
+			all.push(widget)
+			for (const section of widget.content?.sections || []) {
+				visit(section.widget)
+			}
+		}
+	}
+	caseDetail.config.widgets.forEach(visit)
+	const widget = (id) => all.find((entry) => entry.id === id)
+
+	/**
+	 * The sentence the library draws for a row: the first declared line whose
+	 * condition holds and whose template fills (nextcloud-vue conditionalLine).
+	 *
+	 * @param {Array<object>} lines The declared lines.
+	 * @param {object} row The row.
+	 * @return {string} The sentence.
+	 */
+	const sentence = (lines, row) => {
+		for (const line of lines) {
+			if (line.when && !evaluateVisibleWhenLocal(line.when, row)) {
+				continue
+			}
+			const text = fillTemplate(line.text, row)
+			if (text !== '') {
+				return text
+			}
+		}
+		return ''
+	}
+
+	/**
+	 * The count badges the library draws for a row (record-list `kind: count`).
+	 *
+	 * @param {object} row The row.
+	 * @return {Array<string>} The badge texts.
+	 */
+	const countBadges = (row) => widget('linked-contact-moments').content.badges
+		.filter((badge) => badge.kind === 'count')
+		.map((badge) => {
+			const raw = row[badge.field]
+			const count = Array.isArray(raw) ? raw.length : Number(raw)
+			return Number.isFinite(count) && count > 0 ? (count === 1 ? badge.one : badge.other).replace('{count}', String(count)) : ''
+		})
+		.filter(Boolean)
+
 	it('counts a case the reader may not see, and never names it', () => {
-		expect(sharedLine({ shared: false })).toBe('')
-		expect(
-			sharedLine({
-				shared: true,
-				alsoOnCases: ['a', 'b'],
-				alsoOnHiddenCount: 0,
-			}),
-		).toBe('Also on 2 other cases')
-		expect(
-			sharedLine({ shared: true, alsoOnCases: [], alsoOnHiddenCount: 1 }),
-		).toBe('Also on 1 case you may not see')
-		expect(
-			sharedLine({
-				shared: true,
-				alsoOnCases: ['a', 'b'],
-				alsoOnHiddenCount: 1,
-			}),
-		).toBe('Also on 2 other cases and 1 you may not see')
+		expect(countBadges({ alsoOnCases: [], alsoOnHiddenCount: 0 })).toEqual([])
+		expect(countBadges({ alsoOnCases: ['a', 'b'], alsoOnHiddenCount: 0 })).toEqual(['Also on 2 other cases'])
+		expect(countBadges({ alsoOnCases: [], alsoOnHiddenCount: 1 })).toEqual(['Also on 1 case you may not see'])
+		expect(countBadges({ alsoOnCases: ['a', 'b'], alsoOnHiddenCount: 1 })).toEqual(['Also on 2 other cases', 'Also on 1 case you may not see'])
 	})
 
 	it('says an unset preference as unset, and an absent resolver as unreadable', () => {
-		expect(
-			languageLine({
-				available: true,
-				language: 'en',
-				stated: true,
-				rule: 'party',
-			}),
-		).toBe('Writing language: English. Asked for by the party.')
-		expect(
-			languageLine({
-				available: true,
-				language: 'nl',
-				stated: false,
-				rule: 'instanceDefault',
-			}),
-		).toBe(
-			'Writing language: Dutch. No preference recorded, so the default language of this instance.',
-		)
-		expect(
-			languageLine({
-				available: false,
-				language: 'nl',
-				stated: false,
-				rule: 'unavailable',
-			}),
-		).toBe(
-			'Writing language: Dutch. No preference can be read on this instance.',
-		)
-		expect(languageLine(null)).toBe('')
+		const lines = widget('case-party-roles').content.extraLines[0].lines
+		expect(sentence(lines, { available: true, language: 'English', stated: true, rule: 'party' })).toBe('Writing language: English. Asked for by the party.')
+		expect(sentence(lines, { available: true, language: 'Dutch', stated: false, rule: 'instanceDefault' })).toBe('Writing language: Dutch. No preference recorded, so the default language of this instance.')
+		expect(sentence(lines, { available: false, language: 'Dutch', stated: false, rule: 'unavailable' })).toBe('Writing language: Dutch. No preference can be read on this instance.')
+		expect(sentence(lines, {})).toBe('')
 	})
 
 	it('names the mode beside a figure, and never draws an uncomputable one as zero', () => {
-		expect(
-			progressLine({
-				available: true,
-				computable: true,
-				progress: 40,
-				mode: 'fromTasks',
-			}),
-		).toBe('40 percent done, measured by the closed tasks of the programme.')
-		expect(
-			progressLine({
-				available: true,
-				computable: false,
-				progress: null,
-				mode: 'fromEffort',
-				sentence:
-					'Nothing has been estimated, so progress cannot be computed.',
-			}),
-		).toBe(
-			'Progress cannot be computed: Nothing has been estimated, so progress cannot be computed.',
-		)
-		expect(
-			progressLine({
-				available: true,
-				computable: false,
-				progress: null,
-				mode: 'fromTasks',
-				sentence: '',
-			}),
-		).not.toContain('0 percent')
-		expect(progressLine({ available: false })).toBe(
-			'Progress cannot be read on this instance.',
-		)
+		const lines = widget('case-programme').content.fields.find((field) => field.as === 'progress').lines
+		expect(sentence(lines, { progress: { available: true, computable: true, progress: 40, mode: 'fromTasks' } })).toBe('40 percent done, measured by the closed tasks of the programme.')
+		expect(sentence(lines, { progress: { available: true, computable: false, progress: null, mode: 'fromEffort', sentence: 'Nothing has been estimated, so progress cannot be computed.' } })).toBe('Progress cannot be computed: Nothing has been estimated, so progress cannot be computed.')
+		expect(sentence(lines, { progress: { available: true, computable: false, progress: null, mode: 'fromTasks', sentence: '' } })).toBe('Progress cannot be computed.')
+		expect(sentence(lines, { progress: { available: false } })).toBe('Progress cannot be read on this instance.')
 	})
 
 	it('names the indicator in a refusal and says the moment is kept', () => {
@@ -181,11 +158,12 @@ describe('the declarations', () => {
 	)
 	const json = JSON.stringify(caseDetail)
 
-	it('puts the customer record on the Communication tab and the programme on the Related tab, by type', () => {
-		expect(json).toContain('"type":"case-pipelinq-contact-moments"')
-		expect(json).toContain('"type":"case-programme"')
-		expect(registrySource).toContain("'case-pipelinq-contact-moments': {")
-		expect(registrySource).toContain("'case-programme': {")
+	it('puts the customer record on the Communication tab and the programme on the Related tab, as library config', () => {
+		// Renamed from case-pipelinq-contact-moments; RenamedLayoutIds rewrites stored layouts.
+		expect(json).toContain('"id":"linked-contact-moments","type":"record-list"')
+		expect(json).toContain('"id":"case-programme","type":"facts"')
+		expect(registrySource).not.toContain("'case-pipelinq-contact-moments': {")
+		expect(registrySource).not.toContain("'case-programme': {")
 	})
 
 	it('puts the party kinds on the case type page through a slot', () => {
@@ -259,134 +237,6 @@ describe('the Log contact dialog', () => {
 	})
 })
 
-describe('the customer record section', () => {
-	it('says pipelinq is absent rather than drawing an empty list', async () => {
-		axios.get.mockResolvedValue({
-			data: { available: false, moments: [], indicators: [] },
-		})
-		const wrapper = mount(CasePipelinqContactMoments, {
-			props: { objectId: 'case-1' },
-			global: { stubs },
-		})
-		await flushPromises()
-
-		expect(
-			wrapper.find('[data-testid="case-pipelinq-moments-absent"]').exists(),
-		).toBe(true)
-		expect(
-			wrapper.find('[data-testid="case-pipelinq-moments-empty"]').exists(),
-		).toBe(false)
-	})
-
-	it('draws a real empty when pipelinq answered nothing', async () => {
-		axios.get.mockResolvedValue({
-			data: { available: true, moments: [], indicators: [] },
-		})
-		const wrapper = mount(CasePipelinqContactMoments, {
-			props: { objectId: 'case-1' },
-			global: { stubs },
-		})
-		await flushPromises()
-
-		expect(
-			wrapper.find('[data-testid="case-pipelinq-moments-empty"]').exists(),
-		).toBe(true)
-	})
-
-	it('shows the shared line and takes a moment off this case through pipelinq', async () => {
-		axios.get.mockImplementation((url) =>
-			url.includes('/pipelinq/contact-moments')
-				? Promise.resolve({
-						data: {
-							available: true,
-							moments: [
-								{
-									id: 'm-1',
-									channel: 'phone',
-									direction: 'inbound',
-									summary: 'Vraag',
-									shared: true,
-									alsoOnCases: [],
-									alsoOnHiddenCount: 1,
-								},
-							],
-						},
-					})
-				: Promise.resolve({ data: {} }),
-		)
-		axios.delete.mockResolvedValue({ data: { filed: true } })
-		const wrapper = mount(CasePipelinqContactMoments, {
-			props: { objectId: 'case-1' },
-			global: { stubs },
-		})
-		await flushPromises()
-
-		expect(
-			wrapper.find('[data-testid="case-pipelinq-moment-shared"]').text(),
-		).toBe('Also on 1 case you may not see')
-
-		await wrapper
-			.find('[data-testid="case-pipelinq-moment-unfile"]')
-			.trigger('click')
-		await flushPromises()
-		expect(axios.delete).toHaveBeenCalledWith(
-			'/index.php/apps/dossiq/api/cases/case-1/pipelinq/contact-moments/m-1',
-		)
-	})
-})
-
-describe('the programme section', () => {
-	it('draws no bar for an uncomputable figure and says why', async () => {
-		axios.get.mockResolvedValue({
-			data: {
-				available: true,
-				programme: {
-					id: 'p-1',
-					name: 'Lindelaan leefbaar 2026',
-					progress: {
-						available: true,
-						computable: false,
-						progress: null,
-						mode: 'fromTasks',
-						sentence:
-							'This programme has no tasks to derive progress from.',
-					},
-				},
-			},
-		})
-		const wrapper = mount(CaseProgrammeSection, {
-			props: { objectId: 'case-1' },
-			global: { stubs },
-		})
-		await flushPromises()
-
-		expect(wrapper.text()).toContain('Lindelaan leefbaar 2026')
-		expect(
-			wrapper.find('[role="progressbar"]').exists(),
-			'an empty bar reads as nothing done',
-		).toBe(false)
-		expect(
-			wrapper.find('[data-testid="case-programme-progress"]').text(),
-		).toContain('no tasks to derive progress from')
-	})
-
-	it('offers to link a case under no programme', async () => {
-		axios.get.mockResolvedValue({ data: { available: true, programme: null } })
-		const wrapper = mount(CaseProgrammeSection, {
-			props: { objectId: 'case-1' },
-			global: { stubs },
-		})
-		await flushPromises()
-
-		expect(wrapper.find('[data-testid="case-programme-none"]').exists()).toBe(
-			true,
-		)
-		expect(wrapper.find('[data-testid="case-programme-link"]').exists()).toBe(
-			true,
-		)
-	})
-})
-
 describe('the case type party kinds', () => {
 	it('puts the declared kinds first in their order, and saves the new order to pipelinq', async () => {
 		axios.get.mockResolvedValue({
@@ -409,13 +259,18 @@ describe('the case type party kinds', () => {
 		})
 		await flushPromises()
 
-		expect(wrapper.vm.rows.map((row) => [row.code, row.accepted])).toEqual([
-			['gemachtigde', true],
-			['aanvrager', true],
-			['vereniging', false],
+		// The ordered list is the library's CnOrderedListField: the declared
+		// kinds are its rows in their order, every kind is a choice.
+		const list = wrapper.findComponent({ name: 'CnOrderedListField' })
+		expect(list.props('modelValue')).toEqual(['gemachtigde', 'aanvrager'])
+		expect(list.props('options').map((o) => o.value)).toEqual([
+			'aanvrager',
+			'gemachtigde',
+			'vereniging',
 		])
+		expect(list.props('disabled')).toBe(false)
 
-		wrapper.vm.move('aanvrager', -1)
+		list.vm.$emit('update:modelValue', ['aanvrager', 'gemachtigde'])
 		await wrapper.vm.save()
 
 		expect(axios.put).toHaveBeenCalledWith(
@@ -440,121 +295,13 @@ describe('the case type party kinds', () => {
 
 		expect(wrapper.vm.editable).toBe(false)
 		expect(
+			wrapper.findComponent({ name: 'CnOrderedListField' }).props('disabled'),
+		).toBe(true)
+		expect(
 			wrapper.find('[data-testid="case-type-party-kinds-save"]').exists(),
 		).toBe(false)
 		expect(
 			wrapper.find('[data-testid="case-type-party-kinds-source"]').text(),
 		).toContain('Pipelinq is not installed')
-	})
-})
-
-describe('the Roles section', () => {
-	it('lists what the case type accepts, marks a party outside it, and gives each party its writing language', async () => {
-		axios.get.mockImplementation((url) => {
-			const asked = String(url)
-			if (asked.includes('/pipelinq/party-kinds')) {
-				return Promise.resolve({
-					data: {
-						source: 'pipelinq',
-						available: true,
-						kinds: [
-							{ code: 'aanvrager', label: 'Aanvrager' },
-							{ code: 'gemachtigde', label: 'Gemachtigde' },
-						],
-					},
-				})
-			}
-			if (asked.includes('/pipelinq/parties/party-sanne/language')) {
-				return Promise.resolve({
-					data: {
-						available: true,
-						language: 'nl',
-						rule: 'instanceDefault',
-						stated: false,
-					},
-				})
-			}
-			if (asked.includes('/pipelinq/parties/')) {
-				return Promise.resolve({
-					data: {
-						available: true,
-						language: 'en',
-						rule: 'party',
-						stated: true,
-					},
-				})
-			}
-			if (asked.includes('/parties')) {
-				return Promise.resolve({
-					data: {
-						primary: 'party-sanne',
-						roles: [{ key: 'aanvrager', label: 'Requester' }],
-						kinds: [],
-						byRole: {
-							aanvrager: [
-								{
-									partyUuid: 'party-sanne',
-									displayName: 'Sanne de Vries',
-									partyKind: 'aanvrager',
-								},
-								{
-									partyUuid: 'party-bv',
-									displayName: 'Bewonersvereniging',
-									partyKind: 'vereniging',
-								},
-							],
-						},
-						results: [
-							{
-								partyUuid: 'party-sanne',
-								displayName: 'Sanne de Vries',
-								partyKind: 'aanvrager',
-							},
-							{
-								partyUuid: 'party-bv',
-								displayName: 'Bewonersvereniging',
-								partyKind: 'vereniging',
-							},
-						],
-					},
-				})
-			}
-			return Promise.resolve({ data: { indicators: [] } })
-		})
-		const wrapper = mount(CasePartiesWidget, {
-			props: { objectId: 'case-1' },
-			global: {
-				stubs: {
-					NcEmptyContent: true,
-					NcLoadingIcon: true,
-					NcNoteCard: { template: '<div><slot /></div>' },
-				},
-				mocks: { $route: route('case-1') },
-			},
-		})
-		await flushPromises()
-
-		expect(
-			wrapper
-				.findAll('[data-testid="case-parties-accepted-kind"]')
-				.map((el) => el.text()),
-		).toEqual(['1. Aanvrager', '2. Gemachtigde'])
-		const parties = wrapper.findAll('[data-testid="case-parties-party"]')
-		const sanne = parties.find((el) => el.text().includes('Sanne de Vries'))
-		const vereniging = parties.find((el) =>
-			el.text().includes('Bewonersvereniging'),
-		)
-		expect(
-			sanne.find('[data-testid="case-parties-not-accepted"]').exists(),
-		).toBe(false)
-		expect(
-			vereniging.find('[data-testid="case-parties-not-accepted"]').exists(),
-		).toBe(true)
-		expect(sanne.find('[data-testid="case-parties-language"]').text()).toBe(
-			'Writing language: Dutch. No preference recorded, so the default language of this instance.',
-		)
-		expect(vereniging.find('[data-testid="case-parties-language"]').text()).toBe(
-			'Writing language: English. Asked for by the party.',
-		)
 	})
 })

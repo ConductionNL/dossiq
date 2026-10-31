@@ -405,64 +405,6 @@ class CaseTypeCopyService {
 		return $statusMap;
 	}//end copyEveryChild()
 
-	/**
-	 * Delete a case type, but only when it is a draft.
-	 *
-	 * @param string $caseTypeId The case type's OpenRegister id.
-	 *
-	 * @return array{ok: bool, reason?: string} `reason` is one of
-	 *                                          `not_found`, `published`,
-	 *                                          or `error` when `ok` is
-	 *                                          `false`.
-	 *
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T05
-	 */
-	public function deleteDraft(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return ['ok' => false, 'reason' => 'not_found'];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($register === '' || $caseTypeSchema === '') {
-			return ['ok' => false, 'reason' => 'not_found'];
-		}
-
-		$source = $this->fetchObject(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseTypeSchema,
-			id: $caseTypeId
-		);
-		if ($source === null) {
-			return ['ok' => false, 'reason' => 'not_found'];
-		}
-
-		if (($source['isDraft'] ?? false) !== true) {
-			return ['ok' => false, 'reason' => 'published'];
-		}
-
-		try {
-			$deleted = $objectService->deleteObject(
-				uuid: $caseTypeId,
-				register: $register,
-				schema: $caseTypeSchema,
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'CaseTypeCopyService: failed to delete draft case type',
-				['caseTypeId' => $caseTypeId, 'exception' => $e->getMessage()]
-			);
-			return ['ok' => false, 'reason' => 'error'];
-		}
-
-		if ($deleted !== true) {
-			return ['ok' => false, 'reason' => 'error'];
-		}
-
-		return ['ok' => true];
-	}//end deleteDraft()
 
 
 

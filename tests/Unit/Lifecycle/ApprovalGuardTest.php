@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCA\Decidiq\Event\DecisionStateRequestedEvent;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseType\ApprovalGateDeclaration;
@@ -122,6 +123,7 @@ class ApprovalGuardTest extends TestCase {
 				logger: new NullLogger(),
 			),
 			logger: new NullLogger(),
+			l10n: new SourceL10n(),
 		);
 	}//end gateOver()
 
@@ -432,6 +434,7 @@ class ApprovalGuardTest extends TestCase {
 				logger: new NullLogger(),
 			),
 			logger: new NullLogger(),
+			l10n: new SourceL10n(),
 		);
 
 		$verdict = $gate->verdictFor(case: $this->caseWaiting(), act: self::ACT, userId: 'behandelaar');

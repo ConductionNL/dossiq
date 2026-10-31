@@ -40,12 +40,15 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\WOOAssessmentController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
 use OCP\IL10N;
@@ -76,6 +79,9 @@ interface WooCaseObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
  * @covers \OCA\Dossiq\Service\CaseAccessGuard
+ * @covers \OCA\Dossiq\Service\Cases\HandlerActsAsSystem
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class WOOAssessmentControllerAuthorizationTest extends TestCase {
 
@@ -161,7 +167,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 	 *
 	 * @return WOOAssessmentController
 	 */
-	private function controllerFor(string $uid, bool $isAdmin = false): WOOAssessmentController {
+	private function controllerFor(string $uid, bool $isAdmin = false, string $publicationStatus = 'ready'): WOOAssessmentController {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn($uid);
 		$this->userSession->method('getUser')->willReturn($user);
@@ -172,6 +178,9 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 			groupManager: $this->groupManager,
 			logger: $this->createMock(LoggerInterface::class),
 		);
+
+		$store = $this->createMock(CaseStatusStore::class);
+		$store->method('loadCase')->willReturn(['id' => 'case-1', 'assignee' => 'alice', 'wooPublicationStatus' => $publicationStatus]);
 
 		return new WOOAssessmentController(
 			appName: 'dossiq',
@@ -185,6 +194,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 			caseAccessGuard: $guard,
 			logger: $this->createMock(LoggerInterface::class),
 			l10n: $this->createMock(IL10N::class),
+			handlerActs: new HandlerActsAsSystem(guard: $guard, store: $store, settings: $this->settingsService),
 		);
 	}//end controllerFor()
 
@@ -204,8 +214,6 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 			'bulkAssess' => ['bulkAssess', ['case-1']],
 			'extendDeadline' => ['extendDeadline', ['case-1']],
 			'createDecision' => ['createDecision', ['case-1']],
-			'publishDecision' => ['publishDecision', ['case-1']],
-			'withdrawPublication' => ['withdrawPublication', ['case-1']],
 			'proposeRedaction' => ['proposeRedaction', ['case-1', 'doc-1']],
 			'reviewRedactionProposal' => ['reviewRedactionProposal', ['case-1', 'doc-1']],
 		];
@@ -242,6 +250,111 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 
 		$controller->$method(...$args);
 	}//end testAuthenticatedNonAssigneeIsRejectedFromEveryMutationEndpoint()
+
+	/**
+	 * Publishing and withdrawing are refused to a user who is not the case's
+	 * handler, with a 403 in the user's language rather than an exception the
+	 * framework turns into English, and the service is never reached.
+	 *
+	 * @param string $method The controller method under test.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider publicationEndpointProvider
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	public function testANonHandlerIsRefusedPublicationWithA403(string $method): void {
+		$this->publicationService->expects($this->never())->method('publish');
+		$this->publicationService->expects($this->never())->method('withdraw');
+
+		$response = $this->controllerFor('mallory', publicationStatus: 'published')->$method('case-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame('not-the-handler', $response->getData()['error']);
+	}//end testANonHandlerIsRefusedPublicationWithA403()
+
+	/**
+	 * The two publication endpoints.
+	 *
+	 * @return array<string, array{0: string}>
+	 */
+	public static function publicationEndpointProvider(): array {
+		return ['publishDecision' => ['publishDecision'], 'withdrawPublication' => ['withdrawPublication']];
+	}//end publicationEndpointProvider()
+
+	/**
+	 * Control: the case's handler publishes, and the publish runs as the system.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	public function testTheHandlerPublishesAsTheSystem(): void {
+		$inSystem = null;
+		$objects = new class {
+			/** @var bool */
+			public bool $system = false;
+
+			/**
+			 * @param int|string $id       The id.
+			 * @param mixed      $register The register.
+			 * @param mixed      $schema   The schema.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function find(int|string $id, mixed $register = null, mixed $schema = null): array {
+				return ['id' => 'case-1', 'assignee' => 'alice'];
+			}
+
+			/**
+			 * @param callable $operation The operation.
+			 *
+			 * @return mixed
+			 */
+			public function runAsSystem(callable $operation): mixed {
+				$this->system = true;
+				try {
+					return $operation();
+				} finally {
+					$this->system = false;
+				}
+			}
+		};
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->settingsService->method('getObjectService')->willReturn($objects);
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? ''
+		);
+		$this->publicationService->expects($this->once())->method('publish')->willReturnCallback(
+			function () use ($objects, &$inSystem): array {
+				$inSystem = $objects->system;
+				return ['available' => true, 'publicationId' => 'pub-1'];
+			}
+		);
+
+		$response = $this->controllerFor('alice')->publishDecision('case-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertTrue($inSystem);
+	}//end testTheHandlerPublishesAsTheSystem()
+
+	/**
+	 * The handler is refused with a 422 when the case is not at the
+	 * publication step: no decision ready to publish.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	public function testTheHandlerIsRefusedBeforeThePublicationStep(): void {
+		$this->publicationService->expects($this->never())->method('publish');
+
+		$response = $this->controllerFor('alice', publicationStatus: '')->publishDecision('case-1');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('not-at-this-step', $response->getData()['error']);
+	}//end testTheHandlerIsRefusedBeforeThePublicationStep()
 
 	/**
 	 * Statutory WOO deadline extension is rejected for an unrelated user.

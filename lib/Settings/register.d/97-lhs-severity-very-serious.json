@@ -1,0 +1,24 @@
+{
+  "_note": "Board DqHandhaving (decision 24 Oct, coordinator): the LHS consequence axis has a fourth value, zeer_ernstig, after ernstig. Appended to lhsRecommendation.severity (lists concatenate) with its label; the version moves so an existing instance re-imports the schema. The matrix's own severityAxis is data on the lhsMatrix record: a matrix offers zeer_ernstig once its axis and cells hold it (DQ-DATA).",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "lhsRecommendation": {
+        "version": "1.2.0",
+        "properties": {
+          "severity": {
+            "enum": [
+              "zeer_ernstig"
+            ],
+            "x-enum-labels": {
+              "zeer_ernstig": "very serious"
+            }
+          }
+        }
+      }
+    }
+  }
+}

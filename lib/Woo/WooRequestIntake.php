@@ -61,6 +61,14 @@ class WooRequestIntake {
 	public const CASE_TYPE_ID = '3c0f5a00-0000-4000-a000-00000000a001';
 
 	/**
+	 * The identifier every version of the Woo request case type shares (the
+	 * version chain is read by identifier).
+	 *
+	 * @var string
+	 */
+	public const CASE_TYPE_IDENTIFIER = 'woo-verzoek';
+
+	/**
 	 * The case object type of a publication from a dossier.
 	 */
 	public const OBJECT_TYPE = CollectionCaseLinks::OBJECT_TYPE;
@@ -90,6 +98,17 @@ class WooRequestIntake {
 		'pipelinq' => 'other',
 		'portal-form' => 'website',
 		'opencatalogi' => 'other',
+	];
+
+	/**
+	 * How a portal subject logged in, per audience of portaliq's verified
+	 * assertion, in the case schema's `intakeIdentification` enum: a resident
+	 * (`citizen`, `client`) logs in with DigiD, a business with eHerkenning.
+	 */
+	public const IDENTIFICATION_BY_AUDIENCE = [
+		'citizen' => 'digid',
+		'client' => 'digid',
+		'business' => 'eherkenning',
 	];
 
 	/**
@@ -187,7 +206,7 @@ class WooRequestIntake {
 				// (site-business-and-authorisation D2). Never a BSN.
 				'portalParty' => 'subject:' . $subjectRef,
 				'intakeChannel' => self::INTAKE_CHANNEL[(string)$wooRequest['origin']],
-			],
+			] + $this->identification(request: $request),
 			startFrom: trim((string)($request['startFrom'] ?? '')),
 			branch: $this->branchOf(request: $request),
 		);
@@ -208,6 +227,37 @@ class WooRequestIntake {
 			'caseUrl' => $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId),
 		] + $saved['answer'];
 	}//end start()
+
+	/**
+	 * How the requester logged in and the portal the request came through,
+	 * for a request from the portal only: the means from the audience the
+	 * receiver read off the verified assertion, the name from portaliq's
+	 * config. An unknown audience and an empty name are left out.
+	 *
+	 * @param array<string, mixed> $request The request.
+	 *
+	 * @return array{intakeIdentification?: string, intakeSourceName?: string}
+	 *
+	 * @spec openspec/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
+	 */
+	private function identification(array $request): array {
+		if (($request['origin'] ?? '') !== 'portal') {
+			return [];
+		}
+
+		$out = [];
+		$means = (self::IDENTIFICATION_BY_AUDIENCE[(string)($request['audience'] ?? '')] ?? '');
+		if ($means !== '') {
+			$out['intakeIdentification'] = $means;
+		}
+
+		$source = $this->settingsService->getPortalName();
+		if ($source !== '') {
+			$out['intakeSourceName'] = $source;
+		}
+
+		return $out;
+	}//end identification()
 
 	/**
 	 * Link the dossier to the case after the case is answered.
@@ -316,7 +366,7 @@ class WooRequestIntake {
 	}//end termAnswer()
 
 	/**
-	 * The seeded Woo request case type.
+	 * The version of the seeded Woo request case type that new cases get.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param string $register      The dossiq register.
@@ -326,7 +376,7 @@ class WooRequestIntake {
 	 * @throws WooRequestRefused UNAVAILABLE when it is not there.
 	 */
 	private function caseType(object $objectService, string $register): array {
-		$caseType = $this->cases->caseType(objectService: $objectService, register: $register, caseTypeId: self::CASE_TYPE_ID);
+		$caseType = $this->cases->currentCaseType(objectService: $objectService, register: $register, caseTypeId: self::CASE_TYPE_ID);
 		if ($caseType === null) {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The Woo request case type is not installed.');
 		}
@@ -386,7 +436,7 @@ class WooRequestIntake {
 		$case = [
 			'title' => $wooRequest['onderwerp'],
 			'description' => $wooRequest['omschrijving'],
-			'caseType' => self::CASE_TYPE_ID,
+			'caseType' => (string)($caseType['id'] ?? self::CASE_TYPE_ID),
 		] + $intake + ['wooRequest' => $wooRequest];
 
 		// A request that starts from an earlier one names it; WooStartFromListener
@@ -414,7 +464,7 @@ class WooRequestIntake {
 		))->forCaseType(
 			objectService: $objectService,
 			register: $register,
-			caseTypeId: self::CASE_TYPE_ID,
+			caseTypeId: (string)($caseType['id'] ?? self::CASE_TYPE_ID),
 			wooRequest: $wooRequest
 		);
 		if ($properties !== []) {

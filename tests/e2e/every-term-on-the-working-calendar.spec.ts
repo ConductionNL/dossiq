@@ -125,7 +125,7 @@ test.describe('Every statutory term lands on a working day', () => {
 	test('a pause credit landing on Tweede Kerstdag moves to the next ordinary day', async () => {
 		const termId = await seedTerm('2026-12-12')
 
-		const paused = await post(`/termijn/instances/${termId}/pauze`, {
+		const paused = await post(`/deadlines/instances/${termId}/pause`, {
 			duurDagen: 14,
 			rationale: `${RUN_PREFIX} aanvulling gevraagd`,
 		})
@@ -153,7 +153,7 @@ test.describe('Every statutory term lands on a working day', () => {
 	test('the same credit onto an ordinary end date adds exactly the days asked for', async () => {
 		const termId = await seedTerm('2026-12-14')
 
-		const paused = await post(`/termijn/instances/${termId}/pauze`, {
+		const paused = await post(`/deadlines/instances/${termId}/pause`, {
 			duurDagen: 14,
 			rationale: `${RUN_PREFIX} aanvulling gevraagd`,
 		})
@@ -172,13 +172,13 @@ test.describe('Every statutory term lands on a working day', () => {
 	test('an unused remainder taken off lands on a working day', async () => {
 		const termId = await seedTerm('2027-04-08', 'lopend')
 
-		const paused = await post(`/termijn/instances/${termId}/pauze`, {
+		const paused = await post(`/deadlines/instances/${termId}/pause`, {
 			duurDagen: 14,
 			rationale: `${RUN_PREFIX} aanvulling gevraagd`,
 		})
 		expect(paused.status).toBeLessThan(300)
 
-		const resumed = await post(`/termijn/instances/${termId}/hervat`, {
+		const resumed = await post(`/deadlines/instances/${termId}/resume`, {
 			aanvullingDatum: '2027-03-05',
 		})
 

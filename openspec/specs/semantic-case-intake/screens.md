@@ -3,3 +3,5 @@
 - DqContact https://identity.conduction.nl/screens/board?id=dossiq/DqContact
 - DqOrganisatie https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisatie
 - DqNieuweZaak https://identity.conduction.nl/screens/board?id=dossiq/DqNieuweZaak
+- DqTeamwachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqTeamwachtrij
+- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak

@@ -158,7 +158,9 @@ class PackageWriter {
 	 * before the package existed, is adopted: nothing is written, the existing
 	 * row is reported, and every later row of the package that names the
 	 * package's id names the existing one instead (decision 190). An adopted
-	 * row is never taken back, since this run did not create it.
+	 * row is never taken back, since this run did not create it. An adopted
+	 * case type is reported with the fields it lacks (`fill`, decision 273),
+	 * which {@see self::fillAdopted()} writes once the install has succeeded.
 	 *
 	 * @param string                                                          $package The package id, for the messages.
 	 * @param array<int, array<string, mixed>> $groups  The rows, per schema key; a group may name its own
@@ -179,6 +181,7 @@ class PackageWriter {
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function writePackage(string $package, array $groups): array {
 		$objectService = $this->settings->getObjectService();
@@ -212,6 +215,8 @@ class PackageWriter {
 				'held' => [],
 			];
 		}
+
+		$run['adopted'] = $this->fills()->withFillsPointedAt(adopted: $run['adopted'], ids: $run['ids']);
 
 		return [
 			'status' => 'success',
@@ -301,7 +306,13 @@ class PackageWriter {
 				match: (array)($group['match'] ?? []),
 			);
 			if ($existing !== null && $this->existingId(row: $existing) !== '') {
-				$this->adopt(group: $group, schema: $schema, packageId: $packageId, existing: $existing, run: $run);
+				$this->adopt(
+					group: $group,
+					target: ['register' => $register, 'schema' => $schema],
+					row: $row,
+					existing: $existing,
+					run: $run
+				);
 				continue;
 			}
 
@@ -320,26 +331,61 @@ class PackageWriter {
 	/**
 	 * Take an existing row as the package's, and point later rows at it.
 	 *
-	 * @param array{schemaKey: string} $group     The group the row belongs to.
-	 * @param string                   $schema    The schema.
-	 * @param string                   $packageId The id the package gives the row.
-	 * @param array<string, mixed>     $existing  The row this instance holds.
-	 * @param array<string, array<mixed>> $run    The run so far.
+	 * @param array{schemaKey: string}               $group    The group the row belongs to.
+	 * @param array{register: string, schema: string} $target  Where the row lives.
+	 * @param array<string, mixed>                   $row      The row as the package ships it.
+	 * @param array<string, mixed>                   $existing The row this instance holds.
+	 * @param array<string, array<mixed>>            $run      The run so far.
 	 *
 	 * @return void
 	 */
-	private function adopt(array $group, string $schema, string $packageId, array $existing, array &$run): void {
+	private function adopt(array $group, array $target, array $row, array $existing, array &$run): void {
 		$existingId = $this->existingId(row: $existing);
+		$packageId = $this->existingId(row: $row);
 		if ($packageId !== '') {
 			$run['ids'][$packageId] = $existingId;
 		}
 
+		$fill = [];
 		if ($group['schemaKey'] === ExistingRowMatcher::CASE_TYPE_KEY) {
 			$run['caseTypes'][] = $existingId;
+			$fill = $this->fills()->lackedBy(shipped: $this->withoutMetadata(row: $row), stored: $existing);
 		}
 
-		$run['adopted'][] = ['schemaKey' => $group['schemaKey'], 'schema' => $schema, 'id' => $existingId, 'row' => $existing];
+		$run['adopted'][] = [
+			'schemaKey' => $group['schemaKey'],
+			'schema' => $target['schema'],
+			'register' => $target['register'],
+			'id' => $existingId,
+			'row' => $existing,
+			'fill' => $fill,
+		];
 	}//end adopt()
+
+	/**
+	 * Give each adopted case type the fields it lacked, never touching one it has.
+	 *
+	 * Called by the installer after the install has been recorded, so a failed
+	 * install leaves an adopted row exactly as it was.
+	 *
+	 * @param array<int, array<string, mixed>> $adopted The adopted rows {@see self::writePackage()} reported.
+	 *
+	 * @return array<int, string> The ids of the rows that were filled.
+	 *
+	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 */
+	public function fillAdopted(array $adopted): array {
+		return $this->fills()->write(adopted: $adopted);
+	}//end fillAdopted()
+
+	/**
+	 * The fill collaborator.
+	 *
+	 * @return AdoptedCaseTypeFill
+	 */
+	private function fills(): AdoptedCaseTypeFill {
+		return new AdoptedCaseTypeFill(settings: $this->settings, logger: $this->logger);
+	}//end fills()
 
 	/**
 	 * The row with every package id that was adopted replaced by the id it has here.
@@ -355,24 +401,7 @@ class PackageWriter {
 	 * @return array<string, mixed> The row.
 	 */
 	private function pointedAtAdopted(array $row, array $ids): array {
-		if ($ids === []) {
-			return $row;
-		}
-
-		$own = ($row['id'] ?? null);
-		array_walk_recursive(
-			$row,
-			static function (mixed &$value) use ($ids): void {
-				if (is_string($value) === true) {
-					$value = strtr($value, $ids);
-				}
-			}
-		);
-		if ($own !== null) {
-			$row['id'] = $own;
-		}
-
-		return $row;
+		return $this->fills()->pointedAt(row: $row, ids: $ids);
 	}//end pointedAtAdopted()
 
 	/**
@@ -479,11 +508,13 @@ class PackageWriter {
 			$rowUuid = $packageId;
 		}
 
+		// An administrator's install; see holds() for why it passes the access check.
 		$stored = $objectService->saveObject(
 			$this->withoutMetadata(row: $row),
 			register: $register,
 			schema: $schema,
-			uuid: $rowUuid
+			uuid: $rowUuid,
+			_rbac: false
 		);
 
 		$id = $this->storedId(stored: $stored);

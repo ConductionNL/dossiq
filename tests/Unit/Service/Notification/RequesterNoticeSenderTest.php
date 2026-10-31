@@ -238,6 +238,23 @@ class RequesterNoticeSenderTest extends TestCase {
 	}//end testAPortalRequesterGetsAPortalMessageAndNoDigitalPost()
 
 	/**
+	 * REQ-ACK-COPY-001: a caller may name the channels to try; e-mail only
+	 * mails a portal requester, and records the message.
+	 *
+	 * @return void
+	 */
+	public function testACallerMayAskForEmailOnly(): void {
+		$case = $this->seedCase(fields: ['portalSubject' => 'ps-abc', 'email' => 'verzoeker@example.nl']);
+
+		$result = $this->sender(portaliq: true)->send($case, 'ontvangstbevestiging', $this->rendered(), 'acknowledgement', ['channels' => ['email']]);
+
+		self::assertSame('email', $result['channel']);
+		self::assertCount(1, $this->mailed);
+		self::assertSame([], $this->store->findObjects('dossiq', 'portaalBericht'));
+		self::assertSame(['email'], array_column($this->store->get('case', 'case-1')['outboundCommunications'], 'channel'));
+	}//end testACallerMayAskForEmailOnly()
+
+	/**
 	 * Without portaliq the inbox is not offered, and the notice goes on to the next channel.
 	 *
 	 * @return void

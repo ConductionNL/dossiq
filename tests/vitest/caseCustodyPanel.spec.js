@@ -154,7 +154,7 @@ describe('the Custody tab', () => {
 		// The closed holding names a period with two ends. A row that showed
 		// only the start would look complete on a chain with a gap in it.
 		expect(rows[0].text()).toContain('vergunningen')
-		expect(rows[0].text()).toMatch(/2026/)
+		expect(rows[0].find('.case-custody__meta').text()).toMatch(/From .+\d.* to .+\d/)
 		expect(rows[0].text()).toContain('Registered')
 
 		// The open one is the only holding allowed to have no end, and it says
@@ -217,6 +217,11 @@ describe('the Custody tab', () => {
 		expect(axios.post.mock.calls[0][1]).toEqual({
 			reason: 'Ik ben er al mee bezig',
 		})
+	})
+
+	it('draws "Overdragen" as a secondary button, as the board does', async () => {
+		const wrapper = await mountPanel()
+		expect(wrapper.find('[data-testid="case-custody-accept"]').attributes('variant')).toBe('secondary')
 	})
 
 	it('re-reads the case after an answer, rather than rewriting the row', async () => {
@@ -335,5 +340,79 @@ describe('the records the tab reads', () => {
 		expect(share.consentId).toBeDefined()
 		expect(share.consentScope.type).toBe('array')
 		expect(share.consentUntil).toBeDefined()
+	})
+})
+
+describe('the holdings as rows (DqZaakArchivering Bewaring)', () => {
+	/**
+	 * Mount the panel on a chain.
+	 *
+	 * @param {Array<object>} holdings The chain.
+	 * @return {Promise<import('@vue/test-utils').VueWrapper>} The panel.
+	 */
+	async function mountChain(holdings) {
+		vi.spyOn(axios, 'get').mockImplementation((url) => Promise.resolve({ data: String(url).includes('takeover') ? { requests: [], results: [] } : { holdings } }))
+		const wrapper = mount(CaseCustodyPanel, { props: { objectId: 'case-1' } })
+		await new Promise((resolve) => setTimeout(resolve))
+		await wrapper.vm.$nextTick()
+		return wrapper
+	}
+
+	it('marks each unit with its initials and the current holder with a pill', async () => {
+		const wrapper = await mountChain([
+			{ id: 'h-1', organisationUnit: 'Klantcontactcentrum', from: '2026-10-03T14:10:00+02:00', until: '2026-10-03T14:18:00+02:00', open: false, reason: 'doorgezet na het telefoongesprek' },
+			{ id: 'h-2', organisationUnit: 'Team Woo en informatie', from: '2026-10-03T14:18:00+02:00', until: '', open: true, reason: '' },
+		])
+		const rows = wrapper.findAll('[data-testid="case-custody-holding"]')
+		expect(rows.map((row) => row.find('.case-custody__mark').text())).toEqual(['K', 'WI'])
+		expect(rows[1].find('.case-custody__pill').text()).toBe('Holder now')
+		expect(rows[1].find('.case-custody__pill').classes()).toContain('case-custody__pill--holder')
+		expect(rows[0].find('.case-custody__pill').text()).toBe('Handed over')
+		expect(rows[1].find('.case-custody__meta').text()).toContain('In hand since')
+		expect(rows[0].find('.case-custody__meta').text()).toContain('doorgezet na het telefoongesprek')
+	})
+
+	it('leaves the holdings under the card title and heads the requests as the board does', async () => {
+		const wrapper = await mountChain([
+			{ id: 'h-1', organisationUnit: 'Team Woo en informatie', from: '2026-10-03T14:18:00+02:00', until: '', open: true, reason: '' },
+		])
+		const headings = wrapper.findAll('.case-custody__heading')
+		expect(headings[0].classes()).toContain('hidden-visually')
+		expect(headings[0].text()).toBe('Who has held this case')
+		expect(headings[1].classes()).not.toContain('hidden-visually')
+		expect(headings[1].text()).toBe('Request for this case')
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+		expect(nl['Request for this case']).toBe('Verzoek om de zaak')
+	})
+
+	it('sets a holding\'s initials 700, as the board draws "KC"', () => {
+		const sfc = fs.readFileSync(path.join(ROOT, 'src', 'components', 'case', 'CaseCustodyPanel.vue'), 'utf8')
+		const at = sfc.indexOf('.case-custody__mark {')
+		expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('font-weight: 700')
+	})
+
+	it('sets the handed-over pill and the initials in the soft ink, as the board draws "Overgedragen" and "KC"', () => {
+		const sfc = fs.readFileSync(path.join(ROOT, 'src', 'components', 'case', 'CaseCustodyPanel.vue'), 'utf8')
+		for (const rule of ['.case-custody__pill {', '.case-custody__mark {']) {
+			const at = sfc.indexOf(rule)
+			expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('color: var(--cn-board-text-soft, var(--color-main-text))')
+		}
+	})
+
+	it('opts in to the board\'s ruled-list start under the card subtitle', async () => {
+		const wrapper = await mountChain([
+			{ id: 'h-1', organisationUnit: 'Team Woo en informatie', from: '2026-10-03T14:18:00+02:00', until: '', open: true, reason: '' },
+		])
+		expect(wrapper.classes()).toContain('cn-rule-above')
+	})
+
+	it('reads the backfill\'s reason through the translation', async () => {
+		const wrapper = await mountChain([
+			{ id: 'h-1', organisationUnit: 'behandelaars', from: '2026-10-12T09:00:00+02:00', until: '', open: true, reason: 'Opened by the custody backfill from the case as it stood' },
+		])
+		const reasonKey = 'Opened by the custody backfill from the case as it stood'
+		const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
+		expect(nl[reasonKey]).toBeTruthy()
+		expect(wrapper.find('.case-custody__meta').text()).toContain(reasonKey)
 	})
 })

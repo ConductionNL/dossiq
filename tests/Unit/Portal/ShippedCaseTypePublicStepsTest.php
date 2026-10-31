@@ -110,7 +110,19 @@ class ShippedCaseTypePublicStepsTest extends TestCase {
 					$object['id'] = (string)(($object['@self'] ?? [])['slug'] ?? '');
 				}
 
-				$grouped[(string)($object['caseType'] ?? '')][] = $object;
+				// A translatable label ships as `{nl, en}`; OpenRegister answers
+				// one language per reader, and these expectations are English.
+				foreach ($object as $key => $value) {
+					if (is_array($value) === true && is_string($value['en'] ?? null) === true) {
+						$object[$key] = $value['en'];
+					}
+				}
+
+				// A seed reference (`@ref:caseType:<slug>`) is the case type's
+				// slug once the importer resolves it, which is the key here.
+				$caseType = (string)($object['caseType'] ?? '');
+				$caseType = (string)preg_replace('/^@ref:caseType:/', '', $caseType);
+				$grouped[$caseType][] = $object;
 			}//end foreach
 		}//end foreach
 

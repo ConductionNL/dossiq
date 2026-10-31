@@ -190,6 +190,7 @@ class WooReportControllerTest extends TestCase {
 			readLog: new WooReportReadLog(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)),
 			userSession: $session,
 			l10n: $l10n,
+			dates: $this->caseDates(),
 		);
 	}//end controller()
 
@@ -312,6 +313,30 @@ class WooReportControllerTest extends TestCase {
 		$this->assertSame(422, $refused->getStatus());
 		$this->assertSame('woo-throughput-period', $refused->getData()['error']);
 	}//end testAPeriodReadAndAMissingPeriod()
+
+	/**
+	 * A dashboard range sends moments; each is read as the tenant's day.
+	 *
+	 * @return void
+	 */
+	public function testMomentsReadAsTheTenantsDays(): void {
+		$ok = $this->controller(uid: 'lead', params: ['from' => '2026-10-31T23:00:00.000Z', 'to' => '2026-11-30T22:59:59.999Z'])->throughput();
+		$this->assertSame(200, $ok->getStatus());
+		$this->assertSame(['from' => '2026-11-01', 'to' => '2026-11-30'], $this->trail->rows[0]['context']['scope']);
+	}//end testMomentsReadAsTheTenantsDays()
+
+	/**
+	 * The offer answers what the menu reads, and nothing without a session.
+	 *
+	 * @return void
+	 */
+	public function testTheOffer(): void {
+		$this->assertSame(401, $this->controller(uid: null, params: [])->offered()->getStatus());
+
+		$offer = $this->controller(uid: 'lead', params: [])->offered();
+		$this->assertSame(200, $offer->getStatus());
+		$this->assertSame(['throughput', 'parties'], array_keys($offer->getData()));
+	}//end testTheOffer()
 
 	/**
 	 * The CSV holds the same rows as the JSON answer, and is recorded too.

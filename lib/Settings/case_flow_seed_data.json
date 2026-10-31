@@ -20,42 +20,52 @@
                     "description": "De aanvraag is binnengekomen en staat geregistreerd.",
                     "order": 1,
                     "isFinal": false,
-                    "role": "intake"
+                    "role": "intake",
+                    "phase": "Ontvangst",
+                    "colour": "blue"
                 },
                 {
                     "name": "Wacht op aanvulling",
                     "description": "De aanvraag is niet compleet; de indiener is gevraagd om aanvullende gegevens.",
                     "order": 2,
                     "isFinal": false,
-                    "role": "pending-info"
+                    "role": "pending-info",
+                    "phase": "Ontvangst",
+                    "colour": "orange"
                 },
                 {
                     "name": "In behandeling",
                     "description": "De aanvraag is compleet en wordt inhoudelijk beoordeeld.",
                     "order": 3,
                     "isFinal": false,
-                    "role": "in-progress"
+                    "role": "in-progress",
+                    "phase": "Beoordeling",
+                    "colour": "purple"
                 },
                 {
                     "name": "Bij commissie",
                     "description": "De aanvraag ligt voor bij de planningscommissie voor een definitief besluit.",
                     "order": 4,
                     "isFinal": false,
-                    "role": "review"
+                    "role": "review",
+                    "phase": "Advies",
+                    "colour": "orange"
                 },
                 {
                     "name": "Afgehandeld",
                     "description": "Er is een besluit genomen en het besluitdocument is aan de zaak toegevoegd.",
                     "order": 5,
                     "isFinal": true,
-                    "role": "closed"
+                    "role": "closed",
+                    "colour": "green"
                 },
                 {
                     "name": "Gestrand",
                     "description": "De gevraagde aanvulling is uitgebleven. De zaak is bewust beëindigd in plaats van te blijven rondlopen.",
                     "order": 6,
                     "isFinal": true,
-                    "role": "stranded"
+                    "role": "stranded",
+                    "colour": "red"
                 }
             ]
         }

@@ -45,7 +45,6 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Actions\ActionResult;
 use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
 use OCA\Dossiq\Service\Flow\UnmappableStep;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
 use OCA\Filinq\Event\DocumentGenerationRequestedEvent;
@@ -59,8 +58,6 @@ use Throwable;
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class CaseDocumentGenerationService {
-	use SearchesObjects;
-
 	/**
 	 * Filinq's request event, named by string: Filinq is optional at runtime.
 	 *
@@ -129,7 +126,7 @@ class CaseDocumentGenerationService {
 			return new ActionResult(succeeded: false, error: 'missing_template_field:' . $missing[0]);
 		}
 
-		$documentType = $this->resolveDocumentType(name: (string)($template['documentType'] ?? ''));
+		$documentType = trim((string)($template['documentType'] ?? ''));
 		if ($documentType === '') {
 			return new ActionResult(succeeded: false, error: 'missing_document_type');
 		}
@@ -262,46 +259,4 @@ class CaseDocumentGenerationService {
 
 		return array_values(array_unique($missing));
 	}//end missingFields()
-
-	/**
-	 * Resolve a template's document type NAME to the catalogue row's id.
-	 *
-	 * `informatieobject.informatieobjecttype` holds a reference, and a template
-	 * names its type the way a person would ("Ontvangstbevestiging"). When the
-	 * catalogue holds no such row the name is passed through unchanged rather
-	 * than blanked: the Documents tab renders an unresolved type as its raw
-	 * value, so the column still reads Ontvangstbevestiging instead of empty.
-	 *
-	 * @param string $name The type name the template declares.
-	 *
-	 * @return string The catalogue row id, or the name, or empty.
-	 *
-	 * @spec openspec/specs/template-library/spec.md
-	 */
-	private function resolveDocumentType(string $name): string {
-		if (trim($name) === '') {
-			return '';
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'dossier_informatieobjecttype_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return $name;
-		}
-
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['description' => $name, '_limit' => 1],
-		);
-
-		$id = (string)(($rows[0]['id'] ?? ($rows[0]['uuid'] ?? '')));
-		if ($id !== '') {
-			return $id;
-		}
-
-		return $name;
-	}//end resolveDocumentType()
 }//end class

@@ -1,9 +1,7 @@
 # Frontend unit tests (Vitest)
 
-Pure-logic frontend unit tests for Dossiq. The first targets are the
-doorlooptijd (processing-time) analytics helpers and the ISO 8601 duration
-helpers under `src/utils/`, whose exact computed numbers are only ever shown
-through rendered dashboards — never asserted at the value level.
+Frontend unit tests for Dossiq: pure helpers under `src/utils/`, components,
+and the manifest declarations the pages are built from.
 
 ## Running
 
@@ -30,13 +28,11 @@ add `@vitejs/plugin-vue2` plus a css-noop plugin — see
 
 ## What the suite locks
 
-- `doorlooptijdHelpers.js`: ISO-8601 → days approximation (Y=365, M=30, W=7),
-  whole-calendar-day processing time, SLA compliance rate + rounding,
-  per-type breakdown averages, histogram bins with inclusive edges, the
-  single-unique-target SLA line rule, monthly-trend buckets, at-risk
-  detection (overdue + threshold) with sort order and the 1.5 percentUsed
-  cap, and performance status thresholds (>=90 good / >=70 warning /
-  else critical / no-target).
+- The processing-time arithmetic moved to the server with the report that
+  shapes it: `tests/Unit/Service/Reporting/ProcessingTimeCalculatorTest.php`
+  and `ProcessingTimeRowsTest.php` lock what `doorlooptijdHelpers.js` did
+  here. `reportDashboardsDeclaration.spec.js` holds the dashboards'
+  manifest declarations to the shapes those endpoints send.
 - `durationHelpers.js`: duration validation, component parsing, singular vs
   plural human formatting and Y/M/W/D join order, and error text.
 

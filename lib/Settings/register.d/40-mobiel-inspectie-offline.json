@@ -16,7 +16,7 @@
       "fieldInspection": {
         "slug": "fieldInspection",
         "icon": "ClipboardSearchOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Action",
         "title": "Field Inspection",
         "description": "A planned or in-progress field inspection synchronized to an inspector's device for offline fieldwork. Extends a Dossiq case with offline lifecycle metadata.",
@@ -36,6 +36,12 @@
             "type": "string",
             "title": "Case Reference",
             "description": "Reference to the Dossiq case this inspection belongs to"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Location",
+            "description": "Where the inspection is, in words (e.g. Molenweg 4). The day list names the inspection by it, else by the case."
           },
           "inspectorRef": {
             "type": "string",
@@ -308,7 +314,7 @@
       "syncQueue": {
         "slug": "syncQueue",
         "icon": "Sync",
-        "version": "1.0.1",
+        "version": "1.2.0",
         "searchable": false,
         "x-schema-org": "schema:Action",
         "title": "Sync Queue Operation",
@@ -342,6 +348,18 @@
             "type": "string",
             "title": "Target Entity",
             "description": "Schema slug the operation targets (e.g. checklistResult, fieldEvidence)"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Label",
+            "description": "What the queued change is about in words, written by the device when it queues the change (e.g. Molenweg 4, checklist). Lists fall back to the target entity without one."
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Summary",
+            "description": "What the queued change holds, in words, written by the device (e.g. 18 antwoorden, 4 foto's). The outbox shows it under the label."
           },
           "targetId": {
             "type": "string",

@@ -41,7 +41,8 @@
 				</p>
 
 				<template v-else-if="job === null">
-					<BulkSelectionScope
+					<CnSelectionScope
+						:labels="scopeLabels"
 						:selectedIds="caseIds"
 						:total="matchingTotal"
 						:scope="scope"
@@ -104,8 +105,9 @@
 				</template>
 
 				<template v-else>
-					<BulkJobProgress
+					<CnBulkJobProgress
 						:job="job"
+						:labels="jobLabels"
 						:busy="starting"
 						@update:job="job = $event"
 						@finished="onFinished" />
@@ -122,6 +124,7 @@
 </template>
 
 <script>
+import { CnBulkJobProgress, CnSelectionScope } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -132,8 +135,6 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import BulkJobProgress from '../components/bulk/BulkJobProgress.vue'
-import BulkSelectionScope from '../components/bulk/BulkSelectionScope.vue'
 import {
 	ACTION_LIFECYCLE,
 	ACTION_TRANSITION,
@@ -145,14 +146,14 @@ import {
 	lifecycleParameters,
 	transitionParameters,
 } from '../utils/bulkTransitionHelpers.js'
-import { buildSelection, SCOPE_PAGE } from '../utils/selectionScope.js'
+import { buildSelection, caseJobLabels, caseScopeLabels, SCOPE_PAGE } from '../utils/selectionScope.js'
 
 export default {
 	name: 'BulkTransitionDialog',
 
 	components: {
-		BulkJobProgress,
-		BulkSelectionScope,
+		CnBulkJobProgress,
+		CnSelectionScope,
 		NcButton,
 		NcDialog,
 		NcLoadingIcon,
@@ -210,6 +211,8 @@ export default {
 			days: '14',
 			newEndDate: '',
 			scope: SCOPE_PAGE,
+			jobLabels: caseJobLabels(),
+			scopeLabels: caseScopeLabels(),
 			starting: false,
 			refusal: '',
 			job: null,

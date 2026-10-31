@@ -181,9 +181,40 @@ class DashboardController extends Controller {
 		$this->initialState->provideInitialState('features_roadmap_features', $this->roadmapFeatures());
 		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
 		$this->initialState->provideInitialState('version', $this->installedVersion());
+		$this->initialState->provideInitialState('features_roadmap_app_version', $this->installedVersion());
+		$this->initialState->provideInitialState(
+			'staff_app_name',
+			$this->appConfig->getValueString(app: Application::APP_ID, key: 'staff_app_name', default: '')
+		);
+		$this->initialState->provideInitialState('config', $this->listConfig());
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()
+
+	/**
+	 * The app config the pages resolve `@config.<key>` tokens against.
+	 *
+	 * The contacts and organisations lists open on the municipality's own city
+	 * (`@config.municipalityCity`). An empty value tells the bundle to leave
+	 * that lens out rather than filter on nothing. `portalName` is the resident
+	 * portal's name as portaliq holds it ("Mijn Zuiddrecht"); empty when
+	 * portaliq names none, and the bundle then says "the portal".
+	 *
+	 * @return array{municipalityCity: string, portalName: string} The config.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/specs/receipt-confirmation-card/spec.md#requirement-outbound-messages-read-as-lines
+	 */
+	private function listConfig(): array {
+		return [
+			'municipalityCity' => trim(
+				$this->appConfig->getValueString(app: Application::APP_ID, key: 'municipality_city', default: '')
+			),
+			'portalName'       => trim(
+				$this->appConfig->getValueString(app: 'portaliq', key: 'portalName', default: '')
+			),
+		];
+	}//end listConfig()
 
 	/**
 	 * The dossiq version Nextcloud has installed.

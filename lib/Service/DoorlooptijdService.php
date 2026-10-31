@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Service\Doorlooptijd\CaseEnricher;
 use OCA\Dossiq\Service\Doorlooptijd\CaseTypeThroughputCalculator;
 use OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator;
+use OCA\Dossiq\Service\Doorlooptijd\NormAverage;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -56,6 +57,7 @@ class DoorlooptijdService {
 	 * @param CaseEnricher $caseEnricher Derives the `_`-prefixed working fields.
 	 * @param DeadlineComplianceCalculator $complianceCalculator KPI bands, on-time %, monthly compliance, RAG list.
 	 * @param CaseTypeThroughputCalculator $throughputCalculator Average closed-case throughput per case-type.
+	 * @param NormAverage                  $norms                The average term of the recently closed cases.
 	 *
 	 * @return void
 	 */
@@ -64,6 +66,7 @@ class DoorlooptijdService {
 		private readonly CaseEnricher $caseEnricher,
 		private readonly DeadlineComplianceCalculator $complianceCalculator,
 		private readonly CaseTypeThroughputCalculator $throughputCalculator,
+		private readonly NormAverage $norms = new NormAverage(),
 	) {
 	}//end __construct()
 
@@ -87,6 +90,11 @@ class DoorlooptijdService {
 			$period = $params['period'];
 		}
 
+		$granularity = 'month';
+		if (isset($params['granularity']) === true && is_string($params['granularity']) === true) {
+			$granularity = $params['granularity'];
+		}
+
 		$atRiskDays = 5;
 		if (isset($params['atRiskDays']) === true) {
 			$atRiskDays = (int)$params['atRiskDays'];
@@ -106,8 +114,43 @@ class DoorlooptijdService {
 			'compliance' => $this->complianceCalculator->computeMonthlyCompliance(cases: $enriched, period: $period),
 			'caseTypeBreakdown' => $this->throughputCalculator->computeCaseTypeBreakdown(cases: $enriched, caseTypes: $caseTypes),
 			'cases' => $this->complianceCalculator->buildCaseList(cases: $enriched, atRiskDays: $atRiskDays),
+			'summary' => [
+				...$this->complianceCalculator->computeSummary(cases: $enriched, period: $period, granularity: $granularity),
+				'withinNormByCaseType' => $this->throughputCalculator->computeWithinNormByCaseType(cases: $enriched, caseTypes: $caseTypes),
+				// The norm line of the processing-time chart.
+				'normDays' => $this->norms->averageOf(cases: $enriched),
+			],
 		];
 	}//end getMetrics()
+
+	/**
+	 * The processing-time figures per case type and month, for a download.
+	 *
+	 * Reads the same cases as {@see getMetrics()}: the same case type
+	 * filter and the same period, so a download holds what the page shows.
+	 *
+	 * @param array<string, mixed> $params `caseType` (optional) and `period` (`12m`).
+	 *
+	 * @return list<array{caseType: string, month: string, closed: int, avgDays: int|null, withinNormPercent: int|null}>
+	 *
+	 * @spec openspec/specs/doorlooptijd-csv/spec.md#requirement-the-processing-time-figures-download-as-csv
+	 */
+	public function getMonthlyRows(array $params): array {
+		$caseTypeFilter = null;
+		if (isset($params['caseType']) === true && is_string($params['caseType']) === true && $params['caseType'] !== '') {
+			$caseTypeFilter = $params['caseType'];
+		}
+
+		$months = 12;
+		if (isset($params['period']) === true && is_string($params['period']) === true && preg_match('/^(\d+)m$/', $params['period'], $match) === 1) {
+			$months = max(1, min(36, (int)$match[1]));
+		}
+
+		$caseTypes = $this->loadCaseTypes();
+		$enriched = $this->caseEnricher->enrichCases(cases: $this->loadCases(caseTypeFilter: $caseTypeFilter), caseTypes: $caseTypes);
+
+		return $this->throughputCalculator->computeMonthlyByCaseType(cases: $enriched, caseTypes: $caseTypes, months: $months);
+	}//end getMonthlyRows()
 
 	/**
 	 * Compute the four headline KPIs.

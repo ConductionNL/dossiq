@@ -620,13 +620,13 @@ test.describe('Case detail — the Parties tab', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await strip.getByRole('tab', { name: 'People', exact: true }).click()
 
-		const roles = page.locator('[data-testid="case-parties"]')
+		const roles = page.locator('[data-testid="cn-object-parties"]')
 		await expect(roles).toBeVisible({ timeout: 20_000 })
 
 		// This case has role rows and no PARTY links, so the honest answer is
 		// the empty state. What must never appear is the empty state beside a
 		// party: that is the ordering bug and the failed-read bug at once.
-		const parties = roles.locator('[data-testid="case-parties-party"]')
+		const parties = roles.locator('[data-testid="cn-object-parties-party"]')
 		const count = await parties.count()
 		if (count === 0) {
 			await expect(roles).toContainText(
@@ -638,7 +638,7 @@ test.describe('Case detail — the Parties tab', () => {
 		// A case that does have parties: the first one carries the primary
 		// badge, and it is the first party in the first role group.
 		await expect(
-			parties.first().locator('[data-testid="case-parties-primary"]'),
+			parties.first().locator('[data-testid="cn-object-parties-primary"]'),
 		).toHaveCount(1)
 	})
 
@@ -705,9 +705,10 @@ test.describe('Case detail — the Parties tab', () => {
 			'the own role type must have been created',
 		).toBeTruthy()
 
-		// The offer, computed the way `src/services/roleTypeOptions.js` does:
-		// this case type's own rows, then the generic rows whose key nobody
-		// claimed. The rule is unit-tested in tests/vitest/gemachtigdeRole.spec.js;
+		// The offer, computed the way the Role field's CnResourceSelect `scope`
+		// does: this case type's own rows, then the generic rows whose key
+		// nobody claimed. The rule is unit-tested in the library's
+		// tests/components/CnResourceSelectScope.spec.js;
 		// what this asserts is that the instance's real rows exercise it, which
 		// a unit test on invented rows cannot say.
 		const rows = await listObjects(api, 'roleType', { _limit: '200' })

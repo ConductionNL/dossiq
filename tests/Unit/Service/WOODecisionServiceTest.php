@@ -76,6 +76,7 @@ interface WOODecisionObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WOODecisionService
  * @uses \OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer
  * @uses \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
+ * @uses \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
@@ -352,6 +353,38 @@ class WOODecisionServiceTest extends TestCase {
 			$this->assertStringNotContainsString(needle: (string)$caseId, haystack: $description);
 		}
 	}//end testTheAssembledDecisionCarriesTheReadableSummary()
+
+	/**
+	 * The recorded decision is listed on its case, which is what the case
+	 * page's "Record the decision" checklist item reads. A decision listed
+	 * there before is kept.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-recorded-decision-is-listed-on-its-case-req-cm-81
+	 */
+	public function testTheRecordedDecisionIsListedOnItsCase(): void {
+		$store = $this->assembleForCases(
+			cases: [
+				'case-new' => ['title' => 'Brug'],
+				'case-earlier' => ['title' => 'Plein', 'decisions' => ['decision-before']],
+			],
+		);
+
+		$decisionOf = [];
+		foreach ($store->all(schema: 'decision') as $decision) {
+			$decisionOf[$decision['case']] = (string)$decision['id'];
+		}
+
+		$this->assertSame(
+			expected: [$decisionOf['case-new']],
+			actual: $store->find(id: 'case-new', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+		);
+		$this->assertSame(
+			expected: ['decision-before', $decisionOf['case-earlier']],
+			actual: $store->find(id: 'case-earlier', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+		);
+	}//end testTheRecordedDecisionIsListedOnItsCase()
 
 	/**
 	 * Assemble a decision for each seeded case against an in-memory register.

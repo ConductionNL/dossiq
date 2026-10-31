@@ -677,9 +677,9 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 
 		const cell = row(page, 'mine-open')
 			.first()
-			.locator('[data-testid="deadline-countdown"]')
+			.locator('[data-testid="cn-cell-renderer-due"]')
 		await expect(cell).toHaveText(/3 (days left|dagen)/, { timeout: 20_000 })
-		await expect(cell).not.toHaveClass(/is-overdue/)
+		await expect(cell).not.toHaveClass(/cn-cell-renderer__date--error/)
 	})
 
 	// @e2e openspec/specs/signalering-widgets/spec.md#past-due-reads-red
@@ -693,11 +693,11 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 
 		const cell = row(page, 'mine-overdue')
 			.first()
-			.locator('[data-testid="deadline-countdown"]')
+			.locator('[data-testid="cn-cell-renderer-due"]')
 		await expect(cell).toHaveText(/2 (days overdue|dagen)/, { timeout: 20_000 })
 		// The class is what colours the cell. Asserting the text alone would
 		// pass against a list that had quietly lost its only visual alarm.
-		await expect(cell).toHaveClass(/is-overdue/)
+		await expect(cell).toHaveClass(/cn-cell-renderer__date--error/)
 	})
 
 	// @e2e openspec/specs/signalering-widgets/spec.md#overdue-shows-only-open-cases-past-their-deadline

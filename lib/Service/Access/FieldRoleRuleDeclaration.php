@@ -124,15 +124,24 @@ class FieldRoleRuleDeclaration {
 	 * field away from the whole instance because somebody opened the editor and
 	 * changed their mind.
 	 *
+	 * A rule limited to `statuses` lands only in the states of those statuses;
+	 * asked without a status, only the rules for every status answer.
+	 *
 	 * @param array<string, mixed> $caseType The case type row.
+	 * @param string               $statusId The status whose state is built, '' for none.
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The `fields` block, possibly empty.
 	 *
 	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
-	public function lifecycleFields(array $caseType): array {
+	public function lifecycleFields(array $caseType, string $statusId = ''): array {
 		$block = [];
 		foreach ($this->rulesOf(caseType: $caseType) as $rule) {
+			if ($rule['statuses'] !== [] && in_array($statusId, $rule['statuses'], true) === false) {
+				continue;
+			}
+
 			$restricted = $this->restrictedGroups(rule: $rule);
 			if ($restricted === []) {
 				continue;
@@ -167,15 +176,24 @@ class FieldRoleRuleDeclaration {
 	 * holding nobody, so the field would be stripped for every non-administrator
 	 * on the instance while the editor shows a rule naming one role.
 	 *
+	 * A rule limited to `statuses` produces no block either: a property block
+	 * holds in every status, so such a rule is enforced through the states of
+	 * its statuses alone ({@see lifecycleFields()}).
+	 *
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
 	 * @return array<string, array<string, array<int, array<string, string>>>> Blocks by property name.
 	 *
 	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function propertyAuthorization(array $caseType): array {
 		$blocks = [];
 		foreach ($this->rulesOf(caseType: $caseType) as $rule) {
+			if ($rule['statuses'] !== []) {
+				continue;
+			}
+
 			$holders = $this->holdingGroups(rule: $rule);
 			if ($holders === []) {
 				continue;
@@ -306,7 +324,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
-	 * @return array<int, array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed}> The rules.
+	 * @return array<int, array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed, statuses: array<int, string>}> The rules.
 	 *
 	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
 	 */
@@ -334,6 +352,7 @@ class FieldRoleRuleDeclaration {
 				'reason' => trim((string)($rule['reason'] ?? '')),
 				'groups' => ($rule['groups'] ?? null),
 				'heldBy' => ($rule['heldBy'] ?? null),
+				'statuses' => $this->names(value: ($rule['statuses'] ?? null)),
 			];
 		}
 

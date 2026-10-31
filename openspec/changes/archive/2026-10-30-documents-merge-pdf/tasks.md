@@ -1,0 +1,4 @@
+- [x] FilinqMergeClient
+- [x] CaseDocumentMergeController + route + PHPUnit
+- [x] BulkDocumentActionDialog merge-pdf + vitest
+- [x] manifest bulk action, FilePdfBox icon, l10n

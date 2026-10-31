@@ -7,7 +7,7 @@
 // case-list sub-case count badge (T10) and for what a refused delete says
 // (REQ-CM-35). They are deliberately DOM-free and side-effect-free so the
 // vitest suite (node environment) can pin the exact rendered copy without a
-// browser. The Vue layer (formatters.js, DeelzaakList.vue) consumes them.
+// browser. formatters.js consumes them.
 
 import { translate as t } from '@nextcloud/l10n'
 

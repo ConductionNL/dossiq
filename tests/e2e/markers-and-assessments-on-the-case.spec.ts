@@ -347,7 +347,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 
 		await openCase(page, 'flagList1')
 		await expect(
-			page.locator('[data-testid="case-attention-raised"]'),
+			page.locator('[data-testid="cn-attention-flag-raised"]'),
 		).toBeVisible({
 			timeout: 30_000,
 		})
@@ -465,7 +465,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 
 		await openCase(page, 'marked')
 		const marker = page.locator(
-			'[data-testid="case-marker-advice-request-overdue"]',
+			'[data-testid="cn-attention-flag-marker-advice-request-overdue"]',
 		)
 		await expect(marker).toBeVisible({ timeout: 30_000 })
 		await expect(marker).toHaveAttribute('data-tab', 'case-work-panel')
@@ -483,7 +483,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 
 		await openCase(page, 'marked')
 		await expect(
-			page.locator('[data-testid="case-marker-advice-request-overdue"]'),
+			page.locator('[data-testid="cn-attention-flag-marker-advice-request-overdue"]'),
 		).toBeVisible({
 			timeout: 30_000,
 		})
@@ -497,7 +497,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await page.reload(PAGE_LOAD)
 
 		const marker = page.locator(
-			'[data-testid="case-marker-advice-request-overdue"]',
+			'[data-testid="cn-attention-flag-marker-advice-request-overdue"]',
 		)
 		await expect(marker, 'a visit is not the work').toBeVisible({
 			timeout: 30_000,
@@ -546,7 +546,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await openCase(page, 'stale')
 
 		await expect(
-			page.locator('[data-testid="case-attention-risk-stale"]'),
+			page.locator('[data-testid="cn-attention-flag-review-due"]'),
 		).toBeVisible({
 			timeout: 30_000,
 		})

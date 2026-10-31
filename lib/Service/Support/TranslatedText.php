@@ -41,13 +41,14 @@ class TranslatedText {
 	/**
 	 * Constructor.
 	 *
-	 * @param IL10N           $l10n The app's translator, which knows the reader's language.
+	 * @param IL10N|null      $l10n The app's translator, which knows the reader's language;
+	 *                              without it a map is read Dutch first.
 	 * @param LanguageMapText $map  How a language map is read.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
-		private readonly IL10N $l10n,
+		private readonly ?IL10N $l10n = null,
 		private readonly LanguageMapText $map = new LanguageMapText(),
 	) {
 	}//end __construct()
@@ -63,6 +64,6 @@ class TranslatedText {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function forReader(mixed $value): string {
-		return $this->map->textOf(value: $value, language: $this->l10n->getLanguageCode());
+		return $this->map->textOf(value: $value, language: ($this->l10n?->getLanguageCode() ?? ''));
 	}//end forReader()
 }//end class

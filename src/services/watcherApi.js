@@ -44,8 +44,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @spec openspec/changes/case-followers/specs/case-management/spec.md
- * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
- * @spec openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md#requirement-you-follow-a-case-you-do-not-own-req-cm-40
+ * @spec openspec/specs/case-management/spec.md#requirement-the-case-page-shows-one-follow-control-req-cm-40a
  */
 
 import axios from '@nextcloud/axios'
@@ -133,29 +133,6 @@ export async function setFollowing(
 	}
 
 	await unfollow(id, register, schema)
-}
-
-/**
- * The people following an object.
- *
- * Needs `update` on the object. A reader without it gets 403, which the caller
- * has to tell apart from an empty list.
- *
- * @param {string} id       The object uuid.
- * @param {string} register The register slug.
- * @param {string} schema   The schema slug.
- * @return {Promise<Array<object>>} One row per follower.
- *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
- */
-export async function listFollowers(
-	id,
-	register = CASE_REGISTER,
-	schema = CASE_SCHEMA,
-) {
-	const { data } = await axios.get(`${objectUrl(id, register, schema)}/watchers`)
-
-	return Array.isArray(data?.results) ? data.results : []
 }
 
 /**

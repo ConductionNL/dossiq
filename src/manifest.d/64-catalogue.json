@@ -1,0 +1,139 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"board": "DqCatalogus",
+		"why": "The things a case type is built from, each its own entry under Advanced, case types first (Ruben, 23 October 2026: the catalogue is no navigation level). Case types and Attributes are entries of the manifest; this fragment adds Templates and Object types. Object types keeps what only the catalogue page offered: the object types table, Download and New object type. The case type folders are the Case types page's own folder sidebar, the Store card's items are the Marketplace page, and /settings/catalogue redirects (src/utils/manifestRoutes.js)."
+	},
+	"menu": [
+		{
+			"id": "WorkflowDefinitionsMenu",
+			"label": "Templates",
+			"icon": "FileDocumentMultipleOutline",
+			"route": "WorkflowDefinitions",
+			"section": "settings",
+			"order": 23
+		},
+		{
+			"id": "ObjectTypesMenu",
+			"label": "Object types",
+			"icon": "ShapeOutline",
+			"route": "ObjectTypes",
+			"section": "settings",
+			"order": 24,
+			"permission": "admin"
+		}
+	],
+	"pages": [
+		{
+			"id": "ObjectTypes",
+			"route": "/settings/object-types",
+			"type": "dashboard",
+			"title": "Object types",
+			"permission": "admin",
+			"config": {
+				"breadcrumb": {
+					"label": "Settings",
+					"href": "/index.php/settings/admin/dossiq"
+				},
+				"allowEdit": false,
+				"gridFloat": false,
+				"showWidgetActions": false,
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"_headerActionsNote": "Download asks the object types table for its rows as CSV (exportId). An object type is an OpenRegister schema, so New object type opens OpenRegister's schemas, where Add schema creates one.",
+				"headerActions": [
+					{
+						"id": "catalogue-download",
+						"label": "Download",
+						"icon": "TrayArrowDown",
+						"type": "export",
+						"exportId": "catalogue-object-types"
+					},
+					{
+						"id": "catalogue-new-object-type",
+						"label": "New object type",
+						"icon": "Plus",
+						"href": "/apps/openregister/schemas",
+						"variant": "primary"
+					}
+				],
+				"widgets": [
+					{
+						"id": "catalogue-object-types",
+						"type": "object-table",
+						"title": "Object types",
+						"subtitle": "Objects you link to cases; you manage their properties here",
+						"headerActions": [
+							{
+								"label": "Add object type",
+								"icon": "Plus",
+								"action": {
+									"type": "navigate",
+									"target": "/index.php/apps/openregister/schemas"
+								}
+							}
+						],
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/catalogue/object-types",
+								"responsePath": "results"
+							},
+							"columns": [
+								{
+									"key": "title",
+									"label": "Object type",
+									"cellClass": "cn-cell--strong",
+									"secondary": "{schemaLine}"
+								},
+								{
+									"key": "properties",
+									"label": "Schema",
+									"formatter": "propertyCount",
+									"type": "number"
+								},
+								{
+									"key": "views",
+									"label": "Display",
+									"formatter": "objectViews"
+								},
+								{
+									"key": "caseTypes",
+									"label": "Used in",
+									"formatter": "caseTypeCount",
+									"type": "number"
+								}
+							],
+							"sortable": true,
+							"filterable": true,
+							"actions": [
+								{
+									"id": "catalogue-object-type-open-schema",
+									"label": "Open schema",
+									"icon": "OpenInNew",
+									"type": "navigate",
+									"target": "/index.php/apps/openregister/schemas/@object.schemaId"
+								}
+							],
+							"emptyText": "Object types appear here once cases link objects.",
+							"pageSize": 4,
+							"exportId": "catalogue-object-types",
+							"exportFileName": "object-types"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "catalogue-object-types",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 7,
+						"showTitle": true,
+						"sizeToContent": true
+					}
+				]
+			}
+		}
+	]
+}

@@ -84,7 +84,7 @@ class OpenCaseCountsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testCountsFoldIntoTheVersionInUse(): void {
 		$queries = [];
@@ -151,7 +151,7 @@ class OpenCaseCountsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 * @spec openspec/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testUnknownIsNull(): void {
 		$config = ['register' => 'dossiq', 'case_schema' => 'case'];

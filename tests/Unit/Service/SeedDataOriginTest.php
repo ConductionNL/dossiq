@@ -317,6 +317,33 @@ class SeedDataOriginTest extends TestCase {
 	}//end testTheOverviewNamesTheStateAndTheWaitingUpdate()
 
 	/**
+	 * A row seeded from a later version than the set now ships is not offered
+	 * the older one: "Neem 1.0.0" on a case type at 1.3.0 would downgrade it.
+	 *
+	 * @return void
+	 */
+	public function testAnOlderShippedVersionIsNotOfferedAsAnUpdate(): void {
+		$caseType = ['id' => 'ct-1', 'title' => 'Sloopmelding'];
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
+		$this->shipped->stamp(
+			set: ShippedSets::MUNICIPAL_ROLES,
+			targetSchema: 'caseType',
+			targetObject: 'ct-1',
+			object: $caseType,
+		);
+
+		$ledger = $this->harness->register->all(schema: 'shippedOrigin')[0];
+		$ledger['setVersion'] = '1.3.0';
+		$this->harness->seed(schema: 'shippedOrigin', uuid: (string)$ledger['id'], row: $ledger);
+
+		$overview = $this->shipped->overview(targetSchema: 'caseType', objectsKey: 'case_type_schema');
+
+		self::assertNotNull(actual: $overview);
+		self::assertSame(expected: '1.0.0', actual: $overview[0]['latestVersion']);
+		self::assertFalse(condition: $overview[0]['updateAvailable']);
+	}//end testAnOlderShippedVersionIsNotOfferedAsAnUpdate()
+
+	/**
 	 * A seeded row somebody deleted here is reported as removed, not dropped.
 	 *
 	 * @return void
@@ -339,6 +366,64 @@ class SeedDataOriginTest extends TestCase {
 		self::assertSame(expected: 'removed', actual: $overview[0]['state']);
 		self::assertFalse(condition: $overview[0]['updateAvailable']);
 	}//end testASeededRowDeletedHereIsReportedAsRemoved()
+
+	/**
+	 * A row nobody saved since its stamp reads as shipped in the overview,
+	 * although the stored row now hashes differently: the schema gained a
+	 * property, and the store reads it back empty on every row.
+	 *
+	 * @return void
+	 */
+	public function testTheOverviewReadsARowNobodySavedSinceItsStampAsShipped(): void {
+		$caseType = ['id' => 'ct-1', 'title' => 'College-besluit', '@self' => ['updated' => '2026-10-12T21:28:06+00:00']];
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
+		$this->shipped->stamp(
+			set: ShippedSets::MUNICIPAL_ROLES,
+			targetSchema: 'caseType',
+			targetObject: 'ct-1',
+			object: $caseType,
+		);
+
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType + ['goalPrompt' => null]);
+
+		$overview = $this->shipped->overview(targetSchema: 'caseType', objectsKey: 'case_type_schema');
+
+		self::assertNotNull(actual: $overview);
+		self::assertSame(expected: ShippedConfigurationService::STATE_SHIPPED, actual: $overview[0]['state']);
+		self::assertSame(
+			expected: ShippedConfigurationService::STATE_SHIPPED,
+			actual: $this->shipped->stateOf(
+				targetSchema: 'caseType',
+				targetObject: 'ct-1',
+				object: $caseType + ['goalPrompt' => null],
+			)['state']
+		);
+	}//end testTheOverviewReadsARowNobodySavedSinceItsStampAsShipped()
+
+	/**
+	 * A row saved after its stamp, and different from it, reads as changed in
+	 * the overview.
+	 *
+	 * @return void
+	 */
+	public function testTheOverviewReadsARowEditedAfterItsStampAsChanged(): void {
+		$caseType = ['id' => 'ct-1', 'title' => 'College-besluit', '@self' => ['updated' => '2026-10-12T21:28:06+00:00']];
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
+		$this->shipped->stamp(
+			set: ShippedSets::MUNICIPAL_ROLES,
+			targetSchema: 'caseType',
+			targetObject: 'ct-1',
+			object: $caseType,
+		);
+
+		$edited = ['title' => 'Collegebesluit', '@self' => ['updated' => gmdate('c', (time() + 60))]];
+		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: array_merge($caseType, $edited));
+
+		$overview = $this->shipped->overview(targetSchema: 'caseType', objectsKey: 'case_type_schema');
+
+		self::assertNotNull(actual: $overview);
+		self::assertSame(expected: ShippedConfigurationService::STATE_CHANGED, actual: $overview[0]['state']);
+	}//end testTheOverviewReadsARowEditedAfterItsStampAsChanged()
 
 	/**
 	 * The fingerprint ignores what the platform writes and notices what a

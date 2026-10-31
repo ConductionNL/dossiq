@@ -120,7 +120,7 @@ class CasePaymentReader {
 			return $this->states->projection(state: CasePaymentState::STALE, checkedAt: $now);
 		}
 
-		$leaf = $this->leaf();
+		$leaf = $this->paymentLeaf();
 		if ($leaf === null) {
 			// Shillinq is not installed, or does not publish the leaf this app
 			// knows how to read. NOT "nothing is owed": a gemeente that
@@ -154,11 +154,14 @@ class CasePaymentReader {
 	}//end stateOf()
 
 	/**
-	 * shillinq's payment leaf, or null when it cannot be had.
+	 * shillinq's payment leaf, or null when it cannot be had. ForfeitInvoiceRaiser
+	 * raises a request through it too.
 	 *
 	 * @return object|null The leaf provider.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-005)
 	 */
-	private function leaf(): ?object {
+	public function paymentLeaf(): ?object {
 		if ($this->appManager->isInstalled(self::MONEY_APP) === false) {
 			return null;
 		}
@@ -185,5 +188,5 @@ class CasePaymentReader {
 		}
 
 		return null;
-	}//end leaf()
+	}//end paymentLeaf()
 }//end class

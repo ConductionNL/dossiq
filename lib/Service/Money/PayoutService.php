@@ -35,8 +35,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\IURLGenerator;
@@ -69,6 +71,18 @@ class PayoutService {
 	public const CATEGORY = 'dwangsom';
 
 	/**
+	 * How a case is named to the finance app, the way shillinq's leaf identifies it; the id is added per payout.
+	 *
+	 * @var array<string, string>
+	 */
+	private const CASE_LINK = [
+		'app' => Application::APP_ID,
+		'type' => 'case',
+		'register' => CasePaymentReader::CASE_REGISTER,
+		'schema' => CasePaymentReader::CASE_SCHEMA,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
@@ -77,6 +91,7 @@ class PayoutService {
 	 *        statutory term end lands on a day the administered calendar works.
 	 * @param PayoutRequester|null $payouts Hands the payout to the finance app.
 	 * @param IURLGenerator|null $urls Builds the callback address the finance app posts to.
+	 * @param OwningCaseResolver|null $owningCase Finds the case a calculation belongs to, so the payout names it.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -84,6 +99,7 @@ class PayoutService {
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?PayoutRequester $payouts = null,
 		private readonly ?IURLGenerator $urls = null,
+		private readonly ?OwningCaseResolver $owningCase = null,
 	) {
 	}//end __construct()
 
@@ -115,10 +131,10 @@ class PayoutService {
 
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$bSchema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
-		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
+		$bSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
+		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
 		if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
-			throw new RuntimeException('Dwangsom services not configured');
+			throw new RuntimeException('The accruing amount and payout schemas are not configured');
 		}
 
 		$final = $this->resolvePayableAmount(
@@ -145,7 +161,11 @@ class PayoutService {
 			'paymentDateLatest' => $uiterlijk,
 			'status' => 'voorbereid',
 		];
-		$row = $this->raiseInFinance(row: $row);
+		$row = $this->raiseRowInFinance(row: $row);
+		// Finance holds the payout now; dossiq keeps no copy of it (REQ-DQM-004).
+		if ((string)($row['payableId'] ?? '') !== '') {
+			return $row;
+		}
 
 		return $this->persistDisbursement(
 			objectService: $objectService,
@@ -210,6 +230,7 @@ class PayoutService {
 		return $row;
 	}//end withdrawFromFinance()
 
+
 	/**
 	 * Raise a prepared payout in the finance app again under a new reference,
 	 * for example with the amount an objection decided.
@@ -229,7 +250,7 @@ class PayoutService {
 
 		$previous = (string)($row['reference'] ?? '');
 		$row['reference'] = $this->buildReference(calculationId: (string)($row['penaltyPaymentCalculation'] ?? ''));
-		$raised = $this->raiseInFinance(row: $row);
+		$raised = $this->raiseRowInFinance(row: $row);
 		if ((string)($raised['payableId'] ?? '') === '') {
 			// No finance app answered: keep the reference the provider knows.
 			$row['reference'] = $previous;
@@ -241,14 +262,19 @@ class PayoutService {
 
 	/**
 	 * Hand a payout row to the finance app and note the payable it answers with.
+	 * The repair that moves the rows dossiq kept calls it with their history
+	 * (REQ-DQM-004); it passes only a row finance does not hold yet.
 	 *
 	 * @param array<string, mixed> $row The payout row.
+	 * @param array<string, string> $history For a payout settled before finance kept it: historicalState, paidOn, bankReference.
 	 *
 	 * @return array<string, mixed> The row, with payableId when finance took it.
 	 *
 	 * @throws RuntimeException When finance refuses the payout.
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-004)
 	 */
-	private function raiseInFinance(array $row): array {
+	public function raiseRowInFinance(array $row, array $history = []): array {
 		if ($this->payouts === null) {
 			return $row;
 		}
@@ -264,14 +290,37 @@ class PayoutService {
 				'correlationId' => (string)($row['penaltyPaymentCalculation'] ?? ''),
 				'dueOn' => (string)($row['paymentDateLatest'] ?? ''),
 				'callbackUrl' => (string)($this->urls?->linkToRouteAbsolute(self::CALLBACK_ROUTE) ?? ''),
-			]
+				'linkedObjects' => $this->caseLinkOf(calculationId: (string)($row['penaltyPaymentCalculation'] ?? '')),
+			] + $history
 		);
 		if ($answer !== null && $answer['payableId'] !== '') {
 			$row['payableId'] = $answer['payableId'];
 		}
 
 		return $row;
-	}//end raiseInFinance()
+	}//end raiseRowInFinance()
+
+	/**
+	 * The case the calculation belongs to, as a linked object for the finance app.
+	 *
+	 * @param string $calculationId The calculation.
+	 *
+	 * @return array<int, array<string, string>> One link, or none when the case cannot be resolved.
+	 */
+	private function caseLinkOf(string $calculationId): array {
+		$caseId = $this->owningCase?->resolveVia(
+			objectId: $calculationId,
+			schemaKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
+			linkField: 'deadlineInstance',
+			viaSchemaKey: 'termijn_instance_schema',
+			caseField: 'case'
+		);
+		if ($caseId === null || $caseId === '') {
+			return [];
+		}
+
+		return [self::CASE_LINK + ['id' => $caseId]];
+	}//end caseLinkOf()
 
 	/**
 	 * Validate the caller-supplied payment input.
@@ -314,11 +363,11 @@ class PayoutService {
 		try {
 			$calculation = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $calculationId);
 		} catch (\Throwable $e) {
-			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
+			throw new RuntimeException('Accruing amount lookup failed: ' . $e->getMessage());
 		}
 
 		if ($calculation === null) {
-			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
+			throw new RuntimeException('Accruing amount not found: ' . $calculationId);
 		}
 
 		$final = (int)($calculation['definitiveAmount'] ?? $calculation['cumulativeAmount'] ?? 0);
@@ -382,9 +431,9 @@ class PayoutService {
 	): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
+		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
 		if ($objectService === null || $register === '' || $uSchema === '') {
-			throw new RuntimeException('Dwangsom services not configured');
+			throw new RuntimeException('The accruing amount and payout schemas are not configured');
 		}
 
 		$row = $this->findDisbursementByReference(
@@ -521,6 +570,7 @@ class PayoutService {
 	 * @return string
 	 */
 	private function buildReference(string $calculationId): string {
-		return 'PROC-DWS-' . strtoupper(substr(sha1($calculationId . ':' . microtime(true)), 0, 12));
+		// Random bytes, not the clock: two payouts raised in one microsecond must not share a reference.
+		return 'PROC-DWS-' . strtoupper(substr(sha1($calculationId . ':' . bin2hex(random_bytes(8))), 0, 12));
 	}//end buildReferentie()
 }//end class

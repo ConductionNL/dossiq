@@ -73,18 +73,19 @@ describe('a document in a route is marked, and one that is not is not', () => {
 	})
 })
 
-describe('the column is declared where the rows are', () => {
+describe('the approval field is declared where the rows are', () => {
 	const manifest = readJson('src', 'manifest.json')
 	const detail = (manifest.pages || []).find((p) => p.id === 'CaseDetail')
 	const files = (detail.config.widgets || []).find((w) => w.id === 'case-files')
-	const columns = (files.props || files.content || {}).columns || []
+	const cards = (files.props || files.content || {}).sideCards || []
 
-	it('declares an Approval column over the marker, with its formatter', () => {
-		const column = columns.find((c) => c.id === 'approval-chain')
+	// DqDocumentenBeheer: the marker moved from a column into the selected
+	// file's Document details card.
+	it('declares an Approval field over the marker, with its formatter', () => {
+		const field = cards.flatMap((card) => card.fields || []).find((f) => f.key === 'approvalMarker')
 
-		expect(column, 'the Files tab declares no approval column').toBeTruthy()
-		expect(column.property).toBe('approvalMarker')
-		expect(column.formatter).toBe('approvalChain')
+		expect(field, 'the Files tab declares no approval field').toBeTruthy()
+		expect(field.formatter).toBe('approvalChain')
 	})
 
 	it('names a formatter that is registered, or the cell renders the raw value', () => {

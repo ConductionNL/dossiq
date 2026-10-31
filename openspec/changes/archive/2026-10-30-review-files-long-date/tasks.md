@@ -1,0 +1,2 @@
+- [x] manifest secondLine review variant longdate:year
+- [x] vitest documentRowsSecondLine (red first)

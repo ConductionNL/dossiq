@@ -159,34 +159,3 @@ export function allowedFor(direction) {
 	}
 	return { sender: true, recipients: true }
 }
-
-/**
- * The documents of a listing that name one party, as sender or as addressee.
- *
- * The People tab's "documents from and to this party". An empty identifier
- * matches nothing here, unlike the server's filter: a widget asking for a
- * party's documents with no party has nothing to show, where a tab listing a
- * dossier with no filter shows the dossier.
- *
- * @param {Array<object>} documents The documents.
- * @param {string} identifier The party's identifier.
- * @return {object} `{sent, received}`, the documents in each direction.
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
- */
-export function documentsOfParty(documents, identifier) {
-	const id = String(identifier || '').trim()
-	const rows = Array.isArray(documents) ? documents : []
-	if (id === '') {
-		return { sent: [], received: [] }
-	}
-	return {
-		// Sent BY this party: they are its sender, so the document came in.
-		sent: rows.filter((row) => String(row?.sender || '').trim() === id),
-		// Received BY this party: they are among its addressees.
-		received: rows.filter((row) =>
-			(Array.isArray(row?.recipients) ? row.recipients : [])
-				.map((entry) => String(entry || '').trim())
-				.includes(id),
-		),
-	}
-}

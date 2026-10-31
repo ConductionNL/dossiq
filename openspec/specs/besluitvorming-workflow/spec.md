@@ -6,37 +6,34 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Provides end-to-end decision-making workflows for municipal College-besluit, Raadsbesluit, and Mandaatbesluit cases, shipping pre-configured case-type and workflow templates that run from drafting through parafering, agenda compilation, decision recording, publication, and archival. Drives a sequential signing (parafering) chain, auto-transitions cases to agenda-ready status once all signatures are collected, records formal decisions with voting results and attending members, validates mandate authority, and dispatches publication payloads to DROP/LVBB before archiving the complete dossier.
+
 ## Requirements
+
 ### Requirement: REQ-BVW-001 Zaaktype templates MUST be pre-configured for the three core besluitvorming types
 
-The system SHALL ship pre-configured `caseType` + `workflowTemplate` bundles for College-besluit, Raadsbesluit, and Mandaatbesluit, activated via the repair step. Each bundle MUST include `statusType`, `propertyDefinition`, `roleType`, `documentType`, and `resultType` records.
+The system SHALL ship the College-besluit, Raadsbesluit and Mandaatbesluit case types, each with its `statusType`, `propertyDefinition`, `roleType`, `documentType` and `resultType` records and its `workflowTemplate`, as the case definition package `besluitvorming`, marked `install: on-request` because decision types are managed in decidiq. An administrator SHALL install it through `POST /api/packages/besluitvorming/install` or `occ dossiq:package:install besluitvorming`. Installing it again SHALL write nothing, and on an instance where the former besluitvorming seeder already wrote these case types, installing it SHALL adopt them rather than write them a second time.
 
 #### Scenario REQ-BVW-001-A: Activate College-besluit template
+@e2e tests/e2e/packages/besluitvorming.spec.ts
 
-- **GIVEN** the workflow engine is installed and the besluitvorming templates are present
-- **WHEN** an administrator activates the "College-besluit" template via `POST /api/besluitvorming/templates/college-besluit/activate`
-- **THEN** a `caseType` object MUST be created with `title = 'College-besluit'` and `publicationRequired = true`
-- **AND** a `workflowTemplate` MUST be created with the nine standard process steps in order (Voorstel opstellen, Ambtelijk advies, Parafering, Gereed voor agendering, Geagendeerd, Vergadering, Besluit genomen, Bekendmaking, Gearchiveerd)
-- **AND** `statusType` records MUST be created for each step with the correct `order` and `isFinal` values
-- **AND** `propertyDefinition` records MUST be created for: `stemuitslag`, `portefeuillehouder`, `vergadergremium`, `agendanummer`, `publicatieReferentie`
-- **AND** `roleType` records MUST be created for: Steller, Portefeuillehouder, Beleidsadviseur, Afdelingshoofd
-- **AND** the activation MUST be idempotent (re-running does not create duplicate records)
+- **GIVEN** an administrator on an instance where the package is not installed
+- **WHEN** they install the package `besluitvorming`
+- **THEN** the install SHALL answer `installed` or `current`
+- **AND** the College-besluit, Raadsbesluit and Mandaatbesluit case types SHALL open on the case type page, each with its flow
+- **AND** installing it again SHALL answer `current` and write nothing
 
 #### Scenario REQ-BVW-001-B: Raadsbesluit template includes griffier role and extended deadline
+@e2e exclude a property of the shipped rows, read back by tests/integration/packages/besluitvorming.postman_collection.json on a clean instance
 
-- **GIVEN** the besluitvorming templates are installed
-- **WHEN** an administrator activates the "Raadsbesluit" template
-- **THEN** the resulting `caseType` MUST have `processingDeadline = 'P60D'`
-- **AND** a `roleType` for "Griffier" MUST exist on this `caseType`
+- **GIVEN** the besluitvorming package is installed
+- **THEN** the Raadsbesluit case type SHALL have `processingDeadline = 'P60D'`
+- **AND** a `roleType` named "Griffier" SHALL exist on it
 
 #### Scenario REQ-BVW-001-C: Mandaatbesluit template has confidentiality set to intern
+@e2e exclude a property of the shipped rows, read back by tests/integration/packages/besluitvorming.postman_collection.json on a clean instance
 
-- **GIVEN** the besluitvorming templates are installed
-- **WHEN** an administrator activates the "Mandaatbesluit" template
-- **THEN** the resulting `caseType` MUST have `confidentiality = 'intern'` and `publicationRequired = false`
-- **AND** the workflow MUST include a mandate-authority guard on the "Besluit genomen" transition
-
----
+- **GIVEN** the besluitvorming package is installed
+- **THEN** the Mandaatbesluit case type SHALL have `confidentiality = 'intern'` and `publicationRequired = false`
 
 ### Requirement: REQ-BVW-004 Agenda compiler MUST support hamerstukken and bespreekstukken with configurable ordering
 
@@ -215,4 +212,3 @@ When a besluitvorming case is archived, the system SHALL verify that all require
 - **AND** `case.archiveNomination` MUST be set to `'blijvend_bewaren'`
 
 ---
-

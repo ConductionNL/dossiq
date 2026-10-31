@@ -1,80 +1,11 @@
 /**
  * Bulk status-transition helper utilities.
  *
- * Pure logic extracted from the workflow-board selection UI and
- * BulkTransitionDialog.vue so column-scoped selection, request-payload
- * shaping, and per-case result summarisation are unit-testable without
- * mounting a component (the node-env vitest suite cannot mount SFCs).
- *
- * Selection shape: `{ columnId: string|null, caseIds: Array<string> }`.
+ * Pure logic extracted from BulkTransitionDialog.vue so request-payload
+ * shaping is unit-testable without mounting a component.
  *
  * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
-
-/**
- * An empty selection — no column, no cases.
- *
- * @return {{columnId: null, caseIds: Array<string>}}
- */
-export function emptySelection() {
-	return { columnId: null, caseIds: [] }
-}
-
-/**
- * Toggle a case's membership in the selection, scoped to a single column.
- * Selecting a case in a DIFFERENT column than the current selection resets
- * the selection to contain only the newly selected case (cross-column
- * selection always clears the previous selection — never merges columns).
- * Deselecting the last case in a column clears the column scope too, so the
- * next selection in ANY column starts fresh.
- *
- * @param {{columnId: string|null, caseIds: Array<string>}} selection Current selection state.
- * @param {string} caseId The case id being toggled.
- * @param {string} columnId The column the case belongs to.
- * @return {{columnId: string|null, caseIds: Array<string>}} The next selection state (new object).
- */
-export function toggleSelection(selection, caseId, columnId) {
-	const current =
-		selection && typeof selection === 'object' ? selection : emptySelection()
-
-	if (current.columnId !== columnId) {
-		// Selecting in a new/different column resets the selection.
-		return { columnId, caseIds: [caseId] }
-	}
-
-	const caseIds = Array.isArray(current.caseIds) ? current.caseIds : []
-	const exists = caseIds.some((id) => String(id) === String(caseId))
-	const nextCaseIds = exists
-		? caseIds.filter((id) => String(id) !== String(caseId))
-		: [...caseIds, caseId]
-
-	if (nextCaseIds.length === 0) {
-		return emptySelection()
-	}
-
-	return { columnId, caseIds: nextCaseIds }
-}
-
-/**
- * Whether a given case is currently selected.
- *
- * @param {{columnId: string|null, caseIds: Array<string>}} selection Current selection state.
- * @param {string} caseId The case id to check.
- * @return {boolean}
- */
-export function isSelected(selection, caseId) {
-	if (!selection || !Array.isArray(selection.caseIds)) return false
-	return selection.caseIds.some((id) => String(id) === String(caseId))
-}
-
-/**
- * Clear the selection entirely.
- *
- * @return {{columnId: null, caseIds: Array<string>}}
- */
-export function clearSelection() {
-	return emptySelection()
-}
 
 /**
  * The parameters a status transition needs as a bulk job.

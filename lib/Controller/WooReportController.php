@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Woo\WooReportReadLog;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCA\Dossiq\Woo\WooThroughputReport;
@@ -58,6 +59,7 @@ class WooReportController extends Controller {
 	 * @param WooReportReadLog $readLog The read log on the audit trail.
 	 * @param IUserSession $userSession The user session.
 	 * @param IL10N $l10n The translations.
+	 * @param CaseDateNormaliser|null $dates Reads a moment as the tenant's calendar date.
 	 *
 	 * @return void
 	 */
@@ -68,9 +70,29 @@ class WooReportController extends Controller {
 		private readonly WooReportReadLog $readLog,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
+		private readonly ?CaseDateNormaliser $dates = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * Which reports this user is offered: `{throughput, parties}`, the same
+	 * answer the menu reads from the initial state. The reports page shows a
+	 * widget only when its report is offered; the report endpoints still
+	 * refuse anyone else on every read.
+	 *
+	 * @return JSONResponse The offer, or 401 without a session.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	#[NoAdminRequired]
+	public function offered(): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		return new JSONResponse($this->switches->offeredToCurrentUser());
+	}//end offered()
 
 	/**
 	 * Throughput per reviewer per day, for one case (`?case=`) or a period (`?from=&to=`).
@@ -106,8 +128,8 @@ class WooReportController extends Controller {
 		}
 
 		$caseId = trim((string)$this->request->getParam('case', ''));
-		$from = trim((string)$this->request->getParam('from', ''));
-		$to = trim((string)$this->request->getParam('to', ''));
+		$from = $this->calendarDate(value: trim((string)$this->request->getParam('from', '')));
+		$to = $this->calendarDate(value: trim((string)$this->request->getParam('to', '')));
 		$scope = ['from' => $from, 'to' => $to];
 		if ($caseId !== '') {
 			$scope = ['case' => $caseId];
@@ -133,6 +155,24 @@ class WooReportController extends Controller {
 
 		return new JSONResponse(['scope' => $scope] + $report);
 	}//end throughput()
+
+	/**
+	 * A period bound as the tenant's calendar date. A dashboard date range
+	 * sends moments (`2026-10-01T22:00:00.000Z`); the report counts days, so
+	 * a moment is read as the day it falls on in the tenant's zone. A plain
+	 * date, or anything else, passes as given and the report judges it.
+	 *
+	 * @param string $value The bound as it arrived.
+	 *
+	 * @return string The bound as `Y-m-d`, or the value unchanged.
+	 */
+	private function calendarDate(string $value): string {
+		if ($this->dates === null || preg_match('/^\d{4}-\d{2}-\d{2}T/', $value) !== 1) {
+			return $value;
+		}
+
+		return ($this->dates->toCalendarDateOrNull(value: $value) ?? $value);
+	}//end calendarDate()
 
 	/**
 	 * Read one case, or a period when no case is named.
@@ -181,4 +221,20 @@ class WooReportController extends Controller {
 			default => $this->l10n->t('The Woo assessments cannot be read, so the report cannot be made.'),
 		};
 	}//end sentence()
+
+	/**
+	 * throughput() on its old address.
+	 *
+	 * Deprecated alias of /api/document-review/reports/throughput; remove after the next major.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 *
+	 * @contract exclude Deprecated path alias for throughput(); behaviour covered by the throughput() tests.
+	 */
+	#[NoAdminRequired]
+	public function throughputLegacyPath(): JSONResponse|DataDownloadResponse {
+		return $this->throughput();
+	}//end throughputLegacyPath()
 }//end class

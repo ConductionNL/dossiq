@@ -29,10 +29,6 @@ const register = JSON.parse(
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const cellWidgetsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
-	'utf8',
-)
 const panels = require('./helpers/casePanels.js')
 
 /** The `caseObject` schema. @return {object} The schema. */
@@ -88,10 +84,11 @@ describe('the lenses on caseObject', () => {
 		}
 	})
 
-	it('is shown on the Objects tab through the withheld-aware cell', () => {
-		// The marker is an object. The default cell prints `[object Object]` and
-		// an empty cell states that the case is about nothing, so both defaults
-		// are wrong in the same direction.
+	it('is shown on the Objects tab through the library cell, which reads the withheld marker', () => {
+		// The marker is an object. A cell that stringified it would print
+		// `[object Object]` and an empty cell states that the case is about
+		// nothing. The library cell checks for the marker before any other
+		// path, so the column needs no widget of its own.
 		const columns = objectsWidget().content.columns
 		for (const name of Object.keys(lenses())) {
 			const column = columns.find((entry) => entry.key === name)
@@ -99,12 +96,8 @@ describe('the lenses on caseObject', () => {
 				column,
 				`the ${name} lens is not a column on the Objects tab`,
 			).toBeDefined()
-			expect(column.widget).toBe('lensedValue')
+			expect(column.widget).toBeUndefined()
 		}
-	})
-
-	it('names a cell widget the app registers', () => {
-		expect(cellWidgetsSource).toMatch(/\blensedValue:/)
 	})
 })
 

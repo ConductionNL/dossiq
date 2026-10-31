@@ -138,7 +138,8 @@ class OnboardingSteps {
 
 		$steps = [];
 		foreach ($rows as $row) {
-			$step = self::field(row: $row, key: 'taskKey');
+			// An inbox row is the task as JSON, where the stored taskKey reads `key`.
+			$step = self::field(row: $row, key: 'key');
 			if ($step === '') {
 				continue;
 			}

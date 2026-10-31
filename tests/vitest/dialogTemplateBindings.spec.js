@@ -158,6 +158,8 @@ function control(name) {
 
 const stubs = {
 	NcDialog: passthrough('NcDialog'),
+	CnDialog: passthrough('CnDialog'),
+	CnChoiceCards: control('CnChoiceCards'),
 	NcButton: {
 		name: 'NcButton',
 		props: { disabled: { type: Boolean, default: false } },
@@ -191,7 +193,7 @@ describe('BeschikkingComposerDialog', () => {
 		// renders only once that settles.
 		await flushPromises()
 
-		const picker = wrapper.findComponent({ name: 'NcSelect' })
+		const picker = wrapper.findComponent({ name: 'CnChoiceCards' })
 		expect(picker.exists()).toBe(true)
 
 		await picker.vm.$emit('update:modelValue', 'ontvangstbevestiging')

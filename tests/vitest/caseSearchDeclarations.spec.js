@@ -121,6 +121,10 @@ const SILENT = [
 	// The documents a requester sent with a request (decision 179): a list of
 	// file references the case page shows, never typed into a search box.
 	'attachments',
+	// The subject's BSN and the sensitive answers (social-domain-lookup-over-cases):
+	// only dossiq-sensitive reads them, so no desk list searches or filters on them.
+	'subjectBsn',
+	'sensitiveProperties',
 ]
 
 /**

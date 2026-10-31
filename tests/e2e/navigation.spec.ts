@@ -46,7 +46,9 @@ test.describe('Sidebar Navigation', () => {
 		// page stays routable — every other spec still reaches it with a
 		// direct GET — but it no longer has a navigation entry of its own,
 		// and asserting one is asserting the IA we retired.
-		for (const href of ['/queue', '/my-work', '/workflow-board', '/cases']) {
+		// The workflow board is the Cases list in board view (dossiq#3989), so
+		// its entry ends in `/cases?_view=board`.
+		for (const href of ['/queue', '/my-work', '/cases?_view=board', '/cases']) {
 			await expect(nav.locator(`a[href$="${href}"]`)).toHaveCount(1)
 		}
 
@@ -99,7 +101,18 @@ test.describe('Sidebar Navigation', () => {
 		}
 		await byHref('/index.php/apps/dossiq/cases', 'All cases')
 		await byHref('/index.php/apps/dossiq/my-work', 'Assigned to me')
-		await byHref('/index.php/apps/dossiq/workflow-board', 'Workflow board')
+		await byHref('/index.php/apps/dossiq/cases?_view=board', 'Workflow board')
+	})
+
+	test('the retired workflow board address opens the Cases board', async ({
+		page,
+	}) => {
+		// A bookmark of the old page must not land on the dashboard.
+		await page.goto('/index.php/apps/dossiq/workflow-board')
+		await expect(page).toHaveURL(/\/apps\/dossiq\/cases\?_view=board$/)
+		await expect(page.locator('.cn-board-view')).toBeVisible({
+			timeout: 30_000,
+		})
 	})
 
 	test('settings button is visible', async ({ page }) => {

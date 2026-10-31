@@ -25,6 +25,9 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\WOOAssessmentController;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
+use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
@@ -50,6 +53,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
  *
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
+ * @uses \OCA\Dossiq\Service\Cases\HandlerActsAsSystem
  * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -155,8 +159,27 @@ class WOOAssessmentControllerTest extends TestCase {
 			$this->caseAccessGuard,
 			$this->logger,
 			$this->untranslated(),
+			$this->handlerActs(),
 		);
 	}//end setUp()
+
+	/**
+	 * The handler gate over this test's guard, on a case whose decision is published.
+	 *
+	 * @param array<string, mixed> $case The case the store answers.
+	 *
+	 * @return HandlerActsAsSystem The gate.
+	 */
+	private function handlerActs(array $case = ['wooPublicationStatus' => 'published']): HandlerActsAsSystem {
+		$store = $this->createMock(CaseStatusStore::class);
+		$store->method('loadCase')->willReturn($case);
+
+		return new HandlerActsAsSystem(
+			guard: $this->caseAccessGuard,
+			store: $store,
+			settings: $this->createMock(SettingsService::class),
+		);
+	}//end handlerActs()
 
 	/**
 	 * Translations that hand every source sentence back unchanged.
@@ -253,6 +276,7 @@ class WOOAssessmentControllerTest extends TestCase {
 			$this->caseAccessGuard,
 			$this->logger,
 			$this->untranslated(),
+			$this->handlerActs(),
 		);
 	}//end controllerOverTheRealList()
 
@@ -313,6 +337,7 @@ class WOOAssessmentControllerTest extends TestCase {
 			$this->caseAccessGuard,
 			$this->logger,
 			$this->untranslated(),
+			$this->handlerActs(),
 		);
 
 		$response = $controller->bulkAssess('case-uuid-001');
@@ -446,6 +471,92 @@ class WOOAssessmentControllerTest extends TestCase {
 	}//end testCreateDecisionReturns422WhenDocumentsOutstanding()
 
 	/**
+	 * A letter from another case is refused with 422 before the decision is written, and nothing is linked.
+	 *
+	 * @return void
+	 */
+	public function testALetterOfAnotherCaseIsRefusedBeforeTheDecisionIsWritten(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([
+			['decision', [], []],
+			['letter', '', 'io-of-case-b'],
+		]);
+
+		$letters = $this->createMock(DecisionLetter::class);
+		$letters->expects($this->once())->method('assertOnCase')->with('case-a', 'io-of-case-b')
+			->willThrowException(new \InvalidArgumentException('The letter is not a document of this case.'));
+		$letters->expects($this->never())->method('linkDecision');
+		$this->decisionService->expects($this->never())->method('assembleDecision');
+		$controller = new WOOAssessmentController(
+			'dossiq',
+			$this->request,
+			$this->assessmentService,
+			$this->deadlineService,
+			$this->decisionService,
+			$this->publicationService,
+			$this->anonymisationAssist,
+			$this->userSession,
+			$this->caseAccessGuard,
+			$this->logger,
+			$this->untranslated(),
+			$this->handlerActs(),
+			null,
+			$letters,
+		);
+
+		$response = $controller->createDecision('case-a');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('The letter is not a document of this case.', $response->getData()['error']);
+	}//end testALetterOfAnotherCaseIsRefusedBeforeTheDecisionIsWritten()
+
+	/**
+	 * A letter of the case is passed on, so no second letter is drafted, and the decision is linked to it.
+	 *
+	 * @return void
+	 */
+	public function testALetterOfTheCaseIsLinkedToTheDecision(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([
+			['decision', [], []],
+			['letter', '', 'io-9'],
+		]);
+
+		$letters = $this->createMock(DecisionLetter::class);
+		$letters->expects($this->once())->method('assertOnCase')->with('case-a', 'io-9');
+		$letters->expects($this->once())->method('linkDecision')
+			->with(['decisionId' => 'dec-1', 'draft' => null], 'io-9')->willReturn('io-9');
+		$this->decisionService->expects($this->once())->method('assembleDecision')
+			->with('case-a', [], 'io-9')->willReturn(['decisionId' => 'dec-1', 'draft' => null]);
+		$controller = new WOOAssessmentController(
+			'dossiq',
+			$this->request,
+			$this->assessmentService,
+			$this->deadlineService,
+			$this->decisionService,
+			$this->publicationService,
+			$this->anonymisationAssist,
+			$this->userSession,
+			$this->caseAccessGuard,
+			$this->logger,
+			$this->untranslated(),
+			$this->handlerActs(),
+			null,
+			$letters,
+		);
+
+		$response = $controller->createDecision('case-a');
+
+		$this->assertSame('io-9', $response->getData()['letter']);
+	}//end testALetterOfTheCaseIsLinkedToTheDecision()
+
+	/**
 	 * A decision that waits for unseen pages answers 409 naming the documents and pages; publish does the same.
 	 *
 	 * @return void
@@ -550,6 +661,7 @@ class WOOAssessmentControllerTest extends TestCase {
 			$this->caseAccessGuard,
 			$this->logger,
 			$dutch,
+			$this->handlerActs(),
 		);
 
 		$response = $controller->publishDecision('case-uuid-001');
@@ -676,6 +788,27 @@ class WOOAssessmentControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
 		$this->assertStringContainsString('recorded', $response->getData()['message']);
 	}//end testAnUnrecordedSetRefusesThePublish()
+
+	/**
+	 * A disclosable document whose file cannot be read refuses the publish with 409, naming it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testAnUnreadableDocumentRefusesThePublish(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->publicationService->method('publish')->willReturn(['available' => false, 'reason' => 'documents_unreadable', 'documents' => ['nota.pdf']]);
+
+		$response = $this->controller->publishDecision('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertStringContainsString('could not be read', $response->getData()['message']);
+		$this->assertSame(['nota.pdf'], $response->getData()['documents']);
+	}//end testAnUnreadableDocumentRefusesThePublish()
 
 	/**
 	 * WithdrawPublication returns 401 when user is not authenticated.

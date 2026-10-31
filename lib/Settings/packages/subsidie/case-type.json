@@ -12,11 +12,36 @@
     "extensionAllowed": true,
     "extensionPeriod": "P8W",
     "suspensionAllowed": true,
+    "pauseReasons": [
+      {
+        "key": "aanvulling-aanvrager",
+        "name": "Aanvulling gevraagd bij de aanvrager",
+        "category": "applicant",
+        "waitingOn": "applicant",
+        "legalBasis": "Awb 4:5, hersteltermijn"
+      },
+      {
+        "key": "uitstel-aanvrager",
+        "name": "Uitstel met instemming van de aanvrager",
+        "category": "applicant",
+        "waitingOn": "applicant",
+        "legalBasis": "Awb 4:15 lid 1 sub b"
+      }
+    ],
     "internalOrExternal": "extern",
     "publicationRequired": false,
     "isDraft": false,
     "confidentiality": "zaakvertrouwelijk",
-    "initialStatus": "b3c1a000-0000-4000-a000-00005ab50001"
+    "initialStatus": "b3c1a000-0000-4000-a000-00005ab50001",
+    "overviewCards": [
+      "case-grant-decisions-card",
+      "case-payment-schedule"
+    ],
+    "sideCards": [
+      "side-payment-amounts",
+      "side-requester",
+      "case-banner-stack"
+    ]
   },
   "propertyDefinitions": [
     {
@@ -32,21 +57,25 @@
   "statusTypes": [
     {
       "id": "b3c1a000-0000-4000-a000-00005ab50001",
+      "phase": "Ontvangst",
       "name": "Ontvangen",
       "description": "Subsidieaanvraag is ontvangen en geregistreerd",
       "order": 1,
       "isFinal": false,
       "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
-      "role": "intake"
+      "role": "intake",
+      "colour": "blue"
     },
     {
       "id": "2318408c-cb66-5b32-b06a-7809499ec77f",
+      "phase": "Beoordeling",
       "name": "In behandeling",
       "description": "Aanvraag wordt inhoudelijk beoordeeld (volledigheid, regeling, begroting)",
       "order": 2,
       "isFinal": false,
       "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
-      "role": "in-progress"
+      "role": "in-progress",
+      "colour": "purple"
     },
     {
       "id": "c1ae2604-721a-54ec-9300-7b0d1c8f9e91",
@@ -55,7 +84,8 @@
       "order": 3,
       "isFinal": true,
       "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
-      "role": "closed"
+      "role": "closed",
+      "colour": "green"
     },
     {
       "id": "93b1b54f-4571-587e-a505-29c0952d342a",
@@ -63,15 +93,18 @@
       "description": "Subsidieaanvraag is afgewezen",
       "order": 4,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-0000000005ab"
+      "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
+      "colour": "red"
     },
     {
       "id": "5f7731b9-e67d-59be-a98d-71321ca7a5af",
+      "offPath": true,
       "name": "Ingetrokken",
       "description": "Aanvraag is ingetrokken door de aanvrager",
       "order": 90,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-0000000005ab"
+      "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
+      "colour": "grey"
     }
   ],
   "roleTypes": [

@@ -1,0 +1,17 @@
+# example-set-decided-terms Delta
+
+**Status**: proposed
+**Scope**: dossiq
+
+## ADDED Requirements
+
+### Requirement: The example set decides terms in the current quarter
+
+The Zuiddrecht set SHALL hold at least eight completed statutory terms that started within the last 25 days, each on
+a case that closed (status Afgehandeld) the day the term was completed, over at least five case types, exactly one of
+them completed after its end date.
+
+#### Scenario: DqTermijnen on a fresh demo
+
+- **WHEN** the set is installed and the reader opens Termijnbewaking
+- **THEN** "Op tijd beslist" reads a share (7 of 8, 88 %) and "Op tijd beslist per zaaktype" draws five bars

@@ -9,6 +9,8 @@
                     "slug": "omgevingsvergunning-type"
                 },
                 "title": "Omgevingsvergunning (deelzaak-demo)",
+                "colour": "teal",
+                "icon": "OfficeBuildingOutline",
                 "identifier": "omgevingsvergunning-type",
                 "description": "Aanvraag omgevingsvergunning voor bouwen, slopen of gebruik. Hoofdzaaktype dat bouwtoezicht- en milieuadvies-deelzaken kan spawnen.",
                 "purpose": "Demonstratie van hoofdzaak/deelzaak-hierarchie",
@@ -30,6 +32,8 @@
                     "slug": "bouwtoezicht-type"
                 },
                 "title": "Bouwtoezicht",
+                "colour": "teal",
+                "icon": "AccountHardHat",
                 "identifier": "bouwtoezicht-type",
                 "description": "Toezicht op naleving van de bouwvergunning tijdens uitvoering.",
                 "purpose": "Toezicht tijdens de bouwfase",
@@ -50,6 +54,8 @@
                     "slug": "milieu-type"
                 },
                 "title": "Milieuadvies",
+                "colour": "green",
+                "icon": "MapOutline",
                 "identifier": "milieu-type",
                 "description": "Advies omtrent milieuaspecten bij een omgevingsvergunning.",
                 "purpose": "Milieuadvies bij vergunningverlening",

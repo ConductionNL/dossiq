@@ -67,12 +67,14 @@ class InstallShippedPackages implements IRepairStep {
 	}//end getName()
 
 	/**
-	 * Install every automatic package and say what became of each.
+	 * Install every automatic package and update every package already
+	 * installed here, whatever its install mode, and say what became of each.
 	 *
 	 * Runs on install AND on every upgrade (post-migration). The ledger makes
-	 * it idempotent: a package at the version already installed is `current`
-	 * and writes nothing, and a package added or raised in a new app version
-	 * is installed.
+	 * it idempotent: a package at the version and files already recorded is
+	 * `current` and writes nothing, and a package added, raised or changed in
+	 * a new app version is installed, keeping every row edited here. An
+	 * on-request package nobody installed is left alone.
 	 *
 	 * A refused or failed package is a warning, not an abort: one package
 	 * this instance cannot take must not stop the upgrade of everything else,
@@ -89,7 +91,8 @@ class InstallShippedPackages implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
+	 * @spec openspec/changes/repair-updates-installed-packages/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
 		// Under a system identity: an upgrade has no session, and OpenRegister
@@ -98,12 +101,12 @@ class InstallShippedPackages implements IRepairStep {
 		$this->withSystemIdentity(
 			objectService: $this->settings->getObjectService(),
 			work: function () use (&$outcomes): void {
-				$outcomes = $this->installer->installAutomatic();
+				$outcomes = $this->installer->reloadInstalled();
 			}
 		);
 
 		if ($outcomes === []) {
-			$output->info('No shipped package installs automatically.');
+			$output->info('No shipped package installs automatically or is installed here.');
 			return;
 		}
 
@@ -133,7 +136,7 @@ class InstallShippedPackages implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function importRegisterAgain(IOutput $output): void {
 		$result = [];

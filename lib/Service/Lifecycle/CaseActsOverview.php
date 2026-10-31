@@ -54,6 +54,7 @@ class CaseActsOverview {
 	 *                                            menu can offer Restore instead of Archive.
 	 *                                            Optional, so an instance that predates the
 	 *                                            half still answers.
+	 * @param CaseArchiveReadiness|null $readiness The archive checklist, for the archive dialog.
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
@@ -64,6 +65,7 @@ class CaseActsOverview {
 		private readonly CaseIncompleteness $incompleteness,
 		private readonly ProcessOwnedStatusRule $processStatus,
 		private readonly ?CaseArchiveState $archiveState = null,
+		private readonly ?CaseArchiveReadiness $readiness = null,
 	) {
 	}//end __construct()
 
@@ -77,6 +79,7 @@ class CaseActsOverview {
 	 * @throws RefusedException When the case cannot be read.
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 	 */
 	public function overview(string $caseId): array {
 		$case = $this->store->loadCase(caseId: $caseId);
@@ -111,6 +114,7 @@ class CaseActsOverview {
 				'missingFields' => $missing,
 				'endingAct' => (string)($case[CaseEndingActs::ENDING_FIELD] ?? ''),
 				'ending' => $this->endings->endingOf(case: $case),
+				'resultTypes' => $this->endings->resultChoicesOn(case: $case),
 				'statusIsHandSettable' => $this->processStatus->allowsHandSet(
 					caseTypeId: (string)($case['caseType'] ?? '')
 				),
@@ -118,4 +122,31 @@ class CaseActsOverview {
 			$this->menu->forCase(caseId: $caseId, case: $case)
 		);
 	}//end overview()
+
+	/**
+	 * Whether the case is ready to be archived, item by item.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{caseId: string, checklist: array<int, array<string, mixed>>} The checklist.
+	 *
+	 * @throws RefusedException When the case cannot be read.
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function archiveReadiness(string $caseId): array {
+		$case = $this->store->loadCase(caseId: $caseId);
+		if ($case === null) {
+			throw new RefusedException(
+				rule: 'case-not-found',
+				sentence: 'This case could not be found.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return [
+			'caseId' => $caseId,
+			'checklist' => ($this->readiness?->checklist(caseId: $caseId, case: $case) ?? []),
+		];
+	}//end archiveReadiness()
 }//end class

@@ -126,7 +126,7 @@ class GeneratedDocumentFiler {
 
 		$record = [
 			'title' => $title,
-			'informatieobjecttype' => $type,
+			'informatieobjecttype' => $this->catalogueType(name: $type),
 			'direction' => (string)($metadata['direction'] ?? 'outgoing'),
 			'auteur' => $this->currentAuthor(),
 			'format' => $mime,
@@ -140,6 +140,27 @@ class GeneratedDocumentFiler {
 
 		return $this->dossier->uploadDocument($caseId, $file->getName(), $file->getContent(), $record);
 	}//end file()
+
+	/**
+	 * The catalogue id of a document type the metadata names, so every road
+	 * that files a generated document stores the same reference.
+	 *
+	 * @param string $name The type as the template or declaration names it.
+	 *
+	 * @return string The catalogue id, or the name when the catalogue has none.
+	 */
+	private function catalogueType(string $name): string {
+		$resolver = null;
+		if ($this->container->has(DocumentTypeResolver::class) === true) {
+			$resolver = $this->container->get(DocumentTypeResolver::class);
+		}
+
+		if ($resolver instanceof DocumentTypeResolver) {
+			return $resolver->resolve(name: $name);
+		}
+
+		return $name;
+	}//end catalogueType()
 
 	/**
 	 * Who the document is addressed to.

@@ -238,6 +238,95 @@ class PartnerShareScopeTest extends TestCase {
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
 	 */
 	/**
+	 * Seed a consent that lets zorgpartner-bv receive case-1.
+	 *
+	 * @return void
+	 */
+	private function seedConsent(): void {
+		$this->store->seed(
+			schema: 'toestemming',
+			uuid: 'consent-1',
+			row: [
+				'caseId' => 'case-1',
+				'grantedByBsn' => '999990627',
+				'grantedDate' => '2026-01-10',
+				'validTo' => '2099-12-31',
+				'withdrawn' => false,
+				'recipientParties' => ['zorgpartner-bv'],
+				'tegegevens' => ['ondersteuningsplan'],
+			],
+		);
+	}//end seedConsent()
+
+	/**
+	 * The note to the partner and the fields it does not see travel on the share.
+	 *
+	 * @return void
+	 */
+	public function testTheShareCarriesTheMessageAndTheFieldsLeftOut(): void {
+		$this->seedConsent();
+
+		$share = $this->sharing()->createPartnerShare(
+			caseId: 'case-1',
+			partnerId: 'zorgpartner-bv',
+			permissionLevel: 'bekijken_bijdragen',
+			createdBy: 'jan',
+			message: '  Graag jullie advies.  ',
+			fieldExclusions: ['description', 'priority', 'description'],
+		);
+
+		self::assertArrayNotHasKey('error', $share);
+		$written = $this->shares->shares[0];
+		self::assertSame('Graag jullie advies.', $written['message']);
+		self::assertSame('["description","priority"]', $written['fieldExclusions'], 'Stored once each, JSON-encoded as the schema declares.');
+		self::assertSame(
+			[],
+			(new RealSchemaValidator())->errors(slug: 'caseShare', payload: $written),
+			'The register accepts a partner share with a message and exclusions.'
+		);
+	}//end testTheShareCarriesTheMessageAndTheFieldsLeftOut()
+
+	/**
+	 * Without a message or exclusions the share carries neither key.
+	 *
+	 * @return void
+	 */
+	public function testAShareWithoutMessageOrExclusionsCarriesNeither(): void {
+		$this->seedConsent();
+
+		$this->sharing()->createPartnerShare(
+			caseId: 'case-1',
+			partnerId: 'zorgpartner-bv',
+			permissionLevel: 'bekijken',
+			createdBy: 'jan',
+			message: '   ',
+		);
+
+		self::assertArrayNotHasKey('message', $this->shares->shares[0]);
+		self::assertArrayNotHasKey('fieldExclusions', $this->shares->shares[0]);
+	}//end testAShareWithoutMessageOrExclusionsCarriesNeither()
+
+	/**
+	 * A field outside the allow-list is refused before anything is written.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownFieldIsRefusedNotDropped(): void {
+		$this->seedConsent();
+
+		$answer = $this->sharing()->createPartnerShare(
+			caseId: 'case-1',
+			partnerId: 'zorgpartner-bv',
+			permissionLevel: 'bekijken',
+			createdBy: 'jan',
+			fieldExclusions: ['description', 'bsn'],
+		);
+
+		self::assertSame('Unknown case field: bsn', $answer['error']);
+		self::assertSame([], $this->shares->shares, 'Nothing reached the register.');
+	}//end testAnUnknownFieldIsRefusedNotDropped()
+
+	/**
 	 * The partner share the service writes is one the real caseShare schema accepts.
 	 *
 	 * A partner share carries no public token, so `token` cannot be required

@@ -1284,8 +1284,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * target) and its node position. Does NOT delete the underlying
 		 * `statusType` object itself — the caller (`WorkflowEditor.vue::
 		 * onDeleteStatusNode()`) does that via `objectStore.deleteObject()`
-		 * after the same "at least one final status must remain" guard
-		 * `StatusesTab.vue::deleteStatusType()` already enforces.
+		 * after the "at least one final status must remain" guard.
 		 *
 		 * @param {string} statusId UUID of the status to remove
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas

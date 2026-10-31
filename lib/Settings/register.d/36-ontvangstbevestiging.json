@@ -77,6 +77,12 @@
                 "default": [],
                 "title": "Address fields",
                 "description": "Where on a case of this type the sender's e-mail address is kept, as dot paths (for example wooRequest.verzoekerEmail). Read before the general contact fields, so a case type that keeps its requester in its own object is still answered."
+              },
+              "emailCopy": {
+                "type": "boolean",
+                "default": false,
+                "title": "Also send by e-mail",
+                "description": "On, an acknowledgement that went to the portal inbox or digital post is also mailed to the sender's address, and each message is recorded on the case."
               }
             }
           },

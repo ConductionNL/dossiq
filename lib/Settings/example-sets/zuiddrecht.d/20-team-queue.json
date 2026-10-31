@@ -1,0 +1,191 @@
+{
+	"$comment": "The team queue of Woo en informatie and the deadline tiers on Pieter's own cases, as DqTeamwachtrij and DqAanMijToegewezen draw them: five cases without a handler waiting 6, 5, 4, 2 and 1 days (the first three live in the main file), and a statutory term on each of Pieter's open cases so the queue reads one late, one critical, two almost due and the rest normal.",
+	"objects": [
+		{
+			"key": "termijn-bezwaar-parkeerboete-havenstraat",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-16 11:20}}",
+				"endDateCalculated": "{{date:0}}",
+				"endDateCurrent": "{{date:0}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "termijn-kapvergunning-essen-parkweg",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:kapvergunning-essen-parkweg.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-11 13:15}}",
+				"endDateCalculated": "{{date:8}}",
+				"endDateCurrent": "{{date:8}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "termijn-melding-afval-lindelaan",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:melding-afval-lindelaan.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-15 10:15}}",
+				"endDateCalculated": "{{date:15}}",
+				"endDateCurrent": "{{date:15}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "termijn-woo-fietspad-besluitklaar",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:woo-fietspad-besluitklaar.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-24 09:40}}",
+				"endDateCalculated": "{{date:12}}",
+				"endDateCurrent": "{{date:12}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "woo-kosten-nieuw-zwembad",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kosten nieuw zwembad",
+				"description": "De heer De Wit vraagt de ramingen, offertes en raadsstukken over de kosten van het nieuwe zwembad.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-kees-dewit.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:keesdewit.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-2}}",
+				"lastActivityAt": "{{datetime:-2 13:30}}",
+				"receivedAt": "{{datetime:-2 13:30}}",
+				"currentStatusEnteredAt": "{{datetime:-2 13:30}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 13:30}}"
+					}
+				],
+				"tags": [
+					"woo",
+					"zwembad"
+				],
+				"wooRequest": {
+					"onderwerp": "Kosten nieuw zwembad",
+					"omschrijving": "De heer De Wit vraagt de ramingen, offertes en raadsstukken over de kosten van het nieuwe zwembad.",
+					"periodeVan": "{{date:-730}}",
+					"periodeTot": "{{date:-2}}",
+					"origin": "portal"
+				}
+			}
+		},
+		{
+			"key": "termijn-woo-kosten-nieuw-zwembad",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:woo-kosten-nieuw-zwembad.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-2 13:30}}",
+				"endDateCalculated": "{{date:26}}",
+				"endDateCurrent": "{{date:26}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "melding-losliggende-stoeptegels-kerkplein",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Losliggende stoeptegels Kerkplein",
+				"description": "Bij de ingang van de kerk liggen drie stoeptegels los; een voorbijganger is er bijna over gestruikeld.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henk.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henk.displayName}}",
+				"intakeChannel": "website",
+				"communicationChannel": "email",
+				"confidentiality": "intern",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-1}}",
+				"lastActivityAt": "{{datetime:-1 16:05}}",
+				"receivedAt": "{{datetime:-1 16:05}}",
+				"currentStatusEnteredAt": "{{datetime:-1 16:05}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-1 16:05}}"
+					}
+				],
+				"tags": [
+					"openbare-ruimte",
+					"stoep"
+				]
+			}
+		},
+		{
+			"key": "termijn-melding-losliggende-stoeptegels-kerkplein",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:melding-losliggende-stoeptegels-kerkplein.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-1 16:05}}",
+				"endDateCalculated": "{{date:9}}",
+				"endDateCurrent": "{{date:9}}",
+				"status": "lopend"
+			}
+		}
+	]
+}

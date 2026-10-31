@@ -422,4 +422,44 @@ class DwellTimeAnalyzerTest extends TestCase {
 
 	}//end testWithoutTheHeldReaderTheTotalsAreEmpty()
 
+	/**
+	 * A status name is translatable, so a row read through searchObjects()
+	 * carries it as a language map. The stats read it as text rather than
+	 * falling back to the raw status id (DqProcesanalyse, "fase 3c0f…b007").
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	public function testATranslatableStatusNameIsReadAsText(): void {
+		$stats = $this->analyzer->aggregateDwellStats(
+			[['caseId' => 'c1', 'statusId' => 'st-publish', 'hours' => 8.0]],
+			['st-publish' => ['name' => ['nl' => 'Publicatie']]]
+		);
+
+		self::assertSame('Publicatie', $stats[0]['statusName']);
+	}//end testATranslatableStatusNameIsReadAsText()
+
+	/**
+	 * A status carries the phase its type names (translated), or '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/status-type-phase/specs/process-mining/spec.md#requirement-days-per-phase-groups-statuses-by-their-phase
+	 */
+	public function testAStatusCarriesItsPhase(): void {
+		$stats = $this->analyzer->aggregateDwellStats(
+			intervals: [
+				['caseId' => 'c1', 'statusId' => 'st-search', 'hours' => 8.0],
+				['caseId' => 'c1', 'statusId' => 'st-done', 'hours' => 1.0],
+			],
+			statusTypeIndex: [
+				'st-search' => ['name' => 'Zoeken documenten', 'phase' => ['nl' => 'Beoordeling']],
+				'st-done' => ['name' => 'Afgehandeld', 'isFinal' => true],
+			]
+		);
+
+		self::assertSame(expected: ['Beoordeling', ''], actual: array_column(array: $stats, column_key: 'statusPhase'));
+		self::assertSame(expected: [false, true], actual: array_column(array: $stats, column_key: 'statusFinal'));
+	}//end testAStatusCarriesItsPhase()
 }//end class

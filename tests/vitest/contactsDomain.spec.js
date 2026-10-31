@@ -60,7 +60,7 @@ describe('the Contacts menu entry', () => {
 	})
 
 	it('names an icon src/icons.js registers (gate-60)', () => {
-		expect(menuEntry.icon).toBe('AccountGroupOutline')
+		expect(menuEntry.icon).toBe('AccountMultipleOutline')
 		expect(iconsSource).toContain(`\n\t${menuEntry.icon},`)
 	})
 
@@ -87,19 +87,17 @@ describe('the Contacts menu entry', () => {
 			)
 			.map((m) => m.id)
 
-		// FIVE, not the design's three. The design and the delta spec both say
-		// the top level is Dashboard, My work and Contacts; measured against
-		// this tree it is five, and the two extras are real. `CaseObjectsMenu`
-		// (Objects) arrived with custom-objects-on-the-case and was never
-		// relocated into the My work group, and `SettingsGroup` is the gear
-		// group's own header, which carries no route and is not a domain.
+		// FOUR, not the design's three. The design and the delta spec both say
+		// the top level is Dashboard, My work and Contacts; the extra is
+		// `SettingsGroup`, the gear group's own header, which carries no route
+		// and is not a domain. `CaseObjectsMenu` (Objects) is an own-record
+		// register and sits under settings (Ruben, 20 October 2026).
 		// Asserting the design's three would have been a test that fails on a
 		// correct tree, so the measurement is what is written down.
 		expect(topLevel).toEqual([
 			'Dashboard',
 			'WorkGroup',
 			'Contacts',
-			'CaseObjectsMenu',
 			'SettingsGroup',
 		])
 		// ADR-097 allows six. This change spends the fifth, so the NEXT domain
@@ -188,6 +186,8 @@ describe.each([
 			// open cases and the latest contact moments under the card.
 			'contact-open-cases',
 			'contact-latest-moments',
+			// The party's open pipelinq tickets (DqContact/DqOrganisatie Tickets card).
+			'contact-open-tickets',
 			'contact-cases',
 			'contact-moments',
 			// The third question this page is for (#2993): what did we send
@@ -198,8 +198,15 @@ describe.each([
 			// The tab strip the board draws (DqContact): the four above are
 			// its panels.
 			'contact-panels',
+			// History, last as on pipelinq's relation pages: the last tab,
+			// with a last-changed card closing the side column.
+			'contact-history',
+			// An organisation's contact persons (DqOrganisatie Hoofdcontact, "Alle 2 contactpersonen").
+			...(id === 'OrganisationDetail' ? ['org-contact-persons'] : []),
 		])
-		expect(widget(p, 'contact-card').content.editable).toBe(false)
+		// A facts card in two columns, as the board draws it; facts are read only.
+		expect(widget(p, 'contact-card').type).toBe('facts')
+		expect(widget(p, 'contact-card').content.columns).toBe(2)
 	})
 
 	it('filters both lists on this object, not on a field that does not exist', () => {
@@ -239,14 +246,18 @@ describe.each([
 		expect(strip.content.tabs[0].widgetIds).toEqual([
 			'contact-card',
 			'contact-open-cases',
+			'contact-open-tickets',
 			'contact-latest-moments',
 		])
 		expect(strip.content.tabs.map((tab) => tab.widgetId)).toEqual([
 			undefined,
 			'contact-cases',
 			'contact-moments',
+			...(id === 'OrganisationDetail' ? ['org-contact-persons'] : []),
 			'contact-documents',
+			'contact-history',
 		])
+		expect(p.config.sideColumn[p.config.sideColumn.length - 1].id).toBe('side-history')
 	})
 
 	it('names the page the way the board does: breadcrumb, two quick acts, no follow', () => {
@@ -269,7 +280,7 @@ describe.each([
 		expect(a.props).toEqual({ requester: '@objectId' })
 		// A prefill of a field the form does not ask for is dropped silently.
 		expect(a.includeFields).toContain('requester')
-		expect(a.fieldOverrides.requester.widget).toBe('InitiatorPicker')
+		expect(a.fieldOverrides.requester.widget).toBe('party')
 	})
 
 	it('logs a contact moment against this contact', () => {
@@ -326,9 +337,13 @@ describe('the contact on a contact moment', () => {
 		// (#2931) the sensitive-field read rules. The two files are asserted
 		// TOGETHER and against one value on purpose: #2907 bumped the live
 		// register and left the mock behind, and a mock one version short
-		// looks exactly like a mock that is up to date.
+		// looks exactly like a mock that is up to date. 1.6.0 added the paper
+		// letter (`brief`) as a channel (contact-channel-letter). 1.7.0 added
+		// subject, note and attachmentCount (contact-message-subject-note);
+		// 1.8.0 the full message (contact-message-text); 1.9.0 the automatic
+		// marker (contact-log-skips-automatic).
 		for (const register of [kccRegister, mockRegister]) {
-			expect(register.components.schemas.contactmoment.version).toBe('1.5.0')
+			expect(register.components.schemas.contactmoment.version).toBe('1.9.0')
 		}
 	})
 
@@ -339,17 +354,29 @@ describe('the contact on a contact moment', () => {
 		).toBeDefined()
 	})
 
-	it('is served by the same picker as case.requester', () => {
-		// Both fields resolve ns#Requester, so one picker covers both — but
-		// only once its appliesTo says so. Without this the Log contact form
-		// renders the field as a bare uuid box.
-		// Asserted as membership rather than as the whole literal: the same
-		// picker took a third field, `role.representedParty`, with
-		// `gemachtigde-role-on-every-case-type` (#2918), and a third entry is
-		// what this picker is for rather than a break in it.
-		const appliesTo = registrySource.match(/appliesTo: \[([^\]]*)\]/)
-		expect(appliesTo, 'the registry declares no appliesTo').toBeTruthy()
-		expect(appliesTo[1]).toContain("'case.requester'")
-		expect(appliesTo[1]).toContain("'contactmoment.contact'")
+	it('is asked through the same party picker as case.requester, or not asked at all', () => {
+		// Both fields resolve ns#Requester, so a form that asks the contact
+		// must declare the `party` widget the requester forms declare, or it
+		// renders the field as a bare uuid box. The Log contact forms do not
+		// ask it: they preset it to the contact the page is about.
+		const forms = []
+		;(function walk(node) {
+			if (node && typeof node === 'object') {
+				if (node.schema === 'contactmoment' && Array.isArray(node.includeFields)) {
+					forms.push(node)
+				}
+				Object.values(node).forEach(walk)
+			}
+		})(manifest)
+		expect(forms.length).toBeGreaterThan(0)
+		for (const form of forms) {
+			if (form.includeFields.includes('contact')) {
+				expect(form.fieldOverrides?.contact?.widget).toBe('party')
+			}
+		}
+		for (const p of [contactDetail, organisationDetail]) {
+			expect(action(p, 'log-contact').props.contact).toBe('@objectId')
+		}
+		expect(registrySource).not.toContain('InitiatorPicker: {')
 	})
 })

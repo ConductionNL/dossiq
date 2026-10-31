@@ -20,10 +20,6 @@
 
 import { describe, expect, it } from 'vitest'
 import { pauseSentence, termRows } from '../../src/utils/caseTerms.js'
-import {
-	waitingParty,
-	waitingSentence,
-} from '../../src/utils/personalQueueHelpers.js'
 
 /**
  * A `t` that fills the placeholders, so the assertions read like the screen.
@@ -38,40 +34,6 @@ function t(app, text, vars = {}) {
 		key in vars ? String(vars[key]) : match,
 	)
 }
-
-describe('the waiting sentence in the personal queue', () => {
-	it('names the party, the days and the reminders', () => {
-		const item = { waiting: { on: 'applicant', days: 9, chases: 2 } }
-
-		expect(waitingSentence(item, t)).toBe(
-			'Waiting on the applicant for 9 days, chased 2 times',
-		)
-	})
-
-	it('says chased once rather than chased 1 times', () => {
-		const item = { waiting: { on: 'thirdParty', days: 12, chases: 1 } }
-
-		expect(waitingSentence(item, t)).toBe(
-			'Waiting on a third party for 12 days, chased once',
-		)
-	})
-
-	it('leaves the reminders out until one has gone', () => {
-		const item = { waiting: { on: 'applicant', days: 3, chases: 0 } }
-
-		expect(waitingSentence(item, t)).toBe('Waiting on the applicant for 3 days')
-	})
-
-	it('renders nothing for a case nobody is waiting on', () => {
-		expect(waitingSentence({}, t)).toBe('')
-		expect(waitingSentence({ waiting: {} }, t)).toBe('')
-		expect(waitingSentence(null, t)).toBe('')
-	})
-
-	it('passes a party it does not know through rather than dropping it', () => {
-		expect(waitingParty('another-authority', t)).toBe('another-authority')
-	})
-})
 
 describe('the pause sentence on the case terms panel', () => {
 	it('names the reason and how many reminders went out', () => {

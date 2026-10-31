@@ -434,4 +434,128 @@ class EngineTaskGatewayTest extends TestCase {
 		$this->assertSame('available', $service->seen['state']);
 		$this->assertSame('dossiq', $service->seen['appId']);
 	}//end testReturnsTheEngineUuidOnSuccess()
+	/**
+	 * A once-key is looked up in the engine: taken, free, or unknown when the
+	 * engine cannot look a task up by its key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	public function testAOnceKeyIsTakenFreeOrUnknown(): void {
+		$service = new class {
+			public function findByKey(string $key): array {
+				return $key === 'dossiq:once:rule:t:r:case-1' ? [new \stdClass()] : [];
+			}
+		};
+		$gateway = $this->gatewayWith($service);
+
+		$this->assertTrue($gateway->keyTaken(key: 'dossiq:once:rule:t:r:case-1'));
+		$this->assertFalse($gateway->keyTaken(key: 'dossiq:once:rule:t:r:case-2'));
+		$this->assertNull($this->gatewayWith(new class {
+		})->keyTaken(key: 'dossiq:once:rule:t:r:case-1'));
+	}//end testAOnceKeyIsTakenFreeOrUnknown()
+
+	/**
+	 * A once-keyed task is written with its once-key as the engine key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	public function testAOnceKeyedTaskCarriesItAsItsEngineKey(): void {
+		$payload = $this->gatewayWith(null)->toEnginePayload(
+			task: ['title' => 'Welstandsadvies vragen', 'onceKey' => 'dossiq:once:rule:t:r:case-1'],
+			caseId: 'case-1'
+		);
+
+		$this->assertSame('dossiq:once:rule:t:r:case-1', $payload['key']);
+	}//end testAOnceKeyedTaskCarriesItAsItsEngineKey()
+	/**
+	 * OpenRegister's Task is a Nextcloud Entity: its column getters are magic
+	 * (`__call`), so `method_exists()` says no. A task read through `find()`
+	 * still carries its case, its term, its candidates and its metadata, and a
+	 * column the engine does not have reads as empty instead of failing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 */
+	public function testFindReadsTheEntitysMagicColumns(): void {
+		$service = new class {
+			/**
+			 * @param string $id The task uuid.
+			 *
+			 * @return object The task, as an Entity answers it.
+			 */
+			public function get(string $id): object {
+				return new class {
+					/** @var string|null The run. */
+					protected ?string $runUuid = null;
+					/** @var string|null The flow node. */
+					protected ?string $nodeId = null;
+					/** @var string|null Who has it. */
+					protected ?string $assignee = null;
+					/** @var array|null The checklist. */
+					protected ?array $checklist = null;
+					/** @var string|null The case. */
+					protected ?string $objectUuid = 'case-9';
+					/** @var \DateTime|null The term. */
+					protected ?\DateTime $dueAt = null;
+					/** @var array|null The groups it is offered to. */
+					protected ?array $candidateGroups = ['vergunningen'];
+					/** @var array|null What dossiq declared. */
+					protected ?array $metadata = ['form' => 'x'];
+
+					/**
+					 * Sets the term.
+					 */
+					public function __construct() {
+						$this->dueAt = new \DateTime('2026-11-02T00:00:00+00:00');
+					}
+
+					/**
+					 * An Entity's magic getter: a column it has, else BadFunctionCallException.
+					 *
+					 * @param string       $name The method.
+					 * @param array<mixed> $args The arguments.
+					 *
+					 * @return mixed
+					 */
+					public function __call(string $name, array $args): mixed {
+						$property = lcfirst(substr($name, 3));
+						if (str_starts_with($name, 'get') === true && property_exists($this, $property) === true) {
+							return $this->{$property};
+						}
+
+						throw new \BadFunctionCallException($name . ' is not a valid attribute');
+					}
+
+					/** @return string */
+					public function getUuid(): string {
+						return 'task-1';
+					}
+
+					/** @return string */
+					public function getTitle(): string {
+						return 'Advies boomdeskundige beoordelen';
+					}
+
+					/** @return string */
+					public function getState(): string {
+						return 'available';
+					}
+				};
+			}
+		};
+
+		$task = $this->gatewayWith(service: $service)->find(taskId: 'task-1');
+
+		$this->assertSame(expected: 'case-9', actual: $task['objectUuid']);
+		$this->assertSame(expected: '2026-11-02T00:00:00+00:00', actual: $task['dueDate']);
+		$this->assertSame(expected: ['vergunningen'], actual: $task['candidateGroups']);
+		$this->assertSame(expected: ['form' => 'x'], actual: $task['metadata']);
+		$this->assertSame(expected: [], actual: $task['candidateUsers']);
+		$this->assertSame(expected: '', actual: $task['flowRun']);
+	}//end testFindReadsTheEntitysMagicColumns()
 }//end class

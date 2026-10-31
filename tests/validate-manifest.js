@@ -144,6 +144,24 @@ function newerSchemaVersion() {
 }
 
 /**
+ * The page type an `enum` error on `/pages/<n>/type` rejected, when the vendored
+ * newer schema lists it; '' for any other error.
+ *
+ * @param {object} err      An Ajv error.
+ * @param {object} manifest The manifest under validation.
+ * @return {string} The page type, or ''.
+ */
+function newerPageType(err, manifest) {
+	const match = /^\/pages\/(\d+)\/type$/.exec(String(err.instancePath || ''))
+	if (err.keyword !== 'enum' || !match) {
+		return ''
+	}
+	const type = manifest?.pages?.[Number(match[1])]?.type
+	const listed = newerSchema()?.$defs?.page?.properties?.type?.enum
+	return typeof type === 'string' && Array.isArray(listed) && listed.includes(type) ? type : ''
+}
+
+/**
  * Whether the vendored newer schema declares `property` at `instancePath`.
  *
  * 🔑 IT RESOLVES THE PATH RATHER THAN SEARCHING FOR THE NAME. `_note` is
@@ -198,6 +216,41 @@ function newerSchemaAccepts(instancePath, property) {
 		def = schema.$defs.visibleWhen
 	}
 
+	// A detail header pill's `resolve` (pill-color-field, schema 2.134.0).
+	if (
+		def === null
+		&& segments.length === 5
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& ['typePill', 'statusPill'].includes(segments[3])
+		&& segments[4] === 'resolve'
+	) {
+		def = schema.$defs.headerPill?.properties?.resolve ?? null
+	}
+
+	// A board card (its pill's `resolve`, pill-color-field, schema 2.135.0).
+	if (
+		def === null
+		&& segments.length === 5
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& segments[3] === 'board'
+		&& segments[4] === 'card'
+	) {
+		def = schema.$defs.boardView?.properties?.card ?? null
+	}
+
+	// A page's default saved view (its `icon`, pill-color-field, schema 2.134.0).
+	if (
+		def === null
+		&& segments.length === 5
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& segments[3] === 'defaultSavedViews'
+	) {
+		def = schema.$defs.page?.properties?.config?.properties?.defaultSavedViews?.items ?? null
+	}
+
 	// A walkthrough tour is declared inline, not under $defs. Resolved by
 	// its path like the others (the-getting-started-tour-starts-on-the-
 	// dashboard, `startOn` in schema 2.94.0).
@@ -215,6 +268,25 @@ function newerSchemaAccepts(instancePath, property) {
 	}
 
 	return Object.hasOwn(def.properties, property)
+}
+
+/**
+ * Compare two `major.minor.patch` versions.
+ *
+ * @param {string} left The left version.
+ * @param {string} right The right version.
+ * @return {number} Negative when left is older, 0 when equal, positive when newer.
+ */
+function compareSchemaVersions(left, right) {
+	const a = String(left).split('.').map(Number)
+	const b = String(right).split('.').map(Number)
+	for (let i = 0; i < Math.max(a.length, b.length); i++) {
+		const diff = (a[i] || 0) - (b[i] || 0)
+		if (diff !== 0) {
+			return diff
+		}
+	}
+	return 0
 }
 
 function loadAjv() {
@@ -406,7 +478,55 @@ function main() {
 			lagged.push({ err, property })
 			continue
 		}
+		// A page TYPE only the newer schema lists (`redaction`, schema 2.137.0)
+		// is the same lag, one level down: the enum, not a property.
+		const pageType = newerPageType(err, manifest)
+		if (pageType !== '') {
+			lagged.push({ err, property: `type: ${pageType}` })
+			continue
+		}
 		real.push(err)
+	}
+
+	// The same question for a VALUE or a branch the newer schema allows (a new
+	// enum value, a new anyOf branch): there is no property name to look up,
+	// so the newer schema is asked directly. An error is a lag only when the
+	// newer schema reports nothing at its path, below it or above it; any
+	// newer error near it keeps it a defect.
+	const newer = newerSchema()
+	if (newer && real.length > 0 && compareSchemaVersions(schemaVersion(newer), schemaVersion(schema)) > 0) {
+		const newerAjv = new Ajv({ allErrors: true, strict: false })
+		if (addFormats) {
+			try {
+				addFormats(newerAjv)
+			} catch (_) {
+				// formats are not what tells a lag from a defect
+			}
+		}
+		const validateNewer = newerAjv.compile(newer)
+		validateNewer(manifest)
+		const newerPaths = (validateNewer.errors || []).map((e) => e.instancePath || '')
+		const near = (at) => newerPaths.some((p) => p === at || p.startsWith(at + '/') || at.startsWith(p + '/') || p === '')
+		for (let i = real.length - 1; i >= 0; i--) {
+			const at = real[i].instancePath || ''
+			if (at !== '' && !near(at)) {
+				lagged.push({ err: real[i], property: real[i].keyword })
+				real.splice(i, 1)
+			}
+		}
+	}
+
+	// A shape checked inside an `if`/`then` (a board under `type: index`)
+	// reports its lag twice: the property, and the `then` it sits under on an
+	// ancestor path. The wrapper is that same lag, not a defect of its own; a
+	// real error under the same page is reported separately and still fails.
+	const laggedPaths = lagged.map(({ err }) => err.instancePath || '')
+	for (let i = real.length - 1; i >= 0; i--) {
+		const err = real[i]
+		const at = err.instancePath || ''
+		if (err.keyword === 'if' && laggedPaths.some((lagPath) => lagPath.startsWith(at + '/'))) {
+			real.splice(i, 1)
+		}
 	}
 
 	if (lagged.length > 0) {
@@ -415,7 +535,7 @@ function main() {
 		)
 		for (const { err, property } of lagged) {
 			console.warn(
-				`  ~ ${err.instancePath || '(root)'} uses "${property}", which schema ${newerSchemaVersion()} declares and the installed ${schemaVersion(schema)} does not`,
+				`  ~ ${err.instancePath || '(root)'} uses "${property}", which schema ${newerSchemaVersion()} accepts and the installed ${schemaVersion(schema)} does not`,
 			)
 		}
 		console.warn(

@@ -112,6 +112,99 @@ class PaymentStateProjectionJobServiceAccountTest extends TestCase {
 	}//end testWithoutAnAccountTheRunWritesNothing()
 
 	/**
+	 * The projected fields are readOnly, which OpenRegister lets only a system
+	 * operation stamp: the patch runs inside one.
+	 *
+	 * @return void
+	 */
+	public function testThePatchRunsAsASystemOperation(): void {
+		$this->register = $this->readOnlyRegister();
+		$this->register->seed(
+			schema: 'case',
+			id: 'case-1',
+			row: [
+				'title' => 'Omgevingsvergunning',
+				'isFinalStatus' => false,
+				'isDraft' => false,
+				'paymentState' => CasePaymentState::OUTSTANDING,
+			]
+		);
+
+		$this->runJobOnce(job: $this->job());
+
+		$this->assertSame([], $this->register->refusals);
+		$this->assertSame(CasePaymentState::PAID, $this->register->row(schema: 'case', id: 'case-1')['paymentState']);
+	}//end testThePatchRunsAsASystemOperation()
+
+	/**
+	 * A register that, like OpenRegister, refuses a readOnly change outside a system operation.
+	 *
+	 * @return AnonymousRefusingRegister The register.
+	 */
+	private function readOnlyRegister(): AnonymousRefusingRegister {
+		return new class (actor: fn (): ?string => $this->actingUid()) extends AnonymousRefusingRegister {
+
+			/**
+			 * How deep the system operation is.
+			 *
+			 * @var int
+			 */
+			private int $system = 0;
+
+			/**
+			 * Run an operation as the system.
+			 *
+			 * @param callable $operation The operation.
+			 *
+			 * @return mixed What it returns.
+			 */
+			public function runAsSystem(callable $operation): mixed {
+				$this->system++;
+				try {
+					return $operation();
+				} finally {
+					$this->system--;
+				}
+			}//end runAsSystem()
+
+			/**
+			 * Patch a row, refusing a readOnly change outside a system operation.
+			 *
+			 * @param string          $objectId      The id.
+			 * @param array           $data          The changes.
+			 * @param string|int|null $register      Ignored.
+			 * @param string|int|null $schema        The schema.
+			 * @param bool            $_rbac         Passed on.
+			 * @param bool            $_multitenancy Passed on.
+			 *
+			 * @return array<string, mixed> The stored row.
+			 */
+			public function patchObject(
+				string $objectId,
+				array $data,
+				string|int|null $register = null,
+				string|int|null $schema = null,
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): array {
+				if ($this->system === 0 && array_intersect(array_keys($data), ['paymentState', 'paymentStateCheckedAt']) !== []) {
+					$this->refusals[] = 'Cannot modify readOnly property: paymentState';
+					throw new \RuntimeException('Cannot modify readOnly property: paymentState');
+				}
+
+				return parent::patchObject(
+					objectId: $objectId,
+					data: $data,
+					register: $register,
+					schema: $schema,
+					_rbac: $_rbac,
+					_multitenancy: $_multitenancy
+				);
+			}//end patchObject()
+		};
+	}//end readOnlyRegister()
+
+	/**
 	 * The real job, with the shillinq read doubled.
 	 *
 	 * @return object The job.

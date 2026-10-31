@@ -224,6 +224,12 @@
       Four wait on `method-decomposition`; `WOODeadlineService` goes with the refactor programme.
       What keeps this task open is its second half: the TimedJob allowlist still names
       `PauseChaseJob`, which cannot go before OpenRegister is a required dependency.
+      Part 5 (22 Oct, R22-RECORD): the two age counts the list said could move do:
+      `KpiAggregationService::daysBetween()` (signed days a closed case took, pinned by
+      `KpiAggregationServiceTest`'s averages, including a negative span) and `UrgencyScorer`'s idle
+      days (pinned by `UrgencyScorerTest` and `WorkQueueServiceTest`) ask `DayCount`, as a default
+      collaborator so neither constructor's contract widens. The list is at 3: two wait on
+      `method-decomposition`, `WOODeadlineService` goes with the refactor programme.
 
 ## Verify
 
