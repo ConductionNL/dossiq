@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
+use OCA\Dossiq\AppInfo\Registrar\IntakeObligationListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar;
 use OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob;
 use OCA\Dossiq\BackgroundJob\ReportGroupingJob;
@@ -33,12 +34,14 @@ use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\CaseNumberListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\IntakeObligationListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCA\Dossiq\Service\CaseNumberService;
 use OCA\Dossiq\Service\CasePlanProjectionService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Service\Obligations\IntakeObligations;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectActivatedEvent;
@@ -86,6 +89,7 @@ class DraftIsNotReceivedRegistrationTest extends TestCase {
 
 		(new WorkflowListenerRegistrar())->register(context: $context);
 		(new IntakeListenerRegistrar())->register(context: $context);
+		(new IntakeObligationListenerRegistrar())->register(context: $context);
 
 		return count($registered[$listener][$event] ?? []) === 1;
 	}//end registeredOnce()
@@ -101,7 +105,7 @@ class DraftIsNotReceivedRegistrationTest extends TestCase {
 			$entity->setUuid(self::CASE_ID);
 			$entity->setSchema('3');
 			$entity->setStatus($status);
-			$entity->setObject(['title' => 'Verhuizing', 'caseType' => 'type-1']);
+			$entity->setObject(['title' => 'Verhuizing', 'caseType' => 'type-1', 'intakeObligations' => [['kind' => 'cosign', 'state' => 'awaiting']]]);
 
 			return $entity;
 		};
@@ -215,6 +219,7 @@ class DraftIsNotReceivedRegistrationTest extends TestCase {
 
 		(new WorkflowListenerRegistrar())->register(context: $context);
 		(new IntakeListenerRegistrar())->register(context: $context);
+		(new IntakeObligationListenerRegistrar())->register(context: $context);
 
 		$both = array_keys(
 			array_intersect_key(
@@ -283,6 +288,16 @@ class DraftIsNotReceivedRegistrationTest extends TestCase {
 				return ['id' => 'term-1'];
 			}
 		);
+		$intakeObligations = $this->createMock(IntakeObligations::class);
+		$intakeObligations->method('placeFor')->willReturnCallback(
+			static function () use (&$count): int {
+				$count[IntakeObligationListener::class]++;
+
+				return 1;
+			}
+		);
+		$count[IntakeObligationListener::class] = 0;
+
 		$caseTypes = $this->createMock(CaseTypeSlugResolver::class);
 		$caseTypes->method('toSlug')->willReturn('verhuizing');
 
@@ -296,6 +311,7 @@ class DraftIsNotReceivedRegistrationTest extends TestCase {
 			new CasePlanProjectionListener($projection, $this->caseResolver(), $logger, $receipt),
 			new AcknowledgementOnCreateListener($acknowledgementJobs, $this->caseResolver(), $logger, $receipt),
 			new DeadlineCaseCreatedListener($terms, $this->caseResolver(), $caseTypes, $logger, null, null, null, $receipt),
+			new IntakeObligationListener($receipt, $this->caseResolver(), $intakeObligations),
 		];
 
 		foreach ($sequence as $event) {
@@ -330,6 +346,7 @@ class DraftIsNotReceivedRegistrationTest extends TestCase {
 				CaseNumberListener::class,
 				CasePlanProjectionListener::class,
 				DeadlineCaseCreatedListener::class,
+				IntakeObligationListener::class,
 				ReportGroupingOnCreateListener::class,
 			],
 			$onBoth,

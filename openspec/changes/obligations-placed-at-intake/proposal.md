@@ -13,7 +13,7 @@ Dossiq already has one generic way for a case to wait on somebody: the obligatio
 - `POST /api/portal/obligations/settle` takes portaliq's signed assertion and `case`, `kind`, `answer` (`sign` or `refuse`). Signing meets the obligation and records the portal subject and level of assurance. The applicant cannot sign for their own case.
 - A case type's obligation kind gains `whenUnmet` (`stay` or `withdraw`), applied on a refusal and by a daily job when the due date passes.
 - dossiq writes `signed`, `refused` or `expired` back on the case's entry, so the portal can tell the applicant what the case waits on.
-- Register 0.20.86 to 0.20.87 (case 1.54.0, caseType 1.45.0, obligation 1.1.0).
+- Register 0.20.86 to 0.20.87, obligation 1.1.0; the fragment `register.d/99-case-intake-obligations.json` moves case to 1.61.0 and caseType to 1.47.0.
 
 ## Out of scope
 

@@ -2,12 +2,12 @@
 
 ### Task 1: Register
 - **spec_ref**: `openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-case-opened-with-intake-obligations-waits-on-them`
-- **files**: `lib/Settings/dossiq_register.json`
+- **files**: `lib/Settings/dossiq_register.json`, `lib/Settings/register.d/99-case-intake-obligations.json`
 - [x] `case.intakeObligations`, `obligation.holderName`, `settledBySubject`, `settledTrust`, `caseType.obligationKinds[].whenUnmet`; register 0.20.87
 
 ### Task 2: Place on receipt
 - **spec_ref**: `openspec/changes/obligations-placed-at-intake/specs/obligations-placed-at-intake/spec.md#requirement-a-case-opened-with-intake-obligations-waits-on-them`
-- **files**: `lib/Service/Obligations/IntakeObligations.php`, `lib/Listener/IntakeObligationListener.php`, `lib/AppInfo/Registrar/WorkflowListenerRegistrar.php`
+- **files**: `lib/Service/Obligations/IntakeObligations.php`, `lib/Service/Obligations/IntakeObligationCase.php`, `lib/Listener/IntakeObligationListener.php`, `lib/AppInfo/Registrar/IntakeObligationListenerRegistrar.php`
 - [x] Implement
 - [x] Test: `tests/Unit/Service/Obligations/IntakeObligationsTest.php`
 
