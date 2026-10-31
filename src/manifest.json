@@ -2840,6 +2840,10 @@
 				"createSuccessMessage": "Case created.",
 				"formSize": "normal",
 				"formColumns": 1,
+				"_draftNote": "task-forms-keep-a-draft (row 3.14): the new-case form offers Save draft, which stores the case with isDraft set and skips validation: a draft is the case itself in status draft (decision 180), binds no term and shows only to its author. The draft is kept in the browser under dossiq's key and the signed-in user, and offered back when the same form opens again. Needs nextcloud-vue pages-forward-form-drafts (nextcloud-vue#2021); on an older release the keys are ignored.",
+				"draftAppId": "dossiq",
+				"allowDraft": true,
+				"draftField": "isDraft",
 				"viewModes": ["table", "cards", "board", "map"],
 				"_boardNote": "dqwerkbord-as-the-cases-board. The Werkbord is this list in board view (board DqWerkbord), not a page of its own. A case's status references a statusType row and every case type has its own rows, so the columns come from those rows, merged by name and narrowed to one case type while the list is filtered on one. A drop resolves to the statusType row of the case's own case type and moves the case through `moveCaseStatus`, the status-transition engine, never a PATCH of `status`; `caseStatusTargets` asks the engine where a case may go and what holds it, so the board fades the rest and names the guard. A status type's `capacity` is the column's limit; final statuses are filtered out, so none of them carries one onto the board. The case type and handler columns are read-only: a drag does not change a case type, and handing a case over asks for the reason the bulk Reassign collects.",
 				"board": {
@@ -3395,6 +3399,10 @@
 				"_editFormNote": "The same form the index pages open, so editing a case asks what filing one asks wherever it is done. It was the raw schema-driven default here \u2014 one column, normal width, every property the schema declares \u2014 because CnDetailPage took `formSize` and `formColumns` and forwarded neither `includeFields`, `excludeFields` nor `fieldOverrides` to its dialogs. nextcloud-vue now does. `excludeFields` keeps `status` off for the reason the Cases page gives: a status is the OUTPUT of a transition, and a raw dropdown writes it through without a statusRecord, a guard or the transition's automaticActions. The priority trio goes with it, being derived from impact and urgency.",
 				"formSize": "large",
 				"formColumns": 2,
+				"_draftNote": "task-forms-keep-a-draft (row 3.14): the case edit form keeps what the handler typed and did not save. Save draft is offered there only while the case is still a draft (isDraft), so a case in use is never taken out of use. The draft is kept in the browser under dossiq's key and the signed-in user, and offered back when the same form opens again. Needs nextcloud-vue pages-forward-form-drafts (nextcloud-vue#2021); on an older release the keys are ignored.",
+				"draftAppId": "dossiq",
+				"allowDraft": true,
+				"draftField": "isDraft",
 				"editTitle": "Edit case",
 				"editSubtitle": "The case's fields. You change the status and the term through Next step.",
 				"includeFields": [
@@ -7596,6 +7604,8 @@
 			"_note": "The task page (DqTaak) over OpenRegister's task ENGINE, as a manifest detail page on `entitySource: \"tasks\"` (task-page-on-the-manifest). It replaced TaskDetailView, the custom view it was while a detail page could not read an engine task. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The library reads the task (GET /api/flow-tasks/{uuid}), offers the engine's verbs read off the task (Finish, Pick up or Hand back, Edit, Cancel task in the menu; none on a finished task; Edit opens a form for the title, description, due date and priority, saved through the engine's PATCH, which decides who may) and shows a refusal with the engine's message as-is; Finish goes through dossiq's own completion route (`verbEndpoints`), which checks the case type's form and effects before the engine completes the task. The checklist is the library `checklist` widget, ticked through the engine. The notes, appointments and history are the library cards reading the task's own engine endpoints (`source: {kind: flow-task}`: the `notes` integration, `events` and `audit-trail`), and the waiting-case card is the library `notice` with a link to the case. The case card is the library `facts` widget reading the case through `source`. The state pill uses dossiq's words (\"In execution\"); the priority pill shows only for high and urgent. Engine tasks have NO unified-search provider: the engine's tasks live in their own table and no deep-link shape addresses them. There is no version-history tab: an engine task is not an object and nothing writes a version of it.",
 			"config": {
 				"entitySource": "tasks",
+				"_draftNote": "task-forms-keep-a-draft (row 3.14): the task's Edit form keeps what the handler typed and did not save. The draft is kept in the browser under dossiq's key and the signed-in user, and offered back when the same form opens again. Needs nextcloud-vue pages-forward-form-drafts (nextcloud-vue#2021); on an older release the keys are ignored.",
+				"draftAppId": "dossiq",
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"showTypeEyebrow": false,
 				"breadcrumb": {
