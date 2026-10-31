@@ -327,6 +327,7 @@ final class PackageTestSchemaEntity {
  * @covers \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSchemaReferences
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSettingRules
+ * @covers \OCA\Dossiq\Service\CaseDefinition\AdoptedCaseTypeFill
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
@@ -575,11 +576,12 @@ class PackageInstallerTest extends TestCase {
 	/**
 	 * A case type a seeder already wrote under a random id is adopted by its
 	 * identifier: every row is recorded in the ledger under the id it has
-	 * here, and nothing new is written (decision 190).
+	 * here, no new row is written (decision 190), and the case type gains only
+	 * the fields it lacked (decision 273).
 	 *
 	 * @return void
 	 */
-	public function testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten(): void {
+	public function testAnExistingCaseTypeIsAdoptedByIdentifierAndGainsOnlyTheFieldsItLacked(): void {
 		$this->seedAsASeederWould();
 		$before = $this->register->rows;
 
@@ -588,9 +590,16 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
 		$this->assertSame(0, $outcome['written']);
 		$this->assertSame(6, $outcome['adopted']);
+		$this->assertSame(1, $outcome['filled']);
 		$ledger = $this->rowLedger();
 		unset($this->register->rows['shippedOrigin']);
-		$this->assertSame($before, $this->register->rows, 'no row was written, changed or removed');
+		$caseType = $this->register->rows['caseType']['seeded-ct'];
+		$this->assertSame('Fixture request', $caseType['title']);
+		$this->assertSame('fixture-request', $caseType['identifier']);
+		$this->assertSame('A neutral case type used to test the package installer.', $caseType['description']);
+		$this->assertFalse($caseType['isDraft']);
+		unset($before['caseType'], $this->register->rows['caseType']);
+		$this->assertSame($before, $this->register->rows, 'no other row was written, changed or removed');
 
 		$recorded = array_column($ledger, 'targetObject');
 		sort($recorded);
@@ -599,7 +608,7 @@ class PackageInstallerTest extends TestCase {
 			$this->assertSame('fixture-case-type', $row['set']);
 			$this->assertSame('1.0.0', $row['setVersion']);
 		}
-	}//end testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten()
+	}//end testAnExistingCaseTypeIsAdoptedByIdentifierAndGainsOnlyTheFieldsItLacked()
 
 	/**
 	 * A case type a seeder wrote without an identifier is adopted by its title:
@@ -617,8 +626,29 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame(0, $outcome['written']);
 		$this->assertSame(6, $outcome['adopted']);
 		unset($this->register->rows['shippedOrigin']);
-		$this->assertSame($before, $this->register->rows, 'no row was written, changed or removed');
+		$this->assertSame('fixture-request', $this->register->rows['caseType']['seeded-ct']['identifier'], 'the identifier it lacked is filled');
+		unset($before['caseType'], $this->register->rows['caseType']);
+		$this->assertSame($before, $this->register->rows, 'no other row was written, changed or removed');
 	}//end testACaseTypeWithoutAnIdentifierIsAdoptedByTitle()
+
+	/**
+	 * A field the stored case type has, an empty one included, is never overwritten.
+	 *
+	 * @return void
+	 */
+	public function testAnAdoptedCaseTypeKeepsEveryFieldItHasEvenAnEmptyOne(): void {
+		$this->seedAsASeederWould();
+		$this->register->rows['caseType']['seeded-ct']['description'] = '';
+		$this->register->rows['caseType']['seeded-ct']['isDraft'] = true;
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(0, $outcome['filled']);
+		$caseType = $this->register->rows['caseType']['seeded-ct'];
+		$this->assertSame('', $caseType['description']);
+		$this->assertTrue($caseType['isDraft']);
+	}//end testAnAdoptedCaseTypeKeepsEveryFieldItHasEvenAnEmptyOne()
 
 	/**
 	 * A case type with another title and no identifier is not adopted.
@@ -692,6 +722,7 @@ class PackageInstallerTest extends TestCase {
 
 		$this->assertSame(PackageInstaller::FAILED, $outcome['status']);
 		$this->assertSame(['seeded-ct'], array_column($this->register->all('caseType'), 'id'));
+		$this->assertArrayNotHasKey('description', $this->register->rows['caseType']['seeded-ct'], 'a failed install fills nothing');
 		$this->assertCount(2, $this->register->all('statusType'));
 		$this->assertSame([], $this->register->all('roleType'));
 		$this->assertSame([], $this->register->all('shippedOrigin'));
