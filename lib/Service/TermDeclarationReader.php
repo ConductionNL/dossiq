@@ -76,9 +76,10 @@ class TermDeclarationReader {
 	 * @return array{leadTimeDays: int, fixedEndDate: string, plannedLeadTimeDays: int,
 	 *               internalTargetDays: int, maxSuspensionDays: int, extensionPeriodDays: int,
 	 *               statutoryWarningDays: int, plannedWarningDays: int, chainTermDays: int,
-	 *               suspensionAllowed: bool, extensionAllowed: bool}
+	 *               suspensionAllowed: bool, extensionAllowed: bool, statutoryTermDefinition: string}
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md#requirement-a-case-type-can-pick-a-second-statutory-term-req-cmp-ct-03
 	 */
 	public function forCaseType(string $caseTypeId): array {
 		$row = $this->findRow(schemaKey: 'case_type_schema', id: $caseTypeId);
@@ -95,6 +96,7 @@ class TermDeclarationReader {
 			'chainTermDays' => $this->days(value: ($row['chainTermDays'] ?? null)),
 			'suspensionAllowed' => $this->flag(value: ($row['suspensionAllowed'] ?? false)),
 			'extensionAllowed' => $this->flag(value: ($row['extensionAllowed'] ?? false)),
+			'statutoryTermDefinition' => trim((string)($row['statutoryTermDefinition'] ?? '')),
 		];
 	}//end forCaseType()
 

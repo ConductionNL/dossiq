@@ -11900,7 +11900,11 @@ OC.L10N.register(
         "The notice of default is on this case. The penalty starts running on {date}.": "The notice of default is on this case. The penalty starts running on {date}.",
         "The payout could not be prepared.": "The payout could not be prepared.",
         "The payout is prepared. No finance app took it yet.": "The payout is prepared. No finance app took it yet.",
-        "Who sent the notice of default": "Who sent the notice of default"
+        "Who sent the notice of default": "Who sent the notice of default",
+        "Statutory term choice": "Statutory term choice",
+        "The id of a second statutory term for this case type, used instead of its default term. Pick the longer complaints term (td-klacht-behandeling-commissie) when a complaints committee advises on complaints. Leave it empty to use the default term.": "The id of a second statutory term for this case type, used instead of its default term. Pick the longer complaints term (td-klacht-behandeling-commissie) when a complaints committee advises on complaints. Leave it empty to use the default term.",
+        "Only when the case type picks it": "Only when the case type picks it",
+        "Set this on a second term for a case type, such as the longer term when a complaints committee advises. The term then applies only to a case type that names it in its statutory term choice, and never as the case type's default term.": "Set this on a second term for a case type, such as the longer term when a complaints committee advises. The term then applies only to a case type that names it in its statutory term choice, and never as the case type's default term."
     },
     "nplurals=2; plural=(n != 1);"
 )
