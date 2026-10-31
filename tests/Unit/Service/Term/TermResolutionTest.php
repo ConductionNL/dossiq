@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Term;
 
 use OCA\Dossiq\Service\Term\TermResolution;
+use OCA\Dossiq\Service\TermDeclarationReader;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermKind;
 use PHPUnit\Framework\TestCase;
@@ -190,6 +191,65 @@ class TermResolutionTest extends TestCase {
 		$this->assertSame('alkmaar', $snapshot['deadlineDefinition']);
 		$this->assertNotSame('', $snapshot['resolvedAt']);
 	}//end testTheSnapshotExplainsTheResolutionWithoutTheConfiguration()
+
+	/**
+	 * A case type that picks its second statutory term gets it; one that picks
+	 * nothing gets its default, and a pick-only definition never is that default.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypePicksItsSecondStatutoryTerm(): void {
+		$resolution = $this->resolution(definitions: [
+			$this->definition(overrides: ['id' => 'td-committee', 'standardDurationDays' => 70, 'pickedByCaseType' => true]),
+			$this->definition(overrides: ['id' => 'td-default', 'standardDurationDays' => 42]),
+		]);
+
+		$picked = $resolution->resolve(caseType: 'vergunning', context: ['termDefinition' => 'td-committee']);
+		$this->assertSame('td-committee', $picked['definition']['id']);
+		$this->assertSame(TermResolution::PICKED, $picked['resolvedFrom']);
+
+		$default = $resolution->resolve(caseType: 'vergunning', context: []);
+		$this->assertSame('td-default', $default['definition']['id']);
+		$this->assertSame(TermResolution::FALLBACK, $default['resolvedFrom']);
+	}//end testACaseTypePicksItsSecondStatutoryTerm()
+
+	/**
+	 * An organisation's own norm still wins over the case type's pick, and a
+	 * pick naming nothing known falls back to the default.
+	 *
+	 * @return void
+	 */
+	public function testAnOrganisationNormBeatsThePickAndAnUnknownPickFallsBack(): void {
+		$resolution = $this->resolution(definitions: [
+			$this->definition(overrides: ['id' => 'td-committee', 'standardDurationDays' => 70, 'pickedByCaseType' => true]),
+			$this->definition(overrides: ['id' => 'td-org', 'organisation' => 'org-a', 'standardDurationDays' => 30]),
+			$this->definition(overrides: ['id' => 'td-default', 'standardDurationDays' => 42]),
+		]);
+
+		$this->assertSame('td-org', $resolution->resolve(caseType: 'vergunning', context: ['organisation' => 'org-a', 'termDefinition' => 'td-committee'])['definition']['id']);
+		$this->assertSame('td-default', $resolution->resolve(caseType: 'vergunning', context: ['termDefinition' => 'td-gone'])['definition']['id']);
+	}//end testAnOrganisationNormBeatsThePickAndAnUnknownPickFallsBack()
+
+	/**
+	 * Without a named pick, the pick is read off the case type behind the case.
+	 *
+	 * @return void
+	 */
+	public function testThePickIsReadOffTheCaseType(): void {
+		$terms = $this->createMock(TermijnService::class);
+		$terms->method('definitionsFor')->willReturn([
+			$this->definition(overrides: ['id' => 'td-committee', 'standardDurationDays' => 70, 'pickedByCaseType' => true]),
+			$this->definition(overrides: ['id' => 'td-default', 'standardDurationDays' => 42]),
+		]);
+		$declarations = $this->createMock(TermDeclarationReader::class);
+		$declarations->method('forCaseType')->with('ct-uuid')->willReturn(['statutoryTermDefinition' => 'td-committee']);
+
+		$resolved = (new TermResolution(terms: $terms, declarations: $declarations))
+			->resolve(caseType: 'vergunning', context: ['caseTypeId' => 'ct-uuid']);
+
+		$this->assertSame('td-committee', $resolved['definition']['id']);
+		$this->assertSame(70, $resolved['snapshot']['durationDays']);
+	}//end testThePickIsReadOffTheCaseType()
 
 	/**
 	 * One definition row.

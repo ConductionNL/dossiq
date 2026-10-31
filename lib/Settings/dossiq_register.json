@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.89"
+        "version": "0.20.91"
     },
     "x-openregister": {
         "type": "application",
@@ -113,6 +113,12 @@
                         "type": "string",
                         "description": "ISO 8601 duration for the processing deadline (e.g. P30D)",
                         "title": "Processing deadline"
+                    },
+                    "statutoryTermDefinition": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "title": "Statutory term choice",
+                        "description": "The id of a second statutory term for this case type, used instead of its default term. Pick the longer complaints term (td-klacht-behandeling-commissie) when a complaints committee advises on complaints. Leave it empty to use the default term."
                     },
                     "processingDeadlineDate": {
                         "type": "string",

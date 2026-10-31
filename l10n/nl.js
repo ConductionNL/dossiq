@@ -11900,7 +11900,11 @@ OC.L10N.register(
         "The notice of default is on this case. The penalty starts running on {date}.": "De ingebrekestelling staat op deze zaak. De dwangsom gaat lopen op {date}.",
         "The payout could not be prepared.": "De uitbetaling kon niet worden voorbereid.",
         "The payout is prepared. No finance app took it yet.": "De uitbetaling is voorbereid. Nog geen financiële app heeft hem overgenomen.",
-        "Who sent the notice of default": "Wie de ingebrekestelling heeft gestuurd"
+        "Who sent the notice of default": "Wie de ingebrekestelling heeft gestuurd",
+        "Statutory term choice": "Keuze wettelijke termijn",
+        "The id of a second statutory term for this case type, used instead of its default term. Pick the longer complaints term (td-klacht-behandeling-commissie) when a complaints committee advises on complaints. Leave it empty to use the default term.": "Het id van een tweede wettelijke termijn voor dit zaaktype, die in plaats van de standaardtermijn geldt. Kies de langere klachttermijn (td-klacht-behandeling-commissie) als een klachtadviescommissie over klachten adviseert. Laat dit leeg voor de standaardtermijn.",
+        "Only when the case type picks it": "Alleen als het zaaktype deze kiest",
+        "Set this on a second term for a case type, such as the longer term when a complaints committee advises. The term then applies only to a case type that names it in its statutory term choice, and never as the case type's default term.": "Zet dit aan bij een tweede termijn voor een zaaktype, zoals de langere termijn als een klachtadviescommissie adviseert. De termijn geldt dan alleen voor een zaaktype dat hem kiest als wettelijke termijn, en nooit als standaardtermijn van het zaaktype."
     },
     "nplurals=2; plural=(n != 1);"
 )

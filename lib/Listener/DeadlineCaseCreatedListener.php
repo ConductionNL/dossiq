@@ -159,6 +159,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			'organisation' => $this->referenced(value: ($payload['competentAuthority'] ?? null)),
 			'service' => $this->referenced(value: ($payload['procedureType'] ?? null)),
 			'priority' => $this->referenced(value: ($payload['priority'] ?? null)),
+			'caseTypeId' => $this->referenced(value: $caseTypeRef),
 		];
 		$resolution = $this->resolution?->resolve(caseType: $caseType, context: $context);
 
