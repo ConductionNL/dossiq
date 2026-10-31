@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.168.0",
+	"version": "2.169.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -3488,8 +3488,8 @@
 				},
 				"method": {
 					"type": "string",
-					"enum": ["POST", "PUT", "PATCH", "GET"],
-					"description": "api-call: HTTP method (default POST); PATCH changes only the fields in the body (an OpenRegister object); GET sends the resolved params as the query string, and with download: true downloads the file the endpoint answers (DqDoorlooptijd). toggle writeUrl: default PUT."
+					"enum": ["POST", "PUT", "PATCH", "GET", "DELETE"],
+					"description": "api-call: HTTP method (default POST); PATCH changes only the fields in the body (an OpenRegister object); GET sends the resolved params as the query string, and with download: true downloads the file the endpoint answers (DqDoorlooptijd); DELETE sends the body as request data (an OpenRegister unfreeze). toggle writeUrl: default PUT."
 				},
 				"payload": {
 					"type": "object",
