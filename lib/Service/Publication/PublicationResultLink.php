@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dossiq Woo result link
+ * Dossiq publication result link
  *
  * Where the requester reads what was made public
  * (woo-dossier-shared-with-the-requester REQ-WDS-003). The case carries
@@ -9,8 +9,8 @@
  * own `wooPublicationUrl`, written when the decision is published and cleared
  * when the publication is withdrawn. It never carries another url.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Service
+ * @package  OCA\Dossiq\Service\Publication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,14 +26,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Service\Publication;
 
 /**
  * Projects the publication state onto `resultLink`.
  *
  * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-sees-where-the-decision-became-public-req-wds-003
  */
-class WooResultLink {
+class PublicationResultLink {
 
 	/**
 	 * The words the requester reads.
