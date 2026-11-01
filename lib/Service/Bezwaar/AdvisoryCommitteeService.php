@@ -347,6 +347,25 @@ class AdvisoryCommitteeService {
 	}//end transitionAdviceStatus()
 
 	/**
+	 * The stored advice request, null when it does not exist.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The request store.
+	 * @param string $requestId Advice request UUID.
+	 *
+	 * @return array<string, mixed>|null The request.
+	 *
+	 * @spec exclude one read shared by the two request readers in this class
+	 */
+	private function findRequest(array $store, string $requestId): ?array {
+		return $this->findObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			id: $requestId
+		);
+	}//end findRequest()
+
+	/**
 	 * The advice request a council deviation is recorded on, null when it cannot be read.
 	 *
 	 * @param array{objectService: object, register: string, schema: string} $store The request store.
@@ -359,12 +378,7 @@ class AdvisoryCommitteeService {
 	private function readForDeviation(array $store, string $requestId): ?array {
 		$current = null;
 		try {
-			$current = $this->findObjectAsArray(
-				objectService: $store['objectService'],
-				register: $store['register'],
-				schema: $store['schema'],
-				id: $requestId
-			);
+			$current = $this->findRequest(store: $store, requestId: $requestId);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to read the advice request for a council deviation: '
@@ -387,14 +401,17 @@ class AdvisoryCommitteeService {
 	 * @spec exclude one guard of issueAdviceDecision(), which carries the requirement
 	 */
 	private function requireAdviceFields(array $advice): void {
-		foreach (self::REQUIRED_ADVICE_FIELDS as $field) {
-			$value = $advice[$field] ?? null;
-			if (in_array($value, [null, '', []], true) === true) {
-				throw new RuntimeException(
-					'Advice cannot be issued: missing required field '
-					. $field
-				);
-			}
+		$missing = array_values(
+			array_filter(
+				self::REQUIRED_ADVICE_FIELDS,
+				static fn (string $field): bool => in_array(($advice[$field] ?? null), [null, '', []], true)
+			)
+		);
+		if ($missing !== []) {
+			throw new RuntimeException(
+				'Advice cannot be issued: missing required field '
+				. $missing[0]
+			);
 		}
 	}//end requireAdviceFields()
 
@@ -439,12 +456,7 @@ class AdvisoryCommitteeService {
 	 */
 	private function loadAdviceRequest(string $requestId): array {
 		$store = ($this->requestStore() ?? throw new RuntimeException('OpenRegister is not available'));
-		$current = $this->findObjectAsArray(
-			objectService: $store['objectService'],
-			register: $store['register'],
-			schema: $store['schema'],
-			id: $requestId
-		);
+		$current = $this->findRequest(store: $store, requestId: $requestId);
 		if ($current === null) {
 			throw new RuntimeException('Advice request not found');
 		}
