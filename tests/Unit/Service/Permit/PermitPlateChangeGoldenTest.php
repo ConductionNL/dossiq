@@ -36,6 +36,9 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Permit\PermitPlateChange
  * @covers \OCA\Dossiq\Service\Permit\PermitChangeRefused
+ * @covers \OCA\Dossiq\Service\Permit\PermitRegister
+ * @covers \OCA\Dossiq\Service\Permit\PlateChange
+ * @covers \OCA\Dossiq\Service\Permit\PlateChangeRequest
  */
 class PermitPlateChangeGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
