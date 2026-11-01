@@ -1,0 +1,3162 @@
+{
+    "collections / no object service": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' was not written: this instance has no OpenRegister register configured."
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register"
+        ]
+    },
+    "collections / no register": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' was not written: this instance has no OpenRegister register configured."
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register"
+        ]
+    },
+    "collections / all new": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 4 created, 0 replaced",
+            "created": [
+                "ct-1",
+                "st-1",
+                "st-2",
+                "new-4"
+            ],
+            "replaced": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "skip",
+                        "created": 4,
+                        "replaced": 0
+                    }
+                }
+            }
+        ]
+    },
+    "collections / all held, skip": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 1 created, 0 replaced",
+            "created": [
+                "new-1"
+            ],
+            "replaced": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "skip",
+                        "created": 1,
+                        "replaced": 0
+                    }
+                }
+            }
+        ]
+    },
+    "collections / all held, overwrite": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 1 created, 3 replaced",
+            "created": [
+                "new-4"
+            ],
+            "replaced": [
+                "ct-1",
+                "st-1",
+                "st-2"
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "overwrite",
+                        "created": 1,
+                        "replaced": 3
+                    }
+                }
+            }
+        ]
+    },
+    "collections / some held, overwrite": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 3 created, 1 replaced",
+            "created": [
+                "ct-1",
+                "st-2",
+                "new-4"
+            ],
+            "replaced": [
+                "st-1"
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "overwrite",
+                        "created": 3,
+                        "replaced": 1
+                    }
+                }
+            }
+        ]
+    },
+    "collections / some held, skip": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 3 created, 0 replaced",
+            "created": [
+                "ct-1",
+                "st-2",
+                "new-3"
+            ],
+            "replaced": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "skip",
+                        "created": 3,
+                        "replaced": 0
+                    }
+                }
+            }
+        ]
+    },
+    "collections / only held rows, skip": {
+        "answer": {
+            "status": "skipped",
+            "message": "Component 'case-type': 2 row(s) already present, left alone.",
+            "created": [],
+            "replaced": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema"
+        ]
+    },
+    "collections / only held rows, overwrite": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 0 created, 2 replaced",
+            "created": [],
+            "replaced": [
+                "ct-1",
+                "st-1"
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "overwrite",
+                        "created": 0,
+                        "replaced": 2
+                    }
+                }
+            }
+        ]
+    },
+    "collections / held reads as empty": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 4 created, 0 replaced",
+            "created": [
+                "ct-1",
+                "st-1",
+                "st-2",
+                "new-4"
+            ],
+            "replaced": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "skip",
+                        "created": 4,
+                        "replaced": 0
+                    }
+                }
+            }
+        ]
+    },
+    "collections / nothing to write": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' held no rows this import could write."
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            "settings getConfigValue status_type_schema",
+            "settings getConfigValue role_type_schema"
+        ]
+    },
+    "collections / no collections": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' held no rows this import could write."
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register"
+        ]
+    },
+    "collections / a list case type": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 2 created, 0 replaced",
+            "created": [
+                "ct-1",
+                "new-2"
+            ],
+            "replaced": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Tweede"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "skip",
+                        "created": 2,
+                        "replaced": 0
+                    }
+                }
+            }
+        ]
+    },
+    "collections / no schema for the second collection": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' was not imported: No schema is configured for 'statusTypes', so its rows cannot be written."
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "deleteObject": {
+                    "uuid": "ct-1",
+                    "register": "dossiq"
+                }
+            }
+        ]
+    },
+    "collections / save refused midway": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' was not imported: save refused for st-2"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "ct-1",
+                    "register": "dossiq"
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "st-1",
+                    "register": "dossiq"
+                }
+            }
+        ]
+    },
+    "collections / save refused, roll-back refused": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' was not imported: save refused for new-4"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "ct-1",
+                    "register": "dossiq"
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "st-1",
+                    "register": "dossiq"
+                }
+            },
+            {
+                "log.error": {
+                    "message": "Could not roll back imported object {id}: {error}",
+                    "context": {
+                        "id": "st-1",
+                        "error": "delete refused for st-1"
+                    }
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "st-2",
+                    "register": "dossiq"
+                }
+            }
+        ]
+    },
+    "collections / find raises": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 2 created, 2 replaced",
+            "created": [
+                "ct-1",
+                "new-4"
+            ],
+            "replaced": [
+                "st-1",
+                "st-2"
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "overwrite",
+                        "created": 2,
+                        "replaced": 2
+                    }
+                }
+            }
+        ]
+    },
+    "collections / store answers vary": {
+        "answer": {
+            "status": "success",
+            "message": "Component 'case-type': 3 created, 1 replaced",
+            "created": [
+                "ct-1",
+                "st-2",
+                ""
+            ],
+            "replaced": [
+                "st-1"
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue role_type_schema",
+            {
+                "log.info": {
+                    "message": "Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced",
+                    "context": {
+                        "component": "case-type",
+                        "strategy": "overwrite",
+                        "created": 3,
+                        "replaced": 1
+                    }
+                }
+            }
+        ]
+    },
+    "collections / blank self uuid, then refused": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' was not imported: save refused for new-4"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "ct-1-plain",
+                    "register": "dossiq"
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "st-2",
+                    "register": "dossiq"
+                }
+            }
+        ]
+    },
+    "package / no object service": {
+        "answer": {
+            "status": "error",
+            "message": "Package 'jeugdwet' was not installed: this instance has no OpenRegister register configured.",
+            "written": [],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register"
+        ]
+    },
+    "package / no register": {
+        "answer": {
+            "status": "error",
+            "message": "Package 'jeugdwet' was not installed: this instance has no OpenRegister register configured.",
+            "written": [],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register"
+        ]
+    },
+    "package / no groups": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 0 row(s) written, 0 adopted, 0 already present.",
+            "written": [],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register"
+        ]
+    },
+    "package / all new": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 5 row(s) written, 0 adopted, 0 already present.",
+            "written": [
+                {
+                    "schemaKey": "case_type_schema",
+                    "schema": "caseType",
+                    "register": "dossiq",
+                    "id": "ct-1",
+                    "row": {
+                        "id": "ct-1",
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    }
+                },
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "st-1",
+                    "row": {
+                        "id": "st-1",
+                        "caseType": "ct-1",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    }
+                },
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "new-3",
+                    "row": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    }
+                },
+                {
+                    "schemaKey": "seed_schema",
+                    "schema": "tag",
+                    "register": "other",
+                    "id": "tag-1",
+                    "row": {
+                        "id": "tag-1",
+                        "label": "A",
+                        "enabled": true
+                    }
+                },
+                {
+                    "schemaKey": "workflow_template_schema",
+                    "schema": "workflowTemplate",
+                    "register": "dossiq",
+                    "id": "wf-1",
+                    "row": {
+                        "id": "wf-1",
+                        "caseType": "ct-1",
+                        "steps": "[\"ct-1\",\"st-1\"]"
+                    }
+                }
+            ],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "title": "Melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "label": "A",
+                        "enabled": true
+                    },
+                    "register": "other",
+                    "schema": "tag",
+                    "uuid": "tag-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue workflow_template_schema",
+            {
+                "find": {
+                    "id": "wf-1",
+                    "register": "dossiq",
+                    "schema": "workflowTemplate",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "wf-1",
+                    "register": "dossiq",
+                    "schema": "workflowTemplate",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "steps": "[\"ct-1\",\"st-1\"]"
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate",
+                    "uuid": "wf-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            }
+        ]
+    },
+    "package / held rows": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 2 row(s) written, 0 adopted, 2 already present.",
+            "written": [
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "st-1",
+                    "row": {
+                        "id": "st-1",
+                        "caseType": "ct-1",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    }
+                },
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "new-2",
+                    "row": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    }
+                }
+            ],
+            "skipped": [
+                "ct-1",
+                "tag-1"
+            ],
+            "adopted": [],
+            "held": [
+                {
+                    "schemaKey": "case_type_schema",
+                    "schema": "caseType",
+                    "id": "ct-1",
+                    "row": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "ownRegister": false
+                },
+                {
+                    "schemaKey": "seed_schema",
+                    "schema": "tag",
+                    "id": "tag-1",
+                    "row": {
+                        "label": "A",
+                        "enabled": true
+                    },
+                    "ownRegister": true
+                }
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            }
+        ]
+    },
+    "package / find raises": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 1 row(s) written, 0 adopted, 0 already present.",
+            "written": [
+                {
+                    "schemaKey": "case_type_schema",
+                    "schema": "caseType",
+                    "register": "dossiq",
+                    "id": "ct-1",
+                    "row": {
+                        "id": "ct-1",
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    }
+                }
+            ],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "title": "Melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            }
+        ]
+    },
+    "package / no schema for a group": {
+        "answer": {
+            "status": "error",
+            "message": "Package 'jeugdwet' was not installed, and nothing it wrote was kept: No schema is configured for 'missing_schema', so its rows cannot be written.",
+            "written": [],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "label": "A",
+                        "enabled": true
+                    },
+                    "register": "other",
+                    "schema": "tag",
+                    "uuid": "tag-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "title": "Melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue missing_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            {
+                "deleteObject": {
+                    "uuid": "tag-1",
+                    "register": "other"
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "ct-1",
+                    "register": "dossiq"
+                }
+            }
+        ]
+    },
+    "package / a group schema of its own, empty": {
+        "answer": {
+            "status": "error",
+            "message": "Package 'jeugdwet' was not installed, and nothing it wrote was kept: No schema is configured for 'seed_schema', so its rows cannot be written.",
+            "written": [],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getObjectService",
+            "settings getConfigValue register"
+        ]
+    },
+    "package / save refused, undo in each register": {
+        "answer": {
+            "status": "error",
+            "message": "Package 'jeugdwet' was not installed, and nothing it wrote was kept: save refused for new-4",
+            "written": [],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "label": "A",
+                        "enabled": true
+                    },
+                    "register": "other",
+                    "schema": "tag",
+                    "uuid": "tag-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "title": "Melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            {
+                "deleteObject": {
+                    "uuid": "tag-1",
+                    "register": "other"
+                }
+            },
+            {
+                "log.error": {
+                    "message": "Could not roll back imported object {id}: {error}",
+                    "context": {
+                        "id": "tag-1",
+                        "error": "delete refused for tag-1"
+                    }
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "ct-1",
+                    "register": "dossiq"
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "st-1",
+                    "register": "dossiq"
+                }
+            }
+        ]
+    },
+    "package / adopts a case type and its children": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 2 row(s) written, 2 adopted, 0 already present.",
+            "written": [
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "new-1",
+                    "row": {
+                        "caseType": "ct-old",
+                        "name": "Klaar"
+                    }
+                },
+                {
+                    "schemaKey": "workflow_template_schema",
+                    "schema": "workflowTemplate",
+                    "register": "dossiq",
+                    "id": "wf-1",
+                    "row": {
+                        "id": "wf-1",
+                        "caseType": "ct-old",
+                        "steps": "[\"ct-old\",\"st-old\"]"
+                    }
+                }
+            ],
+            "skipped": [],
+            "adopted": [
+                {
+                    "schemaKey": "case_type_schema",
+                    "schema": "caseType",
+                    "register": "dossiq",
+                    "id": "ct-old",
+                    "row": {
+                        "id": "ct-old",
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "fill": {
+                        "description": "Een melding"
+                    }
+                },
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "st-old",
+                    "row": {
+                        "id": "st-old",
+                        "caseType": "ct-old",
+                        "name": "Nieuw"
+                    },
+                    "fill": []
+                }
+            ],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "filters": {
+                        "caseType": "ct-old",
+                        "name": "Nieuw"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "filters": {
+                        "caseType": "ct-old",
+                        "name": "Klaar"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-old",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue workflow_template_schema",
+            {
+                "find": {
+                    "id": "wf-1",
+                    "register": "dossiq",
+                    "schema": "workflowTemplate",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "wf-1",
+                    "register": "dossiq",
+                    "schema": "workflowTemplate",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-old",
+                        "steps": "[\"ct-old\",\"st-old\"]"
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate",
+                    "uuid": "wf-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            }
+        ]
+    },
+    "package / adopted case type lacks nothing": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 0 row(s) written, 1 adopted, 0 already present.",
+            "written": [],
+            "skipped": [],
+            "adopted": [
+                {
+                    "schemaKey": "case_type_schema",
+                    "schema": "caseType",
+                    "register": "dossiq",
+                    "id": "ct-old",
+                    "row": {
+                        "id": "ct-old",
+                        "identifier": "melding",
+                        "title": "Melding"
+                    },
+                    "fill": []
+                }
+            ],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            }
+        ]
+    },
+    "package / adopts without a package id": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 2 row(s) written, 1 adopted, 0 already present.",
+            "written": [
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "st-1",
+                    "row": {
+                        "id": "st-1",
+                        "caseType": "ct-1",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    }
+                },
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "new-2",
+                    "row": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    }
+                }
+            ],
+            "skipped": [],
+            "adopted": [
+                {
+                    "schemaKey": "case_type_schema",
+                    "schema": "caseType",
+                    "register": "dossiq",
+                    "id": "ct-old",
+                    "row": {
+                        "id": "ct-old",
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "D"
+                    },
+                    "fill": {
+                        "description": "D"
+                    }
+                }
+            ],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            }
+        ]
+    },
+    "package / two case types match": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 0 row(s) written, 1 adopted, 0 already present.",
+            "written": [],
+            "skipped": [],
+            "adopted": [
+                {
+                    "schemaKey": "case_type_schema",
+                    "schema": "caseType",
+                    "register": "dossiq",
+                    "id": "ct-a",
+                    "row": {
+                        "id": "ct-a",
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "fill": {
+                        "title": "Melding",
+                        "description": "Een melding"
+                    }
+                }
+            ],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "log.warning": {
+                    "message": "Package install: {count} rows in {schema} match {filters}; adopting the first",
+                    "context": {
+                        "count": 2,
+                        "schema": "caseType",
+                        "filters": "{\"identifier\":\"melding\"}"
+                    }
+                }
+            }
+        ]
+    },
+    "package / match without an id is written": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 1 row(s) written, 0 adopted, 0 already present.",
+            "written": [
+                {
+                    "schemaKey": "case_type_schema",
+                    "schema": "caseType",
+                    "register": "dossiq",
+                    "id": "ct-1",
+                    "row": {
+                        "id": "ct-1",
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    }
+                }
+            ],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            }
+        ]
+    },
+    "package / adopts on its match": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 0 row(s) written, 1 adopted, 0 already present.",
+            "written": [],
+            "skipped": [],
+            "adopted": [
+                {
+                    "schemaKey": "seed_schema",
+                    "schema": "tag",
+                    "register": "other",
+                    "id": "tag-old",
+                    "row": {
+                        "id": "tag-old",
+                        "label": "A",
+                        "enabled": "true"
+                    },
+                    "fill": []
+                }
+            ],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "other",
+                    "schema": "tag",
+                    "filters": {
+                        "label": "A",
+                        "_limit": 500
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            }
+        ]
+    },
+    "package / match finds nothing": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 1 row(s) written, 0 adopted, 0 already present.",
+            "written": [
+                {
+                    "schemaKey": "seed_schema",
+                    "schema": "tag",
+                    "register": "other",
+                    "id": "tag-1",
+                    "row": {
+                        "id": "tag-1",
+                        "label": "A",
+                        "enabled": true
+                    }
+                }
+            ],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "other",
+                    "schema": "tag",
+                    "filters": {
+                        "label": "A",
+                        "_limit": 500
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "find": {
+                    "id": "tag-1",
+                    "register": "other",
+                    "schema": "tag",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "label": "A",
+                        "enabled": true
+                    },
+                    "register": "other",
+                    "schema": "tag",
+                    "uuid": "tag-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            }
+        ]
+    },
+    "package / adoption then failure": {
+        "answer": {
+            "status": "error",
+            "message": "Package 'jeugdwet' was not installed, and nothing it wrote was kept: save refused for wf-1",
+            "written": [],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "filters": {
+                        "caseType": "ct-old",
+                        "name": "Nieuw"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-old",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "filters": {
+                        "caseType": "ct-old",
+                        "name": "Klaar"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-old",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue workflow_template_schema",
+            {
+                "find": {
+                    "id": "wf-1",
+                    "register": "dossiq",
+                    "schema": "workflowTemplate",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "wf-1",
+                    "register": "dossiq",
+                    "schema": "workflowTemplate",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-old",
+                        "steps": "[\"ct-old\",\"st-1\"]"
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate",
+                    "uuid": "wf-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            {
+                "deleteObject": {
+                    "uuid": "st-1",
+                    "register": "dossiq"
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "new-2",
+                    "register": "dossiq"
+                }
+            }
+        ]
+    },
+    "package / store answers vary": {
+        "answer": {
+            "status": "success",
+            "message": "Package 'jeugdwet': 3 row(s) written, 0 adopted, 0 already present.",
+            "written": [
+                {
+                    "schemaKey": "case_type_schema",
+                    "schema": "caseType",
+                    "register": "dossiq",
+                    "id": "ct-1",
+                    "row": {
+                        "id": "ct-1",
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    }
+                },
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "st-1",
+                    "row": {
+                        "id": "st-1",
+                        "caseType": "ct-1",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    }
+                },
+                {
+                    "schemaKey": "status_type_schema",
+                    "schema": "statusType",
+                    "register": "dossiq",
+                    "id": "new-3",
+                    "row": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    }
+                }
+            ],
+            "skipped": [],
+            "adopted": [],
+            "held": []
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "identifier": "melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "searchObjectsBySlug": {
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "filters": {
+                        "title": "Melding"
+                    },
+                    "_rbac": false,
+                    "_multitenancy": false
+                }
+            },
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw",
+                        "color": "blue"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            }
+        ]
+    },
+    "undo / rows in their registers": {
+        "answer": null,
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            {
+                "deleteObject": {
+                    "uuid": "tag-1",
+                    "register": "other"
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "ct-1",
+                    "register": "dossiq"
+                }
+            },
+            {
+                "log.error": {
+                    "message": "Could not roll back imported object {id}: {error}",
+                    "context": {
+                        "id": "ct-1",
+                        "error": "delete refused for ct-1"
+                    }
+                }
+            }
+        ]
+    },
+    "undo / no object service": {
+        "answer": null,
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register"
+        ]
+    },
+    "undo / nothing": {
+        "answer": null,
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register"
+        ]
+    },
+    "fill / adopted rows": {
+        "answer": [
+            "ct-old"
+        ],
+        "calls": [
+            "settings getObjectService",
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-old",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Bad"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-bad",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "log.warning": {
+                    "message": "Package install: adopted case type {id} kept without the fields it lacked: {error}",
+                    "context": {
+                        "id": "ct-bad",
+                        "error": "save refused for ct-bad"
+                    }
+                }
+            }
+        ]
+    },
+    "fill / no object service": {
+        "answer": [],
+        "calls": [
+            "settings getObjectService"
+        ]
+    }
+}
