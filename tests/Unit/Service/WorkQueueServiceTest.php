@@ -53,6 +53,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
  * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  * @covers \OCA\Dossiq\Service\Queue\QueueScoringRun
  * @covers \OCA\Dossiq\Service\Queue\CaseQueueSource
  *
