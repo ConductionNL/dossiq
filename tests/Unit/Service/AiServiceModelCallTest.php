@@ -170,6 +170,58 @@ class AiServiceModelCallTest extends TestCase {
 	}//end testHealthReportsAReplyWithoutASuccessStatus()
 
 	/**
+	 * Serve one HTTP 200 reply on an ephemeral local port and capture the request.
+	 *
+	 * @param string $body The reply body.
+	 *
+	 * @return array{0: resource, 1: array<int, resource>, 2: int} The process, its pipes and the port.
+	 */
+	private function oneShotServer(string $body): array {
+		$script = '$s = stream_socket_server("tcp://127.0.0.1:0");'
+			. 'echo explode(":", stream_socket_get_name($s, false))[1], "\n";'
+			. '$c = stream_socket_accept($s, 10); $r = "";'
+			. 'while (strpos($r, "\r\n\r\n") === false) { $r .= fread($c, 8192); }'
+			. 'preg_match("/Content-Length: (\d+)/i", $r, $m);'
+			. 'while (strlen($r) - strpos($r, "\r\n\r\n") - 4 < (int)$m[1]) { $r .= fread($c, 8192); }'
+			. '$b = base64_decode($argv[1]);'
+			. 'fwrite($c, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: " . strlen($b) . "\r\nConnection: close\r\n\r\n" . $b);'
+			. 'fclose($c); echo base64_encode($r), "\n";';
+		$process = proc_open(
+			[PHP_BINARY, '-n', '-r', $script, base64_encode($body)],
+			[1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+			$pipes
+		);
+		$port = (int)trim((string)fgets($pipes[1]));
+
+		return [$process, $pipes, $port];
+	}//end oneShotServer()
+
+	/**
+	 * A cloud model gets the prompt as an Ollama request with the API key, and its answer is decoded.
+	 *
+	 * @return void
+	 */
+	public function testTheModelCallPostsThePromptAndDecodesTheAnswer(): void {
+		[$process, $pipes, $port] = $this->oneShotServer(body: '{"response": "{\"answer\": \"ja\"}"}');
+		$url = 'http://127.0.0.1:' . $port . '/';
+		$service = $this->service(
+			config: ['ai_model_url' => $url, 'ai_model_type' => 'cloud', 'ai_model_name' => 'gpt', 'ai_api_key' => 'secret'],
+			address: '127.0.0.1'
+		);
+
+		$answer = (new \ReflectionMethod(AiService::class, 'callAiModel'))->invoke($service, 'Vraag?');
+		$request = base64_decode(trim((string)fgets($pipes[1])));
+		proc_close($process);
+
+		self::assertSame(['answer' => 'ja'], $answer);
+		self::assertStringStartsWith("POST /api/generate HTTP/1.1\r\n", $request);
+		self::assertStringContainsString("Authorization: Bearer secret\r\n", $request);
+		self::assertStringContainsString("Content-Type: application/json\r\n", $request);
+		self::assertStringEndsWith('{"model":"gpt","prompt":"Vraag?","stream":false,"format":"json"}', $request);
+		self::assertSame([[$url, 'cloud']], $this->guarded);
+	}//end testTheModelCallPostsThePromptAndDecodesTheAnswer()
+
+	/**
 	 * A model that answers is reported healthy, with the model named.
 	 *
 	 * @return void
