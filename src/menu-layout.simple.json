@@ -4752,6 +4752,12 @@
 								"schema": "role",
 								"field": "case"
 							},
+							"secrecy": {
+								"indicator": "geheimhouding",
+								"kinds": ["person"],
+								"primaryOnly": true
+							},
+							"representationUntil": "Authorisation until {date}",
 							"roleLabels": {
 								"aanvrager": "Requester",
 								"gemachtigde": "Authorised representative",
@@ -4824,7 +4830,10 @@
 								"notAccepted": "Kind not accepted by this case type",
 								"verdictPublication": "Publishing a file on this case is refused",
 								"verdictWarn": "Read this before acting on the case",
-								"sentencePublication": "Publishing a file on this case is refused, because of {party}."
+								"sentencePublication": "Publishing a file on this case is refused, because of {party}.",
+								"primary": "Primary party",
+								"noSecrecy": "No secrecy",
+								"indicatorPill": "Indicator: {label}"
 							}
 						}
 					},
