@@ -288,7 +288,7 @@ class NotesControllerTest extends TestCase {
 			->willReturnCallback(static fn (string $uid): bool => $uid !== 'ghost');
 		$this->service->expects($this->once())
 			->method('notifyMention')
-			->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), ['bob', 'carol'])
+			->with($this->anything(), $this->anything(), $this->anything(), ['bob', 'carol'])
 			->willReturn(2);
 
 		$response = $this->controller->mention();
