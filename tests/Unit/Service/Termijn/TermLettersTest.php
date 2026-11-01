@@ -22,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Termijn\TermLetters
+ * @covers \OCA\Dossiq\Service\Term\TermLetter
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\Support\ReadableDay
  */
