@@ -273,7 +273,14 @@ class CaseSplitAndRebindContractTest extends TestCase {
 		$received = [];
 		$service = $this->createMock(CaseRebindService::class);
 		$service->method('rebind')->willReturnCallback(
-			static function (string $caseId, string $targetCaseTypeId, string $targetStatusId, string $reason, array $properties, string $actorUid) use (&$received): array {
+			static function (
+				string $caseId,
+				string $targetCaseTypeId,
+				string $targetStatusId,
+				string $reason,
+				array $properties,
+				string $actorUid,
+			) use (&$received): array {
 				$received = ['caseId' => $caseId, 'targetCaseTypeId' => $targetCaseTypeId, 'actorUid' => $actorUid];
 				return ['rebound' => true];
 			}
