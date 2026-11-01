@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.169.0",
+	"version": "2.170.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -5000,6 +5000,20 @@
 							"enum": [1, 2],
 							"default": 1,
 							"description": "How many columns the page's built-in Add/Edit form flows its fields into. Pair 2 with formSize 'large', or the two columns are merely two narrow ones. CnFormDialog collapses back to one column below 700px, and a textarea or JSON editor spans both columns regardless. Maps to CnIndexPage / CnDetailPage `formColumns`."
+						},
+						"draftAppId": {
+							"type": "string",
+							"description": "The app a form draft belongs to (type='index' and type='detail'). Every form the page opens keeps what the user typed and did not save under this app's key and the signed-in user, and offers it back on reopen. Maps to CnIndexPage / CnDetailPage `draftAppId`, forwarded to CnFormDialog."
+						},
+						"allowDraft": {
+							"type": "boolean",
+							"default": false,
+							"description": "Offer 'Save draft' on the page's create form, storing the record with `draftField` set instead of validating it. On an edit form it is offered only while the record is still a draft. Inert unless the schema declares `draftField`. Maps to CnIndexPage / CnDetailPage `allowDraft`."
+						},
+						"draftField": {
+							"type": "string",
+							"default": "isDraft",
+							"description": "The boolean property that marks a record as a draft. Maps to CnIndexPage / CnDetailPage `draftField`."
 						},
 						"excludeFields": {
 							"type": "array",
