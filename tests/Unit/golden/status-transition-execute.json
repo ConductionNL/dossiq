@@ -2914,6 +2914,311 @@
             ]
         ]
     },
+    "a case row whose id is not the asked id": {
+        "result": {
+            "status": "ok",
+            "statusRecord": {
+                "id": "rec-1",
+                "dispatchedActions": [
+                    {
+                        "type": "createTask",
+                        "ok": true
+                    },
+                    {
+                        "type": "notify",
+                        "ok": true
+                    }
+                ]
+            },
+            "dispatchedActions": [
+                {
+                    "type": "createTask",
+                    "ok": true
+                },
+                {
+                    "type": "notify",
+                    "ok": true
+                }
+            ],
+            "failedActions": [],
+            "version": 3
+        },
+        "calls": [
+            [
+                "getUser"
+            ],
+            [
+                "load",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "getTransitionForCase",
+                {
+                    "case": {
+                        "id": "row-9",
+                        "status": "st-open",
+                        "@self": {
+                            "version": 2
+                        }
+                    },
+                    "transitionId": "t1"
+                }
+            ],
+            [
+                "assertOpen",
+                {
+                    "transition": {
+                        "id": "t1",
+                        "label": "Besluiten",
+                        "fromStatus": "st-open",
+                        "toStatus": "st-closed",
+                        "guards": []
+                    },
+                    "case": {
+                        "id": "row-9",
+                        "status": "st-open",
+                        "@self": {
+                            "version": 2
+                        }
+                    },
+                    "caseId": "case-1",
+                    "userId": "uid-anna"
+                }
+            ],
+            [
+                "isTransitionGroupAuthorized",
+                {
+                    "transition": {
+                        "id": "t1",
+                        "label": "Besluiten",
+                        "fromStatus": "st-open",
+                        "toStatus": "st-closed",
+                        "guards": []
+                    },
+                    "userId": "uid-anna"
+                }
+            ],
+            [
+                "knows",
+                {
+                    "type": "approvalGate"
+                }
+            ],
+            [
+                "knows",
+                {
+                    "type": "statusEntryRequirements"
+                }
+            ],
+            [
+                "guardsWithImplicit",
+                {
+                    "transition": {
+                        "id": "t1",
+                        "label": "Besluiten",
+                        "fromStatus": "st-open",
+                        "toStatus": "st-closed",
+                        "guards": []
+                    },
+                    "approvalsWired": true,
+                    "entryGuardWired": true
+                }
+            ],
+            [
+                "evaluateAll",
+                {
+                    "guards": [
+                        {
+                            "type": "implicit"
+                        }
+                    ],
+                    "case": {
+                        "id": "row-9",
+                        "status": "st-open",
+                        "@self": {
+                            "version": 2
+                        }
+                    },
+                    "userId": "uid-anna"
+                }
+            ],
+            [
+                "reloadUnchanged",
+                {
+                    "caseId": "case-1",
+                    "readVersion": 2,
+                    "currentId": "st-open"
+                }
+            ],
+            [
+                "close",
+                {
+                    "case": {
+                        "id": "row-9",
+                        "status": "st-open",
+                        "@self": {
+                            "version": 2
+                        },
+                        "reloaded": true
+                    },
+                    "caseId": "case-1",
+                    "toStatus": "st-closed",
+                    "resultTypeId": "rt-1"
+                }
+            ],
+            [
+                "stamp",
+                {
+                    "case": {
+                        "id": "row-9",
+                        "status": "st-open",
+                        "@self": {
+                            "version": 2
+                        },
+                        "reloaded": true,
+                        "closedWith": "rt-1"
+                    },
+                    "toStatus": "st-closed"
+                }
+            ],
+            [
+                "save",
+                {
+                    "case": {
+                        "id": "row-9",
+                        "status": "st-open",
+                        "@self": {
+                            "version": 2
+                        },
+                        "reloaded": true,
+                        "closedWith": "rt-1",
+                        "stamped": "st-closed"
+                    },
+                    "toStatus": "st-closed",
+                    "readVersion": 2
+                }
+            ],
+            [
+                "retime",
+                {
+                    "caseId": "case-1",
+                    "toStatus": "st-closed"
+                }
+            ],
+            [
+                "record",
+                {
+                    "caseId": "case-1",
+                    "move": {
+                        "fromStatus": "st-open",
+                        "toStatus": "st-closed",
+                        "label": "Besluiten",
+                        "comment": "Klaar",
+                        "actor": "uid-anna",
+                        "evaluatedGuards": [
+                            {
+                                "type": "role",
+                                "passed": true
+                            }
+                        ],
+                        "noWorkflowTemplate": false
+                    }
+                }
+            ],
+            [
+                "checklistActions",
+                {
+                    "statusTypeId": "st-closed",
+                    "case": {
+                        "id": "row-9",
+                        "status": "st-open",
+                        "@self": {
+                            "version": 2
+                        },
+                        "reloaded": true,
+                        "closedWith": "rt-1",
+                        "stamped": "st-closed",
+                        "saved": true
+                    },
+                    "actor": "uid-anna"
+                }
+            ],
+            [
+                "extractActions",
+                {
+                    "transition": {
+                        "id": "t1",
+                        "label": "Besluiten",
+                        "fromStatus": "st-open",
+                        "toStatus": "st-closed",
+                        "guards": []
+                    }
+                }
+            ],
+            [
+                "dispatch",
+                {
+                    "actions": [
+                        {
+                            "type": "createTask",
+                            "for": "uid-anna"
+                        },
+                        {
+                            "type": "notify"
+                        }
+                    ],
+                    "case": {
+                        "id": "row-9",
+                        "status": "st-open",
+                        "@self": {
+                            "version": 2
+                        },
+                        "reloaded": true,
+                        "closedWith": "rt-1",
+                        "stamped": "st-closed",
+                        "saved": true
+                    },
+                    "move": {
+                        "fromStatus": "st-open",
+                        "toStatus": "st-closed",
+                        "label": "Besluiten",
+                        "comment": "Klaar",
+                        "actor": "uid-anna",
+                        "evaluatedGuards": [
+                            {
+                                "type": "role",
+                                "passed": true
+                            }
+                        ],
+                        "noWorkflowTemplate": false
+                    },
+                    "record": {
+                        "id": "rec-1"
+                    }
+                }
+            ],
+            [
+                "writeBack",
+                {
+                    "record": {
+                        "id": "rec-1"
+                    },
+                    "dispatched": [
+                        {
+                            "type": "createTask",
+                            "ok": true
+                        },
+                        {
+                            "type": "notify",
+                            "ok": true
+                        }
+                    ]
+                }
+            ]
+        ]
+    },
     "a concurrent change": {
         "error": [
             "RuntimeException",

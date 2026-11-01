@@ -258,6 +258,7 @@ class StatusTransitionExecuteGoldenTest extends TestCase {
 			'a case without a status' => $this->observe(['case' => ['id' => 'case-1', 'version' => 7], 'transition' => ['id' => 't1', 'toStatus' => 'st-closed']]),
 			'a case with a top-level version' => $this->observe(['case' => ['id' => 'case-1', 'status' => 'st-open', 'version' => '9']]),
 			'a case with both versions' => $this->observe(['case' => ['id' => 'case-1', 'status' => 'st-open', 'version' => 11, '@self' => ['version' => 5]]]),
+			'a case row whose id is not the asked id' => $this->observe(['case' => ['id' => 'row-9', 'status' => 'st-open', '@self' => ['version' => 2]]]),
 			'a concurrent change' => $this->observe(['raced' => true]),
 			'a close without a result' => $this->observe(['closeRefused' => true], ['resultTypeId' => null]),
 			'no comment' => $this->observe([], ['comment' => null]),
