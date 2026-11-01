@@ -1,0 +1,1187 @@
+{
+    "a new plate": {
+        "answer": {
+            "caseId": "case-new",
+            "identifier": "2026-0042"
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "HX901B"
+                        }
+                    ],
+                    "status": "st-new"
+                }
+            ]
+        ]
+    },
+    "a plate with spaces": {
+        "answer": {
+            "caseId": "case-new",
+            "identifier": "2026-0042"
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken GZ482K voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "GZ482K"
+                        }
+                    ],
+                    "status": "st-new"
+                }
+            ]
+        ]
+    },
+    "a plate too long": {
+        "refused": "invalid",
+        "detail": "A permit and a licence plate of six letters and digits are needed.",
+        "calls": []
+    },
+    "a plate with a sign": {
+        "refused": "invalid",
+        "detail": "A permit and a licence plate of six letters and digits are needed.",
+        "calls": []
+    },
+    "no subject": {
+        "refused": "invalid",
+        "detail": "A permit and a licence plate of six letters and digits are needed.",
+        "calls": []
+    },
+    "no permit id": {
+        "refused": "invalid",
+        "detail": "A permit and a licence plate of six letters and digits are needed.",
+        "calls": []
+    },
+    "no object service": {
+        "refused": "unavailable",
+        "detail": "OpenRegister or the dossiq register is missing.",
+        "calls": []
+    },
+    "no register": {
+        "refused": "unavailable",
+        "detail": "OpenRegister or the dossiq register is missing.",
+        "calls": []
+    },
+    "another resident asks for this resident's permit": {
+        "refused": "not_found",
+        "detail": "No such permit.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ]
+        ]
+    },
+    "this resident asks for another resident's permit": {
+        "refused": "not_found",
+        "detail": "No such permit.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p-bob"
+            ]
+        ]
+    },
+    "a holder differing in case": {
+        "refused": "not_found",
+        "detail": "No such permit.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p-upper"
+            ]
+        ]
+    },
+    "a subject with a trailing space": {
+        "refused": "not_found",
+        "detail": "No such permit.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ]
+        ]
+    },
+    "a permit without a holder": {
+        "refused": "not_found",
+        "detail": "No such permit.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p-nobody"
+            ]
+        ]
+    },
+    "no such permit": {
+        "refused": "not_found",
+        "detail": "No such permit.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p-404"
+            ]
+        ]
+    },
+    "a revoked permit": {
+        "refused": "not_active",
+        "detail": "This permit is not in force.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p-revoked"
+            ]
+        ]
+    },
+    "a permit without a case": {
+        "refused": "unavailable",
+        "detail": "No case type takes a change of this permit.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p-nocase"
+            ]
+        ]
+    },
+    "a case type naming no change type": {
+        "refused": "unavailable",
+        "detail": "No case type takes a change of this permit.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p-untyped"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c-untyped"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct-plain"
+            ]
+        ]
+    },
+    "a change type that does not exist": {
+        "refused": "unavailable",
+        "detail": "No case type takes a change of this permit.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct-404"
+            ]
+        ]
+    },
+    "a change type without an initial status": {
+        "answer": {
+            "caseId": "case-new",
+            "identifier": "2026-0042"
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "HX901B"
+                        }
+                    ]
+                }
+            ]
+        ]
+    },
+    "a blank initial status": {
+        "answer": {
+            "caseId": "case-new",
+            "identifier": "2026-0042"
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "HX901B"
+                        }
+                    ]
+                }
+            ]
+        ]
+    },
+    "a change type without an id": {
+        "answer": {
+            "caseId": "case-new",
+            "identifier": "2026-0042"
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "status": "st-new"
+                }
+            ]
+        ]
+    },
+    "no property definition schema": {
+        "answer": {
+            "caseId": "case-new",
+            "identifier": "2026-0042"
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "status": "st-new"
+                }
+            ]
+        ]
+    },
+    "no case schema configured": {
+        "answer": {
+            "caseId": "case-new",
+            "identifier": "2026-0042"
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "HX901B"
+                        }
+                    ],
+                    "status": "st-new"
+                }
+            ]
+        ]
+    },
+    "a permit without a title": {
+        "answer": {
+            "caseId": "case-new",
+            "identifier": "2026-0042"
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: ",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "HX901B"
+                        }
+                    ],
+                    "status": "st-new"
+                }
+            ]
+        ]
+    },
+    "the permit read fails": {
+        "refused": "unavailable",
+        "detail": "The register could not be read: database gone",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ]
+        ]
+    },
+    "the case type read fails": {
+        "refused": "unavailable",
+        "detail": "The register could not be read: database gone",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ]
+        ]
+    },
+    "the save fails": {
+        "refused": "unavailable",
+        "detail": "The change case was not written.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "HX901B"
+                        }
+                    ],
+                    "status": "st-new"
+                }
+            ]
+        ]
+    },
+    "the save answers an @self id": {
+        "answer": {
+            "caseId": "case-self",
+            "identifier": ""
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "HX901B"
+                        }
+                    ],
+                    "status": "st-new"
+                }
+            ]
+        ]
+    },
+    "the save answers no id": {
+        "refused": "unavailable",
+        "detail": "The change case was not written.",
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "HX901B"
+                        }
+                    ],
+                    "status": "st-new"
+                }
+            ]
+        ]
+    }
+}
