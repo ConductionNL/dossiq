@@ -174,7 +174,7 @@ class AdmissibilityJudgementGoldenTest extends TestCase {
 
 		try {
 			$answer = $service->judge(
-				caseId: 'case-1',
+				caseId: ($world['caseId'] ?? 'case-1'),
 				verdict: ($world['verdict'] ?? 'inadmissible'),
 				reason: ($world['reason'] ?? ' Te laat ingediend '),
 				judgedBy: ($world['judgedBy'] ?? 'anna'),
@@ -227,6 +227,15 @@ class AdmissibilityJudgementGoldenTest extends TestCase {
 			'inadmissible, close fails' => ['fails' => 'finish'],
 			'inadmissible, save fails' => ['fails' => 'save'],
 			'inadmissible, judge empty' => ['judgedBy' => ''],
+			'case names another person' => [
+				'case' => ['id' => 'case-1', 'caseType' => ' ct-1 ', 'owner' => 'bob', 'assignee' => 'bob', 'judgedBy' => 'bob'],
+				'judgedBy' => 'anna',
+			],
+			'another case' => [
+				'caseId' => 'case-2',
+				'case' => ['id' => 'case-2', 'caseType' => ' ct-1 ', 'title' => 'Aanvraag'],
+				'finish' => ['closed' => true, 'status' => 'afgehandeld'],
+			],
 		];
 
 		$observed = [];

@@ -1227,5 +1227,216 @@
                 }
             ]
         ]
+    },
+    "case names another person": {
+        "answer": {
+            "verdict": "inadmissible",
+            "record": {
+                "verdict": "inadmissible",
+                "judgedBy": "anna",
+                "judgedOn": "<now>",
+                "reason": "Te laat ingediend"
+            },
+            "closed": true,
+            "close": [],
+            "applicantTold": true,
+            "applicantMessage": {
+                "sent": true,
+                "channel": "portal"
+            },
+            "moment": "case-inadmissible"
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "CaseTypeResolver::effectiveCaseType",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": " ct-1 ",
+                        "owner": "bob",
+                        "assignee": "bob",
+                        "judgedBy": "bob",
+                        "admissibility": {
+                            "verdict": "inadmissible",
+                            "judgedBy": "anna",
+                            "judgedOn": "<now>",
+                            "reason": "Te laat ingediend"
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseEndingActs::finish",
+                {
+                    "caseId": "case-1",
+                    "reason": "Te laat ingediend",
+                    "resultTypeId": "rt-niet"
+                }
+            ],
+            [
+                "CaseTypeResolver::effectiveCaseType",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "ApplicantMessage::send",
+                {
+                    "case": {
+                        "id": "case-1",
+                        "caseType": " ct-1 ",
+                        "owner": "bob",
+                        "assignee": "bob",
+                        "judgedBy": "bob",
+                        "admissibility": {
+                            "verdict": "inadmissible",
+                            "judgedBy": "anna",
+                            "judgedOn": "<now>",
+                            "reason": "Te laat ingediend"
+                        }
+                    },
+                    "caseType": {
+                        "id": "ct-1",
+                        "admissibilityJudgement": {
+                            "enabled": true,
+                            "inadmissibleResultType": "rt-niet"
+                        }
+                    },
+                    "moment": "case-inadmissible",
+                    "template": "niet-ontvankelijk",
+                    "context": {
+                        "reason": "Te laat ingediend"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq admissibility: case {case} closed as niet-ontvankelijk",
+                {
+                    "case": "case-1",
+                    "judgedBy": "anna",
+                    "applicantTold": true
+                }
+            ]
+        ]
+    },
+    "another case": {
+        "answer": {
+            "verdict": "inadmissible",
+            "record": {
+                "verdict": "inadmissible",
+                "judgedBy": "anna",
+                "judgedOn": "<now>",
+                "reason": "Te laat ingediend"
+            },
+            "closed": true,
+            "close": {
+                "closed": true,
+                "status": "afgehandeld"
+            },
+            "applicantTold": true,
+            "applicantMessage": {
+                "sent": true,
+                "channel": "portal"
+            },
+            "moment": "case-inadmissible"
+        },
+        "calls": [
+            [
+                "CaseStatusStore::loadCase",
+                {
+                    "caseId": "case-2"
+                }
+            ],
+            [
+                "CaseTypeResolver::effectiveCaseType",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "CaseStatusStore::saveCase",
+                {
+                    "case": {
+                        "id": "case-2",
+                        "caseType": " ct-1 ",
+                        "title": "Aanvraag",
+                        "admissibility": {
+                            "verdict": "inadmissible",
+                            "judgedBy": "anna",
+                            "judgedOn": "<now>",
+                            "reason": "Te laat ingediend"
+                        }
+                    }
+                }
+            ],
+            [
+                "CaseEndingActs::finish",
+                {
+                    "caseId": "case-2",
+                    "reason": "Te laat ingediend",
+                    "resultTypeId": "rt-niet"
+                }
+            ],
+            [
+                "CaseTypeResolver::effectiveCaseType",
+                {
+                    "caseTypeId": "ct-1"
+                }
+            ],
+            [
+                "ApplicantMessage::send",
+                {
+                    "case": {
+                        "id": "case-2",
+                        "caseType": " ct-1 ",
+                        "title": "Aanvraag",
+                        "admissibility": {
+                            "verdict": "inadmissible",
+                            "judgedBy": "anna",
+                            "judgedOn": "<now>",
+                            "reason": "Te laat ingediend"
+                        }
+                    },
+                    "caseType": {
+                        "id": "ct-1",
+                        "admissibilityJudgement": {
+                            "enabled": true,
+                            "inadmissibleResultType": "rt-niet"
+                        }
+                    },
+                    "moment": "case-inadmissible",
+                    "template": "niet-ontvankelijk",
+                    "context": {
+                        "reason": "Te laat ingediend"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq admissibility: case {case} closed as niet-ontvankelijk",
+                {
+                    "case": "case-2",
+                    "judgedBy": "anna",
+                    "applicantTold": true
+                }
+            ]
+        ]
     }
 }
