@@ -35,6 +35,7 @@ use RuntimeException;
  * Pins every find, save and log line of a concluded delivery.
  *
  * @covers \OCA\Dossiq\Listener\DeliveryConcludedListener
+ * @covers \OCA\Dossiq\Listener\Support\ConcludedDelivery
  */
 class DeliveryConcludedListenerGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
