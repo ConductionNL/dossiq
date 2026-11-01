@@ -1,0 +1,21 @@
+{
+  "caseTypes": [
+    {
+      "id": "e4",
+      "statusTypes": [
+        {
+          "name": "A"
+        }
+      ],
+      "workflowTemplate": {
+        "steps": [],
+        "transitions": [
+          {
+            "fromStatusName": "A",
+            "toStatusName": "Z"
+          }
+        ]
+      }
+    }
+  ]
+}

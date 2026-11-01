@@ -45,6 +45,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Controller\ProcessMiningController
+ * @uses \OCA\Dossiq\Service\Csv\CsvWriter
+ * @uses \OCA\Dossiq\Service\ProcessMining\ReportViews
  */
 class ProcessMiningCsvTest extends TestCase {
 

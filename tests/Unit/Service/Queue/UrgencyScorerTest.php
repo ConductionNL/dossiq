@@ -36,6 +36,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Queue\UrgencyScorer
  * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */

@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Doorlooptijd\DeadlineComplianceCalculator
  * @covers \OCA\Dossiq\Service\Doorlooptijd\CaseTypeThroughputCalculator
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Doorlooptijd\ThroughputBuckets
  *
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */

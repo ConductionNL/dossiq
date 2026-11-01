@@ -49,6 +49,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Controller\SetupController
  * @uses \OCA\Dossiq\Service\Setup\FirstRunReadiness
+ * @uses \OCA\Dossiq\Service\Setup\CaseTypePackageChoice
  */
 class SetupControllerStatusTest extends TestCase {
 

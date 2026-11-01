@@ -49,6 +49,8 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\ProcessMining\PhaseSummary
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class ProcessMiningServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

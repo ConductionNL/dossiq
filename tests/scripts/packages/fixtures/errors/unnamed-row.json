@@ -1,0 +1,15 @@
+{
+  "caseTypes": [
+    {
+      "id": "e1",
+      "statusTypes": [
+        {
+          "name": "A"
+        },
+        {
+          "order": 2
+        }
+      ]
+    }
+  ]
+}
