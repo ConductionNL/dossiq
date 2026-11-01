@@ -300,6 +300,8 @@ class PackageWriterGoldenTest extends TestCase {
 			'collections / no collections' => ['writeCollections', ['collections' => []] + $collections('skip'), []],
 			'collections / a list case type' => ['writeCollections', $collections('skip', ['caseType' => [$caseType, 'x', ['title' => 'Tweede']]]), []],
 			'collections / no schema for the second collection' => ['writeCollections', $collections('skip'), ['config' => ['status_type_schema' => '']]],
+			'collections / replaced, then no schema' => ['writeCollections', $collections('replace', ['caseType' => $caseType, 'statusTypes' => [$statuses[2]]]), ['config' => ['status_type_schema' => '']] + $heldAll],
+			'collections / created and replaced, then refused' => ['writeCollections', $collections('replace'), ['saveThrows' => ['new-4']] + ['held' => ['caseType' => ['ct-1' => ['id' => 'ct-1']]]]],
 			'collections / save refused midway' => ['writeCollections', $collections('skip'), ['saveThrows' => ['st-2']]],
 			'collections / save refused, roll-back refused' => ['writeCollections', $collections('skip'), ['saveThrows' => ['new-4'], 'deleteThrows' => ['st-1']]],
 			'collections / find raises' => ['writeCollections', $collections('overwrite'), ['findThrows' => ['ct-1']] + $heldAll],

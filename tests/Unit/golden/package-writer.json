@@ -865,6 +865,145 @@
             }
         ]
     },
+    "collections / replaced, then no schema": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' was not imported: No schema is configured for 'statusTypes', so its rows cannot be written."
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema"
+        ]
+    },
+    "collections / created and replaced, then refused": {
+        "answer": {
+            "status": "error",
+            "message": "Component 'case-type' was not imported: save refused for new-4"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue case_type_schema",
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "identifier": "melding",
+                        "title": "Melding",
+                        "description": "Een melding"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType",
+                    "uuid": "ct-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            "settings getConfigValue status_type_schema",
+            {
+                "find": {
+                    "id": "st-1",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Nieuw"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-1",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "find": {
+                    "id": "st-2",
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Klaar"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": "st-2",
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "ct-1",
+                        "name": "Zonder id"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType",
+                    "uuid": null,
+                    "_rbac": false,
+                    "_multitenancy": true
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "st-1",
+                    "register": "dossiq"
+                }
+            },
+            {
+                "deleteObject": {
+                    "uuid": "st-2",
+                    "register": "dossiq"
+                }
+            }
+        ]
+    },
     "collections / save refused midway": {
         "answer": {
             "status": "error",
