@@ -17,14 +17,16 @@ import { describe, expect, it } from 'vitest'
 const read = (file) => JSON.parse(fs.readFileSync(path.resolve(__dirname, '../..', file), 'utf8'))
 const nl = read('l10n/nl.json').translations
 
-const fullRoles = () => {
+function fullRoles() {
 	const caseDetail = read('src/manifest.json').pages.find((page) => page.id === 'CaseDetail')
 	const people = caseDetail.config.widgets.find((widget) => widget.id === 'case-people-panel')
 	return people.content.sections.map((section) => section.widget).find((widget) => widget.id === 'case-party-roles')
 }
-const simpleRoles = () => read('src/menu-layout.simple.json').pages
-	.find((page) => page.id === 'CaseDetail')
-	.configAppend.widgets.find((widget) => widget.id === 'case-party-roles-card')
+function simpleRoles() {
+	return read('src/menu-layout.simple.json').pages
+		.find((page) => page.id === 'CaseDetail')
+		.configAppend.widgets.find((widget) => widget.id === 'case-party-roles-card')
+}
 
 describe('the simple structure\'s Rollen rows', () => {
 	it('say no secrecy on the primary person only, as the full structure does', () => {
