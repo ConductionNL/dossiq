@@ -1,0 +1,1473 @@
+{
+    "record, stored with @self id": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "Aanvraag vergunning",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "Aanvraag vergunning",
+                    "outcome": "case",
+                    "intakeEntryId": "e-self"
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
+    "record, stored with plain id": {
+        "answer": "e-plain",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "Aanvraag vergunning",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "Aanvraag vergunning",
+                    "outcome": "case",
+                    "intakeEntryId": "e-plain"
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
+    "record, stored without id": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "Aanvraag vergunning",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "Aanvraag vergunning",
+                    "outcome": "case",
+                    "intakeEntryId": ""
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
+    "record, store answers nothing": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "record, store fails": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq: writing an intake log entry failed",
+                {
+                    "messageId": "<m1@b.nl>",
+                    "error": "saveObject failed"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "record, no case": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "record, blank case": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "  ",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "record, blank subject": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "   ",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "Bericht ontvangen zonder onderwerp",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "   ",
+                    "outcome": "case",
+                    "intakeEntryId": "e-self"
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
+    "record, long subject": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+                    "outcome": "case",
+                    "intakeEntryId": "e-self"
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
+    "record, original over the limit": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "262144 bytes, sha1 086b3ca923be18c78ce0067542d042759e350377",
+                        "originalTruncated": true
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "Aanvraag vergunning",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "Aanvraag vergunning",
+                    "outcome": "case",
+                    "intakeEntryId": "e-self"
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
+    "record, original at the limit": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "fail",
+                        "dmarcResult": "none",
+                        "threadingResult": "match",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "262144 bytes, sha1 086b3ca923be18c78ce0067542d042759e350377",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "Aanvraag vergunning",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "Aanvraag vergunning",
+                    "outcome": "case",
+                    "intakeEntryId": "e-self"
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
+    "record, missing results": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "pass",
+                        "dkimResult": "unavailable",
+                        "dmarcResult": "unavailable",
+                        "threadingResult": "unavailable",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "Aanvraag vergunning",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "Aanvraag vergunning",
+                    "outcome": "case",
+                    "intakeEntryId": "e-self"
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
+    "channel, stored": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "channel": "teams",
+                        "channelMessageId": "msg-9",
+                        "sender": "Bob",
+                        "subject": "Vraag",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "outcome": "inbox",
+                        "reason": "Nothing matched",
+                        "case": "case-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "channel, stored without id": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "channel": "teams",
+                        "channelMessageId": "msg-9",
+                        "sender": "Bob",
+                        "subject": "Vraag",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "outcome": "inbox",
+                        "reason": "Nothing matched",
+                        "case": ""
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "channel, store answers nothing": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "channel": "teams",
+                        "channelMessageId": "msg-9",
+                        "sender": "Bob",
+                        "subject": "Vraag",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "outcome": "inbox",
+                        "reason": "Nothing matched",
+                        "case": "case-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "channel, store fails": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "channel": "teams",
+                        "channelMessageId": "msg-9",
+                        "sender": "Bob",
+                        "subject": "Vraag",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "outcome": "inbox",
+                        "reason": "Nothing matched",
+                        "case": "case-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq: writing a channel intake log entry failed",
+                {
+                    "channel": "teams",
+                    "message": "msg-9",
+                    "error": "saveObject failed"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "channel, long fields": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "channel": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                        "channelMessageId": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+                        "sender": "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+                        "subject": "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "outcome": "refused",
+                        "reason": "r",
+                        "case": ""
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "amend, patched": {
+        "answer": true,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "patchObject",
+                {
+                    "objectId": "e1",
+                    "data": {
+                        "outcome": "released"
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry"
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "amend, patch answers nothing": {
+        "answer": false,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "patchObject",
+                {
+                    "objectId": "e1",
+                    "data": {
+                        "a": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry"
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "amend, patch fails": {
+        "answer": false,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "patchObject",
+                {
+                    "objectId": "e1",
+                    "data": {
+                        "a": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq: amending an intake log entry failed",
+                {
+                    "entry": "e1",
+                    "error": "patchObject failed"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "amend, no entry": {
+        "answer": false,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "find, found": {
+        "answer": {
+            "id": "e1",
+            "outcome": "case"
+        },
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "find",
+                {
+                    "id": "e1",
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry"
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "find, read fails": {
+        "answer": null,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "find",
+                {
+                    "id": "e1",
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "Dossiq: reading an intake log entry failed",
+                {
+                    "entry": "e1",
+                    "error": "find failed"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "find, no entry": {
+        "answer": null,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "search, rows": {
+        "answer": [
+            {
+                "id": "e1"
+            },
+            {
+                "id": "e2"
+            }
+        ],
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                {
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "filters": {
+                        "outcome": "case",
+                        "_limit": 5
+                    }
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "search, fails": {
+        "answer": [],
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                {
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "filters": []
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "Dossiq: searching the intake log failed",
+                {
+                    "error": "searchObjectsBySlug failed"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "channel entry, found": {
+        "answer": {
+            "id": "e1",
+            "channel": "teams"
+        },
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                {
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "filters": {
+                        "channel": "teams",
+                        "channelMessageId": "msg-9",
+                        "_limit": 1
+                    }
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "channel entry, none": {
+        "answer": null,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                {
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "filters": {
+                        "channel": "teams",
+                        "channelMessageId": "msg-9",
+                        "_limit": 1
+                    }
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "channel entry, blank id": {
+        "answer": null,
+        "calls": [],
+        "logs": [],
+        "timeline": []
+    },
+    "configured": {
+        "answer": true,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "record, no store": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the intake log is not provisioned, so a processed message was not recorded",
+                {
+                    "messageId": "<m1@b.nl>",
+                    "outcome": "case"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "channel, no store": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the intake log is not provisioned, so a channel message was not recorded",
+                {
+                    "channel": "teams",
+                    "message": "msg-9",
+                    "outcome": "inbox"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "amend, no store": {
+        "answer": false,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "find, no store": {
+        "answer": null,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "search, no store": {
+        "answer": [],
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "configured, no store": {
+        "answer": false,
+        "calls": [],
+        "logs": [],
+        "timeline": []
+    },
+    "record, no register": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the intake log is not provisioned, so a processed message was not recorded",
+                {
+                    "messageId": "<m1@b.nl>",
+                    "outcome": "case"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "channel, no register": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the intake log is not provisioned, so a channel message was not recorded",
+                {
+                    "channel": "teams",
+                    "message": "msg-9",
+                    "outcome": "inbox"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "amend, no register": {
+        "answer": false,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "find, no register": {
+        "answer": null,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "search, no register": {
+        "answer": [],
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "configured, no register": {
+        "answer": false,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "record, no schema": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the intake log is not provisioned, so a processed message was not recorded",
+                {
+                    "messageId": "<m1@b.nl>",
+                    "outcome": "case"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "channel, no schema": {
+        "answer": "",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the intake log is not provisioned, so a channel message was not recorded",
+                {
+                    "channel": "teams",
+                    "message": "msg-9",
+                    "outcome": "inbox"
+                }
+            ]
+        ],
+        "timeline": []
+    },
+    "amend, no schema": {
+        "answer": false,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "find, no schema": {
+        "answer": null,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "search, no schema": {
+        "answer": [],
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    },
+    "configured, no schema": {
+        "answer": false,
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ]
+        ],
+        "logs": [],
+        "timeline": []
+    }
+}
