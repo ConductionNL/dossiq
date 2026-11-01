@@ -113,7 +113,7 @@ class AiServiceGoldenTest extends TestCase {
 		}
 
 		$model = $scenario['model'];
-		$service = new class($appConfig, new AiPromptFactory(), new AiPiiRedactor(), $this->createMock(AiEndpointGuard::class), $audit, new AiModelIdentity(appConfig: $appConfig), $logger, $model) extends AiService {
+		$service = new class($appConfig, ($scenario['prompts'] ?? new AiPromptFactory()), new AiPiiRedactor(), $this->createMock(AiEndpointGuard::class), $audit, new AiModelIdentity(appConfig: $appConfig), $logger, $model) extends AiService {
 			public array $sent = [];
 
 			public function __construct(IAppConfig $a, AiPromptFactory $p, AiPiiRedactor $r, AiEndpointGuard $g, AiAuditLog $l, AiModelIdentity $m, LoggerInterface $log, private mixed $model) {
@@ -190,4 +190,78 @@ class AiServiceGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden('ai-service-operations', $observed);
 	}//end testGoldenOperations()
+
+	/**
+	 * The calls of every operation, with a BSN in the case id so every prompt carries one.
+	 *
+	 * @return array<string, array{0: string, 1: array<string, mixed>}>
+	 */
+	private static function callsWithABsn(): array {
+		$caseId = 'case-123456782';
+		return [
+			'classifyDocument' => ['classifyDocument', ['caseId' => $caseId, 'documentId' => 'doc-1', 'userId' => 'ann']],
+			'extractData' => ['extractData', ['caseId' => $caseId, 'documentId' => null, 'userId' => 'ann']],
+			'askQuestion' => ['askQuestion', ['caseId' => $caseId, 'question' => 'BSN 123456782?', 'userId' => 'ann']],
+			'summarize' => ['summarize', ['caseId' => $caseId, 'type' => 'case', 'documentId' => null, 'userId' => 'ann']],
+			'suggestRouting' => ['suggestRouting', ['caseId' => $caseId, 'userId' => 'ann']],
+			'suggestNextStep' => ['suggestNextStep', ['caseId' => $caseId, 'userId' => 'ann']],
+		];
+	}//end callsWithABsn()
+
+	/**
+	 * With PII stripping on, the failure entry records the scrubbed prompt, never the raw one.
+	 *
+	 * @return void
+	 */
+	public function testAFailedCallRecordsTheScrubbedPrompt(): void {
+		foreach (self::callsWithABsn() as $name => [$op, $args]) {
+			$seen = $this->observe(
+				scenario: ['op' => $op, 'args' => $args, 'config' => array_merge(self::ON, ['ai_pii_stripping' => '1']), 'model' => 'model down']
+			);
+
+			self::assertCount(1, $seen['trail'], $name);
+			$entry = $seen['trail'][0];
+			self::assertSame('failed', $entry['action'], $name);
+			self::assertSame($seen['sent'][0], $entry['prompt'], $name);
+			self::assertStringContainsString('[BSN_REMOVED]', $entry['prompt'], $name);
+			self::assertStringNotContainsString('123456782', $entry['prompt'], $name);
+		}
+	}//end testAFailedCallRecordsTheScrubbedPrompt()
+
+	/**
+	 * A closed gate reads no case data: no prompt is built and the model is not called.
+	 *
+	 * @return void
+	 */
+	public function testAClosedGateBuildsNoPrompt(): void {
+		$features = [
+			'classifyDocument' => 'classification',
+			'extractData' => 'extraction',
+			'askQuestion' => 'qa',
+			'summarize' => 'summary',
+			'suggestRouting' => 'routing',
+			'suggestNextStep' => 'decision_support',
+		];
+		foreach (self::callsWithABsn() as $name => [$op, $args]) {
+			$closed = [
+				'feature off' => array_diff_key(self::ON, ['ai_feature_' . $features[$op] => 1]),
+				'dpia missing' => array_diff_key(self::ON, ['ai_dpia_acknowledged' => 1]),
+				'ai off' => array_merge(self::ON, ['ai_enabled' => '']),
+			];
+			foreach ($closed as $gate => $config) {
+				$prompts = $this->createMock(AiPromptFactory::class);
+				foreach (['classification', 'extraction', 'question', 'summary', 'routing', 'nextStep'] as $method) {
+					$prompts->expects($this->never())->method($method);
+				}
+
+				$seen = $this->observe(
+					scenario: ['op' => $op, 'args' => $args, 'config' => $config, 'model' => self::FULL, 'prompts' => $prompts]
+				);
+
+				self::assertFalse($seen['answer']['success'], $name . ', ' . $gate);
+				self::assertSame([], $seen['sent'], $name . ', ' . $gate);
+				self::assertSame([], $seen['trail'], $name . ', ' . $gate);
+			}
+		}//end foreach
+	}//end testAClosedGateBuildsNoPrompt()
 }//end class
