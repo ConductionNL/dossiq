@@ -35,6 +35,9 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Transitions\RequiredFieldGuard
  *
  * @uses \OCA\Dossiq\Service\Transitions\GuardResult
+ * @uses \OCA\Dossiq\Service\Archival\ArchivalNominationDeriver
+ * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
+ * @uses \OCA\Dossiq\Service\Transitions\SensitiveAnswerCheck
  */
 class RequiredFieldGuardTest extends TestCase {
 	/**

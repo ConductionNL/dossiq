@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Queue\PlannedItemDefaults
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class PlannedItemDefaultsTest extends TestCase {
 	/**

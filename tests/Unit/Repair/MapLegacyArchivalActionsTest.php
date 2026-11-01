@@ -31,6 +31,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Repair\MapLegacyArchivalActions
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class MapLegacyArchivalActionsTest extends TestCase {
 

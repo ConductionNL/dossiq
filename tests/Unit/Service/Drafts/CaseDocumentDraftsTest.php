@@ -43,6 +43,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Service\Drafts\CaseDraftData
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentTypeResolver
  */
 class CaseDocumentDraftsTest extends TestCase {
 

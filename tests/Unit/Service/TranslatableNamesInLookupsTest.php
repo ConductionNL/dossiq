@@ -50,6 +50,11 @@ use ReflectionMethod;
  * @covers \OCA\Dossiq\Service\ZgwBrcRulesService
  * @covers \OCA\Dossiq\Service\Zgw\BrcDocumentLinkRules
  * @covers \OCA\Dossiq\Service\Zgw\ZtcRelatedTypeLookup
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  */
 class TranslatableNamesInLookupsTest extends TestCase {
 

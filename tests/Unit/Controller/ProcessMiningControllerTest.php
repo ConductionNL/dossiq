@@ -45,6 +45,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Controller\ProcessMiningController
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\ProcessMining\ReportViews
+ * @uses \OCA\Dossiq\Service\Reporting\ReportPeriod
  */
 class ProcessMiningControllerTest extends TestCase {
 	use MakesCaseDateNormaliser;

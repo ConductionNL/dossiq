@@ -60,6 +60,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Transitions\StatusPublicLabels
+ * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
  */
 class CaseVersionMoveTest extends TestCase {
 
