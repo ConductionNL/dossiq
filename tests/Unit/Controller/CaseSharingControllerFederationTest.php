@@ -137,6 +137,26 @@ class CaseSharingControllerFederationTest extends TestCase {
 	}//end testHandleTransferAllowsAUserWithCaseAccess()
 
 	/**
+	 * A transfer whose case cannot be resolved is refused like an access denial.
+	 *
+	 * @return void
+	 */
+	public function testHandleTransferRefusesATransferWithoutAResolvableCase(): void {
+		$this->authenticate();
+		$this->request->method('getParam')->willReturnCallback(static fn (string $k, $d = null) => $k === 'action' ? 'accept' : $d);
+
+		$this->transferService->method('getCaseIdForTransfer')->with('transfer-1')->willReturn(null);
+		$this->sharingService->expects(self::never())->method('canUserAccessCase');
+		$this->transferService->expects(self::never())->method('acceptTransfer');
+		$this->transferService->expects(self::never())->method('rejectTransfer');
+
+		$response = $this->controller->handleTransfer('transfer-1');
+
+		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		self::assertSame(['success' => false, 'error' => 'Access denied: you are not assigned to this case'], $response->getData());
+	}//end testHandleTransferRefusesATransferWithoutAResolvableCase()
+
+	/**
 	 * @return void
 	 */
 	public function testCreateFederatedShareDeniesAUserWithoutCaseAccess(): void {
