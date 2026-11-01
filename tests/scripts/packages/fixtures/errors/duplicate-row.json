@@ -1,0 +1,15 @@
+{
+  "caseTypes": [
+    {
+      "id": "e2",
+      "roleTypes": [
+        {
+          "name": "R"
+        },
+        {
+          "name": "R"
+        }
+      ]
+    }
+  ]
+}
