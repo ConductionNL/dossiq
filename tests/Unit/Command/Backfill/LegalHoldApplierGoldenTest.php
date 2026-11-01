@@ -33,6 +33,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Pins every lookup, hold check, hold placed and output line of the legal-hold backfill.
  *
  * @covers \OCA\Dossiq\Command\Backfill\LegalHoldApplier
+ * @covers \OCA\Dossiq\Command\Backfill\HoldRun
  */
 class LegalHoldApplierGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
