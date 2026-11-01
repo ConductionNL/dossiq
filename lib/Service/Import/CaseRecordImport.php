@@ -59,6 +59,37 @@ class CaseRecordImport {
 	private const ARMED = [TermCarryOver::KEPT, TermCarryOver::CARRIED];
 
 	/**
+	 * A failed row that names no record.
+	 */
+	private const NO_RECORD = ['requestId' => '', 'reference' => ''];
+
+	/**
+	 * An import's answer before anything was read, after its key and source app.
+	 */
+	private const NOTHING_YET = [
+		'installed' => false,
+		'imported' => 0,
+		'alreadyImported' => 0,
+		'failed' => [],
+		'unmigrated' => 0,
+		'migrated' => [],
+		'duplicates' => [],
+		'repointed' => 0,
+	];
+
+	/**
+	 * Per outcome kind: the counter it raises and the list it joins, if any.
+	 * Any other kind is a migration.
+	 */
+	private const COUNTS = [
+		'alreadyImported' => ['alreadyImported', null],
+		'unmigrated' => ['unmigrated', null],
+		'failed' => ['unmigrated', 'failed'],
+		'duplicate' => [null, 'duplicates'],
+		'migrated' => ['imported', 'migrated'],
+	];
+
+	/**
 	 * The cases a number became, and the references to move.
 	 *
 	 * @var RecordImportReferences
@@ -144,7 +175,7 @@ class CaseRecordImport {
 						}
 
 						$answers[] = ['caseType' => $this->store->idOf(row: $type)]
-							+ $this->runOne(objectService: $objectService, caseType: $type, import: $import, dryRun: false);
+							+ $this->runOne(run: ['objectService' => $objectService, 'caseType' => $type, 'import' => $import, 'dryRun' => false]);
 					}
 				}
 
@@ -186,7 +217,7 @@ class CaseRecordImport {
 						continue;
 					}
 
-					$imports[] = $this->runOne(objectService: $objectService, caseType: $type, import: $import, dryRun: $dryRun);
+					$imports[] = $this->runOne(run: ['objectService' => $objectService, 'caseType' => $type, 'import' => $import, 'dryRun' => $dryRun]);
 				}
 
 				return ['caseType' => $this->store->idOf(row: $type), 'imports' => $imports];
@@ -195,28 +226,18 @@ class CaseRecordImport {
 	}//end runAll()
 
 	/**
-	 * One declared import.
+	 * Run one declared import.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $caseType      The case type.
-	 * @param array<string, mixed> $import        The declaration.
-	 * @param bool                 $dryRun        Count only.
+	 * @param array<string, mixed> $run The run: objectService, caseType, import, dryRun.
 	 *
 	 * @return array<string, mixed> The answer.
 	 */
-	private function runOne(object $objectService, array $caseType, array $import, bool $dryRun): array {
+	private function runOne(array $run): array {
+		$import = $run['import'];
 		$answer = [
 			'key' => (string)($import['key'] ?? ''),
 			'sourceApp' => (string)($import['sourceApp'] ?? ''),
-			'installed' => false,
-			'imported' => 0,
-			'alreadyImported' => 0,
-			'failed' => [],
-			'unmigrated' => 0,
-			'migrated' => [],
-			'duplicates' => [],
-			'repointed' => 0,
-		];
+		] + self::NOTHING_YET;
 
 		// An undeclared app id is an app nobody installed: isInstalled('') answers false.
 		if ($this->appManager->isInstalled($answer['sourceApp']) === false) {
@@ -224,22 +245,15 @@ class CaseRecordImport {
 		}
 
 		$answer['installed'] = true;
-		$sources = $this->store->sources(objectService: $objectService, import: $import);
+		$sources = $this->store->sources(objectService: $run['objectService'], import: $import);
 		if ($sources === null) {
-			$answer['failed'][] = ['requestId' => '', 'reference' => '', 'reason' => 'The source records could not be read.'];
+			$answer['failed'][] = self::NO_RECORD + ['reason' => 'The source records could not be read.'];
 			return $answer;
 		}
 
 		$state = ['cases' => null, 'byKey' => null];
 		foreach ($sources as $source) {
-			$outcome = $this->moveRecord(
-				objectService: $objectService,
-				caseType: $caseType,
-				import: $import,
-				source: $source,
-				dryRun: $dryRun,
-				state: $state
-			);
+			$outcome = $this->moveRecord(run: $run, source: $source, state: $state);
 			if ($outcome['kind'] === 'stop') {
 				$answer['failed'][] = $outcome['row'];
 				return $answer;
@@ -252,21 +266,20 @@ class CaseRecordImport {
 	}//end runOne()
 
 	/**
-	 * Which counter a source record lands in without being imported, or '' to import it.
+	 * Why a record is not imported this run, or '' when it is.
 	 *
-	 * @param array<string, mixed> $source     The source record.
-	 * @param string               $sourceId   Its uuid.
-	 * @param string               $stampField The field an earlier run stamped, or ''.
-	 * @param bool                 $dryRun     Count only.
+	 * @param array<string, mixed>                                 $source The source record.
+	 * @param array{import: array<string, mixed>, dryRun: bool} $run    The declaration, and whether to count only.
 	 *
 	 * @return string `alreadyImported`, `unmigrated` or ''.
 	 */
-	private function skippedAs(array $source, string $sourceId, string $stampField, bool $dryRun): string {
+	private function skippedAs(array $source, array $run): string {
+		$stampField = (string)($run['import']['stamp']['caseId'] ?? '');
 		if ($stampField !== '' && trim((string)($source[$stampField] ?? '')) !== '') {
 			return 'alreadyImported';
 		}
 
-		if ($dryRun === true || $sourceId === '') {
+		if ($run['dryRun'] === true || $this->store->idOf(row: $source) === '') {
 			return 'unmigrated';
 		}
 
@@ -274,72 +287,82 @@ class CaseRecordImport {
 	}//end skippedAs()
 
 	/**
-	 * Move one source record, or say why it was not moved.
+	 * Move one source record onto a case, or say why it was not.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $caseType      The case type.
-	 * @param array<string, mixed> $import        The declaration.
-	 * @param array<string, mixed> $source        The source record.
-	 * @param bool                 $dryRun        Count only.
-	 * @param array<string, mixed> $state         The cases read so far, by source and by number; read once, on first need.
+	 * @param array<string, mixed> $run The run: objectService, caseType, import, dryRun.
+	 * @param array<string, mixed> $source The source record.
+	 * @param array<string, mixed> $state  The cases read so far, by source and by number; read once, on first need.
 	 *
 	 * @return array{kind: string, row: array<string, mixed>} `kind` is alreadyImported, unmigrated, failed, duplicate, migrated or stop.
 	 */
-	private function moveRecord(object $objectService, array $caseType, array $import, array $source, bool $dryRun, array &$state): array {
-		$sourceId = $this->store->idOf(row: $source);
-		$stampField = (string)($import['stamp']['caseId'] ?? '');
-		$skipped = $this->skippedAs(source: $source, sourceId: $sourceId, stampField: $stampField, dryRun: $dryRun);
+	private function moveRecord(array $run, array $source, array &$state): array {
+		$skipped = $this->skippedAs(source: $source, run: $run);
 		if ($skipped !== '') {
 			return ['kind' => $skipped, 'row' => []];
 		}
 
-		// Read once, and only when there is something to import: a second
-		// run over a fully migrated source reads no case at all. An unread
-		// list stops the run: importing over it would write a half-finished
-		// case a second time.
-		$state['cases'] = ($state['cases'] ?? $this->store->casesBySource(objectService: $objectService, caseType: $caseType, import: $import));
-		if ($state['cases'] === null) {
-			$reason = 'The existing cases could not be read, so nothing more was imported.';
-			return ['kind' => 'stop', 'row' => ['requestId' => '', 'reference' => '', 'reason' => $reason]];
+		$match = $this->matchFor(run: $run + ['source' => $source], state: $state);
+		if (isset($match['stop']) === true) {
+			return ['kind' => 'stop', 'row' => self::NO_RECORD + ['reason' => $match['stop']]];
 		}
 
-		$existing = (string)($state['cases'][$sourceId] ?? '');
-		$duplicateOf = '';
-		try {
-			if ($existing === '') {
-				$duplicateOf = $this->references->caseOfSameNumber(
-					objectService: $objectService,
-					caseType: $caseType,
-					import: $import,
-					source: $source,
-					cache: $state['byKey']
-				);
-			}
-		} catch (Throwable $e) {
-			$reason = 'The existing cases could not be read by their earlier number, so nothing more was imported.';
-			return ['kind' => 'stop', 'row' => ['requestId' => '', 'reference' => '', 'reason' => $reason]];
-		}
-
-		$outcome = $this->importOne(
-			objectService: $objectService,
-			caseType: $caseType,
-			import: $import,
-			source: $source,
-			existing: $existing . $duplicateOf
-		);
+		$outcome = $this->importOne(run: $run + ['existing' => $match['existing'] . $match['duplicateOf']], source: $source);
 		if (isset($outcome['reason']) === true) {
 			return ['kind' => 'failed', 'row' => $outcome];
 		}
 
 		// A second record carrying the same number is the same matter: it
 		// joins the case the first one became, and is reported.
-		if ($duplicateOf !== '') {
+		if ($match['duplicateOf'] !== '') {
 			return ['kind' => 'duplicate', 'row' => $outcome];
 		}
 
-		$this->references->rememberNumber(import: $import, source: $source, caseId: (string)$outcome['caseId'], cache: $state['byKey']);
+		$this->references->rememberNumber(import: $run['import'], source: $source, caseId: (string)$outcome['caseId'], cache: $state['byKey']);
 		return ['kind' => 'migrated', 'row' => $outcome];
 	}//end moveRecord()
+
+	/**
+	 * The case a record already has, or the case of an earlier record with its number.
+	 *
+	 * Read once, and only when there is something to import: a second run
+	 * over a fully migrated source reads no case at all. An unread list stops
+	 * the run: importing over it would write a half-finished case a second time.
+	 *
+	 * @param array<string, mixed> $run The run: objectService, caseType, import, source.
+	 * @param array<string, mixed> $state The cases read so far, by source and by number.
+	 *
+	 * @return array{existing: string, duplicateOf: string}|array{stop: string} The match, or why the run stops.
+	 */
+	private function matchFor(array $run, array &$state): array {
+		$state['cases'] = ($state['cases'] ?? $this->store->casesBySource(
+			objectService: $run['objectService'],
+			caseType: $run['caseType'],
+			import: $run['import']
+		));
+		if ($state['cases'] === null) {
+			return ['stop' => 'The existing cases could not be read, so nothing more was imported.'];
+		}
+
+		$existing = (string)($state['cases'][$this->store->idOf(row: $run['source'])] ?? '');
+		if ($existing !== '') {
+			return ['existing' => $existing, 'duplicateOf' => ''];
+		}
+
+		try {
+			return [
+				'existing' => '',
+				'duplicateOf' => $this->references->caseOfSameNumber(
+					objectService: $run['objectService'],
+					caseType: $run['caseType'],
+					import: $run['import'],
+					source: $run['source'],
+					cache: $state['byKey']
+				),
+			];
+		} catch (Throwable $e) {
+			return ['stop' => 'The existing cases could not be read by their earlier number, so nothing more was imported.'];
+		}
+	}//end matchFor()
 
 	/**
 	 * The answer with one record's outcome counted.
@@ -353,76 +376,45 @@ class CaseRecordImport {
 		$row = $outcome['row'];
 		$answer['repointed'] += (int)($row['repointed'] ?? 0);
 		unset($row['repointed']);
-		switch ($outcome['kind']) {
-			case 'alreadyImported':
-				$answer['alreadyImported']++;
-				break;
-			case 'unmigrated':
-				$answer['unmigrated']++;
-				break;
-			case 'failed':
-				$answer['failed'][] = $row;
-				$answer['unmigrated']++;
-				break;
-			case 'duplicate':
-				$answer['duplicates'][] = $row;
-				break;
-			default:
-				$answer['imported']++;
-				$answer['migrated'][] = $row;
+
+		[$counter, $list] = (self::COUNTS[$outcome['kind']] ?? self::COUNTS['migrated']);
+		if ($counter !== null) {
+			$answer[$counter]++;
+		}
+
+		if ($list !== null) {
+			$answer[$list][] = $row;
 		}
 
 		return $answer;
 	}//end counted()
 
 	/**
-	 * Move one record: find or write its case, carry its term, then stamp it.
+	 * Write one record as a case, carry its term, move its references and stamp it.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $caseType      The case type.
-	 * @param array<string, mixed> $import        The declaration.
-	 * @param array<string, mixed> $source        The source record.
-	 * @param string               $existing      The case a previous run wrote for it, or ''.
+	 * @param array<string, mixed> $run The run: objectService, caseType, import, existing.
+	 * @param array<string, mixed> $source The source record.
 	 *
 	 * @return array<string, int|string> The migrated row, or a failed row carrying `reason`.
 	 */
-	private function importOne(object $objectService, array $caseType, array $import, array $source, string $existing): array {
+	private function importOne(array $run, array $source): array {
 		$sourceId = $this->store->idOf(row: $source);
-		$reference = (string)($source[(string)($import['formerReference']['from'] ?? '')] ?? '');
+		$reference = (string)($source[(string)($run['import']['formerReference']['from'] ?? '')] ?? '');
 		$failed = static fn (string $reason): array => ['requestId' => $sourceId, 'reference' => $reference, 'reason' => $reason];
 
-		try {
-			$mapped = $this->mapping->map(import: $import, record: $source, recordId: $sourceId, caseTypeId: $this->store->idOf(row: $caseType));
-		} catch (InvalidArgumentException $e) {
-			return $failed($e->getMessage());
+		$placed = $this->placeCase(run: $run, source: $source);
+		if (isset($placed['reason']) === true) {
+			return $failed($placed['reason']);
 		}
 
-		$caseId = $existing;
-		if ($caseId === '') {
-			$caseId = $this->store->writeCase(objectService: $objectService, mapped: $mapped);
-			if ($caseId === '') {
-				return $failed('The case could not be written.');
-			}
-		}
-
-		if (($import['carriesTerm'] ?? true) !== false) {
-			$carried = $this->term->carry(
-				caseId: $caseId,
-				term: $mapped['term'],
-				definitionSlug: (string)($caseType['identifier'] ?? ''),
-				extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
-			);
-			if ($mapped['term']['state'] !== TermCarryOver::STATE_CLOSED && in_array($carried['outcome'], self::ARMED, true) === false) {
-				return $failed('The case ' . $caseId . ' was written, but its term could not be armed (' . $carried['outcome'] . ').');
-			}
-		}
+		$caseId = $placed['caseId'];
 
 		// References are moved before the stamp: a record whose references
 		// could not all be moved stays unstamped, so the next run tries again.
 		try {
 			$repointed = $this->references->repoint(
-				objectService: $objectService,
-				import: $import,
+				objectService: $run['objectService'],
+				import: $run['import'],
 				oldValues: [$sourceId, (string)($source['@self']['slug'] ?? '')],
 				caseId: $caseId
 			);
@@ -430,7 +422,7 @@ class CaseRecordImport {
 			return $failed('The case ' . $caseId . ' was written, but the records pointing at the source could not all be moved onto it: ' . $e->getMessage());
 		}
 
-		if ($this->store->stamp(objectService: $objectService, import: $import, sourceId: $sourceId, caseId: $caseId) === false) {
+		if ($this->store->stamp(objectService: $run['objectService'], import: $run['import'], sourceId: $sourceId, caseId: $caseId) === false) {
 			return $failed('The source app did not keep the stamp, so the record is not counted as moved.');
 		}
 
@@ -438,10 +430,53 @@ class CaseRecordImport {
 			'requestId' => $sourceId,
 			'reference' => $reference,
 			'caseId' => $caseId,
-			'sourceTimer' => (string)($source[(string)($import['sourceTimerField'] ?? '')] ?? ''),
+			'sourceTimer' => (string)($source[(string)($run['import']['sourceTimerField'] ?? '')] ?? ''),
 			'repointed' => $repointed,
 		];
 	}//end importOne()
+
+	/**
+	 * Map a record, write its case unless it has one, and carry its term.
+	 *
+	 * @param array<string, mixed> $run The run: objectService, caseType, import, existing.
+	 * @param array<string, mixed> $source The source record.
+	 *
+	 * @return array{caseId: string}|array{reason: string} The case, or why the record failed.
+	 */
+	private function placeCase(array $run, array $source): array {
+		$caseType = $run['caseType'];
+		try {
+			$ids = [$this->store->idOf(row: $source), $this->store->idOf(row: $caseType)];
+			$mapped = $this->mapping->map(import: $run['import'], record: $source, recordId: $ids[0], caseTypeId: $ids[1]);
+		} catch (InvalidArgumentException $e) {
+			return ['reason' => $e->getMessage()];
+		}
+
+		$caseId = $run['existing'];
+		if ($caseId === '') {
+			$caseId = $this->store->writeCase(objectService: $run['objectService'], mapped: $mapped);
+		}
+
+		if ($caseId === '') {
+			return ['reason' => 'The case could not be written.'];
+		}
+
+		if (($run['import']['carriesTerm'] ?? true) === false) {
+			return ['caseId' => $caseId];
+		}
+
+		$carried = $this->term->carry(
+			caseId: $caseId,
+			term: $mapped['term'],
+			definitionSlug: (string)($caseType['identifier'] ?? ''),
+			extensionDays: $this->days(period: (string)($caseType['extensionPeriod'] ?? '')),
+		);
+		if ($mapped['term']['state'] !== TermCarryOver::STATE_CLOSED && in_array($carried['outcome'], self::ARMED, true) === false) {
+			return ['reason' => 'The case ' . $caseId . ' was written, but its term could not be armed (' . $carried['outcome'] . ').'];
+		}
+
+		return ['caseId' => $caseId];
+	}//end placeCase()
 
 
 	/**
@@ -452,10 +487,7 @@ class CaseRecordImport {
 	 * @return int The days.
 	 */
 	private function days(string $period): int {
-		if ($period === '') {
-			return 0;
-		}
-
+		// An empty or unreadable period throws, and reads as no extension.
 		try {
 			$from = new DateTimeImmutable('2000-01-01');
 			return $this->days->between(from: $from, to: $from->add(new DateInterval($period)));
