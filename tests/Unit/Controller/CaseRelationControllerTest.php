@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for CaseRelationController.
  *
  * @covers \OCA\Dossiq\Controller\CaseRelationController
+ * @uses \OCA\Dossiq\Service\Relation\CaseRelationDetails
  */
 class CaseRelationControllerTest extends TestCase {
 

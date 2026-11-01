@@ -99,6 +99,7 @@ interface StatusStoreObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 

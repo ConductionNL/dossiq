@@ -47,6 +47,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Controller\PayoutCallbackController
  * @covers \OCA\Dossiq\Service\Money\SignedPayoutCallback
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Money\PayoutReader
  */
 class PayoutCallbackControllerTest extends TestCase {
 	use MakesCaseDateNormaliser;
