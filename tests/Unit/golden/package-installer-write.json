@@ -4141,5 +4141,347 @@
             ]
         ],
         "logs": []
+    },
+    "installed from another directory": {
+        "answer": {
+            "status": "installed",
+            "package": "pkg",
+            "version": "1.2.0",
+            "message": "Wrote the package.",
+            "written": 2,
+            "adopted": 2,
+            "filled": 1,
+            "skipped": 1,
+            "refreshed": 1,
+            "kept": [
+                "h2",
+                "h3"
+            ]
+        },
+        "calls": [
+            [
+                "PackageDirectory::withRoot",
+                {
+                    "root": "/elsewhere"
+                }
+            ],
+            [
+                "PackageDirectory::read",
+                {
+                    "id": "pkg"
+                }
+            ],
+            [
+                "PackageValidator::validateShipped",
+                {
+                    "package": {
+                        "id": "pkg",
+                        "files": {
+                            "case-type.json": "{\"caseType\":{\"name\":\"Fixture\"},\"propertyDefinitions\":[{\"name\":\"p1\"},{\"name\":\"p2\"}],\"statusTypes\":[],\"roleTypes\":\"one-role\"}",
+                            "settings.json": "{\"new_key\":\"value\",\"flag\":true,\"off\":false,\"count\":3,\"present_key\":\"theirs\",\"ref\":\"app:slug\"}"
+                        },
+                        "digest": "digest-1"
+                    }
+                }
+            ],
+            [
+                "PackageCapabilities::missing",
+                {
+                    "requires": [
+                        "case-type",
+                        "flow",
+                        "seed",
+                        "settings"
+                    ]
+                }
+            ],
+            [
+                "ShippedConfigurationService::isPackageCurrent",
+                {
+                    "set": "pkg",
+                    "version": "1.2.0",
+                    "digest": "digest-1"
+                }
+            ],
+            [
+                "ShippedConfigurationService::ledgerAvailable",
+                []
+            ],
+            [
+                "PackageSchemaReferences::resolve",
+                {
+                    "settings": {
+                        "new_key": "value",
+                        "flag": true,
+                        "off": false,
+                        "count": 3,
+                        "present_key": "theirs",
+                        "ref": "app:slug"
+                    }
+                }
+            ],
+            [
+                "PackageDirectory::rowsUnder",
+                {
+                    "files": {
+                        "case-type.json": "{\"caseType\":{\"name\":\"Fixture\"},\"propertyDefinitions\":[{\"name\":\"p1\"},{\"name\":\"p2\"}],\"statusTypes\":[],\"roleTypes\":\"one-role\"}",
+                        "settings.json": "{\"new_key\":\"value\",\"flag\":true,\"off\":false,\"count\":3,\"present_key\":\"theirs\",\"ref\":\"app:slug\"}"
+                    },
+                    "dir": "flows/"
+                }
+            ],
+            [
+                "PackageDirectory::rowsUnder",
+                {
+                    "files": {
+                        "case-type.json": "{\"caseType\":{\"name\":\"Fixture\"},\"propertyDefinitions\":[{\"name\":\"p1\"},{\"name\":\"p2\"}],\"statusTypes\":[],\"roleTypes\":\"one-role\"}",
+                        "settings.json": "{\"new_key\":\"value\",\"flag\":true,\"off\":false,\"count\":3,\"present_key\":\"theirs\",\"ref\":\"app:slug\"}"
+                    },
+                    "dir": "seed/"
+                }
+            ],
+            [
+                "PackageSchemaReferences::seedGroup",
+                {
+                    "seed": {
+                        "name": "seed-1"
+                    }
+                }
+            ],
+            [
+                "PackageSchemaReferences::seedGroup",
+                {
+                    "seed": {
+                        "name": "seed-2"
+                    }
+                }
+            ],
+            [
+                "PackageWriter::writePackage",
+                {
+                    "package": "pkg",
+                    "groups": [
+                        {
+                            "schemaKey": "case_type_schema",
+                            "rows": [
+                                {
+                                    "name": "Fixture"
+                                }
+                            ]
+                        },
+                        {
+                            "schemaKey": "property_definition_schema",
+                            "rows": [
+                                {
+                                    "name": "p1"
+                                },
+                                {
+                                    "name": "p2"
+                                }
+                            ]
+                        },
+                        {
+                            "schemaKey": "role_type_schema",
+                            "rows": [
+                                "one-role"
+                            ]
+                        },
+                        {
+                            "schemaKey": "workflow_template_schema",
+                            "rows": [
+                                {
+                                    "name": "flow-1"
+                                }
+                            ]
+                        },
+                        {
+                            "schemaKey": "seed_schema",
+                            "rows": [
+                                {
+                                    "name": "seed-1"
+                                }
+                            ]
+                        },
+                        {
+                            "schemaKey": "seed_schema",
+                            "rows": [
+                                {
+                                    "name": "seed-2"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            [
+                "ShippedConfigurationService::stamp",
+                {
+                    "set": "pkg",
+                    "targetSchema": "s-w1",
+                    "targetObject": "w1",
+                    "object": {
+                        "name": "W1"
+                    },
+                    "version": "1.2.0",
+                    "objectsKey": "case_type_schema"
+                }
+            ],
+            [
+                "ShippedConfigurationService::stamp",
+                {
+                    "set": "pkg",
+                    "targetSchema": "s-w2",
+                    "targetObject": "w2",
+                    "object": {
+                        "name": "W2"
+                    },
+                    "version": "1.2.0"
+                }
+            ],
+            [
+                "ShippedConfigurationService::stateOf",
+                {
+                    "targetSchema": "s-a1",
+                    "targetObject": "a1",
+                    "object": {
+                        "name": "A1"
+                    }
+                }
+            ],
+            [
+                "ShippedConfigurationService::stateOf",
+                {
+                    "targetSchema": "s-a2",
+                    "targetObject": "a2",
+                    "object": {
+                        "name": "A2"
+                    }
+                }
+            ],
+            [
+                "ShippedConfigurationService::stamp",
+                {
+                    "set": "pkg",
+                    "targetSchema": "s-a2",
+                    "targetObject": "a2",
+                    "object": {
+                        "name": "A2"
+                    },
+                    "version": "1.2.0",
+                    "objectsKey": "status_type_schema"
+                }
+            ],
+            [
+                "ShippedConfigurationService::recordPackage",
+                {
+                    "set": "pkg",
+                    "version": "1.2.0",
+                    "digest": "digest-1"
+                }
+            ],
+            [
+                "PackageWriter::fillAdopted",
+                {
+                    "adopted": [
+                        {
+                            "schema": "s-a1",
+                            "id": "a1",
+                            "row": {
+                                "name": "A1"
+                            },
+                            "schemaKey": "case_type_schema"
+                        },
+                        {
+                            "schema": "s-a2",
+                            "id": "a2",
+                            "row": {
+                                "name": "A2"
+                            },
+                            "schemaKey": "status_type_schema"
+                        }
+                    ]
+                }
+            ],
+            [
+                "ShippedConfigurationService::refreshRows",
+                {
+                    "set": "pkg",
+                    "version": "1.2.0",
+                    "rows": [
+                        {
+                            "schema": "s-h1",
+                            "id": "h1",
+                            "row": {
+                                "name": "H1"
+                            },
+                            "schemaKey": "role_type_schema"
+                        }
+                    ],
+                    "overLocalChanges": false
+                }
+            ],
+            [
+                "IAppConfig::getKeys",
+                {
+                    "app": "dossiq"
+                }
+            ],
+            [
+                "IAppConfig::setValueString",
+                {
+                    "app": "dossiq",
+                    "key": "new_key",
+                    "value": "value"
+                }
+            ],
+            [
+                "IAppConfig::setValueString",
+                {
+                    "app": "dossiq",
+                    "key": "flag",
+                    "value": "true"
+                }
+            ],
+            [
+                "IAppConfig::setValueString",
+                {
+                    "app": "dossiq",
+                    "key": "off",
+                    "value": "false"
+                }
+            ],
+            [
+                "IAppConfig::setValueString",
+                {
+                    "app": "dossiq",
+                    "key": "count",
+                    "value": "3"
+                }
+            ],
+            [
+                "IAppConfig::setValueString",
+                {
+                    "app": "dossiq",
+                    "key": "ref",
+                    "value": "schema-7"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "Installed package {id} {version}: {written} row(s) written, {adopted} adopted ({filled} given fields they lacked), {skipped} already present ({refreshed} refreshed, {kept} kept as this instance holds them)",
+                {
+                    "id": "pkg",
+                    "version": "1.2.0",
+                    "written": 2,
+                    "adopted": 2,
+                    "filled": 1,
+                    "skipped": 1,
+                    "refreshed": 1,
+                    "kept": 2
+                }
+            ]
+        ]
     }
 }

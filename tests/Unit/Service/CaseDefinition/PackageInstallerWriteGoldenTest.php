@@ -180,14 +180,22 @@ class PackageInstallerWriteGoldenTest extends TestCase {
 			}
 		};
 
+		$packages = $this->double(
+			class: PackageDirectory::class,
+			behaviour: [
+				'read' => ['id' => 'pkg', 'files' => $world['files'], 'digest' => 'digest-1'],
+				'rowsUnder' => static fn (mixed ...$named): array => ($world['rowsUnder'][$named['dir']] ?? []),
+			]
+		);
+		$packages->method('withRoot')->willReturnCallback(
+			function (string $root) use ($packages): object {
+				$this->calls[] = ['PackageDirectory::withRoot', ['root' => $root]];
+
+				return $packages;
+			}
+		);
 		$installer = new PackageInstaller(
-			packages: $this->double(
-				class: PackageDirectory::class,
-				behaviour: [
-					'read' => ['id' => 'pkg', 'files' => $world['files'], 'digest' => 'digest-1'],
-					'rowsUnder' => static fn (mixed ...$named): array => ($world['rowsUnder'][$named['dir']] ?? []),
-				]
-			),
+			packages: $packages,
 			validator: $this->double(
 				class: PackageValidator::class,
 				behaviour: ['validateShipped' => ['valid' => true, 'manifest' => $world['manifest'], 'errors' => []]]
@@ -231,6 +239,10 @@ class PackageInstallerWriteGoldenTest extends TestCase {
 				]
 			),
 		);
+
+		if (($world['root'] ?? '') !== '') {
+			$installer = $installer->fromRoot(root: $world['root']);
+		}
 
 		if (($world['over'] ?? false) === true) {
 			$answer = $installer->installOverLocalChanges(id: 'pkg');
@@ -290,6 +302,7 @@ class PackageInstallerWriteGoldenTest extends TestCase {
 				'manifest' => ['version' => '1.2.0', 'requires' => ['openregister', 7, 'openregister'], 'parts' => ['case-type', 'unknown-part', 'flows']],
 			],
 			'a capability missing' => ['capabilities' => ['openregister', 'flows']],
+			'installed from another directory' => ['root' => '/elsewhere'],
 		];
 
 		$observed = [];
