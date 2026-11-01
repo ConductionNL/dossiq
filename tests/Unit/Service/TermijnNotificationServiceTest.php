@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Service\Term\TermLetter
  *
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
