@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  * @uses \OCA\Dossiq\Service\FieldValidator
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class BrcDocumentLinkRulesTest extends TestCase {
 	use MakesZrcRuleGroup;

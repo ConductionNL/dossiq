@@ -35,6 +35,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Money\PayoutRequester
+ * @uses \OCA\Dossiq\Service\Money\PayoutReader
  */
 class PayoutRequesterTest extends TestCase {
 

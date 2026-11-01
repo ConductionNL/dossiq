@@ -30,6 +30,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\FilinqRedactionClient
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class FilinqRedactionClientTest extends TestCase {
 
