@@ -42,6 +42,7 @@ use RuntimeException;
  * Golden test for the AI operations of AiService.
  *
  * @covers \OCA\Dossiq\Service\AiService
+ * @covers \OCA\Dossiq\Service\Ai\AiRequest
  * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
  * @uses \OCA\Dossiq\Service\Ai\AiPiiRedactor
  * @uses \OCA\Dossiq\Service\Ai\AiPromptFactory

@@ -91,6 +91,7 @@ class FailingAiService extends AiService {
  * @covers \OCA\Dossiq\Service\AiService
  *
  * @uses \OCA\Dossiq\Service\Ai\AiAuditLog
+ * @uses \OCA\Dossiq\Service\Ai\AiRequest
  * @uses \OCA\Dossiq\Service\Ai\AiEndpointGuard
  * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
  * @uses \OCA\Dossiq\Service\Ai\AiPiiRedactor
