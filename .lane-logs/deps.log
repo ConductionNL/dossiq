@@ -1,0 +1,8 @@
+deps: clone /home/rubenlinde/memcap-work/screens/round6/R20/DQ-PILLS/dossiq-green (repo dossiq)
+deps: another lane is building dossiq/node-7928848f2844bf2f-b9239547; waiting for it
+deps: linked node_modules -> /home/rubenlinde/memcap-work/screens/round6/deps-cache/dossiq/node-7928848f2844bf2f-b9239547 (956 symlinks) in 4.0s
+deps: ran the root prepare script in the clone
+deps: cache hit for dossiq/composer-f9c07bd48cab19d7-bd5334c8
+deps: linked vendor -> /home/rubenlinde/memcap-work/screens/round6/deps-cache/dossiq/composer-f9c07bd48cab19d7-bd5334c8 (cp -al + dump-autoload) in 60.3s
+deps: ran post-install-cmd in the clone
+DEPS-EXIT 0
