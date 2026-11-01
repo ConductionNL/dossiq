@@ -134,10 +134,13 @@ class NoteMentionGoldenTest extends TestCase {
 		$request->method('getParams')->willReturn($body);
 		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($body[$key] ?? $default));
 
-		$caseAccessGuard = $this->getMockBuilder(CaseAccessGuard::class)->disableOriginalConstructor()->onlyMethods(['hasCaseMutationAccess', 'hasCaseReadAccess'])->getMock();
-		$caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
-		$userManager = $this->createMock(IUserManager::class);
-		$userManager->method('userExists')->willReturn(true);
+		$caseAccessGuard = $this->getMockBuilder(className: CaseAccessGuard::class)
+			->disableOriginalConstructor()
+			->onlyMethods(methods: ['hasCaseMutationAccess', 'hasCaseReadAccess'])
+			->getMock();
+		$caseAccessGuard->method('hasCaseReadAccess')->willReturn(value: true);
+		$userManager = $this->createMock(originalClassName: IUserManager::class);
+		$userManager->method('userExists')->willReturn(value: true);
 
 		$controller = new NotesController(
 			request: $request,
