@@ -148,6 +148,28 @@ class AiServiceModelCallTest extends TestCase {
 	}//end testHealthReportsARefusedConnection()
 
 	/**
+	 * A reply without a 2xx status is reported with its status, not decoded.
+	 *
+	 * @return void
+	 */
+	public function testHealthReportsAReplyWithoutASuccessStatus(): void {
+		$root = sys_get_temp_dir() . '/ai-model-' . bin2hex(random_bytes(4));
+		mkdir($root . '/api', 0700, true);
+		file_put_contents($root . '/api/generate', '{"response": "{}"}');
+
+		try {
+			$health = $this->service(config: ['ai_model_url' => 'file://' . $root . '/'], address: '127.0.0.1')->testHealth();
+		} finally {
+			unlink($root . '/api/generate');
+			rmdir($root . '/api');
+			rmdir($root);
+		}
+
+		self::assertFalse($health['healthy']);
+		self::assertSame('AI model returned HTTP 0', $health['message']);
+	}//end testHealthReportsAReplyWithoutASuccessStatus()
+
+	/**
 	 * A model that answers is reported healthy, with the model named.
 	 *
 	 * @return void
