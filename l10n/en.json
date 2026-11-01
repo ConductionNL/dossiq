@@ -11992,6 +11992,16 @@
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Who may open this case, and why": "Who may open this case, and why",
+        "Link for {label}": "Link for {label}",
+        "{capabilities}, without an account · the link can end": "{capabilities}, without an account · the link can end",
+        "Read, comment and add documents": "Read, comment and add documents",
+        "Expires {expiresAt|date}": "Expires {expiresAt|date}",
+        "Revoke link": "Revoke link",
+        "The link could not be revoked": "The link could not be revoked",
+        "No links on this case yet": "No links on this case yet",
+        "Only the people this case is assigned to can see its links": "Only the people this case is assigned to can see its links",
+        "Whoever reads the BSN or another sensitive field is recorded in the processing log.": "Whoever reads the BSN or another sensitive field is recorded in the processing log."
     }
 }
