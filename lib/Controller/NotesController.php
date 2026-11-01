@@ -41,6 +41,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -59,6 +60,7 @@ class NotesController extends Controller {
 	 * @param LoggerInterface $logger The logger
 	 * @param NotePush $notePush Hands a note to integriq for the neighbouring register, or says why it did not
 	 * @param CaseAccessGuard $caseAccessGuard Decides whether the caller may write notes on this case
+	 * @param IUserManager $userManager Tells which mentioned user ids have an account
 	 */
 	public function __construct(
 		IRequest $request,
@@ -67,6 +69,7 @@ class NotesController extends Controller {
 		private readonly LoggerInterface $logger,
 		private readonly NotePush $notePush,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly IUserManager $userManager,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -146,6 +149,9 @@ class NotesController extends Controller {
 	 * around the delegate call still returns 200 with a soft error flag
 	 * rather than a 5xx.
 	 *
+	 * The caller must be able to read the case the note is on, and only
+	 * mentioned user ids with an account are notified.
+	 *
 	 * @return JSONResponse Dispatch result
 	 *
 	 * @NoAdminRequired
@@ -178,6 +184,15 @@ class NotesController extends Controller {
 			);
 		}
 
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $objectId, user: $actor) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		$mentionedUserIds = $this->existingUsers(userIds: $mentionedUserIds);
+		if ($mentionedUserIds === []) {
+			return new JSONResponse(['notified' => 0], Http::STATUS_OK);
+		}
+
 		try {
 			$notified = $this->mentionSvc->notifyMention(
 				actorUserId: $actor->getUID(),
@@ -201,6 +216,17 @@ class NotesController extends Controller {
 			);
 		}//end try
 	}//end mention()
+
+	/**
+	 * The user ids that belong to an existing account, in their given order.
+	 *
+	 * @param array<int, string> $userIds The mentioned user ids.
+	 *
+	 * @return array<int, string>
+	 */
+	private function existingUsers(array $userIds): array {
+		return array_values(array_filter($userIds, fn (string $uid): bool => $this->userManager->userExists($uid)));
+	}//end existingUsers()
 
 	/**
 	 * Read the decoded JSON request body.
