@@ -29,13 +29,15 @@
 				:options="statusOptions"
 				:inputLabel="t('dossiq', 'Status')"
 				clearable />
-			<NcButton variant="primary" :disabled="loading" @click="reload">
+		</div>
+		<div class="stuf-audit-log__buttons">
+			<NcButton variant="secondary" :disabled="loading" @click="reload">
 				<template v-if="loading" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
 				{{ loading ? t('dossiq', 'Reloading…') : t('dossiq', 'Reload') }}
 			</NcButton>
-			<NcButton variant="tertiary" @click="exportCsv">
+			<NcButton variant="secondary" @click="exportCsv">
 				{{ t('dossiq', 'Export CSV') }}
 			</NcButton>
 		</div>
@@ -255,11 +257,17 @@ export default {
 
 <style scoped>
 .stuf-audit-log__filters {
-	display: flex;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 12px;
-	margin-bottom: 12px;
 	align-items: end;
+}
+
+.stuf-audit-log__buttons {
+	display: flex;
 	flex-wrap: wrap;
+	gap: 10px;
+	margin: 16px 0 12px;
 }
 
 .stuf-audit-log__table {
