@@ -88,7 +88,8 @@ class PermitPlateChange {
 			throw new PermitChangeRefused(PermitChangeRefused::NOT_FOUND, 'No such permit.');
 		}
 
-		if ((string)($permit['status'] ?? 'active') !== 'active') {
+		// The schema defaults status to `active` on every save, so a permit without one is not in force.
+		if ((string)($permit['status'] ?? '') !== 'active') {
 			throw new PermitChangeRefused(PermitChangeRefused::NOT_ACTIVE, 'This permit is not in force.');
 		}
 
