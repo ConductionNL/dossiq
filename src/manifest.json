@@ -7360,7 +7360,11 @@
 								"draftsKey": "dossiq-end-of-day",
 								"recordAll": {
 									"title": "Ready for today?",
-									"text": "The button records every note you filled in on its own case or task. An item without a note stays open and is back in My work tomorrow.",
+									"text": {
+										"zero": "The button records every note you filled in on its own case or task. An item without a note stays open and is back in My work tomorrow.",
+										"one": "The button records the filled-in note and its hours on its case. An item without a note stays open and is back in My work tomorrow.",
+										"other": "The button records the {count} filled-in notes and their hours on their case. An item without a note stays open and is back in My work tomorrow."
+									},
 									"label": "Close out your day",
 									"icon": "ClipboardCheckOutline",
 									"cancel": {
@@ -7368,7 +7372,8 @@
 										"route": "MyWorkHome"
 									},
 									"placement": {
-										"widget": "eod-ready"
+										"widget": "eod-ready",
+										"sentence": true
 									}
 								}
 							},
