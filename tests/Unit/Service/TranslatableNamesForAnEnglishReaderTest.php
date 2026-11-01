@@ -56,6 +56,7 @@ use ReflectionMethod;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\Ai\CaseTypeAiFeatures
  */
 class TranslatableNamesForAnEnglishReaderTest extends TestCase {
 	use MakesCaseDateNormaliser;

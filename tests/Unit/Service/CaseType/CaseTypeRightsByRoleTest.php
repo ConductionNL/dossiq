@@ -43,6 +43,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Access\OrganisationRoles
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseTypeRightsByRoleTest extends TestCase {
 
