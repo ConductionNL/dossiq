@@ -1488,7 +1488,7 @@
 						"title": "Linked",
 						"_note": "DqZaak Gekoppeld: what other apps hold for this case, in one card (nextcloud-vue linked-integrations-card). Each app's leaf is mounted out of sight and reports a summary: the linked ones list their rows, the rest share one line \"Documents, fees and payments, contract and projects: nothing linked\" with their actions (planninq's New project and Open in Planninq). It replaces the standalone Projects widget in the grid. The ids are the RENDER leaves the apps register (shillinq's `-panel` ids, not its `shillinq-payment-requests` data leaf). An app that is absent registers no leaf and is left out of the line.",
 						"content": {
-							"leaves": ["filinq-documents", { "id": "pipelinq-requests", "register": "pipelinq", "schema": "ticket", "filter": { "caseReference": "@objectId", "ticketType": "request" }, "requiredApp": "pipelinq", "noun": "", "label": "Question in pipelinq", "href": "/apps/pipelinq/tickets/{id}", "icon": "MessageQuestionOutline" }, "shillinq-financial-documents-panel", "shillinq-contracts-panel", "planninq-projects"]
+							"leaves": ["filinq-documents", { "id": "pipelinq-requests", "register": "pipelinq", "schema": "ticket", "filter": { "caseReference": "@objectId", "ticketType": "request" }, "requiredApp": "pipelinq", "noun": "", "label": "Question in pipelinq", "href": "/apps/pipelinq/tickets/{id}", "icon": "MessageQuestionOutline" }, { "id": "shillinq-financial-documents-panel", "noun": "fees and payments" }, "shillinq-contracts-panel", "planninq-projects"]
 						}
 					},
 					{
