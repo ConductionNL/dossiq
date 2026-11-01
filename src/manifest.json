@@ -4391,8 +4391,11 @@
 											},
 											"secrecy": {
 												"indicator": "geheimhouding",
-												"kinds": ["person"]
+												"kinds": ["person"],
+												"primaryOnly": true
 											},
+											"representationUntil": "Authorisation until {date}",
+											"_representationUntilNote": "Board DqZaakBetrokkenen Rollen (design-system #811): a party that acts for another (role rows, representedParty) ends its row with a warning pill naming when its link ends (validUntil), \"Machtiging tot 31 dec\".",
 											"roleLabels": {
 												"aanvrager": "Requester",
 												"gemachtigde": "Authorised representative",
@@ -4465,7 +4468,10 @@
 												"notAccepted": "Kind not accepted by this case type",
 												"verdictPublication": "Publishing a file on this case is refused",
 												"verdictWarn": "Read this before acting on the case",
-												"sentencePublication": "Publishing a file on this case is refused, because of {party}."
+												"sentencePublication": "Publishing a file on this case is refused, because of {party}.",
+												"primary": "Primary party",
+												"noSecrecy": "No secrecy",
+												"indicatorPill": "Indicator: {label}"
 											}
 										}
 									}
