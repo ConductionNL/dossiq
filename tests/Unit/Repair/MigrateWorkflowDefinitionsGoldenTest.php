@@ -39,6 +39,9 @@ use RuntimeException;
  * of the backfill over a store holding every kind of case type.
  *
  * @covers \OCA\Dossiq\Repair\MigrateWorkflowDefinitions
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillSchemas
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillTarget
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillCaseType
  * @uses \OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Workflow\BackfilledTemplateShape
