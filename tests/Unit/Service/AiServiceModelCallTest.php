@@ -183,4 +183,46 @@ class AiServiceModelCallTest extends TestCase {
 		self::assertIsInt($health['responseTimeMs']);
 		self::assertSame(['Respond with "ok" to confirm connectivity.'], $service->sent);
 	}//end testHealthReportsAnAnsweringModel()
+
+	/**
+	 * Model bodies and what they decode to.
+	 *
+	 * @return array<string, array{0: string, 1: array<string, mixed>}>
+	 */
+	public static function modelBodies(): array {
+		return [
+			'JSON answer' => ['{"response": "{\\"answer\\": \\"ja\\", \\"confidence\\": 0.9}"}', ['answer' => 'ja', 'confidence' => 0.9]],
+			'plain-text answer' => ['{"response": "gewoon tekst"}', ['answer' => 'gewoon tekst', 'confidence' => 0.0]],
+			'no response field' => ['{"done": true}', ['answer' => '', 'confidence' => 0.0]],
+		];
+	}//end modelBodies()
+
+	/**
+	 * A model body decodes to its JSON answer, or to the text as the answer.
+	 *
+	 * @param string               $body     The HTTP body.
+	 * @param array<string, mixed> $expected The decoded suggestion.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider modelBodies
+	 */
+	public function testAModelBodyDecodesToTheSuggestion(string $body, array $expected): void {
+		$decode = new \ReflectionMethod(AiService::class, 'decodeAiModelResponse');
+
+		self::assertSame($expected, $decode->invoke($this->service(config: [], address: null), $body));
+	}//end testAModelBodyDecodesToTheSuggestion()
+
+	/**
+	 * A body that is not JSON is refused.
+	 *
+	 * @return void
+	 */
+	public function testABodyThatIsNotJsonIsRefused(): void {
+		$decode = new \ReflectionMethod(AiService::class, 'decodeAiModelResponse');
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('AI model returned invalid JSON');
+		$decode->invoke($this->service(config: [], address: null), '<html>');
+	}//end testABodyThatIsNotJsonIsRefused()
 }//end class
