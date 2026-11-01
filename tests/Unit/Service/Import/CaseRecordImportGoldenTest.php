@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/record-import/spec.md
+ * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -44,6 +44,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Import\RecordImportStore
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class CaseRecordImportGoldenTest extends TestCase {
