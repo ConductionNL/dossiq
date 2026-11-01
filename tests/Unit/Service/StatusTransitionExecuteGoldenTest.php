@@ -47,6 +47,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\StatusTransitionService
  * @covers \OCA\Dossiq\Exception\RefusedException
  * @covers \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @covers \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @covers \OCA\Dossiq\Service\Transitions\TransitionStep
  */
 class StatusTransitionExecuteGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
