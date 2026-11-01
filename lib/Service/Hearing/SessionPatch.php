@@ -35,10 +35,10 @@ class SessionPatch {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                           $sessionId  UUID of the session.
-	 * @param array<string, mixed>             $current    The stored session.
-	 * @param array<string, mixed>             $update     The changes.
-	 * @param array<int, array<string, mixed>> $entries    Audit payloads recorded with the change.
+	 * @param string                           $sessionId UUID of the session.
+	 * @param array<string, mixed>             $current   The stored session.
+	 * @param array<string, mixed>             $update    The changes.
+	 * @param array<int, array<string, mixed>> $entries   Audit payloads recorded with the change.
 	 *
 	 * @return void
 	 */

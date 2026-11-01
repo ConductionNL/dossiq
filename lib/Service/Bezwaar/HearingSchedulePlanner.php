@@ -210,7 +210,8 @@ class HearingSchedulePlanner {
 	 * The record a scheduled session is saved as. The computed fields win
 	 * over the payload; the defaults only fill what the payload leaves out.
 	 *
-	 * @param HearingPlan $plan The scheduling request.
+	 * @param HearingPlan $plan          The scheduling request.
+	 * @param string      $scheduledDate ISO-8601 date-time of the hearing.
 	 *
 	 * @return array<string, mixed>
 	 *
@@ -218,8 +219,8 @@ class HearingSchedulePlanner {
 	 *
 	 * @spec openspec/specs/bezwaar-hearing/spec.md
 	 */
-	public function scheduledRecord(HearingPlan $plan): array {
-		$scheduled = $this->parseDateTime(value: $plan->scheduledDate);
+	public function scheduledRecord(HearingPlan $plan, string $scheduledDate): array {
+		$scheduled = $this->parseDateTime(value: $scheduledDate);
 		$deadline = $this->computeInspectionDeadline(scheduled: $scheduled);
 		$now = new DateTimeImmutable();
 

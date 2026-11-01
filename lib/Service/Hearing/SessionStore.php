@@ -35,9 +35,9 @@ class SessionStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param object $objectService  OpenRegister object service.
-	 * @param string $register       The register.
-	 * @param string $schema         The hearing session schema.
+	 * @param object $objectService OpenRegister object service.
+	 * @param string $register      The register.
+	 * @param string $schema        The hearing session schema.
 	 *
 	 * @return void
 	 */

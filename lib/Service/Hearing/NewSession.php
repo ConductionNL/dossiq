@@ -3,7 +3,7 @@
 /**
  * Dossiq NewSession value object.
  *
- * A session record to create, with what to log when saving fails and the audit entry written once it is saved.
+ * A session record to create and the audit entry written once it is saved.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Hearing
@@ -35,17 +35,15 @@ class NewSession {
 	/**
 	 * Constructor.
 	 *
-	 * @param array<string, mixed> $record        The record to save.
-	 * @param string               $action        What is being done, for the log line and the refusal.
-	 * @param string               $event         Audit event slug.
-	 * @param array<string, mixed> $auditPayload  Audit entry payload.
-	 * @param string               $tag           Audit tag.
+	 * @param array<string, mixed> $record       The record to save.
+	 * @param string               $event        Audit event slug.
+	 * @param array<string, mixed> $auditPayload Audit entry payload.
+	 * @param string               $tag          Audit tag.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		public readonly array $record,
-		public readonly string $action,
 		public readonly string $event,
 		public readonly array $auditPayload,
 		public readonly string $tag,

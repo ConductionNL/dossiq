@@ -69,6 +69,15 @@ class HearingService {
 	use SearchesObjects;
 
 	/**
+	 * What creating a session does, by its audit event, for the log line
+	 * and the refusal when saving fails.
+	 */
+	private const CREATE_ACTIONS = [
+		'hearing-scheduled' => 'schedule hearing',
+		'hearing-waived' => 'record waiver',
+	];
+
+	/**
 	 * The invitee a seeded default hearing is created with.
 	 */
 	private const SEED_INVITEES = [
@@ -153,7 +162,8 @@ class HearingService {
 		}
 
 		$record = $this->planner->scheduledRecord(
-			plan: new HearingPlan(caseId: $caseId, scheduledDate: $scheduledDate, chairpersonId: $chairpersonId, invitees: $invitees, payload: $payload)
+			plan: new HearingPlan(caseId: $caseId, chairpersonId: $chairpersonId, invitees: $invitees, payload: $payload),
+			scheduledDate: $scheduledDate,
 		);
 
 		// Awb art. 7:2. The entry is a row on the session's own OpenRegister
@@ -196,7 +206,6 @@ class HearingService {
 			store: $store,
 			session: new NewSession(
 				record: array_merge($payload, ['case' => $caseId] + $this->planner->waiverFields(reason: $reason, payload: $payload)),
-				action: 'record waiver',
 				event: 'hearing-waived',
 				auditPayload: [
 					'case' => $caseId,
@@ -471,7 +480,6 @@ class HearingService {
 	private function scheduledSession(array $record): NewSession {
 		return new NewSession(
 			record: $record,
-			action: 'schedule hearing',
 			event: 'hearing-scheduled',
 			auditPayload: [
 				'case' => $record['case'],
@@ -502,9 +510,9 @@ class HearingService {
 			) ?? $session->record);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Dossiq hearing: failed to ' . $session->action . ': ' . $e->getMessage()
+				'Dossiq hearing: failed to ' . self::CREATE_ACTIONS[$session->event] . ': ' . $e->getMessage()
 			);
-			throw new RuntimeException('Could not ' . $session->action);
+			throw new RuntimeException('Could not ' . self::CREATE_ACTIONS[$session->event]);
 		}
 
 		$this->auditTrail->recordForNewRecord(
