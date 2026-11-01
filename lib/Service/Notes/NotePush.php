@@ -216,6 +216,8 @@ class NotePush {
 	 * Whether integriq's delivery request exists on this instance.
 	 *
 	 * @return bool True when integriq is installed.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	protected function deliveryAvailable(): bool {
 		return class_exists('\\' . self::DELIVERY_EVENT);
