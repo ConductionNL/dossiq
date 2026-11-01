@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCP\IRequest;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
@@ -133,13 +134,19 @@ class NoteMentionGoldenTest extends TestCase {
 		$request->method('getParams')->willReturn($body);
 		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($body[$key] ?? $default));
 
+		$caseAccessGuard = $this->getMockBuilder(CaseAccessGuard::class)->disableOriginalConstructor()->onlyMethods(['hasCaseMutationAccess', 'hasCaseReadAccess'])->getMock();
+		$caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+		$userManager = $this->createMock(IUserManager::class);
+		$userManager->method('userExists')->willReturn(true);
+
 		$controller = new NotesController(
 			request: $request,
 			mentionSvc: new MentionNotificationService($manager, $queue, $logger),
 			userSession: $session,
 			logger: $this->createMock(LoggerInterface::class),
 			notePush: $this->getMockBuilder(NotePush::class)->disableOriginalConstructor()->onlyMethods(['push'])->getMock(),
-			caseAccessGuard: $this->getMockBuilder(CaseAccessGuard::class)->disableOriginalConstructor()->onlyMethods(['hasCaseMutationAccess'])->getMock(),
+			caseAccessGuard: $caseAccessGuard,
+			userManager: $userManager,
 		);
 
 		$response = $controller->mention();
