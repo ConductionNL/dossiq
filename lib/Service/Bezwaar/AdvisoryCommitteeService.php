@@ -329,7 +329,8 @@ class AdvisoryCommitteeService {
 		$from = (string)($request['current']['status'] ?? 'assigned');
 		$this->assertTransitionAllowed(from: $from, newStatus: $newStatus);
 
-		$update = array_merge($payload, ['status' => $newStatus]);
+		$update = $payload;
+		$update['status'] = $newStatus;
 		$update = $this->buildTransitionUpdate(
 			update: $update,
 			adviceDecisionRef: $this->guardTransition(request: $request, move: ['from' => $from] + $update),
