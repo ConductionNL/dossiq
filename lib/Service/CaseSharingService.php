@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTime;
+use OCA\Dossiq\Service\CaseShare\ShareStore;
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
@@ -150,95 +150,179 @@ class CaseSharingService {
 		array $sharedDocuments = [],
 		array $extra = [],
 	): array {
-		$named = null;
-		if ($label !== '') {
-			$named = $label;
-		}
+		$share = [
+			'caseId' => $caseId,
+			'label' => $label,
+			'createdBy' => $createdBy,
+			'expiresAt' => $expiresAt,
+			'password' => $password,
+			'extra' => $extra,
+		];
 
-		$link = $this->accessLinks->mintCaseLink(
-			caseId: $caseId,
-			userId: $createdBy,
-			capabilities: $capabilities,
-			expiresAt: $expiresAt,
-			password: $password,
-			label: $named
-		);
-
+		$link = $this->mintCaseLink(share: $share, capabilities: $capabilities);
 		if (isset($link['error']) === true) {
 			return $link;
 		}
 
+		$share['link'] = $link;
+		$share['documents'] = $this->documentLinks(share: $share, fileIds: $sharedDocuments);
+
+		return $this->recordTokenShare(share: $share);
+	}//end createTokenShare()
+
+	/**
+	 * Mint the access link over the case itself.
+	 *
+	 * @param array<string, mixed> $share        The share being made.
+	 * @param array<int, string>   $capabilities What the holder may do.
+	 *
+	 * @return array<string, mixed> The link, or an error array.
+	 */
+	private function mintCaseLink(array $share, array $capabilities): array {
+		return $this->accessLinks->mintCaseLink(
+			caseId: $share['caseId'],
+			userId: $share['createdBy'],
+			capabilities: $capabilities,
+			expiresAt: $share['expiresAt'],
+			password: $share['password'],
+			label: $this->linkLabel(share: $share)
+		);
+	}//end mintCaseLink()
+
+	/**
+	 * The label the links carry: the share's label, or none when it is blank.
+	 *
+	 * @param array<string, mixed> $share The share being made.
+	 *
+	 * @return string|null
+	 */
+	private function linkLabel(array $share): ?string {
+		if ($share['label'] === '') {
+			return null;
+		}
+
+		return $share['label'];
+	}//end linkLabel()
+
+	/**
+	 * Mint one `file` link per document named on the share; a document that
+	 * gets no link is logged and left out.
+	 *
+	 * @param array<string, mixed> $share   The share being made, with its case link.
+	 * @param array<int, mixed>    $fileIds The documents named on it.
+	 *
+	 * @return array<int, array<string, mixed>> The document links.
+	 */
+	private function documentLinks(array $share, array $fileIds): array {
 		$documents = [];
-		foreach ($sharedDocuments as $fileId) {
-			$fileLink = $this->accessLinks->mintFileLink(
-				caseId: $caseId,
-				fileId: (string)$fileId,
-				userId: $createdBy,
-				expiresAt: ($link['expiresAt'] ?? $expiresAt),
-				password: $password,
-				label: $named
-			);
-
-			if (isset($fileLink['error']) === true) {
-				$this->logger->warning(
-					'Dossiq: a document named on a case share did not get a link',
-					['caseId' => $caseId, 'fileId' => $fileId, 'error' => $fileLink['error']]
-				);
-				continue;
+		foreach ($fileIds as $fileId) {
+			$document = $this->documentLink(share: $share, fileId: $fileId);
+			if ($document !== null) {
+				$documents[] = $document;
 			}
+		}
 
-			$documents[] = [
-				'fileId' => (string)$fileId,
-				'linkId' => ($fileLink['id'] ?? null),
-				'linkUuid' => ($fileLink['uuid'] ?? null),
-				'url' => ($fileLink['url'] ?? null),
-			];
-		}//end foreach
+		return $documents;
+	}//end documentLinks()
 
+	/**
+	 * Mint the link for one document, or log why it got none.
+	 *
+	 * @param array<string, mixed> $share  The share being made, with its case link.
+	 * @param mixed                $fileId The document.
+	 *
+	 * @return array<string, mixed>|null The document link, or null.
+	 */
+	private function documentLink(array $share, mixed $fileId): ?array {
+		$fileLink = $this->accessLinks->mintFileLink(
+			caseId: $share['caseId'],
+			fileId: (string)$fileId,
+			userId: $share['createdBy'],
+			expiresAt: ($share['link']['expiresAt'] ?? $share['expiresAt']),
+			password: $share['password'],
+			label: $this->linkLabel(share: $share)
+		);
+
+		if (isset($fileLink['error']) === true) {
+			$this->logger->warning(
+				'Dossiq: a document named on a case share did not get a link',
+				['caseId' => $share['caseId'], 'fileId' => $fileId, 'error' => $fileLink['error']]
+			);
+			return null;
+		}
+
+		return [
+			'fileId' => (string)$fileId,
+			'linkId' => ($fileLink['id'] ?? null),
+			'linkUuid' => ($fileLink['uuid'] ?? null),
+			'url' => ($fileLink['url'] ?? null),
+		];
+	}//end documentLink()
+
+	/**
+	 * Record the share with its links, or withdraw the links when it cannot be recorded.
+	 *
+	 * @param array<string, mixed> $share The share, with its case link and document links.
+	 *
+	 * @return array The stored share plus the link, or an error array.
+	 */
+	private function recordTokenShare(array $share): array {
 		$stored = $this->linkShares->store(
-			caseId: $caseId,
-			label: $label,
-			createdBy: $createdBy,
-			link: $link,
-			documents: $documents,
-			extra: $extra
+			caseId: $share['caseId'],
+			label: $share['label'],
+			createdBy: $share['createdBy'],
+			link: $share['link'],
+			documents: $share['documents'],
+			extra: $share['extra']
 		);
 
 		if (isset($stored['error']) === true) {
-			// 🔴 THE LINK IS ALREADY LIVE AT THIS POINT. `mintCaseLink()` runs
-			// before the record is written, so a failed write used to leave a
-			// published access link on the case with no row pointing at it:
-			// invisible in the sharing tab, unrevokable there, and the caller
-			// told the share failed. Measured 2026-09-19 on a live instance,
-			// where `case_share_schema` was unwritten and every attempt to
-			// share a case published a link and answered 502.
-			//
-			// So the mint is undone before the refusal is returned, and the
-			// ids OpenRegister would not pull are named rather than dropped.
-			$refused = $this->linkShares->revokeMinted(
-				link: $link,
-				documents: $documents,
-				userId: $createdBy
-			);
-
-			$this->logger->error(
-				'Dossiq: a case share could not be recorded, so its links were withdrawn',
-				[
-					'caseId' => $caseId,
-					'error' => $stored['error'],
-					'linksNotRevoked' => $refused,
-				]
-			);
-
-			if ($refused !== []) {
-				$stored['linksNotRevoked'] = $refused;
-			}
-
-			return $stored;
+			return $this->withdrawUnrecorded(share: $share, stored: $stored);
 		}
 
-		return ['share' => $stored, 'link' => $link, 'url' => ($link['url'] ?? '')];
-	}//end createTokenShare()
+		return ['share' => $stored, 'link' => $share['link'], 'url' => ($share['link']['url'] ?? '')];
+	}//end recordTokenShare()
+
+	/**
+	 * Withdraw the links of a share whose record could not be written.
+	 *
+	 * 🔴 THE LINK IS ALREADY LIVE AT THIS POINT. `mintCaseLink()` runs before
+	 * the record is written, so a failed write used to leave a published access
+	 * link on the case with no row pointing at it: invisible in the sharing tab,
+	 * unrevokable there, and the caller told the share failed. Measured
+	 * 2026-09-19 on a live instance, where `case_share_schema` was unwritten and
+	 * every attempt to share a case published a link and answered 502.
+	 *
+	 * So the mint is undone before the refusal is returned, and the ids
+	 * OpenRegister would not pull are named rather than dropped.
+	 *
+	 * @param array<string, mixed> $share  The share, with its case link and document links.
+	 * @param array<string, mixed> $stored The refusal the record store gave.
+	 *
+	 * @return array<string, mixed> The refusal, naming any link left live.
+	 */
+	private function withdrawUnrecorded(array $share, array $stored): array {
+		$refused = $this->linkShares->revokeMinted(
+			link: $share['link'],
+			documents: $share['documents'],
+			userId: $share['createdBy']
+		);
+
+		$this->logger->error(
+			'Dossiq: a case share could not be recorded, so its links were withdrawn',
+			[
+				'caseId' => $share['caseId'],
+				'error' => $stored['error'],
+				'linksNotRevoked' => $refused,
+			]
+		);
+
+		if ($refused !== []) {
+			$stored['linksNotRevoked'] = $refused;
+		}
+
+		return $stored;
+	}//end withdrawUnrecorded()
 
 	/**
 	 * Create a partner organization-based case share.
@@ -275,63 +359,108 @@ class CaseSharingService {
 			return ['error' => 'Unknown case field: '.implode(', ', $unknown)];
 		}
 
-		// 🔴 NO SHARE WITHOUT A SCOPE (REQ-CST-02). A partner share crosses the
-		// organisation boundary by definition, so the consent gate always runs
-		// here, and the scope the consent names is written onto the share in
-		// the same act. Recording a scope that nothing carries is the defect
-		// row 13.28 names; asking the gate twice and writing whichever answer
-		// came back second is how the refusal and the share end up disagreeing.
+		$request = [
+			'caseId' => $caseId,
+			'partnerId' => $partnerId,
+			'permissionLevel' => $permissionLevel,
+			'createdBy' => $createdBy,
+			'message' => $message,
+			'excluded' => $excluded,
+		];
+
+		return $this->sharePartner(objectService: $objectService, request: $request);
+	}//end createPartnerShare()
+
+	/**
+	 * Ask the consent gate, then write the partner share with the scope it named.
+	 *
+	 * 🔴 NO SHARE WITHOUT A SCOPE (REQ-CST-02). A partner share crosses the
+	 * organisation boundary by definition, so the consent gate always runs
+	 * here, and the scope the consent names is written onto the share in the
+	 * same act. Recording a scope that nothing carries is the defect row 13.28
+	 * names; asking the gate twice and writing whichever answer came back
+	 * second is how the refusal and the share end up disagreeing.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param array<string, mixed> $request       The partner share asked for.
+	 *
+	 * @return array The created share data, or an error array.
+	 */
+	private function sharePartner(object $objectService, array $request): array {
 		$verdict = $this->consent->assess(
-			caseId: $caseId,
+			caseId: $request['caseId'],
 			sourceOrganisation: '',
-			receivingOrg: $partnerId,
+			receivingOrg: $request['partnerId'],
 		);
 		if ($verdict['allowed'] === false) {
 			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_share_schema');
-
-		// Partner-organisation handover is zaak-domain logic (org-to-org case
-		// hand-off), NOT public token sharing — it stays in-app per ADR-022.
-		// It carries no public token: the bespoke token mechanism moved to the
-		// OR shares leaf (createTokenShare) and is the only public surface.
-		$shareData = [
-			'caseId' => $caseId,
-			'shareType' => 'partner',
-			'partnerId' => $partnerId,
-			'permissionLevel' => $permissionLevel,
-			'createdBy' => $createdBy,
-			'consentId' => trim((string)($verdict['consent']['id'] ?? ($verdict['consent']['uuid'] ?? ''))),
-			'consentScope' => $verdict['scope'],
-			'consentUntil' => $verdict['until'],
-		];
-		if (trim($message) !== '') {
-			$shareData['message'] = trim($message);
-		}
-
-		if ($excluded !== []) {
-			$shareData['fieldExclusions'] = json_encode($excluded);
-		}
-
-		$result = $objectService->saveObject(
-			object: $shareData,
-			register: (int)$register,
-			schema: (int)$schema,
+		$result = $this->shareStore(objectService: $objectService)->save(
+			share: $this->partnerShareFields(request: $request, verdict: $verdict)
 		);
 
 		$this->logger->info(
 			'Dossiq: Partner share created',
 			[
-				'caseId' => $caseId,
-				'partnerId' => $partnerId,
+				'caseId' => $request['caseId'],
+				'partnerId' => $request['partnerId'],
 				'shareId' => $result->getUuid(),
 			]
 		);
 
 		return $result->jsonSerialize();
-	}//end createPartnerShare()
+	}//end sharePartner()
+
+	/**
+	 * The partner share record, carrying the consent it rests on.
+	 *
+	 * Partner-organisation handover is zaak-domain logic (org-to-org case
+	 * hand-off), NOT public token sharing: it stays in-app per ADR-022. It
+	 * carries no public token: the bespoke token mechanism moved to the OR
+	 * shares leaf (createTokenShare) and is the only public surface.
+	 *
+	 * @param array<string, mixed> $request The partner share asked for.
+	 * @param array<string, mixed> $verdict The consent gate's verdict.
+	 *
+	 * @return array<string, mixed> The fields to save.
+	 */
+	private function partnerShareFields(array $request, array $verdict): array {
+		$shareData = [
+			'caseId' => $request['caseId'],
+			'shareType' => 'partner',
+			'partnerId' => $request['partnerId'],
+			'permissionLevel' => $request['permissionLevel'],
+			'createdBy' => $request['createdBy'],
+			'consentId' => trim((string)($verdict['consent']['id'] ?? ($verdict['consent']['uuid'] ?? ''))),
+			'consentScope' => $verdict['scope'],
+			'consentUntil' => $verdict['until'],
+		];
+		if (trim($request['message']) !== '') {
+			$shareData['message'] = trim($request['message']);
+		}
+
+		if ($request['excluded'] !== []) {
+			$shareData['fieldExclusions'] = json_encode($request['excluded']);
+		}
+
+		return $shareData;
+	}//end partnerShareFields()
+
+	/**
+	 * The share register and schema as configured, bound to the object service.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 *
+	 * @return ShareStore
+	 */
+	private function shareStore(object $objectService): ShareStore {
+		return new ShareStore(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $this->settingsService->getConfigValue('case_share_schema'),
+		);
+	}//end shareStore()
 
 	/**
 	 * Look up the caseId for a given share UUID.
@@ -346,29 +475,13 @@ class CaseSharingService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getCaseIdForShare(string $shareId): ?string {
-		$objectService = $this->gateway->objectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
-
-		if (empty($register) === true || empty($shareSchema) === true) {
+		$store = $this->configuredStore();
+		if ($store === null) {
 			return null;
 		}
 
 		try {
-			$shareObj = $objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema);
-			if ($shareObj === null) {
-				return null;
-			}
-
-			$shareData = $shareObj;
-			if (is_array($shareObj) === false) {
-				$shareData = $shareObj->jsonSerialize();
-			}
-
+			$shareData = $store->read(shareId: $shareId);
 			if (isset($shareData['caseId']) === true) {
 				return (string)$shareData['caseId'];
 			}
@@ -382,6 +495,25 @@ class CaseSharingService {
 			return null;
 		}//end try
 	}//end getCaseIdForShare()
+
+	/**
+	 * The share store when OpenRegister is there and the register and schema are set.
+	 *
+	 * @return ShareStore|null The store, or null.
+	 */
+	private function configuredStore(): ?ShareStore {
+		$objectService = $this->gateway->objectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$store = $this->shareStore(objectService: $objectService);
+		if ($store->isConfigured() === false) {
+			return null;
+		}
+
+		return $store;
+	}//end configuredStore()
 
 	/**
 	 * Revoke a case share by marking it as revoked in OpenRegister.
@@ -399,34 +531,40 @@ class CaseSharingService {
 			return ['error' => 'OpenRegister is not available'];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
-
-		if (empty($register) === true || empty($shareSchema) === true) {
+		$store = $this->shareStore(objectService: $objectService);
+		if ($store->isConfigured() === false) {
 			return ['error' => 'Service unavailable'];
 		}
 
-		$shareObj = $objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema);
-		if ($shareObj === null) {
+		$shareData = $store->read(shareId: $shareId);
+		if ($shareData === null) {
 			return ['error' => 'Share not found'];
 		}
 
-		$shareData = $shareObj;
-		if (is_array($shareObj) === false) {
-			$shareData = $shareObj->jsonSerialize();
-		}
+		return $this->markRevoked(store: $store, revocation: ['shareId' => $shareId, 'userId' => $userId, 'share' => $shareData]);
+	}//end revokeShare()
 
-		$refused = $this->linkShares->revokeLinksOf(share: $shareData, userId: $userId);
+	/**
+	 * Pull the share's links, then write it as revoked by this user.
+	 *
+	 * @param ShareStore           $store      The share register.
+	 * @param array<string, mixed> $revocation The share id, the revoking user and the share as it stands.
+	 *
+	 * @return array<string, mixed> The revoked share, naming any link left live.
+	 */
+	private function markRevoked(ShareStore $store, array $revocation): array {
+		$shareData = $revocation['share'];
+		$refused = $this->linkShares->revokeLinksOf(share: $shareData, userId: $revocation['userId']);
 
 		$shareData['status'] = 'revoked';
-		$shareData['revokedBy'] = $userId;
-		$shareData['revokedAt'] = (new DateTime())->format('c');
+		$shareData['revokedBy'] = $revocation['userId'];
+		$shareData['revokedAt'] = date('c');
 
-		$result = $objectService->saveObject(object: $shareData, register: (int)$register, schema: (int)$shareSchema);
+		$result = $store->save(share: $shareData);
 
 		$this->logger->info(
 			'Dossiq: Case share revoked',
-			['shareId' => $shareId, 'revokedBy' => $userId]
+			['shareId' => $revocation['shareId'], 'revokedBy' => $revocation['userId']]
 		);
 
 		$revoked = $this->gateway->toArray($result);
@@ -435,7 +573,7 @@ class CaseSharingService {
 		}
 
 		return $revoked;
-	}//end revokeShare()
+	}//end markRevoked()
 
 	/**
 	 * Create a federated case share: a purpose-built, field-scoped snapshot
