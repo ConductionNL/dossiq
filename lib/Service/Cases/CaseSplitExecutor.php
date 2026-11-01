@@ -519,9 +519,9 @@ class CaseSplitExecutor {
 	/**
 	 * Write onto the original what left it, and where it went.
 	 *
-	 * @param array<string, mixed> $case  The case as it was read.
-	 * @param array{caseId: string, newId: string, newNumber: string, references: array<int, array<string, mixed>>} $split
-	 *        The case that was split, the case the material went to, its number, and the plan's reference entries.
+	 * @param array<string, mixed>                $case  The case as it was read.
+	 * @param array<string, string|array<mixed>> $split The case that was split (caseId), the case the material
+	 *        went to (newId), its number (newNumber), and the plan's reference entries (references).
 	 *
 	 * @return string The plan's one-line note, as recorded.
 	 */
