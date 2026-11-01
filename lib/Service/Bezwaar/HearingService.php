@@ -49,8 +49,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
-use DateTimeImmutable;
-use DateTimeInterface;
+use OCA\Dossiq\Service\Hearing\HearingPlan;
+use OCA\Dossiq\Service\Hearing\NewSession;
+use OCA\Dossiq\Service\Hearing\SessionPatch;
+use OCA\Dossiq\Service\Hearing\SessionStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -67,11 +69,15 @@ class HearingService {
 	use SearchesObjects;
 
 	/**
-	 * Grace window after `scheduledDate` during which the attendance
-	 * array remains append-only. Past this window, mutations require a
-	 * documented correctionReason.
+	 * The invitee a seeded default hearing is created with.
 	 */
-	private const ATTENDANCE_GRACE_HOURS = 1;
+	private const SEED_INVITEES = [
+		[
+			'role' => 'bezwaarmaker',
+			'channel' => 'email',
+			'accessibilityNeeds' => [],
+		],
+	];
 
 	/**
 	 * Audit-tag catalogue covering the legally relevant events on a
@@ -138,19 +144,7 @@ class HearingService {
 		array $invitees,
 		array $payload = [],
 	): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(
-			key: 'hearing_session_schema'
-		);
-
-		if ($register === '' || $schema === '') {
-			throw new RuntimeException('Hearing schema is not configured');
-		}
+		$store = $this->configuredStore();
 
 		if ($caseId === '' || $chairpersonId === '' || $invitees === []) {
 			throw new RuntimeException(
@@ -158,72 +152,13 @@ class HearingService {
 			);
 		}
 
-		$scheduled = $this->planner->parseDateTime(value: $scheduledDate);
-		$deadline = $this->planner->computeInspectionDeadline(scheduled: $scheduled);
-		$now = new DateTimeImmutable();
-
-		$this->planner->guardInspectionFloor(
-			scheduled: $scheduled,
-			today: $now,
+		$record = $this->planner->scheduledRecord(
+			plan: new HearingPlan(caseId: $caseId, scheduledDate: $scheduledDate, chairpersonId: $chairpersonId, invitees: $invitees, payload: $payload)
 		);
-
-		$available = $this->planner->resolveAvailableFrom(
-			payload: $payload,
-			deadline: $deadline,
-			now: $now,
-		);
-
-		$record = array_merge(
-			[
-				'location' => null,
-				'videoCallUrl' => null,
-				'members' => [],
-			],
-			$payload,
-			[
-				'case' => $caseId,
-				'scheduledDate' => $scheduled->format(
-					DateTimeInterface::ATOM
-				),
-				'chairperson' => $chairpersonId,
-				'invitees' => $this->planner->stampInvitees(
-					invitees: $invitees,
-					when: $now,
-				),
-				'inspectionAvailableFrom' => $available->format('Y-m-d'),
-				'inspectionDeadline' => $deadline->format('Y-m-d'),
-				'status' => 'planned',
-				'hearingWaived' => false,
-				'recordingConsent' => $payload['recordingConsent'] ?? 'not_requested',
-			]
-		);
-
-		try {
-			$saved = ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq hearing: failed to schedule hearing: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not schedule hearing');
-		}
 
 		// Awb art. 7:2. The entry is a row on the session's own OpenRegister
 		// trail; a hearing whose entry cannot be written is deleted again.
-		$this->auditTrail->recordForNewRecord(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			objectUuid: $this->idOf(record: $saved),
-			event: 'hearing-scheduled',
-			payload: [
-				'case' => $caseId,
-				'scheduledDate' => $record['scheduledDate'],
-				'inspectionDeadline' => $record['inspectionDeadline'],
-			],
-			tag: self::TAG_SCHEDULED,
-		);
-
-		return $saved;
+		return $this->createSession(store: $store, session: $this->scheduledSession(record: $record));
 	}//end schedule()
 
 	/**
@@ -254,61 +189,22 @@ class HearingService {
 			);
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(
-			key: 'hearing_session_schema'
-		);
-
-		if ($register === '' || $schema === '') {
-			throw new RuntimeException('Hearing schema is not configured');
-		}
-
-		$now = new DateTimeImmutable();
-
-		$record = array_merge(
-			$payload,
-			[
-				'case' => $caseId,
-				'scheduledDate' => $now->format(DateTimeInterface::ATOM),
-				'chairperson' => $payload['chairperson'] ?? ($payload['chairpersonId'] ?? 'system'),
-				'invitees' => $payload['invitees'] ?? [],
-				'inspectionAvailableFrom' => $now->format('Y-m-d'),
-				'inspectionDeadline' => $now->format('Y-m-d'),
-				'status' => 'afgezien',
-				'hearingWaived' => true,
-				'waiverReason' => $reason,
-			]
-		);
-
-		try {
-			$saved = ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq hearing: failed to record waiver: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not record waiver');
-		}
+		$store = $this->configuredStore();
 
 		// Awb art. 7:3. A waiver whose entry cannot be written is deleted again.
-		$this->auditTrail->recordForNewRecord(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			objectUuid: $this->idOf(record: $saved),
-			event: 'hearing-waived',
-			payload: [
-				'case' => $caseId,
-				'reason' => $reason,
-			],
-			tag: self::TAG_WAIVER,
+		return $this->createSession(
+			store: $store,
+			session: new NewSession(
+				record: array_merge($payload, ['case' => $caseId] + $this->planner->waiverFields(reason: $reason, payload: $payload)),
+				action: 'record waiver',
+				event: 'hearing-waived',
+				auditPayload: [
+					'case' => $caseId,
+					'reason' => $reason,
+				],
+				tag: self::TAG_WAIVER,
+			)
 		);
-
-		return $saved;
 	}//end waive()
 
 	/**
@@ -361,129 +257,29 @@ class HearingService {
 			);
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$store = $this->openStore();
+		$current = $this->requireSession(store: $store, sessionId: $sessionId);
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(
-			key: 'hearing_session_schema'
-		);
-
-		$current = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $sessionId
-		);
-		if ($current === null) {
-			throw new RuntimeException('Hearing session not found');
-		}
-
-		$now = new DateTimeImmutable();
-		$scheduledRaw = (string)($current['scheduledDate'] ?? '');
-		$scheduled = $now;
-		if ($scheduledRaw !== '') {
-			$scheduled = $this->planner->parseDateTime(value: $scheduledRaw);
-		}
-
-		$freezeAt = $scheduled->modify(
-			'+' . self::ATTENDANCE_GRACE_HOURS . ' hour'
-		);
-		$isFrozen = $now > $freezeAt;
+		$freeze = $this->planner->attendanceFreeze(current: $current);
 
 		$merged = (array)($current['attendance'] ?? []);
-		$corrections = [];
 		foreach ($entries as $entry) {
-			if ($isFrozen === true) {
-				// Validates every reason before anything is written.
-				$corrections[] = $this->minutes->lateCorrectionPayload(entry: $entry);
-			}
-
 			$merged[] = $entry;
 		}
 
 		return $this->writeAttendance(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			sessionId: $sessionId,
-			current: $current,
-			update: [
-				'attendance' => $merged,
-				'attendanceFrozenAt' => $freezeAt->format(DateTimeInterface::ATOM),
-			],
-			corrections: $corrections,
+			store: $store,
+			patch: new SessionPatch(
+				sessionId: $sessionId,
+				current: $current,
+				update: [
+					'attendance' => $merged,
+					'attendanceFrozenAt' => $freeze['frozenAt'],
+				],
+				entries: $this->minutes->lateCorrections(entries: $entries, isFrozen: $freeze['isFrozen']),
+			)
 		);
 	}//end recordAttendance()
-
-	/**
-	 * Record each late correction, then write the attendance.
-	 *
-	 * Awb art. 7:7. Each late correction is recorded before the attendance
-	 * changes; a correction whose entry cannot be written changes nothing. A
-	 * patch that fails after the entries leaves an
-	 * `attendance-late-correction-not-applied` row per correction (REQ-BAT-003).
-	 *
-	 * @param object                           $objectService OpenRegister object service.
-	 * @param string                           $register      The register.
-	 * @param string                           $schema        The hearingSession schema.
-	 * @param string                           $sessionId     The session.
-	 * @param array<string, mixed>             $current       The stored session.
-	 * @param array<string, mixed>             $update        The attendance patch.
-	 * @param array<int, array<string, mixed>> $corrections   The late corrections' payloads.
-	 *
-	 * @return array<string, mixed> The updated session.
-	 *
-	 * @throws RuntimeException When an entry or the patch fails.
-	 */
-	private function writeAttendance(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $sessionId,
-		array $current,
-		array $update,
-		array $corrections,
-	): array {
-		foreach ($corrections as $correction) {
-			$this->auditTrail->record(
-				register: $register,
-				schema: $schema,
-				objectUuid: $sessionId,
-				event: 'attendance-late-correction',
-				payload: $correction,
-				tag: self::TAG_VERSLAG,
-			);
-		}
-
-		try {
-			return ($this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: (string)$sessionId,
-				changes: $update
-			) ?? array_merge($current, $update));
-		} catch (\Throwable $e) {
-			foreach ($corrections as $correction) {
-				$this->auditTrail->recordRefusal(
-					register: $register,
-					schema: $schema,
-					objectUuid: $sessionId,
-					event: 'attendance-late-correction-not-applied',
-					payload: $correction + ['error' => $e->getMessage()],
-					tag: self::TAG_VERSLAG,
-				);
-			}
-
-			$this->logger->error(
-				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not record attendance');
-		}//end try
-	}//end writeAttendance()
 
 	/**
 	 * Attach minutes (verslag) to a hearingSession and promote it to
@@ -505,92 +301,34 @@ class HearingService {
 		string $sessionId,
 		array $payload,
 	): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(
-			key: 'hearing_session_schema'
-		);
-
-		$current = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $sessionId
-		);
-		if ($current === null) {
-			throw new RuntimeException('Hearing session not found');
-		}
-
-		$summary = (string)(
-			$payload['minutesSummary'] ?? ($current['minutesSummary'] ?? '')
-		);
-		$document = (string)(
-			$payload['minutesDocument'] ?? ($current['minutesDocument'] ?? '')
-		);
-
-		if (trim($summary) === '' && trim($document) === '') {
-			throw new RuntimeException(
-				'Verslag (art. 7:7) ontbreekt — vul minutesSummary of upload minutesDocument'
-			);
-		}
+		$store = $this->openStore();
+		$current = $this->requireSession(store: $store, sessionId: $sessionId);
+		[$summary, $document] = $this->minutes->minutesTexts(payload: $payload, current: $current);
 
 		// Audio recording handling: gated by explicit consent (AVG art. 6).
 		$this->minutes->guardRecordingConsent(
 			sessionId: $sessionId,
 			payload: $payload,
 			current: $current,
-			register: $register,
-			schema: $schema,
+			register: $store->register,
+			schema: $store->schema,
 		);
 
-		$update = $this->minutes->buildMinutesUpdate(
-			payload: $payload,
-			summary: $summary,
-			document: $document,
-		);
-
-		// Awb art. 7:7. The verslag is recorded before the session changes.
-		try {
-			return $this->auditTrail->recordThenApply(
-				register: $register,
-				schema: $schema,
-				objectUuid: $sessionId,
-				event: 'verslag-recorded',
-				payload: [
-					'hasSummary' => trim($summary) !== '',
-					'hasDocument' => trim($document) !== '',
+		return $this->recordMinutes(
+			store: $store,
+			patch: new SessionPatch(
+				sessionId: $sessionId,
+				current: $current,
+				update: $this->minutes->buildMinutesUpdate(payload: $payload, summary: $summary, document: $document),
+				entries: [
+					[
+						'hasSummary' => trim($summary) !== '',
+						'hasDocument' => trim($document) !== '',
+					],
 				],
-				tag: self::TAG_VERSLAG,
-				apply: fn (): array => ($this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: (string)$sessionId,
-					changes: $update
-				) ?? array_merge($current, $update)),
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq hearing: failed to add minutes: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not add minutes');
-		}//end try
+			)
+		);
 	}//end addMinutes()
-
-	/**
-	 * The uuid of a saved record, as OpenRegister serialises it.
-	 *
-	 * @param array<string, mixed> $record The saved record.
-	 *
-	 * @return string The uuid, or '' when it carries none.
-	 */
-	private function idOf(array $record): string {
-		return (string)($record['@self']['id'] ?? ($record['id'] ?? ($record['uuid'] ?? '')));
-	}//end idOf()
 
 	/**
 	 * Listener entry-point: seed a default hearing session for a bezwaar
@@ -606,59 +344,22 @@ class HearingService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function seedDefaultHearing(string $objectionId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$store = $this->findConfiguredStore();
+		if ($store === null) {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(
-			key: 'hearing_session_schema'
-		);
-
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		$caseId = $this->resolveCaseIdFromObjection(objectionId: $objectionId);
+		$caseId = $this->seedCaseId(store: $store, objectionId: $objectionId);
 		if ($caseId === '') {
 			return null;
 		}
 
 		try {
-			$existing = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['case' => $caseId]
-			);
-			if ($existing !== []) {
-				return null;
-			}
-		} catch (\Throwable $e) {
-			$this->logger->debug(
-				'Dossiq hearing: lookup for existing sessions failed: '
-				. $e->getMessage()
-			);
-			return null;
-		}
-
-		$scheduled = (new DateTimeImmutable())
-			->modify('+14 days')
-			->setTime(10, 0, 0);
-
-		try {
 			return $this->schedule(
 				caseId: $caseId,
-				scheduledDate: $scheduled->format(DateTimeInterface::ATOM),
+				scheduledDate: $this->planner->seedDate(),
 				chairpersonId: 'system',
-				invitees: [
-					[
-						'role' => 'bezwaarmaker',
-						'channel' => 'email',
-						'accessibilityNeeds' => [],
-					],
-				],
+				invitees: self::SEED_INVITEES,
 			);
 		} catch (\Throwable $e) {
 			$this->logger->info(
@@ -670,28 +371,330 @@ class HearingService {
 	}//end seedDefaultHearing()
 
 	/**
-	 * Resolve the underlying dossiq case UUID from a bezwaar
-	 * (lifecycle) UUID. Falls back to the input when bezwaar_schema is
-	 * not configured so the listener can still seed against case-keyed
-	 * inputs.
+	 * The object service with the register and hearing session schema, or
+	 * null when OpenRegister is not available.
+	 *
+	 * @return SessionStore|null
+	 */
+	private function findStore(): ?SessionStore {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		return new SessionStore(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue(key: 'register'),
+			schema: $this->settingsService->getConfigValue(key: 'hearing_session_schema'),
+		);
+	}//end findStore()
+
+	/**
+	 * The session store, or null when OpenRegister is not available or the
+	 * register or schema is not configured.
+	 *
+	 * @return SessionStore|null
+	 */
+	private function findConfiguredStore(): ?SessionStore {
+		$store = $this->findStore();
+		if ($store === null || $store->isConfigured() === false) {
+			return null;
+		}
+
+		return $store;
+	}//end findConfiguredStore()
+
+	/**
+	 * The session store; OpenRegister must be available.
+	 *
+	 * @return SessionStore
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 */
+	private function openStore(): SessionStore {
+		$store = $this->findStore();
+		if ($store === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		return $store;
+	}//end openStore()
+
+	/**
+	 * The session store; OpenRegister must be available and the register
+	 * and schema configured.
+	 *
+	 * @return SessionStore
+	 *
+	 * @throws RuntimeException When OpenRegister is not available or the schema is not configured.
+	 */
+	private function configuredStore(): SessionStore {
+		$store = $this->openStore();
+		if ($store->isConfigured() === false) {
+			throw new RuntimeException('Hearing schema is not configured');
+		}
+
+		return $store;
+	}//end configuredStore()
+
+	/**
+	 * The stored session.
+	 *
+	 * @param SessionStore $store     The session store.
+	 * @param string       $sessionId UUID of the session.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When the session is not found.
+	 */
+	private function requireSession(SessionStore $store, string $sessionId): array {
+		$current = $this->findObjectAsArray(
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->schema,
+			id: $sessionId
+		);
+		if ($current === null) {
+			throw new RuntimeException('Hearing session not found');
+		}
+
+		return $current;
+	}//end requireSession()
+
+	/**
+	 * The new session and audit entry of a scheduled hearing.
+	 *
+	 * @param array<string, mixed> $record The scheduled record.
+	 *
+	 * @return NewSession
+	 */
+	private function scheduledSession(array $record): NewSession {
+		return new NewSession(
+			record: $record,
+			action: 'schedule hearing',
+			event: 'hearing-scheduled',
+			auditPayload: [
+				'case' => $record['case'],
+				'scheduledDate' => $record['scheduledDate'],
+				'inspectionDeadline' => $record['inspectionDeadline'],
+			],
+			tag: self::TAG_SCHEDULED,
+		);
+	}//end scheduledSession()
+
+	/**
+	 * Save a new session, then write its audit entry.
+	 *
+	 * @param SessionStore $store   The session store.
+	 * @param NewSession   $session The record and its entry.
+	 *
+	 * @return array<string, mixed> The saved record, or the record itself when the store answers nothing.
+	 *
+	 * @throws RuntimeException When saving or the entry fails.
+	 */
+	private function createSession(SessionStore $store, NewSession $session): array {
+		try {
+			$saved = ($this->saveObjectAsArray(
+				objectService: $store->objectService,
+				register: $store->register,
+				schema: $store->schema,
+				object: $session->record
+			) ?? $session->record);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Dossiq hearing: failed to ' . $session->action . ': ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not ' . $session->action);
+		}
+
+		$this->auditTrail->recordForNewRecord(
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->schema,
+			objectUuid: $this->idOf(record: $saved),
+			event: $session->event,
+			payload: $session->auditPayload,
+			tag: $session->tag,
+		);
+
+		return $saved;
+	}//end createSession()
+
+	/**
+	 * Record each late correction, then write the attendance.
+	 *
+	 * Awb art. 7:7. Each late correction is recorded before the attendance
+	 * changes; a correction whose entry cannot be written changes nothing. A
+	 * patch that fails after the entries leaves an
+	 * `attendance-late-correction-not-applied` row per correction (REQ-BAT-003).
+	 *
+	 * @param SessionStore $store The session store.
+	 * @param SessionPatch $patch The attendance patch; its entries are the late corrections.
+	 *
+	 * @return array<string, mixed> The updated session.
+	 *
+	 * @throws RuntimeException When an entry or the patch fails.
+	 */
+	private function writeAttendance(SessionStore $store, SessionPatch $patch): array {
+		foreach ($patch->entries as $correction) {
+			$this->auditTrail->record(
+				register: $store->register,
+				schema: $store->schema,
+				objectUuid: $patch->sessionId,
+				event: 'attendance-late-correction',
+				payload: $correction,
+				tag: self::TAG_VERSLAG,
+			);
+		}
+
+		try {
+			return $this->patchSession(store: $store, patch: $patch);
+		} catch (\Throwable $e) {
+			foreach ($patch->entries as $correction) {
+				$this->auditTrail->recordRefusal(
+					register: $store->register,
+					schema: $store->schema,
+					objectUuid: $patch->sessionId,
+					event: 'attendance-late-correction-not-applied',
+					payload: $correction + ['error' => $e->getMessage()],
+					tag: self::TAG_VERSLAG,
+				);
+			}
+
+			$this->logger->error(
+				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not record attendance');
+		}//end try
+	}//end writeAttendance()
+
+	/**
+	 * Record the verslag entry, then apply the minutes.
+	 *
+	 * Awb art. 7:7. The verslag is recorded before the session changes.
+	 *
+	 * @param SessionStore $store The session store.
+	 * @param SessionPatch $patch The minutes patch; its one entry is the verslag payload.
+	 *
+	 * @return array<string, mixed> The updated session.
+	 *
+	 * @throws RuntimeException When the entry or the patch fails.
+	 */
+	private function recordMinutes(SessionStore $store, SessionPatch $patch): array {
+		try {
+			return $this->auditTrail->recordThenApply(
+				register: $store->register,
+				schema: $store->schema,
+				objectUuid: $patch->sessionId,
+				event: 'verslag-recorded',
+				payload: $patch->entries[0],
+				tag: self::TAG_VERSLAG,
+				apply: fn (): array => $this->patchSession(store: $store, patch: $patch),
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Dossiq hearing: failed to add minutes: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not add minutes');
+		}//end try
+	}//end recordMinutes()
+
+	/**
+	 * Apply a patch to a stored session.
+	 *
+	 * @param SessionStore $store The session store.
+	 * @param SessionPatch $patch The patch.
+	 *
+	 * @return array<string, mixed> The updated session, or the stored one with the changes when the store answers nothing.
+	 */
+	private function patchSession(SessionStore $store, SessionPatch $patch): array {
+		return ($this->patchObjectAsArray(
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->schema,
+			id: $patch->sessionId,
+			changes: $patch->update
+		) ?? array_merge($patch->current, $patch->update));
+	}//end patchSession()
+
+	/**
+	 * The uuid of a saved record, as OpenRegister serialises it.
+	 *
+	 * @param array<string, mixed> $record The saved record.
+	 *
+	 * @return string The uuid, or '' when it carries none.
+	 */
+	private function idOf(array $record): string {
+		return (string)($record['@self']['id'] ?? ($record['id'] ?? ($record['uuid'] ?? '')));
+	}//end idOf()
+
+	/**
+	 * The case a default hearing is seeded for: '' when it cannot be
+	 * resolved or the case may have a session already.
+	 *
+	 * @param SessionStore $store       The session store.
+	 * @param string       $objectionId Bezwaar UUID.
+	 *
+	 * @return string
+	 */
+	private function seedCaseId(SessionStore $store, string $objectionId): string {
+		// The objection's own id stands in for the case when it names none.
+		$caseId = $this->caseOfObjection(objectionId: $objectionId);
+		if ($caseId === '') {
+			$caseId = $objectionId;
+		}
+
+		if ($caseId === '' || $this->mayHaveSession(store: $store, caseId: $caseId) === true) {
+			return '';
+		}
+
+		return $caseId;
+	}//end seedCaseId()
+
+	/**
+	 * Whether the case has a session already, or the lookup failed.
+	 *
+	 * @param SessionStore $store  The session store.
+	 * @param string       $caseId UUID of the case.
+	 *
+	 * @return bool
+	 */
+	private function mayHaveSession(SessionStore $store, string $caseId): bool {
+		try {
+			$existing = $this->searchObjectsAsArrays(
+				objectService: $store->objectService,
+				register: $store->register,
+				schema: $store->schema,
+				filters: ['case' => $caseId]
+			);
+		} catch (\Throwable $e) {
+			$this->logger->debug(
+				'Dossiq hearing: lookup for existing sessions failed: '
+				. $e->getMessage()
+			);
+			return true;
+		}
+
+		return $existing !== [];
+	}//end mayHaveSession()
+
+	/**
+	 * The case field of a bezwaar record.
 	 *
 	 * @param string $objectionId Bezwaar UUID
 	 *
-	 * @return string The resolved case UUID, or empty when unresolvable.
+	 * @return string The case UUID, or '' when it is unconfigured, missing or unreadable.
 	 */
-	private function resolveCaseIdFromObjection(string $objectionId): string {
+	private function caseOfObjection(string $objectionId): string {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return $objectionId;
+			return '';
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$objectionSchema = $this->settingsService->getConfigValue(
-			key: 'bezwaar_schema'
-		);
-
+		$objectionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
 		if ($register === '' || $objectionSchema === '') {
-			return $objectionId;
+			return '';
 		}
 
 		try {
@@ -701,18 +704,13 @@ class HearingService {
 				schema: $objectionSchema,
 				id: $objectionId
 			);
-			if ($objection !== null) {
-				$candidate = (string)($objection['case'] ?? '');
-				if ($candidate !== '') {
-					return $candidate;
-				}
-			}
+			return (string)($objection['case'] ?? '');
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'Dossiq hearing: bezwaar lookup failed: ' . $e->getMessage()
 			);
 		}
 
-		return $objectionId;
-	}//end resolveCaseIdFromBezwaar()
+		return '';
+	}//end caseOfObjection()
 }//end class

@@ -50,6 +50,10 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder
  * @uses \OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner
  * @uses \OCA\Dossiq\Service\Bezwaar\HearingService
+ * @uses \OCA\Dossiq\Service\Hearing\HearingPlan
+ * @uses \OCA\Dossiq\Service\Hearing\NewSession
+ * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
+ * @uses \OCA\Dossiq\Service\Hearing\SessionStore
  */
 final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 	use MakesBezwaarAuditTrail;
