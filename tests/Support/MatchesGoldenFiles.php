@@ -36,7 +36,8 @@ trait MatchesGoldenFiles {
 	 */
 	protected function assertMatchesGolden(string $name, mixed $value): void {
 		$path = dirname(__DIR__) . '/Unit/golden/' . $name . '.json';
-		$json = json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR) . "\n";
+		$flags = (JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR);
+		$json = json_encode($value, $flags) . "\n";
 
 		if (getenv('GOLDEN_RECORD') === '1') {
 			if (is_dir(dirname($path)) === false) {
@@ -44,11 +45,11 @@ trait MatchesGoldenFiles {
 			}
 
 			file_put_contents($path, $json);
-			$this->addToAssertionCount(1);
+			$this->addToAssertionCount(count: 1);
 			return;
 		}
 
-		$this->assertFileExists($path, 'Golden file missing; record it with GOLDEN_RECORD=1.');
-		$this->assertSame(file_get_contents($path), $json);
+		$this->assertFileExists(filename: $path, message: 'Golden file missing; record it with GOLDEN_RECORD=1.');
+		$this->assertSame(expected: file_get_contents($path), actual: $json);
 	}//end assertMatchesGolden()
 }//end trait

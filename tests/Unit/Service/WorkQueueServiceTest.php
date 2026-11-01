@@ -53,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
  * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ * @uses \OCA\Dossiq\Service\Queue\QueueScoringRun
+ * @uses \OCA\Dossiq\Service\Queue\CaseQueueSource
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
