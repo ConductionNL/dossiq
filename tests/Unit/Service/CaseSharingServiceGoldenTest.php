@@ -38,6 +38,7 @@ use Throwable;
  * nothing, so run once more without it.
  *
  * @covers \OCA\Dossiq\Service\CaseSharingService
+ * @covers \OCA\Dossiq\Service\CaseShare\ShareStore
  */
 class CaseSharingServiceGoldenTest extends TestCase {
 	use MakesRecordedCaseShares;

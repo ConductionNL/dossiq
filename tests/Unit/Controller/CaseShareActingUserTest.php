@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Controller\CaseSharingController
  * @covers \OCA\Dossiq\Service\CaseSharingService
+ * @covers \OCA\Dossiq\Service\CaseShare\ShareStore
  */
 class CaseShareActingUserTest extends TestCase {
 	use MakesRecordedCaseShares;
