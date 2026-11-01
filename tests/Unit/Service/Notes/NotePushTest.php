@@ -213,6 +213,47 @@ class NotePushTest extends TestCase {
 	}//end testNothingBoundWritesNoMarker()
 
 	/**
+	 * Without integriq nothing is dispatched and nothing is written, even for
+	 * an external note.
+	 *
+	 * @return void
+	 */
+	public function testWithoutIntegriqNothingIsSentOrRecorded(): void {
+		$push = $this->push();
+		$absent = new class($push) extends NotePush {
+			/**
+			 * Take over the collaborators of a configured push.
+			 *
+			 * @param NotePush $push The push to copy.
+			 */
+			public function __construct(NotePush $push) {
+				foreach ((new \ReflectionClass(NotePush::class))->getProperties() as $each) {
+					$each->setValue($this, $each->getValue($push));
+				}
+			}
+
+			/**
+			 * integriq is not installed.
+			 *
+			 * @return bool
+			 */
+			protected function deliveryAvailable(): bool {
+				return false;
+			}
+		};
+
+		$outcome = $absent->push('case-1', self::EXTERNAL_NOTE);
+
+		$this->assertSame(NotePush::OUTCOME_NO_REGISTER, $outcome['outcome']);
+		$this->assertSame(NotePush::RECORD_NONE, $outcome['caseRecord']);
+		$this->assertSame('', $outcome['receiverUrl']);
+		$this->assertStringContainsString('not bound to an external register', $outcome['reason']);
+		$this->assertSame([], $this->dispatched);
+		$this->assertSame([], $this->recorded);
+		$this->assertTrue((new \ReflectionMethod(NotePush::class, 'deliveryAvailable'))->invoke($push));
+	}//end testWithoutIntegriqNothingIsSentOrRecorded()
+
+	/**
 	 * The request names the note as a case-note on the zgw-documenten channel,
 	 * carrying the document envelope.
 	 *
@@ -263,6 +304,21 @@ class NotePushTest extends TestCase {
 		$this->assertSame(NotePush::OUTCOME_NOT_SENT, $this->push()->push('case-1', $note)['outcome']);
 		$this->assertSame([], $this->dispatched);
 	}//end testANoteWithNoVisibilityNeverLeaves()
+
+	/**
+	 * Only the exact public marker sends a note: a visibility that merely
+	 * contains the word stays here and dispatches nothing.
+	 *
+	 * @return void
+	 */
+	public function testAVisibilityThatOnlyContainsPublicNeverLeaves(): void {
+		foreach (['non-public', 'public-draft', 'publication'] as $visibility) {
+			$note = array_merge(self::EXTERNAL_NOTE, ['visibility' => $visibility]);
+
+			$this->assertSame(NotePush::OUTCOME_NOT_SENT, $this->push()->push('case-1', $note)['outcome'], $visibility);
+			$this->assertSame([], $this->dispatched, $visibility);
+		}
+	}//end testAVisibilityThatOnlyContainsPublicNeverLeaves()
 
 	/**
 	 * A refusal from integriq leaves the note marked failed, with the reason.
@@ -415,6 +471,8 @@ class NotePushTest extends TestCase {
 			'internal' => [['visibility' => 'internal'], $integriq, null],
 			'no visibility' => [['visibility' => null], $integriq, null],
 			'shouting public' => [['visibility' => ' PUBLIC '], $integriq, null],
+			'lookalike public' => [['visibility' => 'non-public'], $integriq, null],
+			'public-draft' => [['visibility' => 'public-draft'], $integriq, null],
 			'no reserved type' => [[], $integriq, ''],
 			'dispatcher throws' => [[], (['throws' => true] + $integriq), null],
 			'not handled' => [[], (['handled' => false] + $integriq), null],

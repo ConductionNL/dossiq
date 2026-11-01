@@ -187,7 +187,7 @@ class NotePush {
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function push(string $caseId, array $note): array {
-		if (class_exists('\\' . self::DELIVERY_EVENT) === false) {
+		if ($this->deliveryAvailable() === false) {
 			// No marker: see the class docblock. This is the outcome a case
 			// bound to nothing has, and it is not a failure.
 			return $this->unbound();
@@ -211,6 +211,15 @@ class NotePush {
 
 		return $this->deliver(attempt: $attempt);
 	}//end push()
+
+	/**
+	 * Whether integriq's delivery request exists on this instance.
+	 *
+	 * @return bool True when integriq is installed.
+	 */
+	protected function deliveryAvailable(): bool {
+		return class_exists('\\' . self::DELIVERY_EVENT);
+	}//end deliveryAvailable()
 
 	/**
 	 * Hand an external note to integriq, and answer how that went.

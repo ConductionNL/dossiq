@@ -167,6 +167,86 @@
             ]
         ]
     },
+    "lookalike public": {
+        "answer": {
+            "outcome": "not-sent",
+            "reason": "This note is internal, so it stays here. Make it external to send it.",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note kept here rather than sent to the neighbouring register: This note is internal, so it stays here. Make it external to send it.",
+                "fields": {
+                    "noteId": "42",
+                    "status": "not-sent"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [],
+        "errors": []
+    },
+    "lookalike public, history down": {
+        "answer": {
+            "outcome": "not-sent",
+            "reason": "This note is internal, so it stays here. Make it external to send it. The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "not-sent"
+                }
+            ]
+        ]
+    },
+    "public-draft": {
+        "answer": {
+            "outcome": "not-sent",
+            "reason": "This note is internal, so it stays here. Make it external to send it.",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note kept here rather than sent to the neighbouring register: This note is internal, so it stays here. Make it external to send it.",
+                "fields": {
+                    "noteId": "42",
+                    "status": "not-sent"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [],
+        "errors": []
+    },
+    "public-draft, history down": {
+        "answer": {
+            "outcome": "not-sent",
+            "reason": "This note is internal, so it stays here. Make it external to send it. The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "not-sent"
+                }
+            ]
+        ]
+    },
     "no reserved type": {
         "answer": {
             "outcome": "failed",
