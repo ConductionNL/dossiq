@@ -233,6 +233,8 @@ final class GoldenPackageObjects {
  * nothing, so run once more without it.
  *
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageWriter
+ * @covers \OCA\Dossiq\Service\CaseDefinition\ComponentRows
+ * @covers \OCA\Dossiq\Service\CaseDefinition\RowTarget
  * @uses \OCA\Dossiq\Service\CaseDefinition\AdoptedCaseTypeFill
  * @uses \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageSeedRules
