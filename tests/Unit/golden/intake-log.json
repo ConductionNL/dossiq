@@ -664,6 +664,124 @@
             }
         ]
     },
+    "record, no results": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "unavailable",
+                        "dkimResult": "unavailable",
+                        "dmarcResult": "unavailable",
+                        "threadingResult": "unavailable",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "Aanvraag vergunning",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "Aanvraag vergunning",
+                    "outcome": "case",
+                    "intakeEntryId": "e-self"
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
+    "record, results without spf": {
+        "answer": "e-self",
+        "calls": [
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "mail_intake_entry_schema"
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "mailMessageId": "<m1@b.nl>",
+                        "accountId": 7,
+                        "mailbox": "INBOX",
+                        "uid": 42,
+                        "sender": "a@b.nl",
+                        "recipient": "post@gemeente.nl",
+                        "subject": "Aanvraag vergunning",
+                        "receivedAt": "2026-03-04T05:06:07+00:00",
+                        "sentAt": "2026-03-01T10:00:00+00:00",
+                        "decidingFilter": "spam",
+                        "filterOutcome": "accept",
+                        "filterReason": "clean",
+                        "spfResult": "unavailable",
+                        "dkimResult": "unavailable",
+                        "dmarcResult": "unavailable",
+                        "threadingResult": "unavailable",
+                        "outcome": "case",
+                        "reason": "Opened a case",
+                        "case": "case-1",
+                        "original": "From: a@b.nl\r\n\r\nTekst",
+                        "originalTruncated": false
+                    },
+                    "register": "dossiq",
+                    "schema": "mailIntakeEntry",
+                    "uuid": null
+                }
+            ]
+        ],
+        "logs": [],
+        "timeline": [
+            {
+                "caseId": "case-1",
+                "kind": "mail-inkomend",
+                "message": "Aanvraag vergunning",
+                "fields": {
+                    "sender": "a@b.nl",
+                    "subject": "Aanvraag vergunning",
+                    "outcome": "case",
+                    "intakeEntryId": "e-self"
+                },
+                "visibility": "internal"
+            }
+        ]
+    },
     "channel, stored": {
         "answer": "e-self",
         "calls": [

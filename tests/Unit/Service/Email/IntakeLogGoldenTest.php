@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Email;
 
 use DateTime;
+use OCA\Dossiq\Service\Email\AuthenticationResult;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCA\Dossiq\Service\Email\InboundMessage;
 use OCA\Dossiq\Service\Email\IntakeLog;
@@ -189,6 +190,14 @@ class IntakeLogGoldenTest extends TestCase {
 			reason: 'Nothing matched',
 			caseId: $caseId,
 		);
+		$recordWith = static fn (array $res): \Closure => static fn (IntakeLog $log): string => $log->record(
+			message: self::message(),
+			verdict: $verdict,
+			results: $res,
+			outcome: IntakeLog::OUTCOME_CASE,
+			reason: 'Opened a case',
+			caseId: 'case-1',
+		);
 		$saved = ['saveObject' => ['@self' => ['id' => 'e-self'], 'id' => 'e-plain']];
 		$long = str_repeat('x', IntakeLog::ORIGINAL_LIMIT_BYTES + 5);
 		$unprovisioned = [
@@ -210,6 +219,8 @@ class IntakeLogGoldenTest extends TestCase {
 			'record, original over the limit' => ['store' => $saved, 'call' => $record(message: self::message(source: $long))],
 			'record, original at the limit' => ['store' => $saved, 'call' => $record(message: self::message(source: substr($long, 0, IntakeLog::ORIGINAL_LIMIT_BYTES)))],
 			'record, missing results' => ['store' => $saved, 'call' => $record(res: ['spf' => 'pass'])],
+			'record, no results' => ['store' => $saved, 'call' => $recordWith([])],
+			'record, results without spf' => ['store' => $saved, 'call' => $recordWith(['unknown' => 'pass'])],
 			'channel, stored' => ['store' => $saved, 'call' => $channel()],
 			'channel, stored without id' => ['store' => ['saveObject' => []], 'call' => $channel(caseId: '')],
 			'channel, store answers nothing' => ['store' => ['saveObject' => null], 'call' => $channel()],
@@ -252,4 +263,32 @@ class IntakeLogGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden('intake-log', $observed);
 	}//end testGoldenIntakeLog()
+
+	/**
+	 * A check that is missing from the results is written as unavailable, never as passed.
+	 *
+	 * @return void
+	 */
+	public function testMissingResultsAreWrittenAsUnavailable(): void {
+		foreach ([[], ['unknown' => 'pass']] as $results) {
+			$observed = $this->observe(
+				world: [
+					'store' => ['saveObject' => ['id' => 'e1']],
+					'call' => static fn (IntakeLog $log): string => $log->record(
+						message: self::message(),
+						verdict: new FilterVerdict(outcome: 'accept', filterName: 'spam', reason: 'clean'),
+						results: $results,
+						outcome: IntakeLog::OUTCOME_CASE,
+						reason: 'Opened a case',
+						caseId: 'case-1',
+					),
+				]
+			);
+			$saves = array_values(array_filter($observed['calls'], static fn (array $call): bool => $call[0] === 'saveObject'));
+			$this->assertCount(1, $saves);
+			foreach (['spfResult', 'dkimResult', 'dmarcResult', 'threadingResult'] as $field) {
+				$this->assertSame(AuthenticationResult::UNAVAILABLE, $saves[0][1]['object'][$field], $field);
+			}
+		}
+	}//end testMissingResultsAreWrittenAsUnavailable()
 }//end class
