@@ -24,6 +24,7 @@ use Psr\Log\NullLogger;
  * An email template keeps its earlier wording on every write path.
  *
  * @covers \OCA\Dossiq\Listener\EmailTemplateVersionListener
+ * @uses \OCA\Dossiq\Service\Email\EmailTemplateRepository
  */
 class EmailTemplateVersionListenerTest extends TestCase {
 

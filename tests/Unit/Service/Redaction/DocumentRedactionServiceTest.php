@@ -57,6 +57,18 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Redaction\DocumentRedactionService
  * @covers \OCA\Dossiq\Service\Redaction\RedactedCopyRecorder
  * @covers \OCA\Dossiq\Service\Redaction\RedactionEntities
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\DocumentText
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Service\FilinqRedactionClient
+ * @uses \OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader
+ * @uses \OCA\Dossiq\Service\WOOAnonymisationAssistService
+ * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Woo\WooCaseDocuments
+ * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  */
 class DocumentRedactionServiceTest extends TestCase {
 

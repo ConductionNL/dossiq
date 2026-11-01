@@ -38,6 +38,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageWriter
  * @uses \OCA\Dossiq\Service\CaseDefinition\AdoptedCaseTypeFill
+ * @uses \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
  */
 class PackageWriterAsSystemTest extends TestCase {
 

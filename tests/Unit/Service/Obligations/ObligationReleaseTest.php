@@ -48,6 +48,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
  *
  * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
  */

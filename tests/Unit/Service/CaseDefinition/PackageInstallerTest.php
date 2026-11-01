@@ -338,6 +338,12 @@ final class PackageTestSchemaEntity {
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
  * @uses \OCA\Dossiq\Service\Starter\ShippedSets
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageExampleDates
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageExamples
+ * @uses \OCA\Dossiq\Service\Starter\ShippedLedgerTargets
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
+ * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class PackageInstallerTest extends TestCase {
 
