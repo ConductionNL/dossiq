@@ -406,10 +406,11 @@ class CaseSharingController extends Controller {
 		$action = $this->request->getParam('action');
 
 		$result = match ($action) {
-			'accept' => $this->caseTransferService->acceptTransfer($transferId),
+			'accept' => $this->caseTransferService->acceptTransfer(transferId: $transferId, actingUser: $user->getUID()),
 			'reject' => $this->caseTransferService->rejectTransfer(
-				$transferId,
-				$this->request->getParam('reason', '')
+				transferId: $transferId,
+				rejectionReason: $this->request->getParam('reason', ''),
+				actingUser: $user->getUID(),
 			),
 			default => null,
 		};
