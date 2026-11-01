@@ -298,9 +298,10 @@ class CaseSharingController extends Controller {
 
 		// Partner-organisation handover revoke (zaak-domain, in-app object).
 		// C2: Resolve the share's caseId, then verify the caller has access to that case.
+		// A share whose case cannot be resolved is refused like one without access.
 		$caseId = $this->caseSharingService->getCaseIdForShare($shareId);
-		if ($caseId !== null
-			&& $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false
+		if ($caseId === null
+			|| $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false
 		) {
 			return new JSONResponse(
 				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
