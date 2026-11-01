@@ -788,6 +788,94 @@
             ]
         ]
     },
+    "a permit naming another resident as its party": {
+        "answer": {
+            "caseId": "case-new",
+            "identifier": "2026-0042"
+        },
+        "calls": [
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "permit",
+                "p1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "case",
+                "c1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct1"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "find",
+                "reg-1",
+                "caseType",
+                "ct2"
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "search",
+                "reg-1",
+                "propdef",
+                {
+                    "caseType": "ct2"
+                },
+                false,
+                false
+            ],
+            [
+                "runAsSystem"
+            ],
+            [
+                "save",
+                "reg-1",
+                "case-s",
+                null,
+                {
+                    "title": "Kenteken wijzigen: Bewonersvergunning",
+                    "description": "Nieuw kenteken HX901B voor vergunning p1.",
+                    "caseType": "ct2",
+                    "startDate": "<today>",
+                    "portalSubject": "subj-sanne",
+                    "portalParty": "subject:subj-sanne",
+                    "intakeChannel": "website",
+                    "properties": [
+                        {
+                            "propertyDefinition": "d1",
+                            "name": "permit",
+                            "value": "p1"
+                        },
+                        {
+                            "propertyDefinition": "d2",
+                            "name": "nieuwKenteken",
+                            "value": "HX901B"
+                        }
+                    ],
+                    "status": "st-new"
+                }
+            ]
+        ]
+    },
     "a permit without a title": {
         "answer": {
             "caseId": "case-new",

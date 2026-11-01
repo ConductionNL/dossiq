@@ -235,6 +235,7 @@ class PermitPlateChangeGoldenTest extends TestCase {
 			'a change type without an id' => $this->observe([...$sanne, 'HX901B'], ['patch' => ['caseType.ct2.id' => null]]),
 			'no property definition schema' => $this->observe([...$sanne, 'HX901B'], ['settings' => ['property_definition_schema' => '']]),
 			'no case schema configured' => $this->observe([...$sanne, 'HX901B'], ['settings' => ['case_schema' => null]]),
+			'a permit naming another resident as its party' => $this->observe([...$sanne, 'HX901B'], ['patch' => ['permit.p1.portalParty' => 'subject:subj-bob']]),
 			'a permit without a title' => $this->observe([...$sanne, 'HX901B'], ['patch' => ['permit.p1.title' => null]]),
 			'the permit read fails' => $this->observe([...$sanne, 'HX901B'], ['readThrows' => 'permit']),
 			'the case type read fails' => $this->observe([...$sanne, 'HX901B'], ['readThrows' => 'caseType']),
