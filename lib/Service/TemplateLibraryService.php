@@ -62,11 +62,13 @@ class TemplateLibraryService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service for register/schema references
-	 * @param LoggerInterface $logger Logger
+	 * @param LoggerInterface $logger          Logger
+	 * @param string          $templatesDir    Directory holding the template JSON files
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly string $templatesDir=self::TEMPLATES_DIR,
 	) {
 	}//end __construct()
 
@@ -81,18 +83,8 @@ class TemplateLibraryService {
 	 */
 	public function listTemplates(): array {
 		$templates = [];
-		$dir = self::TEMPLATES_DIR;
 
-		if (is_dir($dir) === false) {
-			return $templates;
-		}
-
-		$files = glob($dir . '/*.json');
-		if ($files === false) {
-			return $templates;
-		}
-
-		foreach ($files as $file) {
+		foreach ($this->templateFiles() as $file) {
 			$content = file_get_contents($file);
 			if ($content === false) {
 				continue;
@@ -122,6 +114,26 @@ class TemplateLibraryService {
 	}//end listTemplates()
 
 	/**
+	 * The template JSON files in the templates directory.
+	 *
+	 * @return array<int, string> File paths, or an empty list when the directory is missing or unreadable.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function templateFiles(): array {
+		if (is_dir($this->templatesDir) === false) {
+			return [];
+		}
+
+		$files = glob($this->templatesDir . '/*.json');
+		if ($files === false) {
+			return [];
+		}
+
+		return $files;
+	}//end templateFiles()
+
+	/**
 	 * What a template fills in from the case, for the generate dialog.
 	 *
 	 * @param array<string, mixed> $data The template file's content.
@@ -148,18 +160,7 @@ class TemplateLibraryService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadTemplate(string $templateId): ?array {
-		$dir = self::TEMPLATES_DIR;
-
-		if (is_dir($dir) === false) {
-			return null;
-		}
-
-		$files = glob($dir . '/*.json');
-		if ($files === false) {
-			return null;
-		}
-
-		foreach ($files as $file) {
+		foreach ($this->templateFiles() as $file) {
 			$content = file_get_contents($file);
 			if ($content === false) {
 				continue;
