@@ -8772,6 +8772,8 @@ OC.L10N.register(
         "The branch number (vestigingsnummer) of the company that filed the case in the portal.": "Het vestigingsnummer van het bedrijf dat de zaak in het portaal heeft ingediend.",
         "The BSN of the citizen or parent who gives consent": "BSN van de toestemming-verlenende burger/ouder",
         "The button records every note you filled in on its own case or task. An item without a note stays open and is back in My work tomorrow.": "De knop legt elke ingevulde notitie vast op haar eigen zaak of taak. Wat zonder notitie is blijft gewoon open en staat morgen weer in Mijn werk.",
+        "The button records the filled-in note and its hours on its case. An item without a note stays open and is back in My work tomorrow.": "De knop legt de ingevulde notitie en haar uren vast op haar zaak. Wat zonder notitie is blijft gewoon open en staat morgen weer in Mijn werk.",
+        "The button records the {count} filled-in notes and their hours on their case. An item without a note stays open and is back in My work tomorrow.": "De knop legt de {count} ingevulde notities en hun uren vast op hun zaak. Wat zonder notitie is blijft gewoon open en staat morgen weer in Mijn werk.",
         "The buurt this case's address falls in, resolved with the district and from the same answer.": "De buurt waarin het adres van deze zaak valt, afgeleid samen met de wijk en uit hetzelfde antwoord.",
         "The candidate's file name.": "De bestandsnaam van het kandidaatdocument.",
         "The cards beside a case of this type, in order, by the id of the case page's side card. Empty shows the default cards.": "De kaarten naast een zaak van dit type, op volgorde, met de id van de zijkaart op de zaakpagina. Leeg toont de standaardkaarten.",

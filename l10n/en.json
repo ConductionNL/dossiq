@@ -8867,6 +8867,8 @@
         "The branch number (vestigingsnummer) of the company that filed the case in the portal.": "The branch number (vestigingsnummer) of the company that filed the case in the portal.",
         "The BSN of the citizen or parent who gives consent": "The BSN of the citizen or parent who gives consent",
         "The button records every note you filled in on its own case or task. An item without a note stays open and is back in My work tomorrow.": "The button records every note you filled in on its own case or task. An item without a note stays open and is back in My work tomorrow.",
+        "The button records the filled-in note and its hours on its case. An item without a note stays open and is back in My work tomorrow.": "The button records the filled-in note and its hours on its case. An item without a note stays open and is back in My work tomorrow.",
+        "The button records the {count} filled-in notes and their hours on their case. An item without a note stays open and is back in My work tomorrow.": "The button records the {count} filled-in notes and their hours on their case. An item without a note stays open and is back in My work tomorrow.",
         "The buurt this case's address falls in, resolved with the district and from the same answer.": "The buurt this case's address falls in, resolved with the district and from the same answer.",
         "The candidate's file name.": "The candidate's file name.",
         "The cards beside a case of this type, in order, by the id of the case page's side card. Empty shows the default cards.": "The cards beside a case of this type, in order, by the id of the case page's side card. Empty shows the default cards.",
