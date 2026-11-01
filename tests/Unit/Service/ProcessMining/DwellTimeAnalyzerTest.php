@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\ProcessMining;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\ProcessMining\StatusVisit;
 use OCA\Dossiq\Service\Status\StatusDwellService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
@@ -525,4 +526,22 @@ class DwellTimeAnalyzerTest extends TestCase {
 
 		$this->assertMatchesGolden('dwell-intervals', $this->intervals($records, $cases));
 	}//end testGoldenDwellIntervals()
+
+	/**
+	 * A visit pairs its record with the next one and reads both timestamps;
+	 * the last visit has no next moment.
+	 *
+	 * @return void
+	 */
+	public function testAVisitReadsItsOwnAndTheNextMoment(): void {
+		$records = [
+			['statusType' => 'intake', '@self' => ['created' => '2026-01-01T00:00:00+00:00']],
+			['statusType' => 'review', 'createdAt' => '2026-01-02T00:00:00+00:00'],
+		];
+		$first = new StatusVisit(records: $records, index: 0);
+		$last = new StatusVisit(records: $records, index: 1);
+
+		self::assertSame(['2026-01-01T00:00:00+00:00', '2026-01-02T00:00:00+00:00'], [$first->enteredMoment(), $first->nextMoment()]);
+		self::assertSame(['2026-01-02T00:00:00+00:00', null, null], [$last->enteredMoment(), $last->nextMoment(), $last->next]);
+	}//end testAVisitReadsItsOwnAndTheNextMoment()
 }//end class
