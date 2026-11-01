@@ -4805,14 +4805,6 @@
 											"text": "Writing language: {language}. Asked for by the party."
 										},
 										{
-											"when": {
-												"field": "rule",
-												"op": "eq",
-												"value": "instanceDefault"
-											},
-											"text": "Writing language: {language}. No preference recorded, so the default language of this instance."
-										},
-										{
 											"text": "Writing language: {language}. No preference recorded."
 										}
 									]
