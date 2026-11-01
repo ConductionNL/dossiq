@@ -43,6 +43,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Milestone\MilestoneSchedule
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @covers \OCA\Dossiq\Service\Milestone\StallCandidate
+ * @covers \OCA\Dossiq\Service\Milestone\StallWindow
  */
 class MilestoneServiceStalledTest extends TestCase {
 	use MatchesGoldenFiles;
