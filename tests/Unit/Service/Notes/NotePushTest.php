@@ -44,6 +44,8 @@ use Psr\Log\LoggerInterface;
  * Tests what travels, what stays, and what the case says about it.
  *
  * @covers \OCA\Dossiq\Service\Notes\NotePush
+ * @covers \OCA\Dossiq\Service\Notes\NoteAttempt
+ * @covers \OCA\Dossiq\Service\Notes\NoteVerdict
  * @uses \OCA\Dossiq\Service\Notes\NoteEnvelope
  * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
  */
