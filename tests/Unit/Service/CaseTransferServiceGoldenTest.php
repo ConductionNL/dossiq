@@ -79,6 +79,7 @@ class CaseTransferServiceGoldenTest extends TestCase {
 			'initiate / empty remote' => ['initiateTransfer', $initiate + ['remoteCloudId' => ''], []],
 			'initiate / federated' => ['initiateTransfer', $remote, $keyed],
 			'initiate / federated, uuid key' => ['initiateTransfer', $remote, $keyed + ['idKey' => 'uuid']],
+			'initiate / federated, id and uuid' => ['initiateTransfer', $remote, $keyed + ['idKey' => 'both']],
 			'initiate / federated, no id' => ['initiateTransfer', $remote, $keyed + ['idKey' => 'none']],
 			'initiate / federated, already there' => ['initiateTransfer', $remote, ['precheck' => ['key' => 'key-1', 'answer' => ['id' => 't-0', 'status' => 'pending']]]],
 			'initiate / federated, mint fails' => ['initiateTransfer', $remote, $keyed + ['mint' => null]],

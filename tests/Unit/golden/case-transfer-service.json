@@ -618,6 +618,150 @@
             }
         ]
     },
+    "initiate / federated, id and uuid": {
+        "answer": {
+            "caseId": "case-1",
+            "sourceOrganization": "org-a",
+            "targetOrganization": "org-b",
+            "reason": "moving",
+            "requestedDate": "2026-11-01",
+            "status": "pending",
+            "initiatedBy": "alice",
+            "remoteCloudId": "partner@remote.example",
+            "idempotencyKey": "key-1",
+            "custodyAuditTrail": [
+                {
+                    "event": "initiated",
+                    "actor": "alice",
+                    "actorType": "local",
+                    "cloudId": "",
+                    "timestamp": "<now>"
+                }
+            ],
+            "uuid": "uuid-1",
+            "id": "transfer-1",
+            "federationShareId": "share-1"
+        },
+        "calls": [
+            {
+                "TransferRegisterGateway.objectService": []
+            },
+            {
+                "CaseTransferConsentGate.assess": {
+                    "caseId": "case-1",
+                    "sourceOrganisation": "org-a",
+                    "receivingOrg": "org-b",
+                    "atDate": "2026-11-01"
+                }
+            },
+            {
+                "TransferRegisterGateway.transferScope": []
+            },
+            {
+                "FederatedIdempotency.precheck": {
+                    "remoteCloudId": "partner@remote.example",
+                    "caseId": "case-1",
+                    "targetOrganization": "org-b",
+                    "register": 5,
+                    "schema": 7,
+                    "objectService": "<OCA\\Dossiq\\Tests\\Support\\RecordingTransferObjects>"
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "caseId": "case-1",
+                        "sourceOrganization": "org-a",
+                        "targetOrganization": "org-b",
+                        "reason": "moving",
+                        "requestedDate": "2026-11-01",
+                        "status": "pending",
+                        "initiatedBy": "alice",
+                        "remoteCloudId": "partner@remote.example",
+                        "idempotencyKey": "key-1",
+                        "custodyAuditTrail": [
+                            {
+                                "event": "initiated",
+                                "actor": "alice",
+                                "actorType": "local",
+                                "cloudId": "",
+                                "timestamp": "<now>"
+                            }
+                        ]
+                    },
+                    "register": 5,
+                    "schema": 7
+                }
+            },
+            {
+                "saved.jsonSerialize": "transfer-1"
+            },
+            {
+                "TransferShareBroker.mintTransferShare": {
+                    "transferUuid": "transfer-1",
+                    "remoteCloudId": "partner@remote.example",
+                    "register": "5",
+                    "schema": "7"
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "caseId": "case-1",
+                        "sourceOrganization": "org-a",
+                        "targetOrganization": "org-b",
+                        "reason": "moving",
+                        "requestedDate": "2026-11-01",
+                        "status": "pending",
+                        "initiatedBy": "alice",
+                        "remoteCloudId": "partner@remote.example",
+                        "idempotencyKey": "key-1",
+                        "custodyAuditTrail": [
+                            {
+                                "event": "initiated",
+                                "actor": "alice",
+                                "actorType": "local",
+                                "cloudId": "",
+                                "timestamp": "<now>"
+                            }
+                        ],
+                        "uuid": "uuid-1",
+                        "id": "transfer-1",
+                        "federationShareId": "share-1"
+                    },
+                    "register": 5,
+                    "schema": 7
+                }
+            },
+            {
+                "saved.jsonSerialize": "transfer-1"
+            },
+            {
+                "TenantAuditTrailService.emit": {
+                    "payload": {
+                        "action": "case_transfer_initiated",
+                        "actor": "alice",
+                        "resource": "case-1",
+                        "tenantId": "partner@remote.example"
+                    }
+                }
+            },
+            {
+                "saved.getUuid": "transfer-1"
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Case transfer initiated",
+                    "context": {
+                        "caseId": "case-1",
+                        "transferId": "uuid-1",
+                        "target": "org-b",
+                        "federated": true
+                    }
+                }
+            }
+        ]
+    },
     "initiate / federated, no id": {
         "answer": {
             "caseId": "case-1",

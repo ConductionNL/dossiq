@@ -6,7 +6,7 @@
  * Records every find() and saveObject() call by parameter name. Behaviour
  * keys: `find` (id => fields, or 'throw'), `findAs` ('array' answers a plain
  * array instead of an object), `saveAs` ('array' answers the saved fields as
- * an array), `idKey` ('uuid' or 'none' to change which key a new object gets).
+ * an array), `idKey` ('uuid', 'both' or 'none' to change which keys a new object gets).
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Support
@@ -86,6 +86,11 @@ final class RecordingTransferObjects {
 		$this->log[] = ['objects.saveObject' => ['object' => $object, 'register' => $register, 'schema' => $schema]];
 		$idKey = ($this->behaviour['idKey'] ?? 'id');
 		if ($idKey !== 'none' && isset($object['id']) === false && isset($object['uuid']) === false) {
+			if ($idKey === 'both') {
+				$object['uuid'] = 'uuid-' . $this->next;
+				$idKey = 'id';
+			}
+
 			$object[$idKey] = 'transfer-' . $this->next++;
 		}
 
