@@ -34,9 +34,9 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Woo\WooThroughputReport
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Csv\CsvWriter
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
- * @uses \OCA\Dossiq\Service\Csv\CsvWriter
  */
 class WooThroughputReportTest extends TestCase {
 

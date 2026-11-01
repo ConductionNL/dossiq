@@ -50,9 +50,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Woo\WooReportReadLog
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Csv\CsvWriter
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
- * @uses \OCA\Dossiq\Service\Csv\CsvWriter
  */
 class WooReportControllerTest extends TestCase {
 

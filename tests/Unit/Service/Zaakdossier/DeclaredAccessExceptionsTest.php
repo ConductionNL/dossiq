@@ -21,9 +21,9 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Zaakdossier\DeclaredAccessExceptions
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  *
  * @spec openspec/changes/a-declared-access-exception-is-applied/specs/document-access-exception/spec.md#requirement-an-exception-written-straight-onto-a-document-is-applied-as-the-writer-applies-it
- * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class DeclaredAccessExceptionsTest extends TestCase {
 

@@ -43,10 +43,10 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\People\LeaverHandoverService
  * @uses \OCA\Dossiq\Service\People\CaseSeats
- *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ *
+ * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
  */
 class LeaverHandoverTest extends TestCase {
 

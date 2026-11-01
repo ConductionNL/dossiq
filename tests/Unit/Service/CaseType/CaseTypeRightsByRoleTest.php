@@ -38,12 +38,12 @@ use PHPUnit\Framework\TestCase;
  * The rights matrix projected per role.
  *
  * @covers \OCA\Dossiq\Service\CaseType\CaseTypeRightsByRole
- *
- * @spec openspec/changes/case-type-rights-by-role/specs/case-types/spec.md
  * @uses \OCA\Dossiq\Service\Access\OrganisationRoles
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Exception\RefusedException
+ *
+ * @spec openspec/changes/case-type-rights-by-role/specs/case-types/spec.md
  */
 class CaseTypeRightsByRoleTest extends TestCase {
 
