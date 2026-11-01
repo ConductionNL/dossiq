@@ -40,6 +40,9 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\ZgwService
  * @covers \OCA\Dossiq\Service\Zgw\StoreFailureAnswer
  * @covers \OCA\Dossiq\Service\Zgw\ZgwPatchMerger
+ * @covers \OCA\Dossiq\Service\Zgw\ResourceRoute
+ * @covers \OCA\Dossiq\Service\Zgw\ResourceWrite
+ * @covers \OCA\Dossiq\Service\Zgw\RuleFlags
  */
 class ZgwServiceWriteGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
