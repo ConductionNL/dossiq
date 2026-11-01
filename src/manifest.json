@@ -4335,6 +4335,16 @@
 										"type": "integration",
 										"integrationId": "contacts",
 										"title": "Parties",
+										"labels": {
+											"kindLabels": {
+												"person": "Contact",
+												"organisation": "Organisation",
+												"colleague": "Colleague",
+												"user": "Colleague",
+												"contact": "Contact"
+											}
+										},
+										"_labelsNote": "Board DqZaakBetrokkenen Partijen leads a person's details with their kind: \"Contact\" for a person, \"Organisatie\" for an organisation, \"Collega\" for a colleague or a Nextcloud user. Keyed by the link's partyKind, else its kind.",
 										"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
 									}
 								},
@@ -4384,6 +4394,11 @@
 												}
 											},
 											"_manageNote": "Board DqZaakBetrokkenen draws \"Partij toevoegen\" on this card. The picker searches residents (BSN lookup), organisations and colleagues (the colleague party schema, kind colleague, tied to a Nextcloud user); the role is one the case declares.",
+											"note": {
+												"from": "roles",
+												"field": "description"
+											},
+											"_noteNote": "Board DqZaakBetrokkenen draws a role line here (\"Gemachtigde namens Aannemersbedrijf Van Wijk B.V. · Awb 2:1\") and a details line under Partijen (\"Machtiging namens ...\"). The link note feeds Partijen; this card prints the role record's description, the field that describes the role assignment.",
 											"rolesObjects": {
 												"register": "dossiq",
 												"schema": "role",
