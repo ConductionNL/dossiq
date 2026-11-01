@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Milestone;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Milestone\MilestoneSchedule;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -51,6 +52,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class MilestoneScheduleTest extends TestCase {
+	use MatchesGoldenFiles;
 
 	private MilestoneSchedule $schedule;
 
@@ -471,4 +473,94 @@ class MilestoneScheduleTest extends TestCase {
 			)
 		);
 	}//end testARoleNobodyHoldsLeavesItUnowned()
+
+	/**
+	 * One mixed graph, pinned whole: independent items summed in order, a
+	 * chain, a diamond, a predecessor that is missing, a JSON-string and a
+	 * malformed `dependsOn`, a reached item, a negative duration, an item with
+	 * no identifier, a cycle and a chain deeper than the cap.
+	 *
+	 * @return void
+	 */
+	public function testGoldenProjection(): void {
+		$definitions = [
+			['identifier' => 'b', 'order' => 2, 'expectedDurationWorkingDays' => 3],
+			['identifier' => 'a', 'order' => 1, 'expectedDurationWorkingDays' => 5],
+			['identifier' => 'c', 'order' => 3, 'expectedDurationWorkingDays' => 2, 'dependsOn' => ['a']],
+			['identifier' => 'd', 'order' => 4, 'expectedDurationWorkingDays' => 4, 'dependsOn' => '["c", "b"]'],
+			['identifier' => 'e', 'order' => 5, 'expectedDurationWorkingDays' => 1, 'dependsOn' => ['c', ' ', 'd']],
+			['identifier' => 'f', 'order' => 6, 'expectedDurationWorkingDays' => 2, 'dependsOn' => ['ghost']],
+			['identifier' => 'g', 'order' => 7, 'expectedDurationWorkingDays' => -4, 'dependsOn' => 'not json'],
+			['identifier' => 'h', 'order' => 8, 'expectedDurationWorkingDays' => 6, 'dependsOn' => 7],
+			['order' => 9, 'expectedDurationWorkingDays' => 9],
+			['identifier' => 'x', 'order' => 10, 'expectedDurationWorkingDays' => 1, 'dependsOn' => ['y']],
+			['identifier' => 'y', 'order' => 11, 'expectedDurationWorkingDays' => 1, 'dependsOn' => ['x']],
+			['identifier' => 'r', 'order' => 12, 'expectedDurationWorkingDays' => 3, 'dependsOn' => ['e']],
+		];
+		$chain = [];
+		for ($i = 0; $i < 60; $i++) {
+			$chain[] = ['identifier' => 'n' . $i, 'order' => $i, 'expectedDurationWorkingDays' => 1, 'dependsOn' => ($i === 0 ? [] : ['n' . ($i - 1)])];
+		}
+
+		$format = static fn (array $dates): array => array_map(static fn (DateTimeImmutable $d): string => $d->format('Y-m-d'), $dates);
+		$start = new DateTimeImmutable('2026-04-23');
+
+		$this->assertMatchesGolden(
+			'milestone-projection',
+			[
+				'projected' => $format($this->schedule->project(definitions: $definitions, caseStart: $start)),
+				'reached' => $format($this->schedule->project(definitions: $definitions, caseStart: $start, reached: ['c' => new DateTimeImmutable('2026-06-01'), 'x' => new DateTimeImmutable('2026-05-01')])),
+				'deep chain' => $format($this->schedule->project(definitions: $chain, caseStart: $start)),
+				'deep chain from the end' => $format($this->schedule->project(definitions: array_reverse($chain), caseStart: $start)),
+				'empty' => $this->schedule->project(definitions: [], caseStart: $start),
+				'cycles' => [
+					'none' => $this->schedule->cycle(definitions: $definitions),
+					'pair' => $this->schedule->cycle(definitions: array_slice($definitions, 9, 2)),
+					'with a run-up' => $this->schedule->cycle(
+						definitions: [
+							['identifier' => 'p', 'dependsOn' => ['q']],
+							['identifier' => 'q', 'dependsOn' => ['x']],
+							['identifier' => 'x', 'dependsOn' => ['y']],
+							['identifier' => 'y', 'dependsOn' => '["z"]'],
+							['identifier' => 'z', 'dependsOn' => ['x']],
+						]
+					),
+					'self' => $this->schedule->cycle(definitions: [['identifier' => 's', 'dependsOn' => ['s']]]),
+					'diamond' => $this->schedule->cycle(
+						definitions: [
+							['identifier' => 'top', 'dependsOn' => ['l', 'r']],
+							['identifier' => 'l', 'dependsOn' => ['base']],
+							['identifier' => 'r', 'dependsOn' => ['base', 'nowhere']],
+							['identifier' => 'base'],
+							['dependsOn' => ['top']],
+						]
+					),
+				],
+			]
+		);
+	}//end testGoldenProjection()
+
+	/**
+	 * An identifier PHP reads as a number becomes an integer key, which the
+	 * projection and the cycle check refuse with a type error.
+	 *
+	 * @return void
+	 */
+	public function testANumericIdentifierIsRefused(): void {
+		$definitions = [['identifier' => '7', 'order' => 1, 'expectedDurationWorkingDays' => 1]];
+		$errors = [];
+		try {
+			$this->schedule->project(definitions: $definitions, caseStart: new DateTimeImmutable('2026-04-23'));
+		} catch (\TypeError $e) {
+			$errors[] = 'project';
+		}
+
+		try {
+			$this->schedule->cycle(definitions: $definitions);
+		} catch (\TypeError $e) {
+			$errors[] = 'cycle';
+		}
+
+		$this->assertSame(['project', 'cycle'], $errors);
+	}//end testANumericIdentifierIsRefused()
 }//end class
