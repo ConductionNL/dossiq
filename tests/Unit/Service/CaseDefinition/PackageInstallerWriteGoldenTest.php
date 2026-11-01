@@ -191,7 +191,7 @@ class PackageInstallerWriteGoldenTest extends TestCase {
 				class: PackageValidator::class,
 				behaviour: ['validateShipped' => ['valid' => true, 'manifest' => $world['manifest'], 'errors' => []]]
 			),
-			capabilities: $this->double(class: PackageCapabilities::class, behaviour: ['missing' => []]),
+			capabilities: $this->double(class: PackageCapabilities::class, behaviour: ['missing' => ($world['capabilities'] ?? [])]),
 			writer: $this->double(
 				class: PackageWriter::class,
 				behaviour: [
@@ -285,6 +285,10 @@ class PackageInstallerWriteGoldenTest extends TestCase {
 				'over' => true,
 			],
 			'empty flows and seeds' => ['rowsUnder' => []],
+			'requires named and implied' => [
+				'manifest' => ['version' => '1.2.0', 'requires' => ['openregister', 7, 'openregister'], 'parts' => ['case-type', 'unknown-part', 'flows']],
+			],
+			'a capability missing' => ['capabilities' => ['openregister', 'flows']],
 		];
 
 		$observed = [];
