@@ -44,6 +44,7 @@ use ReflectionMethod;
  * Golden test for PackageInstaller::install() and installOverLocalChanges().
  *
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageInstaller
+ * @covers \OCA\Dossiq\Service\CaseDefinition\PackageInstallRun
  */
 class PackageInstallerWriteGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
