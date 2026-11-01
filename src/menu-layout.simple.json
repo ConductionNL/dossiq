@@ -1488,7 +1488,7 @@
 						"title": "Linked",
 						"_note": "DqZaak Gekoppeld: what other apps hold for this case, in one card (nextcloud-vue linked-integrations-card). Each app's leaf is mounted out of sight and reports a summary: the linked ones list their rows, the rest share one line \"Documents, fees and payments, contract and projects: nothing linked\" with their actions (planninq's New project and Open in Planninq). It replaces the standalone Projects widget in the grid. The ids are the RENDER leaves the apps register (shillinq's `-panel` ids, not its `shillinq-payment-requests` data leaf). An app that is absent registers no leaf and is left out of the line.",
 						"content": {
-							"leaves": ["filinq-documents", { "id": "pipelinq-requests", "register": "pipelinq", "schema": "ticket", "filter": { "caseReference": "@objectId", "ticketType": "request" }, "requiredApp": "pipelinq", "noun": "", "label": "Question in pipelinq", "href": "/apps/pipelinq/tickets/{id}", "icon": "MessageQuestionOutline" }, "shillinq-financial-documents-panel", "shillinq-contracts-panel", "planninq-projects"]
+							"leaves": ["filinq-documents", { "id": "pipelinq-requests", "register": "pipelinq", "schema": "ticket", "filter": { "caseReference": "@objectId", "ticketType": "request" }, "requiredApp": "pipelinq", "noun": "", "label": "Question in pipelinq", "href": "/apps/pipelinq/tickets/{id}", "icon": "MessageQuestionOutline" }, { "id": "shillinq-financial-documents-panel", "noun": "fees and payments" }, "shillinq-contracts-panel", "planninq-projects"]
 						}
 					},
 					{
@@ -2412,9 +2412,10 @@
 									"widgetIds": [
 										"case-parties-card",
 										"case-party-roles-card",
-										"case-seats-card"
+										"case-seats-card",
+										"case-access-card"
 									],
-									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards: the people on the case by role first (Partijen, the contacts tab in a card), the party model (Rollen), then the seats. Who follows the case is the header's Follow popover only (Ruben, 20 Oct 2026), so the Followers card left this tab."
+									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards: the people on the case by role first (Partijen, the contacts tab in a card), the party model (Rollen), the seats, then who may open the case by link (Toegang). Who follows the case is the header's Follow popover only (Ruben, 20 Oct 2026), so the Followers card left this tab."
 								},
 								{
 									"label": "Email",
@@ -4752,6 +4753,12 @@
 								"schema": "role",
 								"field": "case"
 							},
+							"secrecy": {
+								"indicator": "geheimhouding",
+								"kinds": ["person"],
+								"primaryOnly": true
+							},
+							"representationUntil": "Authorisation until {date}",
 							"roleLabels": {
 								"aanvrager": "Requester",
 								"gemachtigde": "Authorised representative",
@@ -4824,7 +4831,10 @@
 								"notAccepted": "Kind not accepted by this case type",
 								"verdictPublication": "Publishing a file on this case is refused",
 								"verdictWarn": "Read this before acting on the case",
-								"sentencePublication": "Publishing a file on this case is refused, because of {party}."
+								"sentencePublication": "Publishing a file on this case is refused, because of {party}.",
+								"primary": "Primary party",
+								"noSecrecy": "No secrecy",
+								"indicatorPill": "Indicator: {label}"
 							}
 						}
 					},
@@ -4836,7 +4846,7 @@
 						"_note": "handing-a-case-over REQ-HAND-05. Two named seats: the handler doing the work and the coordinator answerable for it. The handler is `assignee` and stays so, because My Work, the queue and every lens already read it. The COORDINATOR IS NOT HERE, and that is the design rather than an omission: it is a role binding on the case (D-4), so it renders in Parties above with its role type beside every other person on the case. Putting a second copy of it here would be a second place to look and a second thing to keep in step. `hideEmpty` stays off: a case with no handler must show the row empty, because the absence is what a teamleider is looking for.",
 						"content": {
 							"title": "Seats",
-							"columns": 1,
+							"columns": 3,
 							"footnote": "The coordinator is under Parties, with their role. Not here, so there is one place to look.",
 							"include": [
 								"assignee",
@@ -4865,6 +4875,95 @@
 									"emptyValue": "Nobody"
 								}
 							}
+						}
+					},
+					{
+						"id": "case-access-card",
+						"type": "record-list",
+						"title": "Access",
+						"subtitle": "Who may open this case, and why",
+						"_note": "DqZaakBetrokkenen Toegang: the case's access links as rows, each with the holder's initials, \"Link for {label}\", what the holder may do and when the link ends. The rows come from dossiq's own link list (the one the sidebar Sharing tab reads), which answers only for a reader the case is assigned to; anyone else reads the error text. A live or paused link ends in an icon button that revokes it (nextcloud-vue rowAction.iconOnly); the server refuses a colleague who did not create it, and that refusal shows in its words. Share opens the sidebar Sharing tab, which keeps the whole flow: links, partner shares, transfers and federated shares (nextcloud-vue header action open-sidebar-tab; on an older library the button is absent). The board also draws team and group grants; those come from the Access sidebar tab's catalogue and are not rows here yet.",
+						"headerActions": [
+							{
+								"label": "Share",
+								"icon": "ShareVariant",
+								"action": {
+									"type": "open-sidebar-tab",
+									"tab": "sharing"
+								}
+							}
+						],
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/access-links/case/@objectId",
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"ruleAbove": true,
+							"avatar": {
+								"text": "{label}",
+								"size": 32
+							},
+							"title": "Link for {label}",
+							"meta": "{capabilities}, without an account · the link can end",
+							"valueLabels": {
+								"capabilities": {
+									"read": "Read only",
+									"read,comment": "Read and comment",
+									"read,upload": "Read and add documents",
+									"read,comment,upload": "Read, comment and add documents"
+								}
+							},
+							"pill": {
+								"cases": [
+									{
+										"when": {
+											"field": "state",
+											"op": "eq",
+											"value": "revoked"
+										},
+										"label": "Revoked"
+									},
+									{
+										"when": {
+											"field": "state",
+											"op": "eq",
+											"value": "expired"
+										},
+										"label": "Expired",
+										"variant": "error"
+									},
+									{
+										"when": {
+											"field": "state",
+											"op": "eq",
+											"value": "paused"
+										},
+										"label": "Paused"
+									}
+								],
+								"label": "Expires {expiresAt|date}",
+								"variant": "warning"
+							},
+							"rowAction": {
+								"label": "Revoke link",
+								"icon": "LinkVariantOff",
+								"iconOnly": true,
+								"variant": "outlined",
+								"endpoint": "/apps/dossiq/api/access-links/{accessLinkId}?caseId=@objectId",
+								"method": "DELETE",
+								"labels": {
+									"field": "state",
+									"map": {
+										"revoked": "",
+										"expired": ""
+									}
+								},
+								"errorText": "The link could not be revoked"
+							},
+							"emptyText": "No links on this case yet",
+							"errorText": "Only the people this case is assigned to can see its links",
+							"footnote": "Whoever reads the BSN or another sensitive field is recorded in the processing log."
 						}
 					},
 					{
