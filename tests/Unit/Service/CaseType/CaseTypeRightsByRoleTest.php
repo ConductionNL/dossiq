@@ -40,6 +40,9 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\CaseType\CaseTypeRightsByRole
  *
  * @spec openspec/changes/case-type-rights-by-role/specs/case-types/spec.md
+ * @uses \OCA\Dossiq\Service\Access\OrganisationRoles
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class CaseTypeRightsByRoleTest extends TestCase {
 

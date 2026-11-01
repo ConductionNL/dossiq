@@ -52,6 +52,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Exception\RefusedException
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+ * @uses \OCA\Dossiq\Service\Csv\CsvWriter
  */
 class WooReportControllerTest extends TestCase {
 

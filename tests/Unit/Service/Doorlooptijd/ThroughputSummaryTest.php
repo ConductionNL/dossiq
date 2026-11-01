@@ -33,6 +33,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  *
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+ * @uses \OCA\Dossiq\Service\Doorlooptijd\ThroughputBuckets
  */
 class ThroughputSummaryTest extends TestCase {
 

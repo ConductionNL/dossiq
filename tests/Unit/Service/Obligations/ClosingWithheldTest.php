@@ -51,6 +51,8 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Service\Transitions\FourEyesRule
  *
  * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class ClosingWithheldTest extends TestCase {
 

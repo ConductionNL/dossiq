@@ -22,6 +22,8 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Intake\RequestCatalogue
  * @uses   \OCA\Dossiq\Service\Ai\CaseTypeAiFeatures
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class RequestCatalogueTest extends TestCase {
 

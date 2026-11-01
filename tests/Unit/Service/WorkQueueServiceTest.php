@@ -54,6 +54,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class WorkQueueServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -31,6 +31,7 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Listener\OneStatutoryTermPerCaseListener
+ * @uses \OCA\Dossiq\Service\TermKind
  */
 class OneStatutoryTermPerCaseListenerTest extends TestCase {
 

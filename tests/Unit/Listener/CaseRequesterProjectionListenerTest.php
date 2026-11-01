@@ -38,6 +38,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Listener\CaseRequesterProjectionListener
  * @covers \OCA\Dossiq\Service\People\RequesterProjection
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\TrustedRevealRead
  */
 class CaseRequesterProjectionListenerTest extends TestCase {
 

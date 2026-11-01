@@ -38,6 +38,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  *
  * @spec openspec/changes/method-decomposition/tasks.md
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class UrgencyScorerTest extends TestCase {
 	use MakesCaseDateNormaliser;

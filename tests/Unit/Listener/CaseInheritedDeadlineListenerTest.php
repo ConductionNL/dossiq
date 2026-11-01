@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar
  * @uses   \OCA\Dossiq\Service\CaseTypeResolver
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
+ * @uses \OCA\Dossiq\Service\CaseType\InheritedRowValues
  */
 class CaseInheritedDeadlineListenerTest extends TestCase {
 
