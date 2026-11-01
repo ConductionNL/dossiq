@@ -202,4 +202,30 @@ class TemplateActivationGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden('template-activation', $world);
 	}//end testGoldenActivation()
+
+	/**
+	 * The shipped library lists one entry per template file, and each listed
+	 * template loads by its id; an unknown id loads nothing.
+	 *
+	 * The wording of the shipped templates is not asserted: only that the list
+	 * and the loader read the same files the same way.
+	 *
+	 * @return void
+	 */
+	public function testTheShippedLibraryListsAndLoadsTheSameTemplates(): void {
+		$service = new TemplateLibraryService(settingsService: $this->createMock(SettingsService::class), logger: $this->createMock(LoggerInterface::class));
+		$files = glob(dirname(__DIR__, 4) . '/lib/Settings/templates/*.json');
+
+		$listed = $service->listTemplates();
+
+		self::assertCount(count($files), $listed);
+		self::assertSame(array_map('basename', $files), array_column($listed, 'file'));
+		foreach ($listed as $entry) {
+			$loaded = $service->loadTemplate(templateId: (string)$entry['id']);
+			self::assertIsArray($loaded, (string)$entry['id']);
+			self::assertSame($entry['title'], ($loaded['title'] ?? ''));
+		}
+
+		self::assertNull($service->loadTemplate(templateId: 'no-such-template'));
+	}//end testTheShippedLibraryListsAndLoadsTheSameTemplates()
 }//end class
