@@ -273,6 +273,7 @@ class AdvisoryCommitteeServiceGoldenTest extends TestCase {
 			'move, issue advice, payload status is overridden' => ['store' => $at($deliberating), 'call' => $move('advice-issued', ['status' => 'assigned', 'decisionRef' => 'old'] + $advice)],
 			'move, issue advice, no objection uses the request id' => ['store' => $at(array_diff_key($deliberating, ['bezwaar' => 1])), 'call' => $move('advice-issued')],
 			'move, issue advice, missing conclusion' => ['store' => $at(array_diff_key($deliberating, ['conclusion' => 1])), 'call' => $move('advice-issued')],
+			'move, issue advice, both fields missing' => ['store' => $at(array_diff_key($deliberating, ['conclusion' => 1, 'recommendation' => 1])), 'call' => $move('advice-issued', ['conclusion' => ''])],
 			'move, issue advice, empty recommendation' => ['store' => $at(['recommendation' => []] + $deliberating), 'call' => $move('advice-issued')],
 			'move, issue advice, decision raise fails' => ['store' => $at($deliberating), 'raise' => 'throw', 'call' => $move('advice-issued')],
 			'move, issue advice, decision ref empty' => ['store' => $at($deliberating), 'raise' => '', 'call' => $move('advice-issued')],

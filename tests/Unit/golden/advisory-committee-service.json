@@ -2193,6 +2193,41 @@
         ],
         "logs": []
     },
+    "move, issue advice, both fields missing": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Advice cannot be issued: missing required field conclusion"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
     "move, issue advice, empty recommendation": {
         "answer": {
             "thrown": "RuntimeException",
