@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
 use OCA\Dossiq\Service\Status\StatusDwellService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -45,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  */
 class DwellTimeAnalyzerTest extends TestCase {
 	use MakesCaseDateNormaliser;
+	use MatchesGoldenFiles;
 
 
 	private DwellTimeAnalyzer $analyzer;
@@ -462,4 +464,60 @@ class DwellTimeAnalyzerTest extends TestCase {
 		self::assertSame(expected: ['Beoordeling', ''], actual: array_column(array: $stats, column_key: 'statusPhase'));
 		self::assertSame(expected: [false, true], actual: array_column(array: $stats, column_key: 'statusFinal'));
 	}//end testAStatusCarriesItsPhase()
+
+	/**
+	 * One mixed world, pinned whole: open, closed, unparseable-closed and
+	 * empty cases; records without a status, without or with an unparseable
+	 * timestamp, with the `@self` timestamps, out of order, equal, before and
+	 * after the window, and with and without an actor.
+	 *
+	 * @return void
+	 */
+	public function testGoldenDwellIntervals(): void {
+		$records = [
+			'open' => [
+				['statusType' => 'intake', 'createdAt' => '2025-12-31T23:00:00+00:00', 'actor' => 'early'],
+				['statusType' => 'intake', 'createdAt' => '2026-01-01T00:00:00+00:00', 'actor' => ' ann '],
+				['statusType' => '', 'createdAt' => '2026-01-02T00:00:00+00:00'],
+				['statusType' => 'review', '@self' => ['created' => '2026-01-03T06:00:00+00:00']],
+				['statusType' => 'review', 'createdAt' => 'not a date'],
+				['statusType' => 'decide', '@self' => ['createdAt' => '2026-01-05T00:00:00+00:00'], 'actor' => 'bob'],
+				['statusType' => 'decide', 'createdAt' => '2026-01-04T00:00:00+00:00'],
+				['statusType' => 'wait', 'createdAt' => '2026-01-04T00:00:00+00:00'],
+				['statusType' => 'last', 'createdAt' => '2026-06-30T12:00:00+00:00'],
+			],
+			'closed' => [
+				['statusType' => 'intake', 'createdAt' => '2026-03-01T10:00:00+00:00'],
+				['statusType' => 'done', 'createdAt' => '2026-03-02T10:00:00+00:00'],
+			],
+			'closed-garbled' => [
+				['statusType' => 'intake', 'createdAt' => '2026-12-31T23:59:59+00:00'],
+			],
+			'closed-empty-end' => [
+				['statusType' => 'intake', 'createdAt' => '2026-05-01T00:00:00+00:00'],
+				['statusType' => 'next'],
+			],
+			'after' => [
+				['statusType' => 'intake', 'createdAt' => '2027-01-01T00:00:00+00:00'],
+			],
+			'blank-end' => [
+				['statusType' => 'intake', 'createdAt' => '2026-06-30T00:00:00+00:00'],
+			],
+			'none' => [],
+			'no-row' => [
+				['statusType' => 'intake', 'createdAt' => '2026-02-01T00:00:00+00:00'],
+			],
+		];
+		$cases = [
+			'open' => ['endDate' => null],
+			'closed' => ['endDate' => '2026-03-05T10:00:00+00:00'],
+			'closed-garbled' => ['endDate' => 'garbled'],
+			'closed-empty-end' => ['endDate' => ''],
+			'after' => [],
+			'blank-end' => ['endDate' => ''],
+			'none' => [],
+		];
+
+		$this->assertMatchesGolden('dwell-intervals', $this->intervals($records, $cases));
+	}//end testGoldenDwellIntervals()
 }//end class
