@@ -110,6 +110,7 @@ final class GoldenRebindObjects {
  * nothing, so run once more without it.
  *
  * @covers \OCA\Dossiq\Service\CaseRebindService
+ * @covers \OCA\Dossiq\Service\Cases\RebindMove
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseRebindServiceGoldenTest extends TestCase {
