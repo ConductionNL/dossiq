@@ -1241,6 +1241,346 @@
             }
         ]
     },
+    "change, holder only in the answers": {
+        "answer": null,
+        "calls": [
+            {
+                "call": "find",
+                "system": 1,
+                "id": "c2",
+                "register": "dossiq",
+                "schema": "case"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "t2",
+                "register": "dossiq",
+                "schema": "caseType"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "p1",
+                "register": "dossiq",
+                "schema": "licence"
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: a change case names a product that is not its requester's or not in force",
+                {
+                    "case": "c2",
+                    "product": "p1"
+                }
+            ]
+        ],
+        "products": [
+            [],
+            {
+                "p1": {
+                    "id": "p1",
+                    "portalSubject": "subj-sanne",
+                    "status": "active",
+                    "kenteken": "GZ482K"
+                }
+            }
+        ]
+    },
+    "change, holder differs by case and space": {
+        "answer": null,
+        "calls": [
+            {
+                "call": "find",
+                "system": 1,
+                "id": "c2",
+                "register": "dossiq",
+                "schema": "case"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "t2",
+                "register": "dossiq",
+                "schema": "caseType"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "p1",
+                "register": "dossiq",
+                "schema": "licence"
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: a change case names a product that is not its requester's or not in force",
+                {
+                    "case": "c2",
+                    "product": "p1"
+                }
+            ]
+        ],
+        "products": [
+            [],
+            {
+                "p1": {
+                    "id": "p1",
+                    "portalSubject": "subj-sanne",
+                    "status": "active",
+                    "kenteken": "GZ482K"
+                }
+            }
+        ]
+    },
+    "change, product expired": {
+        "answer": null,
+        "calls": [
+            {
+                "call": "find",
+                "system": 1,
+                "id": "c2",
+                "register": "dossiq",
+                "schema": "case"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "t2",
+                "register": "dossiq",
+                "schema": "caseType"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "p1",
+                "register": "dossiq",
+                "schema": "licence"
+            }
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: a change case names a product that is not its requester's or not in force",
+                {
+                    "case": "c2",
+                    "product": "p1"
+                }
+            ]
+        ],
+        "products": [
+            [],
+            {
+                "p1": {
+                    "id": "p1",
+                    "portalSubject": "subj-sanne",
+                    "status": "expired",
+                    "kenteken": "GZ482K"
+                }
+            }
+        ]
+    },
+    "change, answer names another schema": {
+        "answer": {
+            "id": "p1",
+            "portalSubject": "subj-sanne",
+            "status": "active",
+            "kenteken": "HX901B",
+            "adres": "Eikenlaan 2"
+        },
+        "calls": [
+            {
+                "call": "find",
+                "system": 1,
+                "id": "c2",
+                "register": "dossiq",
+                "schema": "case"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "t2",
+                "register": "dossiq",
+                "schema": "caseType"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "p1",
+                "register": "dossiq",
+                "schema": "licence"
+            },
+            {
+                "call": "patch",
+                "system": 1,
+                "id": "p1",
+                "data": {
+                    "kenteken": "HX901B",
+                    "adres": "Eikenlaan 2"
+                },
+                "register": "dossiq",
+                "schema": "licence"
+            }
+        ],
+        "logs": [],
+        "products": [
+            {
+                "p1": {
+                    "id": "p1",
+                    "portalSubject": "subj-sanne",
+                    "status": "active",
+                    "kenteken": "OLD1"
+                }
+            },
+            {
+                "p1": {
+                    "id": "p1",
+                    "portalSubject": "subj-sanne",
+                    "status": "active",
+                    "kenteken": "HX901B",
+                    "adres": "Eikenlaan 2"
+                }
+            }
+        ]
+    },
+    "issue, answer names another holder": {
+        "answer": {
+            "title": "Vergunning Lindelaan 4 voor gz-482 k",
+            "portalSubject": "subj-sanne",
+            "case": "c1",
+            "decision": "d1",
+            "validFrom": "2026-10-08",
+            "status": "active",
+            "kind": "parkeren-bewoner",
+            "theme": "parkeren",
+            "kenteken": "GZ482K",
+            "adres": "Lindelaan 4",
+            "zone": "A1",
+            "nested": "from answers",
+            "list": "second",
+            "id": "new-0"
+        },
+        "calls": [
+            {
+                "call": "find",
+                "system": 1,
+                "id": "c1",
+                "register": "dossiq",
+                "schema": "case"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "t1",
+                "register": "dossiq",
+                "schema": "caseType"
+            },
+            {
+                "call": "search",
+                "system": 1,
+                "register": "dossiq",
+                "schema": "permit",
+                "filters": {
+                    "decision": "d1",
+                    "_limit": 1
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "call": "save",
+                "system": 1,
+                "object": {
+                    "title": "Vergunning Lindelaan 4 voor gz-482 k",
+                    "portalSubject": "subj-sanne",
+                    "case": "c1",
+                    "decision": "d1",
+                    "validFrom": "2026-10-08",
+                    "status": "active",
+                    "kind": "parkeren-bewoner",
+                    "theme": "parkeren",
+                    "kenteken": "GZ482K",
+                    "adres": "Lindelaan 4",
+                    "zone": "A1",
+                    "nested": "from answers",
+                    "list": "second"
+                },
+                "register": "dossiq",
+                "schema": "permit",
+                "uuid": null
+            }
+        ],
+        "logs": [],
+        "products": [
+            {
+                "new-0": {
+                    "title": "Vergunning Lindelaan 4 voor gz-482 k",
+                    "portalSubject": "subj-sanne",
+                    "case": "c1",
+                    "decision": "d1",
+                    "validFrom": "2026-10-08",
+                    "status": "active",
+                    "kind": "parkeren-bewoner",
+                    "theme": "parkeren",
+                    "kenteken": "GZ482K",
+                    "adres": "Lindelaan 4",
+                    "zone": "A1",
+                    "nested": "from answers",
+                    "list": "second",
+                    "id": "new-0"
+                }
+            },
+            {
+                "p1": {
+                    "id": "p1",
+                    "portalSubject": "subj-sanne",
+                    "status": "active",
+                    "kenteken": "GZ482K"
+                }
+            }
+        ]
+    },
+    "issue, holder only in the answers": {
+        "answer": null,
+        "calls": [
+            {
+                "call": "find",
+                "system": 1,
+                "id": "c1",
+                "register": "dossiq",
+                "schema": "case"
+            },
+            {
+                "call": "find",
+                "system": 1,
+                "id": "t1",
+                "register": "dossiq",
+                "schema": "caseType"
+            }
+        ],
+        "logs": [
+            [
+                "info",
+                "Dossiq: a case without a portal subject issues no product",
+                {
+                    "case": "c1"
+                }
+            ]
+        ],
+        "products": [
+            [],
+            {
+                "p1": {
+                    "id": "p1",
+                    "portalSubject": "subj-sanne",
+                    "status": "active",
+                    "kenteken": "GZ482K"
+                }
+            }
+        ]
+    },
     "not declared outcome": {
         "answer": null,
         "calls": [

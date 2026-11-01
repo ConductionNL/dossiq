@@ -347,6 +347,28 @@ class CaseOutcomeProductGoldenTest extends TestCase {
 			'change, no set' => ['case' => 'c2', 'world' => static function (array &$w): void {
 				unset($w['caseType']['t2']['issuesPermit']['changesProduct']['set']);
 			}],
+			'change, holder only in the answers' => ['case' => 'c2', 'world' => static function (array &$w): void {
+				unset($w['case']['c2']['portalSubject']);
+				$w['case']['c2']['properties'][] = ['name' => 'portalSubject', 'value' => 'subj-sanne'];
+			}],
+			'change, holder differs by case and space' => ['case' => 'c2', 'world' => static function (array &$w): void {
+				$w['case']['c2']['portalSubject'] = ' SUBJ-SANNE ';
+			}],
+			'change, product expired' => ['case' => 'c2', 'world' => static function (array &$w): void {
+				$w['licence']['p1']['status'] = 'expired';
+			}],
+			'change, answer names another schema' => ['case' => 'c2', 'world' => static function (array &$w): void {
+				$w['case']['c2']['properties'][] = ['name' => 'schema', 'value' => 'permit'];
+				$w['permit']['p1'] = ['id' => 'p1', 'portalSubject' => 'subj-sanne', 'status' => 'active', 'kenteken' => 'OLD1'];
+			}],
+			'issue, answer names another holder' => ['case' => 'c1', 'world' => static function (array &$w): void {
+				$w['case']['c1']['properties'][] = ['name' => 'holder', 'value' => 'subj-mallory'];
+				$w['case']['c1']['properties'][] = ['name' => 'portalSubject', 'value' => 'subj-mallory'];
+			}],
+			'issue, holder only in the answers' => ['case' => 'c1', 'world' => static function (array &$w): void {
+				unset($w['case']['c1']['portalSubject']);
+				$w['case']['c1']['properties'][] = ['name' => 'portalSubject', 'value' => 'subj-mallory'];
+			}],
 			'not declared outcome' => ['case' => 'c1', 'status' => 'rejected'],
 			'declared outcome in other case' => ['case' => 'c1', 'status' => ' APPROVED '],
 		];
