@@ -40,6 +40,9 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
+ * @covers \OCA\Dossiq\Service\ProcessMining\DwellWindow
+ * @covers \OCA\Dossiq\Service\ProcessMining\CaseDwell
+ * @covers \OCA\Dossiq\Service\ProcessMining\StatusVisit
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Status\StatusDwellService
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator

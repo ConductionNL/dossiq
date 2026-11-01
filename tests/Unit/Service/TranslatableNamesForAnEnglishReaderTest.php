@@ -49,6 +49,9 @@ use ReflectionMethod;
  *
  * @covers \OCA\Dossiq\Service\Support\TranslatedText
  * @covers \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
+ * @uses \OCA\Dossiq\Service\ProcessMining\DwellWindow
+ * @uses \OCA\Dossiq\Service\ProcessMining\CaseDwell
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusVisit
  * @covers \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder
  * @covers \OCA\Dossiq\Service\Intake\RequestCatalogue
  * @covers \OCA\Dossiq\Service\Transitions\CaseStatusStore
