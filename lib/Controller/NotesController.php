@@ -36,6 +36,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Notes\NotePush;
 use OCA\Dossiq\Service\MentionNotificationService;
+use OCA\Dossiq\Service\Notes\MentionedNote;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -182,10 +183,7 @@ class NotesController extends Controller {
 			$notified = $this->mentionSvc->notifyMention(
 				actorUserId: $actor->getUID(),
 				actorDisplayName: $actor->getDisplayName(),
-				objectId: $objectId,
-				register: $register,
-				schema: $schema,
-				noteId: $noteId,
+				note: new MentionedNote(objectId: $objectId, register: $register, schema: $schema, noteId: $noteId),
 				mentionedUserIds: $mentionedUserIds,
 			);
 

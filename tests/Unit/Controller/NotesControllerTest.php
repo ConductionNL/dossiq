@@ -28,6 +28,7 @@ use OCA\Dossiq\Controller\NotesController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Notes\NotePush;
 use OCA\Dossiq\Service\MentionNotificationService;
+use OCA\Dossiq\Service\Notes\MentionedNote;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -39,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for NotesController.
  *
  * @covers \OCA\Dossiq\Controller\NotesController
+ * @uses \OCA\Dossiq\Service\Notes\MentionedNote
  */
 class NotesControllerTest extends TestCase {
 
@@ -203,10 +205,7 @@ class NotesControllerTest extends TestCase {
 			->with(
 				actorUserId: 'alice',
 				actorDisplayName: 'Alice',
-				objectId: 'case-1',
-				register: 'dossiq',
-				schema: 'case',
-				noteId: 'note-9',
+				note: $this->equalTo(new MentionedNote(objectId: 'case-1', register: 'dossiq', schema: 'case', noteId: 'note-9')),
 				mentionedUserIds: ['bob', 'carol'],
 			)
 			->willReturn(2);
