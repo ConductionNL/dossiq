@@ -285,4 +285,20 @@ class DsoCaseServiceGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden(name: 'dso-case-service', value: $observed);
 	}//end testGoldenDsoCaseService()
+
+	/**
+	 * A read answer is normalised from an array, a serialisable object, or neither.
+	 *
+	 * @return void
+	 */
+	public function testNormalizeToArrayAcceptsArraysAndSerialisableObjects(): void {
+		$service = (new \ReflectionClass(DsoCaseService::class))->newInstanceWithoutConstructor();
+		$normalise = new ReflectionMethod(DsoCaseService::class, 'normalizeToArray');
+
+		self::assertSame(['id' => 'a'], $normalise->invoke($service, ['id' => 'a']));
+		self::assertSame(['id' => 'b'], $normalise->invoke($service, $this->entity(value: ['id' => 'b'])));
+		self::assertSame([], $normalise->invoke($service, $this->entity(value: 'plain')));
+		self::assertSame([], $normalise->invoke($service, new \stdClass()));
+		self::assertSame([], $normalise->invoke($service, 'plain'));
+	}//end testNormalizeToArrayAcceptsArraysAndSerialisableObjects()
 }//end class
