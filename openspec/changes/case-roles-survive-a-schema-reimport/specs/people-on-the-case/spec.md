@@ -9,3 +9,9 @@ When the case schema is updated by anything (a register import, an upgrade, an a
 - WHEN the register is imported again and the case schema's link roles are reset to the generic party roles
 - THEN the role types are written back
 - AND J. van Wijk's row in Rollen reads "Gemachtigde", not the uuid
+
+#### Scenario: The import saves its own copy of the case schema after the sync ran
+- GIVEN a register import updates the case schema, and that update has already written the role types back
+- WHEN the import then saves its own copy of the case schema, holding only the generic party roles
+- THEN the role types are written back again, read against the stored schema rather than the copy cached earlier in the request
+- AND J. van Wijk's row in Rollen still reads "Gemachtigde", not the uuid

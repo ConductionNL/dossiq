@@ -40,6 +40,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\MilestoneService
  * @covers \OCA\Dossiq\Service\Milestone\StalledCaseDetector
  * @covers \OCA\Dossiq\Service\Milestone\MilestoneRepository
+ * @uses \OCA\Dossiq\Service\Milestone\MilestoneProjection
+ * @uses \OCA\Dossiq\Service\Milestone\ChainStep
+ * @uses \OCA\Dossiq\Service\Milestone\CycleSearch
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Milestone\MilestoneSchedule
  * @uses \OCA\Dossiq\Service\Term\DayCount
