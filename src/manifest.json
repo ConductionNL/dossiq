@@ -3506,7 +3506,7 @@
 						"title": "Linked",
 						"_note": "DqZaak Gekoppeld in the FULL profile, which has no side column: the same card the simple profile places after Handling (side-linked), here in the grid cell the standalone Projects widget had, so no profile loses the projects. nextcloud-vue linked-integrations-card mounts each leaf out of sight and lists the linked ones' rows, then one \"...: nothing linked\" line with the rest's actions. The simple profile drops this cell (`full-linked: null`) because its side column carries the card.",
 						"content": {
-							"leaves": ["filinq-documents", { "id": "pipelinq-requests", "register": "pipelinq", "schema": "ticket", "filter": { "caseReference": "@objectId", "ticketType": "request" }, "requiredApp": "pipelinq", "noun": "", "label": "Question in pipelinq", "href": "/apps/pipelinq/tickets/{id}", "icon": "MessageQuestionOutline" }, "shillinq-financial-documents-panel", "shillinq-contracts-panel", "planninq-projects"]
+							"leaves": ["filinq-documents", { "id": "pipelinq-requests", "register": "pipelinq", "schema": "ticket", "filter": { "caseReference": "@objectId", "ticketType": "request" }, "requiredApp": "pipelinq", "noun": "", "label": "Question in pipelinq", "href": "/apps/pipelinq/tickets/{id}", "icon": "MessageQuestionOutline" }, { "id": "shillinq-financial-documents-panel", "noun": "fees and payments" }, "shillinq-contracts-panel", "planninq-projects"]
 						}
 					},
 					{

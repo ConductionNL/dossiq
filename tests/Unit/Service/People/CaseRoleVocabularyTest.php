@@ -401,6 +401,166 @@ class CaseRoleVocabularyTest extends TestCase {
 	}//end testAnUnchangedVocabularyIsNotWritten()
 
 	/**
+	 * A save that puts the shipped roles back is undone by the next sync, even
+	 * when the mapper still holds the copy this sync wrote.
+	 *
+	 * OpenRegister caches find() per request and its update() leaves that cache
+	 * alone, so after a register import saves its own copy of the case schema,
+	 * find() still answers the copy carrying the full vocabulary.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-roles-survive-a-schema-reimport/specs/people-on-the-case/spec.md#requirement-the-case-schemas-role-vocabulary-survives-a-rewrite-of-the-schema
+	 */
+	public function testASaveBehindTheMappersCacheIsUndone(): void {
+		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];
+		$shipped = ['linkRoles' => [['key' => 'aanvrager', 'label' => 'Requester']]];
+		$mapper = $this->requestCachingMapper(stored: $shipped);
+		$vocabulary = $this->vocabularyOn(mapper: $mapper);
+
+		$vocabulary->sync();
+		$mapper->saveBehindTheCache(configuration: $shipped);
+		$count = $vocabulary->sync();
+
+		$this->assertSame(expected: 7, actual: $count);
+		$this->assertSame(
+			expected: ['rt-1', 'aanvrager'],
+			actual: array_slice(array_column($mapper->stored['linkRoles'], 'key'), 0, 2)
+		);
+	}//end testASaveBehindTheMappersCacheIsUndone()
+
+	/**
+	 * A schema mapper that caches find() per request the way OpenRegister's
+	 * does: update() writes the row and leaves the cached copy as it was.
+	 *
+	 * @param array<string, mixed> $stored The configuration as first stored.
+	 *
+	 * @return object The mapper.
+	 */
+	private function requestCachingMapper(array $stored): object {
+		return new class($stored) {
+			/**
+			 * The copy find() answers until the cache is cleared.
+			 *
+			 * @var object|null
+			 */
+			private ?object $cached = null;
+
+			/**
+			 * @param array<string, mixed> $stored The stored configuration.
+			 */
+			public function __construct(public array $stored) {
+			}
+
+			/**
+			 * The cached copy, or a fresh one read from the stored row.
+			 *
+			 * @param string|int $id The schema.
+			 *
+			 * @return object The schema.
+			 */
+			public function find(string|int $id): object {
+				if ($this->cached === null) {
+					$this->cached = new class($this->stored) {
+						/**
+						 * @param array<string, mixed> $configuration The configuration.
+						 */
+						public function __construct(private array $configuration) {
+						}
+
+						/**
+						 * The schema id.
+						 *
+						 * @return int The id.
+						 */
+						public function getId(): int {
+							return 172;
+						}
+
+						/**
+						 * The configuration.
+						 *
+						 * @return array<string, mixed> The configuration.
+						 */
+						public function getConfiguration(): array {
+							return $this->configuration;
+						}
+
+						/**
+						 * Set the configuration.
+						 *
+						 * @param array<string, mixed> $configuration The configuration.
+						 *
+						 * @return void
+						 */
+						public function setConfiguration(array $configuration): void {
+							$this->configuration = $configuration;
+						}
+					};
+				}
+
+				return $this->cached;
+			}
+
+			/**
+			 * Write a schema's configuration to the row, leaving the cache.
+			 *
+			 * @param object $schema The schema.
+			 *
+			 * @return object The schema.
+			 */
+			public function update(object $schema): object {
+				$this->stored = $schema->getConfiguration();
+				return $schema;
+			}
+
+			/**
+			 * Forget the cached copy of a schema.
+			 *
+			 * @param int $schemaId The schema id.
+			 *
+			 * @return void
+			 */
+			public function clearFindCache(int $schemaId): void {
+				$this->cached = null;
+			}
+
+			/**
+			 * Another caller saves its own copy of the schema.
+			 *
+			 * @param array<string, mixed> $configuration What it saves.
+			 *
+			 * @return void
+			 */
+			public function saveBehindTheCache(array $configuration): void {
+				$this->stored = $configuration;
+			}
+		};
+	}//end requestCachingMapper()
+
+	/**
+	 * The service on a given schema mapper.
+	 *
+	 * @param object $mapper The schema mapper.
+	 *
+	 * @return CaseRoleVocabulary The service.
+	 */
+	private function vocabularyOn(object $mapper): CaseRoleVocabulary {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getOpenRegisterClass')->willReturn($mapper);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+
+		return new CaseRoleVocabulary(
+			settingsService: $settings,
+			parties: $this->partyVocabulary(),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+	}//end vocabularyOn()
+
+	/**
 	 * The rest of the schema's configuration survives the write.
 	 *
 	 * @return void
