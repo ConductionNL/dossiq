@@ -44,6 +44,8 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Controller\NotesController
  * @covers \OCA\Dossiq\Service\MentionNotificationService
+ * @covers \OCA\Dossiq\Service\Notes\MentionedNote
+ * @covers \OCA\Dossiq\Service\Notes\NoteMention
  */
 class NoteMentionGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
