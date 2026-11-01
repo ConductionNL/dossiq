@@ -268,13 +268,29 @@ class CaseRoleVocabulary {
 	}//end entryOf()
 
 	/**
-	 * The case schema entity, or null when it cannot be read.
+	 * The case schema entity as stored, or null when it cannot be read.
+	 *
+	 * OpenRegister's mapper caches find() per request and update() leaves that
+	 * cache alone, so after another caller saves its own copy of the schema (a
+	 * register import does, after its update event already ran this sync),
+	 * find() still answers the copy this sync wrote. The cache is cleared and
+	 * the schema read again, so the comparison is against the stored row.
 	 *
 	 * @return object|null The schema.
+	 *
+	 * @spec openspec/changes/case-roles-survive-a-schema-reimport/specs/people-on-the-case/spec.md#requirement-the-case-schemas-role-vocabulary-survives-a-rewrite-of-the-schema
 	 */
 	private function caseSchema(): ?object {
 		try {
-			return $this->schemaMapper()->find($this->schema(key: 'case_schema'));
+			$mapper = $this->schemaMapper();
+			$key = $this->schema(key: 'case_schema');
+			$schema = $mapper->find($key);
+			if (is_callable([$mapper, 'clearFindCache']) === false || is_callable([$schema, 'getId']) === false) {
+				return $schema;
+			}
+
+			$mapper->clearFindCache((int)$schema->getId());
+			return $mapper->find($key);
 		} catch (Throwable $e) {
 			$this->logger->info('Dossiq people: the case schema could not be read: ' . $e->getMessage());
 			return null;
