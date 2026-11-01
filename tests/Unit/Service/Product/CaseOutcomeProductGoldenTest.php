@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
  * and every answer of issuing and changing a product.
  *
  * @covers \OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer
+ * @covers \OCA\Dossiq\Service\Product\ProductOutcome
+ * @covers \OCA\Dossiq\Service\Product\ProductDecision
  */
 class CaseOutcomeProductGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
