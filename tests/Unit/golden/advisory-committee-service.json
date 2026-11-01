@@ -2563,6 +2563,174 @@
         ],
         "logs": []
     },
+    "move, issue advice, forged signer in payload and object": {
+        "answer": {
+            "id": "req-1",
+            "patched": {
+                "chair": "mallory",
+                "actor": "mallory",
+                "userId": "mallory",
+                "conclusion": "ongegrond",
+                "recommendation": "handhaven",
+                "signatureEvidence": "sig-1",
+                "status": "advice-issued",
+                "decisionRef": "decision-1",
+                "adviceIssuedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "AdviceDelegationService::raiseAdviceDecision",
+                {
+                    "subjectSchema": "bacAdviceRequest",
+                    "subjectId": "req-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "externalReference": "obj-1",
+                        "subjectLabel": "ongegrond",
+                        "adviceType": "handhaven",
+                        "question": "ongegrond"
+                    }
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
+                "BezwaarAuditTrail::recordThenApply",
+                {
+                    "register": "reg",
+                    "schema": "req",
+                    "objectUuid": "req-1",
+                    "event": "advice-signed-by-chair",
+                    "payload": {
+                        "chair": "chair-anna",
+                        "signatureEvidence": "sig-1",
+                        "conclusion": "ongegrond"
+                    },
+                    "tag": "",
+                    "apply": "closure"
+                }
+            ],
+            [
+                "store::patchObject",
+                {
+                    "objectId": "req-1",
+                    "data": {
+                        "chair": "mallory",
+                        "actor": "mallory",
+                        "userId": "mallory",
+                        "conclusion": "ongegrond",
+                        "recommendation": "handhaven",
+                        "signatureEvidence": "sig-1",
+                        "status": "advice-issued",
+                        "decisionRef": "decision-1",
+                        "adviceIssuedAt": "<now>"
+                    },
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issued advice cannot be reopened": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Transition from advice-issued to assigned is not permitted"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, inadmissible cannot be reopened": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Transition from inadmissible to in-deliberation is not permitted"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
     "move, inadmissible": {
         "answer": {
             "id": "req-1",
