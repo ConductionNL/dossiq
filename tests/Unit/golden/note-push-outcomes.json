@@ -1,0 +1,727 @@
+{
+    "internal": {
+        "answer": {
+            "outcome": "not-sent",
+            "reason": "This note is internal, so it stays here. Make it external to send it.",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note kept here rather than sent to the neighbouring register: This note is internal, so it stays here. Make it external to send it.",
+                "fields": {
+                    "noteId": "42",
+                    "status": "not-sent"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [],
+        "errors": []
+    },
+    "internal, history down": {
+        "answer": {
+            "outcome": "not-sent",
+            "reason": "This note is internal, so it stays here. Make it external to send it. The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "not-sent"
+                }
+            ]
+        ]
+    },
+    "no visibility": {
+        "answer": {
+            "outcome": "not-sent",
+            "reason": "This note is internal, so it stays here. Make it external to send it.",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note kept here rather than sent to the neighbouring register: This note is internal, so it stays here. Make it external to send it.",
+                "fields": {
+                    "noteId": "42",
+                    "status": "not-sent"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [],
+        "errors": []
+    },
+    "no visibility, history down": {
+        "answer": {
+            "outcome": "not-sent",
+            "reason": "This note is internal, so it stays here. Make it external to send it. The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "not-sent"
+                }
+            ]
+        ]
+    },
+    "shouting public": {
+        "answer": {
+            "outcome": "sent",
+            "reason": "",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note handed to integriq for the neighbouring register",
+                "fields": {
+                    "noteId": "42",
+                    "status": "sent"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": []
+    },
+    "shouting public, history down": {
+        "answer": {
+            "outcome": "sent",
+            "reason": "The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "sent"
+                }
+            ]
+        ]
+    },
+    "no reserved type": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "No informatieobjecttype is reserved for case notes, so nothing is sent. Set the dossiq app config key `note_informatieobjecttype` to the type your catalogue reserved for them.",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note not sent to the neighbouring register: No informatieobjecttype is reserved for case notes, so nothing is sent. Set the dossiq app config key `note_informatieobjecttype` to the type your catalogue reserved for them.",
+                "fields": {
+                    "noteId": "42",
+                    "status": "failed"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [],
+        "errors": []
+    },
+    "no reserved type, history down": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "No informatieobjecttype is reserved for case notes, so nothing is sent. Set the dossiq app config key `note_informatieobjecttype` to the type your catalogue reserved for them. The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "failed"
+                }
+            ]
+        ]
+    },
+    "dispatcher throws": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "integriq could not take the note.",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note not sent to the neighbouring register: integriq could not take the note.",
+                "fields": {
+                    "noteId": "42",
+                    "status": "failed"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [],
+        "errors": [
+            [
+                "Dossiq: a case note could not be handed to integriq",
+                {
+                    "caseId": "case-7",
+                    "error": "dispatcher broke"
+                }
+            ]
+        ]
+    },
+    "dispatcher throws, history down": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "integriq could not take the note. The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [],
+        "errors": [
+            [
+                "Dossiq: a case note could not be handed to integriq",
+                {
+                    "caseId": "case-7",
+                    "error": "dispatcher broke"
+                }
+            ],
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "failed"
+                }
+            ]
+        ]
+    },
+    "not handled": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "integriq could not take the note. Check the integriq log.",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note not sent to the neighbouring register: integriq could not take the note. Check the integriq log.",
+                "fields": {
+                    "noteId": "42",
+                    "status": "failed"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": []
+    },
+    "not handled, history down": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "integriq could not take the note. Check the integriq log. The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "failed"
+                }
+            ]
+        ]
+    },
+    "refused with a reason": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "Receiver closed",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note not sent to the neighbouring register: Receiver closed",
+                "fields": {
+                    "noteId": "42",
+                    "status": "failed"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": []
+    },
+    "refused with a reason, history down": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "Receiver closed The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "failed"
+                }
+            ]
+        ]
+    },
+    "refused without a reason": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "integriq refused the note (E42) and gave no reason.",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note not sent to the neighbouring register: integriq refused the note (E42) and gave no reason.",
+                "fields": {
+                    "noteId": "42",
+                    "status": "failed"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": []
+    },
+    "refused without a reason, history down": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "integriq refused the note (E42) and gave no reason. The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "failed"
+                }
+            ]
+        ]
+    },
+    "nothing bound": {
+        "answer": {
+            "outcome": "no-register",
+            "reason": "This case is not bound to an external register, so nothing was sent and nothing is recorded.",
+            "receiverUrl": "",
+            "caseRecord": "none"
+        },
+        "recorded": [],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": []
+    },
+    "nothing bound, history down": {
+        "answer": {
+            "outcome": "no-register",
+            "reason": "This case is not bound to an external register, so nothing was sent and nothing is recorded.",
+            "receiverUrl": "",
+            "caseRecord": "none"
+        },
+        "recorded": [],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": []
+    },
+    "sent": {
+        "answer": {
+            "outcome": "sent",
+            "reason": "",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note handed to integriq for the neighbouring register",
+                "fields": {
+                    "noteId": "42",
+                    "status": "sent"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": []
+    },
+    "sent, history down": {
+        "answer": {
+            "outcome": "sent",
+            "reason": "The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [
+            [
+                "dossiq",
+                "",
+                "",
+                "case-7",
+                "Gebeld met de aanvrager",
+                "case-note",
+                "zgw-documenten",
+                {
+                    "identificatie": "dossiq-note-42",
+                    "bronorganisatie": "002564440",
+                    "titel": "Gebeld met de aanvrager",
+                    "auteur": "J. Doe",
+                    "taal": "nld",
+                    "informatieobjecttype": "https://catalogi.example/iot/werknotitie",
+                    "creatiedatum": "2026-09-18",
+                    "formaat": "text/plain",
+                    "inhoud": "R2ViZWxkIG1ldCBkZSBhYW52cmFnZXI=",
+                    "zaak": "case-7"
+                },
+                32,
+                "dossiq-note-42"
+            ]
+        ],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "42",
+                    "outcome": "sent"
+                }
+            ]
+        ]
+    },
+    "sent without id or title": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "A note with no text is not sent.",
+            "receiverUrl": "",
+            "caseRecord": "written"
+        },
+        "recorded": [
+            {
+                "message": "Note not sent to the neighbouring register: A note with no text is not sent.",
+                "fields": {
+                    "noteId": "",
+                    "status": "failed"
+                },
+                "visibility": "internal"
+            }
+        ],
+        "dispatched": [],
+        "errors": []
+    },
+    "sent without id or title, history down": {
+        "answer": {
+            "outcome": "failed",
+            "reason": "A note with no text is not sent. The case could not record this, so the case history does not show it. Check the dossiq log before you rely on the history.",
+            "receiverUrl": "",
+            "caseRecord": "lost"
+        },
+        "recorded": [],
+        "dispatched": [],
+        "errors": [
+            [
+                "Dossiq: the outcome of a note push could not be recorded on the case",
+                {
+                    "caseId": "case-7",
+                    "noteId": "",
+                    "outcome": "failed"
+                }
+            ]
+        ]
+    }
+}

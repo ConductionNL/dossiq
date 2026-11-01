@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\Notes\NoteEnvelope;
 use OCA\Dossiq\Service\Notes\NotePush;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Integriq\Event\DeliveryRequestedEvent;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use RuntimeException;
@@ -47,6 +48,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
  */
 class NotePushTest extends TestCase {
+	use MatchesGoldenFiles;
 	/**
 	 * How integriq answers the delivery request: `handled`, `matched`, `refusal`, `throws`.
 	 *
@@ -397,4 +399,88 @@ class NotePushTest extends TestCase {
 		$this->assertSame(NotePush::OUTCOME_NOT_SENT, $this->recorded[0]['fields']['status']);
 		$this->assertSame(CaseTimeline::INTERNAL, $this->recorded[0]['visibility']);
 	}//end testAnInternalNoteSomebodyTriedToSendIsRecorded()
+
+	/**
+	 * Every way a push can end, each with the case history writable and not:
+	 * the answer, the timeline entries, the delivery requests (without their
+	 * random correlation id) and the errors logged.
+	 *
+	 * @return void
+	 */
+	public function testGoldenPushOutcomes(): void {
+		$integriq = ['handled' => true, 'matched' => 1, 'refusal' => null, 'throws' => false];
+		$scenarios = [
+			'internal' => [['visibility' => 'internal'], $integriq, null],
+			'no visibility' => [['visibility' => null], $integriq, null],
+			'shouting public' => [['visibility' => ' PUBLIC '], $integriq, null],
+			'no reserved type' => [[], $integriq, ''],
+			'dispatcher throws' => [[], (['throws' => true] + $integriq), null],
+			'not handled' => [[], (['handled' => false] + $integriq), null],
+			'refused with a reason' => [[], (['refusal' => ['reason' => ' Receiver closed ', 'code' => 'x']] + $integriq), null],
+			'refused without a reason' => [[], (['refusal' => ['reason' => ' ', 'code' => ' E42 ']] + $integriq), null],
+			'nothing bound' => [[], (['matched' => 0] + $integriq), null],
+			'sent' => [[], $integriq, null],
+			'sent without id or title' => [['id' => null, 'message' => ''], $integriq, null],
+		];
+
+		$world = [];
+		foreach ($scenarios as $name => [$noteChange, $answers, $type]) {
+			foreach ([true, false] as $writes) {
+				$this->integriq = $answers;
+				$this->timelineWrites = $writes;
+				$this->reservedType = ($type ?? 'https://catalogi.example/iot/werknotitie');
+				$this->recorded = [];
+				$this->dispatched = [];
+				$errors = [];
+				$logger = $this->createMock(LoggerInterface::class);
+				$logger->method('error')->willReturnCallback(
+					static function (string $message, array $context = []) use (&$errors): void {
+						$errors[] = [$message, $context];
+					}
+				);
+
+				$answer = $this->pushWith(logger: $logger)->push(caseId: 'case-7', note: array_merge(self::EXTERNAL_NOTE, $noteChange));
+
+				$world[$name . ($writes === true ? '' : ', history down')] = [
+					'answer' => $answer,
+					'recorded' => $this->recorded,
+					'dispatched' => array_map(
+						static fn (DeliveryRequestedEvent $event): array => [
+							$event->getSourceApp(),
+							$event->getSubjectRegister(),
+							$event->getSubjectSchema(),
+							$event->getSubjectId(),
+							$event->getSubjectLabel(),
+							$event->getDeliveryKind(),
+							$event->getChannel(),
+							$event->getPayload(),
+							strlen($event->getCorrelationId()),
+							$event->getExternalReference(),
+						],
+						$this->dispatched
+					),
+					'errors' => $errors,
+				];
+			}
+		}
+
+		$this->assertMatchesGolden('note-push-outcomes', $world);
+	}//end testGoldenPushOutcomes()
+
+	/**
+	 * The subject under test over a given logger.
+	 *
+	 * @param LoggerInterface $logger The logger.
+	 *
+	 * @return NotePush
+	 */
+	private function pushWith(LoggerInterface $logger): NotePush {
+		$push = $this->push();
+		$clone = (new \ReflectionClass(NotePush::class))->newInstanceWithoutConstructor();
+		foreach ((new \ReflectionClass(NotePush::class))->getProperties() as $each) {
+			$each->setValue($clone, ($each->getName() === 'logger' ? $logger : $each->getValue($push)));
+		}
+
+		return $clone;
+	}//end pushWith()
 }//end class
