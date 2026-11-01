@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * DqZaakBetrokkenen "Zetels" as the board draws it (design-system #356): a
- * subtitle, one column of pairs, "Wacht op oppakken: Nee" and "Doorgegeven
- * aan: Niemand" when nothing is pending.
+ * subtitle, the pairs in as many 200px columns as the card holds (three on
+ * the case page), "Wacht op oppakken: Nee" and "Doorgegeven aan: Niemand"
+ * when nothing is pending.
  *
  * @spec openspec/specs/case-page/spec.md
  */
@@ -23,8 +24,9 @@ describe('the seats card', () => {
 		expect(nl[seats.subtitle]).toBe('Wie het werk doet en wie ervoor staat')
 	})
 
-	it('lists its pairs in one column', () => {
-		expect(seats.content.columns).toBe(1)
+	it('lets the board look fit its pairs in 200px columns, not one column', () => {
+		expect(seats.content.columns).toBe(3)
+		expect(seats.content.fixedColumns).not.toBe(true)
 	})
 
 	it('names what is not pending in the board words', () => {
