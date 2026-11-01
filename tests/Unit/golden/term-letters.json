@@ -199,6 +199,11 @@
         "body": "Dear applicant,\n\nWe have received your application and a message about it is waiting for you.\nSign in to the citizen portal to read it.\n\nKind regards",
         "locale": "en"
     },
+    "withheld nl": {
+        "subject": "Er staat een bericht over uw aanvraag voor u klaar",
+        "body": "Beste aanvrager,\n\nWij hebben uw aanvraag ontvangen en er staat een bericht voor u klaar.\nLog in op het burgerportaal om het te lezen.\n\nMet vriendelijke groet",
+        "locale": "nl"
+    },
     "received in hours": {
         "subject": "Ontvangstbevestiging zaak term-link",
         "body": "Beste aanvrager,\n\nWij hebben uw aanvraag ontvangen en geregistreerd onder kenmerk term-link.\nWij hebben uw aanvraag ontvangen op 3 november 2026 en de beslistermijn start op 3 november 2026.\nWij nemen uiterlijk op 1 december 2026 een besluit op uw aanvraag. Hebben wij meer tijd nodig, dan laten wij u dat voor die datum weten.\nU volgt deze zaak via het burgerportaal.\n\nMet vriendelijke groet",

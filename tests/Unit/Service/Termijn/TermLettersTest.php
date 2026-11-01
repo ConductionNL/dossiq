@@ -134,6 +134,7 @@ class TermLettersTest extends TestCase {
 		$world['blank type'] = $letters->render(type: '', instance: $instance, context: $full);
 		$world['wrong-case type'] = $letters->render(type: 'Ontvangstbevestiging', instance: $instance, context: $full);
 		$world['withheld'] = $letters->render(type: 'ontvangstbevestiging', instance: $instance, context: ['contentWithheld' => true, 'locale' => 'en']);
+		$world['withheld nl'] = $letters->render(type: 'ontvangstbevestiging', instance: $instance, context: ['contentWithheld' => true, 'locale' => 'nl']);
 		$world['received in hours'] = $letters->render(type: 'ontvangstbevestiging', instance: $instance, context: ['receivedAt' => '2026-11-03', 'termStartsAt' => '2026-11-03', 'locale' => 'nl']);
 		$world['received in hours en'] = $letters->render(type: 'ontvangstbevestiging', instance: $instance, context: ['receivedAt' => '2026-11-03', 'termStartsAt' => '2026-11-03', 'locale' => 'en']);
 
