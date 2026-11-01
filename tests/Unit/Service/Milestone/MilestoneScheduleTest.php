@@ -566,4 +566,18 @@ class MilestoneScheduleTest extends TestCase {
 
 		$this->assertSame(['project', 'cycle'], $errors);
 	}//end testANumericIdentifierIsRefused()
+
+	/**
+	 * A node seen again that is not on the trail answers as a cycle of itself.
+	 * The walk only marks nodes on its own trail, so this is the defensive
+	 * answer, pinned here because no definition set reaches it.
+	 *
+	 * @return void
+	 */
+	public function testACycleOffTheTrailIsTheNodeAlone(): void {
+		$cycleOn = new \ReflectionMethod(MilestoneSchedule::class, 'cycleOn');
+
+		self::assertSame(['a'], $cycleOn->invoke($this->schedule, ['a']));
+		self::assertSame(['b', 'c'], $cycleOn->invoke($this->schedule, ['a', 'b', 'c', 'b']));
+	}//end testACycleOffTheTrailIsTheNodeAlone()
 }//end class
