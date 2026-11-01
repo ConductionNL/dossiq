@@ -1,0 +1,212 @@
+{
+    "ontvangstbevestiging nl full": {
+        "subject": "Ontvangstbevestiging zaak 2026-0117",
+        "body": "Beste aanvrager,\n\nWij hebben uw aanvraag over a permit ontvangen en geregistreerd onder kenmerk 2026-0117.\nWij hebben uw aanvraag ontvangen op 31 oktober 2026 en de beslistermijn start op 2 november 2026.\nUw aanvraag kwam binnen buiten onze openingstijden, daarom start de termijn op de eerstvolgende werkdag.\nWij nemen uiterlijk op 1 december 2026 een besluit op uw aanvraag. Hebben wij meer tijd nodig, dan laten wij u dat voor die datum weten.\nU volgt deze zaak via het burgerportaal.\nMet vragen kunt u terecht bij the desk.\n\nMet vriendelijke groet",
+        "locale": "nl"
+    },
+    "ontvangstbevestiging nl bare": {
+        "subject": "Ontvangstbevestiging zaak –",
+        "body": "Beste aanvrager,\n\nWij hebben uw aanvraag ontvangen en geregistreerd onder kenmerk –.\nOp deze aanvraag geldt geen wettelijke beslistermijn.\nU volgt deze zaak via het burgerportaal.\n\nMet vriendelijke groet",
+        "locale": "nl"
+    },
+    "ontvangstbevestiging en full": {
+        "subject": "Acknowledgement of receipt for case 2026-0117",
+        "body": "Dear applicant,\n\nWe have received your application about a permit and registered it under reference 2026-0117.\nWe received it on 31 October 2026 and the decision period starts on 2 November 2026.\nYour request arrived when we were closed, so the period starts on the first working day after it.\nWe decide on your application by 1 December 2026 at the latest. If we need more time, we tell you before that date.\nYou can follow this case in the citizen portal.\nQuestions go to the desk.\n\nKind regards",
+        "locale": "en"
+    },
+    "ontvangstbevestiging en bare": {
+        "subject": "Acknowledgement of receipt for case –",
+        "body": "Dear applicant,\n\nWe have received your application and registered it under reference –.\nNo statutory decision period applies to this application.\nYou can follow this case in the citizen portal.\n\nKind regards",
+        "locale": "en"
+    },
+    "extension nl full": {
+        "subject": "Verlenging termijn zaak 2026-0117",
+        "body": "Beste aanvrager,\n\nDe termijn voor zaak 2026-0117 is verlengd. De nieuwe deadline is 15 december 2026.\nDe reden: more advice is needed.\nU vindt de officiele verlengingsbrief in uw burgerportaal.",
+        "locale": "nl"
+    },
+    "extension nl bare": {
+        "subject": "Verlenging termijn zaak –",
+        "body": "Beste aanvrager,\n\nDe termijn voor zaak – is verlengd. De nieuwe deadline is –.\nU vindt de officiele verlengingsbrief in uw burgerportaal.",
+        "locale": "nl"
+    },
+    "extension en full": {
+        "subject": "Verlenging termijn zaak 2026-0117",
+        "body": "Beste aanvrager,\n\nDe termijn voor zaak 2026-0117 is verlengd. De nieuwe deadline is 15 december 2026.\nDe reden: more advice is needed.\nU vindt de officiele verlengingsbrief in uw burgerportaal.",
+        "locale": "en"
+    },
+    "extension en bare": {
+        "subject": "Verlenging termijn zaak –",
+        "body": "Beste aanvrager,\n\nDe termijn voor zaak – is verlengd. De nieuwe deadline is –.\nU vindt de officiele verlengingsbrief in uw burgerportaal.",
+        "locale": "en"
+    },
+    "ingebrekestelling-receipt nl full": {
+        "subject": "Bevestiging ingebrekestelling zaak 2026-0117",
+        "body": "Beste aanvrager,\n\nWij hebben uw ingebrekestelling voor zaak 2026-0117 ontvangen.\nDe wettelijke begunstigingstermijn (AWB 4:17) eindigt op 1 december 2026.\nIndien er voor dat moment een beschikking is afgegeven, vervalt de dwangsom.",
+        "locale": "nl"
+    },
+    "ingebrekestelling-receipt nl bare": {
+        "subject": "Bevestiging ingebrekestelling zaak –",
+        "body": "Beste aanvrager,\n\nWij hebben uw ingebrekestelling voor zaak – ontvangen.\nDe wettelijke begunstigingstermijn (AWB 4:17) eindigt op –.\nIndien er voor dat moment een beschikking is afgegeven, vervalt de dwangsom.",
+        "locale": "nl"
+    },
+    "ingebrekestelling-receipt en full": {
+        "subject": "Bevestiging ingebrekestelling zaak 2026-0117",
+        "body": "Beste aanvrager,\n\nWij hebben uw ingebrekestelling voor zaak 2026-0117 ontvangen.\nDe wettelijke begunstigingstermijn (AWB 4:17) eindigt op 1 december 2026.\nIndien er voor dat moment een beschikking is afgegeven, vervalt de dwangsom.",
+        "locale": "en"
+    },
+    "ingebrekestelling-receipt en bare": {
+        "subject": "Bevestiging ingebrekestelling zaak –",
+        "body": "Beste aanvrager,\n\nWij hebben uw ingebrekestelling voor zaak – ontvangen.\nDe wettelijke begunstigingstermijn (AWB 4:17) eindigt op –.\nIndien er voor dat moment een beschikking is afgegeven, vervalt de dwangsom.",
+        "locale": "en"
+    },
+    "hersteltermijn-request nl full": {
+        "subject": "Wij hebben nog iets nodig voor zaak 2026-0117",
+        "body": "Beste aanvrager,\n\nWij kunnen nog niet beslissen over zaak 2026-0117. Stuur ons:\n- a map\n- a photo\n\nWij ontvangen dit graag voor 20 november 2026.\nDe termijn van uw zaak staat stil tot uw antwoord binnen is (Awb 4:5).",
+        "locale": "nl"
+    },
+    "hersteltermijn-request nl bare": {
+        "subject": "Wij hebben nog iets nodig voor zaak –",
+        "body": "Beste aanvrager,\n\nWij kunnen nog niet beslissen over zaak –. Stuur ons:\n\nWij ontvangen dit graag voor -.\nDe termijn van uw zaak staat stil tot uw antwoord binnen is (Awb 4:5).",
+        "locale": "nl"
+    },
+    "hersteltermijn-request en full": {
+        "subject": "We need something more for case 2026-0117",
+        "body": "Dear applicant,\n\nWe cannot decide on case 2026-0117 yet. Please send us:\n- a map\n- a photo\n\nWe need this by 20 November 2026.\nThe term for your case is paused until your answer arrives (Awb 4:5).",
+        "locale": "en"
+    },
+    "hersteltermijn-request en bare": {
+        "subject": "We need something more for case –",
+        "body": "Dear applicant,\n\nWe cannot decide on case – yet. Please send us:\n\nWe need this by -.\nThe term for your case is paused until your answer arrives (Awb 4:5).",
+        "locale": "en"
+    },
+    "hersteltermijn-reminder nl full": {
+        "subject": "Herinnering over zaak 2026-0117",
+        "body": "Beste aanvrager,\n\nWij wachten nog op wat wij u gevraagd hebben voor zaak 2026-0117.\nplease send it\n\nWij ontvangen dit graag voor 20 november 2026.\nDe termijn van uw zaak staat stil tot uw antwoord binnen is (Awb 4:5).",
+        "locale": "nl"
+    },
+    "hersteltermijn-reminder nl bare": {
+        "subject": "Herinnering over zaak –",
+        "body": "Beste aanvrager,\n\nWij wachten nog op wat wij u gevraagd hebben voor zaak –.\n\nWij ontvangen dit graag voor -.\nDe termijn van uw zaak staat stil tot uw antwoord binnen is (Awb 4:5).",
+        "locale": "nl"
+    },
+    "hersteltermijn-reminder en full": {
+        "subject": "A reminder about case 2026-0117",
+        "body": "Dear applicant,\n\nWe are still waiting for what we asked you for on case 2026-0117.\nplease send it\n\nWe need this by 20 November 2026.\nThe term for your case stays paused until your answer arrives (Awb 4:5).",
+        "locale": "en"
+    },
+    "hersteltermijn-reminder en bare": {
+        "subject": "A reminder about case –",
+        "body": "Dear applicant,\n\nWe are still waiting for what we asked you for on case –.\n\nWe need this by -.\nThe term for your case stays paused until your answer arrives (Awb 4:5).",
+        "locale": "en"
+    },
+    "doorzending nl full": {
+        "subject": "Uw zaak 2026-0117 is doorgestuurd",
+        "body": "Beste aanvrager,\n\nWij hebben uw zaak 2026-0117 doorgestuurd naar the province.\nZij behandelen de zaak verder. U hoeft niets opnieuw op te sturen.\nU volgt de zaak via het burgerportaal.\n\nMet vriendelijke groet",
+        "locale": "nl"
+    },
+    "doorzending nl bare": {
+        "subject": "Uw zaak – is doorgestuurd",
+        "body": "Beste aanvrager,\n\nWij hebben uw zaak – doorgestuurd naar de behandelende afdeling.\nZij behandelen de zaak verder. U hoeft niets opnieuw op te sturen.\nU volgt de zaak via het burgerportaal.\n\nMet vriendelijke groet",
+        "locale": "nl"
+    },
+    "doorzending en full": {
+        "subject": "Your case 2026-0117 has moved",
+        "body": "Dear applicant,\n\nWe passed your case 2026-0117 on to the province.\nThey handle it from here, and you do not need to send anything again.\nYou follow the case in the citizen portal.\n\nKind regards",
+        "locale": "en"
+    },
+    "doorzending en bare": {
+        "subject": "Your case – has moved",
+        "body": "Dear applicant,\n\nWe passed your case – on to de behandelende afdeling.\nThey handle it from here, and you do not need to send anything again.\nYou follow the case in the citizen portal.\n\nKind regards",
+        "locale": "en"
+    },
+    "niet-ontvankelijk nl full": {
+        "subject": "Uw aanvraag 2026-0117 is niet-ontvankelijk",
+        "body": "Beste aanvrager,\n\nWij nemen uw aanvraag 2026-0117 niet in behandeling.\nmore advice is needed\nU kunt bezwaar maken tegen dit besluit. In de brief staat waar en binnen welke termijn.\n\nMet vriendelijke groet",
+        "locale": "nl"
+    },
+    "niet-ontvankelijk nl bare": {
+        "subject": "Uw aanvraag – is niet-ontvankelijk",
+        "body": "Beste aanvrager,\n\nWij nemen uw aanvraag – niet in behandeling.\nUw aanvraag voldoet niet aan de eisen om in behandeling te worden genomen.\nU kunt bezwaar maken tegen dit besluit. In de brief staat waar en binnen welke termijn.\n\nMet vriendelijke groet",
+        "locale": "nl"
+    },
+    "niet-ontvankelijk en full": {
+        "subject": "We are not considering your application 2026-0117",
+        "body": "Dear applicant,\n\nWe are not taking your application 2026-0117 into consideration.\nmore advice is needed\nYou can object to this decision. The letter says where and within how long.\n\nKind regards",
+        "locale": "en"
+    },
+    "niet-ontvankelijk en bare": {
+        "subject": "We are not considering your application –",
+        "body": "Dear applicant,\n\nWe are not taking your application – into consideration.\nYour application does not meet the conditions for us to consider it.\nYou can object to this decision. The letter says where and within how long.\n\nKind regards",
+        "locale": "en"
+    },
+    "dwangsom-payment nl full": {
+        "subject": "Uitbetaling dwangsom zaak 2026-0117",
+        "body": "Beste aanvrager,\n\nDe dwangsom van EUR 1.234,56 voor zaak 2026-0117 is overgemaakt.\nOnder betalingsreferentie REF-9.",
+        "locale": "nl"
+    },
+    "dwangsom-payment nl bare": {
+        "subject": "Uitbetaling dwangsom zaak –",
+        "body": "Beste aanvrager,\n\nDe dwangsom van EUR 0,00 voor zaak – is overgemaakt.\nOnder betalingsreferentie –.",
+        "locale": "nl"
+    },
+    "dwangsom-payment en full": {
+        "subject": "Uitbetaling dwangsom zaak 2026-0117",
+        "body": "Beste aanvrager,\n\nDe dwangsom van EUR 1.234,56 voor zaak 2026-0117 is overgemaakt.\nOnder betalingsreferentie REF-9.",
+        "locale": "en"
+    },
+    "dwangsom-payment en bare": {
+        "subject": "Uitbetaling dwangsom zaak –",
+        "body": "Beste aanvrager,\n\nDe dwangsom van EUR 0,00 voor zaak – is overgemaakt.\nOnder betalingsreferentie –.",
+        "locale": "en"
+    },
+    "unknown nl full": {
+        "subject": "",
+        "body": "",
+        "locale": "nl"
+    },
+    "unknown nl bare": {
+        "subject": "",
+        "body": "",
+        "locale": "nl"
+    },
+    "unknown en full": {
+        "subject": "",
+        "body": "",
+        "locale": "en"
+    },
+    "unknown en bare": {
+        "subject": "",
+        "body": "",
+        "locale": "en"
+    },
+    "no locale, term link only": {
+        "subject": "Ontvangstbevestiging zaak term-link",
+        "body": "Beste aanvrager,\n\nWij hebben uw aanvraag ontvangen en geregistreerd onder kenmerk term-link.\nWij nemen uiterlijk op 1 december 2026 een besluit op uw aanvraag. Hebben wij meer tijd nodig, dan laten wij u dat voor die datum weten.\nU volgt deze zaak via het burgerportaal.\n\nMet vriendelijke groet",
+        "locale": "nl"
+    },
+    "blank type": {
+        "subject": "",
+        "body": "",
+        "locale": "nl"
+    },
+    "wrong-case type": {
+        "subject": "",
+        "body": "",
+        "locale": "nl"
+    },
+    "withheld": {
+        "subject": "A message about your application is waiting for you",
+        "body": "Dear applicant,\n\nWe have received your application and a message about it is waiting for you.\nSign in to the citizen portal to read it.\n\nKind regards",
+        "locale": "en"
+    },
+    "received in hours": {
+        "subject": "Ontvangstbevestiging zaak term-link",
+        "body": "Beste aanvrager,\n\nWij hebben uw aanvraag ontvangen en geregistreerd onder kenmerk term-link.\nWij hebben uw aanvraag ontvangen op 3 november 2026 en de beslistermijn start op 3 november 2026.\nWij nemen uiterlijk op 1 december 2026 een besluit op uw aanvraag. Hebben wij meer tijd nodig, dan laten wij u dat voor die datum weten.\nU volgt deze zaak via het burgerportaal.\n\nMet vriendelijke groet",
+        "locale": "nl"
+    },
+    "received in hours en": {
+        "subject": "Acknowledgement of receipt for case term-link",
+        "body": "Dear applicant,\n\nWe have received your application and registered it under reference term-link.\nWe received it on 3 November 2026 and the decision period starts on 3 November 2026.\nWe decide on your application by 1 December 2026 at the latest. If we need more time, we tell you before that date.\nYou can follow this case in the citizen portal.\n\nKind regards",
+        "locale": "en"
+    }
+}
