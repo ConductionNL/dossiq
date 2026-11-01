@@ -42,6 +42,10 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
  * @uses \OCA\Dossiq\Service\Starter\ShippedSets
+ * @uses \OCA\Dossiq\Service\Starter\ShippedLedgerTargets
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
+ * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class PackageRowRefreshAsSystemTest extends TestCase {
 

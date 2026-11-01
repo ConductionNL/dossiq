@@ -23,6 +23,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Integration\CaseLeafProvider
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class CaseLeafProviderTest extends TestCase {
 

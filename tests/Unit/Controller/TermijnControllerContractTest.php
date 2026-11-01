@@ -75,6 +75,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Tests\Support\PhpInputStream
+ * @uses \OCA\Dossiq\Service\Term\ThresholdShares
  */
 class TermijnControllerContractTest extends TestCase {
 	use MakesCaseDateNormaliser;

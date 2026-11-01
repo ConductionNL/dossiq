@@ -32,6 +32,7 @@ use Psr\Log\LoggerInterface;
  * The value migration only offers columns that can hold a text value.
  *
  * @covers \OCA\Dossiq\Repair\DbValueMigrationPort
+ * @uses \OCA\Dossiq\Repair\RenameDutchValueDecisions
  */
 class DbValueMigrationPortTest extends TestCase {
 

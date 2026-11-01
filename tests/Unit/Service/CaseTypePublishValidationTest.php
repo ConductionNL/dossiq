@@ -70,6 +70,7 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeReachability
  * @uses   \OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
  */
 class CaseTypePublishValidationTest extends TestCase {
 

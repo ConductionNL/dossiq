@@ -64,6 +64,7 @@ final class EclFakeNoteService {
  * @covers \OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService
  *
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
  */
 class ExternalConsultationLinkServiceTest extends TestCase {
 	/**

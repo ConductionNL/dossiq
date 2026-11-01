@@ -45,6 +45,9 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\AppInfo\Registrar\CaseLinkListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\OnboardingListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseActivityListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseRequesterListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\ForfeitInvoiceListenerRegistrar
  */
 class ObjectListenerRegistrarTest extends TestCase {
 
