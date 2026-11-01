@@ -32,6 +32,8 @@ use Psr\Log\LoggerInterface;
  * Pins what activating a template saves, in what order, and what it answers.
  *
  * @covers \OCA\Dossiq\Service\TemplateLibraryService
+ * @covers \OCA\Dossiq\Service\TemplateLibrary\TemplateActivation
+ * @covers \OCA\Dossiq\Service\TemplateLibrary\TemplateRows
  */
 class TemplateActivationGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
