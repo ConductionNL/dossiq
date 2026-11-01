@@ -1,0 +1,12 @@
+PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.6
+Configuration: /home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/dossiq/phpunit.xml
+
+...............................................................  63 / 145 ( 43%)
+............................................................... 126 / 145 ( 86%)
+...................                                             145 / 145 (100%)
+
+Time: 00:16.008, Memory: 162.50 MB
+
+OK (145 tests, 1894 assertions)

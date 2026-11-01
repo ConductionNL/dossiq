@@ -1,0 +1,25 @@
+PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.6
+Configuration: /home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/dossiq/phpunit.xml
+
+..............................................FF...............  63 / 167 ( 37%)
+............................................................... 126 / 167 ( 75%)
+.........................................                       167 / 167 (100%)
+
+Time: 00:06.761, Memory: 166.50 MB
+
+There were 2 failures:
+
+1) OCA\Dossiq\Tests\Unit\Settings\ZuiddrechtDashboardDataTest::testPieterHasACaseTwoDaysLate
+Failed asserting that -3 is identical to -2.
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/dossiq/tests/Unit/Settings/ZuiddrechtDashboardDataTest.php:118
+
+2) OCA\Dossiq\Tests\Unit\Settings\ZuiddrechtDashboardDataTest::testPieterHasACaseWhoseTermEndsToday
+Failed asserting that 8 is identical to 0.
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/dossiq/tests/Unit/Settings/ZuiddrechtDashboardDataTest.php:101
+
+FAILURES!
+Tests: 167, Assertions: 1937, Failures: 2.
