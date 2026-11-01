@@ -171,8 +171,7 @@ class DwellTimeAnalyzer {
 		DateTimeImmutable $periodFrom,
 		DateTimeImmutable $periodTo,
 	): array {
-		$windowStart = $periodFrom->setTime(0, 0, 0);
-		$windowEnd = $periodTo->setTime(23, 59, 59);
+		$window = new DwellWindow(now: $now, start: $periodFrom->setTime(0, 0, 0), end: $periodTo->setTime(23, 59, 59));
 
 		$intervals = [];
 		foreach ($recordsByCase as $caseId => $records) {
@@ -180,102 +179,129 @@ class DwellTimeAnalyzer {
 				continue;
 			}
 
-			$case = ($casesById[$caseId] ?? []);
-			$endDate = ($case['endDate'] ?? null);
-			$closedAt = null;
-			if (is_string($endDate) === true && $endDate !== '') {
-				$closedAt = ($this->dates->tryParse($endDate) ?? $now);
-			}
-
-			$intervals = array_merge(
-				$intervals,
-				$this->dwellIntervalsForCase(
-					records: $records,
-					caseId: (string)$caseId,
-					closedAt: $closedAt,
-					now: $now,
-					windowStart: $windowStart,
-					windowEnd: $windowEnd,
-				)
+			$dwell = new CaseDwell(
+				caseId: (string)$caseId,
+				closedAt: $this->closedAtOf(row: ($casesById[$caseId] ?? []), now: $now),
+				window: $window
 			);
-		}//end foreach
+			$intervals = array_merge($intervals, $this->dwellIntervalsForCase(dwell: $dwell, records: $records));
+		}
 
 		return $intervals;
 	}//end computeDwellIntervals()
 
 	/**
+	 * A case's close moment: its end date, "now" when that does not parse, or null while open.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 * @param DateTimeImmutable    $now "Now".
+	 *
+	 * @return DateTimeImmutable|null The close moment.
+	 */
+	private function closedAtOf(array $row, DateTimeImmutable $now): ?DateTimeImmutable {
+		$endDate = ($row['endDate'] ?? null);
+		if (is_string($endDate) === false || $endDate === '') {
+			return null;
+		}
+
+		return ($this->dates->tryParse($endDate) ?? $now);
+	}//end closedAtOf()
+
+	/**
 	 * Build the dwell-time intervals for a single case's chronologically sorted statusRecords.
 	 *
-	 * Only visits ENTERED within `[windowStart, windowEnd]` are returned; the exit boundary of the
-	 * final visit is the case's close moment when it has one, and `$now` otherwise.
+	 * Only visits ENTERED within the window are returned; the exit boundary of the
+	 * final visit is the case's close moment when it has one, and "now" otherwise.
 	 *
+	 * @param CaseDwell                        $dwell   The case, its close moment and the window.
 	 * @param array<int, array<string, mixed>> $records Chronologically sorted statusRecords for one case.
-	 * @param string $caseId The case id.
-	 * @param DateTimeImmutable|null $closedAt The case's close moment, or null when still open.
-	 * @param DateTimeImmutable $now "Now", for the still-open current status.
-	 * @param DateTimeImmutable $windowStart Inclusive window start.
-	 * @param DateTimeImmutable $windowEnd Inclusive window end.
 	 *
 	 * @return array<int, array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}>
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
-	private function dwellIntervalsForCase(
-		array $records,
-		string $caseId,
-		?DateTimeImmutable $closedAt,
-		DateTimeImmutable $now,
-		DateTimeImmutable $windowStart,
-		DateTimeImmutable $windowEnd,
-	): array {
+	private function dwellIntervalsForCase(CaseDwell $dwell, array $records): array {
 		$count = count($records);
 		$intervals = [];
-
 		for ($i = 0; $i < $count; $i++) {
-			$statusId = (string)($records[$i]['statusType'] ?? '');
-			if ($statusId === '') {
-				continue;
-			}
-
-			$enteredAt = $this->extractTimestamp(record: $records[$i]);
-			if ($enteredAt === null) {
-				continue;
-			}
-
-			if ($enteredAt < $windowStart || $enteredAt > $windowEnd) {
-				continue;
-			}
-
-			$exitedAt = ($closedAt ?? $now);
+			$next = null;
 			if (($i + 1) < $count) {
-				$exitedAt = $this->extractTimestamp(record: $records[$i + 1]);
+				$next = $records[$i + 1];
 			}
 
-			if ($exitedAt === null) {
-				$exitedAt = $enteredAt;
+			$interval = $this->visitInterval(dwell: $dwell, visit: new StatusVisit(record: $records[$i], next: $next));
+			if ($interval !== null) {
+				$intervals[] = $interval;
 			}
-
-			$measured = $this->measure(enteredAt: $enteredAt, exitedAt: $exitedAt);
-
-			$intervals[] = [
-				'caseId' => $caseId,
-				'statusId' => $statusId,
-				// `actor` is the statusRecord schema's own field, and the
-				// only one: a second spelling guessed at here would be
-				// dropped by OpenRegister in silence and read as nobody.
-				// Empty rather than absent when the record names no actor,
-				// because a by-handler table that quietly omitted
-				// unattributed time would show less work than was done.
-				'actor' => trim((string)($records[$i]['actor'] ?? '')),
-				'hours' => $measured['wallHours'],
-				'workingHours' => $measured['workingHours'],
-				// The visit a still-open case is in: it ends at "now" and grows every day.
-				'open' => (($i + 1) >= $count && $closedAt === null),
-			];
-		}//end for
+		}
 
 		return $intervals;
 	}//end dwellIntervalsForCase()
+
+	/**
+	 * The interval of one status visit, or null when it names no status or was not entered in the window.
+	 *
+	 * @param CaseDwell   $dwell The case, its close moment and the window.
+	 * @param StatusVisit $visit The visit.
+	 *
+	 * @return array{caseId: string, statusId: string, actor: string, hours: float, workingHours: float, open: bool}|null
+	 */
+	private function visitInterval(CaseDwell $dwell, StatusVisit $visit): ?array {
+		$statusId = $visit->statusId();
+		if ($statusId === '') {
+			return null;
+		}
+
+		$enteredAt = $this->enteredInWindow(dwell: $dwell, record: $visit->record);
+		if ($enteredAt === null) {
+			return null;
+		}
+
+		$measured = $this->measure(enteredAt: $enteredAt, exitedAt: ($this->exitOf(dwell: $dwell, visit: $visit) ?? $enteredAt));
+
+		return [
+			'caseId' => $dwell->caseId,
+			'statusId' => $statusId,
+			'actor' => $visit->actor(),
+			'hours' => $measured['wallHours'],
+			'workingHours' => $measured['workingHours'],
+			// The visit a still-open case is in: it ends at "now" and grows every day.
+			'open' => ($visit->next === null && $dwell->closedAt === null),
+		];
+	}//end visitInterval()
+
+	/**
+	 * When a status record entered its status, or null when that is unknown or outside the window.
+	 *
+	 * @param CaseDwell            $dwell  The case and the window.
+	 * @param array<string, mixed> $record The statusRecord.
+	 *
+	 * @return DateTimeImmutable|null The moment.
+	 */
+	private function enteredInWindow(CaseDwell $dwell, array $record): ?DateTimeImmutable {
+		$enteredAt = $this->extractTimestamp(record: $record);
+		if ($enteredAt === null || $enteredAt < $dwell->window->start || $enteredAt > $dwell->window->end) {
+			return null;
+		}
+
+		return $enteredAt;
+	}//end enteredInWindow()
+
+	/**
+	 * When a visit ended: the next record's moment, or for the last visit the close moment or "now".
+	 *
+	 * @param CaseDwell   $dwell The case's close moment and "now".
+	 * @param StatusVisit $visit The visit.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null when the next record's moment is unknown.
+	 */
+	private function exitOf(CaseDwell $dwell, StatusVisit $visit): ?DateTimeImmutable {
+		if ($visit->next === null) {
+			return ($dwell->closedAt ?? $dwell->window->now);
+		}
+
+		return $this->extractTimestamp(record: $visit->next);
+	}//end exitOf()
 
 	/**
 	 * One interval's two numbers.
