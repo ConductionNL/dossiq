@@ -4,8 +4,8 @@
  *
  * DqZaakBetrokkenen: "Partijen" first, the people on the case grouped by role
  * with Contact koppelen and Nieuw contact, then "Rollen" from OpenRegister's
- * party model, then the seats. Each card carries the board's line under its
- * title.
+ * party model, then the seats, then Toegang. Each card carries the board's
+ * line under its title.
  */
 
 import fs from 'fs'
@@ -42,8 +42,8 @@ function findTab (node) {
 }
 
 describe('the People tab', () => {
-	it('opens with Partijen, then Rollen, then the seats', () => {
-		expect(findTab(simple).widgetIds).toEqual(['case-parties-card', 'case-party-roles-card', 'case-seats-card'])
+	it('opens with Partijen, then Rollen, then the seats, then Toegang', () => {
+		expect(findTab(simple).widgetIds).toEqual(['case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-access-card'])
 	})
 
 	it('lists the people by role in the Partijen card, as the contacts tab', () => {
