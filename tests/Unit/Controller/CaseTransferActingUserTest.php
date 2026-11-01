@@ -46,7 +46,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\CaseSharingController
  * @covers \OCA\Dossiq\Controller\CaseFederationController
  * @covers \OCA\Dossiq\Service\CaseTransferService
- * @uses \OCA\Dossiq\Service\CaseTransfer\TransferStore
+ * @covers \OCA\Dossiq\Service\CaseTransfer\TransferStore
  */
 class CaseTransferActingUserTest extends TestCase {
 	use MakesRecordedCaseTransfers;

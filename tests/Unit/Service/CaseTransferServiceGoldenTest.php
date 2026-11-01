@@ -40,7 +40,7 @@ use Throwable;
  * @covers \OCA\Dossiq\Service\CaseTransferService
  *
  * @uses \OCA\Dossiq\Exception\RefusedException
- * @uses \OCA\Dossiq\Service\CaseTransfer\TransferStore
+ * @covers \OCA\Dossiq\Service\CaseTransfer\TransferStore
  */
 class CaseTransferServiceGoldenTest extends TestCase {
 	use MakesRecordedCaseTransfers;
