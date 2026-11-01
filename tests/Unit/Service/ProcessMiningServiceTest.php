@@ -43,6 +43,9 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\ProcessMiningService
  *
  * @uses \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
+ * @uses \OCA\Dossiq\Service\ProcessMining\DwellWindow
+ * @uses \OCA\Dossiq\Service\ProcessMining\CaseDwell
+ * @uses \OCA\Dossiq\Service\ProcessMining\StatusVisit
  * @uses \OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader
  * @uses \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator
  * @uses \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder
