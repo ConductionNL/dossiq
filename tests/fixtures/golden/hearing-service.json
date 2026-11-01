@@ -1,0 +1,2200 @@
+{
+    "schedule / happy": {
+        "result": {
+            "location": null,
+            "videoCallUrl": null,
+            "members": [],
+            "case": "case-1",
+            "scheduledDate": "<d+20>T10:00:00+00:00",
+            "chairperson": "chair-1",
+            "invitees": [
+                {
+                    "role": "bezwaarmaker",
+                    "channel": "email",
+                    "invitedAt": "<now+0h>"
+                }
+            ],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+13>",
+            "status": "planned",
+            "hearingWaived": false,
+            "recordingConsent": "not_requested",
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "case-1",
+                            "scheduledDate": "<d+20>T10:00:00+00:00",
+                            "chairperson": "chair-1",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+13>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-scheduled",
+                        "payload": {
+                            "case": "case-1",
+                            "scheduledDate": "<d+20>T10:00:00+00:00",
+                            "inspectionDeadline": "<d+13>"
+                        },
+                        "tag": "awb-art-7:2"
+                    }
+                }
+            }
+        ]
+    },
+    "schedule / extras": {
+        "result": {
+            "location": "Room 1",
+            "videoCallUrl": null,
+            "members": [
+                "m-1"
+            ],
+            "recordingConsent": "granted",
+            "inspectionAvailableFrom": "<d+5>",
+            "case": "case-1",
+            "scheduledDate": "<d+20>T10:00:00+00:00",
+            "chairperson": "chair-1",
+            "invitees": [
+                {
+                    "role": "bezwaarmaker",
+                    "channel": "email",
+                    "invitedAt": "<now+0h>"
+                }
+            ],
+            "inspectionDeadline": "<d+13>",
+            "status": "planned",
+            "hearingWaived": false,
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": "Room 1",
+                            "videoCallUrl": null,
+                            "members": [
+                                "m-1"
+                            ],
+                            "recordingConsent": "granted",
+                            "inspectionAvailableFrom": "<d+5>",
+                            "case": "case-1",
+                            "scheduledDate": "<d+20>T10:00:00+00:00",
+                            "chairperson": "chair-1",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionDeadline": "<d+13>",
+                            "status": "planned",
+                            "hearingWaived": false
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-scheduled",
+                        "payload": {
+                            "case": "case-1",
+                            "scheduledDate": "<d+20>T10:00:00+00:00",
+                            "inspectionDeadline": "<d+13>"
+                        },
+                        "tag": "awb-art-7:2"
+                    }
+                }
+            }
+        ]
+    },
+    "schedule / no object service": {
+        "exception": "RuntimeException: OpenRegister is not available",
+        "log": [
+            "settings getObjectService"
+        ]
+    },
+    "schedule / no register": {
+        "exception": "RuntimeException: Hearing schema is not configured",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "schedule / no schema": {
+        "exception": "RuntimeException: Hearing schema is not configured",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "schedule / no case": {
+        "exception": "RuntimeException: case, chairperson and at least one invitee are required",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "schedule / no chair": {
+        "exception": "RuntimeException: case, chairperson and at least one invitee are required",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "schedule / no invitees": {
+        "exception": "RuntimeException: case, chairperson and at least one invitee are required",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "schedule / under the inspection floor": {
+        "exception": "RuntimeException: Inzagetermijn (art. 7:4) wordt geschonden — minimaal 7 dagen voor de hoorzitting",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "schedule / bad date": {
+        "exception": "RuntimeException: Invalid scheduledDate: not a date",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "schedule / save throws": {
+        "exception": "RuntimeException: Could not schedule hearing",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "case-1",
+                            "scheduledDate": "<d+20>T10:00:00+00:00",
+                            "chairperson": "chair-1",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+13>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            "log error Dossiq hearing: failed to schedule hearing: save failed"
+        ]
+    },
+    "schedule / save answers null": {
+        "result": {
+            "location": null,
+            "videoCallUrl": null,
+            "members": [],
+            "case": "case-1",
+            "scheduledDate": "<d+20>T10:00:00+00:00",
+            "chairperson": "chair-1",
+            "invitees": [
+                {
+                    "role": "bezwaarmaker",
+                    "channel": "email",
+                    "invitedAt": "<now+0h>"
+                }
+            ],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+13>",
+            "status": "planned",
+            "hearingWaived": false,
+            "recordingConsent": "not_requested"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "case-1",
+                            "scheduledDate": "<d+20>T10:00:00+00:00",
+                            "chairperson": "chair-1",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+13>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "",
+                        "event": "hearing-scheduled",
+                        "payload": {
+                            "case": "case-1",
+                            "scheduledDate": "<d+20>T10:00:00+00:00",
+                            "inspectionDeadline": "<d+13>"
+                        },
+                        "tag": "awb-art-7:2"
+                    }
+                }
+            }
+        ]
+    },
+    "schedule / entry fails": {
+        "exception": "RuntimeException: entry not written: hearing-scheduled",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "case-1",
+                            "scheduledDate": "<d+20>T10:00:00+00:00",
+                            "chairperson": "chair-1",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+13>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-scheduled",
+                        "payload": {
+                            "case": "case-1",
+                            "scheduledDate": "<d+20>T10:00:00+00:00",
+                            "inspectionDeadline": "<d+13>"
+                        },
+                        "tag": "awb-art-7:2"
+                    }
+                }
+            }
+        ]
+    },
+    "waive / happy": {
+        "result": {
+            "case": "case-1",
+            "scheduledDate": "<now+0h>",
+            "chairperson": "system",
+            "invitees": [],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+0>",
+            "status": "afgezien",
+            "hearingWaived": true,
+            "waiverReason": "no need",
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "case": "case-1",
+                            "scheduledDate": "<now+0h>",
+                            "chairperson": "system",
+                            "invitees": [],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+0>",
+                            "status": "afgezien",
+                            "hearingWaived": true,
+                            "waiverReason": "no need"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-waived",
+                        "payload": {
+                            "case": "case-1",
+                            "reason": "no need"
+                        },
+                        "tag": "awb-art-7:3"
+                    }
+                }
+            }
+        ]
+    },
+    "waive / chairperson": {
+        "result": {
+            "chairperson": "c-1",
+            "chairpersonId": "c-2",
+            "invitees": [
+                {
+                    "role": "bezwaarmaker",
+                    "channel": "email"
+                }
+            ],
+            "note": "n",
+            "case": "case-1",
+            "scheduledDate": "<now+0h>",
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+0>",
+            "status": "afgezien",
+            "hearingWaived": true,
+            "waiverReason": "r",
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "chairperson": "c-1",
+                            "chairpersonId": "c-2",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email"
+                                }
+                            ],
+                            "note": "n",
+                            "case": "case-1",
+                            "scheduledDate": "<now+0h>",
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+0>",
+                            "status": "afgezien",
+                            "hearingWaived": true,
+                            "waiverReason": "r"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-waived",
+                        "payload": {
+                            "case": "case-1",
+                            "reason": "r"
+                        },
+                        "tag": "awb-art-7:3"
+                    }
+                }
+            }
+        ]
+    },
+    "waive / chairperson id": {
+        "result": {
+            "chairpersonId": "c-2",
+            "status": "afgezien",
+            "case": "case-1",
+            "scheduledDate": "<now+0h>",
+            "chairperson": "c-2",
+            "invitees": [],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+0>",
+            "hearingWaived": true,
+            "waiverReason": "r",
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "chairpersonId": "c-2",
+                            "status": "afgezien",
+                            "case": "case-1",
+                            "scheduledDate": "<now+0h>",
+                            "chairperson": "c-2",
+                            "invitees": [],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+0>",
+                            "hearingWaived": true,
+                            "waiverReason": "r"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-waived",
+                        "payload": {
+                            "case": "case-1",
+                            "reason": "r"
+                        },
+                        "tag": "awb-art-7:3"
+                    }
+                }
+            }
+        ]
+    },
+    "waive / blank reason": {
+        "exception": "RuntimeException: Waiver reason is required (Awb art. 7:3)",
+        "log": []
+    },
+    "waive / no object service": {
+        "exception": "RuntimeException: OpenRegister is not available",
+        "log": [
+            "settings getObjectService"
+        ]
+    },
+    "waive / no register": {
+        "exception": "RuntimeException: Hearing schema is not configured",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "waive / no schema": {
+        "exception": "RuntimeException: Hearing schema is not configured",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "waive / save throws": {
+        "exception": "RuntimeException: Could not record waiver",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "case": "case-1",
+                            "scheduledDate": "<now+0h>",
+                            "chairperson": "system",
+                            "invitees": [],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+0>",
+                            "status": "afgezien",
+                            "hearingWaived": true,
+                            "waiverReason": "r"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            "log error Dossiq hearing: failed to record waiver: save failed"
+        ]
+    },
+    "waive / save answers null": {
+        "result": {
+            "case": "case-1",
+            "scheduledDate": "<now+0h>",
+            "chairperson": "system",
+            "invitees": [],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+0>",
+            "status": "afgezien",
+            "hearingWaived": true,
+            "waiverReason": "r"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "case": "case-1",
+                            "scheduledDate": "<now+0h>",
+                            "chairperson": "system",
+                            "invitees": [],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+0>",
+                            "status": "afgezien",
+                            "hearingWaived": true,
+                            "waiverReason": "r"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "",
+                        "event": "hearing-waived",
+                        "payload": {
+                            "case": "case-1",
+                            "reason": "r"
+                        },
+                        "tag": "awb-art-7:3"
+                    }
+                }
+            }
+        ]
+    },
+    "waive / entry fails": {
+        "exception": "RuntimeException: entry not written: hearing-waived",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "case": "case-1",
+                            "scheduledDate": "<now+0h>",
+                            "chairperson": "system",
+                            "invitees": [],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+0>",
+                            "status": "afgezien",
+                            "hearingWaived": true,
+                            "waiverReason": "r"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-waived",
+                        "payload": {
+                            "case": "case-1",
+                            "reason": "r"
+                        },
+                        "tag": "awb-art-7:3"
+                    }
+                }
+            }
+        ]
+    },
+    "case for session": {
+        "result": "case-9",
+        "log": [
+            "owning resolve {\"objectId\":\"session-1\",\"schemaKey\":\"hearing_session_schema\",\"caseField\":\"case\"}"
+        ]
+    },
+    "attendance / no entries": {
+        "exception": "RuntimeException: At least one attendance entry is required",
+        "log": []
+    },
+    "attendance / no object service": {
+        "exception": "RuntimeException: OpenRegister is not available",
+        "log": [
+            "settings getObjectService"
+        ]
+    },
+    "attendance / not found": {
+        "exception": "RuntimeException: Hearing session not found",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-404",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "attendance / within the window": {
+        "result": {
+            "patched": "session-1",
+            "attendance": [
+                {
+                    "invitee": "inv-1",
+                    "present": true
+                },
+                {
+                    "invitee": "inv-2"
+                }
+            ],
+            "attendanceFrozenAt": "<d+20>T11:00:00+00:00"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "attendance": [
+                                {
+                                    "invitee": "inv-1",
+                                    "present": true
+                                },
+                                {
+                                    "invitee": "inv-2"
+                                }
+                            ],
+                            "attendanceFrozenAt": "<d+20>T11:00:00+00:00"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "attendance / no scheduled date": {
+        "result": {
+            "patched": "session-1",
+            "attendance": [
+                "x",
+                {
+                    "invitee": "inv-1"
+                }
+            ],
+            "attendanceFrozenAt": "<now+1h>"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "attendance": [
+                                "x",
+                                {
+                                    "invitee": "inv-1"
+                                }
+                            ],
+                            "attendanceFrozenAt": "<now+1h>"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "attendance / late with reason": {
+        "result": {
+            "patched": "session-1",
+            "attendance": [
+                {
+                    "invitee": "old",
+                    "present": true
+                },
+                {
+                    "invitee": "inv-1",
+                    "present": false,
+                    "correctionReason": "came late"
+                }
+            ],
+            "attendanceFrozenAt": "<d-2>T11:00:00+00:00"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "record": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "attendance-late-correction",
+                        "payload": {
+                            "invitee": "inv-1",
+                            "present": false,
+                            "correctionReason": "came late"
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "attendance": [
+                                {
+                                    "invitee": "old",
+                                    "present": true
+                                },
+                                {
+                                    "invitee": "inv-1",
+                                    "present": false,
+                                    "correctionReason": "came late"
+                                }
+                            ],
+                            "attendanceFrozenAt": "<d-2>T11:00:00+00:00"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "attendance / late without reason": {
+        "exception": "RuntimeException: Aanwezigheidscorrectie vereist toelichting in audit trail",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "attendance / patch throws": {
+        "exception": "RuntimeException: Could not record attendance",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "record": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "attendance-late-correction",
+                        "payload": {
+                            "invitee": "inv-1",
+                            "present": false,
+                            "correctionReason": "came late"
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "attendance": [
+                                {
+                                    "invitee": "old",
+                                    "present": true
+                                },
+                                {
+                                    "invitee": "inv-1",
+                                    "present": false,
+                                    "correctionReason": "came late"
+                                }
+                            ],
+                            "attendanceFrozenAt": "<d-2>T11:00:00+00:00"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordRefusal": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "attendance-late-correction-not-applied",
+                        "payload": {
+                            "invitee": "inv-1",
+                            "present": false,
+                            "correctionReason": "came late",
+                            "error": "patch failed"
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            "log error Dossiq hearing: failed to record attendance: patch failed"
+        ]
+    },
+    "attendance / patch throws in the window": {
+        "exception": "RuntimeException: Could not record attendance",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "attendance": [
+                                {
+                                    "invitee": "inv-1",
+                                    "present": false,
+                                    "correctionReason": "came late"
+                                }
+                            ],
+                            "attendanceFrozenAt": "<d+20>T11:00:00+00:00"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            "log error Dossiq hearing: failed to record attendance: patch failed"
+        ]
+    },
+    "attendance / patch answers null": {
+        "result": {
+            "scheduledDate": "<d-2>T10:00:00+00:00",
+            "attendance": [
+                {
+                    "invitee": "old",
+                    "present": true
+                },
+                {
+                    "invitee": "inv-1",
+                    "present": false,
+                    "correctionReason": "came late"
+                }
+            ],
+            "attendanceFrozenAt": "<d-2>T11:00:00+00:00"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "record": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "attendance-late-correction",
+                        "payload": {
+                            "invitee": "inv-1",
+                            "present": false,
+                            "correctionReason": "came late"
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "attendance": [
+                                {
+                                    "invitee": "old",
+                                    "present": true
+                                },
+                                {
+                                    "invitee": "inv-1",
+                                    "present": false,
+                                    "correctionReason": "came late"
+                                }
+                            ],
+                            "attendanceFrozenAt": "<d-2>T11:00:00+00:00"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "attendance / entry fails": {
+        "exception": "RuntimeException: entry not written: attendance-late-correction",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "record": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "attendance-late-correction",
+                        "payload": {
+                            "invitee": "inv-1",
+                            "present": false,
+                            "correctionReason": "came late"
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            }
+        ]
+    },
+    "minutes / summary": {
+        "result": {
+            "patched": "session-1",
+            "minutesSummary": "said things",
+            "minutesDocument": null,
+            "status": "executed"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordThenApply": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "verslag-recorded",
+                        "payload": {
+                            "hasSummary": true,
+                            "hasDocument": false
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "minutesSummary": "said things",
+                            "minutesDocument": null,
+                            "status": "executed"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "minutes / stored document": {
+        "result": {
+            "patched": "session-1",
+            "minutesSummary": null,
+            "minutesDocument": "doc-1",
+            "status": "executed"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordThenApply": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "verslag-recorded",
+                        "payload": {
+                            "hasSummary": false,
+                            "hasDocument": true
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "minutesSummary": null,
+                            "minutesDocument": "doc-1",
+                            "status": "executed"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "minutes / blank": {
+        "exception": "RuntimeException: Verslag (art. 7:7) ontbreekt — vul minutesSummary of upload minutesDocument",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "minutes / audio with consent": {
+        "result": {
+            "patched": "session-1",
+            "minutesSummary": "s",
+            "minutesDocument": null,
+            "status": "executed",
+            "audioRecording": "a.mp3",
+            "recordingConsent": "granted"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordThenApply": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "verslag-recorded",
+                        "payload": {
+                            "hasSummary": true,
+                            "hasDocument": false
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "minutesSummary": "s",
+                            "minutesDocument": null,
+                            "status": "executed",
+                            "audioRecording": "a.mp3",
+                            "recordingConsent": "granted"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "minutes / audio without consent": {
+        "exception": "RuntimeException: Bezwaarmaker heeft geen toestemming gegeven voor audio-opname",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordRefusal": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "audio-upload-denied",
+                        "payload": {
+                            "consent": "not_requested"
+                        },
+                        "tag": "avg-art-6"
+                    }
+                }
+            }
+        ]
+    },
+    "minutes / no object service": {
+        "exception": "RuntimeException: OpenRegister is not available",
+        "log": [
+            "settings getObjectService"
+        ]
+    },
+    "minutes / not found": {
+        "exception": "RuntimeException: Hearing session not found",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-404",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "minutes / patch throws": {
+        "exception": "RuntimeException: Could not add minutes",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordThenApply": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "verslag-recorded",
+                        "payload": {
+                            "hasSummary": true,
+                            "hasDocument": false
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "minutesSummary": "s",
+                            "minutesDocument": null,
+                            "status": "executed"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            "log error Dossiq hearing: failed to add minutes: patch failed"
+        ]
+    },
+    "minutes / patch answers null": {
+        "result": {
+            "scheduledDate": "<d-2>T10:00:00+00:00",
+            "attendance": [
+                {
+                    "invitee": "old",
+                    "present": true
+                }
+            ],
+            "minutesSummary": "s",
+            "minutesDocument": null,
+            "status": "executed"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordThenApply": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "verslag-recorded",
+                        "payload": {
+                            "hasSummary": true,
+                            "hasDocument": false
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "session-1",
+                        "data": {
+                            "minutesSummary": "s",
+                            "minutesDocument": null,
+                            "status": "executed"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            }
+        ]
+    },
+    "minutes / entry fails": {
+        "exception": "RuntimeException: Could not add minutes",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "session-1",
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordThenApply": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "session-1",
+                        "event": "verslag-recorded",
+                        "payload": {
+                            "hasSummary": true,
+                            "hasDocument": false
+                        },
+                        "tag": "awb-art-7:7"
+                    }
+                }
+            },
+            "log error Dossiq hearing: failed to add minutes: entry not written: verslag-recorded"
+        ]
+    },
+    "seed / via the objection": {
+        "result": {
+            "location": null,
+            "videoCallUrl": null,
+            "members": [],
+            "case": "case-7",
+            "scheduledDate": "<d+14>T10:00:00+00:00",
+            "chairperson": "system",
+            "invitees": [
+                {
+                    "role": "bezwaarmaker",
+                    "channel": "email",
+                    "accessibilityNeeds": [],
+                    "invitedAt": "<now+0h>"
+                }
+            ],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+7>",
+            "status": "planned",
+            "hearingWaived": false,
+            "recordingConsent": "not_requested",
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "dossiq",
+                        "schema": "objectionProceeding"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "searchObjectsBySlug": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "filters": {
+                            "case": "case-7"
+                        },
+                        "scope": []
+                    }
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "case-7",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "chairperson": "system",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "accessibilityNeeds": [],
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+7>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-scheduled",
+                        "payload": {
+                            "case": "case-7",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "inspectionDeadline": "<d+7>"
+                        },
+                        "tag": "awb-art-7:2"
+                    }
+                }
+            }
+        ]
+    },
+    "seed / objection without case": {
+        "result": {
+            "location": null,
+            "videoCallUrl": null,
+            "members": [],
+            "case": "obj-1",
+            "scheduledDate": "<d+14>T10:00:00+00:00",
+            "chairperson": "system",
+            "invitees": [
+                {
+                    "role": "bezwaarmaker",
+                    "channel": "email",
+                    "accessibilityNeeds": [],
+                    "invitedAt": "<now+0h>"
+                }
+            ],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+7>",
+            "status": "planned",
+            "hearingWaived": false,
+            "recordingConsent": "not_requested",
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "dossiq",
+                        "schema": "objectionProceeding"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "searchObjectsBySlug": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "filters": {
+                            "case": "obj-1"
+                        },
+                        "scope": []
+                    }
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "obj-1",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "chairperson": "system",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "accessibilityNeeds": [],
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+7>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-scheduled",
+                        "payload": {
+                            "case": "obj-1",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "inspectionDeadline": "<d+7>"
+                        },
+                        "tag": "awb-art-7:2"
+                    }
+                }
+            }
+        ]
+    },
+    "seed / objection missing": {
+        "result": {
+            "location": null,
+            "videoCallUrl": null,
+            "members": [],
+            "case": "obj-1",
+            "scheduledDate": "<d+14>T10:00:00+00:00",
+            "chairperson": "system",
+            "invitees": [
+                {
+                    "role": "bezwaarmaker",
+                    "channel": "email",
+                    "accessibilityNeeds": [],
+                    "invitedAt": "<now+0h>"
+                }
+            ],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+7>",
+            "status": "planned",
+            "hearingWaived": false,
+            "recordingConsent": "not_requested",
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "dossiq",
+                        "schema": "objectionProceeding"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "searchObjectsBySlug": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "filters": {
+                            "case": "obj-1"
+                        },
+                        "scope": []
+                    }
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "obj-1",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "chairperson": "system",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "accessibilityNeeds": [],
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+7>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-scheduled",
+                        "payload": {
+                            "case": "obj-1",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "inspectionDeadline": "<d+7>"
+                        },
+                        "tag": "awb-art-7:2"
+                    }
+                }
+            }
+        ]
+    },
+    "seed / objection lookup throws": {
+        "result": {
+            "location": null,
+            "videoCallUrl": null,
+            "members": [],
+            "case": "obj-1",
+            "scheduledDate": "<d+14>T10:00:00+00:00",
+            "chairperson": "system",
+            "invitees": [
+                {
+                    "role": "bezwaarmaker",
+                    "channel": "email",
+                    "accessibilityNeeds": [],
+                    "invitedAt": "<now+0h>"
+                }
+            ],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+7>",
+            "status": "planned",
+            "hearingWaived": false,
+            "recordingConsent": "not_requested",
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "dossiq",
+                        "schema": "objectionProceeding"
+                    }
+                }
+            },
+            "log debug Dossiq hearing: bezwaar lookup failed: find failed",
+            {
+                "objects": {
+                    "searchObjectsBySlug": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "filters": {
+                            "case": "obj-1"
+                        },
+                        "scope": []
+                    }
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "obj-1",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "chairperson": "system",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "accessibilityNeeds": [],
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+7>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-scheduled",
+                        "payload": {
+                            "case": "obj-1",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "inspectionDeadline": "<d+7>"
+                        },
+                        "tag": "awb-art-7:2"
+                    }
+                }
+            }
+        ]
+    },
+    "seed / no objection schema": {
+        "result": {
+            "location": null,
+            "videoCallUrl": null,
+            "members": [],
+            "case": "obj-1",
+            "scheduledDate": "<d+14>T10:00:00+00:00",
+            "chairperson": "system",
+            "invitees": [
+                {
+                    "role": "bezwaarmaker",
+                    "channel": "email",
+                    "accessibilityNeeds": [],
+                    "invitedAt": "<now+0h>"
+                }
+            ],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+7>",
+            "status": "planned",
+            "hearingWaived": false,
+            "recordingConsent": "not_requested",
+            "@self": {
+                "id": "saved-1"
+            }
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "objects": {
+                    "searchObjectsBySlug": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "filters": {
+                            "case": "obj-1"
+                        },
+                        "scope": []
+                    }
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "obj-1",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "chairperson": "system",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "accessibilityNeeds": [],
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+7>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-scheduled",
+                        "payload": {
+                            "case": "obj-1",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "inspectionDeadline": "<d+7>"
+                        },
+                        "tag": "awb-art-7:2"
+                    }
+                }
+            }
+        ]
+    },
+    "seed / empty objection id": {
+        "result": null,
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue bezwaar_schema"
+        ]
+    },
+    "seed / already has a session": {
+        "result": null,
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "dossiq",
+                        "schema": "objectionProceeding"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "searchObjectsBySlug": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "filters": {
+                            "case": "obj-1"
+                        },
+                        "scope": []
+                    }
+                }
+            }
+        ]
+    },
+    "seed / search throws": {
+        "result": null,
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "dossiq",
+                        "schema": "objectionProceeding"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "searchObjectsBySlug": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "filters": {
+                            "case": "obj-1"
+                        },
+                        "scope": []
+                    }
+                }
+            },
+            "log debug Dossiq hearing: lookup for existing sessions failed: search failed"
+        ]
+    },
+    "seed / save throws": {
+        "result": null,
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "objects": {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "dossiq",
+                        "schema": "objectionProceeding"
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "searchObjectsBySlug": {
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "filters": {
+                            "case": "obj-1"
+                        },
+                        "scope": []
+                    }
+                }
+            },
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "location": null,
+                            "videoCallUrl": null,
+                            "members": [],
+                            "case": "obj-1",
+                            "scheduledDate": "<d+14>T10:00:00+00:00",
+                            "chairperson": "system",
+                            "invitees": [
+                                {
+                                    "role": "bezwaarmaker",
+                                    "channel": "email",
+                                    "accessibilityNeeds": [],
+                                    "invitedAt": "<now+0h>"
+                                }
+                            ],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+7>",
+                            "status": "planned",
+                            "hearingWaived": false,
+                            "recordingConsent": "not_requested"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            "log error Dossiq hearing: failed to schedule hearing: save failed",
+            "log info Dossiq hearing: seedDefaultHearing skipped for bezwaar obj-1: Could not schedule hearing"
+        ]
+    },
+    "seed / no object service": {
+        "result": null,
+        "log": [
+            "settings getObjectService"
+        ]
+    },
+    "seed / no register": {
+        "result": null,
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    },
+    "seed / no schema": {
+        "result": null,
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema"
+        ]
+    }
+}
