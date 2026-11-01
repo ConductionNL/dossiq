@@ -235,7 +235,8 @@ class AcknowledgementServiceGoldenTest extends TestCase {
 		);
 
 		try {
-			$answer = $service->acknowledge(caseId: ($world['caseId'] ?? 'case-1'), attempt: ($world['attempt'] ?? 1));
+			$call = ($world['call'] ?? static fn (AcknowledgementService $s): array => $s->acknowledge(caseId: ($world['caseId'] ?? 'case-1'), attempt: ($world['attempt'] ?? 1)));
+			$answer = $call($service);
 		} catch (\Throwable $thrown) {
 			$answer = [
 				'thrown' => get_class($thrown),
@@ -340,4 +341,31 @@ class AcknowledgementServiceGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden(name: 'acknowledgement-service', value: $observed);
 	}//end testGoldenAcknowledge()
+
+	/**
+	 * The duty read back, and a confirmation made another way on a case that cannot be read.
+	 *
+	 * @return void
+	 */
+	public function testGoldenDutyLookups(): void {
+		$dutyFor = static fn (AcknowledgementService $s): array => $s->dutyFor(caseId: 'case-1');
+		$another = static fn (AcknowledgementService $s): array => $s->recordMetAnotherWay(caseId: 'case-1', how: 'telefoon', recordedBy: 'anna');
+		$worlds = [
+			'duty: no object service' => ['objectService' => false, 'call' => $dutyFor],
+			'duty: case missing' => ['find' => 'missing', 'call' => $dutyFor],
+			'duty: register throws' => ['find' => 'throw', 'call' => $dutyFor],
+			'duty: none on the case' => ['find' => ['id' => 'case-1'], 'call' => $dutyFor],
+			'duty: not an array' => ['find' => ['id' => 'case-1', 'acknowledgementDuty' => 'met'], 'call' => $dutyFor],
+			'duty: met' => ['find' => ['id' => 'case-1', 'acknowledgementDuty' => ['status' => 'met', 'channel' => 'email']], 'call' => $dutyFor],
+			'another way: no object service' => ['objectService' => false, 'call' => $another],
+			'another way: case missing' => ['find' => 'missing', 'call' => $another],
+		];
+
+		$observed = [];
+		foreach ($worlds as $name => $world) {
+			$observed[$name] = $this->observe(world: $world);
+		}
+
+		$this->assertMatchesGolden(name: 'acknowledgement-service-lookups', value: $observed);
+	}//end testGoldenDutyLookups()
 }//end class
