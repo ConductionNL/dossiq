@@ -302,6 +302,39 @@ class SessionServiceTest extends TestCase {
 	}//end testMinutesAndRecordingConsentFollowTheDefinition()
 
 	/**
+	 * A stored recording consent denial is not changed by the minutes.
+	 *
+	 * @return void
+	 */
+	public function testMinutesKeepAStoredConsentDenial(): void {
+		$id = $this->service->schedule(caseId: self::CASE_ID, sessionKey: 'hearing', scheduledDate: '2026-10-20T10:00:00+00:00', chairpersonId: self::CHAIR, invitees: [['role' => 'applicant']])['id'];
+		$denied = array_merge($this->store->row(schema: 'hearingSession', uuid: $id), ['recordingConsent' => 'denied']);
+
+		foreach ([
+			'grant with audio' => ['minutesSummary' => 'Heard', 'audioRecording' => 'a1f0c1d5-7b1a-4e7e-9a59-3c2f2f0b9a11', 'recordingConsent' => 'granted'],
+			'grant without audio' => ['minutesSummary' => 'Heard', 'recordingConsent' => 'granted'],
+			'not requested' => ['minutesSummary' => 'Heard', 'recordingConsent' => 'not_requested'],
+		] as $case => $payload) {
+			$this->store->seed(schema: 'hearingSession', uuid: $id, row: $denied);
+			try {
+				$this->service->addMinutes(sessionId: $id, payload: $payload);
+				self::fail("A stored denial was changed: $case");
+			} catch (InvalidArgumentException $e) {
+				self::assertStringContainsString('recording consent', $e->getMessage(), $case);
+			}
+
+			$stored = $this->store->row(schema: 'hearingSession', uuid: $id);
+			self::assertSame('denied', $stored['recordingConsent'], $case);
+			self::assertSame('planned', $stored['status'], $case);
+			self::assertArrayNotHasKey('audioRecording', $stored, $case);
+		}
+
+		$closed = $this->service->addMinutes(sessionId: $id, payload: ['minutesSummary' => 'Heard', 'recordingConsent' => 'denied']);
+		self::assertSame('executed', $closed['status']);
+		self::assertSame('denied', $closed['recordingConsent']);
+	}//end testMinutesKeepAStoredConsentDenial()
+
+	/**
 	 * A session that does not require minutes or consent closes without them.
 	 *
 	 * @return void

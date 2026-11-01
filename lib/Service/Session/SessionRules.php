@@ -188,6 +188,24 @@ final class SessionRules {
 	}//end assertMinutes()
 
 	/**
+	 * Refuse minutes that would change a stored recording consent denial.
+	 *
+	 * @param string $stored The stored recording consent, '' for none.
+	 * @param string $asked  The recording consent the minutes carry, 'denied' when they carry none.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When a stored denial would change.
+	 *
+	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-attendance-and-minutes-follow-the-session-definition-req-css-3
+	 */
+	public function assertDenialKept(string $stored, string $asked): void {
+		if ($stored === 'denied' && $asked !== 'denied') {
+			throw new InvalidArgumentException('A denied recording consent cannot be changed with the minutes.');
+		}
+	}//end assertDenialKept()
+
+	/**
 	 * The invitees as a session stores them: objects, each stamped with when it was invited.
 	 *
 	 * @param array<int, mixed> $invitees The invitees.

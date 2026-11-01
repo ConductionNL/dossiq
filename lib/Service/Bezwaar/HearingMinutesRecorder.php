@@ -70,7 +70,7 @@ class HearingMinutesRecorder {
 	 *
 	 * @return void
 	 *
-	 * @throws RuntimeException When consent for the recording is absent.
+	 * @throws RuntimeException When consent for the recording is absent, or the minutes would change a stored denial.
 	 *
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
@@ -81,6 +81,8 @@ class HearingMinutesRecorder {
 		string $register,
 		string $schema,
 	): void {
+		$this->guardStoredDenial(sessionId: $sessionId, payload: $payload, current: $current, register: $register, schema: $schema);
+
 		$hasAudio = isset($payload['audioRecording']) === true
 			&& (string)$payload['audioRecording'] !== '';
 		if ($hasAudio === false) {
@@ -107,6 +109,43 @@ class HearingMinutesRecorder {
 			'Bezwaarmaker heeft geen toestemming gegeven voor audio-opname'
 		);
 	}//end guardRecordingConsent()
+
+	/**
+	 * Refuse minutes that would change a stored recording consent denial.
+	 *
+	 * The refusal is recorded on the session's OpenRegister trail.
+	 *
+	 * @param string $sessionId UUID of the hearingSession.
+	 * @param array<string, mixed> $payload Minutes payload.
+	 * @param array<string, mixed> $current Current hearingSession record.
+	 * @param string $register The register id.
+	 * @param string $schema The hearingSession schema id.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the payload carries another consent than a stored denial.
+	 */
+	private function guardStoredDenial(string $sessionId, array $payload, array $current, string $register, string $schema): void {
+		if (($current['recordingConsent'] ?? null) !== 'denied'
+			|| array_key_exists('recordingConsent', $payload) === false
+			|| (string)$payload['recordingConsent'] === 'denied'
+		) {
+			return;
+		}
+
+		$this->auditTrail->recordRefusal(
+			register: $register,
+			schema: $schema,
+			objectUuid: $sessionId,
+			event: 'recording-consent-change-refused',
+			payload: ['consent' => (string)$payload['recordingConsent']],
+			tag: BezwaarAuditTrail::TAG_RECORDING_CONSENT,
+		);
+
+		throw new RuntimeException(
+			'De geweigerde toestemming voor audio-opname kan niet met het verslag worden gewijzigd'
+		);
+	}//end guardStoredDenial()
 
 	/**
 	 * Build the hearingSession update payload for a minutes submission.
