@@ -55,6 +55,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Service\Status\DerivedStatusEvaluator
  * @uses   \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses   \OCA\Dossiq\Service\Transitions\TransitionPreconditions
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class ClosingChoiceTest extends TestCase {
 

@@ -43,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class TermijnTimerServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

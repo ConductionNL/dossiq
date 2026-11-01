@@ -1,0 +1,27 @@
+{
+  "caseTypes": [
+    {
+      "id": "e5",
+      "statusTypes": [
+        {
+          "name": "A"
+        }
+      ],
+      "workflowTemplate": {
+        "transitions": [
+          {
+            "fromStatusName": "A",
+            "toStatusName": "A",
+            "guards": [
+              {
+                "config": {
+                  "roleName": "Nobody"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

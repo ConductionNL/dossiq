@@ -41,6 +41,8 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Status\DerivedStatusEvaluator
  * @uses \OCA\Dossiq\Service\Status\StatusDeclaration
  * @uses   \OCA\Dossiq\Service\Obligations\ObligationDeclaration
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  *
  * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
  */

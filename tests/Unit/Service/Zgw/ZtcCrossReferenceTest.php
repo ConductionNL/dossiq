@@ -47,6 +47,7 @@ interface ZtcCrossRefObjectServiceStub {
  * @covers \OCA\Dossiq\Service\Zgw\ZtcCrossReferenceEnricher
  * @covers \OCA\Dossiq\Service\Zgw\ZtcRelatedTypeLookup
  * @covers \OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class ZtcCrossReferenceTest extends TestCase {
 

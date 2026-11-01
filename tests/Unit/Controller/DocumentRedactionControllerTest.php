@@ -30,6 +30,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Controller\DocumentRedactionController
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler
  */
 class DocumentRedactionControllerTest extends TestCase {
 

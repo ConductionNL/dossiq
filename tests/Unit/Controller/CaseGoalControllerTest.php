@@ -46,6 +46,7 @@ use Psr\Log\NullLogger;
  * Unit tests for CaseGoalController.
  *
  * @covers \OCA\Dossiq\Controller\CaseGoalController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseGoalControllerTest extends TestCase {
 
