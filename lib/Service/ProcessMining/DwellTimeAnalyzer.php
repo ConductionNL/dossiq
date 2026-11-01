@@ -224,12 +224,7 @@ class DwellTimeAnalyzer {
 		$count = count($records);
 		$intervals = [];
 		for ($i = 0; $i < $count; $i++) {
-			$next = null;
-			if (($i + 1) < $count) {
-				$next = $records[$i + 1];
-			}
-
-			$interval = $this->visitInterval(dwell: $dwell, visit: new StatusVisit(record: $records[$i], next: $next));
+			$interval = $this->visitInterval(dwell: $dwell, visit: new StatusVisit(records: $records, index: $i));
 			if ($interval !== null) {
 				$intervals[] = $interval;
 			}
@@ -252,8 +247,8 @@ class DwellTimeAnalyzer {
 			return null;
 		}
 
-		$enteredAt = $this->enteredInWindow(dwell: $dwell, record: $visit->record);
-		if ($enteredAt === null) {
+		$enteredAt = $this->parseMoment(raw: $visit->enteredMoment());
+		if ($dwell->admits(moment: $enteredAt) === false) {
 			return null;
 		}
 
@@ -265,42 +260,24 @@ class DwellTimeAnalyzer {
 			'actor' => $visit->actor(),
 			'hours' => $measured['wallHours'],
 			'workingHours' => $measured['workingHours'],
-			// The visit a still-open case is in: it ends at "now" and grows every day.
-			'open' => ($visit->next === null && $dwell->closedAt === null),
+			'open' => $dwell->isOpenAt(visit: $visit),
 		];
 	}//end visitInterval()
 
 	/**
-	 * When a status record entered its status, or null when that is unknown or outside the window.
-	 *
-	 * @param CaseDwell            $dwell  The case and the window.
-	 * @param array<string, mixed> $record The statusRecord.
-	 *
-	 * @return DateTimeImmutable|null The moment.
-	 */
-	private function enteredInWindow(CaseDwell $dwell, array $record): ?DateTimeImmutable {
-		$enteredAt = $this->extractTimestamp(record: $record);
-		if ($enteredAt === null || $enteredAt < $dwell->window->start || $enteredAt > $dwell->window->end) {
-			return null;
-		}
-
-		return $enteredAt;
-	}//end enteredInWindow()
-
-	/**
 	 * When a visit ended: the next record's moment, or for the last visit the close moment or "now".
 	 *
-	 * @param CaseDwell   $dwell The case's close moment and "now".
+	 * @param CaseDwell   $dwell The case, for its last exit.
 	 * @param StatusVisit $visit The visit.
 	 *
 	 * @return DateTimeImmutable|null The moment, or null when the next record's moment is unknown.
 	 */
 	private function exitOf(CaseDwell $dwell, StatusVisit $visit): ?DateTimeImmutable {
 		if ($visit->next === null) {
-			return ($dwell->closedAt ?? $dwell->window->now);
+			return $dwell->lastExit();
 		}
 
-		return $this->extractTimestamp(record: $visit->next);
+		return $this->parseMoment(raw: $visit->nextMoment());
 	}//end exitOf()
 
 	/**
@@ -533,23 +510,19 @@ class DwellTimeAnalyzer {
 	}//end statusPhase()
 
 	/**
-	 * Extract a record's creation timestamp — either the flattened
-	 * `createdAt` key or OpenRegister's `@self.created` metadata block.
+	 * Parse a status record's raw timestamp.
 	 *
-	 * @param array<string, mixed> $record A statusRecord row.
+	 * @param mixed $raw The timestamp value as the record holds it.
 	 *
-	 * @return DateTimeImmutable|null
-	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @return DateTimeImmutable|null The moment, or null when absent or unparseable.
 	 */
-	private function extractTimestamp(array $record): ?DateTimeImmutable {
-		$raw = ($record['createdAt'] ?? ($record['@self']['created'] ?? ($record['@self']['createdAt'] ?? null)));
+	private function parseMoment(mixed $raw): ?DateTimeImmutable {
 		if (is_string($raw) === false || $raw === '') {
 			return null;
 		}
 
 		return $this->dates->tryParse($raw);
-	}//end extractTimestamp()
+	}//end parseMoment()
 
 	/**
 	 * Percentile of a pre-sorted numeric list (nearest-rank method).

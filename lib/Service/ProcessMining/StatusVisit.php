@@ -23,22 +23,40 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\ProcessMining;
 
 /**
- * A status record and the next record of the same case, if any.
+ * A status record and the next record of the same case, if any, read from the case's records.
  *
  * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
  */
 final class StatusVisit {
 
 	/**
+	 * The statusRecord that entered the status.
+	 *
+	 * @var array<string, mixed>
+	 */
+	public readonly array $record;
+
+	/**
+	 * The case's next statusRecord, or null for its last.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	public readonly ?array $next;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param array<string, mixed>      $record The statusRecord that entered the status.
-	 * @param array<string, mixed>|null $next   The case's next statusRecord, or null for its last.
+	 * @param array<int, array<string, mixed>> $records The case's chronologically sorted statusRecords.
+	 * @param int                              $index   The position of the record that opens the visit.
 	 */
-	public function __construct(
-		public readonly array $record,
-		public readonly ?array $next,
-	) {
+	public function __construct(array $records, int $index) {
+		$this->record = $records[$index];
+		$next = null;
+		if (($index + 1) < count($records)) {
+			$next = $records[$index + 1];
+		}
+
+		$this->next = $next;
 	}//end __construct()
 
 	/**
@@ -68,4 +86,41 @@ final class StatusVisit {
 	public function actor(): string {
 		return trim((string)($this->record['actor'] ?? ''));
 	}//end actor()
+
+	/**
+	 * The raw moment the status was entered, as the record holds it.
+	 *
+	 * @return mixed The timestamp value, or null.
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	public function enteredMoment(): mixed {
+		return $this->momentOf(record: $this->record);
+	}//end enteredMoment()
+
+	/**
+	 * The raw moment of the next record, or null when this is the last visit.
+	 *
+	 * @return mixed The timestamp value, or null.
+	 *
+	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 */
+	public function nextMoment(): mixed {
+		if ($this->next === null) {
+			return null;
+		}
+
+		return $this->momentOf(record: $this->next);
+	}//end nextMoment()
+
+	/**
+	 * A statusRecord's own timestamp, falling back to the object's metadata.
+	 *
+	 * @param array<string, mixed> $record The statusRecord.
+	 *
+	 * @return mixed The timestamp value, or null.
+	 */
+	private function momentOf(array $record): mixed {
+		return ($record['createdAt'] ?? ($record['@self']['created'] ?? ($record['@self']['createdAt'] ?? null)));
+	}//end momentOf()
 }//end class
