@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -57,6 +58,7 @@ use Psr\Log\LoggerInterface;
  */
 class WorkQueueServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
+	use MatchesGoldenFiles;
 
 
 	private FakeWorkQueueStore $objects;
@@ -1085,6 +1087,54 @@ class WorkQueueServiceTest extends TestCase {
 		self::assertSame('normal', $items[1]['priority']);
 		self::assertNull($items[1]['case']);
 	}//end testATaskIsScoredOnItsDueDate()
+
+	/**
+	 * One mixed world, pinned whole: own cases of several types and states,
+	 * covered cases (new, already own, closed), terms, tasks, the reads made,
+	 * the counts and the workload, and the answers without a configured source.
+	 *
+	 * @return void
+	 */
+	public function testGoldenQueueWorld(): void {
+		$this->config['queue_critical_days'] = '2';
+		$this->objects->saveObject('caseType', ['id' => 'wide', 'queueCriticalDays' => 10, 'queueWarningDays' => 15]);
+		$this->objects->saveObject('caseType', ['id' => 'narrow', 'queueWarningDays' => 4]);
+		$this->seedOpenCase(['id' => 'a', 'title' => 'Alpha', 'identifier' => 'Z-1', 'caseType' => 'wide', 'deadline' => '2026-07-20', 'priority' => 'HIGH', 'startDate' => '2026-06-01', 'status' => 's1']);
+		$this->seedOpenCase(['id' => 'b', 'identifier' => 'Z-2', 'caseType' => ['id' => 'wide'], 'deadline' => '2026-07-01', 'priority' => 'low', 'waitingOn' => 'applicant']);
+		$this->seedOpenCase(['id' => 'c', 'caseType' => 'narrow', 'deadline' => '2026-07-16', 'priority' => 'urgent', 'waitingOn' => ' thirdParty ']);
+		$this->seedOpenCase(['id' => 'd', 'caseType' => 'narrow', 'priority' => 'weird', 'startDate' => '2026-07-20']);
+		$this->seedOpenCase(['id' => 'e', 'caseType' => 'missing', 'deadline' => 'not a date']);
+		$this->seedOpenCase(['id' => 'f', 'endDate' => '2026-07-01', 'deadline' => '2026-07-14']);
+		$this->seedOpenCase(['id' => 'g', 'assignee' => 'marie', 'deadline' => '2026-07-14']);
+		$this->objects->saveObject('deadlineInstance', ['id' => 't1', 'case' => 'a', 'status' => 'lopend', 'endDateCurrent' => '2026-07-15']);
+		$this->objects->saveObject('caseTask', ['id' => 'k1', 'assignee' => 'jan', 'title' => 'Call', 'status' => 'active', 'dueDate' => '2026-07-14', 'case' => 'a', 'priority' => 'urgent']);
+		$this->objects->saveObject('caseTask', ['id' => 'k2', 'assignee' => 'jan', 'status' => 'completed', 'dueDate' => '2026-07-14']);
+		$this->objects->saveObject('caseTask', ['id' => 'k3', 'assignee' => 'jan', 'status' => 'active']);
+		$covered = [
+			['id' => 'cov-1', 'title' => 'Covered', 'caseType' => 'narrow', 'endDate' => '', 'deadline' => '2026-07-10', 'coveredFor' => ['absentee' => 'anouk']],
+			['id' => 'a', 'coveredFor' => ['absentee' => 'piet']],
+			['id' => 'cov-2', 'endDate' => '2026-07-02', 'coveredFor' => ['absentee' => 'anouk']],
+			['id' => 'cov-3', 'priority' => 'high'],
+		];
+
+		$world = [
+			'queue' => $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13 09:00'), $covered),
+			'unknownUser' => $this->service->computeQueue('', new DateTimeImmutable('2026-07-13')),
+			'workload' => $this->service->computeWorkload(),
+			'waitingAll' => $this->service->countByWaitingOn(),
+			'waitingJan' => $this->service->countByWaitingOn('jan'),
+			'searches' => $this->objects->searches,
+		];
+
+		$this->config['case_schema'] = '';
+		$world['noSchema'] = [
+			'queue' => $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13')),
+			'workload' => $this->service->computeWorkload(),
+			'waiting' => $this->service->countByWaitingOn('jan'),
+		];
+
+		$this->assertMatchesGolden('work-queue-world', $world);
+	}//end testGoldenQueueWorld()
 }//end class
 
 /**

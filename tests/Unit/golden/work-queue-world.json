@@ -1,0 +1,344 @@
+{
+    "queue": [
+        {
+            "itemType": "case",
+            "id": "cov-1",
+            "title": "Covered",
+            "identifier": "",
+            "caseType": "narrow",
+            "status": null,
+            "priority": "normal",
+            "deadline": "2026-07-10",
+            "coveredFor": {
+                "absentee": "anouk"
+            },
+            "case": {
+                "id": "cov-1",
+                "title": "Covered",
+                "caseType": "narrow",
+                "endDate": "",
+                "deadline": "2026-07-10",
+                "coveredFor": {
+                    "absentee": "anouk"
+                }
+            },
+            "deadlineTier": "overdue",
+            "daysUntilDeadline": -1,
+            "idleDays": null,
+            "score": 1011.0,
+            "scoreBreakdown": {
+                "deadline": 1001.0,
+                "priority": 10.0,
+                "idle": 0.0
+            }
+        },
+        {
+            "itemType": "case",
+            "id": "b",
+            "title": "Z-2",
+            "identifier": "Z-2",
+            "caseType": {
+                "id": "wide"
+            },
+            "status": null,
+            "priority": "low",
+            "deadline": "2026-07-01",
+            "coveredFor": null,
+            "case": {
+                "assignee": "jan",
+                "endDate": "",
+                "priority": "low",
+                "statusHiddenInLists": false,
+                "isDraft": false,
+                "id": "b",
+                "identifier": "Z-2",
+                "caseType": {
+                    "id": "wide"
+                },
+                "deadline": "2026-07-01",
+                "waitingOn": "applicant",
+                "coveredFor": null
+            },
+            "deadlineTier": "overdue",
+            "daysUntilDeadline": -8,
+            "idleDays": null,
+            "score": 1008.0,
+            "scoreBreakdown": {
+                "deadline": 1008.0,
+                "priority": 0.0,
+                "idle": 0.0
+            }
+        },
+        {
+            "itemType": "case",
+            "id": "a",
+            "title": "Alpha",
+            "identifier": "Z-1",
+            "caseType": "wide",
+            "status": "s1",
+            "priority": "HIGH",
+            "deadline": "2026-07-15",
+            "coveredFor": null,
+            "case": {
+                "assignee": "jan",
+                "endDate": "",
+                "priority": "HIGH",
+                "statusHiddenInLists": false,
+                "isDraft": false,
+                "id": "a",
+                "title": "Alpha",
+                "identifier": "Z-1",
+                "caseType": "wide",
+                "deadline": "2026-07-20",
+                "startDate": "2026-06-01",
+                "status": "s1",
+                "coveredFor": null
+            },
+            "deadlineTier": "critical",
+            "daysUntilDeadline": 2,
+            "idleDays": 42,
+            "score": 789.0,
+            "scoreBreakdown": {
+                "deadline": 748.0,
+                "priority": 20.0,
+                "idle": 21.0
+            }
+        },
+        {
+            "itemType": "task",
+            "id": "k1",
+            "title": "Call",
+            "case": "a",
+            "status": "active",
+            "priority": "urgent",
+            "deadline": "2026-07-14",
+            "deadlineTier": "critical",
+            "daysUntilDeadline": 1,
+            "idleDays": null,
+            "score": 779.0,
+            "scoreBreakdown": {
+                "deadline": 749.0,
+                "priority": 30.0,
+                "idle": 0.0
+            }
+        },
+        {
+            "itemType": "case",
+            "id": "c",
+            "title": "c",
+            "identifier": "",
+            "caseType": "narrow",
+            "status": null,
+            "priority": "urgent",
+            "deadline": "2026-07-16",
+            "coveredFor": null,
+            "case": {
+                "assignee": "jan",
+                "endDate": "",
+                "priority": "urgent",
+                "statusHiddenInLists": false,
+                "isDraft": false,
+                "id": "c",
+                "caseType": "narrow",
+                "deadline": "2026-07-16",
+                "waitingOn": " thirdParty ",
+                "coveredFor": null
+            },
+            "deadlineTier": "warning",
+            "daysUntilDeadline": 3,
+            "idleDays": null,
+            "score": 527.0,
+            "scoreBreakdown": {
+                "deadline": 497.0,
+                "priority": 30.0,
+                "idle": 0.0
+            }
+        },
+        {
+            "itemType": "case",
+            "id": "cov-3",
+            "title": "cov-3",
+            "identifier": "",
+            "caseType": null,
+            "status": null,
+            "priority": "high",
+            "deadline": null,
+            "coveredFor": null,
+            "case": {
+                "id": "cov-3",
+                "priority": "high",
+                "coveredFor": null
+            },
+            "deadlineTier": "normal",
+            "daysUntilDeadline": null,
+            "idleDays": null,
+            "score": 20.0,
+            "scoreBreakdown": {
+                "deadline": 0.0,
+                "priority": 20.0,
+                "idle": 0.0
+            }
+        },
+        {
+            "itemType": "case",
+            "id": "d",
+            "title": "d",
+            "identifier": "",
+            "caseType": "narrow",
+            "status": null,
+            "priority": "weird",
+            "deadline": null,
+            "coveredFor": null,
+            "case": {
+                "assignee": "jan",
+                "endDate": "",
+                "priority": "weird",
+                "statusHiddenInLists": false,
+                "isDraft": false,
+                "id": "d",
+                "caseType": "narrow",
+                "startDate": "2026-07-20",
+                "coveredFor": null
+            },
+            "deadlineTier": "normal",
+            "daysUntilDeadline": null,
+            "idleDays": 0,
+            "score": 10.0,
+            "scoreBreakdown": {
+                "deadline": 0.0,
+                "priority": 10.0,
+                "idle": 0.0
+            }
+        },
+        {
+            "itemType": "case",
+            "id": "e",
+            "title": "e",
+            "identifier": "",
+            "caseType": "missing",
+            "status": null,
+            "priority": "normal",
+            "deadline": "not a date",
+            "coveredFor": null,
+            "case": {
+                "assignee": "jan",
+                "endDate": "",
+                "priority": "normal",
+                "statusHiddenInLists": false,
+                "isDraft": false,
+                "id": "e",
+                "caseType": "missing",
+                "deadline": "not a date",
+                "coveredFor": null
+            },
+            "deadlineTier": "normal",
+            "daysUntilDeadline": null,
+            "idleDays": null,
+            "score": 10.0,
+            "scoreBreakdown": {
+                "deadline": 0.0,
+                "priority": 10.0,
+                "idle": 0.0
+            }
+        },
+        {
+            "itemType": "task",
+            "id": "k3",
+            "title": "",
+            "case": null,
+            "status": "active",
+            "priority": "normal",
+            "deadline": null,
+            "deadlineTier": "normal",
+            "daysUntilDeadline": null,
+            "idleDays": null,
+            "score": 10.0,
+            "scoreBreakdown": {
+                "deadline": 0.0,
+                "priority": 10.0,
+                "idle": 0.0
+            }
+        }
+    ],
+    "unknownUser": [],
+    "workload": [
+        {
+            "handler": "jan",
+            "openCaseCount": 5
+        },
+        {
+            "handler": "marie",
+            "openCaseCount": 1
+        }
+    ],
+    "waitingAll": {
+        "ours": 4,
+        "applicant": 1,
+        "thirdParty": 1,
+        "total": 6
+    },
+    "waitingJan": {
+        "ours": 3,
+        "applicant": 1,
+        "thirdParty": 1,
+        "total": 5
+    },
+    "searches": {
+        "case": [
+            {
+                "assignee": "jan",
+                "statusHiddenInLists": false,
+                "isDraft": false,
+                "_limit": 1000
+            },
+            {
+                "_limit": 1000
+            },
+            {
+                "_limit": 1000
+            },
+            {
+                "_limit": 1000,
+                "assignee": "jan"
+            }
+        ],
+        "deadlineInstance": [
+            {
+                "case": "a"
+            },
+            {
+                "case": "b"
+            },
+            {
+                "case": "c"
+            },
+            {
+                "case": "d"
+            },
+            {
+                "case": "e"
+            },
+            {
+                "case": "cov-1"
+            },
+            {
+                "case": "cov-3"
+            }
+        ],
+        "caseTask": [
+            {
+                "assignee": "jan"
+            }
+        ]
+    },
+    "noSchema": {
+        "queue": [],
+        "workload": [],
+        "waiting": {
+            "ours": 0,
+            "applicant": 0,
+            "thirdParty": 0,
+            "total": 0
+        }
+    }
+}
