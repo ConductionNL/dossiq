@@ -317,12 +317,7 @@ class AdvisoryCommitteeService {
 		// Guard: assigned → in-deliberation requires panel and
 		// independence (REQ-BAC-2).
 		if ($from === 'assigned' && $newStatus === 'in-deliberation') {
-			$this->guardDeliberationStart(
-				current: $current,
-				requestId: $requestId,
-				register: $register,
-				requestSchema: $requestSchema,
-			);
+			$this->guardDeliberationStart(request: $current, requestId: $requestId);
 		}
 
 		// Guard: in-deliberation → advice-issued requires the structured
@@ -542,27 +537,25 @@ class AdvisoryCommitteeService {
 	}//end assertTransitionAllowed()
 
 	/**
-	 * Guard the assigned → in-deliberation transition (REQ-BAC-2): a panel
-	 * must be set and every member must be independent. An independence
-	 * failure is recorded on the request's trail before the guard raises.
+	 * Guard a move into in-deliberation (REQ-BAC-2): a panel must be set and
+	 * every member must be independent. An independence failure is recorded
+	 * on the request's trail before the guard raises.
 	 *
-	 * @param array<string, mixed> $current Current advice-request record
-	 * @param string $requestId Advice request UUID
-	 * @param string $register Register identifier
-	 * @param string $requestSchema Advice-request schema identifier
+	 * Also called by DeliberationStartGuard on every OpenRegister write that
+	 * moves an advice request into in-deliberation.
+	 *
+	 * @param array<string, mixed> $request   The advice request as it will be saved
+	 * @param string               $requestId Advice request UUID
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When no panel has been set
 	 * @throws GuardFailedException When a panel member is not independent, or independence cannot be verified
+	 *
+	 * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-write-that-starts-deliberation-runs-the-panel-check
 	 */
-	private function guardDeliberationStart(
-		array $current,
-		string $requestId,
-		string $register,
-		string $requestSchema,
-	): void {
-		$panel = (array)($current['panel'] ?? []);
+	public function guardDeliberationStart(array $request, string $requestId): void {
+		$panel = (array)($request['panel'] ?? []);
 		if ($panel === []) {
 			throw new RuntimeException(
 				'Panel must be set before deliberation can start'
@@ -570,7 +563,7 @@ class AdvisoryCommitteeService {
 		}
 
 		$independence = $this->independence->check(
-			objectionId: $this->objectionIdOf(request: $current),
+			objectionId: $this->objectionIdOf(request: $request),
 			panel: $panel,
 		);
 
@@ -589,8 +582,8 @@ class AdvisoryCommitteeService {
 		// Recorded before raising, and refused whether or not the entry is
 		// written; an unwritten entry goes to the error log in full.
 		$this->auditTrail->recordRefusal(
-			register: $register,
-			schema: $requestSchema,
+			register: $this->settingsService->getConfigValue(key: 'register'),
+			schema: $this->settingsService->getConfigValue(key: 'bac_advice_request_schema'),
 			objectUuid: $requestId,
 			event: $event,
 			payload: [
