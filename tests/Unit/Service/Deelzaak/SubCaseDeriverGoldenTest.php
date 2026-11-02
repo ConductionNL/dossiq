@@ -42,6 +42,8 @@ use RuntimeException;
  * Golden test for SubCaseDeriver::derive().
  *
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
+ * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseStore
+ * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseLink
  */
 class SubCaseDeriverGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
