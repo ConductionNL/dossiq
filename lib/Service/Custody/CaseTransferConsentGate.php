@@ -46,6 +46,9 @@ use Throwable;
 /**
  * Whether this case may be handed to this receiver now, and under what scope.
  *
+ * @phpstan-type Outcome array{allowed: bool, rule: string, sentence: string, consent: array<string, mixed>|null}
+ * @psalm-type   Outcome = array{allowed: bool, rule: string, sentence: string, consent: array<string, mixed>|null}
+ *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class CaseTransferConsentGate {
@@ -136,64 +139,57 @@ class CaseTransferConsentGate {
 		if ($crosses === false && $this->consentRequiredInside(caseId: $caseId) === false) {
 			// A move between two teams of one organisation is not a
 			// disclosure (D-7), so there is nothing to consent to.
-			return $this->verdict(allowed: true, rule: '', sentence: '', consent: null, crosses: false);
+			return $this->verdict(outcome: $this->granted(consent: null), crosses: false);
 		}
 
 		$moment = $this->instant(value: $atDate) ?? new DateTimeImmutable();
 		$candidates = $this->consentsFor(caseId: $caseId, receiver: $receiver);
-
-		if ($candidates === []) {
-			return $this->verdict(
-				allowed: false,
-				rule: self::NO_CONSENT,
-				sentence: 'There is no recorded consent for ' . $receiver . ', so the case was not handed on.',
-				consent: null,
-				crosses: $crosses,
-			);
-		}
-
 		$scan = $this->scanConsents(candidates: $candidates, moment: $moment);
 		if ($scan['covering'] !== null) {
-			return $this->verdict(
-				allowed: true,
-				rule: '',
-				sentence: '',
-				consent: $scan['covering'],
-				crosses: $crosses,
-			);
+			return $this->verdict(outcome: $this->granted(consent: $scan['covering']), crosses: $crosses);
 		}
 
-		$lapsedOn = $scan['lapsedOn'];
-		$withdrawn = $scan['withdrawn'];
+		$refusal = $this->refusal(scan: $scan + ['none' => ($candidates === [])], receiver: $receiver);
 
-		if ($lapsedOn !== '') {
-			return $this->verdict(
-				allowed: false,
-				rule: self::CONSENT_LAPSED,
-				sentence: 'The consent for ' . $receiver . ' ran to ' . $lapsedOn . ' and has ended, so the case was not handed on.',
-				consent: null,
-				crosses: $crosses,
-			);
-		}
-
-		if ($withdrawn === true) {
-			return $this->verdict(
-				allowed: false,
-				rule: self::CONSENT_WITHDRAWN,
-				sentence: 'The consent for ' . $receiver . ' was withdrawn, so the case was not handed on.',
-				consent: null,
-				crosses: $crosses,
-			);
-		}
-
-		return $this->verdict(
-			allowed: false,
-			rule: self::NO_CONSENT,
-			sentence: 'There is no recorded consent for ' . $receiver . ' covering today, so the case was not handed on.',
-			consent: null,
-			crosses: $crosses,
-		);
+		return $this->verdict(outcome: $refusal, crosses: $crosses);
 	}//end assess()
+
+	/**
+	 * The outcome of a hand-off that may proceed.
+	 *
+	 * @param array<string, mixed>|null $consent The covering consent, or null when none is needed.
+	 *
+	 * @return Outcome The outcome.
+	 */
+	private function granted(?array $consent): array {
+		return ['allowed' => true, 'rule' => '', 'sentence' => '', 'consent' => $consent];
+	}//end granted()
+
+	/**
+	 * The outcome of a hand-off no recorded consent covers, with the sentence that says why.
+	 *
+	 * @param array{covering: array<string, mixed>|null, lapsedOn: string, withdrawn: bool, none: bool} $scan     What the consents amount to.
+	 * @param string                                                                                     $receiver The receiving organisation.
+	 *
+	 * @return Outcome The outcome.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 */
+	private function refusal(array $scan, string $receiver): array {
+		$rule = self::NO_CONSENT;
+		$sentence = 'There is no recorded consent for ' . $receiver . ' covering today, so the case was not handed on.';
+		if ($scan['none'] === true) {
+			$sentence = 'There is no recorded consent for ' . $receiver . ', so the case was not handed on.';
+		} else if ($scan['lapsedOn'] !== '') {
+			$rule = self::CONSENT_LAPSED;
+			$sentence = 'The consent for ' . $receiver . ' ran to ' . $scan['lapsedOn'] . ' and has ended, so the case was not handed on.';
+		} else if ($scan['withdrawn'] === true) {
+			$rule = self::CONSENT_WITHDRAWN;
+			$sentence = 'The consent for ' . $receiver . ' was withdrawn, so the case was not handed on.';
+		}
+
+		return ['allowed' => false, 'rule' => $rule, 'sentence' => $sentence, 'consent' => null];
+	}//end refusal()
 
 	/**
 	 * Read the recorded consents once, and say what they amount to.
@@ -398,11 +394,8 @@ class CaseTransferConsentGate {
 	/**
 	 * Shape one verdict.
 	 *
-	 * @param bool                      $allowed  Whether the hand-off may proceed.
-	 * @param string                    $rule     The refusal rule slug, empty when allowed.
-	 * @param string                    $sentence The refusal sentence, empty when allowed.
-	 * @param array<string, mixed>|null $consent  The covering consent, when there is one.
-	 * @param bool                      $crosses  Whether the boundary was crossed.
+	 * @param Outcome $outcome Whether it may proceed, the refusal rule and sentence, and the covering consent.
+	 * @param bool    $crosses Whether the boundary was crossed.
 	 *
 	 * @return array{
 	 *     allowed: bool,
@@ -414,11 +407,12 @@ class CaseTransferConsentGate {
 	 *     crossesOrganisation: bool
 	 * } The verdict.
 	 */
-	private function verdict(bool $allowed, string $rule, string $sentence, ?array $consent, bool $crosses): array {
+	private function verdict(array $outcome, bool $crosses): array {
+		$consent = $outcome['consent'];
 		return [
-			'allowed' => $allowed,
-			'rule' => $rule,
-			'sentence' => $sentence,
+			'allowed' => $outcome['allowed'],
+			'rule' => $outcome['rule'],
+			'sentence' => $outcome['sentence'],
 			'consent' => $consent,
 			'scope' => $this->scopeOf(consent: $consent),
 			'until' => trim((string)($consent['validTo'] ?? '')),
