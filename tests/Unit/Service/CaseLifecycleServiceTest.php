@@ -36,7 +36,7 @@ use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
  * Suspend, resume, extend and reopen.
  *
  * @covers \OCA\Dossiq\Service\CaseLifecycleService
- * @uses \OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices
  */
 class CaseLifecycleServiceTest extends TestCase {
 

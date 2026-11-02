@@ -58,7 +58,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseActs
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseActsMenu
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseActsOverview
- * @uses \OCA\Dossiq\Service\Lifecycle\CaseActSources
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseActSources
  */
 class CaseActsControllerContractTest extends TestCase {
 

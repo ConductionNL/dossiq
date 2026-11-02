@@ -41,7 +41,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseActsOverview
  *
  * @uses \OCA\Dossiq\Exception\RefusedException
- * @uses \OCA\Dossiq\Service\Lifecycle\CaseActSources
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseActSources
  */
 class CaseActsOverviewTest extends TestCase {
 

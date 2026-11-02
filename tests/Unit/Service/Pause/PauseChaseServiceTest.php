@@ -49,7 +49,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
- * @uses \OCA\Dossiq\Service\Pause\PauseChaseSources
+ * @covers \OCA\Dossiq\Service\Pause\PauseChaseSources
  */
 class PauseChaseServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
