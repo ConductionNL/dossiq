@@ -275,9 +275,9 @@
     },
     "internal move, case missing": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -302,7 +302,16 @@
                 "case"
             ]
         ],
-        "logs": []
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-404",
+                    "exception": "Case not found"
+                }
+            ]
+        ]
     },
     "internal move, case without a case type": {
         "verdict": {
@@ -337,9 +346,9 @@
     },
     "internal move, case read throws": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -377,9 +386,9 @@
     },
     "internal move, no store": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -403,9 +412,9 @@
     },
     "internal move, no register": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -433,9 +442,9 @@
     },
     "internal move, no case type schema": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -477,16 +486,25 @@
     },
     "internal move, empty case id": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
             "crossesOrganisation": false
         },
         "calls": [],
-        "logs": []
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "  ",
+                    "exception": "No case id"
+                }
+            ]
+        ]
     },
     "empty source crosses": {
         "verdict": {
