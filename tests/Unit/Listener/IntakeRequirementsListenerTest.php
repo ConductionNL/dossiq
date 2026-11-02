@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\IntakeDeclarations;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
@@ -65,6 +66,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Intake\DuplicatePolicy
  * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
+ * @uses \OCA\Dossiq\Listener\IntakeDeclarations
  */
 class IntakeRequirementsListenerTest extends TestCase {
 
@@ -123,15 +125,17 @@ class IntakeRequirementsListenerTest extends TestCase {
 		$this->listener = new IntakeRequirementsListener(
 			settingsService: $settings,
 			caseTypeResolver: $resolver,
-			requirements: new IntakeRequirements(),
-			classification: new CaseClassification(
-				schemes: new ClassificationSchemes(appConfig: $appConfig)
-			),
-			narrowing: new AssigneeNarrowing(),
-			duplicates: new DuplicatePolicy(
-				container: $this->createMock(originalClassName: ContainerInterface::class),
-				groupManager: $this->createMock(originalClassName: IGroupManager::class),
-				logger: new NullLogger()
+			declarations: new IntakeDeclarations(
+				requirements: new IntakeRequirements(),
+				classification: new CaseClassification(
+					schemes: new ClassificationSchemes(appConfig: $appConfig)
+				),
+				narrowing: new AssigneeNarrowing(),
+				duplicates: new DuplicatePolicy(
+					container: $this->createMock(originalClassName: ContainerInterface::class),
+					groupManager: $this->createMock(originalClassName: IGroupManager::class),
+					logger: new NullLogger()
+				),
 			),
 			userSession: $this->createMock(originalClassName: IUserSession::class),
 			logger: new NullLogger(),

@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Starter\ShippedRoleSources;
 use OCA\Dossiq\Service\Starter\MunicipalRoleSetService;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCA\Dossiq\Service\Starter\ShippedFingerprint;
@@ -46,6 +47,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
  * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRoleSources
  */
 class MunicipalRoleSetTest extends TestCase {
 
@@ -78,14 +80,16 @@ class MunicipalRoleSetTest extends TestCase {
 		$session->method('getUser')->willReturn($user);
 
 		$this->roleSet = new MunicipalRoleSetService(
-			$this->harness->store,
-			new ShippedConfigurationService(
-				$this->harness->store,
-				new ShippedSets(),
-				new ShippedFingerprint(),
-				new NullLogger(),
+			new ShippedRoleSources(
+				store: $this->harness->store,
+				shipped: new ShippedConfigurationService(
+					$this->harness->store,
+					new ShippedSets(),
+					new ShippedFingerprint(),
+					new NullLogger(),
+				),
+				sets: new ShippedSets(),
 			),
-			new ShippedSets(),
 			$session,
 			new NullLogger(),
 		);
@@ -262,14 +266,16 @@ class MunicipalRoleSetTest extends TestCase {
 		$session->method('getUser')->willReturn($user);
 
 		$service = new MunicipalRoleSetService(
-			$blind->store,
-			new ShippedConfigurationService(
-				$blind->store,
-				new ShippedSets(),
-				new ShippedFingerprint(),
-				new NullLogger(),
+			new ShippedRoleSources(
+				store: $blind->store,
+				shipped: new ShippedConfigurationService(
+					$blind->store,
+					new ShippedSets(),
+					new ShippedFingerprint(),
+					new NullLogger(),
+				),
+				sets: new ShippedSets(),
 			),
-			new ShippedSets(),
 			$session,
 			new NullLogger(),
 		);

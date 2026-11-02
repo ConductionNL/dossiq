@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\Transitions\RecipientResolvers;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
@@ -86,13 +87,15 @@ class SendTemplateMessageHandlerTest extends TestCase {
 		$users->method('get')->willReturnCallback(static fn (string $uid): ?IUser => ($uid === 'esra' ? $user : null));
 
 		return new SendTemplateMessageHandler(
-			assignees: new AssigneeResolver(new NullLogger()),
+			recipients: new RecipientResolvers(
+				assignees: new AssigneeResolver(new NullLogger()),
+				roles: $roles,
+				users: $users,
+			),
 			contacts: $contacts,
 			mail: $mail,
 			logger: new NullLogger(),
-			ledger: $ledger,
-			roles: $roles,
-			users: $users
+			ledger: $ledger
 		);
 	}//end handler()
 

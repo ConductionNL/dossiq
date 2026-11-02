@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Email;
 
+use OCA\Dossiq\Service\Email\InboundMailFiling;
+use OCA\Dossiq\Service\Email\InboundMailChecks;
 use OCA\Dossiq\Service\Email\AuthenticationResult;
 use OCA\Dossiq\Service\Email\AuthenticationVerdict;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
@@ -61,6 +63,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
  * @uses \OCA\Dossiq\Service\Email\InboundMessage
  * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
+ * @uses \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @uses \OCA\Dossiq\Service\Email\InboundMailFiling
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
@@ -202,14 +206,18 @@ final class InboundMailIntakeTest extends TestCase {
 	private function intake(): InboundMailIntake {
 		return new InboundMailIntake(
 			gateway: $this->gateway,
-			pipeline: $this->pipeline,
-			verdicts: $this->verdicts,
-			threading: $this->threading,
+			checks: new InboundMailChecks(
+				pipeline: $this->pipeline,
+				verdicts: $this->verdicts,
+				threading: $this->threading,
+			),
 			policy: $this->policy,
 			log: $this->log,
-			cases: $this->cases,
-			unmatched: $this->unmatched,
-			archival: $this->archival,
+			filing: new InboundMailFiling(
+				cases: $this->cases,
+				unmatched: $this->unmatched,
+				archival: $this->archival,
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end intake()

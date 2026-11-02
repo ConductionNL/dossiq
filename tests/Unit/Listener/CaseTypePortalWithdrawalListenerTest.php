@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\CaseTypeLookup;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
 use OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -147,9 +148,11 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 
 		return new CaseTypePortalWithdrawalListener(
 			$settings,
-			new CaseTypeResolver($store),
-			$store,
-			new PortalWithdrawalTarget(),
+			new CaseTypeLookup(
+				resolver: new CaseTypeResolver($store),
+				store: $store,
+				target: new PortalWithdrawalTarget(),
+			),
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 		);

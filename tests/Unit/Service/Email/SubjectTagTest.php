@@ -40,6 +40,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Email;
 
+use OCA\Dossiq\Service\Email\InboundMailFiling;
+use OCA\Dossiq\Service\Email\InboundMailChecks;
 use OCA\Dossiq\Service\Email\AuthenticationVerdict;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
@@ -60,6 +62,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
  * @uses \OCA\Dossiq\Service\Email\Filters\FilterPipeline
  * @uses \OCA\Dossiq\Service\Email\ThreadingCheck
+ * @uses \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @uses \OCA\Dossiq\Service\Email\InboundMailFiling
  */
 class SubjectTagTest extends TestCase {
 
@@ -82,17 +86,21 @@ class SubjectTagTest extends TestCase {
 
 		$this->intake = new InboundMailIntake(
 			gateway: $gateway,
-			pipeline: new FilterPipeline(logger: new NullLogger(), filters: []),
-			verdicts: new AuthenticationVerdict(
-				gateway: $gateway,
-				threading: new ThreadingCheck(gateway: $gateway)
+			checks: new InboundMailChecks(
+				pipeline: new FilterPipeline(logger: new NullLogger(), filters: []),
+				verdicts: new AuthenticationVerdict(
+					gateway: $gateway,
+					threading: new ThreadingCheck(gateway: $gateway)
+				),
+				threading: new ThreadingCheck(gateway: $gateway),
 			),
-			threading: new ThreadingCheck(gateway: $gateway),
 			policy: $this->createMock(IntakePolicy::class),
 			log: $this->createMock(IntakeLog::class),
-			cases: $this->createMock(CaseEmailRepository::class),
-			unmatched: $this->createMock(UnmatchedMailIntake::class),
-			archival: $this->createMock(EmailArchivalService::class),
+			filing: new InboundMailFiling(
+				cases: $this->createMock(CaseEmailRepository::class),
+				unmatched: $this->createMock(UnmatchedMailIntake::class),
+				archival: $this->createMock(EmailArchivalService::class),
+			),
 			logger: new NullLogger()
 		);
 	}//end setUp()
