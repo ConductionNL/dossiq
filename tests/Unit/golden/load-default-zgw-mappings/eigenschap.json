@@ -1,0 +1,29 @@
+{
+    "zgwResource": "eigenschap",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "name": "{{ name }}",
+        "definitie": "{{ definition }}",
+        "notes": "{{ description }}",
+        "caseType": "{{ _baseUrl | replace({\"catalogi/v1/eigenschappen\": \"catalogi/v1/zaaktypen\"}) }}/{{ caseType }}",
+        "specificatie": "{{ {formaat: propertyType ?: \"tekst\"} | json_encode }}"
+    },
+    "reverseMapping": {
+        "name": "{{ naam }}",
+        "definition": "{{ definitie }}",
+        "description": "{{ toelichting }}",
+        "caseType": "{{ zaaktype | zgw_extract_uuid }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "caseType": {
+            "field": "caseType",
+            "extractUuid": true
+        }
+    }
+}

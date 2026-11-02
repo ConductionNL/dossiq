@@ -46,6 +46,35 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class LoadDefaultZgwMappings implements IRepairStep {
+	/**
+	 * A list query on `zaak` filters on the case, by its uuid.
+	 */
+	private const QUERY_BY_CASE = ['zaak' => ['field' => 'case', 'extractUuid' => true]];
+
+	/**
+	 * A list query on `caseType` filters on the case type, by its uuid.
+	 */
+	private const QUERY_BY_CASE_TYPE = ['caseType' => ['field' => 'caseType', 'extractUuid' => true]];
+
+	/**
+	 * A list query on `informatieobject` filters on the document.
+	 */
+	private const QUERY_BY_DOCUMENT = ['informatieobject' => ['field' => 'document']];
+
+	/**
+	 * `vertrouwelijkheidaanduiding` is the same word on both sides, so each value maps to itself.
+	 */
+	private const CONFIDENTIALITY_VALUES = [
+		'openbaar' => 'openbaar',
+		'beperkt_openbaar' => 'beperkt_openbaar',
+		'intern' => 'intern',
+		'zaakvertrouwelijk' => 'zaakvertrouwelijk',
+		'vertrouwelijk' => 'vertrouwelijk',
+		'confidentieel' => 'confidentieel',
+		'geheim' => 'geheim',
+		'zeer_geheim' => 'zeer_geheim',
+	];
+
 	use RunsUnderSystemIdentity;
 
 	/**
@@ -441,16 +470,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			// 400. `vertrouwelijkheidaanduiding` really is identical on both
 			// sides, so it maps to itself and says so.
 			'valueMapping' => [
-				'confidentiality' => [
-					'openbaar' => 'openbaar',
-					'beperkt_openbaar' => 'beperkt_openbaar',
-					'intern' => 'intern',
-					'zaakvertrouwelijk' => 'zaakvertrouwelijk',
-					'vertrouwelijk' => 'vertrouwelijk',
-					'confidentieel' => 'confidentieel',
-					'geheim' => 'geheim',
-					'zeer_geheim' => 'zeer_geheim',
-				],
+				'confidentiality' => self::CONFIDENTIALITY_VALUES,
 				'archiveStatus' => [
 					'nog_te_archiveren' => 'nog_te_archiveren',
 					'archived' => 'gearchiveerd',
@@ -670,12 +690,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'description' => '{{ statustoelichting }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE,
 		];
 	}//end getStatusMapping()
 
@@ -735,12 +750,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'isEindstatus' => 'bool',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE_TYPE,
 		];
 	}//end getStatusTypeMapping()
 
@@ -781,12 +791,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'description' => '{{ toelichting }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE,
 		];
 	}//end getResultaatMapping()
 
@@ -848,12 +853,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'brondatumArchiefprocedure',
 				'selectielijstklasse',
 			],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE_TYPE,
 		];
 	}//end getResultaatTypeMapping()
 
@@ -897,12 +897,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'participant' => '{{ betrokkeneIdentificatie }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE,
 		];
 	}//end getRolMapping()
 
@@ -938,12 +933,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE_TYPE,
 		];
 	}//end getRolTypeMapping()
 
@@ -982,12 +972,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'caseType' => [
-					'field' => 'caseType',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE_TYPE,
 		];
 	}//end getEigenschapMapping()
 
@@ -1043,12 +1028,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'deliveryDate' => '{{ verzenddatum }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE,
 		];
 	}//end getBesluitMapping()
 
@@ -1244,16 +1224,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'usageRightsIndication' => '{{ indicatieGebruiksrecht }}',
 			],
 			'valueMapping' => [
-				'confidentiality' => [
-					'openbaar' => 'openbaar',
-					'beperkt_openbaar' => 'beperkt_openbaar',
-					'intern' => 'intern',
-					'zaakvertrouwelijk' => 'zaakvertrouwelijk',
-					'vertrouwelijk' => 'vertrouwelijk',
-					'confidentieel' => 'confidentieel',
-					'geheim' => 'geheim',
-					'zeer_geheim' => 'zeer_geheim',
-				],
+				'confidentiality' => self::CONFIDENTIALITY_VALUES,
 				// The KEYS are what the register stores and the values are what
 				// ZGW sends. This table used to map Dutch to Dutch, while the
 				// document schema declares in_bewerking, for_determination, final
@@ -1371,11 +1342,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'conditionsDescription' => '{{ omschrijvingVoorwaarden }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'informatieobject' => [
-					'field' => 'document',
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_DOCUMENT,
 		];
 	}//end getGebruiksrechtenMapping()
 
@@ -1894,12 +1861,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'value' => '{{ waarde }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE,
 		];
 	}//end getZaakeigenschapMapping()
 
@@ -1990,12 +1952,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'description' => '{{ relatieomschrijving }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE,
 		];
 	}//end getZaakobjectMapping()
 
@@ -2035,12 +1992,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'initiator' => '{{ initiator }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'zaak' => [
-					'field' => 'case',
-					'extractUuid' => true,
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_CASE,
 		];
 	}//end getKlantcontactMapping()
 
@@ -2127,11 +2079,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'contactPersonName' => '{{ contactpersoonnaam }}',
 			],
 			'valueMapping' => [],
-			'queryParameterMapping' => [
-				'informatieobject' => [
-					'field' => 'document',
-				],
-			],
+			'queryParameterMapping' => self::QUERY_BY_DOCUMENT,
 		];
 	}//end getVerzendingMapping()
 }//end class

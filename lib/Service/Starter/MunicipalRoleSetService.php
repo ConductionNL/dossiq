@@ -109,18 +109,14 @@ class MunicipalRoleSetService {
 	/**
 	 * Constructor.
 	 *
-	 * @param StarterStore                $store   The OpenRegister seam.
-	 * @param ShippedConfigurationService $shipped The provenance ledger.
-	 * @param ShippedSets                 $sets    The sets dossiq ships, and their versions.
+	 * @param ShippedRoleSources $shippedRoles The starter store, the shipped configuration ledger and the shipped sets.
 	 * @param IUserSession                $session Who is acting.
 	 * @param LoggerInterface             $logger  Logger.
 	 * @param LanguageMapText             $text    Reads a role type name Dutch first, the key it is seeded by.
 	 * @param TranslatedText              $reader  Reads a role type name or description in the reader's language.
 	 */
 	public function __construct(
-		private readonly StarterStore $store,
-		private readonly ShippedConfigurationService $shipped,
-		private readonly ShippedSets $sets,
+		private readonly ShippedRoleSources $shippedRoles,
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
 		private readonly LanguageMapText $text = new LanguageMapText(),
@@ -158,16 +154,16 @@ class MunicipalRoleSetService {
 			}
 
 			$payload = ($role + ['shippedSet' => ShippedSets::MUNICIPAL_ROLES, 'dormant' => true]);
-			$saved = $this->store->save(configKey: self::ROLE_TYPES, payload: $payload);
+			$saved = $this->shippedRoles->store->save(configKey: self::ROLE_TYPES, payload: $payload);
 			if ($saved === null) {
 				continue;
 			}
 
 			$tally['seeded']++;
-			$this->shipped->stamp(
+			$this->shippedRoles->shipped->stamp(
 				set: ShippedSets::MUNICIPAL_ROLES,
 				targetSchema: 'roleType',
-				targetObject: $this->store->idOf(row: $saved),
+				targetObject: $this->shippedRoles->store->idOf(row: $saved),
 				object: $saved,
 			);
 		}//end foreach
@@ -193,14 +189,14 @@ class MunicipalRoleSetService {
 
 		return [
 			'set' => ShippedSets::MUNICIPAL_ROLES,
-			'setVersion' => $this->sets->versionOf(set: ShippedSets::MUNICIPAL_ROLES),
+			'setVersion' => $this->shippedRoles->sets->versionOf(set: ShippedSets::MUNICIPAL_ROLES),
 			'adopted' => ($adoption !== null),
 			'adoptedBy' => (string)(($adoption['adoptedBy'] ?? '')),
 			'adoptedAt' => (string)(($adoption['adoptedAt'] ?? '')),
 			'rolesInUse' => $this->rolesHoldingGrants(roles: $roles),
 			'roles' => array_map(
 				fn (array $role): array => [
-					'id' => $this->store->idOf(row: $role),
+					'id' => $this->shippedRoles->store->idOf(row: $role),
 					'name' => $this->reader->forReader(value: ($role['name'] ?? '')),
 					'description' => $this->reader->forReader(value: ($role['description'] ?? '')),
 					'dormant' => (($role['dormant'] ?? false) === true),
@@ -231,21 +227,21 @@ class MunicipalRoleSetService {
 		$adopted = 0;
 		foreach ($roles as $role) {
 			$role['dormant'] = false;
-			$saved = $this->store->save(
+			$saved = $this->shippedRoles->store->save(
 				configKey: self::ROLE_TYPES,
 				payload: $role,
-				id: $this->store->idOf(row: $role),
+				id: $this->shippedRoles->store->idOf(row: $role),
 			);
 			if ($saved !== null) {
 				$adopted++;
 			}
 		}
 
-		$record = $this->store->save(
+		$record = $this->shippedRoles->store->save(
 			configKey: self::ADOPTIONS,
 			payload: [
 				'set' => ShippedSets::MUNICIPAL_ROLES,
-				'setVersion' => $this->sets->versionOf(set: ShippedSets::MUNICIPAL_ROLES),
+				'setVersion' => $this->shippedRoles->sets->versionOf(set: ShippedSets::MUNICIPAL_ROLES),
 				'adoptedBy' => $this->actor(user: $user),
 				'adoptedAt' => gmdate('c'),
 			],
@@ -289,19 +285,19 @@ class MunicipalRoleSetService {
 
 		foreach ($roles as $role) {
 			$role['dormant'] = true;
-			$this->store->save(
+			$this->shippedRoles->store->save(
 				configKey: self::ROLE_TYPES,
 				payload: $role,
-				id: $this->store->idOf(row: $role),
+				id: $this->shippedRoles->store->idOf(row: $role),
 			);
 		}
 
 		$adoption['reversedBy'] = $this->actor(user: $this->session->getUser());
 		$adoption['reversedAt'] = gmdate('c');
-		$this->store->save(
+		$this->shippedRoles->store->save(
 			configKey: self::ADOPTIONS,
 			payload: $adoption,
-			id: $this->store->idOf(row: $adoption),
+			id: $this->shippedRoles->store->idOf(row: $adoption),
 		);
 
 		return ['ok' => true, 'reason' => '', 'roleInUse' => ''];
@@ -332,7 +328,7 @@ class MunicipalRoleSetService {
 	 * @return array<int, array<string, mixed>>|null The roles, or null when unreachable.
 	 */
 	private function shippedRoles(): ?array {
-		return $this->store->rows(
+		return $this->shippedRoles->store->rows(
 			configKey: self::ROLE_TYPES,
 			filters: ['shippedSet' => ShippedSets::MUNICIPAL_ROLES],
 		);
@@ -344,7 +340,7 @@ class MunicipalRoleSetService {
 	 * @return array<string, mixed>|null The record.
 	 */
 	private function openAdoption(): ?array {
-		$records = $this->store->rows(
+		$records = $this->shippedRoles->store->rows(
 			configKey: self::ADOPTIONS,
 			filters: ['set' => ShippedSets::MUNICIPAL_ROLES],
 		);
@@ -372,12 +368,12 @@ class MunicipalRoleSetService {
 	private function rolesHoldingGrants(array $roles): array {
 		$inUse = [];
 		foreach ($roles as $role) {
-			$roleTypeId = $this->store->idOf(row: $role);
+			$roleTypeId = $this->shippedRoles->store->idOf(row: $role);
 			if ($roleTypeId === '') {
 				continue;
 			}
 
-			$grants = $this->store->rows(
+			$grants = $this->shippedRoles->store->rows(
 				configKey: self::ROLES,
 				filters: ['roleType' => $roleTypeId, '_limit' => 1],
 			);

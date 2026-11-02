@@ -25,7 +25,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseType;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
@@ -60,22 +59,18 @@ class CaseTypeRuleProjector {
 	 *
 	 * @param CaseTypeStore $store Reads the case type.
 	 * @param SettingsService $settings The register and case schema.
-	 * @param CaseTypeRuleFlowDocument $documents Builds the flow of one action.
+	 * @param CaseTypeRuleSources $sources The rule flow document, the case type resolver and the condition logic.
 	 * @param ContainerInterface $container OpenRegister's flow services.
 	 * @param LoggerInterface $logger The logger.
-	 * @param CaseTypeResolver|null $resolver The case type's blueprint, for its property definition names.
-	 * @param RuleConditionLogic $logic Writes a requirement's condition.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $store,
 		private readonly SettingsService $settings,
-		private readonly CaseTypeRuleFlowDocument $documents,
+		private readonly CaseTypeRuleSources $sources,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
-		private readonly ?CaseTypeResolver $resolver = null,
-		private readonly RuleConditionLogic $logic = new RuleConditionLogic(),
 	) {
 	}//end __construct()
 
@@ -105,7 +100,7 @@ class CaseTypeRuleProjector {
 					continue;
 				}
 
-				$document = $this->documents->build(rule: $rule, action: (array)$action, scope: $scope);
+				$document = $this->sources->documents->build(rule: $rule, action: (array)$action, scope: $scope);
 				if ($document === null) {
 					$unprojected[] = (string)($rule['id'] ?? '?') . ': ' . (string)(((array)$action)['action'] ?? '?');
 					continue;
@@ -196,7 +191,7 @@ class CaseTypeRuleProjector {
 		$requirement = ['documentType' => $documentType, 'rule' => (string)($rule['id'] ?? '')];
 		$conditions = (array)($rule['conditions'] ?? []);
 		if ($conditions !== []) {
-			$requirement['condition'] = $this->logic->forRule(caseTypeId: $caseTypeId, conditions: $conditions);
+			$requirement['condition'] = $this->sources->logic->forRule(caseTypeId: $caseTypeId, conditions: $conditions);
 		}
 
 		return $requirement;
@@ -210,7 +205,7 @@ class CaseTypeRuleProjector {
 	 * @return array<int, string> The names.
 	 */
 	private function definitionNames(string $caseTypeId): array {
-		$rows = (array)($this->resolver?->blueprintFor(caseTypeId: $caseTypeId)['propertyDefinitions'] ?? []);
+		$rows = (array)($this->sources->resolver?->blueprintFor(caseTypeId: $caseTypeId)['propertyDefinitions'] ?? []);
 
 		return array_values(array_filter(array_map(static fn ($row): string => (string)(((array)$row)['name'] ?? ''), $rows)));
 	}//end definitionNames()
@@ -294,7 +289,7 @@ class CaseTypeRuleProjector {
 	 * @return array<int, string> The flow uuids.
 	 */
 	private function existing(object $flowService, string $caseTypeId): array {
-		$prefix = $this->documents->marker(caseTypeId: $caseTypeId);
+		$prefix = $this->sources->documents->marker(caseTypeId: $caseTypeId);
 		$uuids = [];
 		$offset = 0;
 		$more = true;
