@@ -596,8 +596,8 @@
         "digest": "f4a93f76ff3c94c12182673a2d2c25df33790289e2022f899e21181f24056203"
     },
     "lib/Settings/dossiq_register.json::bacAdviceRequest": {
-        "version": "1.0.0",
-        "digest": "bd97b84e4e59f5ed2063ac3999ab1f7e0ec65881be35022acb420b88149b757f"
+        "version": "1.0.1",
+        "digest": "84df72b37f1ce5bfc66db77981e756c338f266cf245fd16bd4a62bde32f09b2c"
     },
     "lib/Settings/dossiq_register.json::beroep": {
         "version": "1.0.0",
