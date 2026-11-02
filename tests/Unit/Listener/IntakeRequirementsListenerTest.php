@@ -58,7 +58,7 @@ use Psr\Log\NullLogger;
  * Unit tests for the pre-persist enforcement of the intake declarations.
  *
  * @covers \OCA\Dossiq\Listener\IntakeRequirementsListener
- *
+ * @covers \OCA\Dossiq\Listener\IntakeDeclarations
  * @uses \OCA\Dossiq\Service\Intake\AssigneeNarrowing
  * @uses \OCA\Dossiq\Service\Intake\CaseClassification
  * @uses \OCA\Dossiq\Service\Intake\ClassificationSchemes
@@ -66,7 +66,6 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Intake\DuplicatePolicy
  * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
- * @covers \OCA\Dossiq\Listener\IntakeDeclarations
  */
 class IntakeRequirementsListenerTest extends TestCase {
 

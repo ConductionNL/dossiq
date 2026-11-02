@@ -149,7 +149,7 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 		return new CaseTypePortalWithdrawalListener(
 			$settings,
 			new CaseTypeLookup(
-				resolver: new CaseTypeResolver($store),
+				resolver: new CaseTypeResolver(store: $store),
 				store: $store,
 				target: new PortalWithdrawalTarget(),
 			),

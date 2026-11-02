@@ -37,7 +37,7 @@ use Psr\Log\NullLogger;
  * Unit tests for MunicipalRoleSetService.
  *
  * @covers \OCA\Dossiq\Service\Starter\MunicipalRoleSetService
- *
+ * @covers \OCA\Dossiq\Service\Starter\ShippedRoleSources
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
  * @uses \OCA\Dossiq\Service\Starter\ShippedConfigurationService
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
@@ -47,7 +47,6 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
  * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
- * @covers \OCA\Dossiq\Service\Starter\ShippedRoleSources
  */
 class MunicipalRoleSetTest extends TestCase {
 
@@ -83,10 +82,10 @@ class MunicipalRoleSetTest extends TestCase {
 			new ShippedRoleSources(
 				store: $this->harness->store,
 				shipped: new ShippedConfigurationService(
-					$this->harness->store,
-					new ShippedSets(),
-					new ShippedFingerprint(),
-					new NullLogger(),
+					store: $this->harness->store,
+					sets: new ShippedSets(),
+					fingerprint: new ShippedFingerprint(),
+					logger: new NullLogger(),
 				),
 				sets: new ShippedSets(),
 			),
@@ -269,10 +268,10 @@ class MunicipalRoleSetTest extends TestCase {
 			new ShippedRoleSources(
 				store: $blind->store,
 				shipped: new ShippedConfigurationService(
-					$blind->store,
-					new ShippedSets(),
-					new ShippedFingerprint(),
-					new NullLogger(),
+					store: $blind->store,
+					sets: new ShippedSets(),
+					fingerprint: new ShippedFingerprint(),
+					logger: new NullLogger(),
 				),
 				sets: new ShippedSets(),
 			),

@@ -60,11 +60,11 @@ use Psr\Log\LoggerInterface;
  * Covers the six outcomes, the policy branches and the threading guard.
  *
  * @covers \OCA\Dossiq\Service\Email\InboundMailIntake
+ * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
  * @uses \OCA\Dossiq\Service\Email\InboundMessage
  * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
- * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
- * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */

@@ -59,11 +59,11 @@ use Psr\Log\NullLogger;
  * Unit tests for the subject-tag reading.
  *
  * @covers \OCA\Dossiq\Service\Email\InboundMailIntake
+ * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
  * @uses \OCA\Dossiq\Service\Email\Filters\FilterPipeline
  * @uses \OCA\Dossiq\Service\Email\ThreadingCheck
- * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
- * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  */
 class SubjectTagTest extends TestCase {
 
@@ -97,9 +97,9 @@ class SubjectTagTest extends TestCase {
 			policy: $this->createMock(IntakePolicy::class),
 			log: $this->createMock(IntakeLog::class),
 			filing: new InboundMailFiling(
-				cases: $this->createMock(CaseEmailRepository::class),
-				unmatched: $this->createMock(UnmatchedMailIntake::class),
-				archival: $this->createMock(EmailArchivalService::class),
+				cases: $this->createMock(originalClassName: CaseEmailRepository::class),
+				unmatched: $this->createMock(originalClassName: UnmatchedMailIntake::class),
+				archival: $this->createMock(originalClassName: EmailArchivalService::class),
 			),
 			logger: new NullLogger()
 		);

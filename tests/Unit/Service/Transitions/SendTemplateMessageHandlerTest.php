@@ -88,7 +88,7 @@ class SendTemplateMessageHandlerTest extends TestCase {
 
 		return new SendTemplateMessageHandler(
 			recipients: new RecipientResolvers(
-				assignees: new AssigneeResolver(new NullLogger()),
+				assignees: new AssigneeResolver(logger: new NullLogger()),
 				roles: $roles,
 				users: $users,
 			),

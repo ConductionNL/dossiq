@@ -60,6 +60,8 @@ use Psr\Log\NullLogger;
  * Mail intake runs as the configured account, or not at all.
  *
  * @covers \OCA\Dossiq\BackgroundJob\InboundEmailJob
+ * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  * @uses \OCA\Dossiq\Service\Email\InboundMailIntake
  * @uses \OCA\Dossiq\Service\Email\IntakeLog
  * @uses \OCA\Dossiq\Service\Email\UnmatchedMailIntake
@@ -77,8 +79,6 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\IntakePolicy
  * @uses \OCA\Dossiq\Service\Email\ThreadingCheck
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
- * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
- * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  */
 class InboundEmailJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;
