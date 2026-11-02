@@ -46,8 +46,6 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Portal\PortalContributionProvider;
-use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -123,14 +121,9 @@ class AcknowledgementService {
 	 * Constructor.
 	 *
 	 * @param SettingsService             $settingsService   Bridge to OpenRegister and the configured schemas.
-	 * @param CaseTypeResolver            $caseTypeResolver  The effective case type, parents included.
-	 * @param CaseTypeStore               $store             Reference resolution for the case's case type.
-	 * @param CaseTypeAcknowledgement     $declaration       What the case type declares about confirming receipt.
-	 * @param TermijnService              $termService       The statutory term bound to the case, when there is one.
-	 * @param TermijnNotificationService  $notifications     The template renderer and the notification router.
-	 * @param CaseContactDirectory        $contacts          The addresses registered on a case.
-	 * @param PortalContributionProvider  $portal            The one list of case fields a citizen may see.
-	 * @param CaseFieldWriter             $writer            Partial writes to the stored case.
+	 * @param AcknowledgementDeclaration $caseTypes The case type resolver and store, and the case type's acknowledgement declaration.
+	 * @param AcknowledgementTerms $terms The term instances and the term notifications.
+	 * @param AcknowledgementDelivery $delivery The case contacts, the portal contribution and the case field writer.
 	 * @param LoggerInterface             $logger            The logger.
 	 * @param CaseTimeline                $timeline          The one seam that writes a timeline entry.
 	 *
@@ -141,14 +134,9 @@ class AcknowledgementService {
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly CaseTypeResolver $caseTypeResolver,
-		private readonly CaseTypeStore $store,
-		private readonly CaseTypeAcknowledgement $declaration,
-		private readonly TermijnService $termService,
-		private readonly TermijnNotificationService $notifications,
-		private readonly CaseContactDirectory $contacts,
-		private readonly PortalContributionProvider $portal,
-		private readonly CaseFieldWriter $writer,
+		private readonly AcknowledgementDeclaration $caseTypes,
+		private readonly AcknowledgementTerms $terms,
+		private readonly AcknowledgementDelivery $delivery,
 		private readonly LoggerInterface $logger,
 		private readonly CaseTimeline $timeline,
 	) {
@@ -220,9 +208,9 @@ class AcknowledgementService {
 	 */
 	private function prepared(array $ack): array {
 		$recipient = $this->addressOn(case: $ack['case']);
-		$channel = $this->declaration->channelFor(case: $ack['case'], caseType: $ack['caseType']);
-		$withheld = $this->declaration->contentStaysOnPlatform(caseType: $ack['caseType']);
-		$term = $this->termService->getTermijnInstanceForZaak(caseId: $ack['caseId']);
+		$channel = $this->caseTypes->declaration->channelFor(case: $ack['case'], caseType: $ack['caseType']);
+		$withheld = $this->caseTypes->declaration->contentStaysOnPlatform(caseType: $ack['caseType']);
+		$term = $this->terms->termService->getTermijnInstanceForZaak(caseId: $ack['caseId']);
 
 		$context = $this->contextFor(
 			case: $ack['case'],
@@ -251,7 +239,7 @@ class AcknowledgementService {
 	 * @throws NoticeNotSentException When no transport took it.
 	 */
 	private function sendNotice(array $ack, array $context): array {
-		return $this->notifications->sendTermijnNotification(
+		return $this->terms->notifications->sendTermijnNotification(
 			CaseTypeAcknowledgement::TEMPLATE,
 			(string)($ack['term']['id'] ?? ($ack['term']['uuid'] ?? '')),
 			$ack['recipient'],
@@ -271,7 +259,8 @@ class AcknowledgementService {
 	private function recordMet(array $ack, array $met): void {
 		$this->write(caseId: $ack['caseId'], changes: ['acknowledgementDuty' => $met]);
 
-		if ($met['channel'] !== RequesterNoticeSender::CHANNEL_EMAIL && $this->declaration->sendsEmailCopy(caseType: $ack['caseType']) === true) {
+		$declaration = $this->caseTypes->declaration;
+		if ($met['channel'] !== RequesterNoticeSender::CHANNEL_EMAIL && $declaration->sendsEmailCopy(caseType: $ack['caseType']) === true) {
 			$this->sendEmailCopy(ack: $ack);
 		}
 
@@ -342,7 +331,7 @@ class AcknowledgementService {
 			return ['sent' => false, 'reason' => 'draft', 'duty' => $this->dutyOn(case: $case)];
 		}
 
-		if ($this->declaration->owesAcknowledgement(case: $case, caseType: $caseType) === false) {
+		if ($this->caseTypes->declaration->owesAcknowledgement(case: $case, caseType: $caseType) === false) {
 			$duty = ['required' => false, 'status' => self::STATUS_NOT_REQUIRED];
 			$this->write(caseId: $caseId, changes: ['acknowledgementDuty' => $duty]);
 
@@ -563,8 +552,8 @@ class AcknowledgementService {
 	 */
 	private function addressOn(array $case): string {
 		$addresses = array_merge(
-			$this->declaration->addressesOn(case: $case, caseType: $this->caseTypeOf(case: $case)),
-			$this->contacts->collectAddresses(caseData: $case)
+			$this->caseTypes->declaration->addressesOn(case: $case, caseType: $this->caseTypeOf(case: $case)),
+			$this->delivery->contacts->collectAddresses(caseData: $case)
 		);
 		if ($addresses !== []) {
 			return (string)reset($addresses);
@@ -594,7 +583,7 @@ class AcknowledgementService {
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 */
 	public function quotableFieldsOf(array $case): array {
-		$allowed = $this->portal->citizenCaseFields();
+		$allowed = $this->delivery->portal->citizenCaseFields();
 
 		$quotable = [];
 		foreach ($allowed as $field) {
@@ -627,7 +616,7 @@ class AcknowledgementService {
 		$quotable = $this->quotableFieldsOf(case: $case);
 
 		return [
-			'locale' => $this->declaration->languageFor(caseType: $caseType),
+			'locale' => $this->caseTypes->declaration->languageFor(caseType: $caseType),
 			'case' => (string)($quotable['identifier'] ?? ''),
 			'subject' => (string)($quotable['title'] ?? ''),
 			'endDate' => (string)($term['endDateCurrent'] ?? ($quotable['deadline'] ?? '')),
@@ -657,12 +646,12 @@ class AcknowledgementService {
 	 * @return array<string, mixed> The effective case type, empty when unreadable.
 	 */
 	private function caseTypeOf(array $case): array {
-		$reference = $this->store->referenceId(value: ($case['caseType'] ?? ''));
+		$reference = $this->caseTypes->store->referenceId(value: ($case['caseType'] ?? ''));
 		if ($reference === '') {
 			return [];
 		}
 
-		return $this->caseTypeResolver->effectiveCaseType(caseTypeId: $reference);
+		return $this->caseTypes->caseTypeResolver->effectiveCaseType(caseTypeId: $reference);
 	}//end caseTypeOf()
 
 	/**
@@ -762,7 +751,7 @@ class AcknowledgementService {
 		}
 
 		try {
-			$this->writer->write(
+			$this->delivery->writer->write(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,

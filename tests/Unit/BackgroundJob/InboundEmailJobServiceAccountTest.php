@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\Email\InboundMailFiling;
 use OCA\Dossiq\Service\Email\InboundMailChecks;
 use DateTime;
 use OCA\Dossiq\BackgroundJob\InboundEmailJob;
+use OCA\Dossiq\BackgroundJob\MailIntakeSource;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Email\AuthenticationVerdict;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
@@ -60,6 +61,7 @@ use Psr\Log\NullLogger;
  * Mail intake runs as the configured account, or not at all.
  *
  * @covers \OCA\Dossiq\BackgroundJob\InboundEmailJob
+ * @covers \OCA\Dossiq\BackgroundJob\MailIntakeSource
  * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
  * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  * @uses \OCA\Dossiq\Service\Email\InboundMailIntake
@@ -258,6 +260,7 @@ class InboundEmailJobServiceAccountTest extends TestCase {
 				'gateway' => $this->gateway,
 				'account' => new IntakeAccount(appConfig: $appConfig),
 				'intake' => $intake,
+				'mail' => new MailIntakeSource(gateway: $this->gateway, account: new IntakeAccount(appConfig: $appConfig), intake: $intake),
 				'logger' => $logger,
 				'serviceAccount' => $this->backgroundAccount(),
 			]
