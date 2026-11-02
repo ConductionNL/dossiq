@@ -16,6 +16,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md
+ * @spec openspec/changes/creating-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md
  */
 
 declare(strict_types=1);
@@ -30,14 +31,16 @@ use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
 use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
 use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\OpenRegister\Exception\HookStoppedException;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * Writes to an advice request's status, through the listeners the app registers on OpenRegister's pre-save event.
+ * Writes and creates of an advice request, through the listeners the app registers on OpenRegister's pre-save events.
  *
  * @covers \OCA\Dossiq\Listener\DeliberationStartGuard
  * @covers \OCA\Dossiq\AppInfo\Registrar\BezwaarListenerRegistrar
@@ -231,7 +234,107 @@ class DeliberationStartGuardTest extends TestCase {
 	 */
 	public function testTheRegistrarBindsTheGuardBeforeTheSave(): void {
 		$this->assertContains(needle: DeliberationStartGuard::class, haystack: $this->boundListeners()[ObjectUpdatingEvent::class] ?? []);
+		$this->assertContains(needle: DeliberationStartGuard::class, haystack: $this->boundListeners()[ObjectCreatingEvent::class] ?? []);
 	}//end testTheRegistrarBindsTheGuardBeforeTheSave()
+
+	/**
+	 * Creating a request in in-deliberation with a conflicted panel is refused and nothing is saved.
+	 *
+	 * No request exists to carry the trail entry, so the full entry goes to the error log.
+	 *
+	 * @return void
+	 */
+	public function testCreatingIntoDeliberationWithAConflictedPanelIsRefused(): void {
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail(), conflict: 'p.janssen');
+
+		$refusal = $this->createRequest(service: $service, row: ['status' => 'in-deliberation', 'panel' => ['a.bakker', 'p.janssen']]);
+
+		$this->assertNotNull(actual: $refusal, message: 'a request created in deliberation with a conflicted panel must be refused');
+		$this->assertStringStartsWith(prefix: 'Panel member conflict (Awb Art. 7:13 lid 3)', string: $refusal->getMessage());
+		$this->assertSame(expected: DeliberationStartGuard::ERROR_CODE, actual: $refusal->getErrors()['code']);
+		$this->assertSame(expected: [], actual: $this->store->row('bacAdviceRequest', 'req-1'), message: 'nothing is saved');
+		$this->assertSame(expected: 0, actual: $this->store->writes);
+		$this->assertSame(expected: [], actual: $this->trail->actionsOn('req-1'));
+		$entry = $this->loggedEntry(action: 'dossiq.bezwaar.independence-check-failed');
+		$this->assertSame(expected: 'p.janssen', actual: $entry['payload']['conflictingMember']);
+	}//end testCreatingIntoDeliberationWithAConflictedPanelIsRefused()
+
+	/**
+	 * Creating a request in in-deliberation whose panel cannot be verified is refused, and the entry is logged.
+	 *
+	 * @return void
+	 */
+	public function testCreatingIntoDeliberationWithAnUnverifiablePanelIsRefused(): void {
+		$reason = 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)';
+		$this->independenceVerdict = ['ok' => false, 'member' => null, 'reason' => $reason];
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+
+		$refusal = $this->createRequest(service: $service, row: ['status' => 'in-deliberation', 'panel' => ['a.bakker']]);
+
+		$this->assertNotNull(actual: $refusal, message: 'a request created in deliberation with an unverifiable panel must be refused');
+		$this->assertStringStartsWith(prefix: 'Panel independence could not be verified', string: $refusal->getMessage());
+		$this->assertSame(expected: [], actual: $this->store->row('bacAdviceRequest', 'req-1'), message: 'nothing is saved');
+		$this->assertSame(
+			expected: ['conflictingMember' => null, 'reason' => $reason],
+			actual: $this->loggedEntry(action: 'dossiq.bezwaar.independence-check-unverifiable')['payload']
+		);
+	}//end testCreatingIntoDeliberationWithAnUnverifiablePanelIsRefused()
+
+	/**
+	 * Creating a request in in-deliberation without a panel, or when the check fails, is refused.
+	 *
+	 * @return void
+	 */
+	public function testCreatingIntoDeliberationWithoutAPanelOrAWorkingCheckIsRefused(): void {
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+		$refusal = $this->createRequest(service: $service, row: ['status' => 'in-deliberation']);
+		$this->assertSame(expected: 'Panel must be set before deliberation can start', actual: $refusal?->getMessage());
+
+		$independence = $this->createMock(originalClassName: PanelIndependenceChecker::class);
+		$independence->method('check')->willThrowException(exception: new \TypeError('checker broke'));
+		$broken = new AdvisoryCommitteeService(
+			settingsService: $this->bezwaarSettings(),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			adviceDelegation: $this->createMock(originalClassName: AdviceDelegationService::class),
+			auditTrail: $this->bezwaarAuditTrail(),
+			independence: $independence,
+		);
+		$refusal = $this->createRequest(service: $broken, row: ['status' => 'in-deliberation', 'panel' => ['a.bakker']]);
+		$this->assertSame(expected: DeliberationStartGuard::UNCHECKED_MESSAGE, actual: $refusal?->getMessage());
+		$this->assertSame(expected: [], actual: $this->store->row('bacAdviceRequest', 'req-1'), message: 'nothing is saved');
+	}//end testCreatingIntoDeliberationWithoutAPanelOrAWorkingCheckIsRefused()
+
+	/**
+	 * Creating a request in in-deliberation with an independent panel, or in any other status, is saved unchecked.
+	 *
+	 * @return void
+	 */
+	public function testCreatingInAnotherStatusOrWithAnIndependentPanelIsSaved(): void {
+		$conflicted = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail(), conflict: 'a.bakker');
+		$created = $this->createRequest(service: $conflicted, row: ['status' => 'assigned', 'panel' => ['a.bakker']]);
+		$this->assertNull(actual: $created, message: 'a create in assigned is not checked');
+		$this->assertSame(expected: 'assigned', actual: $this->store->row('bacAdviceRequest', 'req-1')['status']);
+		$this->assertSame(expected: [], actual: $this->trail->actionsOn('req-1'));
+
+		$this->startBezwaarStore();
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+		$this->assertNull(actual: $this->createRequest(service: $service, row: ['status' => 'in-deliberation', 'panel' => ['a.bakker']]));
+		$this->assertSame(expected: 'in-deliberation', actual: $this->store->row('bacAdviceRequest', 'req-1')['status']);
+	}//end testCreatingInAnotherStatusOrWithAnIndependentPanelIsSaved()
+
+	/**
+	 * Creating another schema's object in in-deliberation is not checked.
+	 *
+	 * @return void
+	 */
+	public function testCreatingAnotherSchemaIsNotChecked(): void {
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail(), conflict: 'a.bakker');
+		$event = new ObjectCreatingEvent($this->entity(schema: 'hearingSession', row: ['status' => 'in-deliberation', 'panel' => ['a.bakker']]));
+
+		$this->guard(service: $service)->handle(event: $event);
+
+		$this->assertFalse(condition: $event->isPropagationStopped());
+	}//end testCreatingAnotherSchemaIsNotChecked()
 
 	/**
 	 * Seed advice request req-1 on objection bezwaar-1.
@@ -247,9 +350,8 @@ class DeliberationStartGuardTest extends TestCase {
 	/**
 	 * Write a status onto req-1 the way OpenRegister saves an update.
 	 *
-	 * The pre-save event goes to every listener the app binds to it; a stopped
-	 * event raises HookStoppedException and nothing is saved, as in
-	 * MagicMapper::updateObjectEntity().
+	 * As in MagicMapper::updateObjectEntity(): a stopped ObjectUpdatingEvent
+	 * raises HookStoppedException and nothing is saved.
 	 *
 	 * @param AdvisoryCommitteeService $service The service the guard asks.
 	 * @param string                   $status  The status to write.
@@ -264,26 +366,70 @@ class DeliberationStartGuardTest extends TestCase {
 			$this->entity(schema: 'bacAdviceRequest', row: $before)
 		);
 
-		try {
-			foreach ($this->boundListeners()[ObjectUpdatingEvent::class] ?? [] as $listener) {
-				if ($listener === DeliberationStartGuard::class) {
-					$this->guard(service: $service)->handle(event: $event);
-				}
-			}
+		return $this->saveUnlessRefused(service: $service, event: $event, row: $after);
+	}//end writeStatus()
 
-			if ($event->isPropagationStopped() === true) {
-				throw new HookStoppedException(
-					message: (string) ($event->getErrors()['message'] ?? 'Object update rejected by hook'),
-					errors: $event->getErrors()
-				);
+	/**
+	 * Create req-1 on objection bezwaar-1 the way OpenRegister inserts an object.
+	 *
+	 * As in MagicMapper::insertObjectEntity(): a stopped ObjectCreatingEvent
+	 * raises HookStoppedException and nothing is saved.
+	 *
+	 * @param AdvisoryCommitteeService $service The service the guard asks.
+	 * @param array<string, mixed>     $row     The request's fields.
+	 *
+	 * @return HookStoppedException|null The refusal, or null when the request was saved.
+	 */
+	private function createRequest(AdvisoryCommitteeService $service, array $row): ?HookStoppedException {
+		$row = array_merge(['bezwaar' => 'bezwaar-1', 'committee' => 'committee-1'], $row);
+		$event = new ObjectCreatingEvent($this->entity(schema: 'bacAdviceRequest', row: $row));
+
+		return $this->saveUnlessRefused(service: $service, event: $event, row: $row);
+	}//end createRequest()
+
+	/**
+	 * Hand a pre-save event to every guard the app binds to it, then save req-1 unless one refused.
+	 *
+	 * @param AdvisoryCommitteeService $service The service the guard asks.
+	 * @param Event                    $event   An ObjectCreatingEvent or ObjectUpdatingEvent.
+	 * @param array<string, mixed>     $row     The row to save.
+	 *
+	 * @return HookStoppedException|null The refusal, or null when the row was saved.
+	 */
+	private function saveUnlessRefused(AdvisoryCommitteeService $service, Event $event, array $row): ?HookStoppedException {
+		foreach ($this->boundListeners()[$event::class] ?? [] as $listener) {
+			if ($listener === DeliberationStartGuard::class) {
+				$this->guard(service: $service)->handle(event: $event);
 			}
-		} catch (HookStoppedException $refused) {
-			return $refused;
 		}
 
-		$this->store->saveObject(object: $after, register: 'dossiq', schema: 'bacAdviceRequest', uuid: 'req-1');
+		if ($event->isPropagationStopped() === true) {
+			return new HookStoppedException(
+				message: (string) ($event->getErrors()['message'] ?? 'Object save rejected by hook'),
+				errors: $event->getErrors()
+			);
+		}
+
+		$this->store->saveObject(object: $row, register: 'dossiq', schema: 'bacAdviceRequest', uuid: 'req-1');
 		return null;
-	}//end writeStatus()
+	}//end saveUnlessRefused()
+
+	/**
+	 * The one trail entry for req-1 that went to the error log because it could not be written.
+	 *
+	 * @param string $action The entry's action.
+	 *
+	 * @return array<string, mixed> The entry.
+	 */
+	private function loggedEntry(string $action): array {
+		$matches = array_values(array_filter(
+			array_column($this->auditErrors, 1),
+			static fn (array $context): bool => ($context['object'] ?? null) === 'req-1' && ($context['action'] ?? null) === $action
+		));
+		$this->assertCount(expectedCount: 1, haystack: $matches, message: 'expected exactly one logged '.$action.' entry on req-1');
+
+		return $matches[0]['entry'];
+	}//end loggedEntry()
 
 	/**
 	 * The guard over a service.
