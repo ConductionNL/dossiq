@@ -40,6 +40,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Repair\RenameDutchColumns
  * @covers \OCA\Dossiq\Repair\RenameDutchDeadlineColumns
  * @covers \OCA\Dossiq\Repair\RenameDutchDirectionValues
+ * @covers \OCA\Dossiq\Repair\Support\ReadsRegisterShards
+ * @covers \OCA\Dossiq\Repair\Support\ListsOpenRegisterTables
  *
  * @spec openspec/specs/case-management/spec.md
  */
