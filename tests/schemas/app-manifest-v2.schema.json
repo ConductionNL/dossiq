@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.170.0",
+	"version": "2.171.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -5915,9 +5915,9 @@
 						},
 						"rowTitle": {
 							"type": "string",
-							"enum": ["link", "plain"],
+							"enum": ["link", "plain", "text", "strong"],
 							"default": "link",
-							"description": "type='index' (screens-table-rows-parity): how the board look draws the table's title column. `link` (the default) is the 15px weight 600 underlined title of the DqZaken board; `plain` is the 15px bold title without an underline over a 13px muted secondary line, as the PqTickets and OcPublicaties boards draw it. The row stays clickable either way. The Nextcloud look ignores it. Maps to CnIndexPage `rowTitle`."
+							"description": "type='index' (screens-table-rows-parity): how the board look draws the table's title column. `link` (the default) is the 15px weight 600 underlined title of the DqZaken board; `plain` is the 15px bold title without an underline over a 13px muted secondary line, as the PqTickets and OcPublicaties boards draw it; `text` is an ordinary 14px cell (PtAanvraagformulieren); `strong` a 14px weight 600 name in the main ink without an underline (PtInzendingen, PtNieuws). The row stays clickable either way. The Nextcloud look ignores it. Maps to CnIndexPage `rowTitle`."
 						},
 						"showTypeEyebrow": {
 							"type": "boolean",
