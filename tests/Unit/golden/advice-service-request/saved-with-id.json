@@ -1,0 +1,75 @@
+{
+    "calls": [
+        {
+            "getConfigValue": "register"
+        },
+        {
+            "saveObject": {
+                "object": {
+                    "caseRef": "case-1",
+                    "requestedBy": "bob",
+                    "advisor": "alice",
+                    "deadline": "2028-01-31",
+                    "status": "open",
+                    "question": "Is de kap nodig?",
+                    "adviceText": "",
+                    "addedToFile": false
+                },
+                "register": "dossiq",
+                "schema": "adviceRequest",
+                "uuid": null
+            }
+        },
+        {
+            "raiseAdviceDecision": {
+                "subjectSchema": "adviesAanvraag",
+                "subjectId": "advice-1",
+                "payload": {
+                    "subjectRegister": "dossiq",
+                    "externalReference": "case-1",
+                    "subjectLabel": "Is de kap nodig?",
+                    "question": "Is de kap nodig?",
+                    "advisor": "alice"
+                }
+            }
+        },
+        {
+            "saveObject": {
+                "object": {
+                    "id": "advice-1",
+                    "status": "open",
+                    "decisionRef": "decision-9"
+                },
+                "register": "dossiq",
+                "schema": "adviceRequest",
+                "uuid": "advice-1"
+            }
+        },
+        {
+            "notifyAdviseur": {
+                "caseId": "case-1",
+                "payload": {
+                    "caseRef": "case-1",
+                    "requestedBy": "bob",
+                    "advisor": "alice",
+                    "deadline": "2028-01-31",
+                    "status": "open",
+                    "question": "Is de kap nodig?",
+                    "adviceText": "",
+                    "addedToFile": false
+                },
+                "saved": {
+                    "id": "advice-1",
+                    "status": "open"
+                }
+            }
+        },
+        {
+            "info": "Advice request created for case case-1 by bob"
+        }
+    ],
+    "answer": {
+        "id": "advice-1",
+        "status": "open"
+    }
+}
