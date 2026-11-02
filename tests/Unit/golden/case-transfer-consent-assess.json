@@ -315,9 +315,9 @@
     },
     "internal move, case without a case type": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -342,7 +342,16 @@
                 "case"
             ]
         ],
-        "logs": []
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-1",
+                    "exception": "Case has no case type"
+                }
+            ]
+        ]
     },
     "internal move, case read throws": {
         "verdict": {
