@@ -141,7 +141,7 @@ class CaseSplitStatusTest extends TestCase {
 				}
 
 				$saved = parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac);
-				$this->states[(string)$saved['id']][] = (string)$saved['status'];
+				$this->states[(string)$saved['id']][] = (string)($saved['status'] ?? '');
 
 				return $saved;
 			}
@@ -238,6 +238,35 @@ class CaseSplitStatusTest extends TestCase {
 	}//end testAnOriginalInTheInitialStatusIsNotMovedAgain()
 
 	/**
+	 * An original without a status leaves the second case in its initial status.
+	 *
+	 * @return void
+	 */
+	public function testAnOriginalWithoutAStatusLeavesTheInitialStatus(): void {
+		$this->register->seed(
+			schema: 'case',
+			uuid: 'case-1',
+			row: ['title' => 'Twee klachten', 'caseType' => 'ct-1', 'identifier' => 'ZAAK-1'],
+		);
+
+		$answer = $this->split();
+
+		self::assertSame(expected: ['st-intake'], actual: $this->register->states[(string)$answer['case']['id']]);
+		self::assertSame(expected: [], actual: $this->register->all(schema: 'statusRecord'));
+	}//end testAnOriginalWithoutAStatusLeavesTheInitialStatus()
+
+	/**
+	 * A move into a final status settles the end date, as every closing move does.
+	 *
+	 * @return void
+	 */
+	public function testAMoveIntoAFinalStatusSettlesTheEndDate(): void {
+		$answer = $this->split(final: true);
+
+		self::assertSame(expected: date('Y-m-d'), actual: $answer['case']['endDate']);
+	}//end testAMoveIntoAFinalStatusSettlesTheEndDate()
+
+	/**
 	 * A move the history cannot record is refused before anything moves.
 	 *
 	 * @return void
@@ -259,9 +288,11 @@ class CaseSplitStatusTest extends TestCase {
 	/**
 	 * Split case-1, moving doc-1, as jan.
 	 *
+	 * @param bool $final Whether every status is final.
+	 *
 	 * @return array<string, mixed> The executor's answer.
 	 */
-	private function split(): array {
+	private function split(bool $final = false): array {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->register);
 		$settings->method('getConfigValue')->willReturnCallback(
@@ -281,7 +312,7 @@ class CaseSplitStatusTest extends TestCase {
 
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$results = $this->createMock(originalClassName: CaseResultWriter::class);
-		$results->method('isFinalStatus')->willReturn(false);
+		$results->method('isFinalStatus')->willReturn($final);
 		$ledger = new CaseMoveLedger(
 			store: new CaseStatusStore(
 				settingsService: $settings,
