@@ -2050,6 +2050,7 @@ OC.L10N.register(
         "Conversation with the resident": "Conversation with the resident",
         "Conversations": "Conversations",
         "Conversations In Progress": "Conversations In Progress",
+        "Converted to a case": "Converted to a case",
         "Cooperative": "Cooperative",
         "Cooperative (goedwillend)": "Cooperative (goedwillend)",
         "Coordinates": "Coordinates",
