@@ -1,0 +1,30 @@
+{
+    "zgwResource": "role",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "zaak": "{{ _baseUrl | replace({\"zaken/v1/rollen\": \"zaken/v1/zaken\"}) }}/{{ case }}",
+        "roltype": "{{ _baseUrl | replace({\"zaken/v1/rollen\": \"catalogi/v1/roltypen\"}) }}/{{ roleType }}",
+        "omschrijving": "{{ name }}",
+        "omschrijvingGeneriek": "{{ description }}",
+        "betrokkeneIdentificatie": "{{ participant }}"
+    },
+    "reverseMapping": {
+        "name": "{{ omschrijving }}",
+        "description": "{{ omschrijvingGeneriek }}",
+        "case": "{{ zaak | zgw_extract_uuid }}",
+        "roleType": "{{ roltype | zgw_extract_uuid }}",
+        "participant": "{{ betrokkeneIdentificatie }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "zaak": {
+            "field": "case",
+            "extractUuid": true
+        }
+    }
+}
