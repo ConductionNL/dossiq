@@ -222,6 +222,8 @@ class SubCaseDeriver {
 	/**
 	 * The created child and what it took, for the provenance row.
 	 *
+	 * The array parameter type-checks what the relation service said was inherited.
+	 *
 	 * @param mixed                $created   The created child.
 	 * @param array<string, mixed> $inherited What the child took.
 	 *
