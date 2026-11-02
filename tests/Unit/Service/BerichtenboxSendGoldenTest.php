@@ -57,7 +57,7 @@ class BerichtenboxSendGoldenTest extends TestCase {
 	/**
 	 * The letters, what the adapter answers, and whether OpenRegister is installed.
 	 *
-	 * @return array<string, array{0: array<string, mixed>, 1: array<string, mixed>, 2: bool}>
+	 * @return array<string, array{0: array<string, mixed>, 1: array<string, mixed>, 2: bool|null}>
 	 */
 	public static function letters(): array {
 		$letter = ['caseId' => 'case-1', 'bsn' => self::BSN, 'subject' => 'Uw aanvraag', 'body' => 'Wij hebben uw aanvraag ontvangen.', 'typeCode' => 'T1'];
@@ -73,6 +73,7 @@ class BerichtenboxSendGoldenTest extends TestCase {
 			'no bsn, subject or body' => [array_merge($letter, ['bsn' => '', 'subject' => '', 'body' => '']), $sent, true],
 			'an html body' => [array_merge($letter, ['body' => '<b>Hallo</b>']), $sent, true],
 			'no openregister' => [$letter, $sent, false],
+			'openregister cannot be reached' => [$letter, $sent, null],
 		];
 	}//end letters()
 
@@ -81,13 +82,13 @@ class BerichtenboxSendGoldenTest extends TestCase {
 	 *
 	 * @param array<string, mixed> $letter    The letter.
 	 * @param array<string, mixed> $result    What the adapter answers.
-	 * @param bool                 $installed Whether OpenRegister is installed.
+	 * @param bool|null            $installed Whether OpenRegister is installed; null when installed but unreachable.
 	 *
 	 * @dataProvider letters
 	 *
 	 * @return void
 	 */
-	public function testSendingMatchesTheRecording(array $letter, array $result, bool $installed): void {
+	public function testSendingMatchesTheRecording(array $letter, array $result, ?bool $installed): void {
 		$answer = $this->service(result: $result, installed: $installed)->sendMessage(...$letter);
 
 		$name = trim(strtolower((string)preg_replace('/[^a-z]+/i', '-', $this->dataName())), '-');
@@ -98,11 +99,11 @@ class BerichtenboxSendGoldenTest extends TestCase {
 	 * The service over recording collaborators.
 	 *
 	 * @param array<string, mixed> $result    What the adapter answers.
-	 * @param bool                 $installed Whether OpenRegister is installed.
+	 * @param bool|null            $installed Whether OpenRegister is installed; null when installed but unreachable.
 	 *
 	 * @return BerichtenboxService
 	 */
-	private function service(array $result, bool $installed): BerichtenboxService {
+	private function service(array $result, ?bool $installed): BerichtenboxService {
 		$adapter = $this->createMock(originalClassName: BerichtenboxAdapterInterface::class);
 		$adapter->method('sendMessage')->willReturnCallback(
 			function (mixed ...$args) use ($result): array {
@@ -131,9 +132,18 @@ class BerichtenboxSendGoldenTest extends TestCase {
 		);
 
 		$apps = $this->createMock(originalClassName: IAppManager::class);
-		$apps->method('getInstalledApps')->willReturn($installed === true ? ['openregister'] : []);
+		$apps->method('getInstalledApps')->willReturn(['openregister']);
+		if ($installed === false) {
+			$apps = $this->createMock(originalClassName: IAppManager::class);
+			$apps->method('getInstalledApps')->willReturn([]);
+		}
+
 		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturn($objects);
+		if ($installed === null) {
+			$container = $this->createMock(originalClassName: ContainerInterface::class);
+			$container->method('get')->willThrowException(new \RuntimeException('container down'));
+		}
 
 		$timeline = $this->createMock(originalClassName: CaseTimeline::class);
 		$timeline->method('record')->willReturnCallback(
