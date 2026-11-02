@@ -28,4 +28,4 @@ OpenRegister's own lifecycle validation has the same gap. Closing it belongs in 
 
 - The panel check itself, its reasons and its trail entries.
 - The advice request page and its lifecycle actions. No manifest change is needed.
-- Creating an advice request directly in `in-deliberation` is out of scope. The only writer, `assignToCommittee()`, creates it in `assigned`.
+- Creating an advice request directly in `in-deliberation` is covered by the change creating-into-deliberation-runs-the-panel-check.

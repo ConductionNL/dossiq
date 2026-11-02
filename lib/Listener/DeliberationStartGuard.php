@@ -5,8 +5,9 @@
  *
  * Runs the panel check (Awb Art. 7:13 lid 3) on every single-object save that
  * moves an advice request into in-deliberation: a lifecycle action, an API
- * write or AdvisoryCommitteeService. OpenRegister's bulk save, import and flow
- * writes fire no ObjectUpdatingEvent and are not covered.
+ * write or AdvisoryCommitteeService, and a create directly in in-deliberation.
+ * OpenRegister's bulk save, import and flow writes fire no ObjectCreatingEvent
+ * or ObjectUpdatingEvent and are not covered.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -30,6 +31,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -38,7 +40,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Stops a write into in-deliberation that the panel check refuses.
+ * Stops a write or create into in-deliberation that the panel check refuses.
  *
  * A check that fails unexpectedly refuses too: a panel whose independence was
  * not established does not start deliberating.
@@ -81,16 +83,17 @@ class DeliberationStartGuard implements IEventListener {
 	}//end __construct()
 
 	/**
-	 * Refuse a write into in-deliberation that the panel check does not clear.
+	 * Refuse a write or create into in-deliberation that the panel check does not clear.
 	 *
 	 * @param Event $event The dispatched event.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-single-object-save-that-starts-deliberation-runs-the-panel-check
+	 * @spec openspec/changes/creating-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-single-object-save-that-starts-deliberation-runs-the-panel-check
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectUpdatingEvent === false) {
+		if ($event instanceof ObjectUpdatingEvent === false && $event instanceof ObjectCreatingEvent === false) {
 			return;
 		}
 
@@ -110,6 +113,8 @@ class DeliberationStartGuard implements IEventListener {
 
 	/**
 	 * Whether the write moves an advice request into in-deliberation.
+	 *
+	 * A create has no previous status, so a create in in-deliberation counts.
 	 *
 	 * @param Event                $event   The pre-save event.
 	 * @param array<string, mixed> $request The request as it will be saved.
