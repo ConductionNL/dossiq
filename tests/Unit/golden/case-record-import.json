@@ -1367,6 +1367,13 @@
                 "case-r1"
             ],
             [
+                "caseOfSameNumber",
+                "N-r2",
+                {
+                    "N-r1": "case-r1"
+                }
+            ],
+            [
                 "map",
                 "woo",
                 "r2",
@@ -1914,20 +1921,19 @@
                     "key": "woo",
                     "sourceApp": "opencatalogi",
                     "installed": true,
-                    "imported": 1,
+                    "imported": 0,
                     "alreadyImported": 0,
-                    "failed": [],
-                    "unmigrated": 0,
-                    "migrated": [
+                    "failed": [
                         {
-                            "requestId": "r1",
-                            "reference": "N-r1",
-                            "caseId": "case-known",
-                            "sourceTimer": "2026-11-02"
+                            "requestId": "",
+                            "reference": "",
+                            "reason": "The existing cases could not be read by their earlier number, so nothing more was imported."
                         }
                     ],
+                    "unmigrated": 0,
+                    "migrated": [],
                     "duplicates": [],
-                    "repointed": 2
+                    "repointed": 0
                 }
             ]
         },
@@ -1950,39 +1956,9 @@
                 "woo"
             ],
             [
-                "map",
-                "woo",
-                "r1",
-                "ct-1"
-            ],
-            [
-                "carry",
-                "case-known",
-                {
-                    "state": "running",
-                    "days": 3
-                },
-                "woo-verzoek",
-                14
-            ],
-            [
-                "repoint",
-                [
-                    "r1",
-                    "slug-r1"
-                ],
-                "case-known"
-            ],
-            [
-                "stamp",
-                "woo",
-                "r1",
-                "case-known"
-            ],
-            [
-                "rememberNumber",
+                "caseOfSameNumber",
                 "N-r1",
-                "case-known"
+                null
             ]
         ]
     },
