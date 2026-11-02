@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
 use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Dossiq\Service\DsoCaseService;
@@ -47,6 +48,7 @@ use RuntimeException;
  * Golden test for DsoCaseService.
  *
  * @covers \OCA\Dossiq\Service\DsoCaseService
+ * @covers \OCA\Dossiq\Service\Dso\DsoCaseSteps
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -189,15 +191,21 @@ class DsoCaseServiceGoldenTest extends TestCase {
 		$service = new DsoCaseService(
 			appConfig: $appConfig,
 			container: $container,
-			notifier: $this->double(DsoStatusChangeNotifier::class, ['dispatchStatusChanged' => null]),
+			steps: new DsoCaseSteps(
+				notifier: $this->double(class: DsoStatusChangeNotifier::class, behaviour: ['dispatchStatusChanged' => null]),
+				intakeCases: $this->double(
+					class: DsoIntakeCasePayload::class,
+					behaviour: [
+						'payloadFor' => (
+							$world['payload'] ?? ['caseType' => 'ct-1', 'procedureType' => 'reguliere', 'startDate' => '2026-01-05', 'title' => 'Aanvraag']
+						),
+					]
+				),
+				journal: new CaseJournal(userSession: $session),
+			),
 			logger: $logger,
 			objectService: $objectService,
 			workingDays: new WorkingDayCalculator(),
-			intakeCases: $this->double(
-				DsoIntakeCasePayload::class,
-				['payloadFor' => ($world['payload'] ?? ['caseType' => 'ct-1', 'procedureType' => 'reguliere', 'startDate' => '2026-01-05', 'title' => 'Aanvraag'])]
-			),
-			journal: new CaseJournal(userSession: $session),
 		);
 
 		try {
