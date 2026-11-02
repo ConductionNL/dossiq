@@ -29,11 +29,31 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\Db;
 
+use JsonSerializable;
+use OCA\OpenRegister\Kernel\Contracts\TaskInterface;
+
 if (class_exists(Task::class) === false) {
+	// Composer's classmap answers this stub before an installed OpenRegister,
+	// whose TaskService declares the real Task as its TaskInterface. So the
+	// stub is that interface whenever OpenRegister's kernel contracts load.
+	if (interface_exists(TaskInterface::class) === true) {
+		/**
+		 * The kernel task contract, when OpenRegister is installed.
+		 */
+		interface TaskStubContract extends TaskInterface {
+		}
+	} else {
+		/**
+		 * A serialisable task, when OpenRegister is absent.
+		 */
+		interface TaskStubContract extends JsonSerializable {
+		}
+	}//end if
+
 	/**
 	 * Stub class for Task — used only in standalone unit tests.
 	 */
-	class Task {
+	class Task implements TaskStubContract {
 
 		/**
 		 * The engine task uuid.
@@ -90,5 +110,34 @@ if (class_exists(Task::class) === false) {
 		public function getState(): ?string {
 			return $this->state;
 		}//end getState()
+
+		/**
+		 * @return boolean Whether the state is completed, terminated or disabled.
+		 */
+		public function isInTerminalState(): bool {
+			return in_array($this->state, ['completed', 'terminated', 'disabled'], true);
+		}//end isInTerminalState()
+
+		/**
+		 * @param array<string, mixed> $object The uuid, runUuid, nodeId and state to set.
+		 *
+		 * @return self This task.
+		 */
+		public function hydrate(array $object): self {
+			foreach (['uuid', 'runUuid', 'nodeId', 'state'] as $field) {
+				if (array_key_exists($field, $object) === true) {
+					$this->$field = $object[$field];
+				}
+			}
+
+			return $this;
+		}//end hydrate()
+
+		/**
+		 * @return array<string, string|null> The uuid, runUuid, nodeId and state.
+		 */
+		public function jsonSerialize(): array {
+			return ['uuid' => $this->uuid, 'runUuid' => $this->runUuid, 'nodeId' => $this->nodeId, 'state' => $this->state];
+		}//end jsonSerialize()
 	}//end class
 }

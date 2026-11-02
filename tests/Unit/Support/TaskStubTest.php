@@ -1,0 +1,77 @@
+<?php
+
+/**
+ * Task stub test
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Support
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @link https://conduction.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Support;
+
+use JsonSerializable;
+use OCA\OpenRegister\Db\Task;
+use OCA\OpenRegister\Kernel\Contracts\TaskInterface;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * The Task stub answers OpenRegister's kernel task contract, so an installed
+ * OpenRegister's TaskService can declare it as its TaskInterface.
+ *
+ * @coversNothing
+ */
+class TaskStubTest extends TestCase {
+
+	/**
+	 * Use the stub only; an installed OpenRegister entity is not under test here.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		if (str_ends_with((string)(new \ReflectionClass(Task::class))->getFileName(), 'tests/Stubs/Db/Task.php') === false) {
+			$this->markTestSkipped(message: 'OpenRegister\'s own Task entity is loaded.');
+		}
+	}//end setUp()
+
+	/**
+	 * The stub is serialisable, and is the kernel contract whenever it exists.
+	 *
+	 * @return void
+	 */
+	public function testTheStubIsTheKernelContractWhenItExists(): void {
+		$this->assertInstanceOf(expected: JsonSerializable::class, actual: new Task());
+		if (interface_exists(TaskInterface::class) === true) {
+			$this->assertInstanceOf(expected: TaskInterface::class, actual: new Task());
+		}
+	}//end testTheStubIsTheKernelContractWhenItExists()
+
+	/**
+	 * Hydrate sets the four fields the stub keeps and ignores the rest; the terminal states are the entity's.
+	 *
+	 * @return void
+	 */
+	public function testHydrateSerialiseAndTerminalState(): void {
+		$task = (new Task())->hydrate(object: ['uuid' => 't-1', 'runUuid' => 'r-1', 'nodeId' => 'n-1', 'state' => 'active', 'title' => 'x']);
+
+		$this->assertSame(expected: ['uuid' => 't-1', 'runUuid' => 'r-1', 'nodeId' => 'n-1', 'state' => 'active'], actual: $task->jsonSerialize());
+		$this->assertSame(expected: 'r-1', actual: $task->getRunUuid());
+		$this->assertFalse(condition: $task->isInTerminalState());
+		foreach (['completed', 'terminated', 'disabled'] as $state) {
+			$this->assertTrue(condition: $task->hydrate(object: ['state' => $state])->isInTerminalState(), message: $state);
+		}
+
+		$this->assertSame(expected: 't-1', actual: $task->getUuid());
+		$this->assertSame(expected: ['uuid' => null, 'runUuid' => null, 'nodeId' => null, 'state' => null], actual: (new Task())->jsonSerialize());
+	}//end testHydrateSerialiseAndTerminalState()
+}//end class
