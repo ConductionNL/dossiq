@@ -26,40 +26,15 @@ namespace OCA\Dossiq\Listener\Support;
 
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
-use Throwable;
 
 /**
  * The reads a listener on object updates shares.
  *
- * The using class has `$settingsService` (SettingsService) and `$logger`
- * (LoggerInterface) properties; a class that acts on a status entry also has
- * an ENTRY rule and a FAILURE_LOG prefix as constants.
+ * The using class has a `$settingsService` (SettingsService) property.
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */
 trait ObjectUpdatePayload {
-	/**
-	 * Run the act on the object an update moved into the class's ENTRY status.
-	 *
-	 * A failure is logged at debug level under the class's FAILURE_LOG and
-	 * swallowed: the act must not block the transition that triggered it.
-	 *
-	 * @param Event    $event The dispatched event.
-	 * @param callable $act   Takes the object id.
-	 *
-	 * @return void
-	 */
-	private function actOnStatusEntry(Event $event, callable $act): void {
-		try {
-			$objectId = $this->objectEnteringStatus(event: $event, rule: self::ENTRY);
-			if ($objectId !== '') {
-				$act($objectId);
-			}
-		} catch (Throwable $e) {
-			$this->logger->debug(self::FAILURE_LOG . $e->getMessage());
-		}
-	}//end actOnStatusEntry()
-
 	/**
 	 * The id of the object an update moved into a status, or '' when the update did not.
 	 *
@@ -97,15 +72,41 @@ trait ObjectUpdatePayload {
 	 * @return bool
 	 */
 	private function inConfiguredSchema(array $object, string $schemaKey): bool {
+		return $this->matchesConfiguredSchema(
+			candidate: (string)($object['@self']['schema'] ?? ($object['schema'] ?? '')),
+			schemaKey: $schemaKey
+		);
+	}//end inConfiguredSchema()
+
+	/**
+	 * The schema an object names, read from every place OpenRegister may put it.
+	 *
+	 * @param array<string, mixed> $object The object payload.
+	 *
+	 * @return string The schema, or ''.
+	 */
+	private function schemaNamedAnywhere(array $object): string {
+		return (string)(
+			$object['@self']['schema'] ?? ($object['@self']['schemaSlug'] ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
+		);
+	}//end schemaNamedAnywhere()
+
+	/**
+	 * Whether a schema reference is the schema a config key names, by slug or by a URL ending in it.
+	 *
+	 * @param string $candidate The schema the object names.
+	 * @param string $schemaKey The config key naming the schema.
+	 *
+	 * @return bool
+	 */
+	private function matchesConfiguredSchema(string $candidate, string $schemaKey): bool {
 		$schemaSlug = $this->settingsService->getConfigValue(key: $schemaKey);
 		if ($schemaSlug === '') {
 			return false;
 		}
 
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
 		return $candidate !== '' && ($candidate === $schemaSlug || str_ends_with($candidate, '/' . $schemaSlug));
-	}//end inConfiguredSchema()
+	}//end matchesConfiguredSchema()
 
 	/**
 	 * The new object payload of an update event.

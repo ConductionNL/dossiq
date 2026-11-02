@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Bezwaar\HearingService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Listener\Support\ObjectUpdatePayload;
+use OCA\Dossiq\Listener\Support\ActsOnStatusEntry;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -49,7 +49,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */
 class BezwaarHearingScheduledListener implements IEventListener {
-	use ObjectUpdatePayload;
+	use ActsOnStatusEntry;
 
 	private const TRIGGER_STATUS = 'Hearing planned';
 

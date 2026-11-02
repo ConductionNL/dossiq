@@ -36,6 +36,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Listener\BezwaarHearingScheduledListener
  * @covers \OCA\Dossiq\Listener\Support\ObjectUpdatePayload
+ * @covers \OCA\Dossiq\Listener\Support\ActsOnStatusEntry
  *
  * @uses \OCA\Dossiq\Service\Bezwaar\HearingService
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail

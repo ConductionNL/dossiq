@@ -54,6 +54,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for BezwaarDecisionListener.
  *
  * @covers \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @covers \OCA\Dossiq\Listener\Support\ObjectUpdatePayload
  *
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  */
