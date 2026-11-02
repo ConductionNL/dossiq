@@ -112,7 +112,6 @@ class CaseCustodyControllerContractTest extends TestCase {
 		$query->method('heldBy')->willReturn([['caseId' => self::CASE_ID]]);
 
 		return new CaseCustodyController(
-			appName: 'dossiq',
 			request: $request,
 			chain: $chain,
 			query: $query,
