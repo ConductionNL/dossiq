@@ -34,6 +34,7 @@ use Psr\Log\LoggerInterface;
  * What adopt(), adoptOverLocalChange() and refreshRows() answer, write and log, per case.
  *
  * @covers \OCA\Dossiq\Service\Starter\ShippedConfigurationService
+ * @covers \OCA\Dossiq\Service\Starter\ShippedRowAdopter
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
  * @uses \OCA\Dossiq\Service\Starter\ShippedSets
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
@@ -41,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
  *
  * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
  */

@@ -335,6 +335,7 @@ final class PackageTestSchemaEntity {
  * @uses \OCA\Dossiq\Service\CaseDefinition\WritesPackageRows
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageIds
  * @uses \OCA\Dossiq\Service\Starter\ShippedConfigurationService
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRowAdopter
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
  * @uses \OCA\Dossiq\Service\Starter\ShippedSets
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
