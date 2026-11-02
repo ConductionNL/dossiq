@@ -2056,6 +2056,7 @@ OC.L10N.register(
         "Conversation with the resident": "Gesprek met de inwoner",
         "Conversations": "Gesprekken",
         "Conversations In Progress": "Lopende gesprekken",
+        "Converted to a case": "Omgezet in een zaak",
         "Cooperative": "Coöperatief",
         "Cooperative (goedwillend)": "Coöperatief (goedwillend)",
         "Coordinates": "Coördinaten",
