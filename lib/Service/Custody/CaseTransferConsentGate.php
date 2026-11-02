@@ -175,7 +175,7 @@ class CaseTransferConsentGate {
 	 *
 	 * A move between two teams of one organisation is not a disclosure (D-7),
 	 * so it proceeds unless its case type demands consent. When the case or
-	 * its case type cannot be read, the move is refused.
+	 * its case type cannot be read, or the case has none, the move is refused.
 	 *
 	 * @param string $caseId The case.
 	 *
@@ -366,9 +366,9 @@ class CaseTransferConsentGate {
 	 *
 	 * @param string $caseId The trimmed case id.
 	 *
-	 * @return bool The case type's rule, or false for a case without a case type.
+	 * @return bool The case type's rule.
 	 *
-	 * @throws RuntimeException When the case or its case type cannot be read.
+	 * @throws RuntimeException When the case or its case type cannot be read, or the case has none.
 	 *
 	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
@@ -390,7 +390,7 @@ class CaseTransferConsentGate {
 
 		$caseTypeId = trim((string)($case['caseType'] ?? ''));
 		if ($caseTypeId === '') {
-			return false;
+			throw new RuntimeException('Case has no case type');
 		}
 
 		$caseType = $this->findObjectAsArray(
