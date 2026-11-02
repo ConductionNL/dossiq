@@ -57,6 +57,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  *
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
  */
