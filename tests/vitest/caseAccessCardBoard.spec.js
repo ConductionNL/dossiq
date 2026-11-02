@@ -64,7 +64,7 @@ function originLine(row) {
 		if (cond.all) {
 			return cond.all.every(holds)
 		}
-		const value = cond.field.split('.').reduce((node, key) => (node == null ? undefined : node[key]), row)
+		const value = cond.field.split('.').reduce((node, key) => (node === null || node === undefined ? undefined : node[key]), row)
 		switch (cond.op) {
 		case 'eq': return value === cond.value
 		case 'contains': return Array.isArray(value) && value.includes(cond.value)
