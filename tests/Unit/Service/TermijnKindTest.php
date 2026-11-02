@@ -39,6 +39,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\TermKind
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\TermCalendarGuard
@@ -47,7 +48,6 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Term\ThresholdShares
- * @uses \OCA\Dossiq\Service\Term\CaseTermSources
  */
 class TermijnKindTest extends TestCase {
 	use MakesCaseDateNormaliser;

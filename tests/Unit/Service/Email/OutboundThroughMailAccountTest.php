@@ -60,6 +60,7 @@ require_once __DIR__ . '/../../../Support/Mail/LocalMessage.php';
  * @covers \OCA\Dossiq\Service\Email\OutboundCaseMail
  * @covers \OCA\Dossiq\Service\Email\OutboundState
  * @covers \OCA\Dossiq\Repair\RetireImapCredentials
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailPolicy
  *
  * @uses \OCA\Dossiq\Service\Email\NextcloudMailGateway
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
@@ -67,7 +68,6 @@ require_once __DIR__ . '/../../../Support/Mail/LocalMessage.php';
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
  * @uses \OCA\Dossiq\Exception\RefusedException
- * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  */
 class OutboundThroughMailAccountTest extends TestCase {
 

@@ -60,6 +60,8 @@ use Psr\Log\NullLogger;
  * Covers C4 (IDOR + file-disclosure), H6 (XSS + reserved-domain), L1 (log-injection).
  *
  * @covers \OCA\Dossiq\Service\CaseEmailService
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailRules
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailPolicy
  *
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
@@ -73,8 +75,6 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses \OCA\Dossiq\Support\FleetAppId
- * @uses \OCA\Dossiq\Service\Email\OutboundMailRules
- * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  */
 class CaseEmailServiceTest extends TestCase {
 

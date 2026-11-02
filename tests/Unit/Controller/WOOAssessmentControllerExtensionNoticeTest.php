@@ -61,6 +61,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
  * @covers \OCA\Dossiq\Service\WOODeadlineService
  * @covers \OCA\Dossiq\Service\Termijn\ExtensionNotice
+ * @covers \OCA\Dossiq\Service\Term\TermNoticeSources
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
@@ -91,7 +92,6 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  * @uses \OCA\Dossiq\Service\Term\ThresholdShares
- * @uses \OCA\Dossiq\Service\Term\TermNoticeSources
  */
 class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 	use MakesCaseDateNormaliser;

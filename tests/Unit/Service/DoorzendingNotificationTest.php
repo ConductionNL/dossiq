@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * Who is told a case moved, and who is deliberately not.
  *
  * @covers \OCA\Dossiq\Service\Transfer\DoorzendingNotifier
+ * @covers \OCA\Dossiq\Service\Term\TermNoticeSources
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
@@ -48,7 +49,6 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
- * @uses \OCA\Dossiq\Service\Term\TermNoticeSources
  */
 class DoorzendingNotificationTest extends TestCase {
 

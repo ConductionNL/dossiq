@@ -60,11 +60,11 @@ use Stringable;
  * @covers \OCA\Dossiq\Service\CaseEmailMatchService
  * @covers \OCA\Dossiq\Service\Email\CaseNumberRecognizer
  * @covers \OCA\Dossiq\Service\Email\CaseEmailMatchPreferences
+ * @covers \OCA\Dossiq\Service\Email\MailMatchSources
  * @uses \OCA\Dossiq\Service\CaseMergeService
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRelink
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRule
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
- * @uses \OCA\Dossiq\Service\Email\MailMatchSources
  */
 class CaseEmailMatchServiceTest extends TestCase {
 
