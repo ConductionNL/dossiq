@@ -10281,6 +10281,9 @@
                 "x-zgw-equivalent": "Adviesdocument",
                 "title": "BAC Advice Request",
                 "description": "Per-bezwaar referral of an objection case to a bezwaaradviescommissie. Tracks the advice deliverable through the assigned -> in-deliberation -> advice-issued lifecycle (Awb Art. 7:13). One-way transitions; withdrawn bezwaaren leave the request in its last state for audit.",
+                "configuration": {
+                    "fireEventsOnBulkWrites": true
+                },
                 "type": "object",
                 "required": [
                     "bezwaar",
