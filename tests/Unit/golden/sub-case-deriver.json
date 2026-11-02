@@ -51,8 +51,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -91,8 +90,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -381,8 +379,7 @@
                 "declarationFor",
                 {
                     "schemaId": 12,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -421,8 +418,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -480,8 +476,7 @@
                 "declarationFor",
                 {
                     "schemaId": null,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -520,8 +515,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -609,8 +603,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -676,8 +669,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -714,8 +706,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -781,8 +772,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -819,8 +809,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -878,8 +867,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -916,8 +904,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -964,8 +951,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1041,8 +1027,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1075,8 +1060,7 @@
                     "parent": "parent-entity",
                     "child": "child-entity",
                     "relationType": "sub-case",
-                    "inherited": [],
-                    "entry": null
+                    "inherited": []
                 }
             ]
         ],
@@ -1129,8 +1113,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1163,8 +1146,7 @@
                     "parent": "parent-entity",
                     "child": "child-entity",
                     "relationType": "sub-case",
-                    "inherited": [],
-                    "entry": null
+                    "inherited": []
                 }
             ]
         ],
@@ -1211,8 +1193,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1356,8 +1337,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1396,8 +1376,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -1445,8 +1424,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1539,8 +1517,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1620,8 +1597,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1660,8 +1636,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -1716,8 +1691,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1756,8 +1730,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -1815,8 +1788,7 @@
                 "declarationFor",
                 {
                     "schemaId": 7,
-                    "property": "parentCase",
-                    "language": "nl"
+                    "property": "parentCase"
                 }
             ],
             [
@@ -1855,8 +1827,7 @@
                             "property": "confidentiality",
                             "value": "secret"
                         }
-                    },
-                    "entry": null
+                    }
                 }
             ]
         ],
@@ -1869,5 +1840,145 @@
                 }
             ]
         ]
+    },
+    "declared type not text, saved as an array": {
+        "answer": {
+            "thrown": "TypeError"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": []
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "inherited not a list, saved as an array": {
+        "answer": {
+            "thrown": "TypeError"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
     }
 }

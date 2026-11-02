@@ -235,7 +235,12 @@ class SubCaseDeriverGoldenTest extends TestCase {
 				 * @return array<string, mixed>|null The declaration.
 				 */
 				public function declarationFor(?int $schemaId, string $property, string $language = 'nl'): ?array {
-					$this->test->calls[] = ['declarationFor', ['schemaId' => $schemaId, 'property' => $property, 'language' => $language]];
+					$named = ['schemaId' => $schemaId, 'property' => $property];
+					if ($language !== 'nl') {
+						$named['language'] = $language;
+					}
+
+					$this->test->calls[] = ['declarationFor', $named];
 					if (($this->world['declaration'] ?? null) === 'throws') {
 						throw new RuntimeException('no declaration');
 					}
@@ -292,7 +297,11 @@ class SubCaseDeriverGoldenTest extends TestCase {
 					$this->test->calls[] = [
 						'recordDerivation',
 						SubCaseDeriverGoldenTest::shown(
-							value: ['parent' => $parent, 'child' => $child, 'relationType' => $relationType, 'inherited' => $inherited, 'entry' => $entry]
+							value: array_filter(
+								['parent' => $parent, 'child' => $child, 'relationType' => $relationType, 'inherited' => $inherited, 'entry' => $entry],
+								static fn (mixed $value, string $name): bool => ($name !== 'entry' || $value !== null),
+								ARRAY_FILTER_USE_BOTH
+							)
 						),
 					];
 					if (($this->world['record'] ?? null) === 'throws') {
@@ -379,6 +388,8 @@ class SubCaseDeriverGoldenTest extends TestCase {
 			'saved without jsonSerialize' => ['saved' => self::entity(label: 'bare-entity', entity: [])],
 			'saved entity serialises to text' => ['saved' => self::entity(label: 'text-entity', entity: ['json' => 'text'])],
 			'provenance fails' => ['record' => 'throws', 'saved' => $child('child-entity')],
+			'declared type not text, saved as an array' => ['declaration' => ['type' => 5, 'inherits' => []]],
+			'inherited not a list, saved as an array' => ['applied' => ['data' => ['title' => 'Child'], 'inherited' => 'all']],
 		];
 
 		$observed = [];
