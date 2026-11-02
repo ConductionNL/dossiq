@@ -5831,6 +5831,7 @@ OC.L10N.register(
         "Offline lifecycle status of the inspection": "Offline lifecycle status of the inspection",
         "Offline sync conflicts": "Offline sync conflicts",
         "Offline sync queue": "Offline sync queue",
+        "Offline · synchronised at {time}": "Offline · synchronised at {time}",
         "Offline · synchronised earlier": "Offline · synchronised earlier",
         "Offline-sync state for the whole run": "Offline-sync state for the whole run",
         "Offline-sync state for this response": "Offline-sync state for this response",

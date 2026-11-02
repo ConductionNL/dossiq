@@ -5920,6 +5920,7 @@
         "Offline lifecycle status of the inspection": "Offline levensloopstatus van de inspectie",
         "Offline sync conflicts": "Conflicten offline synchronisatie",
         "Offline sync queue": "Wachtrij offline synchronisatie",
+        "Offline · synchronised at {time}": "Offline · gesynchroniseerd om {time}",
         "Offline · synchronised earlier": "Offline · eerder gesynchroniseerd",
         "Offline-sync state for the whole run": "Staat van de offline synchronisatie voor de hele ronde",
         "Offline-sync state for this response": "Staat van de offline synchronisatie voor dit antwoord",

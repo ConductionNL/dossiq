@@ -5335,6 +5335,22 @@
 			}
 		},
 		{
+			"key": "outbox-dag-geladen",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "update",
+				"targetEntity": "fieldInspection",
+				"label": "Inspecties van vandaag",
+				"summary": "4 inspecties, checklists en kaart op het toestel",
+				"queuedAt": "{{datetime:0 07:41}}",
+				"attemptCount": 1,
+				"lastAttemptAt": "{{datetime:0 07:42}}",
+				"status": "synced"
+			}
+		},
+		{
 			"key": "outbox-molenweg-checklist",
 			"register": "dossiq",
 			"schema": "syncQueue",
@@ -5917,6 +5933,12 @@
 						"respondedAt": "{{datetime:0 11:06}}",
 						"syncState": "queued",
 						"comment": "Fietsen en kratten in de gang naar de achteruitgang"
+					},
+					{
+						"itemId": "brandveiligheid-8",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 11:08}}",
+						"syncState": "queued"
 					}
 				],
 				"photos": []
