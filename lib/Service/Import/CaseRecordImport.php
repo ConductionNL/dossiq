@@ -306,6 +306,10 @@ class CaseRecordImport {
 			return ['kind' => 'stop', 'row' => self::NO_RECORD + ['reason' => $match['stop']]];
 		}
 
+		if (isset($match['conflict']) === true) {
+			return ['kind' => 'failed', 'row' => $this->conflictRow(run: $run, source: $source) + ['reason' => $match['conflict']]];
+		}
+
 		$outcome = $this->importOne(run: $run + ['existing' => $match['existing'] . $match['duplicateOf']], source: $source);
 		if (isset($outcome['reason']) === true) {
 			return ['kind' => 'failed', 'row' => $outcome];
@@ -327,11 +331,15 @@ class CaseRecordImport {
 	 * Read once, and only when there is something to import: a second run
 	 * over a fully migrated source reads no case at all. An unread list stops
 	 * the run: importing over it would write a half-finished case a second time.
+	 * A record that already has a case while its number became another one is
+	 * a conflict: completing it would give one number two cases, and joining
+	 * would leave its own case behind.
 	 *
 	 * @param array<string, mixed> $run The run: objectService, caseType, import, source.
 	 * @param array<string, mixed> $state The cases read so far, by source and by number.
 	 *
-	 * @return array{existing: string, duplicateOf: string}|array{stop: string} The match, or why the run stops.
+	 * @return array{existing: string, duplicateOf: string}|array{stop: string}|array{conflict: string} The match, why the
+	 *         run stops, or why this record is not imported.
 	 */
 	private function matchFor(array $run, array &$state): array {
 		$state['cases'] = ($state['cases'] ?? $this->store->casesBySource(
@@ -344,25 +352,43 @@ class CaseRecordImport {
 		}
 
 		$existing = (string)($state['cases'][$this->store->idOf(row: $run['source'])] ?? '');
-		if ($existing !== '') {
-			return ['existing' => $existing, 'duplicateOf' => ''];
-		}
-
 		try {
-			return [
-				'existing' => '',
-				'duplicateOf' => $this->references->caseOfSameNumber(
-					objectService: $run['objectService'],
-					caseType: $run['caseType'],
-					import: $run['import'],
-					source: $run['source'],
-					cache: $state['byKey']
-				),
-			];
+			$numbered = $this->references->caseOfSameNumber(
+				objectService: $run['objectService'],
+				caseType: $run['caseType'],
+				import: $run['import'],
+				source: $run['source'],
+				cache: $state['byKey']
+			);
 		} catch (Throwable $e) {
 			return ['stop' => 'The existing cases could not be read by their earlier number, so nothing more was imported.'];
 		}
+
+		if ($existing === '') {
+			return ['existing' => '', 'duplicateOf' => $numbered];
+		}
+
+		if ($numbered !== '' && $numbered !== $existing) {
+			return ['conflict' => 'The record already has case ' . $existing . ', but its number became case ' . $numbered . ', so it was not imported.'];
+		}
+
+		return ['existing' => $existing, 'duplicateOf' => ''];
 	}//end matchFor()
+
+	/**
+	 * The record a conflict names, as a failed row names it.
+	 *
+	 * @param array<string, mixed> $run    The run: import.
+	 * @param array<string, mixed> $source The source record.
+	 *
+	 * @return array{requestId: string, reference: string} The row without its reason.
+	 */
+	private function conflictRow(array $run, array $source): array {
+		return [
+			'requestId' => $this->store->idOf(row: $source),
+			'reference' => (string)($source[(string)($run['import']['formerReference']['from'] ?? '')] ?? ''),
+		];
+	}//end conflictRow()
 
 	/**
 	 * The answer with one record's outcome counted.

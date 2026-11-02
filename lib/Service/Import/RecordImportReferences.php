@@ -131,6 +131,8 @@ class RecordImportReferences {
 	/**
 	 * Remember the case a record's number became, so a later record with it joins that case.
 	 *
+	 * A number keeps the first case it became: a later record never moves it.
+	 *
 	 * @param array<string, mixed>       $import The declaration.
 	 * @param array<string, mixed>       $source The source record.
 	 * @param string                     $caseId The case.
@@ -142,7 +144,7 @@ class RecordImportReferences {
 	 */
 	public function rememberNumber(array $import, array $source, string $caseId, ?array &$cache): void {
 		$number = $this->numberOf(import: $import, source: $source);
-		if ($number !== '') {
+		if ($number !== '' && isset($cache[$number]) === false) {
 			$cache[$number] = $caseId;
 		}
 	}//end rememberNumber()
