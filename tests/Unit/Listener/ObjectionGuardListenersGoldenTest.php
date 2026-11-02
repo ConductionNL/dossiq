@@ -38,8 +38,9 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Listener\BezwaarDecisionListener
  * @covers \OCA\Dossiq\Listener\BeroepEscalationListener
+ * @covers \OCA\Dossiq\Listener\Support\ObjectUpdatePayload
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
- * @uses \OCA\Dossiq\Service\Support\OpenRegisterRowNormaliser
+ * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  *
  * @spec openspec/specs/bezwaar-decision/spec.md
  */
@@ -82,6 +83,22 @@ class ObjectionGuardListenersGoldenTest extends TestCase {
 			'appeal on another schema' => ['appeal', 'created', array_replace($appeal, ['@self' => ['schema' => 'case']]), null, true],
 			'appeal without a store' => ['appeal', 'created', $appeal, null, false],
 			'appeal on a plain event' => ['appeal', 'plain', $appeal, null, true],
+			'decision guard, schema slug under self' => [
+				'decision',
+				'updated',
+				array_replace($decided, ['@self' => ['schemaSlug' => 'objection']]),
+				['status' => 'Hearing held'],
+				true,
+			],
+			'decision guard, schema slug at the top' => [
+				'decision',
+				'updated',
+				array_replace($decided, ['@self' => [], '_schemaSlug' => 'objection']),
+				['status' => 'Hearing held'],
+				true,
+			],
+			'appeal, schema by url' => ['appeal', 'created', array_replace($appeal, ['@self' => ['schema' => 'https://x/schemas/appeal']]), null, true],
+			'appeal, schema slug at the top' => ['appeal', 'created', array_replace($appeal, ['@self' => [], 'schema' => 'appeal']), null, true],
 		];
 	}//end worlds()
 
