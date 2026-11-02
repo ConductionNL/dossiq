@@ -299,7 +299,7 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 	}//end testTruthyWithdrawnFormsAreWithdrawn()
 
 	/**
-	 * A move inside one organisation is refused when the case or its case type cannot be read.
+	 * A move inside one organisation is refused when the case or its case type cannot be read, or the case has none.
 	 *
 	 * @return void
 	 */
@@ -319,6 +319,7 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			'no case schema' => ['config' => ['case_schema' => '']] + $inside,
 			'no case type schema' => ['config' => ['case_type_schema' => '']] + $inside,
 			'empty case id' => ['caseId' => ' '] + $inside,
+			'case without a case type' => ['objects' => ['case' => ['case-1' => ['id' => 'case-1']]] + $objects] + $inside,
 		];
 
 		foreach ($worlds as $name => $world) {
@@ -345,7 +346,7 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 		$readable = $this->observe(world: ['askRequired' => true] + $inside);
 		$this->assertFalse(condition: $readable['required'], message: 'a readable case type without the rule is not required');
 		$this->assertTrue(condition: $readable['verdict']['allowed'], message: 'a readable case type without the rule');
-		$noType = $this->observe(world: ['objects' => ['case' => ['case-1' => ['id' => 'case-1']]] + $objects] + $inside);
-		$this->assertTrue(condition: $noType['verdict']['allowed'], message: 'a case without a case type');
+		$noType = $this->observe(world: ['askRequired' => true] + $worlds['case without a case type']);
+		$this->assertTrue(condition: $noType['required'], message: 'a case without a case type needs consent');
 	}//end testAnUnreadableInternalMoveIsRefused()
 }//end class
