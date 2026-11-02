@@ -10454,6 +10454,24 @@
 			}
 		},
 		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v4-begint-bij-ontvangen",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier-v4",
+			"set": {
+				"initialStatus": "{{object:statustype-regulier-v4-ontvangen.id}}"
+			}
+		},
+		{
+			"key": "zaaktype-omgevingsvergunning-regulier-v5-begint-bij-ontvangen",
+			"register": "dossiq",
+			"schema": "caseType",
+			"object": "zaaktype-omgevingsvergunning-regulier",
+			"set": {
+				"initialStatus": "{{object:statustype-regulier-v5-ontvangen.id}}"
+			}
+		},
+		{
 			"key": "checklist-oplevering-versie-2",
 			"register": "dossiq",
 			"schema": "inspectionChecklistTemplate",
