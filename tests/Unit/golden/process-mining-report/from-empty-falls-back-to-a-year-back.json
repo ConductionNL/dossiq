@@ -9,6 +9,103 @@
         "truncated": false,
         "caseTypes": [
             {
+                "id": "ct-2",
+                "title": "Melding",
+                "caseVolume": 2,
+                "dwellTime": [
+                    {
+                        "statusId": "st-rev",
+                        "statusName": "Review",
+                        "statusPhase": "Beoordeling",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    },
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "statusPhase": "Ontvangst",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    }
+                ],
+                "dwellTimeCompleted": [
+                    {
+                        "statusId": "st-rev",
+                        "statusName": "Review",
+                        "statusPhase": "Beoordeling",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    },
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "statusPhase": "Ontvangst",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    }
+                ],
+                "dwellDaysHeld": [],
+                "dwellByAssignee": [
+                    {
+                        "actor": "",
+                        "visitCount": 2,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    }
+                ],
+                "bottlenecks": [
+                    {
+                        "statusId": "st-rev",
+                        "statusName": "Review",
+                        "visitCount": 1,
+                        "medianHours": 344.0,
+                        "score": 344.0
+                    },
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "visitCount": 1,
+                        "medianHours": 344.0,
+                        "score": 344.0
+                    }
+                ],
+                "transitionMatrix": [],
+                "reworkPercent": 0.0,
+                "transitionCount": 0
+            },
+            {
                 "id": "ct-1",
                 "title": "Omgevingsvergunning",
                 "caseVolume": 1,
@@ -100,7 +197,10 @@
                         "meanHours": 104.0
                     }
                 ],
-                "dwellDaysHeld": [],
+                "dwellDaysHeld": {
+                    "st-in": 3,
+                    "st-rev": 2
+                },
                 "dwellByAssignee": [
                     {
                         "actor": "",
@@ -270,68 +370,6 @@
                 ],
                 "reworkPercent": 0.0,
                 "transitionCount": 1
-            },
-            {
-                "id": "ct-2",
-                "title": "Melding",
-                "caseVolume": 1,
-                "dwellTime": [
-                    {
-                        "statusId": "st-rev",
-                        "statusName": "Review",
-                        "statusPhase": "Beoordeling",
-                        "statusFinal": false,
-                        "statusOrder": null,
-                        "visitCount": 1,
-                        "medianWorkingHours": 344.0,
-                        "p90WorkingHours": 344.0,
-                        "meanWorkingHours": 344.0,
-                        "medianHours": 344.0,
-                        "p90Hours": 344.0,
-                        "meanHours": 344.0
-                    }
-                ],
-                "dwellTimeCompleted": [
-                    {
-                        "statusId": "st-rev",
-                        "statusName": "Review",
-                        "statusPhase": "Beoordeling",
-                        "statusFinal": false,
-                        "statusOrder": null,
-                        "visitCount": 1,
-                        "medianWorkingHours": 344.0,
-                        "p90WorkingHours": 344.0,
-                        "meanWorkingHours": 344.0,
-                        "medianHours": 344.0,
-                        "p90Hours": 344.0,
-                        "meanHours": 344.0
-                    }
-                ],
-                "dwellDaysHeld": [],
-                "dwellByAssignee": [
-                    {
-                        "actor": "",
-                        "visitCount": 1,
-                        "medianWorkingHours": 344.0,
-                        "p90WorkingHours": 344.0,
-                        "meanWorkingHours": 344.0,
-                        "medianHours": 344.0,
-                        "p90Hours": 344.0,
-                        "meanHours": 344.0
-                    }
-                ],
-                "bottlenecks": [
-                    {
-                        "statusId": "st-rev",
-                        "statusName": "Review",
-                        "visitCount": 1,
-                        "medianHours": 344.0,
-                        "score": 344.0
-                    }
-                ],
-                "transitionMatrix": [],
-                "reworkPercent": 0.0,
-                "transitionCount": 0
             }
         ],
         "throughputTrend": [
@@ -537,7 +575,7 @@
             },
             {
                 "week": "2026-W25",
-                "count": 0
+                "count": 1
             },
             {
                 "week": "2026-W26",
@@ -551,66 +589,66 @@
         "phaseDays": {
             "mean": {
                 "columns": [
-                    "Ontvangst",
                     "Beoordeling",
+                    "Ontvangst",
                     "Afronding"
                 ],
                 "rows": [
                     {
+                        "label": "Melding",
+                        "values": [
+                            14,
+                            14,
+                            "none"
+                        ]
+                    },
+                    {
                         "label": "Omgevingsvergunning",
                         "values": [
-                            5,
                             4,
+                            5,
                             4
                         ]
                     },
                     {
                         "label": "Omgevingsvergunning",
                         "values": [
+                            "none",
                             30,
-                            "none",
                             9
-                        ]
-                    },
-                    {
-                        "label": "Melding",
-                        "values": [
-                            "none",
-                            14,
-                            "none"
                         ]
                     }
                 ]
             },
             "median": {
                 "columns": [
-                    "Ontvangst",
                     "Beoordeling",
+                    "Ontvangst",
                     "Afronding"
                 ],
                 "rows": [
                     {
+                        "label": "Melding",
+                        "values": [
+                            14,
+                            14,
+                            "none"
+                        ]
+                    },
+                    {
                         "label": "Omgevingsvergunning",
                         "values": [
-                            3,
                             4,
+                            3,
                             4
                         ]
                     },
                     {
                         "label": "Omgevingsvergunning",
                         "values": [
+                            "none",
                             30,
-                            "none",
                             9
-                        ]
-                    },
-                    {
-                        "label": "Melding",
-                        "values": [
-                            "none",
-                            14,
-                            "none"
                         ]
                     }
                 ]

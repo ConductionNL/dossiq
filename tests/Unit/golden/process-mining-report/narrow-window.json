@@ -9,6 +9,19 @@
         "truncated": false,
         "caseTypes": [
             {
+                "id": "ct-2",
+                "title": "Melding",
+                "caseVolume": 2,
+                "dwellTime": [],
+                "dwellTimeCompleted": [],
+                "dwellDaysHeld": [],
+                "dwellByAssignee": [],
+                "bottlenecks": [],
+                "transitionMatrix": [],
+                "reworkPercent": 0.0,
+                "transitionCount": 0
+            },
+            {
                 "id": "ct-1",
                 "title": "Omgevingsvergunning",
                 "caseVolume": 1,
@@ -72,7 +85,10 @@
                         "meanHours": 168.0
                     }
                 ],
-                "dwellDaysHeld": [],
+                "dwellDaysHeld": {
+                    "st-in": 3,
+                    "st-rev": 2
+                },
                 "dwellByAssignee": [
                     {
                         "actor": "",
@@ -151,19 +167,6 @@
                 ],
                 "reworkPercent": 0.0,
                 "transitionCount": 1
-            },
-            {
-                "id": "ct-2",
-                "title": "Melding",
-                "caseVolume": 1,
-                "dwellTime": [],
-                "dwellTimeCompleted": [],
-                "dwellDaysHeld": [],
-                "dwellByAssignee": [],
-                "bottlenecks": [],
-                "transitionMatrix": [],
-                "reworkPercent": 0.0,
-                "transitionCount": 0
             }
         ],
         "throughputTrend": [

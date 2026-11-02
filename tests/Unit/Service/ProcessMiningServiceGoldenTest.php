@@ -28,6 +28,8 @@ use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
 use OCA\Dossiq\Service\ProcessMiningService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Status\StatusDwellService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
@@ -49,6 +51,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\ProcessMining\PhaseSummary
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Status\StatusDwellService
  */
 class ProcessMiningServiceGoldenTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -84,9 +87,10 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 		);
 
 		$dates = $this->caseDatesFrozenAt();
+		$held = new StatusDwellService(calendar: $this->createMock(WorkingDayCalculator::class), dates: $dates);
 		$service = new ProcessMiningService(
 			new ProcessMiningDataLoader($settings),
-			new DwellTimeAnalyzer(dates: $dates),
+			new DwellTimeAnalyzer(dates: $dates, held: $held),
 			new TransitionMatrixBuilder(),
 			new ThroughputTrendCalculator(dates: $dates),
 			$dates,
@@ -139,9 +143,12 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 		];
 		$two = $types + [
 			'case' => [
-				$closed('case-1', 'ct-1', '2026-03-20'),
+				$closed('case-1', 'ct-1', '2026-03-20') + [
+					'statusDwellTotals' => [['statusType' => 'st-in', 'workingDays' => 3], ['statusType' => 'st-rev', 'workingDays' => 2]],
+				],
 				$closed('case-2', 'omgeving', '2026-04-10'),
 				$closed('case-3', 'ct-2', '2026-05-15'),
+				$closed('case-4', 'ct-2', '2026-06-15'),
 			],
 			'statusRecord' => [
 				$record('sr-1', 'case-1', 'st-in', '2026-03-02T09:00:00+00:00'),
@@ -152,6 +159,7 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 				$record('sr-6', 'case-2', 'st-out', '2026-04-01T09:00:00+00:00'),
 				$record('sr-7', 'case-3', 'st-rev', '2026-05-01T09:00:00+00:00'),
 				$record('sr-8', 'case-9', 'st-rev', '2026-05-01T09:00:00+00:00'),
+				$record('sr-9', 'case-4', 'st-in', '2026-06-01T09:00:00+00:00'),
 			],
 		];
 		$history = $types + [
