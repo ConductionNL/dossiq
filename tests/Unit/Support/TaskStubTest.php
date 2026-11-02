@@ -22,8 +22,10 @@ namespace OCA\Dossiq\Tests\Unit\Support;
 
 use JsonSerializable;
 use OCA\OpenRegister\Db\Task;
+use OCA\OpenRegister\Db\TaskStubContract;
 use OCA\OpenRegister\Kernel\Contracts\TaskInterface;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * The Task stub answers OpenRegister's kernel task contract, so an installed
@@ -39,22 +41,28 @@ class TaskStubTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		if (str_ends_with((string)(new \ReflectionClass(Task::class))->getFileName(), 'tests/Stubs/Db/Task.php') === false) {
+		if (str_ends_with((string)(new ReflectionClass(objectOrClass: Task::class))->getFileName(), 'tests/Stubs/Db/Task.php') === false) {
 			$this->markTestSkipped(message: 'OpenRegister\'s own Task entity is loaded.');
 		}
 	}//end setUp()
 
 	/**
-	 * The stub is serialisable, and is the kernel contract whenever it exists.
+	 * The stub is serialisable, and is the kernel contract when that loaded before it.
+	 *
+	 * Whether OpenRegister's contracts load is settled once, when the stub is
+	 * declared; a test that registers OpenRegister later cannot change it.
 	 *
 	 * @return void
 	 */
-	public function testTheStubIsTheKernelContractWhenItExists(): void {
+	public function testTheStubIsTheKernelContractWhenItLoadedFirst(): void {
+		$contract = new ReflectionClass(objectOrClass: TaskStubContract::class);
+
 		$this->assertInstanceOf(expected: JsonSerializable::class, actual: new Task());
-		if (interface_exists(TaskInterface::class) === true) {
+		$this->assertTrue(condition: (new ReflectionClass(objectOrClass: Task::class))->implementsInterface(interface: TaskStubContract::class));
+		if (in_array(needle: TaskInterface::class, haystack: $contract->getInterfaceNames(), strict: true) === true) {
 			$this->assertInstanceOf(expected: TaskInterface::class, actual: new Task());
 		}
-	}//end testTheStubIsTheKernelContractWhenItExists()
+	}//end testTheStubIsTheKernelContractWhenItLoadedFirst()
 
 	/**
 	 * Hydrate sets the four fields the stub keeps and ignores the rest; the terminal states are the entity's.
