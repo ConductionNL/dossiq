@@ -5335,6 +5335,22 @@
 			}
 		},
 		{
+			"key": "outbox-dag-geladen",
+			"register": "dossiq",
+			"schema": "syncQueue",
+			"data": {
+				"deviceId": "toestel-pieter",
+				"operationType": "update",
+				"targetEntity": "fieldInspection",
+				"label": "Inspecties van vandaag",
+				"summary": "4 inspecties, checklists en kaart op het toestel",
+				"queuedAt": "{{datetime:0 07:41}}",
+				"attemptCount": 1,
+				"lastAttemptAt": "{{datetime:0 07:42}}",
+				"status": "synced"
+			}
+		},
+		{
 			"key": "outbox-molenweg-checklist",
 			"register": "dossiq",
 			"schema": "syncQueue",
@@ -5917,6 +5933,12 @@
 						"respondedAt": "{{datetime:0 11:06}}",
 						"syncState": "queued",
 						"comment": "Fietsen en kratten in de gang naar de achteruitgang"
+					},
+					{
+						"itemId": "brandveiligheid-8",
+						"value": "ja",
+						"respondedAt": "{{datetime:0 11:08}}",
+						"syncState": "queued"
 					}
 				],
 				"photos": []
@@ -5992,7 +6014,7 @@
 			"data": {
 				"tenantRef": "{{organisation:waterland}}",
 				"userRef": "{{cast:marieke.uid}}",
-				"role": "admin",
+				"role": "tenant_admin",
 				"joinedAt": "{{datetime:-50 10:00}}",
 				"lastActiveAt": "{{datetime:-1 16:20}}",
 				"mfaEnabled": true,
@@ -9703,7 +9725,11 @@
 						"label": "Stukken een week vooraf ter inzage leggen",
 						"checked": false
 					}
-				]
+				],
+				"runUuid": "{{flow:flow-bezwaar.runs.hoorzitting-havenstraat}}",
+				"nodeId": "hoorzitting",
+				"claimedBy": "{{cast:pieter.uid}}",
+				"claimedAt": "{{datetime:-1 09:05}}"
 			}
 		},
 		{
@@ -10626,6 +10652,88 @@
 					{
 						"from": "vraag",
 						"to": "end"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-bezwaar",
+			"data": {
+				"name": "Bezwaar",
+				"description": "De werkwijze van een bezwaar: de indiener horen, daarna de beslissing op bezwaar voorbereiden.",
+				"trigger": "manual",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-manual",
+						"name": "Gestart vanaf de zaak",
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "hoorzitting",
+						"type": "openregister.user-task",
+						"name": "Hoorzitting",
+						"config": {
+							"title": "Hoorzitting inplannen",
+							"description": "Plan de hoorzitting met de bezwaarcommissie en nodig de indiener uit.",
+							"candidateGroups": [
+								"{{cast:woo-en-informatie.gid}}"
+							],
+							"priority": "high"
+						},
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "beslissing",
+						"type": "dossiq.setStatus",
+						"name": "Status: beslissing op bezwaar",
+						"config": {
+							"status": "Beslissing op bezwaar"
+						},
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 400
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "hoorzitting"
+					},
+					{
+						"from": "hoorzitting",
+						"to": "beslissing"
+					},
+					{
+						"from": "beslissing",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"key": "hoorzitting-havenstraat",
+						"status": "suspended",
+						"node": "hoorzitting",
+						"subject": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"triggeredBy": "{{cast:anouk.uid}}",
+						"created": "{{datetime:-2 16:20}}"
 					}
 				]
 			}

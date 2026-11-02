@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
 
+use OCA\Dossiq\Service\Pause\PauseChaseSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
@@ -248,9 +249,11 @@ class TermNoticeDeliveryTest extends TestCase {
 
 		return new PauseChaseService(
 			termService: $terms,
-			reasons: $reasons,
-			schedule: new ChaseSchedule(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
-			notifications: $notifications,
+			chase: new PauseChaseSources(
+				reasons: $reasons,
+				schedule: new ChaseSchedule(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
+				notifications: $notifications,
+			),
 			timeline: $this->createMock(CaseTimeline::class),
 			settings: $this->createMock(SettingsService::class),
 			logger: $this->logger(),

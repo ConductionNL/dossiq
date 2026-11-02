@@ -28,8 +28,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\Email\InboundMailFiling;
+use OCA\Dossiq\Service\Email\InboundMailChecks;
 use DateTime;
 use OCA\Dossiq\BackgroundJob\InboundEmailJob;
+use OCA\Dossiq\BackgroundJob\MailIntakeSource;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Email\AuthenticationVerdict;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
@@ -59,6 +62,8 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\BackgroundJob\InboundEmailJob
  * @covers \OCA\Dossiq\BackgroundJob\MailIntakeSource
+ * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  * @uses \OCA\Dossiq\Service\Email\InboundMailIntake
  * @uses \OCA\Dossiq\Service\Email\IntakeLog
  * @uses \OCA\Dossiq\Service\Email\UnmatchedMailIntake
@@ -214,9 +219,11 @@ class InboundEmailJobServiceAccountTest extends TestCase {
 
 		$intake = new InboundMailIntake(
 			gateway: $this->gateway,
-			pipeline: new FilterPipeline(logger: $logger),
-			verdicts: new AuthenticationVerdict(gateway: $this->gateway, threading: $threading),
-			threading: $threading,
+			checks: new InboundMailChecks(
+				pipeline: new FilterPipeline(logger: $logger),
+				verdicts: new AuthenticationVerdict(gateway: $this->gateway, threading: $threading),
+				threading: $threading,
+			),
 			policy: new IntakePolicy(
 				settingsService: $settings,
 				appConfig: $appConfig,
@@ -224,17 +231,19 @@ class InboundEmailJobServiceAccountTest extends TestCase {
 				logger: $logger,
 			),
 			log: new IntakeLog(settingsService: $settings, time: $time, logger: $logger, timeline: $timeline),
-			cases: new CaseEmailRepository(settingsService: $settings),
-			unmatched: new UnmatchedMailIntake(
-				settingsService: $settings,
-				assignees: new AssigneeResolver(logger: $logger),
-				appConfig: $appConfig,
-				logger: $logger,
-			),
-			archival: new EmailArchivalService(
-				settingsService: $settings,
-				logger: $logger,
-				correspondents: $correspondents,
+			filing: new InboundMailFiling(
+				cases: new CaseEmailRepository(settingsService: $settings),
+				unmatched: new UnmatchedMailIntake(
+					settingsService: $settings,
+					assignees: new AssigneeResolver(logger: $logger),
+					appConfig: $appConfig,
+					logger: $logger,
+				),
+				archival: new EmailArchivalService(
+					settingsService: $settings,
+					logger: $logger,
+					correspondents: $correspondents,
+				),
 			),
 			logger: $logger,
 		);
@@ -251,6 +260,7 @@ class InboundEmailJobServiceAccountTest extends TestCase {
 				'gateway' => $this->gateway,
 				'account' => new IntakeAccount(appConfig: $appConfig),
 				'intake' => $intake,
+				'mail' => new MailIntakeSource(gateway: $this->gateway, account: new IntakeAccount(appConfig: $appConfig), intake: $intake),
 				'logger' => $logger,
 				'serviceAccount' => $this->backgroundAccount(),
 			]
