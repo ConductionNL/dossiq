@@ -4874,7 +4874,7 @@
 						"type": "record-list",
 						"title": "Access",
 						"subtitle": "Who may open this case, and why",
-						"_note": "DqZaakBetrokkenen Toegang: the case's access links as rows, each with the holder's initials, \"Link for {label}\", what the holder may do and when the link ends. The rows come from dossiq's own link list (the one the sidebar Sharing tab reads), which answers only for a reader the case is assigned to; anyone else reads the error text. A live or paused link ends in an icon button that revokes it (nextcloud-vue rowAction.iconOnly); the server refuses a colleague who did not create it, and that refusal shows in its words. Share opens the sidebar Sharing tab, which keeps the whole flow: links, partner shares, transfers and federated shares (nextcloud-vue header action open-sidebar-tab; on an older library the button is absent). The board also draws team and group grants; those come from the Access sidebar tab's catalogue and are not rows here yet.",
+						"_note": "DqZaakBetrokkenen Toegang: the case's access links as rows, each with the holder's initials, \"Link for {label}\", what the holder may do and when the link ends. The rows come from dossiq's own link list (the one the sidebar Sharing tab reads), which answers only for a reader the case is assigned to; anyone else reads the error text. A live or paused link ends in an icon button that revokes it (nextcloud-vue rowAction.iconOnly); the server refuses a colleague who did not create it, and that refusal shows in its words. Share opens the sidebar Sharing tab, which keeps the whole flow: links, partner shares, transfers and federated shares (nextcloud-vue header action open-sidebar-tab; on an older library the button is absent). Under the links, in the same card (nextcloud-vue record-list sections), the users and groups that can open the case: OpenRegister's grants list for the case (openregister an-object-lists-its-grants-with-their-origin), one row per principal and origin, with a group icon or the initials, the name, and where the access came from written from origin, matchedOn, role and sharedBy (meta.cases). The background service is hidden by id. OpenRegister answers only for a caller the case's readGrants rule admits (register.d/99-case-grants-read.json: the assignee), the owner, an administrator or a grant_manage holder; anyone else reads the refusal text. Board rows \"Team Woo en informatie · via het zaaktype\" and \"Juridische zaken · gedeeld door Pieter Jansen\"; dossiq change case-access-card-lists-team-and-group-grants. On a library without sections the card shows neither list.",
 						"headerActions": [
 							{
 								"label": "Share",
@@ -4886,75 +4886,218 @@
 							}
 						],
 						"content": {
-							"endpointSource": {
-								"url": "/apps/dossiq/api/access-links/case/@objectId",
-								"responsePath": "results"
-							},
 							"presentation": "rows",
 							"ruleAbove": true,
-							"avatar": {
-								"text": "{label}",
-								"size": 32
-							},
-							"title": "Link for {label}",
-							"meta": "{capabilities}, without an account · the link can end",
-							"valueLabels": {
-								"capabilities": {
-									"read": "Read only",
-									"read,comment": "Read and comment",
-									"read,upload": "Read and add documents",
-									"read,comment,upload": "Read, comment and add documents"
-								}
-							},
-							"pill": {
-								"cases": [
-									{
-										"when": {
-											"field": "state",
-											"op": "eq",
-											"value": "revoked"
-										},
-										"label": "Revoked"
+							"sections": [
+								{
+									"endpointSource": {
+										"url": "/apps/dossiq/api/access-links/case/@objectId",
+										"responsePath": "results"
 									},
-									{
-										"when": {
-											"field": "state",
-											"op": "eq",
-											"value": "expired"
-										},
-										"label": "Expired",
-										"variant": "error"
+									"avatar": {
+										"text": "{label}",
+										"size": 32
 									},
-									{
-										"when": {
+									"title": "Link for {label}",
+									"meta": "{capabilities}, without an account · the link can end",
+									"valueLabels": {
+										"capabilities": {
+											"read": "Read only",
+											"read,comment": "Read and comment",
+											"read,upload": "Read and add documents",
+											"read,comment,upload": "Read, comment and add documents"
+										}
+									},
+									"pill": {
+										"cases": [
+											{
+												"when": {
+													"field": "state",
+													"op": "eq",
+													"value": "revoked"
+												},
+												"label": "Revoked"
+											},
+											{
+												"when": {
+													"field": "state",
+													"op": "eq",
+													"value": "expired"
+												},
+												"label": "Expired",
+												"variant": "error"
+											},
+											{
+												"when": {
+													"field": "state",
+													"op": "eq",
+													"value": "paused"
+												},
+												"label": "Paused"
+											}
+										],
+										"label": "Expires {expiresAt|date}",
+										"variant": "warning"
+									},
+									"rowAction": {
+										"label": "Revoke link",
+										"icon": "LinkVariantOff",
+										"iconOnly": true,
+										"variant": "outlined",
+										"endpoint": "/apps/dossiq/api/access-links/{accessLinkId}?caseId=@objectId",
+										"method": "DELETE",
+										"labels": {
 											"field": "state",
-											"op": "eq",
-											"value": "paused"
+											"map": {
+												"revoked": "",
+												"expired": ""
+											}
 										},
-										"label": "Paused"
-									}
-								],
-								"label": "Expires {expiresAt|date}",
-								"variant": "warning"
-							},
-							"rowAction": {
-								"label": "Revoke link",
-								"icon": "LinkVariantOff",
-								"iconOnly": true,
-								"variant": "outlined",
-								"endpoint": "/apps/dossiq/api/access-links/{accessLinkId}?caseId=@objectId",
-								"method": "DELETE",
-								"labels": {
-									"field": "state",
-									"map": {
-										"revoked": "",
-										"expired": ""
-									}
+										"errorText": "The link could not be revoked"
+									},
+									"emptyText": "No links on this case yet",
+									"errorText": "Only the people this case is assigned to can see its links"
 								},
-								"errorText": "The link could not be revoked"
-							},
-							"emptyText": "No links on this case yet",
-							"errorText": "Only the people this case is assigned to can see its links",
+								{
+									"endpointSource": {
+										"url": "/apps/openregister/api/objects/dossiq/case/@objectId/grants",
+										"params": {
+											"principalTypes": "user,group"
+										},
+										"responsePath": "results"
+									},
+									"avatar": {
+										"text": "{principal.displayName}",
+										"size": 32,
+										"icon": {
+											"field": "principal.type",
+											"map": {
+												"group": "AccountGroup"
+											}
+										}
+									},
+									"title": [
+										"{principal.displayName}",
+										"{principal.id}"
+									],
+									"meta": {
+										"cases": [
+											{
+												"when": {
+													"all": [
+														{
+															"field": "origin",
+															"op": "eq",
+															"value": "rule"
+														},
+														{
+															"field": "matchedOn",
+															"op": "contains",
+															"value": "caseType"
+														}
+													]
+												},
+												"text": "via the case type"
+											},
+											{
+												"when": {
+													"all": [
+														{
+															"field": "origin",
+															"op": "eq",
+															"value": "rule"
+														},
+														{
+															"field": "role",
+															"op": "notEmpty"
+														}
+													]
+												},
+												"text": "via the role {role}"
+											},
+											{
+												"when": {
+													"field": "origin",
+													"op": "eq",
+													"value": "rule"
+												},
+												"text": "via a rule on all cases"
+											},
+											{
+												"when": {
+													"all": [
+														{
+															"field": "origin",
+															"op": "eq",
+															"value": "shared"
+														},
+														{
+															"field": "sharedBy.displayName",
+															"op": "empty"
+														}
+													]
+												},
+												"text": "shared by a former user"
+											},
+											{
+												"when": {
+													"field": "origin",
+													"op": "eq",
+													"value": "shared"
+												},
+												"text": "shared by {sharedBy.displayName}"
+											},
+											{
+												"when": {
+													"all": [
+														{
+															"field": "origin",
+															"op": "eq",
+															"value": "inherited"
+														},
+														{
+															"field": "sharedBy.displayName",
+															"op": "empty"
+														}
+													]
+												},
+												"text": "via the main case, shared by a former user"
+											},
+											{
+												"when": {
+													"field": "origin",
+													"op": "eq",
+													"value": "inherited"
+												},
+												"text": "via the main case, shared by {sharedBy.displayName}"
+											},
+											{
+												"when": {
+													"field": "origin",
+													"op": "eq",
+													"value": "owner"
+												},
+												"text": "owner of the case"
+											}
+										]
+									},
+									"pill": {
+										"cases": [],
+										"label": "Expires {expiresAt|date}",
+										"variant": "warning"
+									},
+									"hideWhen": {
+										"field": "principal.id",
+										"op": "in",
+										"value": [
+											"dossiq-background-service"
+										]
+									},
+									"emptyText": "Nobody else has access to this case",
+									"refusalText": "Only the people this case is assigned to can see who has access",
+									"errorText": "Could not read who has access"
+								}
+							],
 							"footnote": "Whoever reads the BSN or another sensitive field is recorded in the processing log."
 						}
 					},
