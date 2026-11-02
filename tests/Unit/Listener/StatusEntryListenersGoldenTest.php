@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Bezwaar\HearingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
@@ -83,6 +84,14 @@ class StatusEntryListenersGoldenTest extends TestCase {
 			}
 
 			$out[$key . ' not an update'] = [$listener, null, null, 'objection', false];
+			$out[$key . ' a created object'] = [$listener, $moved, null, 'objection', false];
+			$out[$key . ' a schema ending in a slash, none configured'] = [
+				$listener,
+				array_replace($moved, ['@self' => ['id' => 'b-5', 'schema' => 'https://x/schemas/']]),
+				$was,
+				'',
+				false,
+			];
 		}
 
 		return $out;
@@ -103,6 +112,12 @@ class StatusEntryListenersGoldenTest extends TestCase {
 	 */
 	public function testTheListenerMatchesTheRecording(string $listener, ?array $new, ?array $old, string $slug, bool $throws): void {
 		$event = $this->event(new: $new, old: $old, update: str_ends_with($this->dataName(), 'not an update') === false);
+		if (str_ends_with($this->dataName(), 'a created object') === true) {
+			$entity = $this->createMock(originalClassName: ObjectEntity::class);
+			$entity->method('jsonSerialize')->willReturn($new);
+			$event = new ObjectCreatedEvent($entity);
+		}
+
 		$this->listener(class: $listener, slug: $slug, throws: $throws)->handle($event);
 
 		$name = trim(strtolower((string)preg_replace('/[^a-z]+/i', '-', $this->dataName())), '-');
