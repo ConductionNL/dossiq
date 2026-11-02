@@ -26,6 +26,7 @@ use OCA\Dossiq\AppInfo\Registrar\BezwaarListenerRegistrar;
 use OCA\Dossiq\Listener\DeliberationStartGuard;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
 use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
 use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -161,6 +162,50 @@ class DeliberationStartGuardTest extends TestCase {
 		$this->assertNull(actual: $this->writeStatus(service: $conflicted, status: 'advice-issued'), message: 'a move out of deliberation is not checked');
 		$this->assertSame(expected: [], actual: $this->trail->actionsOn('req-1'));
 	}//end testOnlyAMoveIntoDeliberationIsChecked()
+
+	/**
+	 * The check reads the panel and objection being saved, and the refusal lands on the configured register and schema.
+	 *
+	 * @return void
+	 */
+	public function testTheCheckReadsTheRequestAsItWillBeSaved(): void {
+		$this->seedRequest(row: ['status' => 'assigned', 'panel' => ['a.bakker']]);
+		$asked = [];
+		$independence = $this->createMock(originalClassName: PanelIndependenceChecker::class);
+		$independence->method('check')->willReturnCallback(
+			static function (string $objectionId, array $panel) use (&$asked): array {
+				$asked[] = [$objectionId, $panel];
+				return ['ok' => false, 'member' => null, 'reason' => 'onverifieerbaar'];
+			}
+		);
+		$recorded = [];
+		$trail = $this->createMock(originalClassName: BezwaarAuditTrail::class);
+		$trail->method('recordRefusal')->willReturnCallback(
+			static function (string $register, string $schema, string $objectUuid, string $event) use (&$recorded): bool {
+				$recorded[] = [$register, $schema, $objectUuid, $event];
+				return true;
+			}
+		);
+		$service = new AdvisoryCommitteeService(
+			settingsService: $this->bezwaarSettings(),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			adviceDelegation: $this->createMock(originalClassName: AdviceDelegationService::class),
+			auditTrail: $trail,
+			independence: $independence,
+		);
+
+		$before = $this->store->row('bacAdviceRequest', 'req-1');
+		$after = array_merge($before, ['status' => 'in-deliberation', 'panel' => ['p.janssen'], 'bezwaar' => 'bezwaar-2']);
+		$event = new ObjectUpdatingEvent(
+			$this->entity(schema: 'bacAdviceRequest', row: $after),
+			$this->entity(schema: 'bacAdviceRequest', row: $before)
+		);
+		$this->guard(service: $service)->handle(event: $event);
+
+		$this->assertTrue(condition: $event->isPropagationStopped());
+		$this->assertSame(expected: [['bezwaar-2', ['p.janssen']]], actual: $asked);
+		$this->assertSame(expected: [['dossiq', 'bacAdviceRequest', 'req-1', 'independence-check-unverifiable']], actual: $recorded);
+	}//end testTheCheckReadsTheRequestAsItWillBeSaved()
 
 	/**
 	 * Another schema's status is never checked.

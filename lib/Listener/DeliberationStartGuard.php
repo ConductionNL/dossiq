@@ -3,9 +3,10 @@
 /**
  * Dossiq deliberation start guard.
  *
- * Runs the panel check (Awb Art. 7:13 lid 3) on every OpenRegister write that
- * moves an advice request into in-deliberation, whichever path made the write:
- * a lifecycle action, an API write or AdvisoryCommitteeService.
+ * Runs the panel check (Awb Art. 7:13 lid 3) on every single-object save that
+ * moves an advice request into in-deliberation: a lifecycle action, an API
+ * write or AdvisoryCommitteeService. OpenRegister's bulk save, import and flow
+ * writes fire no ObjectUpdatingEvent and are not covered.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-write-that-starts-deliberation-runs-the-panel-check
+ * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-single-object-save-that-starts-deliberation-runs-the-panel-check
  */
 class DeliberationStartGuard implements IEventListener {
 
@@ -86,7 +87,7 @@ class DeliberationStartGuard implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-write-that-starts-deliberation-runs-the-panel-check
+	 * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-single-object-save-that-starts-deliberation-runs-the-panel-check
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectUpdatingEvent === false) {

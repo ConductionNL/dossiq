@@ -626,7 +626,7 @@ class AdvisoryCommitteeService {
 	/**
 	 * Guard a move into in-deliberation (REQ-BAC-2) for a request as it will be saved.
 	 *
-	 * Called by DeliberationStartGuard on every OpenRegister write that moves
+	 * Called by DeliberationStartGuard on every single-object save that moves
 	 * an advice request into in-deliberation.
 	 *
 	 * @param array<string, mixed> $request   The advice request as it will be saved
@@ -637,7 +637,7 @@ class AdvisoryCommitteeService {
 	 * @throws RuntimeException When OpenRegister is not available, or no panel has been set
 	 * @throws GuardFailedException When a panel member is not independent, or independence cannot be verified
 	 *
-	 * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-write-that-starts-deliberation-runs-the-panel-check
+	 * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-single-object-save-that-starts-deliberation-runs-the-panel-check
 	 */
 	public function guardDeliberationStart(array $request, string $requestId): void {
 		$store = ($this->requestStore() ?? throw new RuntimeException('OpenRegister is not available'));

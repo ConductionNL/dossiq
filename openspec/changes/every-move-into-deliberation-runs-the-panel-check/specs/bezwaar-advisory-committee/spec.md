@@ -1,13 +1,13 @@
 # bezwaar-advisory-committee Delta: every-move-into-deliberation-runs-the-panel-check
 
 **Status**: draft
-**Scope**: every write that moves an advice request into `in-deliberation`.
+**Scope**: every single-object save that moves an advice request into `in-deliberation`.
 
 ## ADDED Requirements
 
-### Requirement: every write that starts deliberation runs the panel check
+### Requirement: every single-object save that starts deliberation runs the panel check
 
-The panel check of REQ-BAC-2 MUST run on every write that moves an advice request into `in-deliberation`, not only on `transitionAdviceStatus()`. That includes a lifecycle action on the advice request page and a direct OpenRegister API write. The check MUST run before OpenRegister saves the write. A refused check MUST stop the write, and the request MUST keep its old status. The refusal MUST reach the caller as the write's error. The trail entry of the refusal MUST be written before the write is stopped, exactly as `transitionAdviceStatus()` writes it. A check that fails with an unexpected error MUST stop the write too. A write that leaves the status at `in-deliberation`, or moves it anywhere else, MUST NOT run the check.
+The panel check of REQ-BAC-2 MUST run on every single-object save that moves an advice request into `in-deliberation`, not only on `transitionAdviceStatus()`. That includes a lifecycle action on the advice request page and a direct OpenRegister API write. The check MUST read the panel and the objection from the request as it will be saved. Saves that fire no `ObjectUpdatingEvent` (bulk save, import, flow writes) are outside this requirement. The check MUST run before OpenRegister saves the write. A refused check MUST stop the write, and the request MUST keep its old status. The refusal MUST reach the caller as the write's error. The trail entry of the refusal MUST be written before the write is stopped, exactly as `transitionAdviceStatus()` writes it. A check that fails with an unexpected error MUST stop the write too. A write that leaves the status at `in-deliberation`, or moves it anywhere else, MUST NOT run the check.
 
 #### Scenario: a lifecycle action starts deliberation with a conflicted panel
 @e2e exclude needs a contested decision signed by a panel member on a seeded instance; covered by DeliberationStartGuardTest
