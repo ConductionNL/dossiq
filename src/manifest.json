@@ -9330,7 +9330,8 @@
 							"columns": [
 								{
 									"key": "actorLabel",
-									"label": "Handler"
+									"label": "Handler",
+									"formatter": "userName"
 								},
 								{
 									"key": "workingHours",
