@@ -12,7 +12,7 @@ The change every-move-into-deliberation-runs-the-panel-check runs the panel chec
 - A check that fails with an unexpected error stops the create too.
 - A create in any other status is not checked.
 - A save that keeps a request in `in-deliberation` but changes its panel or its objection runs the check again. The objection backfill, which copies `objectionProceeding` into `bezwaar`, does not count as a change.
-- A request without an objection is unverifiable, not independent. So is a request whose contested decision cannot be established: no objection record, no `contestedDecision`, a decision that does not resolve, or a decision with no recorded author. The author is read from `decidedBy` first, then `@self.owner`, `createdBy` and `steller`. `PanelIndependenceChecker` used to clear all of these.
+- A request without an objection is unverifiable, not independent. So is a request whose contested decision cannot be established: no objection record, no `contestedDecision`, a decision that does not resolve, or a decision with no recorded author. Every recorded author counts: a panel member who is the decision's `decidedBy`, `@self.owner`, `createdBy` or `steller` makes the panel not independent. `PanelIndependenceChecker` used to clear all of these.
 - A save or create that reaches `advice-issued` or `inadmissible` from anywhere but `in-deliberation` is refused with error code `deliberation-skip-refused`. `transitionAdviceStatus()` already moves only from `in-deliberation`, so it keeps working.
 
 ## The refusal's trail entry

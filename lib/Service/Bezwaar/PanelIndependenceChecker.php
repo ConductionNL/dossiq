@@ -202,7 +202,7 @@ class PanelIndependenceChecker {
 	}//end lookupFor()
 
 	/**
-	 * The panel member who authored the contested decision, when there is one.
+	 * The first panel member recorded as an author of the contested decision, when there is one.
 	 *
 	 * @param Lookup        $lookup The store and schemas for the objection.
 	 * @param array<string> $panel  Panel member UIDs.
@@ -214,14 +214,14 @@ class PanelIndependenceChecker {
 	 */
 	private function conflictingMember(array $lookup, array $panel): string|false|null {
 		try {
-			$author = $this->resolveContestedDecisionAuthor(lookup: $lookup);
-			if ($author === false) {
+			$authors = $this->resolveContestedDecisionAuthors(lookup: $lookup);
+			if ($authors === false) {
 				return false;
 			}
 
 			return $this->findConflictingPanelMember(
 				panel: $panel,
-				author: $author,
+				authors: $authors,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -232,18 +232,18 @@ class PanelIndependenceChecker {
 	}//end conflictingMember()
 
 	/**
-	 * Resolve the steller (author) of the primair besluit contested by the
+	 * Resolve the recorded authors of the primair besluit contested by the
 	 * objection filed on the bezwaar's underlying dossiq case.
 	 *
 	 * The lookup's `legacyObjSchema` (config key `bezwaar_schema`) may be ''.
 	 *
 	 * @param Lookup $lookup The store, the objection id, the register and the schemas.
 	 *
-	 * @return string|false The steller UID, or false when the contested decision or its author cannot be established.
+	 * @return list<string>|false The author UIDs, or false when the contested decision cannot be established or records no author.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function resolveContestedDecisionAuthor(array $lookup): string|false {
+	private function resolveContestedDecisionAuthors(array $lookup): array|false {
 		$objectService = $lookup['objectService'];
 		$objectionId = $lookup['objectionId'];
 		$register = $lookup['register'];
@@ -295,48 +295,53 @@ class PanelIndependenceChecker {
 			return false;
 		}
 
-		return $this->authorOf(decision: $decision);
-	}//end resolveContestedDecisionAuthor()
+		return $this->authorsOf(decision: $decision);
+	}//end resolveContestedDecisionAuthors()
 
 	/**
-	 * The decision's author: the first non-empty of `decidedBy`, `@self.owner`, `createdBy` and `steller`.
+	 * Every recorded author of the decision: the non-empty values of `decidedBy`, `@self.owner`, `createdBy` and `steller`.
 	 *
 	 * `decidedBy` is the decision schema's own author field. `@self.owner` is
-	 * empty for an import without a session user, so it does not stop the search.
+	 * empty for an import without a session user.
 	 *
 	 * @param array<string, mixed> $decision The contested decision.
 	 *
-	 * @return string|false The author UID, or false when none is recorded.
+	 * @return list<string>|false The author UIDs, or false when none is recorded.
 	 */
-	private function authorOf(array $decision): string|false {
+	private function authorsOf(array $decision): array|false {
 		$candidates = [
 			$decision['decidedBy'] ?? null,
 			$decision['@self']['owner'] ?? null,
 			$decision['createdBy'] ?? null,
 			$decision['steller'] ?? null,
 		];
+		$authors = [];
 		foreach ($candidates as $candidate) {
 			if (is_scalar($candidate) === true && (string)$candidate !== '') {
-				return (string)$candidate;
+				$authors[] = (string)$candidate;
 			}
 		}
 
-		return false;
-	}//end authorOf()
+		if ($authors === []) {
+			return false;
+		}
+
+		return $authors;
+	}//end authorsOf()
 
 	/**
-	 * Find the first panel member that is not independent from the steller.
+	 * Find the first panel member who is one of the contested decision's authors.
 	 *
-	 * @param array<string> $panel Panel member UIDs.
-	 * @param string $author UID of the contested decision's author.
+	 * @param array<string> $panel   Panel member UIDs.
+	 * @param list<string>  $authors UIDs of the contested decision's recorded authors.
 	 *
 	 * @return string|null The conflicting member UID, or null when the panel is independent.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function findConflictingPanelMember(array $panel, string $author): ?string {
+	private function findConflictingPanelMember(array $panel, array $authors): ?string {
 		foreach ($panel as $memberUid) {
-			if ((string)$memberUid === $author) {
+			if (in_array((string)$memberUid, $authors, true) === true) {
 				return (string)$memberUid;
 			}
 		}
