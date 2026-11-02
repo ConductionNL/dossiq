@@ -3984,6 +3984,7 @@
 								"type": "open-modal",
 								"target": "DocumentAssessDialog",
 								"when": "@context.caseType.documentReview.enabled",
+								"visibleIf": { "row": { "reviewVerdict": { "notEmpty": true } } },
 								"rowProps": { "documentId": "id" },
 								"primaryWhen": { "key": "reviewVerdict", "values": ["open"] },
 								"props": {
@@ -4009,7 +4010,7 @@
 									}
 								}
 							},
-							"_rowButtonNote": "DqZaakDocumenten: each document of a case type that reviews its documents (documentReview.enabled) shows its verdict (reviewVerdict from the dossier listing, open while unassessed) and Beoordelen, primary while open, opening the same DocumentAssessDialog as the header's Assess documents with that document chosen (rowProps documentId). On any other case (DqDocumentenBeheer) `when` is false and neither is drawn. Needs nc-vue feat/files-review-row-when; an older library draws both everywhere.",
+							"_rowButtonNote": "DqZaakDocumenten: each document of a case type that reviews its documents (documentReview.enabled) shows its verdict (reviewVerdict from the dossier listing, open while unassessed) and Beoordelen, primary while open, opening the same DocumentAssessDialog as the header's Assess documents with that document chosen (rowProps documentId). On any other case (DqDocumentenBeheer) `when` is false and neither is drawn. Beoordelen follows the same rule as the review count: only a document under review carries a reviewVerdict, so a document the case drafts itself (the decision drafted from the case type's template) stays listed without it. Needs nc-vue feat/files-review-row-when and feat/files-row-button-visible-if-row; an older library draws the button nowhere once visibleIf.row is set.",
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
 							"rowDataUrl": "/apps/dossiq/api/cases/{objectId}/dossier",
 							"rowDataPath": "informatieobjecten",
