@@ -13971,7 +13971,7 @@
 										},
 										{
 											"parts": [
-												"residence.postcode",
+												{ "path": "residence.postcode", "format": "postcode" },
 												"residence.city"
 											],
 											"separator": " "
@@ -14526,7 +14526,7 @@
 								{
 									"as": "text",
 									"parts": [
-										"residence.postcode",
+										{ "path": "residence.postcode", "format": "postcode" },
 										"residence.city"
 									],
 									"separator": " ",
@@ -14751,7 +14751,7 @@
 										},
 										{
 											"parts": [
-												"address.postcode",
+												{ "path": "address.postcode", "format": "postcode" },
 												"address.place"
 											],
 											"separator": " "
@@ -15261,7 +15261,7 @@
 								{
 									"as": "text",
 									"parts": [
-										"address.postcode",
+										{ "path": "address.postcode", "format": "postcode" },
 										"address.place"
 									],
 									"separator": " ",
