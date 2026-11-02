@@ -1,0 +1,117 @@
+{
+    "answer": {
+        "refreshed": [
+            "untouched",
+            "changed",
+            "local"
+        ],
+        "kept": [
+            "foreign",
+            "gone"
+        ]
+    },
+    "caseTypes": [
+        {
+            "title": "Type untouched",
+            "processingDeadline": "P12W",
+            "note": "kept",
+            "id": "untouched"
+        },
+        {
+            "title": "Type changed",
+            "processingDeadline": "P12W",
+            "note": "kept",
+            "id": "changed"
+        },
+        {
+            "title": "Type local",
+            "processingDeadline": "P12W",
+            "note": "kept",
+            "id": "local"
+        },
+        {
+            "title": "Type foreign",
+            "processingDeadline": "P6W",
+            "note": "kept",
+            "id": "foreign"
+        },
+        {
+            "title": "Type same",
+            "processingDeadline": "P6W",
+            "note": "kept",
+            "id": "same"
+        }
+    ],
+    "ledger": [
+        {
+            "set": "gemeentelijke-rollen",
+            "setVersion": "4.0.0",
+            "targetSchema": "caseType",
+            "targetObject": "untouched",
+            "fingerprint": "df2805bb872eb8f534cbdcd2409d1853e8d524ae43a2a76cfbf1a7f9e0e54610",
+            "shippedFingerprint": "c27e05e11b1c1eddf8ebd110190da500a19469b20fee0caa78ab1e89537823db",
+            "seededAt": "<stamped>",
+            "id": "generated-1"
+        },
+        {
+            "set": "gemeentelijke-rollen",
+            "setVersion": "4.0.0",
+            "targetSchema": "caseType",
+            "targetObject": "changed",
+            "fingerprint": "5314c45cbd73260924c1f1414705b0bfe2a1b2ccd2c753bbe2b8a9bad70951f6",
+            "shippedFingerprint": "af91d16d57decf78a4a6e6de2def74bccff00310f8470de63f43221f29efbf25",
+            "seededAt": "<stamped>",
+            "id": "generated-2"
+        },
+        {
+            "set": "gemeentelijke-rollen",
+            "setVersion": "1.0.0",
+            "targetSchema": "caseType",
+            "targetObject": "same",
+            "fingerprint": "b919267730bcff95a4691b48ff7f64badb6e8392c48483cc329c9d8d3e366be6",
+            "shippedFingerprint": "b919267730bcff95a4691b48ff7f64badb6e8392c48483cc329c9d8d3e366be6",
+            "seededAt": "<stamped>",
+            "id": "generated-3"
+        },
+        {
+            "set": "another-set",
+            "setVersion": "2.0.0",
+            "targetSchema": "caseType",
+            "targetObject": "foreign",
+            "fingerprint": "a9af8d495ff69956086f2253cc4637a68fec83768e4269aff0399a3255103d2c",
+            "shippedFingerprint": "a9af8d495ff69956086f2253cc4637a68fec83768e4269aff0399a3255103d2c",
+            "seededAt": "<stamped>",
+            "id": "generated-4"
+        },
+        {
+            "set": "gemeentelijke-rollen",
+            "setVersion": "4.0.0",
+            "targetSchema": "caseType",
+            "targetObject": "local",
+            "fingerprint": "3b64ee811313198de1d4893739be8f96b11443ee42b4337a60c12d7b3cef65f5",
+            "shippedFingerprint": "7608127aed826e97b5e6a3c4b889dea4bd7daacffc8fee0296a01515d9b7eb3a",
+            "seededAt": "<stamped>",
+            "id": "generated-5"
+        }
+    ],
+    "warnings": [
+        {
+            "message": "Dossiq: {set} {version} kept row {row} as this instance holds it ({reason})",
+            "context": {
+                "set": "gemeentelijke-rollen",
+                "version": "4.0.0",
+                "row": "foreign",
+                "reason": "not_shipped_by_this_set"
+            }
+        },
+        {
+            "message": "Dossiq: {set} {version} kept row {row} as this instance holds it ({reason})",
+            "context": {
+                "set": "gemeentelijke-rollen",
+                "version": "4.0.0",
+                "row": "gone",
+                "reason": "not_found"
+            }
+        }
+    ]
+}
