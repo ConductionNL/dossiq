@@ -46,6 +46,8 @@
         "%n items": "%n items",
         "%n logged processing found for this subject.": "%n logged processing found for this subject.",
         "%n logged processings found for this subject.": "%n logged processings found for this subject.",
+        "%n minute": "%n minute",
+        "%n minutes": "%n minutes",
         "%n more result. Narrow your terms to see it.": "%n more result. Narrow your terms to see it.",
         "%n more results. Narrow your terms to see them.": "%n more results. Narrow your terms to see them.",
         "%n open case looks like this one.": "%n open case looks like this one.",
@@ -158,6 +160,10 @@
         "_%n item_::_%n items_": [
             "%n item",
             "%n items"
+        ],
+        "_%n minute_::_%n minutes_": [
+            "%n minute",
+            "%n minutes"
         ],
         "_%n month_::_%n months_": [
             "%n month",
@@ -2136,6 +2142,7 @@
         "Convenience back-reference to the termijn": "Convenience back-reference to the termijn",
         "Convenience flag mirroring status=active for list filtering": "Convenience flag mirroring status=active for list filtering",
         "Conversation": "Conversation",
+        "Conversation over": "Conversation over",
         "Conversation with the resident": "Conversation with the resident",
         "Conversations": "Conversations",
         "Conversations In Progress": "Conversations In Progress",
@@ -3241,6 +3248,7 @@
         "Every change the applicant made through the portal, with the time and the old and new answer.": "Every change the applicant made through the portal, with the time and the old and new answer.",
         "Every channel that refused the message before one took it, or before it was given up.": "Every channel that refused the message before one took it, or before it was given up.",
         "Every conversation you start from this case lands here. You see when it was held, who joined and how long it lasted.": "Every conversation you start from this case lands here. You see when it was held, who joined and how long it lasted.",
+        "Every conversation you start from this case lands here: when it was held, who joined and how long it lasted.": "Every conversation you start from this case lands here: when it was held, who joined and how long it lasted.",
         "Every document of this sample is judged and its estimate is recorded.": "Every document of this sample is judged and its estimate is recorded.",
         "Every document on this case has an assessment.": "Every document on this case has an assessment.",
         "Every entry in the menu, as it was before.": "Every entry in the menu, as it was before.",
@@ -11829,6 +11837,7 @@
         "{count} you may not write": "{count} you may not write",
         "{count}, of which {final} final": "{count}, of which {final} final",
         "{courtReference} · filed {appellantFilingDate|date}": "{courtReference} · filed {appellantFilingDate|date}",
+        "{date}, {start} to {end}": "{date}, {start} to {end}",
         "{daysSinceActivity} days idle": "{daysSinceActivity} days idle",
         "{days} days": "{days} days",
         "{days} days ago": "{days} days ago",
