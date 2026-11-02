@@ -52,11 +52,11 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore
  * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @covers \OCA\Dossiq\Service\Import\RecordImportReferences
+ * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Term\DayCount
- * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  */
 class CaseRecordImportTest extends TestCase {
 
@@ -230,8 +230,13 @@ class CaseRecordImportTest extends TestCase {
 			appManager: $apps,
 			steps: new RecordImportSteps(
 				mapping: new RecordCaseMapping(dates: $dates),
-				term: new TermCarryOver(terms: $this->terms($store), timers: $this->timers(), dates: $dates),
-				store: new RecordImportStore(settingsService: $settings, mapping: new RecordCaseMapping(dates: $dates), time: $time, logger: $this->createMock(LoggerInterface::class)),
+				term: new TermCarryOver(terms: $this->terms(store: $store), timers: $this->timers(), dates: $dates),
+				store: new RecordImportStore(
+					settingsService: $settings,
+					mapping: new RecordCaseMapping(dates: $dates),
+					time: $time,
+					logger: $this->createMock(originalClassName: LoggerInterface::class)
+				),
 			),
 		);
 	}//end import()

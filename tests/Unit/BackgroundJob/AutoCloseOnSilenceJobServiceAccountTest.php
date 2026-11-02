@@ -58,6 +58,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob
  * @covers \OCA\Dossiq\Service\Lifecycle\LifecycleActorGate
  * @covers \OCA\Dossiq\Service\Lifecycle\LifecycleCaseTypeRules
+ * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  * @uses \OCA\Dossiq\Service\Lifecycle\SilenceCloseService
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
@@ -65,7 +66,6 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Term\DayCount
- * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  */
 class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

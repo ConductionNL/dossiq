@@ -42,10 +42,10 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * What a declared silence period decides, one day at a time.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseService
+ * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\Term\DayCount
- * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  */
 class AutoCloseOnSilenceJobTest extends TestCase {
 

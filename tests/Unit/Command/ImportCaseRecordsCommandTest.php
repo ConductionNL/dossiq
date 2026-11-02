@@ -41,13 +41,13 @@ use Symfony\Component\Console\Tester\CommandTester;
  * Built on the real import class over an in-memory register.
  *
  * @covers \OCA\Dossiq\Command\ImportCaseRecordsCommand
+ * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  * @uses   \OCA\Dossiq\Service\Import\CaseRecordImport
  * @uses   \OCA\Dossiq\Service\Import\RecordCaseMapping
  * @uses   \OCA\Dossiq\Service\Import\RecordImportStore
  * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Import\RecordImportReferences
- * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  */
 class ImportCaseRecordsCommandTest extends TestCase {
 
@@ -99,8 +99,17 @@ class ImportCaseRecordsCommandTest extends TestCase {
 			appManager: $apps,
 			steps: new RecordImportSteps(
 				mapping: new RecordCaseMapping(dates: $dates),
-				term: new TermCarryOver(terms: $this->createMock(TermijnService::class), timers: $this->createMock(TermijnTimerService::class), dates: $dates),
-				store: new RecordImportStore(settingsService: $settings, mapping: new RecordCaseMapping(dates: $dates), time: $this->createMock(ITimeFactory::class), logger: $this->createMock(LoggerInterface::class)),
+				term: new TermCarryOver(
+					terms: $this->createMock(originalClassName: TermijnService::class),
+					timers: $this->createMock(originalClassName: TermijnTimerService::class),
+					dates: $dates
+				),
+				store: new RecordImportStore(
+					settingsService: $settings,
+					mapping: new RecordCaseMapping(dates: $dates),
+					time: $this->createMock(originalClassName: ITimeFactory::class),
+					logger: $this->createMock(originalClassName: LoggerInterface::class)
+				),
 			),
 		);
 

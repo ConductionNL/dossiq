@@ -58,6 +58,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\CaseTypePublishService
  * @covers \OCA\Dossiq\Service\CaseType\PublicationChecks
+ * @covers \OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks
  *
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\CaseTypeAcknowledgement
@@ -72,7 +73,6 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
- * @covers \OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks
  */
 class CaseTypePublishValidationTest extends TestCase {
 

@@ -44,11 +44,11 @@ use RuntimeException;
  * Golden test for CaseRecordImport.
  *
  * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
+ * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  * @uses \OCA\Dossiq\Service\Import\RecordImportReferences
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Import\RecordImportStore
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
- * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  */
 class CaseRecordImportGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

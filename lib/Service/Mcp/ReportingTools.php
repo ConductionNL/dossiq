@@ -30,7 +30,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Mcp;
 
 use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
+use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\DoorlooptijdService;
+use OCA\Dossiq\Service\KpiAggregationService;
 use OCA\Dossiq\Service\Reporting\ReportingAudience;
+use OCA\Dossiq\Service\WorkQueueService;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -48,15 +52,21 @@ class ReportingTools {
 	 * @param IUserSession             $userSession The caller's session.
 	 * @param IGroupManager            $groupManager Answers the coordinator (administrator) check.
 	 * @param ReportingAudience        $audience    The gate every fleet-wide report asks.
-	 * @param ReportingServices $reports The deadline, lead time, KPI and work queue reports.
+	 * @param DeadlineReportingService $deadlines   Owns the termijn KPI snapshot.
+	 * @param DoorlooptijdService      $leadTimes   Owns the lead-time metrics.
+	 * @param KpiAggregationService    $kpis        Owns the personal KPI overview.
 	 * @param DashboardWidgetScope     $widgetScope Narrows KPIs to the widgets this reader may see.
+	 * @param WorkQueueService         $workQueue   Owns the per-handler workload.
 	 */
 	public function __construct(
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly ReportingAudience $audience,
-		private readonly ReportingServices $reports,
+		private readonly DeadlineReportingService $deadlines,
+		private readonly DoorlooptijdService $leadTimes,
+		private readonly KpiAggregationService $kpis,
 		private readonly DashboardWidgetScope $widgetScope,
+		private readonly WorkQueueService $workQueue,
 	) {
 	}//end __construct()
 
@@ -83,7 +93,7 @@ class ReportingTools {
 			return $refusal;
 		}
 
-		return $this->reports->deadlines->getTermijnKpi();
+		return $this->deadlines->getTermijnKpi();
 	}//end getDeadlineDashboard()
 
 	/**
@@ -127,7 +137,7 @@ class ReportingTools {
 			$params['caseType'] = $caseType;
 		}
 
-		return $this->reports->leadTimes->getMetrics(params: $params);
+		return $this->leadTimes->getMetrics(params: $params);
 	}//end getDoorlooptijdMetrics()
 
 	/**
@@ -154,7 +164,7 @@ class ReportingTools {
 		}
 
 		$userId = $user->getUID();
-		return $this->widgetScope->narrowFor(payload: $this->reports->kpis->computeKpis($userId), userId: $userId);
+		return $this->widgetScope->narrowFor(payload: $this->kpis->computeKpis($userId), userId: $userId);
 	}//end getKpiOverview()
 
 	/**
@@ -186,7 +196,7 @@ class ReportingTools {
 			return $this->error(code: 'forbidden', message: 'This needs the coordinator role.');
 		}
 
-		return ['handlers' => $this->reports->workQueue->computeWorkload()];
+		return ['handlers' => $this->workQueue->computeWorkload()];
 	}//end getWorkload()
 
 	/**
