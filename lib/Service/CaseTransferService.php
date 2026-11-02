@@ -299,14 +299,21 @@ class CaseTransferService {
 	 *
 	 * @param string $transferId The UUID of the transfer request
 	 * @param string|null $remoteCloudId Set when the accept was authenticated via a federated token (custody audit actorType)
+	 * @param string|null $actingUser    The session user who accepts a local transfer; ignored for a federated one
 	 *
 	 * @return array The updated transfer data, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#case-transfer-extends-across-federation-with-idempotent-acceptreject-and-a-custody-audit-trail
 	 */
-	public function acceptTransfer(string $transferId, ?string $remoteCloudId = null): array {
+	public function acceptTransfer(string $transferId, ?string $remoteCloudId = null, ?string $actingUser = null): array {
 		return $this->completeTransfer(
-			outcome: ['transferId' => $transferId, 'status' => 'accepted', 'remoteCloudId' => $remoteCloudId, 'rejectionReason' => ''],
+			outcome: [
+				'transferId' => $transferId,
+				'status' => 'accepted',
+				'remoteCloudId' => $remoteCloudId,
+				'actor' => ($remoteCloudId ?? $actingUser ?? ''),
+				'rejectionReason' => '',
+			],
 		);
 	}//end acceptTransfer()
 
@@ -318,17 +325,24 @@ class CaseTransferService {
 	 * @param string $transferId The UUID of the transfer request
 	 * @param string $rejectionReason The reason for rejection
 	 * @param string|null $remoteCloudId Set when the reject was authenticated via a federated token
+	 * @param string|null $actingUser    The session user who rejects a local transfer; ignored for a federated one
 	 *
 	 * @return array The updated transfer data, or an error array
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#case-transfer-extends-across-federation-with-idempotent-acceptreject-and-a-custody-audit-trail
 	 */
-	public function rejectTransfer(string $transferId, string $rejectionReason, ?string $remoteCloudId = null): array {
+	public function rejectTransfer(
+		string $transferId,
+		string $rejectionReason,
+		?string $remoteCloudId = null,
+		?string $actingUser = null,
+	): array {
 		return $this->completeTransfer(
 			outcome: [
 				'transferId' => $transferId,
 				'status' => 'rejected',
 				'remoteCloudId' => $remoteCloudId,
+				'actor' => ($remoteCloudId ?? $actingUser ?? ''),
 				'rejectionReason' => $rejectionReason,
 			],
 		);
@@ -341,7 +355,8 @@ class CaseTransferService {
 	 * that already reached the target status.
 	 *
 	 * @param array<string, mixed> $outcome The transfer id, the status to move to, the remote
-	 *                                      that answered (null when local) and the rejection reason.
+	 *                                      that answered (null when local), who answered it
+	 *                                      and the rejection reason.
 	 *
 	 * @return array The updated (or existing, when idempotent) transfer data, or an error array
 	 */
@@ -433,7 +448,7 @@ class CaseTransferService {
 				organisationUnit: (string)($transferData['targetOrganization'] ?? ''),
 				handler: '',
 				reason: (string)($transferData['reason'] ?? ''),
-				movedBy: ($outcome['remoteCloudId'] ?? (string)($transferData['initiatedBy'] ?? '')),
+				movedBy: $outcome['actor'],
 			);
 		} catch (RefusedException $e) {
 			return ['error' => $e->getSentence(), 'rule' => $e->getRule()];
@@ -478,7 +493,7 @@ class CaseTransferService {
 
 		$auditTrail[] = [
 			'event' => $outcome['status'],
-			'actor' => ($outcome['remoteCloudId'] ?? ''),
+			'actor' => $outcome['actor'],
 			'actorType' => $this->resolveCustodyActorType(remoteCloudId: $outcome['remoteCloudId']),
 			'cloudId' => ($outcome['remoteCloudId'] ?? ''),
 			'timestamp' => $now,
@@ -501,7 +516,7 @@ class CaseTransferService {
 		$this->auditTrail->emit(
 			[
 				'action' => 'case_transfer_' . $outcome['status'],
-				'actor' => ($outcome['remoteCloudId'] ?? 'local'),
+				'actor' => $outcome['actor'],
 				'role' => $this->resolveCustodyActorType(remoteCloudId: $outcome['remoteCloudId']),
 				'resource' => $caseId,
 				'tenantId' => ($outcome['remoteCloudId'] ?? ''),
