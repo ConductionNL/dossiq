@@ -106,6 +106,11 @@ class AdvisoryCommitteeService {
 	private const DEFAULT_DEADLINE_DAYS = 84;
 
 	/**
+	 * The code of the RuntimeException raised for an advice request that does not exist.
+	 */
+	public const NOT_FOUND = 404;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge
@@ -472,7 +477,7 @@ class AdvisoryCommitteeService {
 		$store = ($this->requestStore() ?? throw new RuntimeException('OpenRegister is not available'));
 		$current = $this->findRequest(store: $store, requestId: $requestId);
 		if ($current === null) {
-			throw new RuntimeException('Advice request not found');
+			throw new RuntimeException('Advice request not found', self::NOT_FOUND);
 		}
 
 		return $store + ['id' => $requestId, 'current' => $current];
@@ -496,7 +501,8 @@ class AdvisoryCommitteeService {
 	private function applyTransition(array $request, array $update): array {
 		// Marked so DeliberationStartGuard lets this save reach an outcome status.
 		$apply = fn (): array => $this->internalWrites->runInternal(
-			fn (): array => ($this->patchObjectAsArray(
+			objectId: $request['id'],
+			write: fn (): array => ($this->patchObjectAsArray(
 				objectService: $request['objectService'],
 				register: $request['register'],
 				schema: $request['schema'],
@@ -660,16 +666,11 @@ class AdvisoryCommitteeService {
 	 *
 	 * @return void
 	 *
-	 * @throws RuntimeException When no panel has been set, or it holds only blank members
+	 * @throws RuntimeException When no panel has been set, it holds only blank members, or a member is not a user id
 	 * @throws GuardFailedException When a panel member is not independent, or independence cannot be verified
 	 */
 	private function guardPanel(array $request): void {
-		$panel = $this->panelMembers(panel: (array)($request['current']['panel'] ?? []));
-		if ($panel === []) {
-			throw new RuntimeException(
-				'Panel must be set before deliberation can start'
-			);
-		}
+		$panel = $this->requirePanelMembers(panel: (array)($request['current']['panel'] ?? []));
 
 		$independence = $this->independence->check(
 			objectionId: $this->objectionIdOf(request: $request['current']),

@@ -40,16 +40,18 @@ class InternalWriteMarkerTest extends TestCase {
 		$seen = [];
 
 		$result = $marker->runInternal(
-			function () use ($marker, &$seen): string {
-				$seen[] = $marker->isInternal();
-				$marker->runInternal(static fn (): null => null);
-				$seen[] = $marker->isInternal();
+			objectId: 'req-1',
+			write: function () use ($marker, &$seen): string {
+				$seen[] = $marker->isInternal(objectId: 'req-1');
+				$marker->runInternal(objectId: 'req-1', write: static fn (): null => null);
+				$seen[] = $marker->isInternal(objectId: 'req-1');
+				$seen[] = $marker->isInternal(objectId: 'req-2');
 				return 'saved';
 			}
 		);
 
-		$this->assertFalse(condition: $marker->isInternal(), message: 'released after the write');
-		$this->assertSame(expected: [true, true], actual: $seen, message: 'marked inside, and still marked after a nested write');
+		$this->assertFalse(condition: $marker->isInternal(objectId: 'req-1'), message: 'released after the write');
+		$this->assertSame(expected: [true, true, false], actual: $seen, message: 'marked inside and after a nested write, and only for its own object');
 		$this->assertSame(expected: 'saved', actual: $result);
 	}//end testAWriteIsMarkedUntilTheOutermostEnds()
 
@@ -62,11 +64,11 @@ class InternalWriteMarkerTest extends TestCase {
 		$marker = new InternalWriteMarker();
 
 		try {
-			$marker->runInternal(static fn (): never => throw new RuntimeException('save refused'));
+			$marker->runInternal(objectId: 'req-1', write: static fn (): never => throw new RuntimeException('save refused'));
 		} catch (RuntimeException $refused) {
 			$this->assertSame(expected: 'save refused', actual: $refused->getMessage());
 		}
 
-		$this->assertFalse(condition: $marker->isInternal(), message: 'a failed write must not leave the marker set');
+		$this->assertFalse(condition: $marker->isInternal(objectId: 'req-1'), message: 'a failed write must not leave the marker set');
 	}//end testAFailedWriteIsReleased()
 }//end class

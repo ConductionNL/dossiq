@@ -153,9 +153,8 @@ class DeliberationStartGuard implements IEventListener {
 	 * @return array{code: string, message: string}|null The refusal.
 	 */
 	private function refusalFor(array $request, ?array $before): ?array {
-		$status = ($request['status'] ?? null);
-		if (in_array($status, self::AFTER_DELIBERATION, true) === true) {
-			return $this->outcomeRefusal(status: $status, from: ($before['status'] ?? null));
+		if (in_array($request['status'] ?? null, self::AFTER_DELIBERATION, true) === true) {
+			return $this->outcomeRefusal(request: $request, from: ($before['status'] ?? null));
 		}
 
 		if ($this->needsPanelCheck(request: $request, before: $before) === false) {
@@ -176,17 +175,17 @@ class DeliberationStartGuard implements IEventListener {
 	 * Only deliberation leads there, and only the app's own advice transition
 	 * moves a request there. A save that keeps the status is no move.
 	 *
-	 * @param string $status The status as it will be saved.
-	 * @param mixed  $from   The status as stored, null on a create.
+	 * @param array<string, mixed> $request The request as it will be saved.
+	 * @param mixed                $from    The status as stored, null on a create.
 	 *
 	 * @return array{code: string, message: string}|null The refusal.
 	 */
-	private function outcomeRefusal(string $status, mixed $from): ?array {
+	private function outcomeRefusal(array $request, mixed $from): ?array {
 		if (in_array($from, [self::DELIBERATION, ...self::AFTER_DELIBERATION], true) === false) {
 			return ['code' => self::SKIP_ERROR_CODE, 'message' => self::SKIP_MESSAGE];
 		}
 
-		if ($from === $status || $this->internalWrites->isInternal() === true) {
+		if ($from === $request['status'] || $this->internalWrites->isInternal(objectId: (string) $request['id']) === true) {
 			return null;
 		}
 

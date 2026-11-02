@@ -167,7 +167,10 @@ class DeliberationStartGuardTest extends TestCase {
 		$conflicted = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail(), conflict: 'a.bakker');
 		$edit = $this->writeStatus(service: $conflicted, status: 'in-deliberation');
 		$this->assertNull(actual: $edit, message: 'an edit inside deliberation is not a move into it');
-		$issued = $this->internalWrites->runInternal(fn (): ?HookStoppedException => $this->writeStatus(service: $conflicted, status: 'advice-issued'));
+		$issued = $this->internalWrites->runInternal(
+			objectId: 'req-1',
+			write: fn (): ?HookStoppedException => $this->writeStatus(service: $conflicted, status: 'advice-issued')
+		);
 		$this->assertNull(actual: $issued, message: 'the advice transition out of deliberation does not run the panel check');
 		$this->assertSame(expected: [], actual: $this->trail->actionsOn('req-1'));
 	}//end testOnlyAMoveIntoDeliberationIsChecked()
@@ -584,6 +587,37 @@ class DeliberationStartGuardTest extends TestCase {
 	}//end testARawWriteCannotDeclareTheRequestInadmissible()
 
 	/**
+	 * The marker of another advice request does not let a raw write issue this one's advice.
+	 *
+	 * @return void
+	 */
+	public function testAnotherRequestsMarkerDoesNotCount(): void {
+		$this->seedRequest(row: ['status' => 'in-deliberation', 'panel' => ['a.bakker']]);
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+
+		$refusal = $this->internalWrites->runInternal(
+			objectId: 'req-2',
+			write: fn (): ?HookStoppedException => $this->writeStatus(service: $service, status: 'advice-issued')
+		);
+
+		$this->assertSame(expected: DeliberationStartGuard::OUTCOME_ERROR_CODE, actual: $refusal?->getErrors()['code']);
+	}//end testAnotherRequestsMarkerDoesNotCount()
+
+	/**
+	 * A panel member that is a list or an object is refused with a message that says so.
+	 *
+	 * @return void
+	 */
+	public function testAPanelMemberThatIsNotAUserIdIsNamed(): void {
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+
+		$refusal = $this->createRequest(service: $service, row: ['status' => 'in-deliberation', 'panel' => [['a.bakker'], 'p.janssen']]);
+
+		$this->assertSame(expected: 'Panel members must be user ids, not lists or objects', actual: $refusal?->getMessage());
+		$this->assertSame(expected: [], actual: $this->store->row('bacAdviceRequest', 'req-1'), message: 'nothing is saved');
+	}//end testAPanelMemberThatIsNotAUserIdIsNamed()
+
+	/**
 	 * An edit after the advice keeps working: a save that stays in advice-issued is not a move into it.
 	 *
 	 * @return void
@@ -594,7 +628,7 @@ class DeliberationStartGuardTest extends TestCase {
 		$edit = $this->writeRequest(service: $this->realAdvisoryService(trail: $this->bezwaarAuditTrail()), changes: ['adviceText' => 'gecorrigeerd']);
 
 		$this->assertNull(actual: $edit, message: 'an edit inside advice-issued is unchanged');
-		$this->assertFalse(condition: $this->internalWrites->isInternal(), message: 'the test wrote without the marker');
+		$this->assertFalse(condition: $this->internalWrites->isInternal(objectId: 'req-1'), message: 'the test wrote without the marker');
 	}//end testAnEditAfterTheAdviceIsSaved()
 
 	/**

@@ -10,6 +10,8 @@ An advice request reaches `advice-issued` or `inadmissible` when the committee i
 - `transitionAdviceStatus()` runs its save inside the marker.
 - `DeliberationStartGuard` refuses a write that moves an advice request into `advice-issued` or `inadmissible` without the marker. The error code is `deliberation-outcome-refused`.
 - A save that keeps a request in `advice-issued` or `inadmissible` is not a move into it, so the marker does not apply. That keeps edits after the advice working as they do today.
+- `transitionAdviceStatus()` had no caller. The advice request page moved `status` through OpenRegister directly, so with the marker rule nobody could issue committee advice. A new endpoint, `POST /api/bezwaar/advice-requests/{id}/transition`, runs the transition for members of `bezwaarcommissie` and administrators. The page's lifecycle action needs to call it; that manifest change belongs to the screens work.
+- The marker is kept per advice request, so a nested save of another request does not count as marked.
 
 ## What does not change
 

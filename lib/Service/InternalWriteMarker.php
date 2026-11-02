@@ -25,47 +25,51 @@ namespace OCA\Dossiq\Service;
 /**
  * Tells a pre-save listener that the app itself is writing.
  *
- * A depth counter on the one shared instance, so a nested write stays marked
- * until the outermost one ends. It is set only by code in this process, never
- * from request input.
+ * A depth counter per object on the one shared instance, so a nested write of
+ * the same object stays marked until the outermost one ends, and a write of
+ * another object is not marked by it. It is set only by code in this process,
+ * never from request input.
  *
  * @spec openspec/changes/only-the-advice-transition-sets-the-outcome/specs/bezwaar-advisory-committee/spec.md#requirement-only-the-advice-transition-writes-an-advice-request-into-advice-issued-or-inadmissible
  */
 class InternalWriteMarker {
 
 	/**
-	 * How many internal writes are running.
+	 * How many internal writes are running, per object id.
 	 *
-	 * @var integer
+	 * @var array<string, int>
 	 */
-	private int $depth = 0;
+	private array $depth = [];
 
 	/**
-	 * Whether an internal write is running.
+	 * Whether an internal write of this object is running.
+	 *
+	 * @param string $objectId The object's id.
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/changes/only-the-advice-transition-sets-the-outcome/specs/bezwaar-advisory-committee/spec.md#requirement-only-the-advice-transition-writes-an-advice-request-into-advice-issued-or-inadmissible
 	 */
-	public function isInternal(): bool {
-		return $this->depth > 0;
+	public function isInternal(string $objectId): bool {
+		return ($this->depth[$objectId] ?? 0) > 0;
 	}//end isInternal()
 
 	/**
-	 * Run a write as an internal one.
+	 * Run a write of one object as an internal one.
 	 *
-	 * @param callable $write The write.
+	 * @param string   $objectId The id of the object the write saves.
+	 * @param callable $write    The write.
 	 *
 	 * @return mixed What the write returns.
 	 *
 	 * @spec openspec/changes/only-the-advice-transition-sets-the-outcome/specs/bezwaar-advisory-committee/spec.md#requirement-only-the-advice-transition-writes-an-advice-request-into-advice-issued-or-inadmissible
 	 */
-	public function runInternal(callable $write): mixed {
-		++$this->depth;
+	public function runInternal(string $objectId, callable $write): mixed {
+		$this->depth[$objectId] = (($this->depth[$objectId] ?? 0) + 1);
 		try {
 			return $write();
 		} finally {
-			--$this->depth;
+			$this->depth[$objectId] -= 1;
 		}
 	}//end runInternal()
 }//end class
