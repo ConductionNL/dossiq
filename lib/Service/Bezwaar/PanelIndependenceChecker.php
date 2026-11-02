@@ -207,13 +207,18 @@ class PanelIndependenceChecker {
 	 * @param Lookup        $lookup The store and schemas for the objection.
 	 * @param array<string> $panel  Panel member UIDs.
 	 *
-	 * @return string|false|null The conflicting member UID, null when none conflicts, false when a store read threw.
+	 * @return string|false|null The conflicting member UID, null when none conflicts, false when a store read threw
+	 *                           or the contested decision has no recorded author.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
 	private function conflictingMember(array $lookup, array $panel): string|false|null {
 		try {
 			$author = $this->resolveContestedDecisionAuthor(lookup: $lookup);
+			if ($author === false) {
+				return false;
+			}
+
 			if ($author === '') {
 				return null;
 			}
@@ -238,11 +243,11 @@ class PanelIndependenceChecker {
 	 *
 	 * @param Lookup $lookup The store, the objection id, the register and the schemas.
 	 *
-	 * @return string The steller UID, or '' when it cannot be resolved.
+	 * @return string|false The steller UID, '' when no contested decision resolves, false when it has no recorded author.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function resolveContestedDecisionAuthor(array $lookup): string {
+	private function resolveContestedDecisionAuthor(array $lookup): string|false {
 		$objectService = $lookup['objectService'];
 		$objectionId = $lookup['objectionId'];
 		$register = $lookup['register'];
@@ -294,9 +299,15 @@ class PanelIndependenceChecker {
 			return '';
 		}
 
-		return (string)(
+		$author = (string)(
 			$decision['@self']['owner'] ?? ($decision['createdBy'] ?? ($decision['steller'] ?? ''))
 		);
+
+		if ($author === '') {
+			return false;
+		}
+
+		return $author;
 	}//end resolveContestedDecisionAuthor()
 
 	/**

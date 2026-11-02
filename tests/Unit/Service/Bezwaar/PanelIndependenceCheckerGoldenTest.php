@@ -297,4 +297,22 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 		);
 		$this->assertSame(expected: [], actual: $observed['calls'], message: 'an empty objection reads nothing');
 	}//end testAnEmptyObjectionRefusesThePanel()
+
+	/**
+	 * A contested decision without a recorded author is refused as unverifiable, not cleared.
+	 *
+	 * @return void
+	 */
+	public function testADecisionWithoutAnAuthorRefusesThePanel(): void {
+		$objects = ['bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']], 'decision' => ['dec-1' => ['id' => 'dec-1']]];
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		foreach (['a panel' => ['alice', 'bob'], 'a blank member on the panel' => ['', 'alice']] as $name => $panel) {
+			$observed = $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => $panel]);
+			$this->assertSame(
+				expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+				actual: $observed['verdict'],
+				message: $name
+			);
+		}
+	}//end testADecisionWithoutAnAuthorRefusesThePanel()
 }//end class
