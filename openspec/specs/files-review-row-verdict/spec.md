@@ -15,9 +15,15 @@ The dossier listing MUST put each document's review verdict on its row as `revie
 
 ### Requirement: a document is assessed from its row
 
-On a case type that reviews its documents the Files tab MUST show the verdict per row and a "Beoordelen" button, primary while the verdict is `open`, that opens the assessment dialog with that document chosen.
+On a case type that reviews its documents the Files tab MUST show the verdict per row and a "Beoordelen" button, primary while the verdict is `open`, that opens the assessment dialog with that document chosen. The button MUST follow the same rule as the review count: it is drawn only on a row that carries a `reviewVerdict`, so a document the case drafts itself stays listed without it. The rule MUST read what the document is, never its file name.
 
 #### Scenario: Plattegrond lichtmasten
 - GIVEN the open document "Plattegrond lichtmasten"
 - WHEN the handler presses its "Beoordelen"
 - THEN the assessment dialog opens with that document ticked
+
+#### Scenario: The case's own draft decision
+- GIVEN the Lindelaan case with its draft decision `09-concept-woo-besluit.docx`, drafted from the case type's template
+- WHEN the handler opens Bestanden
+- THEN the draft is listed without a "Beoordelen" button
+- AND "4 van 7 beoordeeld" still leaves it out

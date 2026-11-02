@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Pause;
 
+use OCA\Dossiq\Service\Pause\PauseChaseSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
@@ -42,6 +43,7 @@ use RuntimeException;
  * REQ-TERM-011: each reminder is sent, recorded and counted exactly once.
  *
  * @covers \OCA\Dossiq\Service\Pause\PauseChaseService
+ * @covers \OCA\Dossiq\Service\Pause\PauseChaseSources
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Pause\ChaseSchedule
@@ -142,12 +144,14 @@ class PauseChaseServiceTest extends TestCase {
 	private function service(): PauseChaseService {
 		return new PauseChaseService(
 			termService: $this->termService,
-			reasons: $this->reasons,
-			schedule: new ChaseSchedule(
-				calendar: new WorkingDayCalculator(),
-				dates: $this->caseDates(),
+			chase: new PauseChaseSources(
+				reasons: $this->reasons,
+				schedule: new ChaseSchedule(
+					calendar: new WorkingDayCalculator(),
+					dates: $this->caseDates(),
+				),
+				notifications: $this->notifications,
 			),
-			notifications: $this->notifications,
 			timeline: $this->timeline,
 			settings: $this->createMock(SettingsService::class),
 			logger: new NullLogger(),
