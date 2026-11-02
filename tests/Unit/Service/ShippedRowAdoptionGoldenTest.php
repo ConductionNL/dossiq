@@ -103,6 +103,11 @@ class ShippedRowAdoptionGoldenTest extends TestCase {
 
 		$this->shipped->stamp(set: 'another-set', targetSchema: 'caseType', targetObject: 'foreign', object: ['id' => 'foreign', 'title' => 'Type foreign', 'processingDeadline' => 'P6W', 'note' => 'kept'], version: '2.0.0');
 		$this->harness->seed(schema: 'caseType', uuid: 'changed', row: ['title' => 'Type changed', 'processingDeadline' => 'P8W', 'note' => 'kept']);
+		$this->harness->seed(
+			schema: 'caseType',
+			uuid: 'untouched',
+			row: ['title' => 'Type untouched', 'processingDeadline' => 'P6W', 'note' => 'kept', 'updated' => '2026-01-01T00:00:00+00:00', '@self' => ['owner' => 'admin']]
+		);
 	}//end setUp()
 
 	/**

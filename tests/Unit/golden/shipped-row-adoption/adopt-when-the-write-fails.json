@@ -8,6 +8,10 @@
             "title": "Type untouched",
             "processingDeadline": "P6W",
             "note": "kept",
+            "updated": "2026-01-01T00:00:00+00:00",
+            "@self": {
+                "owner": "admin"
+            },
             "id": "untouched"
         },
         {
