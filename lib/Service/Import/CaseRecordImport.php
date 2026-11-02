@@ -64,6 +64,16 @@ class CaseRecordImport {
 	private const NO_RECORD = ['requestId' => '', 'reference' => ''];
 
 	/**
+	 * Why a run stops when the existing cases cannot be read.
+	 */
+	private const UNREAD_CASES = 'The existing cases could not be read, so nothing more was imported.';
+
+	/**
+	 * Why a run stops when the existing cases cannot be read by their earlier number.
+	 */
+	private const UNREAD_NUMBERS = 'The existing cases could not be read by their earlier number, so nothing more was imported.';
+
+	/**
 	 * An import's answer before anything was read, after its key and source app.
 	 */
 	private const NOTHING_YET = [
@@ -302,12 +312,8 @@ class CaseRecordImport {
 		}
 
 		$match = $this->matchFor(run: $run + ['source' => $source], state: $state);
-		if (isset($match['stop']) === true) {
-			return ['kind' => 'stop', 'row' => self::NO_RECORD + ['reason' => $match['stop']]];
-		}
-
-		if (isset($match['conflict']) === true) {
-			return ['kind' => 'failed', 'row' => $this->conflictRow(run: $run, source: $source) + ['reason' => $match['conflict']]];
+		if (isset($match['kind']) === true) {
+			return $match;
 		}
 
 		$outcome = $this->importOne(run: $run + ['existing' => $match['existing'] . $match['duplicateOf']], source: $source);
@@ -338,8 +344,8 @@ class CaseRecordImport {
 	 * @param array<string, mixed> $run The run: objectService, caseType, import, source.
 	 * @param array<string, mixed> $state The cases read so far, by source and by number.
 	 *
-	 * @return array{existing: string, duplicateOf: string}|array{stop: string}|array{conflict: string} The match, why the
-	 *         run stops, or why this record is not imported.
+	 * @return array{existing: string, duplicateOf: string}|array{kind: string, row: array<string, mixed>} The match, or
+	 *         the outcome when the run stops (`stop`) or this record is not imported (`failed`).
 	 */
 	private function matchFor(array $run, array &$state): array {
 		$state['cases'] = ($state['cases'] ?? $this->store->casesBySource(
@@ -348,7 +354,7 @@ class CaseRecordImport {
 			import: $run['import']
 		));
 		if ($state['cases'] === null) {
-			return ['stop' => 'The existing cases could not be read, so nothing more was imported.'];
+			return ['kind' => 'stop', 'row' => self::NO_RECORD + ['reason' => self::UNREAD_CASES]];
 		}
 
 		$existing = (string)($state['cases'][$this->store->idOf(row: $run['source'])] ?? '');
@@ -361,34 +367,19 @@ class CaseRecordImport {
 				cache: $state['byKey']
 			);
 		} catch (Throwable $e) {
-			return ['stop' => 'The existing cases could not be read by their earlier number, so nothing more was imported.'];
+			return ['kind' => 'stop', 'row' => self::NO_RECORD + ['reason' => self::UNREAD_NUMBERS]];
 		}
 
-		if ($existing === '') {
-			return ['existing' => '', 'duplicateOf' => $numbered];
+		$placement = $this->references->placement(existing: $existing, numbered: $numbered);
+		if (isset($placement['conflict']) === true) {
+			$reference = (string)($run['source'][(string)($run['import']['formerReference']['from'] ?? '')] ?? '');
+			$row = ['requestId' => $this->store->idOf(row: $run['source']), 'reference' => $reference, 'reason' => $placement['conflict']];
+
+			return ['kind' => 'failed', 'row' => $row];
 		}
 
-		if ($numbered !== '' && $numbered !== $existing) {
-			return ['conflict' => 'The record already has case ' . $existing . ', but its number became case ' . $numbered . ', so it was not imported.'];
-		}
-
-		return ['existing' => $existing, 'duplicateOf' => ''];
+		return $placement;
 	}//end matchFor()
-
-	/**
-	 * The record a conflict names, as a failed row names it.
-	 *
-	 * @param array<string, mixed> $run    The run: import.
-	 * @param array<string, mixed> $source The source record.
-	 *
-	 * @return array{requestId: string, reference: string} The row without its reason.
-	 */
-	private function conflictRow(array $run, array $source): array {
-		return [
-			'requestId' => $this->store->idOf(row: $source),
-			'reference' => (string)($source[(string)($run['import']['formerReference']['from'] ?? '')] ?? ''),
-		];
-	}//end conflictRow()
 
 	/**
 	 * The answer with one record's outcome counted.
