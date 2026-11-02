@@ -36,7 +36,7 @@ describe('the flow page as board DqFlow draws it', () => {
 	it('draws steps as cards, saves edits as the next version and keeps the switch named Active', () => {
 		expect(config.nodeLook).toBe('card')
 		expect(config.saveAsVersion).toBe(true)
-		expect(config.metaParts).toEqual(['version'])
+		expect(config.metaParts).toEqual([])
 		expect(nl[config.metaNote]).toBe('wijzigingen gelden voor nieuwe zaken')
 		expect(config.toggleLabel).toBe('fixed')
 	})

@@ -13489,7 +13489,7 @@
 				"nodeLook": "card",
 				"saveAsVersion": true,
 				"toggleLabel": "fixed",
-				"metaParts": ["version"],
+				"metaParts": [],
 				"metaNote": "changes apply to new cases",
 				"_paletteNote": "Board DqFlow: steps in four groups per providing app, every other step behind More steps. Two calls against the board: 'Deelzaak of taak aanmaken' is two catalogue steps (createSubCase, createTask), and 'Bericht of e-mail' is dossiq's own sendMessage step, so it stands under Dossiq and its pill reads dossiq.",
 				"paletteGroups": [
