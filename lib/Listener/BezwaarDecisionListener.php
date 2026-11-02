@@ -39,6 +39,7 @@ use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Dossiq\Listener\Support\ObjectUpdatePayload;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -54,6 +55,7 @@ use Throwable;
  */
 class BezwaarDecisionListener implements IEventListener {
 
+	use ObjectUpdatePayload;
 	use SearchesObjects;
 
 	/**
@@ -108,7 +110,7 @@ class BezwaarDecisionListener implements IEventListener {
 		}
 
 		try {
-			$object = $this->extractObject(event: $event);
+			$object = $this->updatedObject(event: $event);
 			if ($object === null) {
 				return;
 			}
@@ -268,7 +270,7 @@ class BezwaarDecisionListener implements IEventListener {
 	 * @return void
 	 */
 	private function revertStatus(array $objection, Event $event): void {
-		$previous = $this->extractPreviousStatus(event: $event);
+		$previous = $this->previousStatus(event: $event);
 		if ($previous === '') {
 			return;
 		}
@@ -315,25 +317,6 @@ class BezwaarDecisionListener implements IEventListener {
 	}//end revertStatus()
 
 	/**
-	 * Extract the previous status from an ObjectUpdatedEvent.
-	 *
-	 * @param Event $event Event instance.
-	 *
-	 * @return string
-	 */
-	private function extractPreviousStatus(Event $event): string {
-		if (method_exists($event, 'getOldObject') === true) {
-			$old = $event->getOldObject();
-			$arr = $this->normalise(value: $old);
-			if ($arr !== null) {
-				return (string)($arr['status'] ?? '');
-			}
-		}
-
-		return '';
-	}//end extractPreviousStatus()
-
-	/**
 	 * Whether the object belongs to the `bezwaar` schema.
 	 *
 	 * @param array<string, mixed> $object The object payload.
@@ -341,74 +324,6 @@ class BezwaarDecisionListener implements IEventListener {
 	 * @return bool
 	 */
 	private function isObjectionSchema(array $object): bool {
-		$schemaSlug = $this->settingsService->getConfigValue(
-			key: 'bezwaar_schema'
-		);
-		if ($schemaSlug === '') {
-			return false;
-		}
-
-		$candidate = (string)(
-			$object['@self']['schema'] ?? ($object['@self']['schemaSlug'] ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
-		);
-
-		return $candidate !== '' && (
-			$candidate === $schemaSlug
-			|| str_ends_with($candidate, '/' . $schemaSlug)
-		);
-	}//end isBezwaarSchema()
-
-	/**
-	 * Extract the new object payload from an event.
-	 *
-	 * @param Event $event Event instance.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function extractObject(Event $event): ?array {
-		foreach (['getNewObject', 'getObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$value = $event->{$method}();
-			$array = $this->normalise(value: $value);
-			if ($array !== null) {
-				return $array;
-			}
-		}
-
-		return null;
-	}//end extractObject()
-
-	/**
-	 * Normalise a getter return value to an associative array.
-	 *
-	 * @param mixed $value The raw value.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-		}
-
-		return null;
-	}//end normalise()
+		return $this->matchesConfiguredSchema(candidate: $this->schemaNamedAnywhere(object: $object), schemaKey: 'bezwaar_schema');
+	}//end isObjectionSchema()
 }//end class
