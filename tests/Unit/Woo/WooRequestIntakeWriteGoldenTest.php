@@ -112,7 +112,7 @@ class WooRequestIntakeWriteGoldenTest extends TestCase {
 	/**
 	 * Answers for `receive()`, with the case type and what the store answers on the write.
 	 *
-	 * @return array<string, array{0: array<string, mixed>, 1: array<string, mixed>|null}>
+	 * @return array<string, array{0: array<string, mixed>, 1: array<string, mixed>|null, 2?: array<string, string>}>
 	 */
 	public static function receipts(): array {
 		$type = ['id' => 'type-1', 'initialStatus' => 'status-ontvangst'];
@@ -121,6 +121,8 @@ class WooRequestIntakeWriteGoldenTest extends TestCase {
 			'received form' => [$type, ['id' => 'case-9', 'answer' => []]],
 			'received, write fails' => [$type, null],
 			'received, type without status' => [['id' => 'type-2'], ['id' => 'case-8', 'answer' => []]],
+			'received with a named initiator' => [$type, ['id' => 'case-7', 'answer' => []], ['initiatorDisplayName' => 'Dora']],
+			'received with a blank initiator' => [$type, ['id' => 'case-6', 'answer' => []], ['initiatorDisplayName' => ' ']],
 		];
 	}//end receipts()
 
@@ -129,17 +131,18 @@ class WooRequestIntakeWriteGoldenTest extends TestCase {
 	 *
 	 * @param array<string, mixed>      $caseType The current case type.
 	 * @param array<string, mixed>|null $written  What the store answers on the write.
+	 * @param array<string, string>     $extra    More intake fields the answers reader gives.
 	 *
 	 * @dataProvider receipts
 	 *
 	 * @return void
 	 */
-	public function testReceiveWritesWhatWasRecorded(array $caseType, ?array $written): void {
+	public function testReceiveWritesWhatWasRecorded(array $caseType, ?array $written, array $extra = []): void {
 		$answers = $this->createMock(WooReceivedAnswers::class);
 		$answers->method('toRequest')->willReturn(
 			['onderwerp' => 'Notulen', 'omschrijving' => 'Raad 2025', 'origin' => 'portal-form', 'verzoekerNaam' => 'Cees']
 		);
-		$answers->method('intake')->willReturn(['intakeChannel' => 'website', 'receivedAt' => '2026-10-01T09:00:00+02:00']);
+		$answers->method('intake')->willReturn(['intakeChannel' => 'website', 'receivedAt' => '2026-10-01T09:00:00+02:00'] + $extra);
 
 		$term = $this->createMock(WooReceivedTerm::class);
 		$term->method('isAvailable')->willReturn(true);
