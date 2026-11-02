@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\AcknowledgementService;
@@ -222,8 +223,10 @@ class AcknowledgementDutyTest extends TestCase {
 			declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
 			termService: $terms,
 			notifications: new TermijnNotificationService(
-				termService: $noticeTerms,
-				sender: ($sender ?? $this->sentNotices()),
+				notices: new TermNoticeSources(
+					termService: $noticeTerms,
+					sender: ($sender ?? $this->sentNotices()),
+				),
 				logger: $logger,
 				requester: ($requester ?? new RequesterNoticeSender(
 					email: ($sender ?? $this->sentNotices()),

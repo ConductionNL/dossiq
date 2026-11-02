@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Service\CaseNumberReader;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
@@ -57,6 +58,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  * @uses   \OCA\Dossiq\Service\CaseNumberReader
+ * @uses \OCA\Dossiq\Service\Term\TermNoticeSources
  */
 class TermijnNotificationServiceTest extends TestCase {
 	use MakesRealTermNoticeSender;
@@ -86,9 +88,11 @@ class TermijnNotificationServiceTest extends TestCase {
 
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->service = new TermijnNotificationService(
-			new TermijnService($settings, $logger),
-			$this->sender(),
-			$logger
+			notices: new TermNoticeSources(
+				termService: new TermijnService(settingsService: $settings, logger: $logger),
+				sender: $this->sender(),
+			),
+			logger: $logger
 		);
 	}
 
@@ -170,9 +174,11 @@ class TermijnNotificationServiceTest extends TestCase {
 	public function testANoticeWithNoChannelIsNotSentAndCarriesItsResult(): void {
 		$logger = $this->createMock(LoggerInterface::class);
 		$service = new TermijnNotificationService(
-			$this->createMock(TermijnService::class),
-			$this->realTermNoticeSender(),
-			$logger
+			notices: new TermNoticeSources(
+				termService: $this->createMock(originalClassName: TermijnService::class),
+				sender: $this->realTermNoticeSender(),
+			),
+			logger: $logger
 		);
 
 		try {
@@ -293,8 +299,10 @@ class TermijnNotificationServiceTest extends TestCase {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 
 		return new TermijnNotificationService(
-			termService: $terms,
-			sender: $this->sender(),
+			notices: new TermNoticeSources(
+				termService: $terms,
+				sender: $this->sender(),
+			),
 			logger: $logger,
 			caseNumbers: new CaseNumberReader(settings: $settings, logger: $logger),
 		);

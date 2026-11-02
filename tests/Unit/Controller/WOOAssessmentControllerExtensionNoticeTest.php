@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Controller\WOOAssessmentController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
@@ -58,9 +59,9 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
- * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @covers \OCA\Dossiq\Service\WOODeadlineService
  * @covers \OCA\Dossiq\Service\Termijn\ExtensionNotice
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
@@ -90,6 +91,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Term\TermNoticeSources
  */
 class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -164,8 +166,10 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 
 		$email = $this->realTermNoticeSender();
 		$notifications = new TermijnNotificationService(
-			termService: $terms,
-			sender: $email,
+			notices: new TermNoticeSources(
+				termService: $terms,
+				sender: $email,
+			),
 			logger: $logger,
 			requester: new RequesterNoticeSender(email: $email, settings: $settings, appManager: $apps, writer: new CaseFieldWriter()),
 		);

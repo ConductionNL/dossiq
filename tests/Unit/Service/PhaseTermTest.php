@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\ChainTermSplitter;
@@ -40,6 +41,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\ChainTermSplitter
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Term\CaseTermSources
  */
 class PhaseTermTest extends TestCase {
 	use BindsTermFixtures;
@@ -113,9 +115,11 @@ class PhaseTermTest extends TestCase {
 		);
 
 		$this->terms = new CaseTermsService(
-			termService: $this->termService,
-			declarations: $this->declarations,
-			timers: $timers,
+			sources: new CaseTermSources(
+				termService: $this->termService,
+				declarations: $this->declarations,
+				timers: $timers,
+			),
 			logger: new NullLogger(),
 		);
 

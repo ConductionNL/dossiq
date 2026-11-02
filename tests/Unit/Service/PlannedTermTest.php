@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\TermDeclarationReader;
@@ -36,6 +37,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Term\CaseTermSources
  */
 class PlannedTermTest extends TestCase {
 	use BindsTermFixtures;
@@ -86,9 +88,11 @@ class PlannedTermTest extends TestCase {
 		);
 
 		$this->service = new CaseTermsService(
-			termService: $this->termService,
-			declarations: $this->declarations,
-			timers: $timers,
+			sources: new CaseTermSources(
+				termService: $this->termService,
+				declarations: $this->declarations,
+				timers: $timers,
+			),
 			logger: new NullLogger(),
 		);
 	}//end setUp()

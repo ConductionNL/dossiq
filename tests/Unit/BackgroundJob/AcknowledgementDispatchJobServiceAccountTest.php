@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\AcknowledgementService;
@@ -81,6 +82,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Term\TermNoticeSources
  */
 class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;
@@ -245,8 +247,10 @@ class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 			declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
 			termService: $terms,
 			notifications: new TermijnNotificationService(
-				termService: $terms,
-				sender: $sender,
+				notices: new TermNoticeSources(
+					termService: $terms,
+					sender: $sender,
+				),
 				logger: new NullLogger(),
 				requester: new RequesterNoticeSender(email: $sender, settings: $settings, writer: new CaseFieldWriter()),
 			),
