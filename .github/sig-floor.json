@@ -5,12 +5,13 @@
  "tools": {
   "lizard": "1.24.3"
  },
- "measured_at": "fbf7da8256c45bb2168ab7b967c3910e2271eb1c",
+ "measured_at": "a3111566f223a1559b3567b9aebd37d98e6573b8",
  "checks": [
   "javascript duplication",
   "javascript unit_interfacing >2",
   "javascript unit_interfacing >4",
   "javascript unit_interfacing >6",
+  "javascript unit_size >30",
   "javascript unit_size >60",
   "php module_coupling >10",
   "php module_coupling >20",
