@@ -35,20 +35,34 @@ namespace OCA\Dossiq\Service\CaseType;
 final class RuleFlowScope {
 
 	/**
+	 * The register slug cases live in.
+	 *
+	 * @var string
+	 */
+	public readonly string $register;
+
+	/**
+	 * The case schema slug.
+	 *
+	 * @var string
+	 */
+	public readonly string $schema;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param string             $caseTypeId      The case type uuid.
-	 * @param string             $caseTypeTitle   The case type's title, for the flow's name.
-	 * @param string             $register        The register slug cases live in.
-	 * @param string             $schema          The case schema slug.
-	 * @param array<int, string> $definitionNames The case type's property definition names, inherited ones included.
+	 * @param string                                  $caseTypeId      The case type uuid.
+	 * @param string                                  $caseTypeTitle   The case type's title, for the flow's name.
+	 * @param array{register: string, schema: string} $cases           Where cases live: the register and case schema slugs.
+	 * @param array<int, string>                      $definitionNames The case type's property definition names, inherited ones included.
 	 */
 	public function __construct(
 		public readonly string $caseTypeId,
 		public readonly string $caseTypeTitle,
-		public readonly string $register,
-		public readonly string $schema,
+		array $cases,
 		public readonly array $definitionNames = [],
 	) {
+		$this->register = $cases['register'];
+		$this->schema = $cases['schema'];
 	}//end __construct()
 }//end class

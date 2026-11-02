@@ -134,8 +134,7 @@ class CaseTypeRuleProjector {
 		return new RuleFlowScope(
 			caseTypeId: $caseTypeId,
 			caseTypeTitle: $title,
-			register: $register,
-			schema: $schema,
+			cases: ['register' => $register, 'schema' => $schema],
 			definitionNames: $this->definitionNames(caseTypeId: $caseTypeId)
 		);
 	}//end scopeOf()
