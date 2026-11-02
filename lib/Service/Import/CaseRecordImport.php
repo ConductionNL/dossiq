@@ -64,6 +64,16 @@ class CaseRecordImport {
 	private const NO_RECORD = ['requestId' => '', 'reference' => ''];
 
 	/**
+	 * Why a run stops when the existing cases cannot be read.
+	 */
+	private const UNREAD_CASES = 'The existing cases could not be read, so nothing more was imported.';
+
+	/**
+	 * Why a run stops when the existing cases cannot be read by their earlier number.
+	 */
+	private const UNREAD_NUMBERS = 'The existing cases could not be read by their earlier number, so nothing more was imported.';
+
+	/**
 	 * An import's answer before anything was read, after its key and source app.
 	 */
 	private const NOTHING_YET = [
@@ -302,8 +312,8 @@ class CaseRecordImport {
 		}
 
 		$match = $this->matchFor(run: $run + ['source' => $source], state: $state);
-		if (isset($match['stop']) === true) {
-			return ['kind' => 'stop', 'row' => self::NO_RECORD + ['reason' => $match['stop']]];
+		if (isset($match['kind']) === true) {
+			return $match;
 		}
 
 		$outcome = $this->importOne(run: $run + ['existing' => $match['existing'] . $match['duplicateOf']], source: $source);
@@ -327,11 +337,15 @@ class CaseRecordImport {
 	 * Read once, and only when there is something to import: a second run
 	 * over a fully migrated source reads no case at all. An unread list stops
 	 * the run: importing over it would write a half-finished case a second time.
+	 * A record that already has a case while its number became another one is
+	 * a conflict: completing it would give one number two cases, and joining
+	 * would leave its own case behind.
 	 *
 	 * @param array<string, mixed> $run The run: objectService, caseType, import, source.
 	 * @param array<string, mixed> $state The cases read so far, by source and by number.
 	 *
-	 * @return array{existing: string, duplicateOf: string}|array{stop: string} The match, or why the run stops.
+	 * @return array{existing: string, duplicateOf: string}|array{kind: string, row: array<string, mixed>} The match, or
+	 *         the outcome when the run stops (`stop`) or this record is not imported (`failed`).
 	 */
 	private function matchFor(array $run, array &$state): array {
 		$state['cases'] = ($state['cases'] ?? $this->store->casesBySource(
@@ -340,28 +354,31 @@ class CaseRecordImport {
 			import: $run['import']
 		));
 		if ($state['cases'] === null) {
-			return ['stop' => 'The existing cases could not be read, so nothing more was imported.'];
+			return ['kind' => 'stop', 'row' => self::NO_RECORD + ['reason' => self::UNREAD_CASES]];
 		}
 
 		$existing = (string)($state['cases'][$this->store->idOf(row: $run['source'])] ?? '');
-		if ($existing !== '') {
-			return ['existing' => $existing, 'duplicateOf' => ''];
+		try {
+			$numbered = $this->references->caseOfSameNumber(
+				objectService: $run['objectService'],
+				caseType: $run['caseType'],
+				import: $run['import'],
+				source: $run['source'],
+				cache: $state['byKey']
+			);
+		} catch (Throwable $e) {
+			return ['kind' => 'stop', 'row' => self::NO_RECORD + ['reason' => self::UNREAD_NUMBERS]];
 		}
 
-		try {
-			return [
-				'existing' => '',
-				'duplicateOf' => $this->references->caseOfSameNumber(
-					objectService: $run['objectService'],
-					caseType: $run['caseType'],
-					import: $run['import'],
-					source: $run['source'],
-					cache: $state['byKey']
-				),
-			];
-		} catch (Throwable $e) {
-			return ['stop' => 'The existing cases could not be read by their earlier number, so nothing more was imported.'];
+		$placement = $this->references->placement(existing: $existing, numbered: $numbered);
+		if (isset($placement['conflict']) === true) {
+			$reference = (string)($run['source'][(string)($run['import']['formerReference']['from'] ?? '')] ?? '');
+			$row = ['requestId' => $this->store->idOf(row: $run['source']), 'reference' => $reference, 'reason' => $placement['conflict']];
+
+			return ['kind' => 'failed', 'row' => $row];
 		}
+
+		return $placement;
 	}//end matchFor()
 
 	/**

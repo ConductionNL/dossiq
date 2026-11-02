@@ -43,6 +43,7 @@ use RuntimeException;
  * Golden test for CaseRecordImport.
  *
  * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
+ * @uses \OCA\Dossiq\Service\Import\RecordImportReferences
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Import\RecordImportStore
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
