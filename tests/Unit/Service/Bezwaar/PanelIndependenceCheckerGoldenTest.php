@@ -281,4 +281,69 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 			);
 		}
 	}//end testMissingSchemasRefuseThePanel()
+
+	/**
+	 * Every person on the contested decision is compared with every panel member, not only the first one found.
+	 *
+	 * @return void
+	 */
+	public function testEveryPersonOnTheDecisionIsCompared(): void {
+		$decision = [
+			'id' => 'dec-1',
+			'@self' => ['owner' => 'olga'],
+			'createdBy' => 'chris',
+			'steller' => 'stan',
+			'decidedBy' => 'dina',
+			'signatory' => 'sven',
+			'signatories' => ['sara', ['uid' => 'umar'], ['userId' => 'ursula']],
+		];
+		$objects = ['bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']], 'decision' => ['dec-1' => $decision]];
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		foreach (['olga', 'chris', 'stan', 'dina', 'sven', 'sara', 'umar', 'ursula'] as $person) {
+			$observed = $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => ['alice', $person]]);
+			$this->assertSame(
+				expected: ['ok' => false, 'member' => $person, 'reason' => 'Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)'],
+				actual: $observed['verdict'],
+				message: $person
+			);
+		}
+
+		$observed = $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => ['alice', 'bob']]);
+		$this->assertSame(expected: ['ok' => true, 'member' => null, 'reason' => null], actual: $observed['verdict']);
+
+		$objects['decision']['dec-1'] = ['id' => 'dec-1', 'decidedBy' => 42];
+		$observed = $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => ['alice', '42']]);
+		$this->assertSame(expected: '42', actual: $observed['verdict']['member'], message: 'numeric person');
+	}//end testEveryPersonOnTheDecisionIsCompared()
+
+	/**
+	 * A panel is refused when no person on the contested decision can be resolved.
+	 *
+	 * @return void
+	 */
+	public function testNoResolvablePersonRefusesThePanel(): void {
+		$objects = [
+			'bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']],
+			'decision' => ['dec-1' => ['id' => 'dec-1', 'createdBy' => '', 'signatories' => ['', ['uid' => '']]]],
+		];
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		$worlds = [
+			'no person on the decision' => ['objects' => $objects, 'objections' => [$objection]],
+			'no objection' => ['objects' => $objects, 'objections' => []],
+			'objection without a contested decision' => ['objects' => $objects, 'objections' => [['case' => 'case-1']]],
+			'contested decision missing' => ['objects' => $objects, 'objections' => [['contestedDecision' => 'dec-404']]],
+			'empty objection id' => ['objectionId' => '', 'objects' => $objects, 'objections' => [$objection]],
+			'no store' => ['noStore' => true, 'objects' => $objects, 'objections' => [$objection]],
+		];
+
+		foreach ($worlds as $name => $world) {
+			$observed = $this->observe(world: $world);
+			$this->assertSame(
+				expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+				actual: $observed['verdict'],
+				message: $name
+			);
+			$this->assertSame(expected: 'warning', actual: ($observed['logs'][0][0] ?? null), message: $name);
+		}
+	}//end testNoResolvablePersonRefusesThePanel()
 }//end class

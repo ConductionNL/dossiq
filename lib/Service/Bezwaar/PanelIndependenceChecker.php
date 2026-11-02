@@ -13,11 +13,16 @@
  * Resolution chain:
  *   bacAdviceRequest.bezwaar -> bezwaar (lifecycle record) -> bezwaar.case
  *   (dossiq case) -> objection (filed on that case) ->
- *   objection.contestedDecision -> decision owner / createdBy / steller.
+ *   objection.contestedDecision -> every person on that decision.
  *
- * A panel whose independence cannot be verified is refused: a missing
- * objection or decision schema, or a store read that throws, answers the
- * same refusal without a conflicting member, and is logged.
+ * The persons on a decision are its decidedBy, @self.owner, createdBy,
+ * steller and signatory, and each entry of its signatories. A panel member
+ * who matches any of them blocks the panel.
+ *
+ * A panel whose independence cannot be verified is refused: no objection
+ * id, no store, a missing objection or decision schema, a store read that
+ * throws, or a chain that ends without any person answers the same refusal
+ * without a conflicting member, and is logged.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Bezwaar
@@ -78,6 +83,11 @@ class PanelIndependenceChecker {
 		. 'worden vastgesteld (Awb Art. 7:13 lid 3)';
 
 	/**
+	 * The decision fields that each hold one person UID.
+	 */
+	private const PERSON_FIELDS = ['decidedBy', 'createdBy', 'steller', 'signatory'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge.
@@ -94,8 +104,9 @@ class PanelIndependenceChecker {
 	/**
 	 * Member-independence check per Awb Art. 7:13(3).
 	 *
-	 * Compares each panel member UID against the `createdBy` (steller) of
-	 * the contested primair besluit.
+	 * Compares each panel member UID against every person on the contested
+	 * primair besluit. An empty panel is clear; any other panel whose
+	 * decision persons cannot be resolved is refused.
 	 *
 	 * @param string $objectionId The bezwaar (lifecycle) UUID.
 	 * @param array<string> $panel Panel member UIDs.
@@ -108,13 +119,13 @@ class PanelIndependenceChecker {
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
 	public function check(string $objectionId, array $panel): array {
-		if ($objectionId === '' || $panel === []) {
+		if ($panel === []) {
 			return $this->verdictFor(conflicting: null);
 		}
 
 		$lookup = $this->lookupFor(objectionId: $objectionId);
-		if (is_array($lookup) === false) {
-			return $this->verdictFor(conflicting: $lookup);
+		if ($lookup === false) {
+			return $this->verdictFor(conflicting: false);
 		}
 
 		return $this->verdictFor(
@@ -162,14 +173,24 @@ class PanelIndependenceChecker {
 	 *
 	 * @param string $objectionId The bezwaar (lifecycle) UUID.
 	 *
-	 * @return Lookup|false|null The lookup, null when there is no store, false when the schemas are not configured.
+	 * @return Lookup|false The lookup, or false when there is no objection id, no store or no configured schemas.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function lookupFor(string $objectionId): array|false|null {
+	private function lookupFor(string $objectionId): array|false {
+		if ($objectionId === '') {
+			$this->logger->warning(
+				'Dossiq BAC: advice request names no objection; panel independence cannot be verified'
+			);
+			return false;
+		}
+
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return null;
+			$this->logger->warning(
+				'Dossiq BAC: no object store; panel independence cannot be verified'
+			);
+			return false;
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
@@ -196,25 +217,32 @@ class PanelIndependenceChecker {
 	}//end lookupFor()
 
 	/**
-	 * The panel member who authored the contested decision, when there is one.
+	 * The first panel member who is a person on the contested decision, when there is one.
 	 *
 	 * @param Lookup        $lookup The store and schemas for the objection.
 	 * @param array<string> $panel  Panel member UIDs.
 	 *
-	 * @return string|false|null The conflicting member UID, null when none conflicts, false when a store read threw.
+	 * @return string|false|null The conflicting member UID, null when none conflicts, false when a store read
+	 *                           threw or no person on the decision could be resolved.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
 	private function conflictingMember(array $lookup, array $panel): string|false|null {
 		try {
-			$author = $this->resolveContestedDecisionAuthor(lookup: $lookup);
-			if ($author === '') {
-				return null;
+			$persons = $this->personsOn(
+				decision: $this->resolveContestedDecision(lookup: $lookup)
+			);
+			if ($persons === []) {
+				$this->logger->warning(
+					'Dossiq BAC: no person on the contested decision could be resolved; '
+					. 'panel independence cannot be verified'
+				);
+				return false;
 			}
 
 			return $this->findConflictingPanelMember(
 				panel: $panel,
-				author: $author,
+				persons: $persons,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -225,18 +253,18 @@ class PanelIndependenceChecker {
 	}//end conflictingMember()
 
 	/**
-	 * Resolve the steller (author) of the primair besluit contested by the
-	 * objection filed on the bezwaar's underlying dossiq case.
+	 * Resolve the primair besluit contested by the objection filed on the
+	 * bezwaar's underlying dossiq case.
 	 *
 	 * The lookup's `legacyObjSchema` (config key `bezwaar_schema`) may be ''.
 	 *
 	 * @param Lookup $lookup The store, the objection id, the register and the schemas.
 	 *
-	 * @return string The steller UID, or '' when it cannot be resolved.
+	 * @return array<mixed> The decision, or [] when it cannot be resolved.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function resolveContestedDecisionAuthor(array $lookup): string {
+	private function resolveContestedDecision(array $lookup): array {
 		$objectService = $lookup['objectService'];
 		$objectionId = $lookup['objectionId'];
 		$register = $lookup['register'];
@@ -270,12 +298,12 @@ class PanelIndependenceChecker {
 		}
 
 		if (is_array($objection) === false) {
-			return '';
+			return [];
 		}
 
 		$contestedId = (string)($objection['contestedDecision'] ?? '');
 		if ($contestedId === '') {
-			return '';
+			return [];
 		}
 
 		$decision = $this->findObjectAsArray(
@@ -284,28 +312,67 @@ class PanelIndependenceChecker {
 			schema: $lookup['decisionSchema'],
 			id: $contestedId
 		);
-		if ($decision === null) {
+		return ($decision ?? []);
+	}//end resolveContestedDecision()
+
+	/**
+	 * Every person UID on a decision: its owner, its person fields and its signatories.
+	 *
+	 * @param array<mixed> $decision The decision.
+	 *
+	 * @return array<string> The distinct non-empty person UIDs.
+	 *
+	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+	 */
+	private function personsOn(array $decision): array {
+		$candidates = [($decision['@self']['owner'] ?? null)];
+		foreach (self::PERSON_FIELDS as $field) {
+			$candidates[] = ($decision[$field] ?? null);
+		}
+
+		foreach ((array)($decision['signatories'] ?? []) as $signatory) {
+			$candidates[] = $signatory;
+		}
+
+		$persons = array_map(fn (mixed $candidate): string => $this->personUid(value: $candidate), $candidates);
+
+		return array_values(array_unique(array_diff($persons, [''])));
+	}//end personsOn()
+
+	/**
+	 * The person UID one decision value names: a scalar, or an entry with a `uid` or `userId`.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return string The UID, or '' when the value names no person.
+	 *
+	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+	 */
+	private function personUid(mixed $value): string {
+		if (is_array($value) === true) {
+			$value = ($value['uid'] ?? ($value['userId'] ?? null));
+		}
+
+		if (is_scalar($value) === false) {
 			return '';
 		}
 
-		return (string)(
-			$decision['@self']['owner'] ?? ($decision['createdBy'] ?? ($decision['steller'] ?? ''))
-		);
-	}//end resolveContestedDecisionAuthor()
+		return (string)$value;
+	}//end personUid()
 
 	/**
-	 * Find the first panel member that is not independent from the steller.
+	 * Find the first panel member who is a person on the contested decision.
 	 *
-	 * @param array<string> $panel Panel member UIDs.
-	 * @param string $author UID of the contested decision's author.
+	 * @param array<string> $panel   Panel member UIDs.
+	 * @param array<string> $persons The person UIDs on the contested decision.
 	 *
 	 * @return string|null The conflicting member UID, or null when the panel is independent.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function findConflictingPanelMember(array $panel, string $author): ?string {
+	private function findConflictingPanelMember(array $panel, array $persons): ?string {
 		foreach ($panel as $memberUid) {
-			if ((string)$memberUid === $author) {
+			if (in_array((string)$memberUid, $persons, true) === true) {
 				return (string)$memberUid;
 			}
 		}
