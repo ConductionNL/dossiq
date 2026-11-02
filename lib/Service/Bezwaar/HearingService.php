@@ -52,6 +52,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\OpensInTheInitialState;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -65,6 +66,7 @@ use RuntimeException;
 class HearingService {
 
 	use SearchesObjects;
+	use OpensInTheInitialState;
 
 	/**
 	 * Grace window after `scheduledDate` during which the attendance
@@ -229,8 +231,9 @@ class HearingService {
 	/**
 	 * Record an art. 7:3 waiver: bezwaarmaker afziet van het hoorrecht.
 	 *
-	 * Creates a hearingSession with status = afzien, hearingWaived = true
-	 * and the supplied reason. Writes an awb-art-7:3 audit entry.
+	 * Creates a hearingSession with hearingWaived = true and the supplied
+	 * reason in the schema's initial status, and moves it to afgezien through
+	 * the declared `waive` transition. Writes an awb-art-7:3 audit entry.
 	 *
 	 * @param string $caseId UUID of the parent bezwaar case
 	 * @param string $reason Non-empty waiver reason
@@ -286,7 +289,10 @@ class HearingService {
 		);
 
 		try {
-			$saved = ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
+			$saved = $this->createThenMove(
+				objectService: $objectService,
+				write: ['register' => $register, 'schema' => $schema, 'object' => $record, 'field' => 'status']
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq hearing: failed to record waiver: ' . $e->getMessage()
