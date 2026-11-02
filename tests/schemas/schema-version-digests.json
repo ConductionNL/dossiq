@@ -712,8 +712,8 @@
         "digest": "972486cb47511ec19d9c2a2bca84d2d484349feb2af0d140042c26d5756a5a73"
     },
     "lib/Settings/dossiq_register.json::document": {
-        "version": "1.1.2",
-        "digest": "fb2c41864a5e6b70f15ff4f581bc8964495cf0be4bfab101fdd20092119af210"
+        "version": "1.2.0",
+        "digest": "10ff7dd3d97131219f194541ebc24b500dc7ba57110b18141b7206efbfe6f4c9"
     },
     "lib/Settings/dossiq_register.json::documentLink": {
         "version": "1.0.1",
@@ -912,7 +912,7 @@
         "digest": "37037a79164866402611a7fde656e53659f9c7ef950599be682aaada89cfa8be"
     },
     "lib/Settings/register.d/30-beschikking.json::beschikking": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "329e9dff1c44db3345bc05096cc589c1bd935176dadc5cc6e82e174b0949100e"
     },
     "lib/Settings/register.d/30-beschikking.json::bezwaarTrigger": {
@@ -1236,7 +1236,7 @@
         "digest": "07eefb766e6f75a558f5d26fca5c4d2c344de6f6de84e8a71aebb3f8d6028068"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::noticeOfDefault": {
-        "version": "1.1.2",
+        "version": "1.2.0",
         "digest": "59e7a80ed4c1e91ce6b9691df689397d59f6751cad2a09b9dc64abb787656d8d"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::penaltyPaymentCalculation": {

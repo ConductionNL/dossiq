@@ -25,7 +25,8 @@
       "overviewCards": [
         "case-objection-grounds",
         "case-objection-advice-card"
-      ]
+      ],
+      "initialStatus": "b3c1a000-0000-4000-a000-0000000b2a01"
     },
     {
       "id": "b3c1a000-0000-4000-a000-00000000be30",
@@ -42,7 +43,8 @@
       "internalOrExternal": "extern",
       "publicationRequired": false,
       "isDraft": false,
-      "confidentiality": "zaakvertrouwelijk"
+      "confidentiality": "zaakvertrouwelijk",
+      "initialStatus": "fbe0b51c-3931-5428-9386-5c2a4ce266e2"
     }
   ],
   "propertyDefinitions": [
