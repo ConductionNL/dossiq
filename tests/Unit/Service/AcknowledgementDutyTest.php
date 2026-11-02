@@ -109,6 +109,9 @@ class AcknowledgementCaseStore {
  * Confirming receipt, recording it, and refusing when there is nowhere to send.
  *
  * @covers \OCA\Dossiq\Service\AcknowledgementService
+ * @covers \OCA\Dossiq\Service\AcknowledgementDelivery
+ * @covers \OCA\Dossiq\Service\AcknowledgementTerms
+ * @covers \OCA\Dossiq\Service\AcknowledgementDeclaration
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  *
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider

@@ -58,6 +58,7 @@ use Psr\Log\NullLogger;
  * Mail intake runs as the configured account, or not at all.
  *
  * @covers \OCA\Dossiq\BackgroundJob\InboundEmailJob
+ * @covers \OCA\Dossiq\BackgroundJob\MailIntakeSource
  * @uses \OCA\Dossiq\Service\Email\InboundMailIntake
  * @uses \OCA\Dossiq\Service\Email\IntakeLog
  * @uses \OCA\Dossiq\Service\Email\UnmatchedMailIntake
