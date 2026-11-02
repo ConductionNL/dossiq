@@ -429,8 +429,47 @@ class CaseSplitExecutor {
 		$payload = $this->secondCaseOf(source: $source, title: $title);
 		$payload['relatedCases'] = $this->relationBack(sourceId: $payload['splitFrom'], actor: $actor);
 
-		return $this->saveSecondCase(payload: $payload);
+		return $this->takeOverStatus(
+			newCase: $this->saveSecondCase(payload: $payload),
+			move: ['source' => $source, 'actor' => $actor],
+		);
 	}//end openSecondCase()
+
+	/**
+	 * Move the second case from its initial status into the status of the first.
+	 *
+	 * OpenRegister opens a case in its case type's initial status, so the
+	 * status the original held is entered as a recorded move afterwards.
+	 *
+	 * @param array<string, mixed> $newCase The second case as stored.
+	 * @param array<string, mixed> $move    The case being split (`source`) and who split it (`actor`).
+	 *
+	 * @return array<string, mixed> The second case, in the status of the first.
+	 *
+	 * @throws RefusedException When the move cannot be saved or recorded.
+	 */
+	private function takeOverStatus(array $newCase, array $move): array {
+		$source = $move['source'];
+		$status = trim((string)($source['status'] ?? ''));
+		if ($status === '' || $status === trim((string)($newCase['status'] ?? ''))) {
+			return $newCase;
+		}
+
+		$origin = trim((string)($source['identifier'] ?? $this->store->uuidOf(row: $source)));
+		try {
+			return $this->store->enterStatus(
+				case: $newCase,
+				move: ['toStatus' => $status, 'label' => 'Split from ' . $origin, 'actor' => (string)$move['actor']],
+			);
+		} catch (Throwable $e) {
+			throw new RefusedException(
+				rule: self::UNWRITABLE,
+				sentence: 'The second case was opened but could not take over the status of the first, so nothing was moved.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}
+	}//end takeOverStatus()
 
 	/**
 	 * The second case's fields, taken from the first.
@@ -449,7 +488,6 @@ class CaseSplitExecutor {
 		return [
 			'title' => $title,
 			'caseType' => (string)($source['caseType'] ?? ''),
-			'status' => (string)($source['status'] ?? ''),
 			'assignedGroup' => (string)($source['assignedGroup'] ?? ''),
 			'assignee' => (string)($source['assignee'] ?? ''),
 			'impact' => (string)($source['impact'] ?? 'medium'),

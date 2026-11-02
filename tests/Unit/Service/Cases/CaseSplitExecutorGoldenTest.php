@@ -32,6 +32,11 @@ use OCA\Dossiq\Service\Cases\CaseSplitPlan;
 use OCA\Dossiq\Service\Cases\CaseSplitPolicy;
 use OCA\Dossiq\Service\Cases\CaseSplitStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
+use OCA\Dossiq\Service\Transitions\CaseResultWriter;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -47,6 +52,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
+ * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
  */
 class CaseSplitExecutorGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -144,7 +151,7 @@ class CaseSplitExecutorGoldenTest extends TestCase {
 					return $this->knobs['saveAnswers'][$key];
 				}
 
-				$id = ($uuid ?? ('new-' . (count($this->rows[$schema] ?? []) + 1)));
+				$id = ($uuid ?? ($object['id'] ?? ('new-' . (count($this->rows[$schema] ?? []) + 1))));
 				$object['id'] = $id;
 				$this->rows[$schema][$id] = $object;
 
@@ -189,6 +196,30 @@ class CaseSplitExecutorGoldenTest extends TestCase {
 	}//end rows()
 
 	/**
+	 * The status engine's write step over the world's register; no status is final.
+	 *
+	 * @param SettingsService $settings The world's settings.
+	 * @param AbstractLogger  $logger   The world's logger.
+	 *
+	 * @return CaseMoveLedger The ledger.
+	 */
+	private function ledger(SettingsService $settings, AbstractLogger $logger): CaseMoveLedger {
+		$results = $this->createMock(originalClassName: CaseResultWriter::class);
+		$results->method('isFinalStatus')->willReturn(false);
+
+		return new CaseMoveLedger(
+			store: new CaseStatusStore(
+				settingsService: $settings,
+				statusTypeLookup: $this->createMock(originalClassName: StatusTypeLookup::class),
+				logger: $logger,
+			),
+			resultWriter: $results,
+			dispatcher: $this->createMock(originalClassName: SideEffectDispatcher::class),
+			logger: $logger,
+		);
+	}//end ledger()
+
+	/**
 	 * Run one call against a world and record every effect.
 	 *
 	 * @param array<string, mixed> $world The rows, knobs, settings and the call.
@@ -210,6 +241,7 @@ class CaseSplitExecutorGoldenTest extends TestCase {
 			'case_type_schema' => 'caseType',
 			'case_document_schema' => 'caseDocument',
 			'role_schema' => 'role',
+			'status_record_schema' => 'statusRecord',
 		];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(($world['noService'] ?? false) === true ? null : $register);
@@ -243,7 +275,7 @@ class CaseSplitExecutorGoldenTest extends TestCase {
 			policy: new CaseSplitPolicy(),
 			plan: new CaseSplitPlan(),
 			logger: $logger,
-			store: new CaseSplitStore($settings),
+			store: new CaseSplitStore(settingsService: $settings, ledger: $this->ledger(settings: $settings, logger: $logger)),
 		);
 
 		try {
