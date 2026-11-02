@@ -98,15 +98,33 @@ class ShippedRowAdoptionGoldenTest extends TestCase {
 		}
 
 		foreach (['untouched', 'changed', 'same'] as $id) {
-			$this->shipped->stamp(set: self::SET, targetSchema: 'caseType', targetObject: $id, object: ['id' => $id, 'title' => 'Type ' . $id, 'processingDeadline' => 'P6W', 'note' => 'kept'], version: '1.0.0');
+			$this->shipped->stamp(
+				set: self::SET,
+				targetSchema: 'caseType',
+				targetObject: $id,
+				object: ['id' => $id, 'title' => 'Type ' . $id, 'processingDeadline' => 'P6W', 'note' => 'kept'],
+				version: '1.0.0'
+			);
 		}
 
-		$this->shipped->stamp(set: 'another-set', targetSchema: 'caseType', targetObject: 'foreign', object: ['id' => 'foreign', 'title' => 'Type foreign', 'processingDeadline' => 'P6W', 'note' => 'kept'], version: '2.0.0');
+		$this->shipped->stamp(
+			set: 'another-set',
+			targetSchema: 'caseType',
+			targetObject: 'foreign',
+			object: ['id' => 'foreign', 'title' => 'Type foreign', 'processingDeadline' => 'P6W', 'note' => 'kept'],
+			version: '2.0.0'
+		);
 		$this->harness->seed(schema: 'caseType', uuid: 'changed', row: ['title' => 'Type changed', 'processingDeadline' => 'P8W', 'note' => 'kept']);
 		$this->harness->seed(
 			schema: 'caseType',
 			uuid: 'untouched',
-			row: ['title' => 'Type untouched', 'processingDeadline' => 'P6W', 'note' => 'kept', 'updated' => '2026-01-01T00:00:00+00:00', '@self' => ['owner' => 'admin']]
+			row: [
+				'title' => 'Type untouched',
+				'processingDeadline' => 'P6W',
+				'note' => 'kept',
+				'updated' => '2026-01-01T00:00:00+00:00',
+				'@self' => ['owner' => 'admin'],
+			]
 		);
 	}//end setUp()
 
@@ -216,7 +234,9 @@ class ShippedRowAdoptionGoldenTest extends TestCase {
 	private function outcome(array $answer): array {
 		$ledger = [];
 		foreach ($this->harness->register->all(schema: 'shippedOrigin') as $row) {
-			$row['seededAt'] = (($row['seededAt'] ?? '') === '') ? '' : '<stamped>';
+			if (($row['seededAt'] ?? '') !== '') {
+				$row['seededAt'] = '<stamped>';
+			}
 			$ledger[] = $row;
 		}
 
