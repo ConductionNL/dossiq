@@ -252,9 +252,7 @@ class HearingService {
 	): array {
 		$reason = trim($reason);
 		if ($reason === '') {
-			throw new RuntimeException(
-				'Waiver reason is required (Awb art. 7:3)'
-			);
+			throw new RuntimeException('Waiver reason is required (Awb art. 7:3)');
 		}
 
 		$objectService = $this->settingsService->getObjectService();
@@ -263,9 +261,7 @@ class HearingService {
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(
-			key: 'hearing_session_schema'
-		);
+		$schema = $this->settingsService->getConfigValue(key: 'hearing_session_schema');
 
 		if ($register === '' || $schema === '') {
 			throw new RuntimeException('Hearing schema is not configured');
