@@ -16063,7 +16063,7 @@
         },
         "bezwaar": "d5607c11-c828-4cf1-ad39-080c7b646978",
         "committee": "59c6f03b-adde-4f3e-aaad-6e393b7bcd62",
-        "status": "advice-issued",
+        "status": "in-deliberation",
         "panel": [
           "Voorbeeld Panel 3"
         ],
@@ -18354,7 +18354,8 @@
         "publicationDate": "2026-03-01",
         "deliveryDate": "2026-03-01",
         "explanation": "Voorbeeld Explanation 1",
-        "governingBody": "Voorbeeld Governingbody 1"
+        "governingBody": "Voorbeeld Governingbody 1",
+        "decidedBy": "Voorbeeld Decidedby 1"
       },
       {
         "@self": {
@@ -18374,7 +18375,8 @@
         "publicationDate": "2026-03-02",
         "deliveryDate": "2026-03-02",
         "explanation": "Voorbeeld Explanation 2",
-        "governingBody": "Voorbeeld Governingbody 2"
+        "governingBody": "Voorbeeld Governingbody 2",
+        "decidedBy": "Voorbeeld Decidedby 2"
       },
       {
         "@self": {
@@ -18394,7 +18396,8 @@
         "publicationDate": "2026-03-03",
         "deliveryDate": "2026-03-03",
         "explanation": "Voorbeeld Explanation 3",
-        "governingBody": "Voorbeeld Governingbody 3"
+        "governingBody": "Voorbeeld Governingbody 3",
+        "decidedBy": "Voorbeeld Decidedby 3"
       },
       {
         "@self": {
@@ -21459,6 +21462,24 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "objection",
+          "slug": "objection-objection-4-4",
+          "id": "a31ba78d-03b9-47cb-a42f-141c9c0c65b1"
+        },
+        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
+        "contestedDecision": "8438cec3-804e-4fc3-ab33-6a263fef56fe",
+        "grounds": "Voorbeeld Grounds 4",
+        "receivedDate": "2026-03-02",
+        "receivedChannel": "brief",
+        "requestedRelief": "Voorbeeld Requestedrelief 4",
+        "isTimely": true,
+        "timelinessAssessment": "Voorbeeld Timelinessassessment 4",
+        "proProvision": false,
+        "attachments": "Voorbeeld Attachments 4"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "objectionProceeding",
           "slug": "objectionproceeding-objectionproceeding-1-1",
           "id": "26358476-3ea8-4a9a-a40a-f62f84fb4cf4"
@@ -21466,7 +21487,7 @@
         "case": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
         "receiptDate": "2026-03-01",
         "status": "Received",
-        "objection": "0cf0ec7c-61e4-4a8b-bdab-4cf1772a3240",
+        "objection": "746d33e5-66e8-4cc8-b8cc-3ea5a98f2958",
         "awbReference": "Voorbeeld Awbreference 1",
         "adjournedOn": "2026-03-01",
         "verdagingsperiode": 0,
@@ -21489,7 +21510,7 @@
         "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
         "receiptDate": "2026-03-02",
         "status": "AdmissibilityCheck",
-        "objection": "92bbb4de-053e-4e37-a2d2-92ce003db5cc",
+        "objection": "a31ba78d-03b9-47cb-a42f-141c9c0c65b1",
         "awbReference": "Voorbeeld Awbreference 2",
         "adjournedOn": "2026-03-02",
         "verdagingsperiode": 0,
@@ -21512,7 +21533,7 @@
         "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
         "receiptDate": "2026-03-03",
         "status": "In handling",
-        "objection": "92bbb4de-053e-4e37-a2d2-92ce003db5cc",
+        "objection": "0cf0ec7c-61e4-4a8b-bdab-4cf1772a3240",
         "awbReference": "Voorbeeld Awbreference 3",
         "adjournedOn": "2026-03-03",
         "verdagingsperiode": 0,
