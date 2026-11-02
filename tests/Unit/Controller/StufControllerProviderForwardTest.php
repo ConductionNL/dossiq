@@ -133,7 +133,15 @@ class StufControllerProviderForwardTest extends TestCase {
 		);
 
 		$body = self::envelope(application: $application);
-		return new class($this->createMock(IRequest::class), $register, $bridge, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class), $body) extends StufController {
+		return new class(
+			$this->createMock(originalClassName: IRequest::class),
+			$register,
+			$bridge,
+			$this->createMock(originalClassName: IL10N::class),
+			$this->createMock(originalClassName: LoggerInterface::class),
+			$this->createMock(originalClassName: IntegrationStatusService::class),
+			$body,
+		) extends StufController {
 			/**
 			 * Constructor.
 			 *
@@ -145,8 +153,16 @@ class StufControllerProviderForwardTest extends TestCase {
 			 * @param IntegrationStatusService $status   Status.
 			 * @param string                   $body     The fixed request body.
 			 */
-			public function __construct(IRequest $request, StufRegisterAccess $register, StufIntegriqBridge $bridge, IL10N $l10n, LoggerInterface $logger, IntegrationStatusService $status, private readonly string $body) {
-				parent::__construct($request, $register, $bridge, $l10n, $logger, $status);
+			public function __construct(
+				IRequest $request,
+				StufRegisterAccess $register,
+				StufIntegriqBridge $bridge,
+				IL10N $l10n,
+				LoggerInterface $logger,
+				IntegrationStatusService $status,
+				private readonly string $body,
+			) {
+				parent::__construct(request: $request, register: $register, bridge: $bridge, l10n: $l10n, logger: $logger, integrationStatus: $status);
 			}
 
 			/**

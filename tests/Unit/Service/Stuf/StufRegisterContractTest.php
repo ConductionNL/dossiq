@@ -153,7 +153,14 @@ class StufRegisterContractTest extends TestCase {
 			}
 		);
 
-		$controller = new class($this->createMock(\OCP\IRequest::class), $this->register, $bridge, $this->createMock(\OCP\IL10N::class), $this->createMock(\Psr\Log\LoggerInterface::class), $this->createMock(\OCA\Dossiq\Service\IntegrationStatusService::class)) extends \OCA\Dossiq\Controller\StufController {
+		$controller = new class(
+			$this->createMock(originalClassName: \OCP\IRequest::class),
+			$this->register,
+			$bridge,
+			$this->createMock(originalClassName: \OCP\IL10N::class),
+			$this->createMock(originalClassName: \Psr\Log\LoggerInterface::class),
+			$this->createMock(originalClassName: \OCA\Dossiq\Service\IntegrationStatusService::class),
+		) extends \OCA\Dossiq\Controller\StufController {
 			/**
 			 * Serve a fixed body instead of php://input.
 			 *
