@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
 use OCA\Dossiq\Service\SubstitutionAuditService;
@@ -54,7 +55,6 @@ class SubstitutionController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
 	 * @param SubstitutionService $substitutionService Substitution domain logic.
 	 * @param SubstitutionAuditService $auditService Capacity audit.
@@ -65,7 +65,6 @@ class SubstitutionController extends Controller {
 	 * @return void
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly SubstitutionService $substitutionService,
 		private readonly SubstitutionAuditService $auditService,
@@ -73,7 +72,7 @@ class SubstitutionController extends Controller {
 		private readonly CaseReassignmentService $reassignmentService,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

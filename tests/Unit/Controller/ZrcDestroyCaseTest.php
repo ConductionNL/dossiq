@@ -132,7 +132,6 @@ final class ZrcDestroyCaseTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		$controller = new ZrcController(
-			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			zgwService: $zgwService,
 			l10n: $l10n,

@@ -128,7 +128,6 @@ class CaseTaskControllerTest extends TestCase {
 	 */
 	private function controller(): CaseTaskController {
 		return new CaseTaskController(
-			appName: 'dossiq',
 			request: $this->request,
 			tasks: $this->completion,
 			attachments: $this->attachments,

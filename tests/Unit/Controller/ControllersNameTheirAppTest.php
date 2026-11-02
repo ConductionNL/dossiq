@@ -41,6 +41,16 @@ use ReflectionNamedType;
  * @covers \OCA\Dossiq\Controller\CaseAttentionController
  * @covers \OCA\Dossiq\Controller\CaseCustodyController
  * @covers \OCA\Dossiq\Controller\CaseHandoverController
+ * @covers \OCA\Dossiq\Controller\CaseTaskController
+ * @covers \OCA\Dossiq\Controller\DocumentAssessmentController
+ * @covers \OCA\Dossiq\Controller\FieldEvidenceController
+ * @covers \OCA\Dossiq\Controller\FileRequestController
+ * @covers \OCA\Dossiq\Controller\PipelinqContactMomentController
+ * @covers \OCA\Dossiq\Controller\StarterContentController
+ * @covers \OCA\Dossiq\Controller\StufController
+ * @covers \OCA\Dossiq\Controller\SubstitutionController
+ * @covers \OCA\Dossiq\Controller\TemplateStartController
+ * @covers \OCA\Dossiq\Controller\ZrcController
  *
  * @spec exclude Pins how the controllers are constructed; no product behaviour.
  */
@@ -59,6 +69,16 @@ class ControllersNameTheirAppTest extends TestCase {
 			'CaseAttention',
 			'CaseCustody',
 			'CaseHandover',
+			'CaseTask',
+			'DocumentAssessment',
+			'FieldEvidence',
+			'FileRequest',
+			'PipelinqContactMoment',
+			'StarterContent',
+			'Stuf',
+			'Substitution',
+			'TemplateStart',
+			'Zrc',
 		];
 
 		$out = [];

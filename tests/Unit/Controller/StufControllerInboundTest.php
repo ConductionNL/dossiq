@@ -112,7 +112,7 @@ class StufControllerInboundTest extends TestCase {
 			}
 		);
 
-		return new class('dossiq', $this->createMock(IRequest::class), $this->createMock(StufRegisterAccess::class), $bridge, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class)) extends StufController {
+		return new class($this->createMock(IRequest::class), $this->createMock(StufRegisterAccess::class), $bridge, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class)) extends StufController {
 			/**
 			 * Serve a fixed body instead of php://input.
 			 *

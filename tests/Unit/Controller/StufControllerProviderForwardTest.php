@@ -133,11 +133,10 @@ class StufControllerProviderForwardTest extends TestCase {
 		);
 
 		$body = self::envelope(application: $application);
-		return new class('dossiq', $this->createMock(IRequest::class), $register, $bridge, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class), $body) extends StufController {
+		return new class($this->createMock(IRequest::class), $register, $bridge, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class), $body) extends StufController {
 			/**
 			 * Constructor.
 			 *
-			 * @param string                   $appName  The app.
 			 * @param IRequest                 $request  The request.
 			 * @param StufRegisterAccess       $register The register.
 			 * @param StufIntegriqBridge       $bridge   The bridge.
@@ -146,8 +145,8 @@ class StufControllerProviderForwardTest extends TestCase {
 			 * @param IntegrationStatusService $status   Status.
 			 * @param string                   $body     The fixed request body.
 			 */
-			public function __construct(string $appName, IRequest $request, StufRegisterAccess $register, StufIntegriqBridge $bridge, IL10N $l10n, LoggerInterface $logger, IntegrationStatusService $status, private readonly string $body) {
-				parent::__construct($appName, $request, $register, $bridge, $l10n, $logger, $status);
+			public function __construct(IRequest $request, StufRegisterAccess $register, StufIntegriqBridge $bridge, IL10N $l10n, LoggerInterface $logger, IntegrationStatusService $status, private readonly string $body) {
+				parent::__construct($request, $register, $bridge, $l10n, $logger, $status);
 			}
 
 			/**
