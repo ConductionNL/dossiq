@@ -271,7 +271,8 @@ class PublicationServiceGoldenTest extends TestCase {
 		];
 
 		foreach ($worlds as $name => $world) {
-			$this->assertMatchesGolden(name: 'publication-publish/' . trim((string)preg_replace('/[^a-z0-9]+/', '-', strtolower($name)), '-'), value: [$name => $this->observe(world: $world)]);
+			$file = trim((string)preg_replace('/[^a-z0-9]+/', '-', strtolower($name)), '-');
+			$this->assertMatchesGolden(name: 'publication-publish/' . $file, value: [$name => $this->observe(world: $world)]);
 		}
 	}//end testGoldenPublish()
 }//end class
