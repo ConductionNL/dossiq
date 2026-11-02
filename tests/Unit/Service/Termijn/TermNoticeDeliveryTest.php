@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Service\Pause\PauseChaseSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
@@ -212,7 +213,13 @@ class TermNoticeDeliveryTest extends TestCase {
 		$terms->method('updateTermijnInstance')->willReturnCallback(static fn (string $id, array $patch): array => array_merge(['id' => $id], $patch));
 		$terms->method('recordEvent')->willReturn([]);
 
-		return [new TermijnNotificationService($terms, $sender, $this->logger()), $terms];
+		return [
+			new TermijnNotificationService(
+				notices: new TermNoticeSources(termService: $terms, sender: $sender),
+				logger: $this->logger()
+			),
+			$terms,
+		];
 	}//end notifications()
 
 	/**

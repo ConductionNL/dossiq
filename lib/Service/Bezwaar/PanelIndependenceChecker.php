@@ -15,9 +15,10 @@
  *   (dossiq case) -> objection (filed on that case) ->
  *   objection.contestedDecision -> decision decidedBy / owner / createdBy / steller.
  *
- * A panel whose independence cannot be verified is refused: a missing
- * objection or decision schema, or a store read that throws, answers the
- * same refusal without a conflicting member, and is logged.
+ * A panel whose independence cannot be verified is refused: no object
+ * store, a missing objection or decision schema, or a store read that
+ * throws, answers the same refusal without a conflicting member, and is
+ * logged.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Bezwaar
@@ -121,8 +122,8 @@ class PanelIndependenceChecker {
 		}
 
 		$lookup = $this->lookupFor(objectionId: $objectionId);
-		if (is_array($lookup) === false) {
-			return $this->verdictFor(conflicting: $lookup);
+		if ($lookup === false) {
+			return $this->verdictFor(conflicting: false);
 		}
 
 		return $this->verdictFor(
@@ -170,14 +171,15 @@ class PanelIndependenceChecker {
 	 *
 	 * @param string $objectionId The bezwaar (lifecycle) UUID.
 	 *
-	 * @return Lookup|false|null The lookup, null when there is no store, false when the schemas are not configured.
+	 * @return Lookup|false The lookup, or false when there is no store or the schemas are not configured.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function lookupFor(string $objectionId): array|false|null {
+	private function lookupFor(string $objectionId): array|false {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return null;
+			$this->logger->warning('Dossiq BAC: no object store; panel independence cannot be verified');
+			return false;
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
