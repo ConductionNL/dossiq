@@ -441,7 +441,7 @@ class AdvisoryCommitteeService {
 		// Guard: assigned → in-deliberation requires panel and
 		// independence (REQ-BAC-2).
 		if ($move['from'] === 'assigned' && $move['status'] === 'in-deliberation') {
-			$this->guardDeliberationStart(request: $request);
+			$this->guardPanel(request: $request);
 		}
 
 		// Guard: in-deliberation → advice-issued requires the structured
@@ -624,6 +624,27 @@ class AdvisoryCommitteeService {
 	}//end assertTransitionAllowed()
 
 	/**
+	 * Guard a move into in-deliberation (REQ-BAC-2) for a request as it will be saved.
+	 *
+	 * Called by DeliberationStartGuard on every single-object save that moves
+	 * an advice request into in-deliberation.
+	 *
+	 * @param array<string, mixed> $request   The advice request as it will be saved
+	 * @param string               $requestId Advice request UUID
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When OpenRegister is not available, or no panel has been set
+	 * @throws GuardFailedException When a panel member is not independent, or independence cannot be verified
+	 *
+	 * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-single-object-save-that-starts-deliberation-runs-the-panel-check
+	 */
+	public function guardDeliberationStart(array $request, string $requestId): void {
+		$store = ($this->requestStore() ?? throw new RuntimeException('OpenRegister is not available'));
+		$this->guardPanel(request: $store + ['id' => $requestId, 'current' => $request]);
+	}//end guardDeliberationStart()
+
+	/**
 	 * Guard the assigned → in-deliberation transition (REQ-BAC-2): a panel
 	 * must be set and every member must be independent. An independence
 	 * failure is recorded on the request's trail before the guard raises.
@@ -635,7 +656,7 @@ class AdvisoryCommitteeService {
 	 * @throws RuntimeException When no panel has been set
 	 * @throws GuardFailedException When a panel member is not independent, or independence cannot be verified
 	 */
-	private function guardDeliberationStart(array $request): void {
+	private function guardPanel(array $request): void {
 		$panel = (array)($request['current']['panel'] ?? []);
 		if ($panel === []) {
 			throw new RuntimeException(
@@ -672,7 +693,7 @@ class AdvisoryCommitteeService {
 			failedGuards: [],
 			message: $message . $independence['reason']
 		);
-	}//end guardDeliberationStart()
+	}//end guardPanel()
 
 	/**
 	 * Validate the structured advice content (REQ-BAC-4) and raise the
@@ -787,10 +808,7 @@ class AdvisoryCommitteeService {
 	 */
 	private function externalReferenceFor(array $request, string $requestId): string {
 		$objectionId = $this->objectionIdOf(request: $request);
-		if ($objectionId !== '') {
-			return $objectionId;
-		}
 
-		return $requestId;
+		return [$objectionId, $requestId][(int)($objectionId === '')];
 	}//end externalReferenceFor()
 }//end class
