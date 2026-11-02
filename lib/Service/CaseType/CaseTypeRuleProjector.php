@@ -92,13 +92,7 @@ class CaseTypeRuleProjector {
 	 */
 	public function plan(string $caseTypeId): array {
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
-		$scope = new RuleFlowScope(
-			caseTypeId: $caseTypeId,
-			caseTypeTitle: (string)($caseType['title'] ?? $caseTypeId),
-			register: $this->settings->getConfigValue(key: 'register'),
-			schema: $this->settings->getConfigValue(key: 'case_schema'),
-			definitionNames: $this->definitionNames(caseTypeId: $caseTypeId),
-		);
+		$scope = $this->scopeOf(caseTypeId: $caseTypeId, caseType: $caseType);
 		$flows = [];
 		$unprojected = [];
 		foreach ((array)($caseType['rules'] ?? []) as $rule) {
@@ -123,6 +117,28 @@ class CaseTypeRuleProjector {
 
 		return ['flows' => $flows, 'unprojected' => $unprojected];
 	}//end plan()
+
+	/**
+	 * The case type every flow of this plan belongs to.
+	 *
+	 * @param string               $caseTypeId The case type uuid.
+	 * @param array<string, mixed> $caseType   The case type.
+	 *
+	 * @return RuleFlowScope The scope.
+	 */
+	private function scopeOf(string $caseTypeId, array $caseType): RuleFlowScope {
+		$title = (string)($caseType['title'] ?? $caseTypeId);
+		$register = $this->settings->getConfigValue(key: 'register');
+		$schema = $this->settings->getConfigValue(key: 'case_schema');
+
+		return new RuleFlowScope(
+			caseTypeId: $caseTypeId,
+			caseTypeTitle: $title,
+			register: $register,
+			schema: $schema,
+			definitionNames: $this->definitionNames(caseTypeId: $caseTypeId)
+		);
+	}//end scopeOf()
 
 	/**
 	 * What each status requires before a case enters it, from the case type's rules.
