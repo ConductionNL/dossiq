@@ -77,6 +77,13 @@ class CaseTransferConsentGate {
 	public const CONSENT_WITHDRAWN = 'consent-withdrawn';
 
 	/**
+	 * The refusal when a move inside one organisation cannot be checked against its case type.
+	 *
+	 * @var string
+	 */
+	public const CONSENT_UNCHECKED = 'consent-unchecked';
+
+	/**
 	 * How many consents one case read takes at most.
 	 *
 	 * @var int
@@ -144,10 +151,11 @@ class CaseTransferConsentGate {
 			receivingOrg: $receiver,
 		);
 
-		if ($crosses === false && $this->consentRequiredInside(caseId: $caseId) === false) {
-			// A move between two teams of one organisation is not a
-			// disclosure (D-7), so there is nothing to consent to.
-			return $this->verdict(outcome: $this->granted(consent: null), crosses: false);
+		if ($crosses === false) {
+			$inside = $this->insideOutcome(caseId: $caseId);
+			if ($inside !== null) {
+				return $this->verdict(outcome: $inside, crosses: false);
+			}
 		}
 
 		$moment = $this->instant(value: $atDate) ?? new DateTimeImmutable();
@@ -161,6 +169,43 @@ class CaseTransferConsentGate {
 
 		return $this->verdict(outcome: $refusal, crosses: $crosses);
 	}//end assess()
+
+	/**
+	 * The outcome of a move inside one organisation, or null when it needs a consent check.
+	 *
+	 * A move between two teams of one organisation is not a disclosure (D-7),
+	 * so it proceeds unless its case type demands consent. When the case or
+	 * its case type cannot be read, the move is refused.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return Outcome|null The outcome, or null to check the recorded consents.
+	 *
+	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function insideOutcome(string $caseId): ?array {
+		try {
+			$required = $this->readInsideRule(caseId: trim($caseId));
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq consent: the case type could not be read for the internal-move rule',
+				['caseId' => $caseId, 'exception' => $e->getMessage()],
+			);
+
+			return [
+				'allowed' => false,
+				'rule' => self::CONSENT_UNCHECKED,
+				'sentence' => 'Consent could not be checked, so the case was not handed on.',
+				'consent' => null,
+			];
+		}
+
+		if ($required === true) {
+			return null;
+		}
+
+		return $this->granted(consent: null);
+	}//end insideOutcome()
 
 	/**
 	 * The outcome of a hand-off that may proceed.
@@ -303,53 +348,63 @@ class CaseTransferConsentGate {
 	 * administrator can read which case types may not move without one, and a
 	 * Jeugdwet file and a parking permit are not the same question (D-7).
 	 *
-	 * An unreadable case or case type answers FALSE, and deliberately: this
-	 * branch only ever runs for a move that stays inside one organisation,
-	 * where the default is that no consent is needed. The cross-organisation
-	 * refusal does not pass through here at all.
+	 * A case or case type that cannot be read answers true: consent is then
+	 * treated as needed, because whether it is cannot be checked.
 	 *
 	 * @param string $caseId The case.
 	 *
 	 * @return bool Whether an internal move needs consent too.
 	 *
-	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function consentRequiredInside(string $caseId): bool {
-		$caseId = trim($caseId);
+		return (($this->insideOutcome(caseId: $caseId)['allowed'] ?? false) === false);
+	}//end consentRequiredInside()
+
+	/**
+	 * Read the case and its case type, and answer the case type's internal-move rule.
+	 *
+	 * @param string $caseId The trimmed case id.
+	 *
+	 * @return bool The case type's rule, or false for a case without a case type.
+	 *
+	 * @throws RuntimeException When the case or its case type cannot be read.
+	 *
+	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function readInsideRule(string $caseId): bool {
 		if ($caseId === '') {
+			throw new RuntimeException('No case id');
+		}
+
+		[$objectService, $register] = $this->context();
+		$case = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_schema'),
+			id: $caseId,
+		);
+		if ($case === null) {
+			throw new RuntimeException('Case not found');
+		}
+
+		$caseTypeId = trim((string)($case['caseType'] ?? ''));
+		if ($caseTypeId === '') {
 			return false;
 		}
 
-		try {
-			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				id: $caseId,
-			);
-			$caseTypeId = trim((string)($case['caseType'] ?? ''));
-			if ($caseTypeId === '') {
-				return false;
-			}
-
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_type_schema'),
-				id: $caseTypeId,
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq consent: the case type could not be read for the internal-move rule',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
-
-			return false;
+		$caseType = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_type_schema'),
+			id: $caseTypeId,
+		);
+		if ($caseType === null) {
+			throw new RuntimeException('Case type not found');
 		}
 
 		return (($caseType['consentRequiredInsideOrganisation'] ?? false) === true);
-	}//end consentRequiredInside()
+	}//end readInsideRule()
 
 	/**
 	 * The consents recorded for a case that name this receiver.

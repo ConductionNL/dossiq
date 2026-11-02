@@ -152,7 +152,12 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			atDate: ($world['at'] ?? '2026-05-01'),
 		);
 
-		return ['verdict' => $verdict, 'calls' => $calls, 'logs' => $logger->lines];
+		$observed = ['verdict' => $verdict, 'calls' => $calls, 'logs' => $logger->lines];
+		if (($world['askRequired'] ?? false) === true) {
+			$observed['required'] = $gate->consentRequiredInside(caseId: ($world['caseId'] ?? 'case-1'));
+		}
+
+		return $observed;
 	}//end observe()
 
 	/**
@@ -292,4 +297,53 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			$this->assertTrue(condition: $verdict['allowed'], message: var_export($value, true));
 		}
 	}//end testTruthyWithdrawnFormsAreWithdrawn()
+
+	/**
+	 * A move inside one organisation is refused when the case or its case type cannot be read.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableInternalMoveIsRefused(): void {
+		$objects = [
+			'case' => ['case-1' => ['id' => 'case-1', 'caseType' => 'ct-wmo']],
+			'caseType' => ['ct-wmo' => ['id' => 'ct-wmo']],
+		];
+		$inside = ['objects' => $objects, 'receiver' => 'gemeente-delft', 'consents' => []];
+		$worlds = [
+			'case read throws' => ['objects' => ['case' => ['case-1' => 'throw']] + $objects] + $inside,
+			'case missing' => ['caseId' => 'case-404'] + $inside,
+			'case type read throws' => ['objects' => ['caseType' => ['ct-wmo' => 'throw']] + $objects] + $inside,
+			'case type missing' => ['objects' => ['caseType' => []] + $objects] + $inside,
+			'no store' => ['noStore' => true] + $inside,
+			'no register' => ['config' => ['register' => '']] + $inside,
+			'no case schema' => ['config' => ['case_schema' => '']] + $inside,
+			'no case type schema' => ['config' => ['case_type_schema' => '']] + $inside,
+			'empty case id' => ['caseId' => ' '] + $inside,
+		];
+
+		foreach ($worlds as $name => $world) {
+			$observed = $this->observe(world: $world);
+			$this->assertFalse(condition: $observed['verdict']['allowed'], message: $name);
+			$this->assertSame(expected: CaseTransferConsentGate::CONSENT_UNCHECKED, actual: $observed['verdict']['rule'], message: $name);
+			$this->assertSame(
+				expected: 'Consent could not be checked, so the case was not handed on.',
+				actual: $observed['verdict']['sentence'],
+				message: $name
+			);
+			$this->assertFalse(condition: $observed['verdict']['crossesOrganisation'], message: $name);
+			$this->assertSame(expected: 'warning', actual: ($observed['logs'][0][0] ?? null), message: $name);
+		}
+
+		$this->assertTrue(condition: $this->observe(world: ['askRequired' => true] + $worlds['case missing'])['required'], message: 'unreadable is required');
+		$this->assertTrue(
+			condition: $this->observe(world: ['askRequired' => true, 'objects' => ['caseType' => ['ct-wmo' => ['consentRequiredInsideOrganisation' => true]]] + $objects] + $inside)['required'],
+			message: 'the case type demands consent'
+		);
+
+		$readable = $this->observe(world: ['askRequired' => true] + $inside);
+		$this->assertFalse(condition: $readable['required'], message: 'a readable case type without the rule is not required');
+		$this->assertTrue(condition: $readable['verdict']['allowed'], message: 'a readable case type without the rule');
+		$noType = $this->observe(world: ['objects' => ['case' => ['case-1' => ['id' => 'case-1']]] + $objects] + $inside);
+		$this->assertTrue(condition: $noType['verdict']['allowed'], message: 'a case without a case type');
+	}//end testAnUnreadableInternalMoveIsRefused()
 }//end class
