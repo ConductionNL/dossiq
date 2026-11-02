@@ -17,6 +17,7 @@
  *
  * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md
  * @spec openspec/changes/creating-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md
+ * @spec openspec/changes/only-the-advice-transition-sets-the-outcome/specs/bezwaar-advisory-committee/spec.md
  */
 
 declare(strict_types=1);
@@ -29,6 +30,7 @@ use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
 use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
+use OCA\Dossiq\Service\InternalWriteMarker;
 use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
 use OCA\Dossiq\Tests\Support\RefusableRegister;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -50,6 +52,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException
  * @uses \OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker
+ * @uses \OCA\Dossiq\Service\InternalWriteMarker
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  */
 class DeliberationStartGuardTest extends TestCase {
@@ -164,7 +167,8 @@ class DeliberationStartGuardTest extends TestCase {
 		$conflicted = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail(), conflict: 'a.bakker');
 		$edit = $this->writeStatus(service: $conflicted, status: 'in-deliberation');
 		$this->assertNull(actual: $edit, message: 'an edit inside deliberation is not a move into it');
-		$this->assertNull(actual: $this->writeStatus(service: $conflicted, status: 'advice-issued'), message: 'a move out of deliberation is not checked');
+		$issued = $this->internalWrites->runInternal(fn (): ?HookStoppedException => $this->writeStatus(service: $conflicted, status: 'advice-issued'));
+		$this->assertNull(actual: $issued, message: 'the advice transition out of deliberation does not run the panel check');
 		$this->assertSame(expected: [], actual: $this->trail->actionsOn('req-1'));
 	}//end testOnlyAMoveIntoDeliberationIsChecked()
 
@@ -483,7 +487,7 @@ class DeliberationStartGuardTest extends TestCase {
 		$edit = $this->writeRequest(service: $service, changes: ['adviceText' => 'gecorrigeerd']);
 		$this->assertNull(actual: $edit, message: 'an edit after the advice is not a skip');
 		$move = $this->writeStatus(service: $service, status: 'inadmissible');
-		$this->assertNull(actual: $move, message: 'a move between post-deliberation statuses is not a skip');
+		$this->assertSame(expected: DeliberationStartGuard::OUTCOME_ERROR_CODE, actual: $move?->getErrors()['code'], message: 'a raw move between outcomes');
 	}//end testACreateThatSkipsDeliberationIsRefused()
 
 	/**
@@ -546,6 +550,72 @@ class DeliberationStartGuardTest extends TestCase {
 	}//end testTransitionAdviceStatusStillIssuesTheAdvice()
 
 	/**
+	 * A raw write cannot issue the advice: refused, and the request stays in deliberation.
+	 *
+	 * @return void
+	 */
+	public function testARawWriteCannotIssueTheAdvice(): void {
+		$this->seedRequest(row: ['status' => 'in-deliberation', 'panel' => ['a.bakker'], 'conclusion' => 'gegrond', 'recommendation' => 'herroepen']);
+
+		$refusal = $this->writeStatus(service: $this->realAdvisoryService(trail: $this->bezwaarAuditTrail()), status: 'advice-issued');
+
+		$this->assertNotNull(actual: $refusal, message: 'only the advice transition may issue the advice');
+		$this->assertSame(expected: DeliberationStartGuard::OUTCOME_ERROR_CODE, actual: $refusal->getErrors()['code']);
+		$this->assertSame(expected: DeliberationStartGuard::OUTCOME_MESSAGE, actual: $refusal->getMessage());
+		$this->assertSame(expected: 'in-deliberation', actual: $this->store->row('bacAdviceRequest', 'req-1')['status']);
+	}//end testARawWriteCannotIssueTheAdvice()
+
+	/**
+	 * A raw write cannot declare the request inadmissible.
+	 *
+	 * @return void
+	 */
+	public function testARawWriteCannotDeclareTheRequestInadmissible(): void {
+		$this->seedRequest(row: ['status' => 'in-deliberation', 'panel' => ['a.bakker']]);
+
+		$refusal = $this->writeStatus(service: $this->realAdvisoryService(trail: $this->bezwaarAuditTrail()), status: 'inadmissible');
+
+		$this->assertSame(expected: DeliberationStartGuard::OUTCOME_ERROR_CODE, actual: $refusal?->getErrors()['code']);
+		$this->assertSame(expected: 'in-deliberation', actual: $this->store->row('bacAdviceRequest', 'req-1')['status']);
+	}//end testARawWriteCannotDeclareTheRequestInadmissible()
+
+	/**
+	 * An edit after the advice keeps working: a save that stays in advice-issued is not a move into it.
+	 *
+	 * @return void
+	 */
+	public function testAnEditAfterTheAdviceIsSaved(): void {
+		$this->seedRequest(row: ['status' => 'advice-issued', 'panel' => ['a.bakker']]);
+
+		$edit = $this->writeRequest(service: $this->realAdvisoryService(trail: $this->bezwaarAuditTrail()), changes: ['adviceText' => 'gecorrigeerd']);
+
+		$this->assertNull(actual: $edit, message: 'an edit inside advice-issued is unchanged');
+		$this->assertFalse(condition: $this->internalWrites->isInternal(), message: 'the test wrote without the marker');
+	}//end testAnEditAfterTheAdviceIsSaved()
+
+	/**
+	 * The bezwaar registrar shares one write marker between the service and the guard.
+	 *
+	 * @return void
+	 */
+	public function testTheRegistrarSharesOneWriteMarker(): void {
+		$context = $this->createMock(originalClassName: IRegistrationContext::class);
+		$services = [];
+		$context->method('registerService')->willReturnCallback(
+			callback: static function (string $name, \Closure $factory, bool $shared = true) use (&$services): void {
+				$services[$name] = [$factory, $shared];
+			}
+		);
+
+		(new BezwaarListenerRegistrar())->register(context: $context);
+
+		$this->assertArrayHasKey(key: InternalWriteMarker::class, array: $services);
+		[$factory, $shared] = $services[InternalWriteMarker::class];
+		$this->assertTrue(condition: $shared, message: 'the service and the guard must see the same marker');
+		$this->assertInstanceOf(expected: InternalWriteMarker::class, actual: $factory());
+	}//end testTheRegistrarSharesOneWriteMarker()
+
+	/**
 	 * Seed advice request req-1 on objection bezwaar-1.
 	 *
 	 * @param array<string, mixed> $row The request's fields.
@@ -604,6 +674,7 @@ class DeliberationStartGuardTest extends TestCase {
 			adviceDelegation: $this->createMock(originalClassName: AdviceDelegationService::class),
 			auditTrail: $this->bezwaarAuditTrail(),
 			independence: $independence,
+			internalWrites: $this->internalWrites,
 		);
 	}//end advisoryService()
 
@@ -695,6 +766,7 @@ class DeliberationStartGuardTest extends TestCase {
 			settingsService: $this->bezwaarSettings(),
 			advisoryCommittee: $service,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			internalWrites: $this->internalWrites,
 		);
 	}//end guard()
 
