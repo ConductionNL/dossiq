@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps;
 use DateTimeImmutable;
 use OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob;
 use OCA\Dossiq\Exception\RefusedException;
@@ -64,6 +65,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  */
 class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;
@@ -299,9 +301,11 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 			time: $this->createMock(ITimeFactory::class),
 			silence: new SilenceCloseService(
 				store: $store,
-				rules: new LifecycleCaseTypeRules(settingsService: $this->settings()),
-				endings: $endings,
-				journal: new CaseJournal(userSession: $this->backgroundSession()),
+				steps: new SilenceCloseSteps(
+					rules: new LifecycleCaseTypeRules(settingsService: $this->settings()),
+					endings: $endings,
+					journal: new CaseJournal(userSession: $this->backgroundSession()),
+				),
 				dates: $this->caseDates(),
 				logger: new NullLogger(),
 			),

@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Mcp;
 
+use OCA\Dossiq\Service\Mcp\ReportingServices;
 use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
 use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\DoorlooptijdService;
@@ -118,11 +119,13 @@ class ReportingToolsTest extends TestCase {
 			userSession: $this->session,
 			groupManager: $this->groups,
 			audience: new ReportingAudience(groupManager: $this->groups),
-			deadlines: $this->deadlines,
-			leadTimes: $this->leadTimes,
-			kpis: $this->kpis,
+			reports: new ReportingServices(
+				deadlines: $this->deadlines,
+				leadTimes: $this->leadTimes,
+				kpis: $this->kpis,
+				workQueue: $this->workQueue,
+			),
 			widgetScope: $this->widgetScope,
-			workQueue: $this->workQueue,
 		);
 	}//end setUp()
 

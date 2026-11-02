@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Command;
 
+use OCA\Dossiq\Service\Import\RecordImportSteps;
 use OCA\Dossiq\Command\ImportCaseRecordsCommand;
 use OCA\Dossiq\Service\Import\CaseRecordImport;
 use OCA\Dossiq\Service\Import\RecordCaseMapping;
@@ -46,6 +47,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Import\RecordImportReferences
+ * @uses \OCA\Dossiq\Service\Import\RecordImportSteps
  */
 class ImportCaseRecordsCommandTest extends TestCase {
 
@@ -95,9 +97,11 @@ class ImportCaseRecordsCommandTest extends TestCase {
 		$import = new CaseRecordImport(
 			settingsService: $settings,
 			appManager: $apps,
-			mapping: new RecordCaseMapping(dates: $dates),
-			term: new TermCarryOver(terms: $this->createMock(TermijnService::class), timers: $this->createMock(TermijnTimerService::class), dates: $dates),
-			store: new RecordImportStore(settingsService: $settings, mapping: new RecordCaseMapping(dates: $dates), time: $this->createMock(ITimeFactory::class), logger: $this->createMock(LoggerInterface::class)),
+			steps: new RecordImportSteps(
+				mapping: new RecordCaseMapping(dates: $dates),
+				term: new TermCarryOver(terms: $this->createMock(TermijnService::class), timers: $this->createMock(TermijnTimerService::class), dates: $dates),
+				store: new RecordImportStore(settingsService: $settings, mapping: new RecordCaseMapping(dates: $dates), time: $this->createMock(ITimeFactory::class), logger: $this->createMock(LoggerInterface::class)),
+			),
 		);
 
 		return new CommandTester(new ImportCaseRecordsCommand(import: $import));

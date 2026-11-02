@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Import;
 
+use OCA\Dossiq\Service\Import\RecordImportSteps;
 use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
@@ -55,6 +56,7 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Import\RecordImportSteps
  */
 class CaseRecordImportTest extends TestCase {
 
@@ -226,9 +228,11 @@ class CaseRecordImportTest extends TestCase {
 		return new CaseRecordImport(
 			settingsService: $settings,
 			appManager: $apps,
-			mapping: new RecordCaseMapping(dates: $dates),
-			term: new TermCarryOver(terms: $this->terms($store), timers: $this->timers(), dates: $dates),
-			store: new RecordImportStore(settingsService: $settings, mapping: new RecordCaseMapping(dates: $dates), time: $time, logger: $this->createMock(LoggerInterface::class)),
+			steps: new RecordImportSteps(
+				mapping: new RecordCaseMapping(dates: $dates),
+				term: new TermCarryOver(terms: $this->terms($store), timers: $this->timers(), dates: $dates),
+				store: new RecordImportStore(settingsService: $settings, mapping: new RecordCaseMapping(dates: $dates), time: $time, logger: $this->createMock(LoggerInterface::class)),
+			),
 		);
 	}//end import()
 

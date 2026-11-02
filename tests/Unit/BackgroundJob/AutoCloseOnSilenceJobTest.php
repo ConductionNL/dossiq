@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
@@ -44,6 +45,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  */
 class AutoCloseOnSilenceJobTest extends TestCase {
 
@@ -86,9 +88,11 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 
 		return new SilenceCloseService(
 			store: $this->createMock(originalClassName: CaseStatusStore::class),
-			rules: $rules,
-			endings: $this->createMock(originalClassName: CaseEndingActs::class),
-			journal: new CaseJournal(userSession: $session),
+			steps: new SilenceCloseSteps(
+				rules: $rules,
+				endings: $this->createMock(originalClassName: CaseEndingActs::class),
+				journal: new CaseJournal(userSession: $session),
+			),
 			dates: $this->caseDates(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);

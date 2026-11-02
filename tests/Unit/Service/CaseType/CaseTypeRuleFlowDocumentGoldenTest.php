@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeRuleSources;
 use OCA\Dossiq\Service\CaseType\CaseTypeRuleFlowDocument;
 use OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector;
 use OCA\Dossiq\Service\CaseType\RuleConditionLogic;
@@ -44,6 +45,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\CaseType\RuleFlowScope
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector
  * @uses \OCA\Dossiq\Service\CaseType\RuleConditionLogic
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeRuleSources
  */
 class CaseTypeRuleFlowDocumentGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -71,10 +73,12 @@ class CaseTypeRuleFlowDocumentGoldenTest extends TestCase {
 		$projector = new CaseTypeRuleProjector(
 			store: $store,
 			settings: $settings,
-			documents: new CaseTypeRuleFlowDocument(logic: new RuleConditionLogic()),
+			sources: new CaseTypeRuleSources(
+				documents: new CaseTypeRuleFlowDocument(logic: new RuleConditionLogic()),
+				resolver: $resolver,
+			),
 			container: $this->createMock(originalClassName: ContainerInterface::class),
 			logger: new NullLogger(),
-			resolver: $resolver
 		);
 
 		return $projector->plan(caseTypeId: 'ct-1');

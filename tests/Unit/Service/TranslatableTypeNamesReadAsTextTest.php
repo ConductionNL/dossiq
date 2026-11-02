@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\KpiSources;
 use OCA\Dossiq\Service\DemoCaseloadGateway;
 use OCA\Dossiq\Service\DemoCaseloadSeedDataService;
 use OCA\Dossiq\Service\KpiAggregationService;
@@ -45,6 +46,7 @@ use ReflectionMethod;
  * @covers \OCA\Dossiq\Service\KpiAggregationService
  * @covers \OCA\Dossiq\Service\DemoCaseloadSeedDataService
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\KpiSources
  */
 class TranslatableTypeNamesReadAsTextTest extends TestCase {
 
@@ -79,8 +81,10 @@ class TranslatableTypeNamesReadAsTextTest extends TestCase {
 			appConfig: $appConfig,
 			container: $container,
 			appManager: $appManager,
-			engineTasks: $this->createMock(EngineTaskInbox::class),
-			queueFigures: $this->createMock(QueueFigures::class),
+			sources: new KpiSources(
+				engineTasks: $this->createMock(EngineTaskInbox::class),
+				queueFigures: $this->createMock(QueueFigures::class),
+			),
 			l10n: $l10n,
 			logger: $this->createMock(LoggerInterface::class),
 		);
