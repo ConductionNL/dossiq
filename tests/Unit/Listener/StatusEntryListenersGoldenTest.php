@@ -41,6 +41,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Listener\BezwaarAdviceRequestedListener
  * @covers \OCA\Dossiq\Listener\BezwaarHearingScheduledListener
+ * @covers \OCA\Dossiq\Listener\Support\ObjectUpdatePayload
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */

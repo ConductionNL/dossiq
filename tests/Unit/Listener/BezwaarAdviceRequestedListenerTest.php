@@ -34,6 +34,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\BezwaarAdviceRequestedListener
+ * @covers \OCA\Dossiq\Listener\Support\ObjectUpdatePayload
  *
  * @uses \OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
