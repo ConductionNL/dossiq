@@ -256,11 +256,11 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 		foreach ($worlds as $name => $world) {
 			$observed = $this->observe(world: $world);
 			$this->assertSame(
-				['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
-				$observed['verdict'],
-				$name
+				expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+				actual: $observed['verdict'],
+				message: $name
 			);
-			$this->assertSame('error', $observed['logs'][0][0], $name);
+			$this->assertSame(expected: 'error', actual: $observed['logs'][0][0], message: $name);
 		}
 	}//end testAStoreReadThatThrowsRefusesThePanel()
 
@@ -275,9 +275,9 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 		foreach (['objection_schema', 'decision_schema'] as $key) {
 			$observed = $this->observe(world: ['config' => [$key => ''], 'objects' => $objects, 'objections' => [$objection]]);
 			$this->assertSame(
-				['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
-				$observed['verdict'],
-				$key
+				expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+				actual: $observed['verdict'],
+				message: $key
 			);
 		}
 	}//end testMissingSchemasRefuseThePanel()

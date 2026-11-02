@@ -141,22 +141,23 @@ class AdvisoryCommitteeServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnverifiablePanelIsRecordedAndRefused(): void {
+		$reason = 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)';
 		$this->store->seed('bacAdviceRequest', 'req-1', ['bezwaar' => 'bezwaar-1', 'status' => 'assigned', 'panel' => ['member-1']]);
-		$this->independenceVerdict = ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'];
+		$this->independenceVerdict = ['ok' => false, 'member' => null, 'reason' => $reason];
 		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
 
 		try {
 			$service->transitionAdviceStatus(requestId: 'req-1', newStatus: 'in-deliberation');
-			$this->fail('an unverifiable panel must be refused');
+			$this->fail(message: 'an unverifiable panel must be refused');
 		} catch (GuardFailedException $refused) {
-			$this->assertStringStartsWith('Panel independence could not be verified', $refused->getMessage());
+			$this->assertStringStartsWith(prefix: 'Panel independence could not be verified', string: $refused->getMessage());
 		}
 
-		$this->assertSame(['dossiq.bezwaar.independence-check-unverifiable'], $this->trail->actionsOn('req-1'));
+		$this->assertSame(expected: ['dossiq.bezwaar.independence-check-unverifiable'], actual: $this->trail->actionsOn('req-1'));
 		$this->assertSame(
-			['conflictingMember' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
-			$this->rowContext(uuid: 'req-1', action: 'dossiq.bezwaar.independence-check-unverifiable')['payload']
+			expected: ['conflictingMember' => null, 'reason' => $reason],
+			actual: $this->rowContext(uuid: 'req-1', action: 'dossiq.bezwaar.independence-check-unverifiable')['payload']
 		);
-		$this->assertSame('assigned', $this->store->row('bacAdviceRequest', 'req-1')['status']);
+		$this->assertSame(expected: 'assigned', actual: $this->store->row('bacAdviceRequest', 'req-1')['status']);
 	}
 }
