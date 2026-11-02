@@ -252,4 +252,43 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden(name: 'case-transfer-consent-assess', value: $observed);
 	}//end testGoldenAssess()
+
+	/**
+	 * A consent whose start or end date cannot be read does not cover the hand-off.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableDateDoesNotCover(): void {
+		$objects = ['case' => ['case-1' => ['id' => 'case-1', 'caseType' => 'ct-wmo']], 'caseType' => ['ct-wmo' => ['id' => 'ct-wmo']]];
+		foreach (['grantedDate', 'validTo'] as $field) {
+			$verdict = $this->observe(world: ['objects' => $objects, 'consents' => [$this->consent(fields: [$field => 'soon'])]])['verdict'];
+			$this->assertFalse(condition: $verdict['allowed'], message: $field);
+			$this->assertSame(expected: CaseTransferConsentGate::NO_CONSENT, actual: $verdict['rule'], message: $field);
+		}
+
+		$verdict = $this->observe(
+			world: ['objects' => $objects, 'consents' => [$this->consent(fields: ['validTo' => 'later']), $this->consent(fields: ['id' => 'c2'])]]
+		)['verdict'];
+		$this->assertTrue(condition: $verdict['allowed'], message: 'a readable consent after it still covers');
+		$this->assertSame(expected: 'c2', actual: $verdict['consent']['id']);
+	}//end testAnUnreadableDateDoesNotCover()
+
+	/**
+	 * The truthy forms the register can hold mark a consent withdrawn; the falsy forms do not.
+	 *
+	 * @return void
+	 */
+	public function testTruthyWithdrawnFormsAreWithdrawn(): void {
+		$objects = ['case' => ['case-1' => ['id' => 'case-1', 'caseType' => 'ct-wmo']], 'caseType' => ['ct-wmo' => ['id' => 'ct-wmo']]];
+		foreach ([true, 'true', ' TRUE ', 1, '1'] as $value) {
+			$verdict = $this->observe(world: ['objects' => $objects, 'consents' => [$this->consent(fields: ['withdrawn' => $value])]])['verdict'];
+			$this->assertFalse(condition: $verdict['allowed'], message: var_export($value, true));
+			$this->assertSame(expected: CaseTransferConsentGate::CONSENT_WITHDRAWN, actual: $verdict['rule'], message: var_export($value, true));
+		}
+
+		foreach ([false, 'false', 0, '0', '', null] as $value) {
+			$verdict = $this->observe(world: ['objects' => $objects, 'consents' => [$this->consent(fields: ['withdrawn' => $value])]])['verdict'];
+			$this->assertTrue(condition: $verdict['allowed'], message: var_export($value, true));
+		}
+	}//end testTruthyWithdrawnFormsAreWithdrawn()
 }//end class
