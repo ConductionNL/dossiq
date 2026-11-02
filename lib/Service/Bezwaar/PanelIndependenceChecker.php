@@ -108,38 +108,45 @@ class PanelIndependenceChecker {
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
 	public function check(string $objectionId, array $panel): array {
-		$clear = [
-			'ok' => true,
-			'member' => null,
-			'reason' => null,
-		];
-
 		if ($objectionId === '' || $panel === []) {
-			return $clear;
+			return $this->verdictFor(conflicting: null);
 		}
-
-		$unverifiable = [
-			'ok' => false,
-			'member' => null,
-			'reason' => self::UNVERIFIABLE_REASON,
-		];
 
 		$lookup = $this->lookupFor(objectionId: $objectionId);
-		if ($lookup === false) {
-			return $unverifiable;
+		if (is_array($lookup) === false) {
+			return $this->verdictFor(conflicting: $lookup);
 		}
 
-		if ($lookup === null) {
-			return $clear;
-		}
+		return $this->verdictFor(
+			conflicting: $this->conflictingMember(lookup: $lookup, panel: $panel)
+		);
+	}//end check()
 
-		$conflicting = $this->conflictingMember(lookup: $lookup, panel: $panel);
+	/**
+	 * The verdict for the outcome of the check.
+	 *
+	 * @param string|false|null $conflicting The conflicting member UID, null when the panel is clear, false when
+	 *                                       independence could not be verified.
+	 *
+	 * @return array{ok: bool, member: ?string, reason: ?string} The verdict.
+	 *
+	 * @spec openspec/changes/an-unverifiable-panel-does-not-start-deliberating/specs/bezwaar-advisory-committee/spec.md
+	 */
+	private function verdictFor(string|false|null $conflicting): array {
 		if ($conflicting === false) {
-			return $unverifiable;
+			return [
+				'ok' => false,
+				'member' => null,
+				'reason' => self::UNVERIFIABLE_REASON,
+			];
 		}
 
 		if ($conflicting === null) {
-			return $clear;
+			return [
+				'ok' => true,
+				'member' => null,
+				'reason' => null,
+			];
 		}
 
 		return [
@@ -148,7 +155,7 @@ class PanelIndependenceChecker {
 			'reason' => 'Lid was betrokken bij het bestreden '
 						. 'besluit (Awb Art. 7:13 lid 3)',
 		];
-	}//end check()
+	}//end verdictFor()
 
 	/**
 	 * The object service and the configured register and schemas for one objection.
