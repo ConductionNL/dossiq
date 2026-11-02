@@ -503,6 +503,28 @@ class DeliberationStartGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testTransitionAdviceStatusStillIssuesTheAdvice(): void {
+		$this->assertTheTransitionIssuesTheAdvice(requestId: 'req-1');
+	}//end testTransitionAdviceStatusStillIssuesTheAdvice()
+
+	/**
+	 * The transition called with a slug the store resolves is still marked: the marker is keyed on the stored id.
+	 *
+	 * @return void
+	 */
+	public function testTheTransitionByAnotherIdFormIsStillMarked(): void {
+		$this->assertTheTransitionIssuesTheAdvice(requestId: 'bacadvicerequest-req-1');
+	}//end testTheTransitionByAnotherIdFormIsStillMarked()
+
+	/**
+	 * Issue req-1's advice through transitionAdviceStatus(), with every save passing the guard first.
+	 *
+	 * The store resolves `bacadvicerequest-req-1` to req-1, as OpenRegister's find() resolves a slug.
+	 *
+	 * @param string $requestId The id form the caller uses.
+	 *
+	 * @return void
+	 */
+	private function assertTheTransitionIssuesTheAdvice(string $requestId): void {
 		$guarded = new class() extends RefusableRegister {
 			/**
 			 * Runs before each save with the row as stored and as it will be saved.
@@ -510,6 +532,41 @@ class DeliberationStartGuardTest extends TestCase {
 			 * @var \Closure|null
 			 */
 			public ?\Closure $beforeSave = null;
+
+			/**
+			 * Find one row by its uuid or by its slug.
+			 *
+			 * @param int|string $id            The uuid or the slug.
+			 * @param mixed      $_extend       Ignored.
+			 * @param bool       $files         Ignored.
+			 * @param int|string $register      Ignored.
+			 * @param int|string $schema        The schema.
+			 * @param bool       $_rbac         Passed on.
+			 * @param bool       $_multitenancy Passed on.
+			 *
+			 * @return array<string, mixed>|null The row.
+			 */
+			public function find(
+				int|string $id,
+				mixed $_extend = null,
+				bool $files = false,
+				int|string $register = '',
+				int|string $schema = '',
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): ?array {
+				$uuid = ['bacadvicerequest-req-1' => 'req-1'][(string) $id] ?? $id;
+
+				return parent::find(
+					id: $uuid,
+					_extend: $_extend,
+					files: $files,
+					register: $register,
+					schema: $schema,
+					_rbac: $_rbac,
+					_multitenancy: $_multitenancy
+				);
+			}
 
 			/**
 			 * Save one row after the pre-save hook.
@@ -550,11 +607,12 @@ class DeliberationStartGuardTest extends TestCase {
 		};
 
 		$advice = ['conclusion' => 'gegrond', 'recommendation' => 'herroepen'];
-		$service->transitionAdviceStatus(requestId: 'req-1', newStatus: 'advice-issued', payload: $advice);
+		$service->transitionAdviceStatus(requestId: $requestId, newStatus: 'advice-issued', payload: $advice);
 
 		$this->assertSame(expected: 1, actual: $saves);
 		$this->assertSame(expected: 'advice-issued', actual: $this->store->row('bacAdviceRequest', 'req-1')['status']);
-	}//end testTransitionAdviceStatusStillIssuesTheAdvice()
+		$this->assertSame(expected: [], actual: $this->store->row('bacAdviceRequest', 'bacadvicerequest-req-1'), message: 'no second row under the slug');
+	}//end assertTheTransitionIssuesTheAdvice()
 
 	/**
 	 * A raw write cannot issue the advice: refused, and the request stays in deliberation.

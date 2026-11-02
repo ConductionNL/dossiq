@@ -68,16 +68,22 @@
     },
     "no store": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
                 "getObjectService"
             ]
         ],
-        "logs": []
+        "logs": [
+            [
+                "warning",
+                "Dossiq BAC: no object store; panel independence cannot be verified",
+                []
+            ]
+        ]
     },
     "no objection schema": {
         "verdict": {
