@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use OCA\Dossiq\Service\CaseLifecycleService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
@@ -37,6 +38,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\CaseLifecycleService
  * @covers \OCA\Dossiq\Service\DeadlinePauseService
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices
  */
 class CaseLifecycleSuspendPauseReasonTest extends TestCase {
 
@@ -79,9 +81,11 @@ class CaseLifecycleSuspendPauseReasonTest extends TestCase {
 		return new CaseLifecycleService(
 			store: $store,
 			caseTypes: $caseTypes,
-			termService: $termService,
-			pauseService: $pauseService,
-			extensionService: $this->createMock(DeadlineExtensionService::class),
+			deadlines: new CaseDeadlineServices(
+				termService: $termService,
+				pauseService: $pauseService,
+				extensionService: $this->createMock(DeadlineExtensionService::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);

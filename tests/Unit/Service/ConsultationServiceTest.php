@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Consultation\ConsultationRecords;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
 use OCA\Dossiq\Service\Consultation\ConsultationRepository;
@@ -108,6 +109,7 @@ interface ConsultationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  * @uses   \OCA\Dossiq\Service\Obligations\ObligationDeclaration
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationRecords
  */
 class ConsultationServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -159,20 +161,22 @@ class ConsultationServiceTest extends TestCase {
 			settingsService: $this->settings,
 			logger: $this->logger,
 			adviceDelegation: $this->adviceDelegation,
-			repository: $repository,
-			dependencyGraph: new ConsultationDependencyGraph($repository),
-			dates: $this->caseDates(),
-			// A REAL ObligationService over the same mocked SettingsService,
-			// not a double. Every assertion in this file is about behaviour
-			// the advice request keeps now that the blocking is one declared
-			// mechanism, and a double would let that behaviour be asserted
-			// against a stub of itself.
-			obligations: new ObligationService(
-				settingsService: $this->settings,
-				declaration: new ObligationDeclaration(),
-				dates: $this->caseDates(),
-				logger: $this->logger,
+			records: new ConsultationRecords(
+				repository: $repository,
+				dependencyGraph: new ConsultationDependencyGraph($repository),
+				// A REAL ObligationService over the same mocked SettingsService,
+				// not a double. Every assertion in this file is about behaviour
+				// the advice request keeps now that the blocking is one declared
+				// mechanism, and a double would let that behaviour be asserted
+				// against a stub of itself.
+				obligations: new ObligationService(
+					settingsService: $this->settings,
+					declaration: new ObligationDeclaration(),
+					dates: $this->caseDates(),
+					logger: $this->logger,
+				),
 			),
+			dates: $this->caseDates(),
 		);
 
 	}//end setUp()

@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\Lifecycle\CaseActSources;
 use OCA\Dossiq\Controller\CaseActsController;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -57,6 +58,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseActs
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseActsMenu
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseActsOverview
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseActSources
  */
 class CaseActsControllerContractTest extends TestCase {
 
@@ -172,10 +174,12 @@ class CaseActsControllerContractTest extends TestCase {
 	private function overview(): CaseActsOverview {
 		return new CaseActsOverview(
 			store: $this->store,
-			menu: new CaseActsMenu(gate: $this->gate),
-			endings: $this->endings,
-			holds: $this->holds,
-			drafts: $this->drafts,
+			acts: new CaseActSources(
+				menu: new CaseActsMenu(gate: $this->gate),
+				endings: $this->endings,
+				holds: $this->holds,
+				drafts: $this->drafts,
+			),
 			incompleteness: $this->incompleteness,
 			processStatus: $this->processStatus,
 		);

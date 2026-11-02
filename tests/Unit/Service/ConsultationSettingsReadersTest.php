@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Consultation\ConsultationRecords;
 use DateTimeImmutable;
 use OCA\Dossiq\Controller\ConsultationReportController;
 use OCA\Dossiq\Service\AdviceDelegationService;
@@ -133,10 +134,12 @@ class ConsultationSettingsReadersTest extends TestCase {
 			settingsService: $settings,
 			logger: $logger,
 			adviceDelegation: $delegation,
-			repository: $repository,
-			dependencyGraph: new ConsultationDependencyGraph($repository),
+			records: new ConsultationRecords(
+				repository: $repository,
+				dependencyGraph: new ConsultationDependencyGraph($repository),
+				obligations: new ObligationService(settingsService: $settings, declaration: new ObligationDeclaration(), dates: $this->caseDates(), logger: $logger),
+			),
 			dates: $this->caseDates(),
-			obligations: new ObligationService(settingsService: $settings, declaration: new ObligationDeclaration(), dates: $this->caseDates(), logger: $logger),
 			terms: new ConsultationTerms(settingsService: $settings, today: new DateTimeImmutable('2026-10-24')),
 		);
 	}//end service()

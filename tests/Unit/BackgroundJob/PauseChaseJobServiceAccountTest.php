@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\Pause\PauseChaseSources;
 use DateTimeImmutable;
 use OCA\Dossiq\BackgroundJob\PauseChaseJob;
 use OCA\Dossiq\Notification\Notifier;
@@ -76,6 +77,7 @@ use Stringable;
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Pause\PauseChaseSources
  */
 class PauseChaseJobServiceAccountTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -329,9 +331,11 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 
 		$chases = new PauseChaseService(
 			termService: new TermijnService(settingsService: $settings, logger: new NullLogger()),
-			reasons: $reasons,
-			schedule: new ChaseSchedule(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
-			notifications: $notifications,
+			chase: new PauseChaseSources(
+				reasons: $reasons,
+				schedule: new ChaseSchedule(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
+				notifications: $notifications,
+			),
 			timeline: $this->createMock(CaseTimeline::class),
 			settings: $settings,
 			logger: new NullLogger(),

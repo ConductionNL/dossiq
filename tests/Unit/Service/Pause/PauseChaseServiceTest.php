@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Pause;
 
+use OCA\Dossiq\Service\Pause\PauseChaseSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
@@ -48,6 +49,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
+ * @uses \OCA\Dossiq\Service\Pause\PauseChaseSources
  */
 class PauseChaseServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -142,12 +144,14 @@ class PauseChaseServiceTest extends TestCase {
 	private function service(): PauseChaseService {
 		return new PauseChaseService(
 			termService: $this->termService,
-			reasons: $this->reasons,
-			schedule: new ChaseSchedule(
-				calendar: new WorkingDayCalculator(),
-				dates: $this->caseDates(),
+			chase: new PauseChaseSources(
+				reasons: $this->reasons,
+				schedule: new ChaseSchedule(
+					calendar: new WorkingDayCalculator(),
+					dates: $this->caseDates(),
+				),
+				notifications: $this->notifications,
 			),
-			notifications: $this->notifications,
 			timeline: $this->timeline,
 			settings: $this->createMock(SettingsService::class),
 			logger: new NullLogger(),

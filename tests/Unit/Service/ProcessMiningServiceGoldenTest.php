@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
@@ -52,6 +53,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\ProcessMining\PhaseSummary
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Status\StatusDwellService
+ * @uses \OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers
  */
 class ProcessMiningServiceGoldenTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -90,9 +92,11 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 		$held = new StatusDwellService(calendar: $this->createMock(originalClassName: WorkingDayCalculator::class), dates: $dates);
 		$service = new ProcessMiningService(
 			dataLoader: new ProcessMiningDataLoader(settingsService: $settings),
-			dwellTimeAnalyzer: new DwellTimeAnalyzer(dates: $dates, held: $held),
-			transitionBuilder: new TransitionMatrixBuilder(),
-			throughputCalculator: new ThroughputTrendCalculator(dates: $dates),
+			analysers: new ProcessMiningAnalysers(
+				dwellTimeAnalyzer: new DwellTimeAnalyzer(dates: $dates, held: $held),
+				transitionBuilder: new TransitionMatrixBuilder(),
+				throughputCalculator: new ThroughputTrendCalculator(dates: $dates),
+			),
 			dates: $dates,
 		);
 
@@ -220,9 +224,11 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 		$dates = $this->caseDatesFrozenAt();
 		$service = new ProcessMiningService(
 			dataLoader: $loader,
-			dwellTimeAnalyzer: new DwellTimeAnalyzer(dates: $dates),
-			transitionBuilder: new TransitionMatrixBuilder(),
-			throughputCalculator: new ThroughputTrendCalculator(dates: $dates),
+			analysers: new ProcessMiningAnalysers(
+				dwellTimeAnalyzer: new DwellTimeAnalyzer(dates: $dates),
+				transitionBuilder: new TransitionMatrixBuilder(),
+				throughputCalculator: new ThroughputTrendCalculator(dates: $dates),
+			),
 			dates: $dates,
 		);
 		$report = $service->getReport(params: ['from' => '2026-01-01', 'to' => '2026-12-31']);
