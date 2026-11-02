@@ -81,9 +81,9 @@
     },
     "no objection schema": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -108,17 +108,17 @@
         ],
         "logs": [
             [
-                "info",
-                "Dossiq BAC: objection/decision schemas not configured; skipping independence check",
+                "warning",
+                "Dossiq BAC: objection/decision schemas not configured; panel independence cannot be verified",
                 []
             ]
         ]
     },
     "no decision schema": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -143,8 +143,8 @@
         ],
         "logs": [
             [
-                "info",
-                "Dossiq BAC: objection/decision schemas not configured; skipping independence check",
+                "warning",
+                "Dossiq BAC: objection/decision schemas not configured; panel independence cannot be verified",
                 []
             ]
         ]
@@ -341,9 +341,9 @@
     },
     "legacy lookup throws": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -474,9 +474,9 @@
     },
     "objection search throws": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -658,9 +658,9 @@
     },
     "decision lookup throws": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [

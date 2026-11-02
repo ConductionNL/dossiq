@@ -554,7 +554,7 @@ class AdvisoryCommitteeService {
 	 * @return void
 	 *
 	 * @throws RuntimeException When no panel has been set
-	 * @throws GuardFailedException When a panel member is not independent
+	 * @throws GuardFailedException When a panel member is not independent, or independence cannot be verified
 	 */
 	private function guardDeliberationStart(
 		array $current,
@@ -578,13 +578,21 @@ class AdvisoryCommitteeService {
 			return;
 		}
 
+		// A refusal without a member means independence could not be verified.
+		$event = 'independence-check-failed';
+		$message = 'Panel member conflict (Awb Art. 7:13 lid 3): ';
+		if ($independence['member'] === null) {
+			$event = 'independence-check-unverifiable';
+			$message = 'Panel independence could not be verified (Awb Art. 7:13 lid 3): ';
+		}
+
 		// Recorded before raising, and refused whether or not the entry is
 		// written; an unwritten entry goes to the error log in full.
 		$this->auditTrail->recordRefusal(
 			register: $register,
 			schema: $requestSchema,
 			objectUuid: $requestId,
-			event: 'independence-check-failed',
+			event: $event,
 			payload: [
 				'conflictingMember' => $independence['member'],
 				'reason' => $independence['reason'],
@@ -593,8 +601,7 @@ class AdvisoryCommitteeService {
 
 		throw new GuardFailedException(
 			failedGuards: [],
-			message: 'Panel member conflict (Awb Art. 7:13 lid 3): '
-			. $independence['reason']
+			message: $message . $independence['reason']
 		);
 	}//end guardDeliberationStart()
 

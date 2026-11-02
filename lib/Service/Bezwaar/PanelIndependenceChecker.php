@@ -15,9 +15,9 @@
  *   (dossiq case) -> objection (filed on that case) ->
  *   objection.contestedDecision -> decision owner / createdBy / steller.
  *
- * The check FAILS OPEN on infrastructure errors by design: a missing
- * schema or an OpenRegister hiccup must not block a committee from
- * deliberating. Every fail-open path is logged.
+ * A panel whose independence cannot be verified is refused: a missing
+ * objection or decision schema, or a store read that throws, answers the
+ * same refusal without a conflicting member, and is logged.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Bezwaar
@@ -72,6 +72,12 @@ class PanelIndependenceChecker {
 	use SearchesObjects;
 
 	/**
+	 * The refusal reason when the check could not run.
+	 */
+	private const UNVERIFIABLE_REASON = 'Onafhankelijkheid van het panel kon niet '
+		. 'worden vastgesteld (Awb Art. 7:13 lid 3)';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge.
@@ -94,7 +100,10 @@ class PanelIndependenceChecker {
 	 * @param string $objectionId The bezwaar (lifecycle) UUID.
 	 * @param array<string> $panel Panel member UIDs.
 	 *
-	 * @return array{ok: bool, member: ?string, reason: ?string} The verdict.
+	 * @return array{ok: bool, member: ?string, reason: ?string} The verdict; a refusal
+	 *                                                          without a member means
+	 *                                                          independence could not
+	 *                                                          be verified.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
@@ -109,12 +118,26 @@ class PanelIndependenceChecker {
 			return $clear;
 		}
 
+		$unverifiable = [
+			'ok' => false,
+			'member' => null,
+			'reason' => self::UNVERIFIABLE_REASON,
+		];
+
 		$lookup = $this->lookupFor(objectionId: $objectionId);
+		if ($lookup === false) {
+			return $unverifiable;
+		}
+
 		if ($lookup === null) {
 			return $clear;
 		}
 
 		$conflicting = $this->conflictingMember(lookup: $lookup, panel: $panel);
+		if ($conflicting === false) {
+			return $unverifiable;
+		}
+
 		if ($conflicting === null) {
 			return $clear;
 		}
@@ -132,11 +155,11 @@ class PanelIndependenceChecker {
 	 *
 	 * @param string $objectionId The bezwaar (lifecycle) UUID.
 	 *
-	 * @return Lookup|null The lookup, or null when the store or the schemas are not configured.
+	 * @return Lookup|false|null The lookup, null when there is no store, false when the schemas are not configured.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function lookupFor(string $objectionId): ?array {
+	private function lookupFor(string $objectionId): array|false|null {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -148,12 +171,11 @@ class PanelIndependenceChecker {
 		$decisionSchema = $this->settingsService->getConfigValue(key: 'decision_schema');
 
 		if (in_array('', [$objectionSchema, $decisionSchema], true) === true) {
-			// Unable to resolve; do not block the transition, but log.
-			$this->logger->info(
+			$this->logger->warning(
 				'Dossiq BAC: objection/decision schemas not configured; '
-				. 'skipping independence check'
+				. 'panel independence cannot be verified'
 			);
-			return null;
+			return false;
 		}
 
 		return [
@@ -172,11 +194,11 @@ class PanelIndependenceChecker {
 	 * @param Lookup        $lookup The store and schemas for the objection.
 	 * @param array<string> $panel  Panel member UIDs.
 	 *
-	 * @return string|null The conflicting member UID, or null when none conflicts or the check could not run.
+	 * @return string|false|null The conflicting member UID, null when none conflicts, false when a store read threw.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function conflictingMember(array $lookup, array $panel): ?string {
+	private function conflictingMember(array $lookup, array $panel): string|false|null {
 		try {
 			$author = $this->resolveContestedDecisionAuthor(lookup: $lookup);
 			if ($author === '') {
@@ -191,8 +213,7 @@ class PanelIndependenceChecker {
 			$this->logger->error(
 				'Dossiq BAC: independence check error: ' . $e->getMessage()
 			);
-			// Fail-open here is intentional: do not block on infra issues.
-			return null;
+			return false;
 		}//end try
 	}//end conflictingMember()
 
