@@ -34,6 +34,7 @@ use RuntimeException;
  * Golden test for CaseTransferConsentGate::assess(): the verdict, every store and settings call, and the logs.
  *
  * @covers \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
+ * @uses   \OCA\Dossiq\Service\Custody\ConsentStanding
  */
 class CaseTransferConsentGateGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -216,7 +217,7 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			'until trimmed' => ['consents' => [$this->consent(fields: ['validTo' => ' 2026-12-31 '])]] + $base,
 			'lapsed' => ['consents' => [$this->consent(fields: ['validTo' => '2026-04-01'])]] + $base,
 			'withdrawn' => ['consents' => [$this->consent(fields: ['withdrawn' => true])]] + $base,
-			'withdrawn as a string is not withdrawn' => ['consents' => [$this->consent(fields: ['withdrawn' => 'true'])]] + $base,
+			'withdrawn as a string is withdrawn' => ['consents' => [$this->consent(fields: ['withdrawn' => 'true'])]] + $base,
 			'lapsed and withdrawn' => [
 				'consents' => [$this->consent(fields: ['withdrawn' => true]), $this->consent(fields: ['id' => 'c2', 'validTo' => '2026-03-01'])],
 			] + $base,
@@ -226,7 +227,7 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			'not yet granted' => ['consents' => [$this->consent(fields: ['grantedDate' => '2026-06-01'])]] + $base,
 			'granted on the day' => ['at' => '2026-01-10', 'consents' => [$this->consent()]] + $base,
 			'ends on the day' => ['at' => '2026-12-31', 'consents' => [$this->consent()]] + $base,
-			'unreadable dates cover' => ['consents' => [$this->consent(fields: ['grantedDate' => 'soon', 'validTo' => 'later'])]] + $base,
+			'unreadable dates do not cover' => ['consents' => [$this->consent(fields: ['grantedDate' => 'soon', 'validTo' => 'later'])]] + $base,
 			'no dates cover' => ['consents' => [$this->consent(fields: ['grantedDate' => '', 'validTo' => ''])]] + $base,
 			'first covering consent wins' => [
 				'consents' => [

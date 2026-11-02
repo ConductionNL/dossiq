@@ -84,6 +84,13 @@ class CaseTransferConsentGate {
 	public const PAGE_SIZE = 100;
 
 	/**
+	 * Where each recorded consent stands.
+	 *
+	 * @var ConsentStanding
+	 */
+	private readonly ConsentStanding $standings;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
@@ -95,6 +102,7 @@ class CaseTransferConsentGate {
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->standings = new ConsentStanding();
 	}//end __construct()
 
 	/**
@@ -212,27 +220,23 @@ class CaseTransferConsentGate {
 		$withdrawn = false;
 
 		foreach ($candidates as $consent) {
-			if (($consent['withdrawn'] ?? false) === true) {
+			$standing = $this->standings->standingOf(consent: $consent, moment: $moment);
+			if ($standing === ConsentStanding::COVERS) {
+				return ['covering' => $consent, 'lapsedOn' => $lapsedOn, 'withdrawn' => $withdrawn];
+			}
+
+			if ($standing === ConsentStanding::WITHDRAWN) {
 				$withdrawn = true;
-				continue;
 			}
 
-			$grantedOn = $this->instant(value: (string)($consent['grantedDate'] ?? ''));
-			if ($grantedOn !== null && $grantedOn > $moment) {
-				continue;
-			}
-
-			$expiresOn = $this->instant(value: (string)($consent['validTo'] ?? ''));
-			if ($expiresOn !== null && $expiresOn < $moment) {
+			if ($standing === ConsentStanding::LAPSED) {
 				$lapsedOn = (string)$consent['validTo'];
-				continue;
 			}
-
-			return ['covering' => $consent, 'lapsedOn' => $lapsedOn, 'withdrawn' => $withdrawn];
 		}
 
 		return ['covering' => null, 'lapsedOn' => $lapsedOn, 'withdrawn' => $withdrawn];
 	}//end scanConsents()
+
 
 	/**
 	 * Whether the hand-off leaves the organisation.
@@ -428,16 +432,12 @@ class CaseTransferConsentGate {
 	 * @return DateTimeImmutable|null The moment.
 	 */
 	private function instant(string $value): ?DateTimeImmutable {
-		$value = trim($value);
-		if ($value === '') {
+		$date = $this->standings->dateOf(value: $value);
+		if ($date === false) {
 			return null;
 		}
 
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return null;
-		}
+		return $date;
 	}//end instant()
 
 	/**

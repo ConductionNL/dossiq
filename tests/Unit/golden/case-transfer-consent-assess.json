@@ -937,32 +937,14 @@
         ],
         "logs": []
     },
-    "withdrawn as a string is not withdrawn": {
+    "withdrawn as a string is withdrawn": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
-            "consent": {
-                "withdrawn": "true",
-                "id": "consent-1",
-                "caseId": "case-1",
-                "grantedDate": "2026-01-10",
-                "validTo": "2026-12-31",
-                "recipientParties": [
-                    "zorgpartner-bv"
-                ],
-                "tegegevens": [
-                    "ondersteuningsplan",
-                    " ",
-                    "beschikking "
-                ],
-                "scope": "Alleen het ondersteuningsplan"
-            },
-            "scope": [
-                "ondersteuningsplan",
-                "beschikking"
-            ],
-            "until": "2026-12-31",
+            "allowed": false,
+            "rule": "consent-withdrawn",
+            "sentence": "The consent for zorgpartner-bv was withdrawn, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
             "crossesOrganisation": true
         },
         "calls": [
@@ -1195,32 +1177,14 @@
         ],
         "logs": []
     },
-    "unreadable dates cover": {
+    "unreadable dates do not cover": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
-            "consent": {
-                "grantedDate": "soon",
-                "validTo": "later",
-                "id": "consent-1",
-                "caseId": "case-1",
-                "withdrawn": false,
-                "recipientParties": [
-                    "zorgpartner-bv"
-                ],
-                "tegegevens": [
-                    "ondersteuningsplan",
-                    " ",
-                    "beschikking "
-                ],
-                "scope": "Alleen het ondersteuningsplan"
-            },
-            "scope": [
-                "ondersteuningsplan",
-                "beschikking"
-            ],
-            "until": "later",
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for zorgpartner-bv covering today, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
             "crossesOrganisation": true
         },
         "calls": [
