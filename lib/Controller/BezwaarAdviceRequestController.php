@@ -103,10 +103,7 @@ class BezwaarAdviceRequestController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$uid = $user->getUID();
-		if ($this->groupManager->isInGroup($uid, self::COMMITTEE_GROUP) === false
-			&& $this->groupManager->isAdmin($uid) === false
-		) {
+		if ($this->mayMove(uid: $user->getUID()) === false) {
 			return new JSONResponse(['error' => 'Only the advisory committee can move an advice request'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -117,6 +114,18 @@ class BezwaarAdviceRequestController extends Controller {
 
 		return $this->run(requestId: $id, move: ['status' => $status] + $this->adviceFields());
 	}//end transition()
+
+	/**
+	 * Whether this user may move advice requests: a member of the committee, or an administrator.
+	 *
+	 * @param string $uid The session user's id.
+	 *
+	 * @return bool
+	 */
+	private function mayMove(string $uid): bool {
+		return $this->groupManager->isInGroup($uid, self::COMMITTEE_GROUP) === true
+			|| $this->groupManager->isAdmin($uid) === true;
+	}//end mayMove()
 
 	/**
 	 * Run the transition and answer its outcome.
