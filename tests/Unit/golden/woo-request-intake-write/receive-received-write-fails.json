@@ -1,0 +1,51 @@
+{
+    "calls": [
+        {
+            "currentCaseType": {
+                "register": "dossiq",
+                "caseTypeId": "3c0f5a00-0000-4000-a000-00000000a001"
+            }
+        },
+        {
+            "write": {
+                "register": "dossiq",
+                "case": {
+                    "title": "Notulen",
+                    "description": "Raad 2025",
+                    "caseType": "type-1",
+                    "intakeChannel": "website",
+                    "receivedAt": "2026-10-01T09:00:00+02:00",
+                    "wooRequest": {
+                        "onderwerp": "Notulen",
+                        "omschrijving": "Raad 2025",
+                        "origin": "portal-form",
+                        "originReference": "",
+                        "collectionId": "",
+                        "verzoekerNaam": "Cees"
+                    },
+                    "properties": [
+                        {
+                            "propertyDefinition": "definition-1",
+                            "name": "verzoekerNaam",
+                            "value": "Cees"
+                        }
+                    ],
+                    "initiatorDisplayName": "Cees",
+                    "status": "status-ontvangst"
+                },
+                "caseType": {
+                    "id": "type-1",
+                    "initialStatus": "status-ontvangst"
+                }
+            }
+        }
+    ],
+    "answer": {
+        "outcome": "unavailable",
+        "requestId": "",
+        "reference": "",
+        "dueAt": "",
+        "message": "The case could not be written.",
+        "caseUrl": ""
+    }
+}
