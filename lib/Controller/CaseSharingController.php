@@ -298,9 +298,10 @@ class CaseSharingController extends Controller {
 
 		// Partner-organisation handover revoke (zaak-domain, in-app object).
 		// C2: Resolve the share's caseId, then verify the caller has access to that case.
+		// A share whose case cannot be resolved is refused like one without access.
 		$caseId = $this->caseSharingService->getCaseIdForShare($shareId);
-		if ($caseId !== null
-			&& $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false
+		if ($caseId === null
+			|| $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false
 		) {
 			return new JSONResponse(
 				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
@@ -395,8 +396,9 @@ class CaseSharingController extends Controller {
 		// already had. Previously this endpoint had NO authorization check
 		// at all: any authenticated user could accept/reject any transfer
 		// by UUID.
+		// A transfer whose case cannot be resolved is refused like one without access.
 		$caseId = $this->caseTransferService->getCaseIdForTransfer($transferId);
-		if ($caseId !== null && $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
+		if ($caseId === null || $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
 			return new JSONResponse(
 				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
 				Http::STATUS_FORBIDDEN
@@ -406,10 +408,11 @@ class CaseSharingController extends Controller {
 		$action = $this->request->getParam('action');
 
 		$result = match ($action) {
-			'accept' => $this->caseTransferService->acceptTransfer($transferId),
+			'accept' => $this->caseTransferService->acceptTransfer(transferId: $transferId, actingUser: $user->getUID()),
 			'reject' => $this->caseTransferService->rejectTransfer(
-				$transferId,
-				$this->request->getParam('reason', '')
+				transferId: $transferId,
+				rejectionReason: $this->request->getParam('reason', ''),
+				actingUser: $user->getUID(),
 			),
 			default => null,
 		};

@@ -66,10 +66,11 @@ class CaseTransferServiceGoldenTest extends TestCase {
 		$pending = ['id' => 't-1', 'caseId' => 'case-1', 'targetOrganization' => 'org-b', 'reason' => 'moving', 'initiatedBy' => 'bob', 'status' => 'pending', 'custodyAuditTrail' => $trail];
 		$with = static fn (array $fields): array => ['find' => ['t-1' => $fields + $pending]];
 		$found = $with([]);
-		$accept = ['transferId' => 't-1'];
-		$acceptRemote = $accept + ['remoteCloudId' => 'partner@remote.example'];
-		$reject = ['transferId' => 't-1', 'rejectionReason' => 'not ours'];
-		$rejectRemote = $reject + ['remoteCloudId' => 'partner@remote.example'];
+		$byId = ['transferId' => 't-1'];
+		$accept = ['transferId' => 't-1', 'actingUser' => 'carol'];
+		$acceptRemote = ['transferId' => 't-1', 'remoteCloudId' => 'partner@remote.example'];
+		$reject = ['transferId' => 't-1', 'rejectionReason' => 'not ours', 'actingUser' => 'carol'];
+		$rejectRemote = ['transferId' => 't-1', 'rejectionReason' => 'not ours', 'remoteCloudId' => 'partner@remote.example'];
 
 		return [
 			'initiate / local' => ['initiateTransfer', $initiate, []],
@@ -91,6 +92,8 @@ class CaseTransferServiceGoldenTest extends TestCase {
 			'accept / no status' => ['acceptTransfer', $accept, ['find' => ['t-1' => ['id' => 't-1']]]],
 			'accept / local' => ['acceptTransfer', $accept, $found],
 			'accept / remote' => ['acceptTransfer', $acceptRemote, $found],
+			'accept / local, no acting user' => ['acceptTransfer', $byId, $found],
+			'accept / remote, acting user ignored' => ['acceptTransfer', $acceptRemote + ['actingUser' => 'carol'], $found],
 			'accept / custody refuses' => ['acceptTransfer', $accept, $found + ['custodyRefuses' => true]],
 			'accept / remote, custody refuses' => ['acceptTransfer', $acceptRemote, $found + ['custodyRefuses' => true]],
 			'accept / save answers an array' => ['acceptTransfer', $accept, $found + ['saveAs' => 'array']],
@@ -99,20 +102,21 @@ class CaseTransferServiceGoldenTest extends TestCase {
 			'accept / other scope' => ['acceptTransfer', $accept, $found + ['scope' => [11, 13]]],
 			'reject / local' => ['rejectTransfer', $reject, $found],
 			'reject / remote' => ['rejectTransfer', $rejectRemote, $found],
+			'reject / local, no acting user' => ['rejectTransfer', ['transferId' => 't-1', 'rejectionReason' => 'not ours'], $found],
 			'reject / custody would refuse' => ['rejectTransfer', $reject, $found + ['custodyRefuses' => true]],
 			'reject / already rejected' => ['rejectTransfer', $reject, $with(['status' => 'rejected'])],
 			'reject / after an accept' => ['rejectTransfer', $reject, $with(['status' => 'accepted'])],
 			'reject / not found' => ['rejectTransfer', $reject, []],
 			'reject / no object service' => ['rejectTransfer', $reject, ['noObjectService' => true]],
-			'case id / found' => ['getCaseIdForTransfer', $accept, $found],
-			'case id / numeric' => ['getCaseIdForTransfer', $accept, ['find' => ['t-1' => ['caseId' => 42]]]],
-			'case id / as array' => ['getCaseIdForTransfer', $accept, $found + ['findAs' => 'array']],
-			'case id / without case' => ['getCaseIdForTransfer', $accept, ['find' => ['t-1' => ['id' => 't-1']]]],
-			'case id / not found' => ['getCaseIdForTransfer', $accept, []],
-			'case id / find throws' => ['getCaseIdForTransfer', $accept, ['find' => ['t-1' => 'throw']]],
-			'case id / no object service' => ['getCaseIdForTransfer', $accept, ['noObjectService' => true]],
-			'case id / no register' => ['getCaseIdForTransfer', $accept, $found + ['scope' => [0, 7]]],
-			'case id / no schema' => ['getCaseIdForTransfer', $accept, $found + ['scope' => [5, 0]]],
+			'case id / found' => ['getCaseIdForTransfer', $byId, $found],
+			'case id / numeric' => ['getCaseIdForTransfer', $byId, ['find' => ['t-1' => ['caseId' => 42]]]],
+			'case id / as array' => ['getCaseIdForTransfer', $byId, $found + ['findAs' => 'array']],
+			'case id / without case' => ['getCaseIdForTransfer', $byId, ['find' => ['t-1' => ['id' => 't-1']]]],
+			'case id / not found' => ['getCaseIdForTransfer', $byId, []],
+			'case id / find throws' => ['getCaseIdForTransfer', $byId, ['find' => ['t-1' => 'throw']]],
+			'case id / no object service' => ['getCaseIdForTransfer', $byId, ['noObjectService' => true]],
+			'case id / no register' => ['getCaseIdForTransfer', $byId, $found + ['scope' => [0, 7]]],
+			'case id / no schema' => ['getCaseIdForTransfer', $byId, $found + ['scope' => [5, 0]]],
 			'resolve token' => ['resolveFederatedTransferShare', ['shareToken' => 'tok', 'transferId' => 't-1'], []],
 			'resolve token / refused' => ['resolveFederatedTransferShare', ['shareToken' => 'tok', 'transferId' => 't-1'], ['resolve' => null]],
 			'hand to team' => ['handToTeam', ['caseId' => 'case-1', 'targetTeam' => 'team-b', 'reason' => 'r', 'initiatedBy' => 'alice'], []],
