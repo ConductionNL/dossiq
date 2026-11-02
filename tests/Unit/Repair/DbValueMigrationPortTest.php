@@ -73,4 +73,65 @@ class DbValueMigrationPortTest extends TestCase {
 		$this->assertNotContains(needle: 'integer', haystack: DbValueMigrationPort::TEXT_TYPES);
 		$this->assertNotContains(needle: 'jsonb', haystack: DbValueMigrationPort::TEXT_TYPES);
 	}//end testColumnsOfListsTextColumnsOnly()
+
+	/**
+	 * The shard tables are every OpenRegister table information_schema lists; a listing that fails answers none and says so.
+	 *
+	 * @return void
+	 */
+	public function testShardTablesListsOpenRegisterTablesOrNone(): void {
+		$calls = [];
+		$statement = $this->createMock(originalClassName: IPreparedStatement::class);
+		$statement->method('bindValue')->willReturnCallback(
+			callback: static function (mixed $param, mixed $value) use (&$calls): bool {
+				$calls[] = ['bindValue', $param, $value];
+				return true;
+			}
+		);
+		$statement->method('execute')->willReturnCallback(
+			callback: function () use (&$calls): IResult {
+				$calls[] = ['execute'];
+				return $this->createMock(originalClassName: IResult::class);
+			}
+		);
+		$statement->method('fetchAll')->willReturn(value: [['table_name' => 'oc_openregister_table_8_9'], ['other' => 'x']]);
+		$db = $this->createMock(originalClassName: IDBConnection::class);
+		$db->method('prepare')->willReturnCallback(
+			callback: static function (string $query) use (&$calls, $statement): IPreparedStatement {
+				$calls[] = ['prepare', $query];
+				return $statement;
+			}
+		);
+
+		$port = new DbValueMigrationPort(
+			db: $db,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			decisions: new RenameDutchValueDecisions()
+		);
+
+		$this->assertSame(expected: ['oc_openregister_table_8_9', ''], actual: $port->shardTables());
+		$this->assertSame(
+			expected: [
+				['prepare', 'SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern'],
+				['bindValue', 'pattern', '%openregister\\_table\\_%'],
+				['execute'],
+			],
+			actual: $calls
+		);
+
+		$warnings = [];
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			callback: static function (string $message) use (&$warnings): void {
+				$warnings[] = $message;
+			}
+		);
+		$failing = $this->createMock(originalClassName: IDBConnection::class);
+		$failing->method('prepare')->willThrowException(exception: new \RuntimeException('down'));
+
+		$port = new DbValueMigrationPort(db: $failing, logger: $logger, decisions: new RenameDutchValueDecisions());
+
+		$this->assertSame(expected: [], actual: $port->shardTables());
+		$this->assertSame(expected: ['DbValueMigrationPort: could not list tables.'], actual: $warnings);
+	}//end testShardTablesListsOpenRegisterTablesOrNone()
 }//end class

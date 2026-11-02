@@ -78,6 +78,10 @@ class RenameDutchRepairsGoldenTest extends TestCase {
 			$out[$short . ' when a table cannot be inspected'] = [$repair, ['columnsThrow' => 'oc_openregister_table_17_86'] + $world];
 			$out[$short . ' when a statement fails'] = [$repair, ['statementThrows' => 'oc_openregister_table_17_85'] + $world];
 			$out[$short . ' when nothing changes'] = [$repair, ['rows' => 0] + $world];
+			$ambiguous = $world;
+			$ambiguous['columns']['oc_openregister_table_17_85'][] = 'aanvraag_datum';
+			$ambiguous['columns']['oc_openregister_table_17_85'][] = 'verzoek_datum';
+			$out[$short . ' with an ambiguous pair'] = [$repair, $ambiguous];
 		}
 
 		return $out;
@@ -113,6 +117,20 @@ class RenameDutchRepairsGoldenTest extends TestCase {
 		$name = trim(strtolower((string)preg_replace('/[^a-z]+/i', '-', $this->dataName())), '-');
 		$this->assertMatchesGolden(name: 'rename-dutch-repairs/' . $name, value: $this->log);
 	}//end testTheRepairMatchesTheRecording()
+
+	/**
+	 * Each step names itself.
+	 *
+	 * @return void
+	 */
+	public function testEachStepNamesItself(): void {
+		$names = [];
+		foreach ([RenameDutchColumns::class, RenameDutchDeadlineColumns::class, RenameDutchDirectionValues::class] as $repair) {
+			$names[] = (new $repair($this->database(world: []), $this->createMock(originalClassName: LoggerInterface::class)))->getName();
+		}
+
+		$this->assertMatchesGolden(name: 'rename-dutch-repairs/names', value: $names);
+	}//end testEachStepNamesItself()
 
 	/**
 	 * A database that answers from the world and records every call.
