@@ -3984,6 +3984,7 @@
 								"type": "open-modal",
 								"target": "DocumentAssessDialog",
 								"when": "@context.caseType.documentReview.enabled",
+								"visibleIf": { "row": { "reviewVerdict": { "notEmpty": true } } },
 								"rowProps": { "documentId": "id" },
 								"primaryWhen": { "key": "reviewVerdict", "values": ["open"] },
 								"props": {
@@ -4009,7 +4010,7 @@
 									}
 								}
 							},
-							"_rowButtonNote": "DqZaakDocumenten: each document of a case type that reviews its documents (documentReview.enabled) shows its verdict (reviewVerdict from the dossier listing, open while unassessed) and Beoordelen, primary while open, opening the same DocumentAssessDialog as the header's Assess documents with that document chosen (rowProps documentId). On any other case (DqDocumentenBeheer) `when` is false and neither is drawn. Needs nc-vue feat/files-review-row-when; an older library draws both everywhere.",
+							"_rowButtonNote": "DqZaakDocumenten: each document of a case type that reviews its documents (documentReview.enabled) shows its verdict (reviewVerdict from the dossier listing, open while unassessed) and Beoordelen, primary while open, opening the same DocumentAssessDialog as the header's Assess documents with that document chosen (rowProps documentId). On any other case (DqDocumentenBeheer) `when` is false and neither is drawn. Beoordelen follows the same rule as the review count: only a document under review carries a reviewVerdict, so a document the case drafts itself (the decision drafted from the case type's template) stays listed without it. Needs nc-vue feat/files-review-row-when and feat/files-row-button-visible-if-row; an older library draws the button nowhere once visibleIf.row is set.",
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
 							"rowDataUrl": "/apps/dossiq/api/cases/{objectId}/dossier",
 							"rowDataPath": "informatieobjecten",
@@ -4335,6 +4336,16 @@
 										"type": "integration",
 										"integrationId": "contacts",
 										"title": "Parties",
+										"labels": {
+											"kindLabels": {
+												"person": "Contact",
+												"organisation": "Organisation",
+												"colleague": "Colleague",
+												"user": "Colleague",
+												"contact": "Contact"
+											}
+										},
+										"_labelsNote": "Board DqZaakBetrokkenen Partijen leads a person's details with their kind: \"Contact\" for a person, \"Organisatie\" for an organisation, \"Collega\" for a colleague or a Nextcloud user. Keyed by the link's partyKind, else its kind.",
 										"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
 									}
 								},
@@ -4384,6 +4395,11 @@
 												}
 											},
 											"_manageNote": "Board DqZaakBetrokkenen draws \"Partij toevoegen\" on this card. The picker searches residents (BSN lookup), organisations and colleagues (the colleague party schema, kind colleague, tied to a Nextcloud user); the role is one the case declares.",
+											"note": {
+												"from": "roles",
+												"field": "description"
+											},
+											"_noteNote": "Board DqZaakBetrokkenen draws a role line here (\"Gemachtigde namens Aannemersbedrijf Van Wijk B.V. · Awb 2:1\") and a details line under Partijen (\"Machtiging namens ...\"). The link note feeds Partijen; this card prints the role record's description, the field that describes the role assignment.",
 											"rolesObjects": {
 												"register": "dossiq",
 												"schema": "role",
@@ -9322,7 +9338,8 @@
 							"columns": [
 								{
 									"key": "actorLabel",
-									"label": "Handler"
+									"label": "Handler",
+									"formatter": "userName"
 								},
 								{
 									"key": "workingHours",
@@ -13530,6 +13547,52 @@
 				"notice": "This flow is how the case type {name} works. The case runs the steps; old webhook steps now run as an external call through Integriq.",
 				"paletteFootnote": "dossiq only offers steps a case can do itself. The rest comes from the app that does it.",
 				"flowDirection": "down",
+				"nodeLook": "card",
+				"saveAsVersion": true,
+				"toggleLabel": "fixed",
+				"metaParts": [],
+				"metaNote": "changes apply to new cases",
+				"_paletteNote": "Board DqFlow: steps in four groups per providing app, every other step behind More steps. Two calls against the board: 'Deelzaak of taak aanmaken' is two catalogue steps (createSubCase, createTask), and 'Bericht of e-mail' is dossiq's own sendMessage step, so it stands under Dossiq and its pill reads dossiq.",
+				"paletteGroups": [
+					{
+						"app": "dossiq",
+						"label": "Dossiq",
+						"pill": "dossiq",
+						"entries": [
+							{ "type": "dossiq.setStatus", "label": "Set status" },
+							{ "type": "dossiq.createSubCase", "label": "Create a sub-case" },
+							{ "type": "dossiq.createTask", "label": "Create a task" },
+							{ "type": "dossiq.askPerson", "label": "Ask a person", "short": "ask a person" },
+							{ "type": "dossiq.sendMessage", "label": "Message or e-mail", "short": "message" },
+							{ "type": "dossiq.besluitvormingPublish", "label": "Publish decision" }
+						]
+					},
+					{
+						"app": "openregister",
+						"label": "OpenRegister",
+						"tone": "purple",
+						"entries": [
+							{ "type": "openregister.set-fields", "label": "Write a field", "short": "write a field" },
+							{ "type": "openregister.decision-table", "label": "Decision table", "short": "decision table" }
+						]
+					},
+					{
+						"app": "openconnector",
+						"label": "Integriq",
+						"tone": "teal",
+						"entries": [
+							{ "type": "openconnector.source-call", "label": "External call", "short": "external call" }
+						]
+					},
+					{
+						"app": "filinq",
+						"label": "Filinq",
+						"tone": "teal",
+						"entries": [
+							{ "type": "filinq.generate-document", "label": "Create a document", "short": "document" }
+						]
+					}
+				],
 				"breadcrumb": [
 					{
 						"label": "Settings",
@@ -14023,7 +14086,7 @@
 										},
 										{
 											"parts": [
-												"residence.postcode",
+												{ "path": "residence.postcode", "format": "postcode" },
 												"residence.city"
 											],
 											"separator": " "
@@ -14184,12 +14247,14 @@
 									"awaiting_customer": "Awaiting customer",
 									"resolved": "Handled",
 									"closed": "Handled",
-									"completed": "Handled"
+									"completed": "Handled",
+									"converted": "Converted to a case"
 								},
 								"colorMap": {
 									"resolved": "success",
 									"closed": "success",
-									"completed": "success"
+									"completed": "success",
+									"converted": "success"
 								}
 							},
 							"trailing": [
@@ -14578,7 +14643,7 @@
 								{
 									"as": "text",
 									"parts": [
-										"residence.postcode",
+										{ "path": "residence.postcode", "format": "postcode" },
 										"residence.city"
 									],
 									"separator": " ",
@@ -14803,7 +14868,7 @@
 										},
 										{
 											"parts": [
-												"address.postcode",
+												{ "path": "address.postcode", "format": "postcode" },
 												"address.place"
 											],
 											"separator": " "
@@ -14964,12 +15029,14 @@
 									"awaiting_customer": "Awaiting customer",
 									"resolved": "Handled",
 									"closed": "Handled",
-									"completed": "Handled"
+									"completed": "Handled",
+									"converted": "Converted to a case"
 								},
 								"colorMap": {
 									"resolved": "success",
 									"closed": "success",
-									"completed": "success"
+									"completed": "success",
+									"converted": "success"
 								}
 							},
 							"trailing": [
@@ -15313,7 +15380,7 @@
 								{
 									"as": "text",
 									"parts": [
-										"address.postcode",
+										{ "path": "address.postcode", "format": "postcode" },
 										"address.place"
 									],
 									"separator": " ",
@@ -15430,12 +15497,14 @@
 									"awaiting_customer": "Awaiting customer",
 									"resolved": "Handled",
 									"closed": "Handled",
-									"completed": "Handled"
+									"completed": "Handled",
+									"converted": "Converted to a case"
 								},
 								"colorMap": {
 									"resolved": "success",
 									"closed": "success",
-									"completed": "success"
+									"completed": "success",
+									"converted": "success"
 								}
 							},
 							"trailing": [
