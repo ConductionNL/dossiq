@@ -63,8 +63,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
  * @uses \OCA\Dossiq\Service\Email\InboundMessage
  * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
- * @uses \OCA\Dossiq\Service\Email\InboundMailChecks
- * @uses \OCA\Dossiq\Service\Email\InboundMailFiling
+ * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */

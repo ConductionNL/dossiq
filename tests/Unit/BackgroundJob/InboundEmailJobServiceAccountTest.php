@@ -77,8 +77,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\IntakePolicy
  * @uses \OCA\Dossiq\Service\Email\ThreadingCheck
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
- * @uses \OCA\Dossiq\Service\Email\InboundMailChecks
- * @uses \OCA\Dossiq\Service\Email\InboundMailFiling
+ * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  */
 class InboundEmailJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

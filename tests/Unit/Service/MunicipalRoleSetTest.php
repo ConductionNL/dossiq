@@ -47,7 +47,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
  * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
- * @uses \OCA\Dossiq\Service\Starter\ShippedRoleSources
+ * @covers \OCA\Dossiq\Service\Starter\ShippedRoleSources
  */
 class MunicipalRoleSetTest extends TestCase {
 

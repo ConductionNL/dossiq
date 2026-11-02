@@ -66,7 +66,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Intake\DuplicatePolicy
  * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
- * @uses \OCA\Dossiq\Listener\IntakeDeclarations
+ * @covers \OCA\Dossiq\Listener\IntakeDeclarations
  */
 class IntakeRequirementsListenerTest extends TestCase {
 

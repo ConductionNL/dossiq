@@ -62,8 +62,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
  * @uses \OCA\Dossiq\Service\Email\Filters\FilterPipeline
  * @uses \OCA\Dossiq\Service\Email\ThreadingCheck
- * @uses \OCA\Dossiq\Service\Email\InboundMailChecks
- * @uses \OCA\Dossiq\Service\Email\InboundMailFiling
+ * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  */
 class SubjectTagTest extends TestCase {
 
