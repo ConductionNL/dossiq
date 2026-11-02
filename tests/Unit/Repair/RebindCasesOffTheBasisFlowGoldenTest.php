@@ -35,6 +35,7 @@ use RuntimeException;
  * Every read, write, log line and output line of the rebind, per world.
  *
  * @covers \OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow
+ * @uses \OCA\Dossiq\Repair\FlowRebindRun
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
