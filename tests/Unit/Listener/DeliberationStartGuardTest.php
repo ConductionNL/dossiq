@@ -487,7 +487,11 @@ class DeliberationStartGuardTest extends TestCase {
 		$edit = $this->writeRequest(service: $service, changes: ['adviceText' => 'gecorrigeerd']);
 		$this->assertNull(actual: $edit, message: 'an edit after the advice is not a skip');
 		$move = $this->writeStatus(service: $service, status: 'inadmissible');
-		$this->assertSame(expected: DeliberationStartGuard::OUTCOME_ERROR_CODE, actual: $move?->getErrors()['code'], message: 'a raw move between outcomes');
+		$this->assertSame(
+			expected: DeliberationStartGuard::OUTCOME_ERROR_CODE,
+			actual: $move?->getErrors()['code'],
+			message: 'a raw move between outcomes'
+		);
 	}//end testACreateThatSkipsDeliberationIsRefused()
 
 	/**

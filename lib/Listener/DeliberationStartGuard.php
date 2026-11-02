@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Service\InternalWriteMarker;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -65,6 +66,16 @@ class DeliberationStartGuard implements IEventListener {
 	public const SKIP_ERROR_CODE = 'deliberation-skip-refused';
 
 	/**
+	 * The error code a write into an outcome status outside the advice transition carries.
+	 */
+	public const OUTCOME_ERROR_CODE = 'deliberation-outcome-refused';
+
+	/**
+	 * The refusal of a write into an outcome status outside the advice transition.
+	 */
+	public const OUTCOME_MESSAGE = 'Only the advice transition can issue the advice or declare the request inadmissible';
+
+	/**
 	 * The refusal when the check itself fails.
 	 */
 	public const UNCHECKED_MESSAGE = 'Panel independence could not be checked (Awb Art. 7:13 lid 3)';
@@ -90,11 +101,13 @@ class DeliberationStartGuard implements IEventListener {
 	 * @param SettingsService          $settingsService   The configured advice request schema.
 	 * @param AdvisoryCommitteeService $advisoryCommittee The panel check.
 	 * @param LoggerInterface          $logger            Logger.
+	 * @param InternalWriteMarker      $internalWrites    Whether the app's own advice transition is writing.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly AdvisoryCommitteeService $advisoryCommittee,
 		private readonly LoggerInterface $logger,
+		private readonly InternalWriteMarker $internalWrites,
 	) {
 	}//end __construct()
 
@@ -108,6 +121,7 @@ class DeliberationStartGuard implements IEventListener {
 	 * @spec openspec/changes/every-move-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-single-object-save-that-starts-deliberation-runs-the-panel-check
 	 * @spec openspec/changes/creating-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-single-object-save-that-starts-deliberation-runs-the-panel-check
 	 * @spec openspec/changes/creating-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-an-advice-request-reaches-advice-issued-or-inadmissible-only-from-in-deliberation
+	 * @spec openspec/changes/only-the-advice-transition-sets-the-outcome/specs/bezwaar-advisory-committee/spec.md#requirement-only-the-advice-transition-writes-an-advice-request-into-advice-issued-or-inadmissible
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectUpdatingEvent === false && $event instanceof ObjectCreatingEvent === false) {
@@ -139,11 +153,9 @@ class DeliberationStartGuard implements IEventListener {
 	 * @return array{code: string, message: string}|null The refusal.
 	 */
 	private function refusalFor(array $request, ?array $before): ?array {
-		$from = ($before['status'] ?? null);
-		if (in_array($request['status'] ?? null, self::AFTER_DELIBERATION, true) === true
-			&& in_array($from, [self::DELIBERATION, ...self::AFTER_DELIBERATION], true) === false
-		) {
-			return ['code' => self::SKIP_ERROR_CODE, 'message' => self::SKIP_MESSAGE];
+		$status = ($request['status'] ?? null);
+		if (in_array($status, self::AFTER_DELIBERATION, true) === true) {
+			return $this->outcomeRefusal(status: $status, from: ($before['status'] ?? null));
 		}
 
 		if ($this->needsPanelCheck(request: $request, before: $before) === false) {
@@ -157,6 +169,29 @@ class DeliberationStartGuard implements IEventListener {
 
 		return ['code' => self::ERROR_CODE, 'message' => $message];
 	}//end refusalFor()
+
+	/**
+	 * The refusal of a write that reaches advice-issued or inadmissible, or null when it may be saved.
+	 *
+	 * Only deliberation leads there, and only the app's own advice transition
+	 * moves a request there. A save that keeps the status is no move.
+	 *
+	 * @param string $status The status as it will be saved.
+	 * @param mixed  $from   The status as stored, null on a create.
+	 *
+	 * @return array{code: string, message: string}|null The refusal.
+	 */
+	private function outcomeRefusal(string $status, mixed $from): ?array {
+		if (in_array($from, [self::DELIBERATION, ...self::AFTER_DELIBERATION], true) === false) {
+			return ['code' => self::SKIP_ERROR_CODE, 'message' => self::SKIP_MESSAGE];
+		}
+
+		if ($from === $status || $this->internalWrites->isInternal() === true) {
+			return null;
+		}
+
+		return ['code' => self::OUTCOME_ERROR_CODE, 'message' => self::OUTCOME_MESSAGE];
+	}//end outcomeRefusal()
 
 	/**
 	 * Whether the write starts deliberation, or changes who deliberates on which objection.

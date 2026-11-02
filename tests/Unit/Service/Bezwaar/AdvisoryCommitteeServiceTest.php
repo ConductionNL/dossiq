@@ -33,6 +33,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @uses \OCA\Dossiq\Service\InternalWriteMarker
  */
 class AdvisoryCommitteeServiceTest extends TestCase {
 	use MakesBezwaarAuditTrail;

@@ -45,6 +45,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @uses \OCA\Dossiq\Service\InternalWriteMarker
  */
 class AdvisoryCommitteeServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

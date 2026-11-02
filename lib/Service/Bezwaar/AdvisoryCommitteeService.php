@@ -44,6 +44,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
+use OCA\Dossiq\Service\InternalWriteMarker;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -113,6 +114,7 @@ class AdvisoryCommitteeService {
 	 * @param BezwaarAuditTrail $auditTrail Writes each entry onto OpenRegister's audit trail
 	 * @param PanelIndependenceChecker $independence Awb Art. 7:13 lid 3 panel check
 	 * @param GovernanceBodyReader|null $governanceBodies Reads the committee back from decidiq, falling back locally
+	 * @param InternalWriteMarker $internalWrites Marks the transition's own save for DeliberationStartGuard
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -121,6 +123,7 @@ class AdvisoryCommitteeService {
 		private readonly BezwaarAuditTrail $auditTrail,
 		private readonly PanelIndependenceChecker $independence,
 		private readonly ?GovernanceBodyReader $governanceBodies = null,
+		private readonly InternalWriteMarker $internalWrites = new InternalWriteMarker(),
 	) {
 	}//end __construct()
 
@@ -491,13 +494,16 @@ class AdvisoryCommitteeService {
 	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
 	 */
 	private function applyTransition(array $request, array $update): array {
-		$apply = fn (): array => ($this->patchObjectAsArray(
-			objectService: $request['objectService'],
-			register: $request['register'],
-			schema: $request['schema'],
-			id: $request['id'],
-			changes: $update
-		) ?? array_merge($request['current'], $update));
+		// Marked so DeliberationStartGuard lets this save reach an outcome status.
+		$apply = fn (): array => $this->internalWrites->runInternal(
+			fn (): array => ($this->patchObjectAsArray(
+				objectService: $request['objectService'],
+				register: $request['register'],
+				schema: $request['schema'],
+				id: $request['id'],
+				changes: $update
+			) ?? array_merge($request['current'], $update))
+		);
 
 		if (isset($update['adviceIssuedAt']) === false) {
 			return $apply();
