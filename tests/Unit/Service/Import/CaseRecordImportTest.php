@@ -836,6 +836,7 @@ class CaseRecordImportTest extends TestCase {
 		$caseR1 = $answer['migrated'][0]['caseId'];
 		self::assertCount(expectedCount: 1, haystack: $answer['failed']);
 		self::assertSame(expected: 'traj-2', actual: $answer['failed'][0]['requestId']);
+		self::assertSame(expected: 'N-r1', actual: $answer['failed'][0]['reference']);
 		self::assertStringContainsString(needle: 'case-half', haystack: $answer['failed'][0]['reason']);
 		self::assertStringContainsString(needle: $caseR1, haystack: $answer['failed'][0]['reason']);
 		self::assertArrayNotHasKey(key: 'migratedTo', array: $this->store->row('trajectory', 'traj-2'));
