@@ -340,4 +340,25 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 			);
 		}
 	}//end testAnUnestablishedContestedDecisionRefusesThePanel()
+
+	/**
+	 * The decision's own decidedBy is its author: first, and an empty owner does not hide it.
+	 *
+	 * @return void
+	 */
+	public function testDecidedByIsTheDecisionsAuthor(): void {
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		$verdict = function (array $decision) use ($objection): array {
+			$objects = ['bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']], 'decision' => ['dec-1' => ['id' => 'dec-1'] + $decision]];
+			return $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => ['alice', 'bob']])['verdict'];
+		};
+
+		$this->assertTrue(condition: $verdict(['decidedBy' => 'eve'])['ok'], message: 'only decidedBy, not on the panel: independent');
+		$this->assertSame(expected: 'alice', actual: $verdict(['decidedBy' => 'alice'])['member'], message: 'decidedBy on the panel: a conflict');
+		$hidden = $verdict(['decidedBy' => 'alice', '@self' => ['owner' => '']]);
+		$this->assertSame(expected: 'alice', actual: $hidden['member'], message: 'an empty owner does not hide decidedBy');
+		$this->assertTrue(condition: $verdict(['decidedBy' => 'eve', '@self' => ['owner' => 'bob']])['ok'], message: 'decidedBy comes before the owner');
+		$fallback = $verdict(['@self' => ['owner' => ''], 'createdBy' => 'bob']);
+		$this->assertSame(expected: 'bob', actual: $fallback['member'], message: 'an empty owner falls through to createdBy');
+	}//end testDecidedByIsTheDecisionsAuthor()
 }//end class

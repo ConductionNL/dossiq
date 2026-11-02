@@ -13,7 +13,7 @@
  * Resolution chain:
  *   bacAdviceRequest.bezwaar -> bezwaar (lifecycle record) -> bezwaar.case
  *   (dossiq case) -> objection (filed on that case) ->
- *   objection.contestedDecision -> decision owner / createdBy / steller.
+ *   objection.contestedDecision -> decision decidedBy / owner / createdBy / steller.
  *
  * A panel whose independence cannot be verified is refused: a missing
  * objection or decision schema, or a store read that throws, answers the
@@ -94,7 +94,7 @@ class PanelIndependenceChecker {
 	/**
 	 * Member-independence check per Awb Art. 7:13(3).
 	 *
-	 * Compares each panel member UID against the `createdBy` (steller) of
+	 * Compares each panel member UID against the author (`decidedBy`, owner, `createdBy` or steller) of
 	 * the contested primair besluit.
 	 *
 	 * @param string $objectionId The bezwaar (lifecycle) UUID.
@@ -295,16 +295,34 @@ class PanelIndependenceChecker {
 			return false;
 		}
 
-		$author = (string)(
-			$decision['@self']['owner'] ?? ($decision['createdBy'] ?? ($decision['steller'] ?? ''))
-		);
+		return $this->authorOf(decision: $decision);
+	}//end resolveContestedDecisionAuthor()
 
-		if ($author === '') {
-			return false;
+	/**
+	 * The decision's author: the first non-empty of `decidedBy`, `@self.owner`, `createdBy` and `steller`.
+	 *
+	 * `decidedBy` is the decision schema's own author field. `@self.owner` is
+	 * empty for an import without a session user, so it does not stop the search.
+	 *
+	 * @param array<string, mixed> $decision The contested decision.
+	 *
+	 * @return string|false The author UID, or false when none is recorded.
+	 */
+	private function authorOf(array $decision): string|false {
+		$candidates = [
+			$decision['decidedBy'] ?? null,
+			$decision['@self']['owner'] ?? null,
+			$decision['createdBy'] ?? null,
+			$decision['steller'] ?? null,
+		];
+		foreach ($candidates as $candidate) {
+			if (is_scalar($candidate) === true && (string)$candidate !== '') {
+				return (string)$candidate;
+			}
 		}
 
-		return $author;
-	}//end resolveContestedDecisionAuthor()
+		return false;
+	}//end authorOf()
 
 	/**
 	 * Find the first panel member that is not independent from the steller.

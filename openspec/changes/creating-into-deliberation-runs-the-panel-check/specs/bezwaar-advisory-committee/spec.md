@@ -7,7 +7,7 @@
 
 ### Requirement: every single-object save that starts deliberation runs the panel check
 
-The panel check of REQ-BAC-2 MUST run on every single-object save that moves an advice request into `in-deliberation`, not only on `transitionAdviceStatus()`. That includes a lifecycle action on the advice request page and a direct OpenRegister API write. It also includes a single-object create of an advice request whose status is `in-deliberation`. The check MUST also run again when a save keeps the status at `in-deliberation` but changes the panel or the objection. The objection is `bezwaar`, or the legacy `objectionProceeding` when `bezwaar` is empty, so the objection backfill does not count as a change. The check MUST read the panel and the objection from the request as it will be saved. A request without an objection MUST count as unverifiable, never as independent. So MUST a request whose contested decision cannot be established: no objection record for the case, an objection without a `contestedDecision`, a `contestedDecision` that does not resolve, or a contested decision that has no recorded author (no owner, `createdBy` or `steller`). Saves that fire no `ObjectUpdatingEvent` or `ObjectCreatingEvent` (bulk save, import, flow writes) are outside this requirement. The check MUST run before OpenRegister saves the write. A refused check MUST stop the write. An updated request MUST keep its old values, and a created request MUST NOT be saved. The refusal MUST reach the caller as the write's error. The trail entry of the refusal MUST be written before the write is stopped, exactly as `transitionAdviceStatus()` writes it. On a refused create no record exists to carry it, so the full entry MUST go to the error log. A check that fails with an unexpected error MUST stop the write too. A save that leaves the status, the panel and the objection of a request in deliberation as they were MUST NOT run the check, and neither may a move anywhere else than `in-deliberation`. A create in any other status MUST NOT run the check.
+The panel check of REQ-BAC-2 MUST run on every single-object save that moves an advice request into `in-deliberation`, not only on `transitionAdviceStatus()`. That includes a lifecycle action on the advice request page and a direct OpenRegister API write. It also includes a single-object create of an advice request whose status is `in-deliberation`. The check MUST also run again when a save keeps the status at `in-deliberation` but changes the panel or the objection. The objection is `bezwaar`, or the legacy `objectionProceeding` when `bezwaar` is empty, so the objection backfill does not count as a change. The check MUST read the panel and the objection from the request as it will be saved. A request without an objection MUST count as unverifiable, never as independent. So MUST a request whose contested decision cannot be established: no objection record for the case, an objection without a `contestedDecision`, a `contestedDecision` that does not resolve, or a contested decision that has no recorded author. The author is the first non-empty of the decision's `decidedBy`, `@self.owner`, `createdBy` and `steller`. `decidedBy` comes first because it is the decision schema's own author field, and an empty owner, as an import without a session user leaves it, does not hide the fields after it. Saves that fire no `ObjectUpdatingEvent` or `ObjectCreatingEvent` (bulk save, import, flow writes) are outside this requirement. The check MUST run before OpenRegister saves the write. A refused check MUST stop the write. An updated request MUST keep its old values, and a created request MUST NOT be saved. The refusal MUST reach the caller as the write's error. The trail entry of the refusal MUST be written before the write is stopped, exactly as `transitionAdviceStatus()` writes it. On a refused create no record exists to carry it, so the full entry MUST go to the error log. A check that fails with an unexpected error MUST stop the write too. A save that leaves the status, the panel and the objection of a request in deliberation as they were MUST NOT run the check, and neither may a move anywhere else than `in-deliberation`. A create in any other status MUST NOT run the check.
 
 #### Scenario: a client creates an advice request in deliberation with a conflicted panel
 @e2e exclude needs a contested decision signed by a panel member on a seeded instance; covered by DeliberationStartGuardTest
@@ -33,10 +33,18 @@ The panel check of REQ-BAC-2 MUST run on every single-object save that moves an 
 
 #### Scenario: a contested decision without a recorded author is unverifiable
 @e2e exclude covered by PanelIndependenceCheckerGoldenTest
-- **GIVEN** a contested primair besluit with no owner, `createdBy` or `steller`
+- **GIVEN** a contested primair besluit with no `decidedBy`, owner, `createdBy` or `steller`
 - **WHEN** the panel check runs for an advice request on it
 - **THEN** the verdict is unverifiable, with no conflicting member
 - **AND** a blank panel member is not matched against the missing author
+
+#### Scenario: decidedBy is the contested decision's author
+@e2e exclude covered by PanelIndependenceCheckerGoldenTest
+- **GIVEN** a contested primair besluit whose `decidedBy` is `p.janssen` and whose owner is empty
+- **WHEN** the panel check runs for a panel without `p.janssen`
+- **THEN** the panel is independent
+- **WHEN** the panel check runs for a panel with `p.janssen`
+- **THEN** the verdict names `p.janssen` as the conflicting member
 
 #### Scenario: a case without an objection record is unverifiable
 @e2e exclude covered by PanelIndependenceCheckerGoldenTest
