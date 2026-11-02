@@ -134,4 +134,29 @@ class AdvisoryCommitteeServiceTest extends TestCase {
 
 		$this->assertSame('assigned', $this->store->row('bacAdviceRequest', 'req-1')['status']);
 	}
+
+	/**
+	 * A panel whose independence cannot be verified does not start deliberating, and the refusal is recorded.
+	 *
+	 * @return void
+	 */
+	public function testAnUnverifiablePanelIsRecordedAndRefused(): void {
+		$this->store->seed('bacAdviceRequest', 'req-1', ['bezwaar' => 'bezwaar-1', 'status' => 'assigned', 'panel' => ['member-1']]);
+		$this->independenceVerdict = ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'];
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+
+		try {
+			$service->transitionAdviceStatus(requestId: 'req-1', newStatus: 'in-deliberation');
+			$this->fail('an unverifiable panel must be refused');
+		} catch (GuardFailedException $refused) {
+			$this->assertStringStartsWith('Panel independence could not be verified', $refused->getMessage());
+		}
+
+		$this->assertSame(['dossiq.bezwaar.independence-check-unverifiable'], $this->trail->actionsOn('req-1'));
+		$this->assertSame(
+			['conflictingMember' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+			$this->rowContext(uuid: 'req-1', action: 'dossiq.bezwaar.independence-check-unverifiable')['payload']
+		);
+		$this->assertSame('assigned', $this->store->row('bacAdviceRequest', 'req-1')['status']);
+	}
 }

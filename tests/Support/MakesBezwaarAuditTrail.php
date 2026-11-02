@@ -68,6 +68,13 @@ trait MakesBezwaarAuditTrail {
 	private array $auditErrors = [];
 
 	/**
+	 * The independence verdict the doubled check answers, when a test sets one.
+	 *
+	 * @var array{ok: bool, member: ?string, reason: ?string}|null
+	 */
+	private ?array $independenceVerdict = null;
+
+	/**
 	 * Start an empty store and trail.
 	 *
 	 * @return void
@@ -177,7 +184,7 @@ trait MakesBezwaarAuditTrail {
 	 *
 	 * The decidesk delegation and the independence check are not what these
 	 * tests are about, so they are doubled: the decision is raised as `dec-1`,
-	 * and the panel is independent unless a conflict is given.
+	 * and the panel is independent unless a conflict or `independenceVerdict` is given.
 	 *
 	 * @param BezwaarAuditTrail $trail    The audit writer.
 	 * @param string|null       $conflict The conflicting panel member, or null for an independent panel.
@@ -190,11 +197,12 @@ trait MakesBezwaarAuditTrail {
 		$delegation->method('raiseAdviceDecision')->willReturn('dec-1');
 
 		$independence = $this->createMock(PanelIndependenceChecker::class);
-		$independence->method('check')->willReturn(
-			$conflict === null
-				? ['ok' => true, 'member' => null, 'reason' => '']
-				: ['ok' => false, 'member' => $conflict, 'reason' => 'Lid was eerder betrokken bij het besluit']
-		);
+		$verdict = ['ok' => false, 'member' => $conflict, 'reason' => 'Lid was eerder betrokken bij het besluit'];
+		if ($conflict === null) {
+			$verdict = ['ok' => true, 'member' => null, 'reason' => ''];
+		}
+
+		$independence->method('check')->willReturn($this->independenceVerdict ?? $verdict);
 
 		return new AdvisoryCommitteeService(
 			settingsService: $this->bezwaarSettings(),

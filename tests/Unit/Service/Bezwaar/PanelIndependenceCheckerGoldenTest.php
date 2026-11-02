@@ -235,4 +235,50 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden(name: 'panel-independence-check', value: $observed);
 	}//end testGoldenCheck()
+
+	/**
+	 * A panel whose check cannot read the store is refused, not cleared.
+	 *
+	 * @return void
+	 */
+	public function testAStoreReadThatThrowsRefusesThePanel(): void {
+		$objects = [
+			'bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']],
+			'decision' => ['dec-1' => ['id' => 'dec-1', 'createdBy' => 'alice']],
+		];
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		$worlds = [
+			'legacy lookup throws' => ['objects' => ['bezwaar' => ['bz-1' => 'throw']] + $objects, 'objections' => [$objection]],
+			'objection search throws' => ['objects' => $objects, 'objections' => 'throw'],
+			'decision lookup throws' => ['objects' => ['decision' => ['dec-1' => 'throw']] + $objects, 'objections' => [$objection]],
+		];
+
+		foreach ($worlds as $name => $world) {
+			$observed = $this->observe(world: $world);
+			$this->assertSame(
+				['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+				$observed['verdict'],
+				$name
+			);
+			$this->assertSame('error', $observed['logs'][0][0], $name);
+		}
+	}//end testAStoreReadThatThrowsRefusesThePanel()
+
+	/**
+	 * A panel whose objection or decision schema is not configured is refused, not cleared.
+	 *
+	 * @return void
+	 */
+	public function testMissingSchemasRefuseThePanel(): void {
+		$objects = ['decision' => ['dec-1' => ['id' => 'dec-1', 'createdBy' => 'alice']]];
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		foreach (['objection_schema', 'decision_schema'] as $key) {
+			$observed = $this->observe(world: ['config' => [$key => ''], 'objects' => $objects, 'objections' => [$objection]]);
+			$this->assertSame(
+				['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+				$observed['verdict'],
+				$key
+			);
+		}
+	}//end testMissingSchemasRefuseThePanel()
 }//end class
