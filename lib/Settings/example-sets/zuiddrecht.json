@@ -5992,7 +5992,7 @@
 			"data": {
 				"tenantRef": "{{organisation:waterland}}",
 				"userRef": "{{cast:marieke.uid}}",
-				"role": "admin",
+				"role": "tenant_admin",
 				"joinedAt": "{{datetime:-50 10:00}}",
 				"lastActiveAt": "{{datetime:-1 16:20}}",
 				"mfaEnabled": true,
