@@ -9703,7 +9703,11 @@
 						"label": "Stukken een week vooraf ter inzage leggen",
 						"checked": false
 					}
-				]
+				],
+				"runUuid": "{{flow:flow-bezwaar.runs.hoorzitting-havenstraat}}",
+				"nodeId": "hoorzitting",
+				"claimedBy": "{{cast:pieter.uid}}",
+				"claimedAt": "{{datetime:-1 09:05}}"
 			}
 		},
 		{
@@ -10626,6 +10630,88 @@
 					{
 						"from": "vraag",
 						"to": "end"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-bezwaar",
+			"data": {
+				"name": "Bezwaar",
+				"description": "De werkwijze van een bezwaar: de indiener horen, daarna de beslissing op bezwaar voorbereiden.",
+				"trigger": "manual",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-manual",
+						"name": "Gestart vanaf de zaak",
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "hoorzitting",
+						"type": "openregister.user-task",
+						"name": "Hoorzitting",
+						"config": {
+							"title": "Hoorzitting inplannen",
+							"description": "Plan de hoorzitting met de bezwaarcommissie en nodig de indiener uit.",
+							"candidateGroups": [
+								"{{cast:woo-en-informatie.gid}}"
+							],
+							"priority": "high"
+						},
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "beslissing",
+						"type": "dossiq.setStatus",
+						"name": "Status: beslissing op bezwaar",
+						"config": {
+							"status": "Beslissing op bezwaar"
+						},
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 400
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "hoorzitting"
+					},
+					{
+						"from": "hoorzitting",
+						"to": "beslissing"
+					},
+					{
+						"from": "beslissing",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"key": "hoorzitting-havenstraat",
+						"status": "suspended",
+						"node": "hoorzitting",
+						"subject": "{{object:bezwaar-parkeerboete-havenstraat.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"triggeredBy": "{{cast:anouk.uid}}",
+						"created": "{{datetime:-2 16:20}}"
 					}
 				]
 			}
