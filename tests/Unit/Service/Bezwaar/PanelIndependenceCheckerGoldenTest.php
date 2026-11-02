@@ -396,4 +396,45 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 		$this->assertSame(expected: $unverifiable, actual: $blankPair, message: 'a blank author does not match a blank member');
 		$this->assertSame(expected: $unverifiable, actual: $verdict(['decidedBy' => 'alice'], ['', ' ']), message: 'a blank-only panel');
 	}//end testAuthorsAndMembersAreComparedTrimmed()
+
+	/**
+	 * Unicode whitespace is trimmed too, and a panel entry that is not a UID fails closed.
+	 *
+	 * @return void
+	 */
+	public function testUnicodeWhitespaceIsTrimmedAndOddEntriesFailClosed(): void {
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		$verdict = function (array $decision, array $panel) use ($objection): array {
+			$objects = ['bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']], 'decision' => ['dec-1' => ['id' => 'dec-1'] + $decision]];
+			return $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => $panel])['verdict'];
+		};
+		$unverifiable = ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'];
+		$nbsp = "\u{00A0}";
+
+		$this->assertSame(
+			expected: $unverifiable,
+			actual: $verdict(['decidedBy' => $nbsp], ['alice', 'bob']),
+			message: 'a non-breaking space is no author'
+		);
+		$this->assertSame(
+			expected: 'alice',
+			actual: $verdict(['decidedBy' => 'alice'.$nbsp], ['alice', 'bob'])['member'],
+			message: 'an author padded with a non-breaking space'
+		);
+		$this->assertSame(
+			expected: 'alice',
+			actual: $verdict(['decidedBy' => 'alice'], ['alice'.$nbsp, 'bob'])['member'],
+			message: 'a member padded with a non-breaking space'
+		);
+		$this->assertSame(
+			expected: $unverifiable,
+			actual: $verdict(['decidedBy' => 'eve'], [['alice'], 'bob']),
+			message: 'a panel entry that is not a UID'
+		);
+		$this->assertSame(
+			expected: 'alice',
+			actual: $verdict(['decidedBy' => 'alice'], [null, 'alice'])['member'],
+			message: 'a null entry is a blank, not an odd entry'
+		);
+	}//end testUnicodeWhitespaceIsTrimmedAndOddEntriesFailClosed()
 }//end class

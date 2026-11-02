@@ -319,8 +319,9 @@ class PanelIndependenceChecker {
 		];
 		$authors = [];
 		foreach ($candidates as $candidate) {
-			if (is_scalar($candidate) === true && trim((string)$candidate) !== '') {
-				$authors[] = trim((string)$candidate);
+			$author = $this->uidOf(value: $candidate);
+			if ($author !== null) {
+				$authors[] = $author;
 			}
 		}
 
