@@ -73,7 +73,7 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 			}
 		}
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => match ($key) {
@@ -87,13 +87,13 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 		);
 
 		$dates = $this->caseDatesFrozenAt();
-		$held = new StatusDwellService(calendar: $this->createMock(WorkingDayCalculator::class), dates: $dates);
+		$held = new StatusDwellService(calendar: $this->createMock(originalClassName: WorkingDayCalculator::class), dates: $dates);
 		$service = new ProcessMiningService(
-			new ProcessMiningDataLoader($settings),
-			new DwellTimeAnalyzer(dates: $dates, held: $held),
-			new TransitionMatrixBuilder(),
-			new ThroughputTrendCalculator(dates: $dates),
-			$dates,
+			dataLoader: new ProcessMiningDataLoader(settingsService: $settings),
+			dwellTimeAnalyzer: new DwellTimeAnalyzer(dates: $dates, held: $held),
+			transitionBuilder: new TransitionMatrixBuilder(),
+			throughputCalculator: new ThroughputTrendCalculator(dates: $dates),
+			dates: $dates,
 		);
 
 		return $service->getReport(params: $params);
@@ -205,7 +205,7 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWithoutAnIdIsLeftOut(): void {
-		$loader = $this->createMock(ProcessMiningDataLoader::class);
+		$loader = $this->createMock(originalClassName: ProcessMiningDataLoader::class);
 		$loader->method('loadCases')->willReturn([
 			['id' => '', 'caseType' => 'ct-1', 'endDate' => '2026-03-20T17:00:00+00:00'],
 			['caseType' => 'ct-1'],
@@ -219,11 +219,11 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 
 		$dates = $this->caseDatesFrozenAt();
 		$service = new ProcessMiningService(
-			$loader,
-			new DwellTimeAnalyzer(dates: $dates),
-			new TransitionMatrixBuilder(),
-			new ThroughputTrendCalculator(dates: $dates),
-			$dates,
+			dataLoader: $loader,
+			dwellTimeAnalyzer: new DwellTimeAnalyzer(dates: $dates),
+			transitionBuilder: new TransitionMatrixBuilder(),
+			throughputCalculator: new ThroughputTrendCalculator(dates: $dates),
+			dates: $dates,
 		);
 		$report = $service->getReport(params: ['from' => '2026-01-01', 'to' => '2026-12-31']);
 
