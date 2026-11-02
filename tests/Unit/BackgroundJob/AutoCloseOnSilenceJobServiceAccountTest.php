@@ -65,7 +65,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Term\DayCount
- * @uses \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
+ * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  */
 class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

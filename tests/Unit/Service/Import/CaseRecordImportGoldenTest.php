@@ -48,7 +48,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Import\RecordImportStore
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
- * @uses \OCA\Dossiq\Service\Import\RecordImportSteps
+ * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  */
 class CaseRecordImportGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

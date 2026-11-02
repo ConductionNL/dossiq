@@ -56,7 +56,7 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Term\DayCount
- * @uses \OCA\Dossiq\Service\Import\RecordImportSteps
+ * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  */
 class CaseRecordImportTest extends TestCase {
 

@@ -45,7 +45,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\CaseType\RuleFlowScope
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector
  * @uses \OCA\Dossiq\Service\CaseType\RuleConditionLogic
- * @uses \OCA\Dossiq\Service\CaseType\CaseTypeRuleSources
+ * @covers \OCA\Dossiq\Service\CaseType\CaseTypeRuleSources
  */
 class CaseTypeRuleFlowDocumentGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

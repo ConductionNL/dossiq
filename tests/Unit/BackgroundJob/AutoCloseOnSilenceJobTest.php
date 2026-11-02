@@ -45,7 +45,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\Term\DayCount
- * @uses \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
+ * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  */
 class AutoCloseOnSilenceJobTest extends TestCase {
 
