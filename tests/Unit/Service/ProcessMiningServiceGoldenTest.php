@@ -39,7 +39,7 @@ use PHPUnit\Framework\TestCase;
  * Golden test for ProcessMiningService::getReport() over seeded stores.
  *
  * @covers \OCA\Dossiq\Service\ProcessMiningService
- *
+ * @covers \OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers
  * @uses \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
  * @uses \OCA\Dossiq\Service\ProcessMining\DwellWindow
  * @uses \OCA\Dossiq\Service\ProcessMining\CaseDwell
@@ -53,7 +53,6 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\ProcessMining\PhaseSummary
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Status\StatusDwellService
- * @covers \OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers
  */
 class ProcessMiningServiceGoldenTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -42,7 +42,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMiningService
- *
+ * @covers \OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers
  * @uses \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
  * @uses \OCA\Dossiq\Service\ProcessMining\DwellWindow
  * @uses \OCA\Dossiq\Service\ProcessMining\CaseDwell
@@ -55,7 +55,6 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\ProcessMining\PhaseSummary
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
- * @covers \OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers
  */
 class ProcessMiningServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

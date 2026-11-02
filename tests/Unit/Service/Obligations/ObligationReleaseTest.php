@@ -44,13 +44,13 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\ConsultationService::consultationBlocks
  * @covers \OCA\Dossiq\Service\Obligations\ObligationDeclaration
+ * @covers \OCA\Dossiq\Service\Consultation\ConsultationRecords
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\ConsultationService
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
- * @covers \OCA\Dossiq\Service\Consultation\ConsultationRecords
  *
  * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
  */

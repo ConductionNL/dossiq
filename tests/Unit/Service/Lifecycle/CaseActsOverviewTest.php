@@ -39,9 +39,8 @@ use PHPUnit\Framework\TestCase;
  * The state half of the act read.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseActsOverview
- *
- * @uses \OCA\Dossiq\Exception\RefusedException
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseActSources
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseActsOverviewTest extends TestCase {
 

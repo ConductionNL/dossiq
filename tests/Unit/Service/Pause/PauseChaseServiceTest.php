@@ -43,13 +43,13 @@ use RuntimeException;
  * REQ-TERM-011: each reminder is sent, recorded and counted exactly once.
  *
  * @covers \OCA\Dossiq\Service\Pause\PauseChaseService
+ * @covers \OCA\Dossiq\Service\Pause\PauseChaseSources
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Pause\ChaseSchedule
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
- * @covers \OCA\Dossiq\Service\Pause\PauseChaseSources
  */
 class PauseChaseServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -84,7 +84,7 @@ class CaseLifecycleSuspendPauseReasonTest extends TestCase {
 			deadlines: new CaseDeadlineServices(
 				termService: $termService,
 				pauseService: $pauseService,
-				extensionService: $this->createMock(DeadlineExtensionService::class),
+				extensionService: $this->createMock(originalClassName: DeadlineExtensionService::class),
 			),
 			logger: $this->createMock(LoggerInterface::class),
 			endings: $this->createMock(originalClassName: CaseEndingActs::class),

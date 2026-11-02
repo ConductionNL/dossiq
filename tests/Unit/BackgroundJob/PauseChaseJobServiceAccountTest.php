@@ -67,6 +67,7 @@ use Stringable;
  * @covers \OCA\Dossiq\BackgroundJob\PauseChaseJob
  * @covers \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  * @covers \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @covers \OCA\Dossiq\Service\Pause\PauseChaseSources
  * @uses \OCA\Dossiq\Service\Pause\PauseChaseService
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
@@ -77,7 +78,6 @@ use Stringable;
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
- * @covers \OCA\Dossiq\Service\Pause\PauseChaseSources
  */
 class PauseChaseJobServiceAccountTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -136,8 +136,13 @@ class ConsultationSettingsReadersTest extends TestCase {
 			adviceDelegation: $delegation,
 			records: new ConsultationRecords(
 				repository: $repository,
-				dependencyGraph: new ConsultationDependencyGraph($repository),
-				obligations: new ObligationService(settingsService: $settings, declaration: new ObligationDeclaration(), dates: $this->caseDates(), logger: $logger),
+				dependencyGraph: new ConsultationDependencyGraph(repository: $repository),
+				obligations: new ObligationService(
+					settingsService: $settings,
+					declaration: new ObligationDeclaration(),
+					dates: $this->caseDates(),
+					logger: $logger
+				),
 			),
 			dates: $this->caseDates(),
 			terms: new ConsultationTerms(settingsService: $settings, today: new DateTimeImmutable('2026-10-24')),

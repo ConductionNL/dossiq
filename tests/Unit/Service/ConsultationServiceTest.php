@@ -102,14 +102,13 @@ interface ConsultationObjectServiceStub {
  * Unit tests for ConsultationService.
  *
  * @covers \OCA\Dossiq\Service\ConsultationService
- *
+ * @covers \OCA\Dossiq\Service\Consultation\ConsultationRecords
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  * @uses   \OCA\Dossiq\Service\Obligations\ObligationDeclaration
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
- * @covers \OCA\Dossiq\Service\Consultation\ConsultationRecords
  */
 class ConsultationServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -163,7 +162,7 @@ class ConsultationServiceTest extends TestCase {
 			adviceDelegation: $this->adviceDelegation,
 			records: new ConsultationRecords(
 				repository: $repository,
-				dependencyGraph: new ConsultationDependencyGraph($repository),
+				dependencyGraph: new ConsultationDependencyGraph(repository: $repository),
 				// A REAL ObligationService over the same mocked SettingsService,
 				// not a double. Every assertion in this file is about behaviour
 				// the advice request keeps now that the blocking is one declared
