@@ -385,6 +385,10 @@ class EngineTaskGatewayTest extends TestCase {
 		// Installed, but the container hands back nothing and the class is
 		// absent from this test runtime (OpenRegister is not autoloadable in
 		// dossiq's unit suite), which is exactly the rename shape.
+		if (class_exists(class: 'OCA\\OpenRegister\\Service\\Task\\TaskService') === true) {
+			$this->markTestSkipped(message: 'OpenRegister\'s TaskService loads here, so the class cannot be absent.');
+		}
+
 		$gateway = new EngineTaskGateway($this->settings('1', true, null), $this->container(null), new NullLogger());
 
 		$this->assertFalse($gateway->isEnabled());
