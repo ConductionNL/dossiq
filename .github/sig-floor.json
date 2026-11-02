@@ -5,7 +5,7 @@
  "tools": {
   "lizard": "1.24.3"
  },
- "measured_at": "a3111566f223a1559b3567b9aebd37d98e6573b8",
+ "measured_at": "2438ce27c846b955c6ec0f9742e33112e9cfa0a3",
  "checks": [
   "javascript duplication",
   "javascript unit_interfacing >2",
