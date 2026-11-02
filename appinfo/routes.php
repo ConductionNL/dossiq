@@ -1032,6 +1032,10 @@ $extra = [
         // schema has no manifest page, so this is the only way in.
     ['name' => 'bezwaarHearing#recordAttendance', 'url' => '/api/bezwaar/hearings/{sessionId}/attendance', 'verb' => 'POST'],
 
+    // The advisory committee's move of an advice request (Awb 7:13). The only
+    // writer DeliberationStartGuard lets into advice-issued or inadmissible.
+    ['name' => 'bezwaarAdviceRequest#transition', 'url' => '/api/bezwaar/advice-requests/{id}/transition', 'verb' => 'POST'],
+
     // The decision on an objection, Awb 7:11. `DecisionService` has held the
     // whole disposition matrix since the bezwaar lifecycle shipped and no
     // route reached any of it, so a jurist could hold the hearing and had

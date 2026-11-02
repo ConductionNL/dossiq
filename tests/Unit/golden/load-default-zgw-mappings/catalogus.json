@@ -1,0 +1,40 @@
+{
+    "zgwResource": "catalogus",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "domein": "{{ domein }}",
+        "rsin": "{{ rsin }}",
+        "contactpersoonBeheerNaam": "{{ contactPersonManagementName }}",
+        "contactpersoonBeheerTelefoonnummer": "{{ contactPersonManagementPhoneNumber }}",
+        "contactpersoonBeheerEmailadres": "{{ contactPersonManagementEmailAddress }}",
+        "zaaktypen": "[]",
+        "besluittypen": "[]",
+        "informatieobjecttypen": "[]"
+    },
+    "cast": {
+        "zaaktypen": "jsonToArray",
+        "besluittypen": "jsonToArray",
+        "informatieobjecttypen": "jsonToArray"
+    },
+    "reverseMapping": {
+        "domein": "{{ domein }}",
+        "rsin": "{{ rsin }}",
+        "contactPersonManagementName": "{{ contactpersoonBeheerNaam }}",
+        "contactPersonManagementPhoneNumber": "{{ contactpersoonBeheerTelefoonnummer }}",
+        "contactPersonManagementEmailAddress": "{{ contactpersoonBeheerEmailadres }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "domein": {
+            "field": "domein"
+        },
+        "rsin": {
+            "field": "rsin"
+        }
+    }
+}
