@@ -9,4 +9,4 @@ Under Awb Art. 7:13 lid 3, no member of a bezwaaradviescommissie panel may have 
 - When independence cannot be verified, the advice request stays in `assigned`.
 - The refusal names no member and gives the reason "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)".
 - The request's trail gets an `independence-check-unverifiable` entry, written the same way as `independence-check-failed`.
-- A contested decision whose author cannot be resolved is not part of this change. That case still clears the panel, and is left for the product owner to decide.
+- A chain that resolves no person on the contested decision is refused the same way. So is an advice request that names no objection, and a missing object store.
