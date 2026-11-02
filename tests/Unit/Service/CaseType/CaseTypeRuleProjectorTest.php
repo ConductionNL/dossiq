@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeRuleSources;
 use OCA\Dossiq\Service\CaseType\CaseTypeRuleFlowDocument;
 use OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector;
 use OCA\Dossiq\Service\CaseType\RuleConditionLogic;
@@ -143,10 +144,12 @@ class CaseTypeRuleProjectorTest extends TestCase {
 		return new CaseTypeRuleProjector(
 			store: $store,
 			settings: $settings,
-			documents: new CaseTypeRuleFlowDocument(logic: new RuleConditionLogic()),
+			sources: new CaseTypeRuleSources(
+				documents: new CaseTypeRuleFlowDocument(logic: new RuleConditionLogic()),
+				resolver: $resolver,
+			),
 			container: $container,
 			logger: new NullLogger(),
-			resolver: $resolver
 		);
 	}//end projector()
 

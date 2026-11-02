@@ -40,12 +40,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
-use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
-use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Email\SenderIdentity;
-use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use Throwable;
@@ -91,22 +88,16 @@ class PublicationChecks {
 	 *
 	 * @param CaseTypeResolver        $caseTypeResolver The effective blueprint.
 	 * @param CaseTypeStore           $store            Reads for the resolver's schemas.
-	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
+	 * @param CaseTypeDeclarationChecks $declarations The acknowledgement, admissibility, remedy clause and handling declarations.
 	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
-	 * @param AdmissibilityJudgement  $admissibility    Whether intake ends with a verdict, and what it closes on.
-	 * @param RemedyClauseDeclaration $remedy           The remedy open against this case type's decisions.
-	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseTypeReachability    $reachability     What this type's moves can and cannot reach.
 	 * @param SenderIdentity          $senders          Whether the mail account this type names exists.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly CaseTypeStore $store,
-		private readonly CaseTypeAcknowledgement $acknowledgement,
+		private readonly CaseTypeDeclarationChecks $declarations,
 		private readonly UnreadTriggerService $unreadTriggers,
-		private readonly AdmissibilityJudgement $admissibility,
-		private readonly RemedyClauseDeclaration $remedy,
-		private readonly CaseTypeHandling $handling,
 		private readonly CaseTypeReachability $reachability,
 		private readonly SenderIdentity $senders,
 	) {
@@ -137,16 +128,16 @@ class PublicationChecks {
 		}
 
 		return array_merge(
-			$this->acknowledgement->publicationWarnings(caseType: $caseType),
+			$this->declarations->acknowledgement->publicationWarnings(caseType: $caseType),
 			$this->unreadTriggers->publicationWarnings(caseType: $caseType),
 			// Decision outcomes on the case: a case type that judges
 			// admissibility with no result to close on, or closes an
 			// inadmissible aanvraag without telling the applicant.
-			$this->admissibility->publicationWarnings(caseType: $caseType),
+			$this->declarations->admissibility->publicationWarnings(caseType: $caseType),
 			// A case type whose decisions declare no remedy. Its besluit would
 			// print no bezwaarclausule, which is a decision going out without
 			// saying how to object to it.
-			$this->remedy->publicationWarnings(caseType: $caseType)
+			$this->declarations->remedy->publicationWarnings(caseType: $caseType)
 		);
 	}//end warnings()
 
@@ -314,7 +305,7 @@ class PublicationChecks {
 	 */
 	private function handlingFindings(array $caseType): array {
 		$findings = [];
-		foreach ($this->handling->unreadSwitches(caseType: $caseType) as $switch) {
+		foreach ($this->declarations->handling->unreadSwitches(caseType: $caseType) as $switch) {
 			$findings[] = ('Nothing reads the handling switch "' . $switch . '". Remove it, or name a switch that is read.');
 		}
 
