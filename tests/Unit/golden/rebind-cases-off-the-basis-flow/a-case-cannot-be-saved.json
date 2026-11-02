@@ -1,0 +1,130 @@
+[
+    {
+        "search": {
+            "register": "dossiq",
+            "schema": "caseType",
+            "filters": {
+                "_limit": 500
+            }
+        }
+    },
+    {
+        "find": {
+            "id": "flow-a",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "search": {
+            "register": "dossiq",
+            "schema": "case",
+            "filters": {
+                "caseType": "type-a",
+                "_limit": 500
+            }
+        }
+    },
+    {
+        "find": {
+            "id": "basis-a",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "save": {
+            "object": {
+                "caseType": "type-a",
+                "workflowTemplate": "flow-a",
+                "isFinalStatus": false,
+                "title": "A1",
+                "workflowVersion": 3
+            },
+            "register": "dossiq",
+            "schema": "case",
+            "uuid": "a-open"
+        }
+    },
+    {
+        "error": "Dossiq: the basis flow rebind could not move a case",
+        "context": {
+            "app": "dossiq",
+            "caseId": "a-open",
+            "exception": "save a-open failed"
+        }
+    },
+    {
+        "find": {
+            "id": "basis-a",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "save": {
+            "object": {
+                "caseType": "type-a",
+                "workflowTemplate": "flow-a",
+                "title": "A2",
+                "workflowVersion": 3
+            },
+            "register": "dossiq",
+            "schema": "case",
+            "uuid": "a-open-2"
+        }
+    },
+    {
+        "find": {
+            "id": "basis-other",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "find": {
+            "id": "gone",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "find": {
+            "id": "flow-b",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "search": {
+            "register": "dossiq",
+            "schema": "case",
+            "filters": {
+                "caseType": "type-b",
+                "_limit": 500
+            }
+        }
+    },
+    {
+        "find": {
+            "id": "basis-b",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "save": {
+            "object": {
+                "caseType": "type-b",
+                "workflowTemplate": "flow-b",
+                "workflowVersion": 1
+            },
+            "register": "dossiq",
+            "schema": "case",
+            "uuid": "b-open"
+        }
+    },
+    {
+        "info": "Basis flow rebind: 2 open case(s) moved onto the flow their case type names."
+    }
+]
