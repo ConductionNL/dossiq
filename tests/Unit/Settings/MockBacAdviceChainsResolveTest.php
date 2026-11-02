@@ -96,4 +96,20 @@ class MockBacAdviceChainsResolveTest extends TestCase {
 			$this->assertNotContains(needle: $author, haystack: $members, message: $id.': the author is not on the panel');
 		}//end foreach
 	}//end testEveryAdviceRequestResolvesToADecisionWithAnIndependentAuthor()
+
+	/**
+	 * No advice request is seeded past deliberation: only dossiq's own status
+	 * transition moves a request to advice-issued or inadmissible.
+	 *
+	 * @return void
+	 */
+	public function testNoAdviceRequestIsSeededPastDeliberation(): void {
+		foreach ($this->objectsBySchema()['bacAdviceRequest'] ?? [] as $id => $request) {
+			$this->assertNotContains(
+				needle: (string) ($request['status'] ?? ''),
+				haystack: ['advice-issued', 'inadmissible'],
+				message: $id.': seeded in a status only the status transition may set'
+			);
+		}
+	}//end testNoAdviceRequestIsSeededPastDeliberation()
 }//end class
