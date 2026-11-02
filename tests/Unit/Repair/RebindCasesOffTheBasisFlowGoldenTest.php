@@ -146,6 +146,37 @@ class RebindCasesOffTheBasisFlowGoldenTest extends TestCase {
 	}//end testTheRebindMatchesTheRecording()
 
 	/**
+	 * Without a schema configured nothing is read, and the output says so; the step names itself.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredInstanceIsLeftAlone(): void {
+		$messages = [];
+		$output = $this->createMock(originalClassName: IOutput::class);
+		$output->method('info')->willReturnCallback(
+			function (string $message) use (&$messages): void {
+				$messages[] = $message;
+			}
+		);
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(new \stdClass());
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ['case_schema' => ''][$key] ?? $key);
+
+		$repair = new RebindCasesOffTheBasisFlow(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class));
+		$repair->run(output: $output);
+
+		$this->assertSame(
+			expected: ['Basis flow rebind: OpenRegister or the schema configuration is not available, nothing to do.'],
+			actual: $messages
+		);
+		$this->assertSame(
+			expected: 'Dossiq: move open cases off the backfilled basis flow onto the flow their case type names',
+			actual: $repair->getName()
+		);
+	}//end testAnUnconfiguredInstanceIsLeftAlone()
+
+	/**
 	 * The repair over a recording register.
 	 *
 	 * @param array<string, array<string, array<string, mixed>>> $rows  The rows.
