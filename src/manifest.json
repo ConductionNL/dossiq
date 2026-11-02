@@ -11091,7 +11091,7 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "bacAdviceRequest",
-				"_note": "ADVICE-ASSIGNMENT archetype (a committee advice request on a bezwaar), ADR-062 round 2. No comms leaves and no child schemas. The 15-field schema splits into two genuinely distinct groups: 'Assignment' (who/when — bezwaar, commissie, panel, status, assignedAt, deadline) paired with the Related panel (parent bezwaar and committee), and 'Advice & outcome' (the substantive opinion, dissent and evidence — advice, recommendation, conclusion, adviceIssuedAt, dissentingOpinions[], adviceDocuments, signatureEvidence, hearingReportRef) full-width below. lifecycleActions drive the status (assigned → in-deliberation → advice-issued / niet-ontvankelijk). Document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
+				"_note": "ADVICE-ASSIGNMENT archetype (a committee advice request on a bezwaar), ADR-062 round 2. No comms leaves and no child schemas. The 15-field schema splits into two genuinely distinct groups: 'Assignment' (who/when — bezwaar, commissie, panel, status, assignedAt, deadline) paired with the Related panel (parent bezwaar and committee), and 'Advice & outcome' (the substantive opinion, dissent and evidence — advice, recommendation, conclusion, adviceIssuedAt, dissentingOpinions[], adviceDocuments, signatureEvidence, hearingReportRef) full-width below. The status moves only through the header actions below, which call dossiq's own transition endpoint (assigned → in-deliberation → advice-issued / inadmissible). Document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
@@ -11179,9 +11179,61 @@
 						"gridHeight": 5
 					}
 				],
-				"lifecycleActions": {
-					"field": "status"
-				},
+				"_headerActionsNote": "dossiq#5109: only dossiq's transition endpoint may move an advice request into advice-issued or inadmissible, and only bezwaarcommissie members and administrators may call it (Awb 7:13). A generic lifecycle write to OpenRegister is refused, so this page has no lifecycleActions. Each action POSTs the target status; the advice fields are already on the record from the edit form, and the endpoint merges the stored request with the body. The endpoint answers with the updated request and the page re-reads it. The buttons show by status only: a reader outside the committee still sees them and gets the endpoint's refusal as an error toast, until nextcloud-vue has a visibility rule by group or role.",
+				"headerActions": [
+					{
+						"id": "start-deliberation",
+						"type": "api-call",
+						"label": "Start deliberation",
+						"url": "/apps/dossiq/api/bezwaar/advice-requests/@objectId/transition",
+						"method": "POST",
+						"payload": {
+							"status": "in-deliberation"
+						},
+						"successMessage": "Deliberation has started.",
+						"visibleWhen": {
+							"field": "status",
+							"op": "eq",
+							"value": "assigned"
+						}
+					},
+					{
+						"id": "issue-advice",
+						"type": "api-call",
+						"label": "Issue advice",
+						"url": "/apps/dossiq/api/bezwaar/advice-requests/@objectId/transition",
+						"method": "POST",
+						"payload": {
+							"status": "advice-issued"
+						},
+						"confirm": true,
+						"confirmMessage": "Issue the committee's advice? Check the conclusion and the recommendation first.",
+						"successMessage": "The advice has been issued.",
+						"visibleWhen": {
+							"field": "status",
+							"op": "eq",
+							"value": "in-deliberation"
+						}
+					},
+					{
+						"id": "declare-inadmissible",
+						"type": "api-call",
+						"label": "Declare inadmissible",
+						"url": "/apps/dossiq/api/bezwaar/advice-requests/@objectId/transition",
+						"method": "POST",
+						"payload": {
+							"status": "inadmissible"
+						},
+						"confirm": true,
+						"confirmMessage": "Declare this objection inadmissible? The committee then gives no advice on its merits.",
+						"successMessage": "The objection has been declared inadmissible.",
+						"visibleWhen": {
+							"field": "status",
+							"op": "eq",
+							"value": "in-deliberation"
+						}
+					}
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true,
