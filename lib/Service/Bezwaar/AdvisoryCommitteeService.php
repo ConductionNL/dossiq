@@ -480,7 +480,9 @@ class AdvisoryCommitteeService {
 			throw new RuntimeException('Advice request not found', self::NOT_FOUND);
 		}
 
-		return $store + ['id' => $requestId, 'current' => $current];
+		// Keyed on the stored request's own id, so a slug or other id form the
+		// store resolves still names the object the guard sees being saved.
+		return $store + ['id' => (string)($current['id'] ?? ($current['@self']['id'] ?? $requestId)), 'current' => $current];
 	}//end loadAdviceRequest()
 
 	/**
