@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\AcknowledgementService;
@@ -54,6 +55,7 @@ use Psr\Log\NullLogger;
  * The acknowledgement is recorded as the configured account, or the job waits.
  *
  * @covers \OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob
+ * @covers \OCA\Dossiq\Service\Term\TermNoticeSources
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\AcknowledgementService
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
@@ -72,6 +74,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
@@ -245,8 +248,10 @@ class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 			declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
 			termService: $terms,
 			notifications: new TermijnNotificationService(
-				termService: $terms,
-				sender: $sender,
+				notices: new TermNoticeSources(
+					termService: $terms,
+					sender: $sender,
+				),
 				logger: new NullLogger(),
 				requester: new RequesterNoticeSender(email: $sender, settings: $settings, writer: new CaseFieldWriter()),
 			),
