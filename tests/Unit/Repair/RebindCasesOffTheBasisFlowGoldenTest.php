@@ -97,6 +97,7 @@ class RebindCasesOffTheBasisFlowGoldenTest extends TestCase {
 				self::TYPE_A => ['id' => self::TYPE_A, 'workflowDefinition' => 'flow-a'],
 				self::TYPE_B => ['id' => self::TYPE_B, 'workflowDefinition' => 'flow-b'],
 				'type-c' => ['id' => 'type-c', 'workflowDefinition' => ''],
+				'type-d' => ['id' => 'type-d', 'workflowDefinition' => 'flow-a'],
 				'' => ['workflowDefinition' => 'flow-a'],
 			],
 			'workflowTemplate' => [
@@ -115,6 +116,7 @@ class RebindCasesOffTheBasisFlowGoldenTest extends TestCase {
 				'a-missing-flow' => ['id' => 'a-missing-flow', 'caseType' => self::TYPE_A, 'workflowTemplate' => 'gone'],
 				'b-open' => ['id' => 'b-open', 'caseType' => self::TYPE_B, 'workflowTemplate' => 'basis-b'],
 				'b-unbound' => ['id' => 'b-unbound', 'caseType' => self::TYPE_B],
+				'b-on-the-flow-of-a' => ['id' => 'b-on-the-flow-of-a', 'caseType' => self::TYPE_B, 'workflowTemplate' => 'flow-a'],
 			],
 		];
 	}//end world()

@@ -59,6 +59,24 @@
         }
     },
     {
+        "search": {
+            "register": "dossiq",
+            "schema": "case",
+            "filters": {
+                "caseType": "type-d",
+                "_limit": 500
+            }
+        }
+    },
+    {
+        "error": "Dossiq: the basis flow rebind could not list cases",
+        "context": {
+            "app": "dossiq",
+            "caseType": "type-d",
+            "exception": "search case failed"
+        }
+    },
+    {
         "info": "Basis flow rebind: 0 open case(s) moved onto the flow their case type names."
     }
 ]

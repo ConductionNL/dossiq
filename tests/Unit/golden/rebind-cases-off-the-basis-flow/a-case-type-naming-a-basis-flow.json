@@ -52,6 +52,30 @@
         }
     },
     {
+        "find": {
+            "id": "flow-a",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "find": {
+            "id": "flow-a",
+            "register": "dossiq",
+            "schema": "workflowTemplate"
+        }
+    },
+    {
+        "search": {
+            "register": "dossiq",
+            "schema": "case",
+            "filters": {
+                "caseType": "type-d",
+                "_limit": 500
+            }
+        }
+    },
+    {
         "info": "Basis flow rebind: 1 open case(s) moved onto the flow their case type names."
     }
 ]

@@ -117,6 +117,16 @@
         }
     },
     {
+        "search": {
+            "register": "dossiq",
+            "schema": "case",
+            "filters": {
+                "caseType": "type-d",
+                "_limit": 500
+            }
+        }
+    },
+    {
         "info": "Basis flow rebind: 3 open case(s) moved onto the flow their case type names."
     }
 ]
