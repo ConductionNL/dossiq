@@ -4057,6 +4057,7 @@
 									"source": "row",
 									"label": "Assessment",
 									"property": "reviewVerdict",
+									"subline": "ground {reviewGrounds|values}",
 									"when": "@context.caseType.documentReview.enabled",
 									"formatter": "optionLabel",
 									"formatterOptions": {
