@@ -35,6 +35,8 @@ use OCP\DB\Exception;
  * @spec openspec/specs/case-management/spec.md
  */
 trait ReadsRegisterShards {
+	use ListsOpenRegisterTables;
+
 	/**
 	 * The ids of the registers whose slug starts with the prefix, or none when they cannot be read.
 	 *
@@ -57,23 +59,11 @@ trait ReadsRegisterShards {
 	/**
 	 * The names of every OpenRegister table, or none when they cannot be listed.
 	 *
-	 * Table discovery goes through information_schema, NOT IDBConnection.
-	 * OCP\IDBConnection exposes neither getSchema() nor getPrefix(); calling
-	 * either is a runtime fatal that `php -l` and phpcs both report as clean.
-	 * The match is on the `openregister_table_` MARKER rather than a computed
-	 * prefix: getQueryBuilder()->getTableName('') yields the literal
-	 * `*PREFIX*` placeholder, which a raw information_schema string never
-	 * resolves, so a LIKE built from it matches zero tables.
-	 *
 	 * @return array<int, string>
 	 */
 	private function openRegisterTableNames(): array {
 		try {
-			$stmt = $this->db->prepare(
-				'SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern'
-			);
-			$stmt->bindValue('pattern', '%openregister\_table\_%');
-			$stmt->execute();
+			$stmt = $this->openRegisterTableListing();
 		} catch (\Throwable $e) {
 			$this->logger->warning(self::LOG_NAME . ': could not list tables; skipping.', ['exception' => $e->getMessage()]);
 			return [];
