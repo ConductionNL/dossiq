@@ -198,4 +198,36 @@ class ProcessMiningServiceGoldenTest extends TestCase {
 			$this->assertMatchesGolden(name: 'process-mining-report/' . $file, value: [$name => $report]);
 		}
 	}//end testGoldenReport()
+
+	/**
+	 * A loaded case without an id is left out of the report and of the throughput count.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutAnIdIsLeftOut(): void {
+		$loader = $this->createMock(ProcessMiningDataLoader::class);
+		$loader->method('loadCases')->willReturn([
+			['id' => '', 'caseType' => 'ct-1', 'endDate' => '2026-03-20T17:00:00+00:00'],
+			['caseType' => 'ct-1'],
+			['id' => 'case-1', 'caseType' => 'ct-2'],
+		]);
+		$loader->method('loadCaseTypes')->willReturn([]);
+		$loader->method('loadStatusTypes')->willReturn([]);
+		$loader->method('loadStatusRecords')->willReturn([]);
+		$loader->method('indexById')->willReturn([]);
+		$loader->method('indexByIdAndSlug')->willReturn([]);
+
+		$dates = $this->caseDatesFrozenAt();
+		$service = new ProcessMiningService(
+			$loader,
+			new DwellTimeAnalyzer(dates: $dates),
+			new TransitionMatrixBuilder(),
+			new ThroughputTrendCalculator(dates: $dates),
+			$dates,
+		);
+		$report = $service->getReport(params: ['from' => '2026-01-01', 'to' => '2026-12-31']);
+
+		self::assertSame(expected: ['ct-2'], actual: array_column($report['caseTypes'], 'id'));
+		self::assertSame(expected: 1, actual: $report['caseTypes'][0]['caseVolume']);
+	}//end testACaseWithoutAnIdIsLeftOut()
 }//end class
