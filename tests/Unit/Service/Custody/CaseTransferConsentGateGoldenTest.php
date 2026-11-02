@@ -334,9 +334,11 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			$this->assertSame(expected: 'warning', actual: ($observed['logs'][0][0] ?? null), message: $name);
 		}
 
-		$this->assertTrue(condition: $this->observe(world: ['askRequired' => true] + $worlds['case missing'])['required'], message: 'unreadable is required');
+		$unreadable = $this->observe(world: ['askRequired' => true] + $worlds['case missing']);
+		$this->assertTrue(condition: $unreadable['required'], message: 'unreadable is required');
+		$demanding = ['caseType' => ['ct-wmo' => ['consentRequiredInsideOrganisation' => true]]] + $objects;
 		$this->assertTrue(
-			condition: $this->observe(world: ['askRequired' => true, 'objects' => ['caseType' => ['ct-wmo' => ['consentRequiredInsideOrganisation' => true]]] + $objects] + $inside)['required'],
+			condition: $this->observe(world: ['askRequired' => true, 'objects' => $demanding] + $inside)['required'],
 			message: 'the case type demands consent'
 		);
 
