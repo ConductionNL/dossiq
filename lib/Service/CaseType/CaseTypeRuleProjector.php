@@ -92,11 +92,13 @@ class CaseTypeRuleProjector {
 	 */
 	public function plan(string $caseTypeId): array {
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
-		$title = (string)($caseType['title'] ?? $caseTypeId);
-		$register = $this->settings->getConfigValue(key: 'register');
-		$schema = $this->settings->getConfigValue(key: 'case_schema');
-
-		$definitionNames = $this->definitionNames(caseTypeId: $caseTypeId);
+		$scope = new RuleFlowScope(
+			caseTypeId: $caseTypeId,
+			caseTypeTitle: (string)($caseType['title'] ?? $caseTypeId),
+			register: $this->settings->getConfigValue(key: 'register'),
+			schema: $this->settings->getConfigValue(key: 'case_schema'),
+			definitionNames: $this->definitionNames(caseTypeId: $caseTypeId),
+		);
 		$flows = [];
 		$unprojected = [];
 		foreach ((array)($caseType['rules'] ?? []) as $rule) {
@@ -109,15 +111,7 @@ class CaseTypeRuleProjector {
 					continue;
 				}
 
-				$document = $this->documents->build(
-					rule: $rule,
-					action: (array)$action,
-					caseTypeId: $caseTypeId,
-					caseTypeTitle: $title,
-					register: $register,
-					schema: $schema,
-					definitionNames: $definitionNames
-				);
+				$document = $this->documents->build(rule: $rule, action: (array)$action, scope: $scope);
 				if ($document === null) {
 					$unprojected[] = (string)($rule['id'] ?? '?') . ': ' . (string)(((array)$action)['action'] ?? '?');
 					continue;

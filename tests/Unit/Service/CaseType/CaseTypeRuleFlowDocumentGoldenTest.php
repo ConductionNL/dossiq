@@ -41,6 +41,7 @@ use Psr\Log\NullLogger;
  * Golden test for CaseTypeRuleFlowDocument::build(), through CaseTypeRuleProjector::plan().
  *
  * @covers \OCA\Dossiq\Service\CaseType\CaseTypeRuleFlowDocument
+ * @covers \OCA\Dossiq\Service\CaseType\RuleFlowScope
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector
  * @uses \OCA\Dossiq\Service\CaseType\RuleConditionLogic
  */
