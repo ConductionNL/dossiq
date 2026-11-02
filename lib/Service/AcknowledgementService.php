@@ -173,15 +173,11 @@ class AcknowledgementService {
 	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function acknowledge(string $caseId, int $attempt = 1): array {
-		$case = $this->readCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'acknowledgement-register-not-configured',
-				sentence: 'We could not read the case, so receipt could not be confirmed.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
-		}
-
+		$case = $this->readCase(caseId: $caseId) ?? throw new RefusedException(
+			rule: 'acknowledgement-register-not-configured',
+			sentence: 'We could not read the case, so receipt could not be confirmed.',
+			status: RefusedException::STATUS_INDETERMINATE,
+		);
 		$caseType = $this->caseTypeOf(case: $case);
 
 		$settled = $this->nothingToSend(caseId: $caseId, case: $case, caseType: $caseType);
@@ -189,15 +185,48 @@ class AcknowledgementService {
 			return $settled;
 		}
 
-		$recipient = $this->addressOn(case: $case);
-		$channel = $this->declaration->channelFor(case: $case, caseType: $caseType);
-		$withheld = $this->declaration->contentStaysOnPlatform(caseType: $caseType);
+		$ack = $this->prepared(ack: ['caseId' => $caseId, 'case' => $case, 'caseType' => $caseType]);
 
-		$term = $this->termService->getTermijnInstanceForZaak(caseId: $caseId);
+		// The sender picks the channel (portal inbox, digital post, e-mail),
+		// calls its transport and records the result on the case. A notice no
+		// transport took throws, so nothing below runs for it (REQ-WRN-003).
+		try {
+			$payload = $this->sendNotice(ack: $ack, context: $ack['context']);
+		} catch (NoticeNotSentException $e) {
+			throw $this->notSent(caseId: $caseId, notice: $e);
+		}
+
+		$dispatch = (array)($payload['dispatch'] ?? []);
+		$met = [
+			'required' => true,
+			'status' => self::STATUS_MET,
+			'channel' => (string)($dispatch['channel'] ?? ''),
+			'recipient' => $ack['recipient'],
+			'sentAt' => (string)($dispatch['sentAt'] ?? ''),
+			'attempts' => $attempt,
+			'lastError' => '',
+		];
+		$this->recordMet(ack: $ack, met: $met);
+
+		return ['sent' => true, 'duty' => $met, 'record' => (array)($dispatch['record'] ?? []), 'payload' => $payload];
+	}//end acknowledge()
+
+	/**
+	 * The acknowledgement ready to send: its address, its term and the context the template reads.
+	 *
+	 * @param array{caseId: string, case: array<string, mixed>, caseType: array<string, mixed>} $ack The case and its case type.
+	 *
+	 * @return array<string, mixed> The same, with `recipient`, `term` and `context`.
+	 */
+	private function prepared(array $ack): array {
+		$recipient = $this->addressOn(case: $ack['case']);
+		$channel = $this->declaration->channelFor(case: $ack['case'], caseType: $ack['caseType']);
+		$withheld = $this->declaration->contentStaysOnPlatform(caseType: $ack['caseType']);
+		$term = $this->termService->getTermijnInstanceForZaak(caseId: $ack['caseId']);
 
 		$context = $this->contextFor(
-			case: $case,
-			caseType: $caseType,
+			case: $ack['case'],
+			caseType: $ack['caseType'],
 			term: $term,
 			channel: $channel,
 			withheld: $withheld,
@@ -208,39 +237,42 @@ class AcknowledgementService {
 			'contentWithheld' => $withheld,
 		];
 
-		// The sender picks the channel (portal inbox, digital post, e-mail),
-		// calls its transport and records the result on the case. A notice no
-		// transport took throws, so nothing below runs for it (REQ-WRN-003).
-		try {
-			$payload = $this->notifications->sendTermijnNotification(
-				CaseTypeAcknowledgement::TEMPLATE,
-				(string)($term['id'] ?? ($term['uuid'] ?? '')),
-				$recipient,
-				$context,
-				$case,
-			);
-		} catch (NoticeNotSentException $e) {
-			throw $this->notSent(caseId: $caseId, notice: $e);
-		}
+		return $ack + ['recipient' => $recipient, 'term' => $term, 'context' => $context];
+	}//end prepared()
 
-		$dispatch = (array)($payload['dispatch'] ?? []);
-		$sentAt = (string)($dispatch['sentAt'] ?? '');
-		$record = (array)($dispatch['record'] ?? []);
+	/**
+	 * Hand the acknowledgement to the sender.
+	 *
+	 * @param array<string, mixed> $ack     The prepared acknowledgement.
+	 * @param array<string, mixed> $context The context to send it with.
+	 *
+	 * @return array<string, mixed> What the sender answered.
+	 *
+	 * @throws NoticeNotSentException When no transport took it.
+	 */
+	private function sendNotice(array $ack, array $context): array {
+		return $this->notifications->sendTermijnNotification(
+			CaseTypeAcknowledgement::TEMPLATE,
+			(string)($ack['term']['id'] ?? ($ack['term']['uuid'] ?? '')),
+			$ack['recipient'],
+			$context,
+			$ack['case'],
+		);
+	}//end sendNotice()
 
-		$met = [
-			'required' => true,
-			'status' => self::STATUS_MET,
-			'channel' => (string)($dispatch['channel'] ?? ''),
-			'recipient' => $recipient,
-			'sentAt' => $sentAt,
-			'attempts' => $attempt,
-			'lastError' => '',
-		];
+	/**
+	 * Record a met duty on the case, send the e-mail copy when declared, and write the public line.
+	 *
+	 * @param array<string, mixed> $ack The prepared acknowledgement.
+	 * @param array<string, mixed> $met The met duty.
+	 *
+	 * @return void
+	 */
+	private function recordMet(array $ack, array $met): void {
+		$this->write(caseId: $ack['caseId'], changes: ['acknowledgementDuty' => $met]);
 
-		$this->write(caseId: $caseId, changes: ['acknowledgementDuty' => $met]);
-
-		if ($met['channel'] !== RequesterNoticeSender::CHANNEL_EMAIL && $this->declaration->sendsEmailCopy(caseType: $caseType) === true) {
-			$this->sendEmailCopy(case: $case, term: $term, recipient: $recipient, context: $context);
+		if ($met['channel'] !== RequesterNoticeSender::CHANNEL_EMAIL && $this->declaration->sendsEmailCopy(caseType: $ack['caseType']) === true) {
+			$this->sendEmailCopy(ack: $ack);
 		}
 
 		// PUBLIC, because the acknowledgement is the one message on this path
@@ -249,25 +281,23 @@ class AcknowledgementService {
 		// on the very act the law requires be sent to them. Written only here,
 		// after a transport took it, with the transport's own moment.
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: $ack['caseId'],
 			kind: TimelineKinds::ACKNOWLEDGEMENT,
 			message: 'Ontvangstbevestiging verzonden',
 			fields: [
 				'channel' => (string)$met['channel'],
-				'recipient' => (string)$recipient,
+				'recipient' => (string)$met['recipient'],
 				'template' => CaseTypeAcknowledgement::TEMPLATE,
-				'sentAt' => $sentAt,
+				'sentAt' => $met['sentAt'],
 			],
 			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
 
 		$this->logger->info(
 			'Dossiq acknowledgement: receipt of case {case} confirmed through {channel}',
-			['case' => $caseId, 'channel' => $met['channel'], 'attempt' => $attempt],
+			['case' => $ack['caseId'], 'channel' => $met['channel'], 'attempt' => $met['attempts']],
 		);
-
-		return ['sent' => true, 'duty' => $met, 'record' => $record, 'payload' => $payload];
-	}//end acknowledge()
+	}//end recordMet()
 
 	/**
 	 * The same acknowledgement by e-mail as well, when the case type asks for it.
@@ -276,28 +306,19 @@ class AcknowledgementService {
 	 * no transport took is recorded as not sent there and leaves the duty,
 	 * which the first channel already met, as it is.
 	 *
-	 * @param array<string, mixed>      $case      The case row.
-	 * @param array<string, mixed>|null $term      The bound statutory term.
-	 * @param string                    $recipient The address on the case.
-	 * @param array<string, mixed>      $context   The acknowledgement's context.
+	 * @param array<string, mixed> $ack The prepared acknowledgement.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
-	private function sendEmailCopy(array $case, ?array $term, string $recipient, array $context): void {
+	private function sendEmailCopy(array $ack): void {
 		try {
-			$this->notifications->sendTermijnNotification(
-				CaseTypeAcknowledgement::TEMPLATE,
-				(string)($term['id'] ?? ($term['uuid'] ?? '')),
-				$recipient,
-				$context + ['channels' => [RequesterNoticeSender::CHANNEL_EMAIL]],
-				$case,
-			);
+			$this->sendNotice(ack: $ack, context: $ack['context'] + ['channels' => [RequesterNoticeSender::CHANNEL_EMAIL]]);
 		} catch (NoticeNotSentException $e) {
 			$this->logger->warning(
 				'Dossiq acknowledgement: the e-mail copy for case {case} was not sent: {reason}',
-				['case' => (string)($case['id'] ?? ''), 'reason' => $e->getMessage()],
+				['case' => (string)($ack['case']['id'] ?? ''), 'reason' => $e->getMessage()],
 			);
 		}
 	}//end sendEmailCopy()
@@ -550,7 +571,7 @@ class AcknowledgementService {
 		}
 
 		$source = trim((string)($case['initiatorSourceId'] ?? ''));
-		if ($source !== '' && filter_var($source, FILTER_VALIDATE_EMAIL) !== false) {
+		if (filter_var($source, FILTER_VALIDATE_EMAIL) !== false) {
 			return strtolower($source);
 		}
 
