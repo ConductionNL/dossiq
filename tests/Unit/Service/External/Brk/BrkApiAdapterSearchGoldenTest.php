@@ -84,12 +84,12 @@ class BrkApiAdapterSearchGoldenTest extends TestCase {
 		};
 
 		$config = ($world['config'] ?? ['integration.brk.mode' => 'test', 'integration.brk.apiKey' => 'key-1']);
-		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
 			static fn (string $app, string $key, string $default = ''): string => (string)($config[$key] ?? $default)
 		);
 
-		$response = $this->createMock(IResponse::class);
+		$response = $this->createMock(originalClassName: IResponse::class);
 		if (($world['response'] ?? null) === 'throw') {
 			$response->method('getStatusCode')->willThrowException(new RuntimeException('status unreadable'));
 		} else {
@@ -98,7 +98,7 @@ class BrkApiAdapterSearchGoldenTest extends TestCase {
 
 		$response->method('getBody')->willReturn(($world['body'] ?? '{"_embedded":{"kadastraalOnroerendeZaken":[]}}'));
 
-		$client = $this->createMock(IClient::class);
+		$client = $this->createMock(originalClassName: IClient::class);
 		$client->method('get')->willReturnCallback(
 			function (string $uri, array $options = []) use ($world, $response): IResponse {
 				$this->requests[] = ['uri' => $uri, 'options' => $options];
@@ -110,7 +110,7 @@ class BrkApiAdapterSearchGoldenTest extends TestCase {
 			}
 		);
 
-		$clients = $this->createMock(IClientService::class);
+		$clients = $this->createMock(originalClassName: IClientService::class);
 		$clients->method('newClient')->willReturn($client);
 
 		$adapter = new BrkApiAdapter(
@@ -168,7 +168,10 @@ class BrkApiAdapterSearchGoldenTest extends TestCase {
 			'no embedded' => ['body' => '{"items":[1]}'],
 			'unreadable status' => ['response' => 'throw'],
 			'transport failure' => ['get' => 'throw'],
-			'base url with trailing slash, no api key' => ['config' => ['integration.brk.mode' => 'live', 'integration.brk.baseUrl' => 'https://brk.example/v2/'], 'body' => $found],
+			'base url with trailing slash, no api key' => [
+				'config' => ['integration.brk.mode' => 'live', 'integration.brk.baseUrl' => 'https://brk.example/v2/'],
+				'body' => $found,
+			],
 		];
 
 		$observed = [];
