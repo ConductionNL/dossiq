@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
  * The payload reads accept arrays, serialisable objects and toArray() objects, and answer nothing for anything else.
  *
  * @covers \OCA\Dossiq\Listener\Support\ObjectUpdatePayload
+ * @covers \OCA\Dossiq\Listener\Support\ReadsEventObjects
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */

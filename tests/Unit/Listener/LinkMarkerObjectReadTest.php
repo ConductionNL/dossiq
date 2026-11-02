@@ -31,6 +31,7 @@ use ReflectionClass;
  * The new object wins over the object; an array or a serialisable object is read, anything else is skipped.
  *
  * @covers \OCA\Dossiq\Listener\LinkMarkerListener
+ * @covers \OCA\Dossiq\Listener\Support\ReadsEventObjects
  *
  * @spec openspec/specs/case-management/spec.md
  */

@@ -35,6 +35,8 @@ use OCP\EventDispatcher\Event;
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */
 trait ObjectUpdatePayload {
+	use ReadsEventObjects;
+
 	/**
 	 * The id of the object an update moved into a status, or '' when the update did not.
 	 *
@@ -116,12 +118,8 @@ trait ObjectUpdatePayload {
 	 * @return array<string, mixed>|null
 	 */
 	private function updatedObject(Event $event): ?array {
-		foreach (['getNewObject', 'getObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$array = $this->payloadArray(value: $event->{$method}());
+		foreach ($this->eventObjectValues(event: $event) as $value) {
+			$array = $this->payloadArray(value: $value);
 			if ($array !== null) {
 				return $array;
 			}
