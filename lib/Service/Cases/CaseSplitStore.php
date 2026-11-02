@@ -94,6 +94,137 @@ class CaseSplitStore {
 	}//end enterStatus()
 
 	/**
+	 * Refuse, before the second case is opened, a status it could not be moved into.
+	 *
+	 * A closing status needs a result when the case type declares results, and
+	 * a split has none to give. The engine's own close step answers that
+	 * without writing anything, because no result is named.
+	 *
+	 * @param array<string, mixed> $source The case being split.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException `result-type-required` when that status closes a case with a result,
+	 *         or `split-unwritable` when the status could not be checked. Nothing is opened either way.
+	 *
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	public function refuseUnreachableStatus(array $source): void {
+		$status = trim((string)($source['status'] ?? ''));
+		if ($status === '') {
+			return;
+		}
+
+		try {
+			$this->ledger->close(
+				case: ['caseType' => (string)($source['caseType'] ?? '')],
+				caseId: '',
+				toStatus: $status,
+				resultTypeId: null,
+			);
+		} catch (RefusedException $refused) {
+			throw new RefusedException(
+				rule: $refused->getRule(),
+				sentence: 'This case is closed, and its case type closes a case only with a result, so it cannot be split.'
+					. ' Nothing was opened or moved.',
+				status: $refused->getStatus(),
+				previous: $refused,
+			);
+		} catch (Throwable $e) {
+			throw new RefusedException(
+				rule: CaseSplitExecutor::UNWRITABLE,
+				sentence: 'We could not check the status of this case, so it was not split. Nothing was opened or moved.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}
+	}//end refuseUnreachableStatus()
+
+	/**
+	 * Remove a second case that could not take over the status of the first, or else mark it.
+	 *
+	 * @param array<string, mixed> $newCase The second case as stored.
+	 *
+	 * @return string What the handler is told: what was left behind, and that nothing was moved.
+	 *
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	public function undoSecondCase(array $newCase): string {
+		$caseId = $this->uuidOf(row: $newCase);
+		if ($this->discardCase(caseId: $caseId) === true) {
+			return 'The second case could not take over the status of the first, so it was removed again. Nothing was moved.';
+		}
+
+		$number = trim((string)($newCase['identifier'] ?? $caseId));
+		if ($this->markFailedSplit(case: $newCase) === true) {
+			return 'The second case ' . $number . ' could not take over the status of the first and could not be removed.'
+				. ' It is titled as a failed split; remove it. Nothing was moved.';
+		}
+
+		return 'The second case ' . $number . ' could not take over the status of the first,'
+			. ' and could not be removed or marked. Remove it by hand. Nothing was moved.';
+	}//end undoSecondCase()
+
+	/**
+	 * Remove a case a failed split opened, with any status record written for it.
+	 *
+	 * Runs with the handler's own rights. Returns false rather than throwing,
+	 * so the caller can say what is left behind.
+	 *
+	 * @param string $caseId The case to remove.
+	 *
+	 * @return bool True when the case is gone.
+	 *
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function discardCase(string $caseId): bool {
+		try {
+			[$objectService, $register] = $this->context();
+			$recordSchema = $this->schema(key: 'status_record_schema');
+			$records = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $recordSchema,
+				filters: ['case' => $caseId],
+			);
+			foreach ($records as $record) {
+				$objectService->deleteObject(uuid: $this->uuidOf(row: $record), register: $register, schema: $recordSchema);
+			}
+
+			return ($objectService->deleteObject(uuid: $caseId, register: $register, schema: $this->schema(key: 'case_schema')) !== false);
+		} catch (Throwable) {
+			return false;
+		}
+	}//end discardCase()
+
+	/**
+	 * Title a case a failed split opened and could not remove, so a handler finds it.
+	 *
+	 * @param array<string, mixed> $case The case as stored.
+	 *
+	 * @return bool True when the title was written.
+	 *
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 */
+	private function markFailedSplit(array $case): bool {
+		$case['title'] = 'Failed split: ' . (string)($case['title'] ?? '');
+		try {
+			[$objectService, $register] = $this->context();
+			$this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $this->schema(key: 'case_schema'),
+				object: $case,
+				uuid: $this->uuidOf(row: $case),
+			);
+
+			return true;
+		} catch (Throwable) {
+			return false;
+		}
+	}//end markFailedSplit()
+
+	/**
 	 * The stored case, or a refusal.
 	 *
 	 * @param string $caseId The case uuid.

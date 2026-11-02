@@ -426,6 +426,7 @@ class CaseSplitExecutor {
 	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	private function openSecondCase(array $source, string $title, string $actor): array {
+		$this->store->refuseUnreachableStatus(source: $source);
 		$payload = $this->secondCaseOf(source: $source, title: $title);
 		$payload['relatedCases'] = $this->relationBack(sourceId: $payload['splitFrom'], actor: $actor);
 
@@ -464,12 +465,13 @@ class CaseSplitExecutor {
 		} catch (Throwable $e) {
 			throw new RefusedException(
 				rule: self::UNWRITABLE,
-				sentence: 'The second case was opened but could not take over the status of the first, so nothing was moved.',
+				sentence: $this->store->undoSecondCase(newCase: $newCase),
 				status: RefusedException::STATUS_INDETERMINATE,
 				previous: $e,
 			);
 		}
 	}//end takeOverStatus()
+
 
 	/**
 	 * The second case's fields, taken from the first.

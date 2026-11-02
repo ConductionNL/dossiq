@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -66,7 +67,10 @@ class CaseSplitStatusTest extends TestCase {
 	/**
 	 * The register, refusing a create outside the initial status.
 	 *
-	 * @var InMemoryRegister&object{states: array<string, array<int, string>>, rbac: array<int, bool>, mayWriteCases: bool}
+	 * @var InMemoryRegister&object{
+	 *     states: array<string, array<int, string>>, rbac: array<int, bool>,
+	 *     mayWriteCases: bool, mayUpdateCases: bool, mayDeleteCases: bool
+	 * }
 	 */
 	private InMemoryRegister $register;
 
@@ -99,6 +103,37 @@ class CaseSplitStatusTest extends TestCase {
 			public bool $mayWriteCases = true;
 
 			/**
+			 * Whether the handler may change a case once it exists.
+			 *
+			 * @var bool
+			 */
+			public bool $mayUpdateCases = true;
+
+			/**
+			 * Whether the handler may remove a case.
+			 *
+			 * @var bool
+			 */
+			public bool $mayDeleteCases = true;
+
+			/**
+			 * Remove one row, refusing a case when the handler may not.
+			 *
+			 * @param int|string $register Ignored.
+			 * @param int|string $schema   The schema slug.
+			 * @param string     $uuid     The uuid.
+			 *
+			 * @return bool True when a row was removed.
+			 */
+			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+				if ($schema === 'case' && $this->mayDeleteCases === false) {
+					throw new RuntimeException("User 'jan' does not have permission to 'delete' objects in schema 'case'");
+				}
+
+				return parent::deleteObject(register: $register, schema: $schema, uuid: $uuid);
+			}
+
+			/**
 			 * Save a row, starting a new case in its case type's initial status.
 			 *
 			 * @param array<string, mixed> $object        The row.
@@ -129,6 +164,10 @@ class CaseSplitStatusTest extends TestCase {
 
 				if ($uuid === null && isset($object['id']) === true) {
 					$uuid = (string)$object['id'];
+				}
+
+				if ($this->mayUpdateCases === false && $uuid !== null && isset($this->rows['case'][$uuid]) === true) {
+					throw new RuntimeException("User 'jan' does not have permission to 'update' objects in schema 'case'");
 				}
 
 				if ($uuid === null || isset($this->rows['case'][$uuid]) === false) {
@@ -217,7 +256,7 @@ class CaseSplitStatusTest extends TestCase {
 		}
 
 		self::assertSame(expected: 'case-1', actual: $this->register->row(schema: 'caseDocument', uuid: 'doc-1')['case']);
-		self::assertSame(expected: [], actual: $this->register->all(schema: 'statusRecord'));
+		$this->assertNothingLeftBehind();
 	}//end testAHandlerWhoMayNotWriteCasesIsRefused()
 
 	/**
@@ -287,13 +326,164 @@ class CaseSplitStatusTest extends TestCase {
 	}//end testAMoveThatCannotBeRecordedIsRefused()
 
 	/**
+	 * A move whose record fails removes the second case again, and says so.
+	 *
+	 * @return void
+	 */
+	public function testAMoveThatCannotBeRecordedRemovesTheSecondCase(): void {
+		$this->register->refusedSchemas = ['statusRecord'];
+
+		$refused = $this->refusal();
+
+		self::assertSame(expected: CaseSplitExecutor::UNWRITABLE, actual: $refused->getRule());
+		self::assertStringContainsString(needle: 'removed again', haystack: $refused->getSentence());
+		$this->assertNothingLeftBehind();
+	}//end testAMoveThatCannotBeRecordedRemovesTheSecondCase()
+
+	/**
+	 * A failure after the record is written removes the record with the case.
+	 *
+	 * @return void
+	 */
+	public function testAFailureAfterTheRecordRemovesTheRecordToo(): void {
+		$refused = $this->refusal(timeline: false);
+
+		self::assertSame(expected: CaseSplitExecutor::UNWRITABLE, actual: $refused->getRule());
+		$this->assertNothingLeftBehind();
+	}//end testAFailureAfterTheRecordRemovesTheRecordToo()
+
+	/**
+	 * A handler who may create but not update cases is left with nothing.
+	 *
+	 * @return void
+	 */
+	public function testAHandlerWhoMayCreateButNotUpdateIsLeftWithNothing(): void {
+		$this->register->mayUpdateCases = false;
+
+		$refused = $this->refusal();
+
+		self::assertStringContainsString(needle: 'removed again', haystack: $refused->getSentence());
+		$this->assertNothingLeftBehind();
+	}//end testAHandlerWhoMayCreateButNotUpdateIsLeftWithNothing()
+
+	/**
+	 * A closed case whose type closes with a result is refused before anything opens, every time.
+	 *
+	 * @return void
+	 */
+	public function testAClosedCaseNeedingAResultIsRefusedBeforeAnythingOpens(): void {
+		foreach ([1, 2] as $attempt) {
+			$refused = $this->refusal(final: true, results: true);
+
+			self::assertSame(expected: 'result-type-required', actual: $refused->getRule(), message: 'attempt ' . $attempt);
+			self::assertStringContainsString(needle: 'cannot be split', haystack: $refused->getSentence());
+			$this->assertNothingLeftBehind();
+		}
+	}//end testAClosedCaseNeedingAResultIsRefusedBeforeAnythingOpens()
+
+	/**
+	 * A second case that cannot be removed is titled as a failed split, and the handler is told.
+	 *
+	 * @return void
+	 */
+	public function testASecondCaseThatCannotBeRemovedIsMarked(): void {
+		$this->register->refusedSchemas = ['statusRecord'];
+		$this->register->mayDeleteCases = false;
+
+		$refused = $this->refusal();
+
+		self::assertStringContainsString(needle: 'titled as a failed split', haystack: $refused->getSentence());
+		$left = $this->secondCases();
+		self::assertCount(expectedCount: 1, haystack: $left);
+		self::assertSame(expected: 'Failed split: De tweede klacht', actual: $left[0]['title']);
+		$this->assertTheOriginalIsUntouched();
+	}//end testASecondCaseThatCannotBeRemovedIsMarked()
+
+	/**
+	 * A second case that can be neither removed nor marked is named in the refusal.
+	 *
+	 * @return void
+	 */
+	public function testASecondCaseThatCannotBeRemovedOrMarkedIsNamed(): void {
+		$this->register->mayUpdateCases = false;
+		$this->register->mayDeleteCases = false;
+
+		$refused = $this->refusal();
+
+		$left = $this->secondCases();
+		self::assertCount(expectedCount: 1, haystack: $left);
+		self::assertStringContainsString(needle: 'Remove it by hand', haystack: $refused->getSentence());
+		self::assertStringContainsString(needle: (string)$left[0]['id'], haystack: $refused->getSentence());
+		self::assertSame(expected: 'De tweede klacht', actual: $left[0]['title']);
+		$this->assertTheOriginalIsUntouched();
+	}//end testASecondCaseThatCannotBeRemovedOrMarkedIsNamed()
+
+	/**
+	 * The refusal of a split expected to fail.
+	 *
+	 * @param bool $final    Whether every status is final.
+	 * @param bool $results  Whether the case type closes with a result.
+	 * @param bool $timeline Whether the timeline entry succeeds.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function refusal(bool $final = false, bool $results = false, bool $timeline = true): RefusedException {
+		try {
+			$this->split(final: $final, results: $results, timeline: $timeline);
+		} catch (RefusedException $refused) {
+			return $refused;
+		}
+
+		self::fail(message: 'The split went on.');
+	}//end refusal()
+
+	/**
+	 * The cases other than the original.
+	 *
+	 * @return array<int, array<string, mixed>> The cases.
+	 */
+	private function secondCases(): array {
+		return array_values(
+			array_filter(
+				$this->register->all(schema: 'case'),
+				static fn (array $row): bool => (string)($row['id'] ?? '') !== 'case-1',
+			)
+		);
+	}//end secondCases()
+
+	/**
+	 * Only the original case exists, with no status records, and it is as it was.
+	 *
+	 * @return void
+	 */
+	private function assertNothingLeftBehind(): void {
+		self::assertSame(expected: [], actual: $this->secondCases());
+		self::assertSame(expected: [], actual: $this->register->all(schema: 'statusRecord'));
+		$this->assertTheOriginalIsUntouched();
+	}//end assertNothingLeftBehind()
+
+	/**
+	 * The original keeps its status and its document, and records no split.
+	 *
+	 * @return void
+	 */
+	private function assertTheOriginalIsUntouched(): void {
+		$original = $this->register->row(schema: 'case', uuid: 'case-1');
+		self::assertSame(expected: 'st-review', actual: $original['status']);
+		self::assertArrayNotHasKey(key: 'splitInto', array: $original);
+		self::assertSame(expected: 'case-1', actual: $this->register->row(schema: 'caseDocument', uuid: 'doc-1')['case']);
+	}//end assertTheOriginalIsUntouched()
+
+	/**
 	 * Split case-1, moving doc-1, as jan.
 	 *
-	 * @param bool $final Whether every status is final.
+	 * @param bool $final    Whether every status is final.
+	 * @param bool $results  Whether the case type closes with a result.
+	 * @param bool $timeline Whether the timeline entry of a move fails after its record is written.
 	 *
 	 * @return array<string, mixed> The executor's answer.
 	 */
-	private function split(bool $final = false): array {
+	private function split(bool $final = false, bool $results = false, bool $timeline = true): array {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->register);
 		$settings->method('getConfigValue')->willReturnCallback(
@@ -312,15 +502,31 @@ class CaseSplitStatusTest extends TestCase {
 		);
 
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
-		$results = $this->createMock(originalClassName: CaseResultWriter::class);
-		$results->method('isFinalStatus')->willReturn($final);
+		$writer = $this->createMock(originalClassName: CaseResultWriter::class);
+		$writer->method('isFinalStatus')->willReturn($final);
+		if ($results === true) {
+			$writer->method('resolveClosingResult')->willThrowException(
+				new RefusedException(
+					rule: 'result-type-required',
+					sentence: 'Pick a result before closing this case.',
+					status: RefusedException::STATUS_UNPROCESSABLE,
+				)
+			);
+		}
+
+		$entry = null;
+		if ($timeline === false) {
+			$entry = $this->createMock(originalClassName: StatusMoveEntry::class);
+			$entry->method('record')->willThrowException(new RuntimeException('timeline unavailable'));
+		}
 		$ledger = new CaseMoveLedger(
 			store: new CaseStatusStore(
 				settingsService: $settings,
 				statusTypeLookup: $this->createMock(originalClassName: StatusTypeLookup::class),
 				logger: $logger,
+				moveEntry: $entry,
 			),
-			resultWriter: $results,
+			resultWriter: $writer,
 			dispatcher: $this->createMock(originalClassName: SideEffectDispatcher::class),
 			logger: $logger,
 		);
