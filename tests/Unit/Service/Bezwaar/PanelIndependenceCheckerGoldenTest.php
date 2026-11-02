@@ -281,4 +281,20 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 			);
 		}
 	}//end testMissingSchemasRefuseThePanel()
+
+	/**
+	 * A request without an objection is refused as unverifiable, not cleared.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyObjectionRefusesThePanel(): void {
+		$objects = ['decision' => ['dec-1' => ['id' => 'dec-1', 'createdBy' => 'alice']]];
+		$observed = $this->observe(world: ['objectionId' => '', 'objects' => $objects, 'objections' => []]);
+
+		$this->assertSame(
+			expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+			actual: $observed['verdict']
+		);
+		$this->assertSame(expected: [], actual: $observed['calls'], message: 'an empty objection reads nothing');
+	}//end testAnEmptyObjectionRefusesThePanel()
 }//end class

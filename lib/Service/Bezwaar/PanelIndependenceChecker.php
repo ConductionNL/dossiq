@@ -103,12 +103,18 @@ class PanelIndependenceChecker {
 	 * @return array{ok: bool, member: ?string, reason: ?string} The verdict; a refusal
 	 *                                                          without a member means
 	 *                                                          independence could not
-	 *                                                          be verified.
+	 *                                                          be verified, as for a
+	 *                                                          request without an objection.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+	 * @spec openspec/changes/creating-into-deliberation-runs-the-panel-check/specs/bezwaar-advisory-committee/spec.md#requirement-every-single-object-save-that-starts-deliberation-runs-the-panel-check
 	 */
 	public function check(string $objectionId, array $panel): array {
-		if ($objectionId === '' || $panel === []) {
+		if ($objectionId === '') {
+			return $this->verdictFor(conflicting: false);
+		}
+
+		if ($panel === []) {
 			return $this->verdictFor(conflicting: null);
 		}
 

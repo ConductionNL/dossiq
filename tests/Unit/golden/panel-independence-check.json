@@ -50,9 +50,9 @@
     },
     "empty objection id": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [],
         "logs": []
