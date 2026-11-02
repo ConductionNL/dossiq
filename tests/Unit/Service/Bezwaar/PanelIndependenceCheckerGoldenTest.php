@@ -315,4 +315,29 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 			);
 		}
 	}//end testADecisionWithoutAnAuthorRefusesThePanel()
+
+	/**
+	 * A contested decision that cannot be established is refused as unverifiable, not cleared.
+	 *
+	 * @return void
+	 */
+	public function testAnUnestablishedContestedDecisionRefusesThePanel(): void {
+		$objects = [
+			'bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']],
+			'decision' => ['dec-1' => ['id' => 'dec-1', 'createdBy' => 'alice']],
+		];
+		$worlds = [
+			'no objection record for the case' => [],
+			'an objection without a contested decision' => [['id' => 'obj-1', 'case' => 'case-1']],
+			'a contested decision that does not resolve' => [['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-404']],
+		];
+		foreach ($worlds as $name => $objections) {
+			$observed = $this->observe(world: ['objects' => $objects, 'objections' => $objections, 'panel' => ['alice', 'bob']]);
+			$this->assertSame(
+				expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+				actual: $observed['verdict'],
+				message: $name
+			);
+		}
+	}//end testAnUnestablishedContestedDecisionRefusesThePanel()
 }//end class

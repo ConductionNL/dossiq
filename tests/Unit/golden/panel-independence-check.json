@@ -431,9 +431,9 @@
     },
     "no objection": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -523,9 +523,9 @@
     },
     "first objection is used": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -566,9 +566,9 @@
     },
     "objection without a contested decision": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -609,9 +609,9 @@
     },
     "contested decision missing": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [

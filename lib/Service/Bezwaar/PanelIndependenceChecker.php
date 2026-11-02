@@ -208,7 +208,7 @@ class PanelIndependenceChecker {
 	 * @param array<string> $panel  Panel member UIDs.
 	 *
 	 * @return string|false|null The conflicting member UID, null when none conflicts, false when a store read threw
-	 *                           or the contested decision has no recorded author.
+	 *                           or the contested decision's author cannot be established.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
@@ -217,10 +217,6 @@ class PanelIndependenceChecker {
 			$author = $this->resolveContestedDecisionAuthor(lookup: $lookup);
 			if ($author === false) {
 				return false;
-			}
-
-			if ($author === '') {
-				return null;
 			}
 
 			return $this->findConflictingPanelMember(
@@ -243,7 +239,7 @@ class PanelIndependenceChecker {
 	 *
 	 * @param Lookup $lookup The store, the objection id, the register and the schemas.
 	 *
-	 * @return string|false The steller UID, '' when no contested decision resolves, false when it has no recorded author.
+	 * @return string|false The steller UID, or false when the contested decision or its author cannot be established.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
@@ -281,12 +277,12 @@ class PanelIndependenceChecker {
 		}
 
 		if (is_array($objection) === false) {
-			return '';
+			return false;
 		}
 
 		$contestedId = (string)($objection['contestedDecision'] ?? '');
 		if ($contestedId === '') {
-			return '';
+			return false;
 		}
 
 		$decision = $this->findObjectAsArray(
@@ -296,7 +292,7 @@ class PanelIndependenceChecker {
 			id: $contestedId
 		);
 		if ($decision === null) {
-			return '';
+			return false;
 		}
 
 		$author = (string)(
