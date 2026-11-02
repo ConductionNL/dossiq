@@ -375,4 +375,25 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 		$emptyOnly = $verdict(['@self' => ['owner' => '']]);
 		$this->assertSame(expected: [false, null], actual: [$emptyOnly['ok'], $emptyOnly['member']], message: 'only an empty owner: unverifiable');
 	}//end testEveryRecordedAuthorIsAConflict()
+
+	/**
+	 * Authors and panel members are compared trimmed; blanks are neither an author nor a member.
+	 *
+	 * @return void
+	 */
+	public function testAuthorsAndMembersAreComparedTrimmed(): void {
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		$verdict = function (array $decision, array $panel) use ($objection): array {
+			$objects = ['bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']], 'decision' => ['dec-1' => ['id' => 'dec-1'] + $decision]];
+			return $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => $panel])['verdict'];
+		};
+		$unverifiable = ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'];
+
+		$this->assertSame(expected: $unverifiable, actual: $verdict(['decidedBy' => ' '], ['alice', 'bob']), message: 'a blank author is no author');
+		$this->assertSame(expected: 'alice', actual: $verdict(['decidedBy' => 'alice '], ['alice', 'bob'])['member'], message: 'a padded author');
+		$this->assertSame(expected: 'alice', actual: $verdict(['decidedBy' => 'alice'], [' alice', 'bob'])['member'], message: 'a padded member');
+		$blankPair = $verdict(['decidedBy' => ' '], [' ', 'bob']);
+		$this->assertSame(expected: $unverifiable, actual: $blankPair, message: 'a blank author does not match a blank member');
+		$this->assertSame(expected: $unverifiable, actual: $verdict(['decidedBy' => 'alice'], ['', ' ']), message: 'a blank-only panel');
+	}//end testAuthorsAndMembersAreComparedTrimmed()
 }//end class

@@ -70,6 +70,7 @@ use Throwable;
 class PanelIndependenceChecker {
 
 	use SearchesObjects;
+	use ReadsPanelMembers;
 
 	/**
 	 * The refusal reason when the check could not run.
@@ -114,8 +115,9 @@ class PanelIndependenceChecker {
 			return $this->verdictFor(conflicting: false);
 		}
 
-		if ($panel === []) {
-			return $this->verdictFor(conflicting: null);
+		$members = $this->panelMembers(panel: $panel);
+		if ($members === []) {
+			return $this->verdictFor(conflicting: false);
 		}
 
 		$lookup = $this->lookupFor(objectionId: $objectionId);
@@ -124,7 +126,7 @@ class PanelIndependenceChecker {
 		}
 
 		return $this->verdictFor(
-			conflicting: $this->conflictingMember(lookup: $lookup, panel: $panel)
+			conflicting: $this->conflictingMember(lookup: $lookup, panel: $members)
 		);
 	}//end check()
 
@@ -317,8 +319,8 @@ class PanelIndependenceChecker {
 		];
 		$authors = [];
 		foreach ($candidates as $candidate) {
-			if (is_scalar($candidate) === true && (string)$candidate !== '') {
-				$authors[] = (string)$candidate;
+			if (is_scalar($candidate) === true && trim((string)$candidate) !== '') {
+				$authors[] = trim((string)$candidate);
 			}
 		}
 
@@ -341,8 +343,8 @@ class PanelIndependenceChecker {
 	 */
 	private function findConflictingPanelMember(array $panel, array $authors): ?string {
 		foreach ($panel as $memberUid) {
-			if (in_array((string)$memberUid, $authors, true) === true) {
-				return (string)$memberUid;
+			if (in_array($memberUid, $authors, true) === true) {
+				return $memberUid;
 			}
 		}
 

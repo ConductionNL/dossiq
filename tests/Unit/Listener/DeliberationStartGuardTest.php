@@ -307,6 +307,22 @@ class DeliberationStartGuardTest extends TestCase {
 	}//end testCreatingIntoDeliberationWithoutAPanelOrAWorkingCheckIsRefused()
 
 	/**
+	 * A panel of blank members is no panel.
+	 *
+	 * @return void
+	 */
+	public function testABlankOnlyPanelDoesNotStartDeliberating(): void {
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+
+		foreach ([[''], [' '], ['', "\t"]] as $panel) {
+			$refusal = $this->createRequest(service: $service, row: ['status' => 'in-deliberation', 'panel' => $panel]);
+			$this->assertSame(expected: 'Panel must be set before deliberation can start', actual: $refusal?->getMessage(), message: json_encode($panel));
+		}
+
+		$this->assertSame(expected: [], actual: $this->store->row('bacAdviceRequest', 'req-1'), message: 'nothing is saved');
+	}//end testABlankOnlyPanelDoesNotStartDeliberating()
+
+	/**
 	 * Creating a request in in-deliberation with an independent panel, or in any other status, is saved unchecked.
 	 *
 	 * @return void

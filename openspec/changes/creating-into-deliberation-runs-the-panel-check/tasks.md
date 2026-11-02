@@ -13,6 +13,7 @@
 - [x] A request without an objection is unverifiable
 - [x] A contested decision without a recorded author is unverifiable
 - [x] A missing objection record, a missing `contestedDecision` and an unresolved decision are unverifiable
+- [x] Authors and panel members are compared trimmed; a blank-only panel is refused
 - [x] A panel or objection change during deliberation runs the check again
 - [x] A save or create that skips deliberation is refused
 - [x] Test: `tests/Unit/Listener/DeliberationStartGuardTest.php`, `tests/Unit/Service/Bezwaar/PanelIndependenceCheckerGoldenTest.php`
