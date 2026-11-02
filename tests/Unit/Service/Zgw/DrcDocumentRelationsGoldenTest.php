@@ -35,8 +35,24 @@ use Psr\Log\LoggerInterface;
  * The search half of the ObjectService, as the uniqueness check calls it.
  */
 interface DrcGoldenSearchStub {
+	/**
+	 * Build a search query.
+	 *
+	 * @param array<string, mixed> $requestParams The search parameters.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The schema.
+	 *
+	 * @return array<string, mixed>
+	 */
 	public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
 
+	/**
+	 * Run a search query.
+	 *
+	 * @param array<string, mixed> $query The query.
+	 *
+	 * @return array<string, mixed>
+	 */
 	public function searchObjectsPaginated(array $query): array;
 }//end interface
 
@@ -133,7 +149,7 @@ class DrcDocumentRelationsGoldenTest extends TestCase {
 	 * @return DrcDocumentRelations
 	 */
 	private function relations(array $schemas, int $hitAt, bool $throws): DrcDocumentRelations {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(
 			function (string $key) use ($schemas): string {
 				$this->log[] = ['getConfigValue' => $key];
@@ -141,7 +157,7 @@ class DrcDocumentRelationsGoldenTest extends TestCase {
 			}
 		);
 
-		$search = $this->createMock(DrcGoldenSearchStub::class);
+		$search = $this->createMock(originalClassName: DrcGoldenSearchStub::class);
 		$search->method('buildSearchQuery')->willReturnCallback(
 			function (array $requestParams, string $register, string $schema): array {
 				$this->log[] = ['buildSearchQuery' => ['requestParams' => $requestParams, 'register' => $register, 'schema' => $schema]];
@@ -170,7 +186,7 @@ class DrcDocumentRelationsGoldenTest extends TestCase {
 
 		return new DrcDocumentRelations(
 			lookups: $lookups,
-			results: new ZgwRuleResults(logger: $this->createMock(LoggerInterface::class)),
+			results: new ZgwRuleResults(logger: $this->createMock(originalClassName: LoggerInterface::class)),
 			settingsService: $settings,
 			fieldValidator: new FieldValidator()
 		);

@@ -71,7 +71,12 @@ class WooRequestIntakeWriteGoldenTest extends TestCase {
 
 		return [
 			'plain portal request' => [$base, $type, $written, false],
-			'with requester details' => [$base + ['verzoekerNaam' => 'Anna de Vries', 'verzoekerEmail' => 'anna@example.com', 'verzoekerType' => 'burger'], $type, $written, true],
+			'with requester details' => [
+				$base + ['verzoekerNaam' => 'Anna de Vries', 'verzoekerEmail' => 'anna@example.com', 'verzoekerType' => 'burger'],
+				$type,
+				$written,
+				true,
+			],
 			'requester details, no definitions' => [$base + ['verzoekerNaam' => 'Anna de Vries'], $type, $written, false],
 			'starts from an earlier request' => [$base + ['startFrom' => ' ' . self::EARLIER . ' '], $type, $written, false],
 			'start from that is no uuid' => [$base + ['startFrom' => 'not-a-uuid'], $type, $written, false],
@@ -80,7 +85,12 @@ class WooRequestIntakeWriteGoldenTest extends TestCase {
 			'with a branch number' => [$base + ['branch' => 123456789012], $type, $written, false],
 			'type without id or status' => [$base, ['initialStatus' => ' '], $written, false],
 			'pipelinq request' => [array_merge($base, ['origin' => 'pipelinq']), $type, ['id' => 'case-2', 'answer' => []], false],
-			'everything at once' => [$base + ['verzoekerNaam' => ' Bob ', 'startFrom' => self::EARLIER, 'branch' => '000012345678', 'audience' => 'client'], $type, $written, true],
+			'everything at once' => [
+				$base + ['verzoekerNaam' => ' Bob ', 'startFrom' => self::EARLIER, 'branch' => '000012345678', 'audience' => 'client'],
+				$type,
+				$written,
+				true,
+			],
 			'write fails' => [$base, $type, null, false],
 			'write without id' => [$base, $type, ['id' => '', 'answer' => []], false],
 		];
@@ -138,13 +148,13 @@ class WooRequestIntakeWriteGoldenTest extends TestCase {
 	 * @return void
 	 */
 	public function testReceiveWritesWhatWasRecorded(array $caseType, ?array $written, array $extra = []): void {
-		$answers = $this->createMock(WooReceivedAnswers::class);
+		$answers = $this->createMock(originalClassName: WooReceivedAnswers::class);
 		$answers->method('toRequest')->willReturn(
 			['onderwerp' => 'Notulen', 'omschrijving' => 'Raad 2025', 'origin' => 'portal-form', 'verzoekerNaam' => 'Cees']
 		);
 		$answers->method('intake')->willReturn(['intakeChannel' => 'website', 'receivedAt' => '2026-10-01T09:00:00+02:00'] + $extra);
 
-		$term = $this->createMock(WooReceivedTerm::class);
+		$term = $this->createMock(originalClassName: WooReceivedTerm::class);
 		$term->method('isAvailable')->willReturn(true);
 		$term->method('answer')->willReturnCallback(
 			fn (string $caseId, array $case, string $caseUrl): array => ['outcome' => 'armed', 'caseId' => $caseId, 'case' => $case, 'caseUrl' => $caseUrl]
@@ -196,14 +206,14 @@ class WooRequestIntakeWriteGoldenTest extends TestCase {
 			}
 		}
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($register);
 		$settings->method('getConfigValue')->willReturnCallback(
 			fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'property_definition_schema' => 'propertyDefinition'][$key] ?? $default
 		);
 		$settings->method('getPortalName')->willReturn('Mijn Zuiddrecht');
 
-		$cases = $this->createMock(SystemCaseStore::class);
+		$cases = $this->createMock(originalClassName: SystemCaseStore::class);
 		$cases->method('currentCaseType')->willReturnCallback(
 			function (object $objectService, string $register, string $caseTypeId) use ($caseType): array {
 				$this->log[] = ['currentCaseType' => ['register' => $register, 'caseTypeId' => $caseTypeId]];
@@ -223,13 +233,13 @@ class WooRequestIntakeWriteGoldenTest extends TestCase {
 			}
 		);
 
-		$urls = $this->createMock(IURLGenerator::class);
+		$urls = $this->createMock(originalClassName: IURLGenerator::class);
 		$urls->method('getAbsoluteURL')->willReturnCallback(fn (string $path): string => 'https://gemeente.test' . $path);
 
 		return new WooRequestIntake(
 			settingsService: $settings,
 			urlGenerator: $urls,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			receivedTerm: $term,
 			receivedAnswers: $answers,
 			cases: $cases,

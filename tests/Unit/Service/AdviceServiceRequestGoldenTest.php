@@ -39,6 +39,16 @@ use RuntimeException;
  * The save half of the ObjectService, as requestAdvice() calls it.
  */
 interface AdviceGoldenSaveStub {
+	/**
+	 * Save an object.
+	 *
+	 * @param mixed       $object   The object.
+	 * @param mixed       $register The register.
+	 * @param mixed       $schema   The schema.
+	 * @param string|null $uuid     The id to save under.
+	 *
+	 * @return mixed
+	 */
 	public function saveObject(mixed $object = null, mixed $register = null, mixed $schema = null, ?string $uuid = null): mixed;
 }//end interface
 
@@ -114,7 +124,7 @@ class AdviceServiceRequestGoldenTest extends TestCase {
 	 * @return AdviceService
 	 */
 	private function service(mixed $saved, bool $refuses): AdviceService {
-		$objects = $this->createMock(AdviceGoldenSaveStub::class);
+		$objects = $this->createMock(originalClassName: AdviceGoldenSaveStub::class);
 		$objects->method('saveObject')->willReturnCallback(
 			function (mixed $object = null, mixed $register = null, mixed $schema = null, ?string $uuid = null) use ($saved): mixed {
 				$this->log[] = ['saveObject' => ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]];
@@ -122,7 +132,7 @@ class AdviceServiceRequestGoldenTest extends TestCase {
 			}
 		);
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objects);
 		$settings->method('getConfigValue')->willReturnCallback(
 			function (string $key): string {
@@ -131,7 +141,7 @@ class AdviceServiceRequestGoldenTest extends TestCase {
 			}
 		);
 
-		$delegation = $this->createMock(AdviceDelegationService::class);
+		$delegation = $this->createMock(originalClassName: AdviceDelegationService::class);
 		$delegation->method('raiseAdviceDecision')->willReturnCallback(
 			function (string $subjectSchema, string $subjectId, array $payload = []) use ($refuses): string {
 				$this->log[] = ['raiseAdviceDecision' => ['subjectSchema' => $subjectSchema, 'subjectId' => $subjectId, 'payload' => $payload]];
@@ -143,14 +153,14 @@ class AdviceServiceRequestGoldenTest extends TestCase {
 			}
 		);
 
-		$notifier = $this->createMock(AdviceNotifier::class);
+		$notifier = $this->createMock(originalClassName: AdviceNotifier::class);
 		$notifier->method('notifyAdviseur')->willReturnCallback(
 			function (string $caseId, array $payload, array $saved): void {
 				$this->log[] = ['notifyAdviseur' => ['caseId' => $caseId, 'payload' => $payload, 'saved' => $saved]];
 			}
 		);
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		foreach (['info', 'error'] as $level) {
 			$logger->method($level)->willReturnCallback(
 				function (string $message, array $context = []) use ($level): void {
@@ -161,11 +171,11 @@ class AdviceServiceRequestGoldenTest extends TestCase {
 
 		return new AdviceService(
 			settingsService: $settings,
-			userSession: $this->createMock(IUserSession::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
 			logger: $logger,
 			adviceDelegation: $delegation,
-			repository: $this->createMock(AdviceRepository::class),
-			guard: $this->createMock(AdviceAuthorizationGuard::class),
+			repository: $this->createMock(originalClassName: AdviceRepository::class),
+			guard: $this->createMock(originalClassName: AdviceAuthorizationGuard::class),
 			notifier: $notifier,
 			dates: $this->caseDates(),
 		);
