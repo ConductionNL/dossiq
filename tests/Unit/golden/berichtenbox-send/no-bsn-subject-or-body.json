@@ -1,0 +1,11 @@
+{
+    "calls": [],
+    "answer": {
+        "error": "BSN is verplicht voor berichten via Mijn Overheid; Onderwerp is verplicht; Berichttekst is verplicht",
+        "errors": [
+            "BSN is verplicht voor berichten via Mijn Overheid",
+            "Onderwerp is verplicht",
+            "Berichttekst is verplicht"
+        ]
+    }
+}

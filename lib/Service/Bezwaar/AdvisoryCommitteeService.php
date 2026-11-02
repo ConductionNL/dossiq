@@ -58,6 +58,7 @@ use RuntimeException;
 class AdvisoryCommitteeService {
 
 	use SearchesObjects;
+	use ReadsPanelMembers;
 
 	/**
 	 * Allowed advice-request lifecycle states.
@@ -653,11 +654,11 @@ class AdvisoryCommitteeService {
 	 *
 	 * @return void
 	 *
-	 * @throws RuntimeException When no panel has been set
+	 * @throws RuntimeException When no panel has been set, or it holds only blank members
 	 * @throws GuardFailedException When a panel member is not independent, or independence cannot be verified
 	 */
 	private function guardPanel(array $request): void {
-		$panel = (array)($request['current']['panel'] ?? []);
+		$panel = $this->panelMembers(panel: (array)($request['current']['panel'] ?? []));
 		if ($panel === []) {
 			throw new RuntimeException(
 				'Panel must be set before deliberation can start'
