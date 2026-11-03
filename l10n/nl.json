@@ -11896,6 +11896,7 @@
         "{count} document(s) selected": "{count} document(en) geselecteerd",
         "{count} documents": "{count} documenten",
         "{count} documents selected": "{count} documenten geselecteerd",
+        "{count} end today": "{count} lopen vandaag af",
         "{count} ends today": "{count} loopt vandaag af",
         "{count} failed": "{count} mislukt",
         "{count} files go to case {case}, as a document still to be assessed.": "{count} bestanden komen bij zaak {case}, als nog te beoordelen document.",
