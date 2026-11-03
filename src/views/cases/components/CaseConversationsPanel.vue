@@ -393,4 +393,40 @@ export default {
 .case-conversations__meta {
 	color: var(--color-text-maxcontrast);
 }
+
+/* The board look (DqZaakContact "Live gesprek"): each conversation as one
+   56px row, its subject and meta line on the normal line beside the badge,
+   which centres on both, and the footnote 12px under the list. */
+.cn-look-board .case-conversations__record {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 2px 8px;
+	padding-block: 10px;
+}
+
+.cn-look-board .case-conversations__head {
+	display: contents;
+}
+
+.cn-look-board .case-conversations__subject {
+	grid-area: 1 / 1;
+	font-weight: 600;
+	line-height: normal;
+}
+
+.cn-look-board .case-conversations__head > .cn-status-badge {
+	grid-area: 1 / 2 / 3 / 3;
+}
+
+.cn-look-board .case-conversations__meta {
+	grid-area: 2 / 1;
+	font-size: 13px;
+	line-height: normal;
+}
+
+.cn-look-board .case-conversations__footnote {
+	margin-top: 12px;
+	line-height: normal;
+}
 </style>
