@@ -9,3 +9,4 @@
 - opencatalogi/wr-intake: no opencatalogi screen; a Woo request is registered as a dossiq case
 - opencatalogi/wr-deadline: no opencatalogi screen; the decision term of a Woo request runs on the dossiq case
 - dossiq/DqZaakTermijn termijn op de zaak, de vijf standen en verdagen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakTermijn
+- dossiq/DqZaakBesluiten zaak, besluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
