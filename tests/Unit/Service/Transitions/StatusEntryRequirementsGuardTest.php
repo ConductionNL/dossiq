@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\StatusEntryRequirementsGuard;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
+use OCA\Dossiq\Tests\Support\SiblingOpenRegister;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
@@ -106,16 +107,17 @@ class StatusEntryRequirementsGuardTest extends TestCase {
 	/**
 	 * The evaluator reads the case under json, as a rule flow's filter does.
 	 *
+	 * OpenRegister's autoloader stays registered once required, so this runs
+	 * in a process of its own.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 *
 	 * @return void
 	 */
 	public function testTheEvaluatorReadsTheCaseAsTheFilterDoes(): void {
-		$library = dirname(__DIR__, 5) . '/openregister/lib/Service/Flow/FlowExpression.php';
-		if (is_file($library) === false) {
-			$this->markTestSkipped('needs a sibling openregister checkout with its vendor');
-		}
-
-		require_once dirname(__DIR__, 5) . '/openregister/vendor/autoload.php';
-		require_once $library;
+		require_once SiblingOpenRegister::path(relative: 'vendor/autoload.php');
+		require_once SiblingOpenRegister::path(relative: 'lib/Service/Flow/FlowExpression.php');
 		$evaluator = new CaseConditionEvaluator();
 		$condition = ['>' => [['var' => 'json.bouwkosten'], 100000]];
 

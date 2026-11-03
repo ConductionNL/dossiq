@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
+use OCA\Dossiq\Tests\Support\SiblingOpenRegister;
 use PHPUnit\Framework\TestCase;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -639,15 +640,17 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 * authorization change without a conflict. With the baseline left as
 	 * shipped, the same change is kept out as a conflict.
 	 *
-	 * Runs OpenRegister's own merge, so it needs OpenRegister beside this app.
+	 * Runs OpenRegister's own merge from the checkout beside this app, in a
+	 * process of its own.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 *
 	 * @return void
 	 */
 	public function testAShippedChangeAfterARewriteMergesWithoutAConflict(): void {
+		SiblingOpenRegister::loadNamespace(namespace: 'Service\\ShippedBaseline');
 		$merge = 'OCA\\OpenRegister\\Service\\ShippedBaseline\\GuardedDescriptorMerge';
-		if (class_exists($merge) === false) {
-			$this->markTestSkipped(message: 'OpenRegister\'s GuardedDescriptorMerge is not beside this app.');
-		}
 
 		$shipped = $this->projector(rows: [])->shippedBlock();
 		$asShipped = self::baselineOf(authorization: $shipped);
