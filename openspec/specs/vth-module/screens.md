@@ -6,3 +6,4 @@
 - dossiq/DqInspectie inspectie in het veld, mobiel https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie
 - dossiq/DqToezichtplan toezichtplan: gepland en afgerond per categorie, capaciteit, frequentie op risico, kwartaaloverzicht met prognose, clusters op de kaart https://identity.conduction.nl/screens/board?id=dossiq/DqToezichtplan
 - dossiq/DqZaakDocumenten zaak, tabblad documenten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumenten
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
