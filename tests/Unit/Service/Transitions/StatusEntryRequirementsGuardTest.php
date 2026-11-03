@@ -86,7 +86,7 @@ class StatusEntryRequirementsGuardTest extends TestCase {
 		$wired = $reader->guardsWithImplicit(transition: $transition, approvalsWired: false, entryGuardWired: true);
 		$this->assertContains(['type' => GuardRegistry::STATUS_ENTRY_REQUIREMENTS, 'toStatus' => 'status-besluit'], $wired);
 
-		$unwired = $reader->guardsWithImplicit(transition: $transition, approvalsWired: false);
+		$unwired = $reader->guardsWithImplicit(transition: $transition, approvalsWired: false, entryGuardWired: false);
 		$this->assertNotContains(GuardRegistry::STATUS_ENTRY_REQUIREMENTS, array_column($unwired, 'type'));
 	}//end testTheEngineAppendsTheGuardWhenWired()
 	/**

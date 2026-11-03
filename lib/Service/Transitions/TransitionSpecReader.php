@@ -60,16 +60,12 @@ class TransitionSpecReader {
 	 * @param bool                 $approvalsWired Whether the registry answers for the approval gate.
 	 * @param bool                 $entryGuardWired Whether the registry answers for a status's entry requirements.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Each flag says whether an implicit guard's
-	 *   evaluator is wired, the same question approvalsWired answers; the method appends, it
-	 *   does not change mode.
-	 *
 	 * @return array<int, array<string, mixed>> The guards to evaluate, in order.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
 	 */
-	public function guardsWithImplicit(array $transition, bool $approvalsWired, bool $entryGuardWired = false): array {
+	public function guardsWithImplicit(array $transition, bool $approvalsWired, bool $entryGuardWired): array {
 		$guards = $this->extractGuards(transition: $transition);
 		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
 
