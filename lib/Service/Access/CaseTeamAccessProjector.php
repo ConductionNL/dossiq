@@ -71,6 +71,11 @@ class CaseTeamAccessProjector {
 	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
 
 	/**
+	 * OpenRegister's record of what an app shipped for a schema.
+	 */
+	private const BASELINE_STORE = 'OCA\\OpenRegister\\Service\\ShippedBaseline\\ShippedBaselineStore';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseTypeStore          $store     Reads every case type.
@@ -192,18 +197,68 @@ class CaseTeamAccessProjector {
 
 		$caseTypes = $this->caseTypeTeams();
 		$block = $this->rules->block(shipped: $this->shippedBlock(), caseTypes: $caseTypes);
-		if ($block === $schema->getAuthorization()) {
-			return false;
+		$changed = ($block !== $schema->getAuthorization());
+		if ($changed === true) {
+			$schema->setAuthorization($block);
+			$schemaMapper->update($schema);
+			$this->logger->info(
+				'Dossiq: wrote the handling team rules onto the case schema',
+				['teams' => count($this->rules->teamEntries(caseTypes: $caseTypes))]
+			);
 		}
 
-		$schema->setAuthorization($block);
-		$schemaMapper->update($schema);
+		$this->alignShippedBaseline(block: $block);
 
-		$this->logger->info(
-			'Dossiq: wrote the handling team rules onto the case schema',
-			['teams' => count($this->rules->teamEntries(caseTypes: $caseTypes))]
-		);
-
-		return true;
+		return $changed;
 	}//end writeToSchema()
+
+	/**
+	 * Record the written block as the case schema's shipped authorization.
+	 *
+	 * OpenRegister keeps what an app shipped beside what the instance runs, and
+	 * on an upgrade it keeps a part the instance changed instead of the newly
+	 * shipped one. Without this, the block written above reads as a local edit,
+	 * so a later shipped change to the case schema's authorization is kept out
+	 * as a conflict. With it, the upgrade applies the shipped change and the
+	 * next reapply puts the team rules back on top of it.
+	 *
+	 * Only an existing baseline is aligned: without one the import has nothing
+	 * to compare against and writes the shipped block anyway. A failure is
+	 * logged and does not undo the schema write.
+	 *
+	 * @param array<string, mixed> $block The block on the live case schema.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function alignShippedBaseline(array $block): void {
+		if ($this->container->has(self::BASELINE_STORE) === false) {
+			return;
+		}
+
+		try {
+			$baselines = $this->container->get(self::BASELINE_STORE);
+			$subject = $baselines->schemaSubject(slug: self::CASE_SCHEMA_SLUG);
+			$baseline = $baselines->read(subject: $subject);
+			if ($baseline === null || ($baseline['definition']['authorization'] ?? null) === $block) {
+				return;
+			}
+
+			$definition = $baseline['definition'];
+			$definition['authorization'] = $block;
+			$recorded = $baselines->record(
+				subject: $subject,
+				definition: $definition,
+				app: $baseline['app'],
+				appVersion: $baseline['appVersion'],
+			);
+		} catch (Throwable) {
+			$recorded = false;
+		}
+
+		if ($recorded === false) {
+			$this->logger->warning('Dossiq: the case schema\'s shipped baseline was not aligned with the handling team rules');
+		}
+	}//end alignShippedBaseline()
 }//end class

@@ -5772,14 +5772,17 @@
 							"ai-oversight"
 						],
 						"requiredApp": "hermiq",
-						"_note": "The AI Chat Companion embedded in the Assistant tab (DqZaakAssistent). The library widget renders the companion the launcher hex opens, always open and without the hex; it reads the page context CnDetailPage provides, so the agents offered are the ones relevant to a case. Without hermiq the widget says it is not installed rather than leaving an empty tab. Needs the nextcloud-vue release with the `ai-chat` widget (ai-chat-widget). `openSubjectSession` opens the handler's latest conversation about this case with the proposals the assistant still waits on (nextcloud-vue ai-chat-opens-the-subject-session, hermiq session-about-a-subject); an older library or hermiq leaves an empty thread.",
+						"_note": "The AI Chat Companion embedded in the Assistant tab (DqZaakAssistent). The library widget renders the companion the launcher hex opens, always open and without the hex; it reads the page context CnDetailPage provides, so the agents offered are the ones relevant to a case. Without hermiq the widget says it is not installed rather than leaving an empty tab. Needs the nextcloud-vue release with the `ai-chat` widget (ai-chat-widget). `openSubjectSession` opens the handler's latest conversation about this case with the proposals the assistant still waits on (nextcloud-vue ai-chat-opens-the-subject-session, hermiq session-about-a-subject); an older library or hermiq leaves an empty thread. A proposal the assistant waits on is drawn as the board draws it: Voorstel: before the tool's name, with Uitvoeren and Niet doen (`approvalTitlePrefix`, `allowLabel`, `denyLabel`; an older library keeps the tool's name with Allow and Decline).",
 						"content": {
 							"chatAppId": "hermiq",
 							"pill": "Hermiq",
 							"note": "The assistant sees only what you see on this case. Without Hermiq this panel is off.",
 							"placeholder": "Ask something about this case",
 							"sendLabel": "Ask",
-							"openSubjectSession": true
+							"openSubjectSession": true,
+							"approvalTitlePrefix": "Proposal:",
+							"allowLabel": "Run",
+							"denyLabel": "Don't do it"
 						}
 					},
 					{
