@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-sets/specs/example-sets/spec.md#requirement-a-field-a-schema-keeps-as-json-text-is-sent-as-text-req-exs-012
+ * @spec openspec/specs/example-set-zuiddrecht-data/spec.md#requirement-a-change-to-a-case-keeps-its-geometry-as-json-text
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Changes keep a case's JSON-text geometry as text.
  *
- * @spec openspec/changes/example-sets/specs/example-sets/spec.md#requirement-a-field-a-schema-keeps-as-json-text-is-sent-as-text-req-exs-012
+ * @spec openspec/specs/example-set-zuiddrecht-data/spec.md#requirement-a-change-to-a-case-keeps-its-geometry-as-json-text
  */
 class ZuiddrechtChangesKeepJsonTextTest extends TestCase {
 

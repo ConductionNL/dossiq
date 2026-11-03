@@ -160,6 +160,19 @@ jobs:
           fail=0
           for collection in "${collections[@]}"; do
             echo "=== ${collection##*/}"
-            newman run "$collection" --env-var baseUrl=http://localhost:8080 || fail=1
+            # The ledger records the version the package declares, so the
+            # collection reads it from the same package.json.
+            package="$(basename "$collection" .postman_collection.json)"
+            manifest=""
+            for root in server/apps/dossiq/lib/Settings/packages server/apps/dossiq/tests/fixtures/packages; do
+              [ -f "$root/$package/package.json" ] && manifest="$root/$package/package.json"
+            done
+            if [ -z "$manifest" ]; then
+              echo "::error::No package.json for the $package collection."
+              fail=1
+              continue
+            fi
+            version="$(jq -r '.version' "$manifest")"
+            newman run "$collection" --env-var baseUrl=http://localhost:8080 --env-var "packageVersion=$version" || fail=1
           done
           exit "$fail"
