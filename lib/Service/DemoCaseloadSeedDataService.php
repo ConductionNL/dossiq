@@ -101,6 +101,26 @@ class DemoCaseloadSeedDataService {
 		$now = ($now ?? new DateTimeImmutable('today'));
 		$seed = $this->readSeedFile();
 		$objectService = $this->gateway->objectService();
+
+		return $this->gateway->asSystem(
+			objectService: $objectService,
+			operation: fn (): array => $this->seedWith(seed: $seed, objectService: $objectService, now: $now),
+		);
+	}//end seed()
+
+	/**
+	 * Seed the demo caseload through one ObjectService, inside the system-operation scope.
+	 *
+	 * The seed creates cases in later lifecycle statuses, which OpenRegister
+	 * allows on create only to the system.
+	 *
+	 * @param array             $seed          The dataset.
+	 * @param object            $objectService The OpenRegister ObjectService.
+	 * @param DateTimeImmutable $now           The clock.
+	 *
+	 * @return array{cases: integer, tasks: integer, skipped: integer} What was created.
+	 */
+	private function seedWith(array $seed, object $objectService, DateTimeImmutable $now): array {
 		$ids = $this->gateway->schemaIds();
 
 		$caseTypes = $this->caseTypesByIdentifier(objectService: $objectService, ids: $ids);
@@ -150,7 +170,7 @@ class DemoCaseloadSeedDataService {
 		$this->logger->info('Dossiq: Demo caseload seeded', $summary);
 
 		return $summary;
-	}//end seed()
+	}//end seedWith()
 
 	/**
 	 * Create one case from its seed entry.
