@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
+
 /**
  * Normalises the {@see AlwaysAvailableActs::DECLARATION} list on a case type.
  *
@@ -42,21 +44,8 @@ final class AlwaysAvailableActDeclaration {
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
 	 */
 	public function actsOn(array $caseType): array {
-		$raw = ($caseType[AlwaysAvailableActs::DECLARATION] ?? []);
-		if (is_string($raw) === true) {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
-
 		$acts = [];
-		foreach ($raw as $act) {
+		foreach ((new WorkflowJsonProperty())->decodeList(raw: ($caseType[AlwaysAvailableActs::DECLARATION] ?? [])) as $act) {
 			if (is_array($act) === false) {
 				continue;
 			}

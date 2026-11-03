@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
  * Each case was recorded on the static reader this class replaced.
  *
  * @covers \OCA\Dossiq\Service\CaseType\AlwaysAvailableActDeclaration
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
  */
 class AlwaysAvailableActDeclarationTest extends TestCase {
 

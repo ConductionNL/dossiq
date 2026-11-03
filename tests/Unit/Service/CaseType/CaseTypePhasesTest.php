@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\CaseType\CaseTypePhases
  * @uses \OCA\Dossiq\Service\CaseType\AlwaysAvailableActDeclaration
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Task\TaskDeclaration
