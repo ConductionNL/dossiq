@@ -5211,15 +5211,23 @@
 								"responsePath": "results"
 							},
 							"presentation": "rows",
-							"avatar": { "text": "{caseTypeTitle}", "size": 32, "tone": "primary" },
+							"avatar": { "text": ["{caseTypeTitle}", "{plannedKind}"], "size": 32, "tone": "primary", "letters": 2 },
 							"ruleAbove": true,
 							"title": "{title}",
-							"meta": [
-								"{identifier} · {caseTypeTitle} · {assigneeName}",
-								"{identifier} · {caseTypeTitle}",
-								"{caseTypeTitle}",
-								"{plannedKind} · {date}"
-							],
+							"meta": {
+								"cases": [
+									{ "when": { "field": "plannedKind", "value": "flow" }, "text": ["Planned flow · makes a case on {date|date}", "Planned flow"] },
+									{ "when": { "all": [{ "field": "plannedKind", "value": "series" }, { "field": "occurrences", "op": "gte", "value": 2 }] }, "text": ["Series · next on {date|date} · {occurrences} cases opened earlier", "Series · {occurrences} cases opened earlier"] },
+									{ "when": { "all": [{ "field": "plannedKind", "value": "series" }, { "field": "occurrences", "value": 1 }] }, "text": ["Series · next on {date|date} · 1 case opened earlier", "Series · 1 case opened earlier"] },
+									{ "when": { "field": "plannedKind", "value": "series" }, "text": ["Series · next on {date|date}", "Series"] }
+								],
+								"text": [
+									"{identifier} · {caseTypeTitle} · {assigneeName}",
+									"{identifier} · {caseTypeTitle}",
+									"{caseTypeTitle}"
+								]
+							},
+							"_metaNote": "Board DqZaakGerelateerd: a planned flow reads \"Geplande flow · maakt op 4 nov een zaak aan\", a series \"Reeks · volgende op 1 jan · 3 zaken eerder geopend\". The avatar of a planned row reads its kind (Reeks: RE), and a one-word case type gives two letters (Omgevingsvergunning: OV), as the board draws them.",
 							"pill": {
 								"field": "statusRole",
 								"labels": {
@@ -5248,7 +5256,11 @@
 							"valueLabels": {
 								"group": {
 									"subject": "Subject of this case",
+									"gaat over": "Subject of this case",
+									"is about": "Subject of this case",
 									"waitsOn": "Waits on",
+									"wacht op": "Waits on",
+									"waits on": "Waits on",
 									"vervolg": "Follow-up",
 									"bijdrage": "Contribution",
 									"samenhang": "Related",
