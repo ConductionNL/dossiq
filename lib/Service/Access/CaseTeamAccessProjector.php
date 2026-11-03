@@ -214,6 +214,7 @@ class CaseTeamAccessProjector {
 		);
 		$block = $merge['block'];
 		$this->reportKeptLocal(conflicts: $merge['conflicts']);
+		$this->reportRestored(restored: $merge['restored']);
 		$changed = ($block !== $live);
 		if ($changed === true) {
 			$schema->setAuthorization($block);
@@ -321,6 +322,28 @@ class CaseTeamAccessProjector {
 			['keptLocal' => $conflicts]
 		);
 	}//end reportKeptLocal()
+
+	/**
+	 * Log the handling team rules an administrator edited or added that the projector restored to what the case types grant.
+	 *
+	 * Ruben decided on 3 November 2026 that the case types win for a team
+	 * rule, and that the overwrite is reported, so the edit is not lost in silence.
+	 *
+	 * @param array<int, string> $restored The `action[rule]` paths restored.
+	 *
+	 * @return void
+	 */
+	private function reportRestored(array $restored): void {
+		if ($restored === []) {
+			return;
+		}
+
+		$this->logger->warning(
+			'Dossiq: the case schema had local changes to handling team rules, which were replaced. '
+			. 'These rules follow the case type\'s teams; change the case type instead.',
+			['restored' => $restored]
+		);
+	}//end reportRestored()
 
 	/**
 	 * Record the projector's own block as the case schema's shipped authorization.

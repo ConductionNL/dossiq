@@ -540,6 +540,12 @@ class CaseTeamAccessProjectorTest extends TestCase {
 
 		self::assertContains(needle: $team, haystack: $this->schema->authorization['read']);
 		self::assertNotContains(needle: $edited, haystack: $this->schema->authorization['read'], message: 'a team rule follows the case types');
+		self::assertCount(expectedCount: 1, haystack: $this->warnings);
+		self::assertStringContainsString(needle: 'change the case type instead', haystack: $this->warnings[0]);
+		self::assertSame(
+			expected: ['read[vergunningen:{"caseType":{"$in":["ct-permit","ct-kap"]}}]'],
+			actual: $this->warningContexts[0]['restored'],
+		);
 	}//end testAnEditedTeamRuleFollowsTheCaseTypes()
 
 	/**

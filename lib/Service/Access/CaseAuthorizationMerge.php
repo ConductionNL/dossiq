@@ -67,7 +67,9 @@ class CaseAuthorizationMerge {
 	 * @param array<string, mixed>|null $baseline What the projector wrote last, or null when nothing was recorded.
 	 * @param array<int, string>        $managed  The teams the projector manages besides those it derives now.
 	 *
-	 * @return array{block: array<string, mixed>, conflicts: array<int, string>} The block, and `action` or `action[rule]` paths kept local.
+	 * @return array{block: array<string, mixed>, conflicts: array<int, string>, restored: array<int, string>} The block, the
+	 *         `action` or `action[rule]` paths kept local, and the managed team rules an administrator edited or added that
+	 *         were restored to what the case types grant.
 	 *
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
@@ -76,6 +78,7 @@ class CaseAuthorizationMerge {
 		$teams = array_values(array_unique($teams));
 		$block = [];
 		$conflicts = [];
+		$restored = [];
 		foreach (array_unique(array_merge(array_keys($desired), array_keys($live))) as $action) {
 			$owned = null;
 			if ($baseline !== null) {
@@ -94,9 +97,13 @@ class CaseAuthorizationMerge {
 			foreach ($merged['conflicts'] as $suffix) {
 				$conflicts[] = $action . $suffix;
 			}
+
+			foreach (($merged['restored'] ?? []) as $suffix) {
+				$restored[] = $action . $suffix;
+			}
 		}
 
-		return ['block' => $block, 'conflicts' => $conflicts];
+		return ['block' => $block, 'conflicts' => $conflicts, 'restored' => $restored];
 	}//end merge()
 
 	/**
@@ -106,7 +113,8 @@ class CaseAuthorizationMerge {
 	 * @param array{owned: mixed}|null           $baseline What the projector wrote last, or null without a baseline.
 	 * @param array<int, string>                 $teams    The managed teams.
 	 *
-	 * @return array{value: mixed, conflicts: array<int, string>} The value (null: leave the action out) and the conflict suffixes.
+	 * @return array{value: mixed, conflicts: array<int, string>, restored?: array<int, string>} The value (null: leave the
+	 *         action out), the conflict suffixes and the restored managed team rules.
 	 */
 	private function mergeAction(array $values, ?array $baseline, array $teams): array {
 		if ($this->entries->isList(value: $values['desired']) === false || $this->entries->isList(value: $values['live']) === false) {
@@ -123,8 +131,10 @@ class CaseAuthorizationMerge {
 			conflicts: $conflicts,
 		);
 
+		$restored = [];
 		foreach ($live as $entry) {
 			if ($this->entries->isManagedTeamRule(entry: $entry, teams: $teams) === true) {
+				$restored = array_merge($restored, $this->restoredRule(entry: $entry, owned: $owned, values: $values, hasBaseline: ($baseline !== null)));
 				continue;
 			}
 
@@ -132,8 +142,30 @@ class CaseAuthorizationMerge {
 			$value = array_merge($value, $this->keptLive(entry: $entry, ownedEntry: $ownedEntry, desired: $values['desired'], conflicts: $conflicts));
 		}
 
-		return ['value' => $this->entries->unique(entries: $value), 'conflicts' => $conflicts];
+		return ['value' => $this->entries->unique(entries: $value), 'conflicts' => $conflicts, 'restored' => $restored];
 	}//end mergeAction()
+
+	/**
+	 * A managed team rule on the live block that an administrator edited or added, which the case types now replace.
+	 *
+	 * Only with a baseline: without one, the projector's own last rules cannot be told from an administrator's.
+	 *
+	 * @param mixed                              $entry       The live managed team rule.
+	 * @param array<int, string>                 $owned       Keys of the rules the projector wrote last.
+	 * @param array{desired: mixed, live: mixed} $values      What the projector derives now, and the live value.
+	 * @param bool                               $hasBaseline Whether a baseline was recorded.
+	 *
+	 * @return array<int, string> The rule's report suffix, or nothing.
+	 */
+	private function restoredRule(mixed $entry, array $owned, array $values, bool $hasBaseline): array {
+		$key = $this->entries->key(entry: $entry);
+		$derived = array_map($this->entries->key(...), $this->entries->listOf(value: $values['desired']));
+		if ($hasBaseline === false || in_array($key, $owned, true) === true || in_array($key, $derived, true) === true) {
+			return [];
+		}
+
+		return ['[' . $this->entries->label(entry: $entry) . ']'];
+	}//end restoredRule()
 
 	/**
 	 * The rules the projector derives that it may write: all but a non-team rule an administrator removed or changed.

@@ -247,7 +247,66 @@ class CaseAuthorizationMergeTest extends TestCase {
 
 		self::assertSame(expected: $after, actual: $result['block']['read']);
 		self::assertSame(expected: [], actual: $result['conflicts']);
+		self::assertSame(expected: [], actual: $result['restored'], message: 'the projector replacing its own rule is no edit');
 	}//end testTheProjectorsOwnRulesStillUpdate()
+
+	/**
+	 * R2: an administrator's narrowing of a managed team rule is undone, and reported.
+	 *
+	 * @return void
+	 */
+	public function testANarrowedTeamRuleIsRestoredAndReported(): void {
+		$granted = self::team(group: 't1', caseTypes: ['ct1', 'ct2']);
+		$narrowed = self::team(group: 't1', caseTypes: ['ct1']);
+
+		$result = self::merge(desired: [self::ASSIGNEE, $granted], live: [self::ASSIGNEE, $narrowed], baseline: [self::ASSIGNEE, $granted]);
+
+		self::assertSame(expected: [self::ASSIGNEE, $granted], actual: $result['block']['read']);
+		self::assertSame(expected: ['read[t1:{"caseType":{"$in":["ct1"]}}]'], actual: $result['restored']);
+	}//end testANarrowedTeamRuleIsRestoredAndReported()
+
+	/**
+	 * R1: an extra team-shaped rule for a managed team is removed, and reported.
+	 *
+	 * @return void
+	 */
+	public function testAnExtraManagedTeamRuleIsRemovedAndReported(): void {
+		$granted = self::team(group: 't1', caseTypes: ['ct1']);
+		$extra = self::team(group: 't1', caseTypes: ['ct9']);
+
+		$result = self::merge(desired: [self::ASSIGNEE, $granted], live: [self::ASSIGNEE, $granted, $extra], baseline: [self::ASSIGNEE, $granted]);
+
+		self::assertSame(expected: [self::ASSIGNEE, $granted], actual: $result['block']['read']);
+		self::assertSame(expected: ['read[t1:{"caseType":{"$in":["ct9"]}}]'], actual: $result['restored']);
+	}//end testAnExtraManagedTeamRuleIsRemovedAndReported()
+
+	/**
+	 * A managed team rule that is already what the case types grant is not reported, even when the baseline lags.
+	 *
+	 * @return void
+	 */
+	public function testAGrantedTeamRuleIsNotReported(): void {
+		$granted = self::team(group: 't1', caseTypes: ['ct1']);
+
+		$result = self::merge(desired: [self::ASSIGNEE, $granted], live: [self::ASSIGNEE, $granted], baseline: [self::ASSIGNEE]);
+
+		self::assertSame(expected: [], actual: $result['restored']);
+	}//end testAGrantedTeamRuleIsNotReported()
+
+	/**
+	 * Without a baseline, replacing a managed team rule is not reported: whose it was cannot be told.
+	 *
+	 * @return void
+	 */
+	public function testNothingIsReportedRestoredWithoutABaseline(): void {
+		$result = self::merge(
+			desired: [self::ASSIGNEE, self::team(group: 't1', caseTypes: ['ct1'])],
+			live: [self::ASSIGNEE, self::team(group: 't1', caseTypes: ['ct1', 'ct2'])],
+			baseline: null,
+		);
+
+		self::assertSame(expected: [], actual: $result['restored']);
+	}//end testNothingIsReportedRestoredWithoutABaseline()
 
 	/**
 	 * No local rule is widened: a team rule for the same group is added beside it, never folded in.
