@@ -648,6 +648,7 @@ import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import { feeRuleBasis, feeRuleCalculation, feeRuleName } from '../../utils/feeRules.js'
+import { activityOverviewFormatters } from './activityOverviewFormatters.js'
 import {
 	aiFields,
 	archivalFields,
@@ -666,7 +667,6 @@ import {
 	storeRegistryFields,
 	textsAndAccessFields,
 } from './adminFields.js'
-import { activityOverviewFormatters } from './activityOverviewFormatters.js'
 
 export default {
 	name: 'AdminRoot',

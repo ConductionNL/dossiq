@@ -67,9 +67,6 @@ import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // @spec openspec/specs/berichtenbox-integration/spec.md
 import AssessmentDecisionDialog from './dialogs/AssessmentDecisionDialog.vue'
 import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
-// Generate document — the CaseDetail header action's template picker.
-// @spec openspec/specs/beschikking-generatie/spec.md
-import GenerateDocumentDialog from './dialogs/GenerateDocumentDialog.vue'
 // The Actions menu's non-lifecycle gestures: copy this case, start a flow
 // its type allows, and plan a follow-up case for a later date.
 // @spec openspec/specs/case-management/spec.md
@@ -104,6 +101,9 @@ import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
 import DocumentCompareDialog from './dialogs/DocumentCompareDialog.vue'
 import FileContactMomentDialog from './dialogs/FileContactMomentDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
+// Generate document — the CaseDetail header action's template picker.
+// @spec openspec/specs/beschikking-generatie/spec.md
+import GenerateDocumentDialog from './dialogs/GenerateDocumentDialog.vue'
 import LinkProgrammeDialog from './dialogs/LinkProgrammeDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import NoticeOfDefaultDialog from './dialogs/NoticeOfDefaultDialog.vue'
