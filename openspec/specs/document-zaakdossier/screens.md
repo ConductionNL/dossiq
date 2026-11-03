@@ -1,9 +1,9 @@
 # Screens
 
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
-- DqZaakBetrokkenen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBetrokkenen
-- DqZaakDocumenten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumenten
-- DqZaakDocumentenSlepen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumentenSlepen
-- DqDocumentenBeheer https://identity.conduction.nl/screens/board?id=dossiq/DqDocumentenBeheer
-- DqKop https://identity.conduction.nl/screens/board?id=werkplek/DqKop
-- DqZaakMeer https://identity.conduction.nl/screens/board?id=dossiq/DqZaakMeer
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqZaakBetrokkenen zaak, betrokkenen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBetrokkenen
+- dossiq/DqZaakDocumenten zaak, tabblad documenten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumenten
+- dossiq/DqZaakDocumentenSlepen zaak, bestanden op de documenten slepen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumentenSlepen
+- dossiq/DqDocumentenBeheer zaak, documenten selecteren, scannen en afschermen https://identity.conduction.nl/screens/board?id=dossiq/DqDocumentenBeheer
+- werkplek/DqKop bovenbalk over de volle breedte https://identity.conduction.nl/screens/board?id=werkplek/DqKop
+- dossiq/DqZaakMeer zaak, menu Meer en tabbladoverloop https://identity.conduction.nl/screens/board?id=dossiq/DqZaakMeer

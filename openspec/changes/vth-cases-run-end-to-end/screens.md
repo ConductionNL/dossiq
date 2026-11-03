@@ -1,6 +1,6 @@
 # Screens
 
-- DqVthInstellingen https://identity.conduction.nl/screens/board?id=dossiq/DqVthInstellingen
-- DqZaaktypen https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypen
-- DqInspectie https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie
-- DqHandhaving https://identity.conduction.nl/screens/board?id=dossiq/DqHandhaving
+- dossiq/DqVthInstellingen beheerinstellingen in Nextcloud, tab VTH https://identity.conduction.nl/screens/board?id=dossiq/DqVthInstellingen
+- dossiq/DqZaaktypen zaaktypen https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypen
+- dossiq/DqInspectie inspectie in het veld, mobiel https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie
+- dossiq/DqHandhaving handhavingsadvies (LHS) https://identity.conduction.nl/screens/board?id=dossiq/DqHandhaving

@@ -1,3 +1,3 @@
 # Screens
 
-- DqTenant https://identity.conduction.nl/screens/board?id=dossiq/DqTenant
+- dossiq/DqTenant organisatie (tenant) https://identity.conduction.nl/screens/board?id=dossiq/DqTenant
