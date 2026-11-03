@@ -545,13 +545,13 @@ The case schema MUST carry `portalTurn`, a calculation that is `applicant` when
 `thirdParty`, `us` otherwise, and empty when the case has an `endDate`. The citizen case
 projection MUST include `portalTurn`, `waitingOnApplicant` and `waitingOn`. The `mijnZaken`
 collection MUST declare `turnField: 'portalTurn'`, `dueField: 'deadline'` and value labels on
-`portalTurn`, so a case card reads "U bent aan zet", "Wij wachten op informatie van een ander"
-or "De gemeente is aan zet". A closed case MUST show no such line. This is a new requirement.
+`portalTurn`, so a case card reads "Wacht op u" when it is `applicant` and "In behandeling" when it is
+`thirdParty` or `us`. A closed case MUST show no such line. This is a new requirement.
 
 #### Scenario: The case waits on the resident
 - **GIVEN** a running case with an open aanvullingsverzoek
 - **WHEN** the resident's overview lists the case
-- **THEN** the case card MUST read "U bent aan zet"
+- **THEN** the case card MUST read "Wacht op u"
 
 #### Scenario: The card reads one declared field
 - **GIVEN** the `mijnZaken` collection
@@ -561,7 +561,7 @@ or "De gemeente is aan zet". A closed case MUST show no such line. This is a new
 #### Scenario: The case waits on the organisation
 - **GIVEN** a running case in a status whose `waitingOn` is `us` and no open request
 - **WHEN** the overview lists it
-- **THEN** the card MUST read "De gemeente is aan zet"
+- **THEN** the card MUST read "In behandeling"
 
 ### Requirement: A case hands the portal its steps (REQ-SRPD-003)
 The provider MUST answer `caseSteps(caseId)` with the case type's statuses in `order`, folded
