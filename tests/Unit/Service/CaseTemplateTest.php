@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Starter\CaseTemplateService;
+use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Support\StarterStoreHarness;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -200,4 +201,29 @@ class CaseTemplateTest extends TestCase {
 		self::assertCount(expectedCount: 1, haystack: $vth);
 		self::assertSame(expected: 'Standaardzaak sloopmelding', actual: $vth[0]['templateName']);
 	}//end testOnlyTemplatesAreOfferedAndTheyAreScopedToTheirCaseType()
+
+	/**
+	 * A case started from a template opens in its case type's initial status,
+	 * not in the status the template case holds. The register refuses a create
+	 * in any other status (openregister#5400).
+	 *
+	 * @return void
+	 */
+	public function testACaseStartedFromATemplateOpensInItsTypesInitialStatus(): void {
+		$register  = new LifecycleRegister();
+		$harness   = new StarterStoreHarness(test: $this, register: $register);
+		$templates = new CaseTemplateService($harness->store, new NullLogger());
+		$harness->seed(schema: 'caseType', uuid: 'ct-vth', row: ['title' => 'Sloopmelding', 'initialStatus' => 'st-intake']);
+		$harness->seed(
+			schema: 'case',
+			uuid: 'tpl-1',
+			row: ['isTemplate' => true, 'templateName' => 'Standaardzaak', 'title' => 'Sloopmelding', 'caseType' => 'ct-vth', 'status' => 'st-review'],
+		);
+
+		$result = $templates->startFrom(templateId: 'tpl-1');
+
+		self::assertTrue(condition: $result['ok']);
+		self::assertSame(expected: 'st-intake', actual: $register->row('case', (string)$result['case']['id'])['status']);
+		self::assertSame(expected: 'st-review', actual: $register->row('case', 'tpl-1')['status']);
+	}//end testACaseStartedFromATemplateOpensInItsTypesInitialStatus()
 }//end class
