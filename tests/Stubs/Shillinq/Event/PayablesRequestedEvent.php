@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+ * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -32,7 +32,7 @@ use OCP\EventDispatcher\Event;
 /**
  * Asks for the payouts one app raised.
  *
- * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+ * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
  */
 final class PayablesRequestedEvent extends Event {
 	/**
@@ -80,7 +80,7 @@ final class PayablesRequestedEvent extends Event {
 	 *
 	 * @return string The app id.
 	 *
-	 * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+	 * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
 	 */
 	public function getSourceApp(): string {
 		return trim($this->sourceApp);
@@ -91,7 +91,7 @@ final class PayablesRequestedEvent extends Event {
 	 *
 	 * @return array<int, string> The ids.
 	 *
-	 * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+	 * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
 	 */
 	public function getCorrelationIds(): array {
 		return array_values(array_filter(array_map('strval', $this->correlationIds), static fn (string $id): bool => $id !== ''));
@@ -102,7 +102,7 @@ final class PayablesRequestedEvent extends Event {
 	 *
 	 * @return string The category, or empty.
 	 *
-	 * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+	 * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
 	 */
 	public function getCategory(): string {
 		return trim($this->category);
@@ -113,7 +113,7 @@ final class PayablesRequestedEvent extends Event {
 	 *
 	 * @return int The year, or zero.
 	 *
-	 * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+	 * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
 	 */
 	public function getPaidInYear(): int {
 		return $this->paidInYear;
@@ -126,7 +126,7 @@ final class PayablesRequestedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+	 * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
 	 */
 	public function answer(array $payables): void {
 		$this->error = null;
@@ -140,7 +140,7 @@ final class PayablesRequestedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+	 * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
 	 */
 	public function refuse(string $error): void {
 		$this->payables = null;
@@ -152,7 +152,7 @@ final class PayablesRequestedEvent extends Event {
 	 *
 	 * @return bool True when answered.
 	 *
-	 * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+	 * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
 	 */
 	public function isHandled(): bool {
 		return $this->payables !== null;
@@ -163,7 +163,7 @@ final class PayablesRequestedEvent extends Event {
 	 *
 	 * @return array<int, array<string, mixed>> The payouts.
 	 *
-	 * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+	 * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
 	 */
 	public function getPayables(): array {
 		return ($this->payables ?? []);
@@ -174,7 +174,7 @@ final class PayablesRequestedEvent extends Event {
 	 *
 	 * @return string|null The reason, or null.
 	 *
-	 * @spec openspec/changes/financial-documents-on-any-object/specs/financial-documents-on-any-object/spec.md (REQ-FDO-008)
+	 * @spec exclude test stub of shillinq's event; the requirement lives in ConductionNL/shillinq (financial-documents-on-any-object, REQ-FDO-008)
 	 */
 	public function getError(): ?string {
 		return $this->error;
