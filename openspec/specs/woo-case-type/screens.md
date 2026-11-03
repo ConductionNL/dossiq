@@ -7,3 +7,4 @@
 - dossiq/DqZaakDocumentenSlepen zaak, bestanden op de documenten slepen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumentenSlepen
 - dossiq/DqArchiveren archiveren, dialoog https://identity.conduction.nl/screens/board?id=dossiq/DqArchiveren
 - dossiq/DqZaakTermijn termijn op de zaak, de vijf standen en verdagen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakTermijn
+- dossiq/DqZaakBesluiten zaak, besluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
