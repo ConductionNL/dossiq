@@ -36,14 +36,18 @@ use ReflectionClass;
 class TaskStubTest extends TestCase {
 
 	/**
-	 * Use the stub only; an installed OpenRegister entity is not under test here.
+	 * The stub is the Task this process loaded. Tests that load OpenRegister's
+	 * own classes run in a process of their own, so the real entity here means
+	 * one of them leaked into the shared process.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
-		if (str_ends_with((string)(new ReflectionClass(objectOrClass: Task::class))->getFileName(), 'tests/Stubs/Db/Task.php') === false) {
-			$this->markTestSkipped(message: 'OpenRegister\'s own Task entity is loaded.');
-		}
+		$this->assertStringEndsWith(
+			suffix: 'tests/Stubs/Db/Task.php',
+			string: (string)(new ReflectionClass(objectOrClass: Task::class))->getFileName(),
+			message: 'OpenRegister\'s own Task entity is loaded in the shared process.'
+		);
 	}//end setUp()
 
 	/**

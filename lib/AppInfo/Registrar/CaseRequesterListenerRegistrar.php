@@ -35,8 +35,6 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 /**
  * Registers the case requester projection listener.
  *
- * @psalm-suppress UnusedClass
- *
  * @spec openspec/specs/initiator-display/spec.md
  */
 class CaseRequesterListenerRegistrar {
