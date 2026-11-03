@@ -157,6 +157,64 @@ class DocumentVerdictsTest extends TestCase {
 	}//end testNamesEachDocumentsVerdictAndOpenForTheRest()
 
 	/**
+	 * Each document carries the grounds its verdict cites, from the same assessment, on the same documents as its verdict.
+	 *
+	 * @return void
+	 */
+	public function testNamesEachDocumentsGroundsOnTheDocumentsThatCarryAVerdict(): void {
+		$register = $this->lindelaan();
+		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a8', row: [
+				'caseRef' => 'case-1',
+				'documentRef' => 'd5',
+				'classification' => 'niet_openbaar',
+				'weigeringsgronden' => [' 5.1.1.d ', '', '5.1.2.e'],
+			]);
+		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a9', row: [
+				'caseRef' => 'case-1',
+				'documentRef' => 'd7',
+				'weigeringsgronden' => ['5.1.2.e'],
+			]);
+		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a10', row: [
+				'caseRef' => 'case-1',
+				'documentRef' => 'd3',
+				'classification' => 'niet_openbaar',
+				'weigeringsgronden' => ['5.1.3'],
+			]);
+		$verdicts = $this->verdicts(register: $register);
+
+		$answer = $verdicts->groundsByDocument(caseId: 'case-1');
+
+		self::assertSame(
+			expected: [
+				'd1' => [],
+				'd2' => ['5.1.2.e'],
+				'd3' => ['5.1.3'],
+				'd4' => ['5.1.2.e'],
+				'd5' => ['5.1.1.d', '5.1.2.e'],
+				'd6' => [],
+				'd7' => [],
+			],
+			actual: $answer
+		);
+		self::assertSame(expected: 'niet_openbaar', actual: $verdicts->byDocument(caseId: 'case-1')['d3']);
+		self::assertSame(expected: array_keys($verdicts->byDocument(caseId: 'case-1')), actual: array_keys($answer));
+	}//end testNamesEachDocumentsGroundsOnTheDocumentsThatCarryAVerdict()
+
+	/**
+	 * The grounds are read with the caller's own access: assessments hidden from the caller cite nothing.
+	 *
+	 * @return void
+	 */
+	public function testGroundsHiddenFromTheCallerAreNotRead(): void {
+		$register = $this->lindelaan();
+		$register->hiddenFromCaller = ['wooDocumentAssessment'];
+		$verdicts = $this->verdicts(register: $register);
+
+		self::assertSame(expected: array_fill_keys(['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'], []), actual: $verdicts->groundsByDocument(caseId: 'case-1'));
+		self::assertSame(expected: array_fill_keys(['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'], 'open'), actual: $verdicts->byDocument(caseId: 'case-1'));
+	}//end testGroundsHiddenFromTheCallerAreNotRead()
+
+	/**
 	 * A list of grounds that cannot be read leaves the code without a label, not the answer without grounds.
 	 *
 	 * @return void
