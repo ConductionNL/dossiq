@@ -340,6 +340,7 @@ class ApprovalGuardTest extends TestCase {
 		$guards = (new TransitionSpecReader())->guardsWithImplicit(
 			transition: $transition,
 			approvalsWired: $registry->knows(type: GuardRegistry::APPROVAL_GATE),
+			entryGuardWired: false,
 		);
 		$eval = $registry->evaluateAll(guards: $guards, case: $this->caseWaiting(), userId: 'behandelaar');
 
@@ -380,6 +381,7 @@ class ApprovalGuardTest extends TestCase {
 			guards: (new TransitionSpecReader())->guardsWithImplicit(
 				transition: ['id' => self::ACT],
 				approvalsWired: true,
+				entryGuardWired: false,
 			),
 			case: $this->caseWaiting(),
 			userId: 'behandelaar',
@@ -414,6 +416,7 @@ class ApprovalGuardTest extends TestCase {
 			actual: (new TransitionSpecReader())->guardsWithImplicit(
 				transition: ['id' => self::ACT],
 				approvalsWired: false,
+				entryGuardWired: false,
 			),
 		);
 	}//end testAnUnwiredRegistryAppendsNoApprovalGuard()

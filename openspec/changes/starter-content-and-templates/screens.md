@@ -1,5 +1,5 @@
 # Screens
 
-- DqInstellen https://identity.conduction.nl/screens/board?id=dossiq/DqInstellen
-- DqZaakDialogen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDialogen
-- DqDocumentGenereren https://identity.conduction.nl/screens/board?id=dossiq/DqDocumentGenereren
+- dossiq/DqInstellen eerste keer instellen https://identity.conduction.nl/screens/board?id=dossiq/DqInstellen
+- dossiq/DqZaakDialogen twaalf kleine zaakdialogen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDialogen
+- dossiq/DqDocumentGenereren document genereren https://identity.conduction.nl/screens/board?id=dossiq/DqDocumentGenereren
