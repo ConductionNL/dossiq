@@ -29,6 +29,10 @@ describe('the assistant card', () => {
 		})
 	})
 
+	it('opens the handler\'s conversation about this case, with its pending proposal', () => {
+		expect(chat.content.openSubjectSession).toBe(true)
+	})
+
 	it('reads as the board in Dutch', () => {
 		expect(nl[chat.title]).toBe('Assistent')
 		expect(nl[chat.content.note]).toBe('De assistent ziet alleen wat u op deze zaak ziet. Is Hermiq er niet, dan staat dit paneel uit.')

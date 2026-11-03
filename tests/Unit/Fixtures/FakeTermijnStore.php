@@ -165,7 +165,11 @@ class FakeTermijnStore {
 		string|int|null $schema = null,
 	): FakeStoredObject {
 		$id = (string)$id;
-		$schemas = ($schema === null ? array_keys($this->store) : [(string)$schema]);
+		$schemas = array_keys($this->store);
+		if ($schema !== null) {
+			$schemas = [(string)$schema];
+		}
+
 		foreach ($schemas as $slug) {
 			if (isset($this->store[$slug][$id]) === true) {
 				return new FakeStoredObject($this->store[$slug][$id]);
@@ -176,7 +180,8 @@ class FakeTermijnStore {
 	}
 
 	/**
-	 * Equality-filter object search over stored rows.
+	 * Equality-filter object search over stored rows. A list against a
+	 * scalar property matches any of its values, as live.
 	 *
 	 * OpenRegister's real search treats `_limit`/`_offset` as pagination
 	 * keys (stripped here) and resolves object identity ONLY via the
@@ -188,11 +193,19 @@ class FakeTermijnStore {
 	 * @param string $schema Schema slug.
 	 * @param array<string, mixed> $filters Object-field filters.
 	 * @param string|null $uuid Metadata uuid filter (from `@self.uuid`).
+	 * @param array<int, string>|null $slugs Metadata slug filter (from `@self.slug`), any of them.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function findObjects(string $register, string $schema, array $filters = [], ?string $uuid = null): array {
+	public function findObjects(string $register, string $schema, array $filters = [], ?string $uuid = null, ?array $slugs = null): array {
 		$rows = array_values($this->store[$schema] ?? []);
+
+		if ($slugs !== null) {
+			$rows = array_values(array_filter(
+				$rows,
+				static fn (array $row): bool => in_array((string)($row['@self']['slug'] ?? ''), $slugs, true),
+			));
+		}
 
 		unset($filters['_limit'], $filters['_offset']);
 
@@ -227,7 +240,13 @@ class FakeTermijnStore {
 			$rows,
 			static function (array $row) use ($filters): bool {
 				foreach ($filters as $key => $value) {
-					if (($row[$key] ?? null) !== $value) {
+					// A list against a scalar property is "any of", as live.
+					$anyOf = (is_array($value) === true && array_is_list($value) === true && is_array($row[$key] ?? null) === false);
+					if ($anyOf === true && in_array(($row[$key] ?? null), $value, true) === false) {
+						return false;
+					}
+
+					if ($anyOf === false && ($row[$key] ?? null) !== $value) {
 						return false;
 					}
 				}
@@ -251,9 +270,10 @@ class FakeTermijnStore {
 	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
 		$self = ($filters['@self'] ?? []);
 		unset($filters['@self']);
-		$uuid = (isset($self['uuid']) === true ? (string)$self['uuid'] : null);
 
-		return $this->findObjects($registerSlug, $schemaSlug, $filters, $uuid);
+		$meta = $this->metadataFilters(self: $self);
+
+		return $this->findObjects(register: $registerSlug, schema: $schemaSlug, filters: $filters, uuid: $meta['uuid'], slugs: $meta['slugs']);
 	}
 
 	/**
@@ -270,10 +290,31 @@ class FakeTermijnStore {
 	public function searchObjects(array $query = []): array {
 		$self = ($query['@self'] ?? []);
 		$schema = (string)($self['schema'] ?? '');
-		$uuid = (isset($self['uuid']) === true ? (string)$self['uuid'] : null);
 		unset($query['@self']);
 
-		return $this->findObjects('', $schema, $query, $uuid);
+		$meta = $this->metadataFilters(self: $self);
+
+		return $this->findObjects(register: '', schema: $schema, filters: $query, uuid: $meta['uuid'], slugs: $meta['slugs']);
+	}
+
+	/**
+	 * The metadata filters of a `@self` block: its uuid, and its slug or slugs.
+	 *
+	 * @param array<string, mixed> $self The `@self` block.
+	 *
+	 * @return array{uuid: string|null, slugs: array<int, string>|null}
+	 */
+	private function metadataFilters(array $self): array {
+		$filters = ['uuid' => null, 'slugs' => null];
+		if (isset($self['uuid']) === true) {
+			$filters['uuid'] = (string)$self['uuid'];
+		}
+
+		if (isset($self['slug']) === true) {
+			$filters['slugs'] = array_map('strval', (array)$self['slug']);
+		}
+
+		return $filters;
 	}
 
 	/**

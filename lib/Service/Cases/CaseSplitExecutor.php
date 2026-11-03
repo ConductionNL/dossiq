@@ -426,11 +426,52 @@ class CaseSplitExecutor {
 	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	private function openSecondCase(array $source, string $title, string $actor): array {
+		$this->store->refuseUnreachableStatus(source: $source);
 		$payload = $this->secondCaseOf(source: $source, title: $title);
 		$payload['relatedCases'] = $this->relationBack(sourceId: $payload['splitFrom'], actor: $actor);
 
-		return $this->saveSecondCase(payload: $payload);
+		return $this->takeOverStatus(
+			newCase: $this->saveSecondCase(payload: $payload),
+			move: ['source' => $source, 'actor' => $actor],
+		);
 	}//end openSecondCase()
+
+	/**
+	 * Move the second case from its initial status into the status of the first.
+	 *
+	 * OpenRegister opens a case in its case type's initial status, so the
+	 * status the original held is entered as a recorded move afterwards.
+	 *
+	 * @param array<string, mixed> $newCase The second case as stored.
+	 * @param array<string, mixed> $move    The case being split (`source`) and who split it (`actor`).
+	 *
+	 * @return array<string, mixed> The second case, in the status of the first.
+	 *
+	 * @throws RefusedException When the move cannot be saved or recorded.
+	 */
+	private function takeOverStatus(array $newCase, array $move): array {
+		$source = $move['source'];
+		$status = trim((string)($source['status'] ?? ''));
+		if ($status === '' || $status === trim((string)($newCase['status'] ?? ''))) {
+			return $newCase;
+		}
+
+		$origin = trim((string)($source['identifier'] ?? $this->store->uuidOf(row: $source)));
+		try {
+			return $this->store->enterStatus(
+				case: $newCase,
+				move: ['toStatus' => $status, 'label' => 'Split from ' . $origin, 'actor' => (string)$move['actor']],
+			);
+		} catch (Throwable $e) {
+			throw new RefusedException(
+				rule: self::UNWRITABLE,
+				sentence: $this->store->undoSecondCase(newCase: $newCase),
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}
+	}//end takeOverStatus()
+
 
 	/**
 	 * The second case's fields, taken from the first.
@@ -449,7 +490,6 @@ class CaseSplitExecutor {
 		return [
 			'title' => $title,
 			'caseType' => (string)($source['caseType'] ?? ''),
-			'status' => (string)($source['status'] ?? ''),
 			'assignedGroup' => (string)($source['assignedGroup'] ?? ''),
 			'assignee' => (string)($source['assignee'] ?? ''),
 			'impact' => (string)($source['impact'] ?? 'medium'),
