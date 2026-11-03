@@ -1,4 +1,10 @@
 {
-    "writes": [],
-    "answer": []
+    "writes": [
+        {
+            "register": "5"
+        }
+    ],
+    "answer": {
+        "register": "5"
+    }
 }

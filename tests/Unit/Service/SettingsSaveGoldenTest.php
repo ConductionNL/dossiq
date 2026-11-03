@@ -41,6 +41,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Settings\ConfigurationImport
  * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
+ * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
+ * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
+ * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
  */
 class SettingsSaveGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -52,8 +55,9 @@ class SettingsSaveGoldenTest extends TestCase {
 	 */
 	public static function saves(): array {
 		return [
-			'unrelated key' => [['mailFromAddress' => 'a@b.nl'], []],
+			'unrelated key' => [['register' => '5'], []],
 			'unknown key is not written' => [['notAKey' => 'x'], []],
+			'unrelated key, switch stored on without readers' => [['register' => '5'], ['reviewerThroughputReport' => 'true']],
 			'old switch key on, readers exist' => [['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'readers'], []],
 			'old switch key on, no readers' => [['wooReviewerThroughputReport' => 'true'], []],
 			'old switch key on, stored readers' => [['wooReviewerThroughputReport' => '1'], ['reviewerThroughputReaders' => 'readers']],
