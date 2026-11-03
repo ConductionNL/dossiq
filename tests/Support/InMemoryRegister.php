@@ -277,7 +277,13 @@ class InMemoryRegister {
 				continue;
 			}
 
-			if (($row[$key] ?? null) !== $value) {
+			// A list against a scalar property is "any of", as OpenRegister matches it.
+			$anyOf = (is_array($value) === true && array_is_list($value) === true && is_array($row[$key] ?? null) === false);
+			if ($anyOf === true && in_array(($row[$key] ?? null), $value, true) === false) {
+				return false;
+			}
+
+			if ($anyOf === false && ($row[$key] ?? null) !== $value) {
 				return false;
 			}
 		}

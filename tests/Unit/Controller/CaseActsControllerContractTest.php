@@ -529,4 +529,57 @@ class CaseActsControllerContractTest extends TestCase {
 		$this->assertStringNotContainsString(needle: 'db-01', haystack: json_encode($response->getData()));
 		$this->assertSame(expected: 'act-failed', actual: $response->getData()['error']);
 	}//end testAnUnexpectedFailureNeverLeaksItsMessage()
+	/**
+	 * A reader who may not act still reads the archive checklist: read access is enough.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testAReaderReadsTheArchiveChecklist(): void {
+		$response = $this->controllerFor(reads: true, acts: false)->archiveReadiness(caseId: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['caseId' => 'case-1', 'checklist' => []], actual: $response->getData());
+	}//end testAReaderReadsTheArchiveChecklist()
+
+	/**
+	 * Somebody who may not read the case gets a 403 and no checklist.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testANonReaderGetsNoArchiveChecklist(): void {
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->expects($this->never())->method('loadCase');
+
+		$response = $this->controllerFor(reads: false, acts: false)->archiveReadiness(caseId: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		$this->assertSame(expected: 'not-authorized', actual: $response->getData()['error']);
+	}//end testANonReaderGetsNoArchiveChecklist()
+
+	/**
+	 * With nobody signed in the archive checklist answers 401.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testNoSessionGetsNoArchiveChecklist(): void {
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn(null);
+		$controller = new CaseActsController(
+			appName: 'dossiq',
+			request: $this->request,
+			acts: $this->facade(),
+			overview: $this->overview(),
+			caseAccessGuard: $this->caseAccessGuard,
+			userSession: $session,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $controller->archiveReadiness(caseId: 'case-1')->getStatus());
+	}//end testNoSessionGetsNoArchiveChecklist()
 }//end class
