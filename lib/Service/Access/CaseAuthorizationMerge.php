@@ -43,32 +43,49 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Access;
 
 /**
- * Merges a desired authorization block onto a live one, against what was written last.
+ * Merges a desired authorization block onto a live one.
  *
  * @spec openspec/specs/case-access-control/spec.md
  */
 class CaseAuthorizationMerge {
 
 	/**
-	 * The merged block, and the projector rules an administrator changed.
+	 * Constructor.
+	 *
+	 * @param CaseAuthorizationEntries $entries Reads one rule at a time.
+	 */
+	public function __construct(
+		private readonly CaseAuthorizationEntries $entries = new CaseAuthorizationEntries(),
+	) {
+	}//end __construct()
+
+	/**
+	 * The merged block, and the rules kept local against what the projector derives.
 	 *
 	 * @param array<string, mixed>      $desired  What the projector would write now: shipped plus team rules.
 	 * @param array<string, mixed>      $live     The case schema's block as it stands.
 	 * @param array<string, mixed>|null $baseline What the projector wrote last, or null when nothing was recorded.
+	 * @param array<int, string>        $managed  The teams the projector manages besides those it derives now.
 	 *
-	 * @return array{block: array<string, mixed>, conflicts: array<int, string>} The block, and `action` or `action[i]` paths kept local.
+	 * @return array{block: array<string, mixed>, conflicts: array<int, string>} The block, and `action` or `action[rule]` paths kept local.
 	 *
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
-	public function merge(array $desired, array $live, ?array $baseline): array {
-		$owned = ($baseline ?? $this->ownedByShape(desired: $desired, live: $live));
+	public function merge(array $desired, array $live, ?array $baseline, array $managed = []): array {
+		$teams = array_merge($managed, $this->entries->teamsIn(block: $desired), $this->entries->teamsIn(block: ($baseline ?? [])));
+		$teams = array_values(array_unique($teams));
 		$block = [];
 		$conflicts = [];
 		foreach (array_unique(array_merge(array_keys($desired), array_keys($live))) as $action) {
+			$owned = null;
+			if ($baseline !== null) {
+				$owned = ['owned' => ($baseline[$action] ?? null)];
+			}
+
 			$merged = $this->mergeAction(
-				desired: ($desired[$action] ?? null),
-				live: ($live[$action] ?? null),
-				owned: ($owned[$action] ?? null),
+				values: ['desired' => ($desired[$action] ?? null), 'live' => ($live[$action] ?? null)],
+				baseline: $owned,
+				teams: $teams,
 			);
 			if ($merged['value'] !== null) {
 				$block[$action] = $merged['value'];
@@ -83,231 +100,118 @@ class CaseAuthorizationMerge {
 	}//end merge()
 
 	/**
-	 * One action's value: the projector's entries it still owns, then the local ones.
+	 * One action's value.
 	 *
-	 * A map (`roles`, `matrix`) is taken whole: the projector's when the live
-	 * value is still what it wrote, the live one otherwise.
-	 *
-	 * @param mixed $desired What the projector would write now.
-	 * @param mixed $live    The live value.
-	 * @param mixed $owned   What the projector wrote last.
+	 * @param array{desired: mixed, live: mixed} $values   What the projector derives now, and the live value.
+	 * @param array{owned: mixed}|null           $baseline What the projector wrote last, or null without a baseline.
+	 * @param array<int, string>                 $teams    The managed teams.
 	 *
 	 * @return array{value: mixed, conflicts: array<int, string>} The value (null: leave the action out) and the conflict suffixes.
 	 */
-	private function mergeAction(mixed $desired, mixed $live, mixed $owned): array {
-		if (self::isList(value: $desired) === false || self::isList(value: $live) === false) {
-			return $this->mergeWhole(desired: $desired, live: $live, owned: $owned);
+	private function mergeAction(array $values, ?array $baseline, array $teams): array {
+		if ($this->entries->isList(value: $values['desired']) === false || $this->entries->isList(value: $values['live']) === false) {
+			return $this->mergeWhole(values: $values, baseline: $baseline);
 		}
 
-		$ownedKeys = array_map(self::key(...), self::listOf(value: $owned));
-		$liveKeys = array_map(self::key(...), self::listOf(value: $live));
-		$changed = array_values(array_diff($ownedKeys, $liveKeys));
-
-		$value = [];
+		$owned = array_map($this->entries->key(...), $this->entries->listOf(value: ($baseline['owned'] ?? null)));
+		$live = $this->entries->listOf(value: $values['live']);
 		$conflicts = [];
-		foreach (self::listOf(value: $desired) as $entry) {
-			if ($this->replaces(entry: $entry, changed: $changed, owned: self::listOf(value: $owned)) === true) {
-				$conflicts[] = '[' . self::label(entry: $entry) . ']';
+		$value = $this->derivedEntries(
+			values: $values,
+			known: ['owned' => $owned, 'live' => array_map($this->entries->key(...), $live), 'hasBaseline' => ($baseline !== null)],
+			teams: $teams,
+			conflicts: $conflicts,
+		);
+
+		foreach ($live as $entry) {
+			if ($this->entries->isManagedTeamRule(entry: $entry, teams: $teams) === true) {
+				continue;
+			}
+
+			$ownedEntry = ($baseline !== null && in_array($this->entries->key(entry: $entry), $owned, true) === true);
+			$value = array_merge($value, $this->keptLive(entry: $entry, ownedEntry: $ownedEntry, desired: $values['desired'], conflicts: $conflicts));
+		}
+
+		return ['value' => $this->entries->unique(entries: $value), 'conflicts' => $conflicts];
+	}//end mergeAction()
+
+	/**
+	 * The rules the projector derives that it may write: all but a non-team rule an administrator removed or changed.
+	 *
+	 * @param array{desired: mixed, live: mixed}                                           $values    What the projector derives now, and the live value.
+	 * @param array{owned: array<int, string>, live: array<int, string>, hasBaseline: bool} $known     Keys of the baseline's and the live rules.
+	 * @param array<int, string>                                                           $teams     The managed teams.
+	 * @param array<int, string>                                                           $conflicts The conflict suffixes, extended in place.
+	 *
+	 * @return array<int, mixed> The rules to write.
+	 */
+	private function derivedEntries(array $values, array $known, array $teams, array &$conflicts): array {
+		$value = [];
+		foreach ($this->entries->listOf(value: $values['desired']) as $entry) {
+			$key = $this->entries->key(entry: $entry);
+			$removedLocally = in_array($key, $known['live'], true) === false
+				&& (($known['hasBaseline'] === false && $values['live'] !== null) || in_array($key, $known['owned'], true) === true);
+			if ($this->entries->isManagedTeamRule(entry: $entry, teams: $teams) === false && $removedLocally === true) {
+				$conflicts[] = '[' . $this->entries->label(entry: $entry) . ']';
 				continue;
 			}
 
 			$value[] = $entry;
 		}
 
-		foreach (self::listOf(value: $live) as $entry) {
-			if (in_array(self::key(entry: $entry), $ownedKeys, true) === false) {
-				$value[] = $entry;
-			}
+		return $value;
+	}//end derivedEntries()
+
+	/**
+	 * A live rule that is not a managed team rule: kept unless the projector owned it and dropped it.
+	 *
+	 * A local rule the projector does not derive is reported when it is
+	 * shaped like a team rule, so an administrator's team rule is visible.
+	 *
+	 * @param mixed              $entry      The live rule.
+	 * @param bool               $ownedEntry Whether the baseline says the projector wrote it.
+	 * @param mixed              $desired    What the projector derives now for this action.
+	 * @param array<int, string> $conflicts  The conflict suffixes, extended in place.
+	 *
+	 * @return array<int, mixed> The rule to keep, or nothing.
+	 */
+	private function keptLive(mixed $entry, bool $ownedEntry, mixed $desired, array &$conflicts): array {
+		$derived = in_array($this->entries->key(entry: $entry), array_map($this->entries->key(...), $this->entries->listOf(value: $desired)), true);
+		if ($ownedEntry === true && $derived === false) {
+			return [];
 		}
 
-		return ['value' => self::unique(entries: $value), 'conflicts' => $conflicts];
-	}//end mergeAction()
+		if ($derived === false && $this->entries->isTeamRule(entry: $entry) === true) {
+			$conflicts[] = '[' . $this->entries->label(entry: $entry) . ']';
+		}
+
+		return [$entry];
+	}//end keptLive()
 
 	/**
 	 * A map value, or a value that is no list on one side.
 	 *
-	 * @param mixed $desired What the projector would write now.
-	 * @param mixed $live    The live value.
-	 * @param mixed $owned   What the projector wrote last.
+	 * The projector's value while the live one is what it wrote; the live one
+	 * otherwise, reported. Without a baseline a live value that differs is kept.
+	 *
+	 * @param array{desired: mixed, live: mixed} $values   What the projector derives now, and the live value.
+	 * @param array{owned: mixed}|null           $baseline What the projector wrote last, or null without a baseline.
 	 *
 	 * @return array{value: mixed, conflicts: array<int, string>} The value and the conflict suffixes.
 	 */
-	private function mergeWhole(mixed $desired, mixed $live, mixed $owned): array {
-		if ($live === null || self::key(entry: $live) === self::key(entry: $owned)) {
+	private function mergeWhole(array $values, ?array $baseline): array {
+		$live = $values['live'];
+		$desired = $values['desired'];
+		if ($live === null || ($baseline !== null && $this->entries->key(entry: $live) === $this->entries->key(entry: $baseline['owned']))) {
 			return ['value' => $desired, 'conflicts' => []];
 		}
 
 		$conflicts = [];
-		if ($desired !== null && self::key(entry: $desired) !== self::key(entry: $live)) {
+		if ($desired !== null && $this->entries->key(entry: $desired) !== $this->entries->key(entry: $live)) {
 			$conflicts[] = '';
 		}
 
 		return ['value' => $live, 'conflicts' => $conflicts];
 	}//end mergeWhole()
 
-	/**
-	 * Whether a desired entry stands where an administrator changed or removed a projector rule.
-	 *
-	 * The same rule (same key), or a rule for the same principal on the same
-	 * kind of match, counts as the same place.
-	 *
-	 * @param mixed              $entry   The desired entry.
-	 * @param array<int, string> $changed Keys of owned entries no longer on the live block.
-	 * @param array<int, mixed>  $owned   What the projector wrote last.
-	 *
-	 * @return bool True when writing it would overwrite the administrator.
-	 */
-	private function replaces(mixed $entry, array $changed, array $owned): bool {
-		if (in_array(self::key(entry: $entry), $changed, true) === true) {
-			return true;
-		}
-
-		foreach ($owned as $before) {
-			if (in_array(self::key(entry: $before), $changed, true) === true && self::label(entry: $before) === self::label(entry: $entry)) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end replaces()
-
-	/**
-	 * The projector's own rules when no baseline was recorded: those on the live
-	 * block that are shipped or shaped like a handling team rule.
-	 *
-	 * Only rules that are on the live block count, so nothing reads as changed
-	 * by an administrator: without a baseline that cannot be known.
-	 *
-	 * @param array<string, mixed> $desired What the projector would write now.
-	 * @param array<string, mixed> $live    The live block.
-	 *
-	 * @return array<string, mixed> The owned block.
-	 */
-	private function ownedByShape(array $desired, array $live): array {
-		$owned = [];
-		foreach ($live as $action => $value) {
-			if (self::isList(value: $value) === false || self::isList(value: ($desired[$action] ?? [])) === false) {
-				$owned[$action] = $value;
-				continue;
-			}
-
-			$shipped = array_map(self::key(...), self::listOf(value: ($desired[$action] ?? [])));
-			$owned[$action] = array_values(
-				array_filter(
-					$value,
-					static fn (mixed $entry): bool => self::isTeamRule(entry: $entry) === true || in_array(self::key(entry: $entry), $shipped, true) === true,
-				)
-			);
-		}
-
-		return $owned;
-	}//end ownedByShape()
-
-	/**
-	 * Whether an entry is a handling team rule: a group granted on `caseType`.
-	 *
-	 * @param mixed $entry The entry.
-	 *
-	 * @return bool True for a team rule.
-	 */
-	private static function isTeamRule(mixed $entry): bool {
-		return is_array($entry) === true
-			&& is_string($entry['group'] ?? null) === true
-			&& array_keys((array)($entry['match'] ?? [])) === [CaseTeamAccessRules::MATCH_FIELD];
-	}//end isTeamRule()
-
-	/**
-	 * Where an entry stands: the principal it names and the fields it matches on.
-	 *
-	 * @param mixed $entry The entry.
-	 *
-	 * @return string The label.
-	 */
-	private static function label(mixed $entry): string {
-		if (is_array($entry) === false) {
-			return (string)json_encode($entry);
-		}
-
-		$fields = array_keys((array)($entry['match'] ?? []));
-		sort($fields);
-
-		return (string)($entry['group'] ?? ($entry['user'] ?? '')) . ':' . implode(',', $fields);
-	}//end label()
-
-	/**
-	 * A canonical key for an entry, independent of key order.
-	 *
-	 * @param mixed $entry The entry.
-	 *
-	 * @return string The key.
-	 */
-	private static function key(mixed $entry): string {
-		return (string)json_encode(self::canonical(value: $entry));
-	}//end key()
-
-	/**
-	 * The value with every map's keys sorted.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return mixed The canonical value.
-	 */
-	private static function canonical(mixed $value): mixed {
-		if (is_array($value) === false) {
-			return $value;
-		}
-
-		if (array_is_list($value) === false) {
-			ksort($value);
-		}
-
-		return array_map(self::canonical(...), $value);
-	}//end canonical()
-
-	/**
-	 * Whether a value is a list of rules (or absent).
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return bool True for a list or null.
-	 */
-	private static function isList(mixed $value): bool {
-		return $value === null || (is_array($value) === true && array_is_list($value) === true);
-	}//end isList()
-
-	/**
-	 * A value as a list of rules.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return array<int, mixed> The list.
-	 */
-	private static function listOf(mixed $value): array {
-		if (is_array($value) === true && array_is_list($value) === true) {
-			return $value;
-		}
-
-		return [];
-	}//end listOf()
-
-	/**
-	 * The entries without repeats, first one kept.
-	 *
-	 * @param array<int, mixed> $entries The entries.
-	 *
-	 * @return array<int, mixed> The entries.
-	 */
-	private static function unique(array $entries): array {
-		$seen = [];
-		$kept = [];
-		foreach ($entries as $entry) {
-			$key = self::key(entry: $entry);
-			if (isset($seen[$key]) === false) {
-				$seen[$key] = true;
-				$kept[] = $entry;
-			}
-		}
-
-		return $kept;
-	}//end unique()
 }//end class

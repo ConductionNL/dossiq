@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use PHPUnit\Framework\TestCase;
+use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -44,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Access\CaseAuthorizationMerge
+ * @uses \OCA\Dossiq\Service\Access\CaseAuthorizationEntries
  *
  * @spec openspec/specs/case-access-control/spec.md
  */
@@ -76,6 +78,13 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 * @var array<int, string>
 	 */
 	private array $warnings = [];
+
+	/**
+	 * The teams the projector remembers managing, as the app config holds them.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $managedTeams = [];
 
 	/**
 	 * The context of every warning.
@@ -141,6 +150,17 @@ class CaseTeamAccessProjectorTest extends TestCase {
 		if ($this->baselines !== null) {
 			$services['OCA\\OpenRegister\\Service\\ShippedBaseline\\ShippedBaselineStore'] = $this->baselines;
 		}
+
+		$config = $this->createMock(originalClassName: IAppConfig::class);
+		$config->method('getValueString')->willReturnCallback(fn (): string => (string)json_encode($this->managedTeams));
+		$config->method('setValueString')->willReturnCallback(
+			function (string $app, string $key, string $value): bool {
+				$this->managedTeams = json_decode($value, true);
+
+				return true;
+			}
+		);
+		$services[IAppConfig::class] = $config;
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('has')->willReturnCallback(static fn (string $id): bool => isset($services[$id]));
@@ -238,10 +258,26 @@ class CaseTeamAccessProjectorTest extends TestCase {
 		$stale = ['group' => 'oud-team', 'match' => ['caseType' => ['$in' => ['ct-permit']]]];
 		$this->schema->authorization = ['read' => [$stale]];
 
+		$this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['oud-team']]]])->reapply();
 		$this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]])->reapply();
 
 		$this->assertNotContains($stale, $this->schema->authorization['read']);
+		$this->assertSame(expected: ['oud-team', 'vergunningen'], actual: $this->managedTeams);
 	}//end testAStaleTeamRuleOnTheLiveSchemaIsRemoved()
+
+	/**
+	 * A team-shaped rule for a team the projector never managed is an administrator's, and stays.
+	 *
+	 * @return void
+	 */
+	public function testATeamRuleTheProjectorNeverWroteStays(): void {
+		$auditors = ['group' => 'auditors', 'match' => ['caseType' => ['$in' => ['ct-permit']]]];
+		$this->schema->authorization = ['read' => [$auditors]];
+
+		$this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]])->reapply();
+
+		$this->assertContains(needle: $auditors, haystack: $this->schema->authorization['read']);
+	}//end testATeamRuleTheProjectorNeverWroteStays()
 
 	/**
 	 * Nothing changed, nothing written.
@@ -402,6 +438,7 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 */
 	public function testAStaleBaselineIsAlignedWithoutRewritingTheSchema(): void {
 		$rows = [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]];
+		$this->schema->authorization = $this->projector(rows: [])->shippedBlock();
 		$this->projector(rows: $rows)->reapply();
 		$shipped = $this->projector(rows: [])->shippedBlock();
 		$this->baselines = self::baselineStore(
@@ -420,6 +457,7 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 */
 	public function testNothingIsRecordedWhenAlignedOrWithoutABaseline(): void {
 		$rows = [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]];
+		$this->schema->authorization = $this->projector(rows: [])->shippedBlock();
 		$this->projector(rows: $rows)->reapply();
 		self::assertSame(expected: [], actual: $this->warnings, message: 'An OpenRegister without baselines is an ordinary state.');
 
@@ -479,11 +517,11 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	}//end testAnAdminRuleSurvivesACaseTypeSave()
 
 	/**
-	 * A team rule an administrator changed is left as they changed it, and logged as kept local.
+	 * A team rule for a managed team follows the case types, even when an administrator edited its case types.
 	 *
 	 * @return void
 	 */
-	public function testAChangedTeamRuleIsLoggedNotOverwritten(): void {
+	public function testAnEditedTeamRuleFollowsTheCaseTypes(): void {
 		$rows = [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]];
 		$shipped = $this->projector(rows: [])->shippedBlock();
 		$this->baselines = self::baselineStore(baseline: self::baselineOf(authorization: $shipped));
@@ -500,11 +538,57 @@ class CaseTeamAccessProjectorTest extends TestCase {
 
 		$this->projector(rows: $rows)->reapply();
 
-		self::assertContains(needle: $edited, haystack: $this->schema->authorization['read']);
-		self::assertNotContains(needle: $team, haystack: $this->schema->authorization['read']);
+		self::assertContains(needle: $team, haystack: $this->schema->authorization['read']);
+		self::assertNotContains(needle: $edited, haystack: $this->schema->authorization['read'], message: 'a team rule follows the case types');
+	}//end testAnEditedTeamRuleFollowsTheCaseTypes()
+
+	/**
+	 * A shipped rule an administrator changed is left as they changed it, and logged as kept local.
+	 *
+	 * @return void
+	 */
+	public function testAChangedShippedRuleIsLoggedNotOverwritten(): void {
+		$rows = [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]];
+		$shipped = $this->projector(rows: [])->shippedBlock();
+		$this->baselines = self::baselineStore(baseline: self::baselineOf(authorization: $shipped));
+		$this->schema->authorization = $shipped;
+		$this->projector(rows: $rows)->reapply();
+
+		$this->schema->authorization['delete'] = ['dossiq-beheerders'];
+		$this->warnings = [];
+		$this->warningContexts = [];
+		$this->projector(rows: $rows)->reapply();
+
+		self::assertSame(expected: ['dossiq-beheerders'], actual: $this->schema->authorization['delete']);
 		self::assertCount(expectedCount: 1, haystack: $this->warnings);
-		self::assertContains(needle: 'read[vergunningen:caseType]', haystack: $this->warningContexts[0]['keptLocal']);
-	}//end testAChangedTeamRuleIsLoggedNotOverwritten()
+		self::assertContains(needle: 'delete["admin"]', haystack: $this->warningContexts[0]['keptLocal']);
+	}//end testAChangedShippedRuleIsLoggedNotOverwritten()
+
+	/**
+	 * A baseline that cannot be read, or has no definition, reads as none: a shipped rule an administrator removed is not brought back.
+	 *
+	 * Read as an empty baseline instead, every shipped rule would look new and be written back.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableBaselineReadsAsNone(): void {
+		$rows = [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]];
+		$shipped = $this->projector(rows: [])->shippedBlock();
+		$narrowed = $shipped;
+		$narrowed['read'] = array_values(array_diff_key($shipped['read'], [1 => true]));
+		$stores = [
+			'throws' => self::baselineStore(baseline: self::baselineOf(authorization: $shipped), throws: 'read'),
+			'no definition' => self::baselineStore(baseline: ['app' => 'dossiq', 'appVersion' => '1.4.0', 'recordedAt' => 'then']),
+		];
+		foreach ($stores as $why => $store) {
+			$this->baselines = $store;
+			$this->schema->authorization = $narrowed;
+
+			$this->projector(rows: $rows)->reapply();
+
+			self::assertNotContains(needle: $shipped['read'][1], haystack: $this->schema->authorization['read'], message: $why);
+		}
+	}//end testAnUnreadableBaselineReadsAsNone()
 
 	/**
 	 * The baseline keeps the app it was recorded for, whatever that app is.
