@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -148,6 +149,7 @@ class CaseTemplateService {
 	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function startFrom(string $templateId, array $overrides = []): array {
+		$overrides = array_diff_key($overrides, CallerIdentity::KEYS);
 		$template = $this->store->row(configKey: self::CASES, id: $templateId);
 		if ($template === null) {
 			return ['ok' => false, 'reason' => 'not_found', 'case' => []];

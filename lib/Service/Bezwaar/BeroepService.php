@@ -58,6 +58,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -161,6 +162,7 @@ class BeroepService {
 		string $filingDate,
 		array $payload = [],
 	): array {
+		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');

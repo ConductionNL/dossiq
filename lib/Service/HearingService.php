@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -67,6 +68,7 @@ class HearingService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function scheduleHearing(string $complaintId, array $data): array {
+		$data = array_diff_key($data, CallerIdentity::KEYS);
 		if (empty($data['date']) === true) {
 			throw new RuntimeException('Hearing datum is required');
 		}

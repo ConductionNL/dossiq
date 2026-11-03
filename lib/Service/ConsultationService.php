@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\Consultation\ConsultationRecords;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Obligations\ObligationService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -136,6 +137,7 @@ class ConsultationService {
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
 	public function createConsultation(array $data): array {
+		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
