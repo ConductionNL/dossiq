@@ -193,7 +193,7 @@ export default {
 		 *
 		 * @param {object} message The message as it was sent.
 		 * @return {Promise<boolean>} Whether it was logged.
-		 * @spec openspec/changes/reply-logs-a-contact-moment/specs/portal-contribution/spec.md#requirement-an-answer-to-the-resident-can-be-logged-as-a-contact-moment
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		async logAsContactMoment(message) {
 			try {
