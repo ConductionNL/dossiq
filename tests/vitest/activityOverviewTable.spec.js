@@ -18,7 +18,7 @@ vi.mock('@nextcloud/l10n', () => ({
 	translatePlural: (app, one, many, count) => (count === 1 ? one : many).replace('%n', String(count)),
 }))
 
-const { dsoActivityFormatters } = await import('../../src/views/settings/dsoActivityFormatters.js')
+const { activityOverviewFormatters } = await import('../../src/views/settings/activityOverviewFormatters.js')
 
 const ROOT = path.resolve(__dirname, '../..')
 const admin = fs.readFileSync(path.join(ROOT, 'src/views/settings/AdminRoot.vue'), 'utf8')
@@ -34,8 +34,8 @@ describe('the DSO activity table', () => {
 	it('has the board\'s four columns', () => {
 		const keys = [...columns.matchAll(/key: '([^']+)'/g)].map((m) => m[1])
 		expect(keys).toEqual(['activityName', 'caseTypes', 'variant', 'lastReceivedAt'])
-		expect(columns).toContain("formatter: 'dsoCaseTypes'")
-		expect(columns).toContain("formatter: 'dsoVariants'")
+		expect(columns).toContain("formatter: 'activityCaseTypes'")
+		expect(columns).toContain("formatter: 'activityVariants'")
 		expect(columns).toContain("formatter: 'relativeDate'")
 		expect(nl.Variant).toBe('Variant')
 		expect(nl['Last received']).toBe('Laatst ontvangen')
@@ -52,11 +52,11 @@ describe('the DSO activity table', () => {
 
 	it('names the case types, or how many requests wait for a link', () => {
 		const row = { caseTypes: [{ reference: 'OV', title: 'Omgevingsvergunning regulier', variant: 'Regulier' }, { reference: 'TI' }] }
-		expect(dsoActivityFormatters.dsoCaseTypes(row.caseTypes, row)).toBe('Omgevingsvergunning regulier, TI')
-		expect(dsoActivityFormatters.dsoVariants(row.caseTypes, row)).toBe('Regulier')
+		expect(activityOverviewFormatters.activityCaseTypes(row.caseTypes, row)).toBe('Omgevingsvergunning regulier, TI')
+		expect(activityOverviewFormatters.activityVariants(row.caseTypes, row)).toBe('Regulier')
 		const waiting = { unmapped: true, waiting: 1, caseTypes: [] }
-		expect(dsoActivityFormatters.dsoCaseTypes([], waiting)).toBe('Not linked yet: 1 request waiting')
-		expect(dsoActivityFormatters.dsoVariants([], waiting)).toBe('')
+		expect(activityOverviewFormatters.activityCaseTypes([], waiting)).toBe('Not linked yet: 1 request waiting')
+		expect(activityOverviewFormatters.activityVariants([], waiting)).toBe('')
 		expect(nl['_Not linked yet: %n request waiting_::_Not linked yet: %n requests waiting_']).toEqual(['Nog niet gekoppeld: %n aanvraag wacht', 'Nog niet gekoppeld: %n aanvragen wachten'])
 	})
 })

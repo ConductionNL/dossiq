@@ -16,7 +16,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import WooSearchPlanDialog from '../../src/dialogs/WooSearchPlanDialog.vue'
+import SearchPlanDialog from '../../src/dialogs/SearchPlanDialog.vue'
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -124,7 +124,7 @@ async function mountDialog(plan = null) {
 		}),
 	)
 
-	const wrapper = mount(WooSearchPlanDialog, {
+	const wrapper = mount(SearchPlanDialog, {
 		props: { caseId: CASE_ID },
 		global: {
 			stubs: {
@@ -161,7 +161,7 @@ async function mountDialog(plan = null) {
 	return { wrapper, axios }
 }
 
-describe('WooSearchPlanDialog', () => {
+describe('SearchPlanDialog', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 	})
@@ -171,13 +171,13 @@ describe('WooSearchPlanDialog', () => {
 		const action = caseDetail.config.headerActions.find(
 			(a) => a.id === 'woo-search-plan',
 		)
-		expect(action.target).toBe('WooSearchPlanDialog')
+		expect(action.target).toBe('SearchPlanDialog')
 		expect(action.visibleWhen.all).toContainEqual({
 			field: 'caseTypeIdentifier',
 			op: 'eq',
 			value: 'woo-verzoek',
 		})
-		expect(registrySource).toMatch(/WooSearchPlanDialog: \{\s*kind: 'modal'/)
+		expect(registrySource).toMatch(/SearchPlanDialog: \{\s*kind: 'modal'/)
 	})
 
 	it('testCustodiansSystemsPeriodAndTermsAreRequired', async () => {
