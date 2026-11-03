@@ -43,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Access\CaseTeamAccessRules
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Access\CaseAuthorizationMerge
  *
  * @spec openspec/specs/case-access-control/spec.md
  */
@@ -75,6 +76,13 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 * @var array<int, string>
 	 */
 	private array $warnings = [];
+
+	/**
+	 * The context of every warning.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $warningContexts = [];
 
 	/**
 	 * Build the schema and the mapper.
@@ -157,8 +165,9 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	private function warningLog(): LoggerInterface {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->method('warning')->willReturnCallback(
-			function (string|\Stringable $message): void {
+			function (string|\Stringable $message, array $context = []): void {
 				$this->warnings[] = (string)$message;
+				$this->warningContexts[] = $context;
 			}
 		);
 
@@ -368,6 +377,7 @@ class CaseTeamAccessProjectorTest extends TestCase {
 		$this->baselines = self::baselineStore(
 			baseline: self::baselineOf(authorization: $shipped)
 		);
+		$this->schema->authorization = $shipped;
 
 		$this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]])->reapply();
 
@@ -436,12 +446,65 @@ class CaseTeamAccessProjectorTest extends TestCase {
 			baseline: self::baselineOf(authorization: $shipped),
 			records: false,
 		);
+		$this->schema->authorization = $shipped;
 
 		self::assertTrue(condition: $this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]])->reapply());
 		self::assertSame(expected: 1, actual: $this->mapper->writes);
 		self::assertCount(expectedCount: 1, haystack: $this->baselines->recorded);
 		self::assertCount(expectedCount: 1, haystack: $this->warnings);
 	}//end testAFailedRecordKeepsTheSchemaWrite()
+
+	/**
+	 * An administrator's rule on the case schema survives a case type save.
+	 *
+	 * @return void
+	 */
+	public function testAnAdminRuleSurvivesACaseTypeSave(): void {
+		$rows = [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]];
+		$shipped = $this->projector(rows: [])->shippedBlock();
+		$this->baselines = self::baselineStore(baseline: self::baselineOf(authorization: $shipped));
+		$this->schema->authorization = $shipped;
+		$this->projector(rows: $rows)->reapply();
+
+		$local = ['group' => 'juristen', 'match' => ['status' => 'bezwaar']];
+		$this->schema->authorization['read'][] = $local;
+		$this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen', 'handhaving']]]])->reapply();
+
+		self::assertContains(needle: $local, haystack: $this->schema->authorization['read']);
+		self::assertContains(
+			needle: ['group' => 'handhaving', 'match' => ['caseType' => ['$in' => ['ct-permit']]]],
+			haystack: $this->schema->authorization['read'],
+		);
+		self::assertNotContains(needle: $local, haystack: $this->baselines->baseline['definition']['authorization']['read']);
+	}//end testAnAdminRuleSurvivesACaseTypeSave()
+
+	/**
+	 * A team rule an administrator changed is left as they changed it, and logged as kept local.
+	 *
+	 * @return void
+	 */
+	public function testAChangedTeamRuleIsLoggedNotOverwritten(): void {
+		$rows = [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]];
+		$shipped = $this->projector(rows: [])->shippedBlock();
+		$this->baselines = self::baselineStore(baseline: self::baselineOf(authorization: $shipped));
+		$this->schema->authorization = $shipped;
+		$this->projector(rows: $rows)->reapply();
+
+		$team = ['group' => 'vergunningen', 'match' => ['caseType' => ['$in' => ['ct-permit']]]];
+		$edited = ['group' => 'vergunningen', 'match' => ['caseType' => ['$in' => ['ct-permit', 'ct-kap']]]];
+		$read = $this->schema->authorization['read'];
+		$read[array_search($team, $read, true)] = $edited;
+		$this->schema->authorization['read'] = $read;
+		$this->warnings = [];
+		$this->warningContexts = [];
+
+		$this->projector(rows: $rows)->reapply();
+
+		self::assertContains(needle: $edited, haystack: $this->schema->authorization['read']);
+		self::assertNotContains(needle: $team, haystack: $this->schema->authorization['read']);
+		self::assertCount(expectedCount: 1, haystack: $this->warnings);
+		self::assertContains(needle: 'read[vergunningen:caseType]', haystack: $this->warningContexts[0]['keptLocal']);
+	}//end testAChangedTeamRuleIsLoggedNotOverwritten()
 
 	/**
 	 * The baseline keeps the app it was recorded for, whatever that app is.
@@ -470,6 +533,7 @@ class CaseTeamAccessProjectorTest extends TestCase {
 			$this->setUp();
 			$this->warnings = [];
 			$this->baselines = self::baselineStore(baseline: self::baselineOf(authorization: $shipped), throws: $method);
+			$this->schema->authorization = $shipped;
 
 			self::assertTrue(
 				condition: $this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]])->reapply(),
@@ -498,6 +562,7 @@ class CaseTeamAccessProjectorTest extends TestCase {
 		$shipped = $this->projector(rows: [])->shippedBlock();
 		$asShipped = self::baselineOf(authorization: $shipped);
 		$this->baselines = self::baselineStore(baseline: $asShipped);
+		$this->schema->authorization = $shipped;
 		$this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]])->reapply();
 
 		$live = self::shippedDefinition(authorization: $this->schema->authorization);

@@ -196,8 +196,12 @@ class CaseTeamAccessProjector {
 		}
 
 		$caseTypes = $this->caseTypeTeams();
-		$block = $this->rules->block(shipped: $this->shippedBlock(), caseTypes: $caseTypes);
-		$changed = ($block !== $schema->getAuthorization());
+		$desired = $this->rules->block(shipped: $this->shippedBlock(), caseTypes: $caseTypes);
+		$live = ($schema->getAuthorization() ?? []);
+		$merge = (new CaseAuthorizationMerge())->merge(desired: $desired, live: $live, baseline: $this->recordedAuthorization());
+		$block = $merge['block'];
+		$this->reportKeptLocal(conflicts: $merge['conflicts']);
+		$changed = ($block !== $live);
 		if ($changed === true) {
 			$schema->setAuthorization($block);
 			$schemaMapper->update($schema);
@@ -207,13 +211,56 @@ class CaseTeamAccessProjector {
 			);
 		}
 
-		$this->alignShippedBaseline(block: $block);
+		$this->alignShippedBaseline(block: $desired);
 
 		return $changed;
 	}//end writeToSchema()
 
 	/**
-	 * Record the written block as the case schema's shipped authorization.
+	 * The authorization the projector recorded last, as the case schema's shipped baseline.
+	 *
+	 * @return array<string, mixed>|null The block, or null when none was recorded or it cannot be read.
+	 */
+	private function recordedAuthorization(): ?array {
+		if ($this->container->has(self::BASELINE_STORE) === false) {
+			return null;
+		}
+
+		try {
+			$baselines = $this->container->get(self::BASELINE_STORE);
+			$baseline = $baselines->read(subject: $baselines->schemaSubject(slug: self::CASE_SCHEMA_SLUG));
+		} catch (Throwable) {
+			return null;
+		}
+
+		$block = ($baseline['definition']['authorization'] ?? null);
+		if (is_array($block) === false) {
+			return null;
+		}
+
+		return $block;
+	}//end recordedAuthorization()
+
+	/**
+	 * Log the projector rules an administrator changed, which the projector left as they are.
+	 *
+	 * @param array<int, string> $conflicts The `action` or `action[rule]` paths kept local.
+	 *
+	 * @return void
+	 */
+	private function reportKeptLocal(array $conflicts): void {
+		if ($conflicts === []) {
+			return;
+		}
+
+		$this->logger->warning(
+			'Dossiq: the case schema kept local changes to handling team rules; the projector did not overwrite them',
+			['keptLocal' => $conflicts]
+		);
+	}//end reportKeptLocal()
+
+	/**
+	 * Record the projector's own block as the case schema's shipped authorization.
 	 *
 	 * OpenRegister keeps what an app shipped beside what the instance runs, and
 	 * on an upgrade it keeps a part the instance changed instead of the newly
@@ -226,7 +273,7 @@ class CaseTeamAccessProjector {
 	 * to compare against and writes the shipped block anyway. A failure is
 	 * logged and does not undo the schema write.
 	 *
-	 * @param array<string, mixed> $block The block on the live case schema.
+	 * @param array<string, mixed> $block The block the projector derives: shipped plus team rules, without local rules.
 	 *
 	 * @return void
 	 *
