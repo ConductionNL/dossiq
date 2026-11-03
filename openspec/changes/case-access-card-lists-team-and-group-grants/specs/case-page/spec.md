@@ -2,7 +2,7 @@
 
 ### Requirement: The Toegang card lists the teams and groups that can open the case
 
-The Toegang card on the simple People tab SHALL list, after the case's access links, the
+The Toegang card on the simple People tab SHALL list, before the case's access links, the
 users and groups that hold access to the case, read from OpenRegister's grants list for the
 case (`an-object-lists-its-grants-with-their-origin`). Each row SHALL show a group icon or
 the user's initials at 32px, the display name, and a line saying where the access came from.
@@ -37,3 +37,8 @@ what OpenRegister answers.
 #### Scenario: the grants cannot be read
 - GIVEN OpenRegister answers 500 for the case's grants
 - THEN the grant rows show "Kon niet lezen wie toegang heeft" and never an empty list
+
+#### Scenario: who can open the case comes before the links
+- GIVEN case 710d44a4 has the group grants "Team Woo en informatie" and "Juridische zaken" and the access link "Link voor Sanne de Vries"
+- WHEN the reader opens Betrokkenen
+- THEN the Toegang card lists the two groups first and the link under them, as DqZaakBetrokkenen draws it
