@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\Access\ReadableObjects;
 use OCA\Dossiq\Service\People\PersonReachability;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -43,11 +44,13 @@ class PersonReachabilityController extends Controller {
 	 * @param string             $appName      The app name.
 	 * @param IRequest           $request      The request.
 	 * @param PersonReachability $reachability Reads how the person can be reached.
+	 * @param ReadableObjects $readable Whether a caller is signed in and may read the requested object.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly PersonReachability $reachability,
+		private readonly ReadableObjects $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -63,7 +66,15 @@ class PersonReachabilityController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(string $id): JSONResponse {
+		if ($this->readable->hasCaller() === false) {
+			return new JSONResponse(['error' => 'Sign in to read this person.'], Http::STATUS_UNAUTHORIZED);
+		}
+
 		try {
+			if ($this->readable->canRead(schema: 'brpPerson', id: $id) === false) {
+				return new JSONResponse(['error' => 'Person not found'], Http::STATUS_NOT_FOUND);
+			}
+
 			$answer = $this->reachability->forPerson(personId: trim($id));
 		} catch (Throwable) {
 			return new JSONResponse(['error' => 'The person could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
