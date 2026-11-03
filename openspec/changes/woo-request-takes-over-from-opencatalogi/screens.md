@@ -1,6 +1,4 @@
-# Screens: woo-request-takes-over-from-opencatalogi
-
-- No screen: the intake is an API that portaliq and opencatalogi call, the import is an occ command, and a former reference is found through the case search that already exists
 # Screens
 
-- OcWooBatch https://identity.conduction.nl/screens/board?id=opencatalogi/OcWooBatch (decision 256: Woo request screens are opencatalogi's, dossiq links out)
+- opencatalogi/OcWooBatch the Woo batch with its linked Woo request (decision 256: dossiq links out) https://identity.conduction.nl/screens/board?id=opencatalogi/OcWooBatch
+- dossiq has no board of its own for the Woo request intake; it is an API, the import is an occ command, and a former reference is found through the case search.

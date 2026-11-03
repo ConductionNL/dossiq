@@ -1,5 +1,5 @@
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
-- PtVoorstelBeoordelen https://identity.conduction.nl/screens/board?id=portaliq/PtVoorstelBeoordelen
 # Screens
 
-- No screen: dossiq half is a provider declaration, the screen is in portaliq
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- portaliq/PtVoorstelBeoordelen voorstellen beoordelen in dossiq https://identity.conduction.nl/screens/board?id=portaliq/PtVoorstelBeoordelen
+- dossiq has no board of its own for the proposal review; its half is a provider declaration.

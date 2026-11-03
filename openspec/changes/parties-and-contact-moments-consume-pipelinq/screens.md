@@ -1,7 +1,6 @@
 # Screens
 
-- DqZaakContact https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact
-- DqContact https://identity.conduction.nl/screens/board?id=dossiq/DqContact
-- DqZaakContactmomenten https://identity.conduction.nl/screens/dossiq/DqZaakContactmomenten
-- DqZaakPartijen https://identity.conduction.nl/screens/dossiq/DqZaakPartijen
-- DqZaaktype https://identity.conduction.nl/screens/dossiq/DqZaaktype
+- dossiq/DqZaakContact the contact moments of the case, a shared one marked https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact
+- dossiq/DqContact contact https://identity.conduction.nl/screens/board?id=dossiq/DqContact
+- dossiq/DqZaakBetrokkenen the case's party panel https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBetrokkenen
+- dossiq/DqZaaktype zaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktype
