@@ -32,6 +32,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
  */
 class WooAssessmentForgedIdTest extends TestCase {
 
