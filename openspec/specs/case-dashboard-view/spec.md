@@ -544,32 +544,26 @@ library honours it is a deletion rather than a new idea.
 - **WHEN** `CaseDetail` sets it to identifier, case type and assignee
 - **THEN** the subtitle SHALL read 2026-0015, Omgevingsvergunning, Jan de Vries
 
-### Requirement: The case page carries no breadcrumb (REQ-CDV-15)
+### Requirement: The case page names the list and the case number under its title (REQ-CDV-15)
 
-The case page SHALL NOT render a breadcrumb trail. The way back to the case
-list is the app menu, which every other detail page in this app uses.
+The case page SHALL render, on the line under the case title, a trail of
+"Alle zaken" (a link to the cases list) and the case number, as board DqZaak
+draws it: `Alle zaken / 2026-0110`. The trail's last crumb SHALL be the case
+number, never the case title, so the trail never repeats the heading above it.
+A sub-case SHALL carry its parent's case number between the two (deelzaak-support).
 
-This requirement used to say the opposite: `CaseDetail` declared a trail of
-Cases followed by the case title, rendered through `CnBreadcrumbs` above the
-title. It was withdrawn because the trail's LAST crumb was the case title,
-rendered one line below the page header that already printed that title, so
-the page read `Cases > Dakkapel Kerkstraat 12` directly under
-`Dakkapel Kerkstraat 12`. A trail whose final segment repeats the heading
-beside it states a location the reader is already looking at, and it cost the
-top of the page a row that the content below it needed.
+A trail of Cases followed by the case title was withdrawn earlier because its
+last crumb repeated the title one line above it. The board keeps the trail and
+ends it on the number, which the title does not show.
 
-It is stated as a requirement rather than simply deleted so the absence is
-legible: without it the next reader finds the `_breadcrumbsNote` in the
-manifest, reads it as an oversight, and adds the trail back.
-
-#### Scenario: No trail is rendered
+#### Scenario: The trail ends on the case number
 @e2e tests/e2e/case-header.spec.ts
 
-- **GIVEN** a case titled Aanbouw Beethovenlaan 8
+- **GIVEN** case 2026-0110 titled Verlichting fietspad Lindelaan
 - **WHEN** the handler opens the case page
-- **THEN** the page SHALL render no breadcrumb trail
-- **AND** no element SHALL carry both the case title and `aria-current="page"`,
-  which is the signature the trail's last crumb left
+- **THEN** the line under the title SHALL read "Alle zaken / 2026-0110"
+- **AND** "Alle zaken" SHALL link to the cases list
+- **AND** no crumb SHALL carry the case title
 
 ### Requirement: The case shows its step (REQ-CDV-13)
 
@@ -699,23 +693,28 @@ writes only, as REQ-CDV-17 and REQ-CDV-18 describe.
 - **WHEN** the handler opens the History tab
 - **THEN** the upload SHALL read above the status change, with the handler as actor
 
-### Requirement: Thirteen tabs hold every panel of the case (REQ-CDV-16)
+### Requirement: Five tabs and Meer hold every panel of the case (REQ-CDV-16)
 
-You reach every panel of the case from one row of thirteen tabs. The
-`case-panels` widget on `CaseDetail` SHALL list exactly thirteen tabs, in the
-order Data (`case-data-panel`), Files (`case-files`), Notes
-(`case-notes-panel`), Timeline (`case-timeline-panel`), People
-(`case-people-panel`), Communication (`case-communication-panel`), Email
-(`case-email-panel`), Work (`case-work-panel`), Decisions
-(`case-decisions-panel`), Related (`case-related-panel`), Custody
-(`case-custody-panel`), Archiving (`case-archival-panel`) and Knowledge
-(`case-knowledge-panel`). The strip SHALL sit above the fold at 1024 pixels
-wide, and all thirteen SHALL be visible there without a scroll or a gesture.
+You reach the panels you use every day from five tabs, and every other panel
+from Meer, as boards DqZaak and DqZaakMeer draw it. The `case-panels` widget on
+`CaseDetail` SHALL show five tabs, in the order Overzicht (`case-data-panel`),
+Bestanden (`case-files`), Contact (`case-communication-panel`), Taken
+(`case-work-panel`) and Historie (`case-timeline-panel`), each with its count
+where the panel counts something ("Bestanden 7", "Taken 4"). The other eight
+panels, Notes (`case-notes-panel`), People (`case-people-panel`), Email
+(`case-email-panel`), Decisions (`case-decisions-panel`), Related
+(`case-related-panel`), Custody (`case-custody-panel`), Archiving
+(`case-archival-panel`) and Knowledge (`case-knowledge-panel`), SHALL be
+reachable as the extra tabs under Meer. Where the case assistant is on, an
+Assistent tab MAY follow Historie (board DqZaakAssistent). The strip SHALL sit
+above the fold at 1024 pixels wide, and its tabs and Meer SHALL be visible
+there without a scroll or a gesture.
 
 Objects and locations is retired. Its objects are the last section of Related,
 an object linked to a case being a relation like any other, and its locations
-are a map on the Data tab: `case-location` already carries latitude and
-longitude, so the list was a table of coordinates nobody could picture.
+are the Locaties card on Overzicht (board DqZaak): `case-location` already
+carries latitude and longitude, so the list was a table of coordinates nobody
+could picture.
 
 A tab MAY hold more than one panel, as a `case-sections` widget whose sections
 render stacked under their own headings. Files SHALL hold the case folder and
@@ -724,8 +723,7 @@ crumbs and no section heading over it (one title on the page, and the word is
 files; the ZGW document list left the page on 2026-09-13, its API and register
 stay); People SHALL hold the parties and the contact moments;
 Work SHALL hold the tasks and the appointments; Related SHALL hold the related
-cases and the sub-cases; Objects and locations SHALL hold the case objects and
-the case locations.
+cases, the sub-cases and the case objects.
 
 A section SHALL be absent or non-empty, never a heading over a void.
 `CnDetailWidgetHost` renders nothing, and logs nothing, for a widget type it
@@ -744,15 +742,15 @@ No surface SHALL read in both the strip and the sidebar. One surface in two
 places is duplication rather than coverage (REQ-CDV-17). Until 2026-09-13 that
 rule was satisfied by keeping the sidebar copy and barring the strip tab; it is
 satisfied the other way now, because the strip is where a handler works and the
-sidebar is a shelf beside it. Notes, Email and Besluitvorming are strip tabs,
-and the sidebar carries History, Terms, Access, Sharing, AVG and Tags, none of
-which has a strip counterpart.
+sidebar is a shelf beside it. Notes, Email and Besluitvorming are tabs under
+Meer, and the sidebar carries History, Terms, Access, Sharing, AVG and Tags,
+none of which has a tab counterpart.
 
-The strip carries a Timeline tab as of 2026-09-16, and that is not the
-duplication this rule bars. The History sidebar tab is the audit trail, one row
-per write on the object. Timeline is every note, call and message on the case
-in one order, which the audit trail does not hold. Two surfaces over two
-sources is coverage; the rule bars two surfaces over one.
+The strip's Historie tab is the timeline, and that is not the duplication this
+rule bars. The History sidebar tab is the audit trail, one row per write on the
+object. Historie on the strip is every note, call and message on the case in one
+order, which the audit trail does not hold. Two surfaces over two sources is
+coverage; the rule bars two surfaces over one.
 
 A panel SHALL NOT be removed from the strip unless it is reachable elsewhere on
 the page: folding it into a tab and deleting it look identical in a tab count.
@@ -765,27 +763,29 @@ collection holding nothing could be absent rather than empty; with tabs that
 hold one or two collections each, an empty section is a line of text inside a
 tab the handler opened deliberately.
 
-> The ceiling has moved five times, every time deliberately. Six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Files. Seven to nine on 2026-09-13 (Ruben): Communication left the People tab, and Email and Decisions left the SIDEBAR. The second move added nothing to the page. The sidebar lost exactly the three tabs the strip gained, so counted together the page holds what it held; what changed is which chrome each surface reads in. Nine to ten on 2026-09-15: Archiving arrived, a surface the case did not have. Ten to eleven on 2026-09-16: Timeline arrived. Eleven to thirteen on 2026-09-19 (Ruben): Custody and Knowledge both arrived this round, and both stay. Custody answers who has held the case and who is asking for it, which the timeline does not: the timeline says what changed, not who was accountable while it changed. Knowledge is the work instruction for this kind of case, drawn from the collectives leaf, beside the case instead of in a second app the handler has to go and find. Neither folds into an existing tab without burying it.
->
-> Thirteen is a decision, not a surrender. A fourteenth tab still reddens the count, and whoever wants it says here what it answers that the thirteen do not. The ceiling guards UNWATCHED growth, the strip going from ten to fourteen with nothing counting it, and an exact count somebody has to edit on purpose is what does that guarding.
+> The strip counted thirteen tabs until 2026-11-03. Board DqZaak draws five, and
+> DqZaakMeer draws the other eight under Meer (decision 130: the board is the UI
+> canon). Nothing left the page: the eight panels moved from the strip to Meer.
+> The count stays exact on purpose. A sixth everyday tab still reddens it, and
+> whoever wants it says here what it answers that the five do not.
 
-#### Scenario: The strip holds thirteen tabs and no more
+#### Scenario: The strip holds five tabs and Meer
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 @e2e tests/e2e/case-header.spec.ts
 
-- **GIVEN** a case with three tasks and one document
+- **GIVEN** a case with four tasks and seven files
 - **WHEN** the handler opens the case page
-- **THEN** the tab strip SHALL contain exactly thirteen tabs
-- **AND** they SHALL read Data, Files, Notes, Timeline, People, Communication, Email, Work, Decisions, Related, Custody, Archiving, Knowledge, in that order
+- **THEN** the tab strip SHALL read Overzicht, Bestanden 7, Contact, Taken 4, Historie, in that order
+- **AND** Meer SHALL offer the other eight panels as tabs
 - **AND** the strip SHALL carry no tab named Documents, Mail, Contacts or Objects and locations
 
-#### Scenario: The thirteen tabs fit a laptop screen
+#### Scenario: The five tabs fit a laptop screen
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a viewport 1024 pixels wide
 - **WHEN** the handler opens the case page
 - **THEN** the tab strip SHALL sit above the fold
-- **AND** every one of the thirteen tabs SHALL be visible without a scroll or a gesture
+- **AND** every one of the five tabs and Meer SHALL be visible without a scroll or a gesture
 
 > Measured 2026-09-09 at 1024 pixels: six tabs need 661 pixels on one line, and the strip's
 > tab row has roughly 280. A full-width strip yields about 570, so one line is not reachable
@@ -804,7 +804,7 @@ tab the handler opened deliberately.
 #### Scenario: Every folded panel still renders, inside the tab it moved to
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 
-- **GIVEN** a case page whose strip holds thirteen tabs
+- **GIVEN** a case page with five tabs and eight more under Meer
 - **WHEN** the handler opens each tab in turn
 - **THEN** each `case-sections` tab SHALL render both of its sections
 - **AND** each section SHALL carry its own heading

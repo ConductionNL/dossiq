@@ -190,6 +190,7 @@ class SetupController extends Controller {
 			// Exactly the ids of `manifest.setup.steps`: a step the server
 			// never reports stays open and reopens the wizard.
 			'steps' => [
+				'welcome' => ['done' => true],
 				'organisation-details' => ['done' => $this->organisationProfile->isSettled()],
 				'house-style' => ['done' => true],
 				'case-types' => ['done' => ($this->caseTypes->isDecided() === true || $wizardDoneBefore === true)],

@@ -75,6 +75,7 @@ import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateOcsUrl, generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /** Nextcloud's share types for a person and a group. */
 const SHARE_TYPE_USER = 0
@@ -127,11 +128,7 @@ export default {
 		 * @return {string} The case id, or ''.
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
-				return fromProp
-			}
-			return (this.$route && this.$route.params && this.$route.params.id) || ''
+			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**

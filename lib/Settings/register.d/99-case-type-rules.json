@@ -44,6 +44,8 @@
                   ],
                   "properties": {
                     "event": {
+                      "title": "Event",
+                      "description": "The moment the rule runs: created, saved or statusEntered.",
                       "type": "string",
                       "enum": [
                         "created",
@@ -52,6 +54,7 @@
                       ]
                     },
                     "status": {
+                      "title": "Status",
                       "type": "string",
                       "description": "The statusType uuid, for statusEntered."
                     }
@@ -68,6 +71,8 @@
                     ],
                     "properties": {
                       "kind": {
+                        "title": "Kind",
+                        "description": "What the condition tests: fieldCompare, fieldEquals, fieldPresent, documentPresent or statusIs.",
                         "type": "string",
                         "enum": [
                           "fieldCompare",
@@ -78,9 +83,13 @@
                         ]
                       },
                       "field": {
+                        "title": "Field",
+                        "description": "The case property or property definition the condition reads.",
                         "type": "string"
                       },
                       "op": {
+                        "title": "Operator",
+                        "description": "How fieldCompare compares the field with the value: eq, neq, gt, gte, lt or lte.",
                         "type": "string",
                         "enum": [
                           "eq",
@@ -93,9 +102,13 @@
                       },
                       "value": {},
                       "documentType": {
+                        "title": "Document type",
+                        "description": "The document type documentPresent looks for on the case.",
                         "type": "string"
                       },
                       "status": {
+                        "title": "Status",
+                        "description": "The statusType uuid statusIs compares with the status of the case.",
                         "type": "string"
                       }
                     }
@@ -112,6 +125,8 @@
                     ],
                     "properties": {
                       "action": {
+                        "title": "Action",
+                        "description": "What the rule does: addTask, setField, chooseVariant, requireDocument or sendMessage.",
                         "type": "string",
                         "enum": [
                           "addTask",
@@ -122,23 +137,35 @@
                         ]
                       },
                       "title": {
+                        "title": "Task title",
+                        "description": "The title of the task addTask creates.",
                         "type": "string",
                         "maxLength": 255
                       },
                       "taskType": {
+                        "title": "Task type",
+                        "description": "The type of the task addTask creates, when it has one.",
                         "type": "string"
                       },
                       "field": {
+                        "title": "Field",
+                        "description": "The case property setField writes.",
                         "type": "string"
                       },
                       "value": {},
                       "variant": {
+                        "title": "Variant",
+                        "description": "The variant chooseVariant picks for the case.",
                         "type": "string"
                       },
                       "documentType": {
+                        "title": "Document type",
+                        "description": "The document type requireDocument asks for.",
                         "type": "string"
                       },
                       "emailTemplate": {
+                        "title": "Email template",
+                        "description": "The template sendMessage sends.",
                         "type": "string"
                       }
                     }

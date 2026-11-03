@@ -41,8 +41,6 @@ use RuntimeException;
 /**
  * The advisory committee's own move of an advice request.
  *
- * @psalm-suppress UnusedClass
- *
  * @spec openspec/changes/only-the-advice-transition-sets-the-outcome/specs/bezwaar-advisory-committee/spec.md#requirement-the-committee-moves-an-advice-request-through-its-own-endpoint
  */
 class BezwaarAdviceRequestController extends Controller {

@@ -37,7 +37,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://www.filinq.app
  *
- * @spec openspec/changes/redaction-and-what-leaves-the-building/specs/redaction-output-guarantee/spec.md
+ * @spec exclude test stub of filinq's class; the requirement lives in ConductionNL/filinq (redaction-output-guarantee)
  */
 
 declare(strict_types=1);
@@ -99,7 +99,7 @@ class RedactionReviewGate {
 	 *
 	 * @return array<string, mixed>|null The refusal, or null when output may proceed.
 	 *
-	 * @spec openspec/changes/redaction-and-what-leaves-the-building/specs/redaction-output-guarantee/spec.md
+	 * @spec exclude test stub of filinq's class; the requirement lives in ConductionNL/filinq (redaction-output-guarantee)
 	 */
 	public function refuse(?array $mark, string $detectionRunId): ?array {
 		if ($detectionRunId === '') {
@@ -170,7 +170,7 @@ class RedactionReviewGate {
 	 *
 	 * @return bool True only when a person has checked this run.
 	 *
-	 * @spec openspec/changes/redaction-and-what-leaves-the-building/specs/redaction-output-guarantee/spec.md
+	 * @spec exclude test stub of filinq's class; the requirement lives in ConductionNL/filinq (redaction-output-guarantee)
 	 */
 	public function mayWrite(?array $mark, string $detectionRunId): bool {
 		return ($this->refuse(mark: $mark, detectionRunId: $detectionRunId) === null);
@@ -188,7 +188,7 @@ class RedactionReviewGate {
 	 *
 	 * @return array{write: array<int, string>, refused: array<int, array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/redaction-and-what-leaves-the-building/specs/redaction-output-guarantee/spec.md
+	 * @spec exclude test stub of filinq's class; the requirement lives in ConductionNL/filinq (redaction-output-guarantee)
 	 */
 	public function screenBatch(array $documents): array {
 		$write = [];

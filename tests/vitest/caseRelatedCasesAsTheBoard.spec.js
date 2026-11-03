@@ -6,7 +6,7 @@
  * case's type initials on the primary tint, ruled rows, and a closed case as
  * "Afgehandeld". Read from the layout.
  *
- * @spec openspec/changes/record-list-avatar-tone/specs/record-list-avatar/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 import fs from 'fs'
 import path from 'path'
