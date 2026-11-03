@@ -28,13 +28,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Dashboard;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Queue\Source\EngineTaskSource;
 use OCP\Dashboard\IAPIWidgetV2;
 use OCP\Dashboard\Model\WidgetItems;
 use OCP\IL10N;
 use OCP\IURLGenerator;
-use OCP\Util;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -48,7 +46,7 @@ use Throwable;
  * @spec openspec/specs/dashboard/spec.md
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-024
  */
-class MyTasksWidget implements IAPIWidgetV2 {
+class MyTasksWidget extends DashboardPageWidget implements IAPIWidgetV2 {
 	/**
 	 * Constructor.
 	 *
@@ -59,12 +57,13 @@ class MyTasksWidget implements IAPIWidgetV2 {
 	 * @param LoggerInterface  $logger Logger.
 	 */
 	public function __construct(
-		private IL10N $l10n,
-		private IURLGenerator $url,
+		IL10N $l10n,
+		IURLGenerator $url,
 		private EngineTaskSource $tasks,
 		private QueueWidgetItems $items,
 		private LoggerInterface $logger,
 	) {
+		parent::__construct(l10n: $l10n, url: $url);
 	}//end __construct()
 
 	/**
@@ -107,49 +106,6 @@ class MyTasksWidget implements IAPIWidgetV2 {
 	public function getOrder(): int {
 		return 12;
 	}//end getOrder()
-
-	/**
-	 * Get the CSS icon class for this widget.
-	 *
-	 * @inheritDoc
-	 * @return string The icon CSS class
-	 *
-	 * @spec openspec/specs/dashboard/spec.md
-	 */
-	public function getIconClass(): string {
-		return 'icon-dossiq-widget';
-	}//end getIconClass()
-
-	/**
-	 * Get the URL for the widget's full view.
-	 *
-	 * @inheritDoc
-	 * @return string|null The widget URL or null
-	 *
-	 * @spec openspec/specs/dashboard/spec.md
-	 */
-	public function getUrl(): ?string {
-		return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
-	}//end getUrl()
-
-	/**
-	 * Load the widget scripts and styles.
-	 *
-	 * @inheritDoc
-	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
-	 *
-	 * @spec openspec/specs/dashboard/spec.md
-	 */
-	public function load(): void {
-		// Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-vendor');
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-shared-nc-vue');
-		Util::addScript(Application::APP_ID, Application::APP_ID . '-dashboardWidgets');
-		Util::addStyle(Application::APP_ID, 'dashboardWidgets');
-
-	}//end load()
 
 	/**
 	 * The person's open tasks as widget items, soonest due first.
