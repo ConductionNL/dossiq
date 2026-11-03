@@ -264,7 +264,7 @@ class AdviceController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-or-starts-a-consultation-from-the-case-req-adv-case-01
+	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 *
 	 * @contract exclude Deprecated path alias for createForCase(); behaviour covered by the createForCase() tests.
 	 */
@@ -284,7 +284,7 @@ class AdviceController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-or-starts-a-consultation-from-the-case-req-adv-case-01
+	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 *
 	 * @contract exclude Deprecated path alias for getForCase(); behaviour covered by the getForCase() tests.
 	 */
