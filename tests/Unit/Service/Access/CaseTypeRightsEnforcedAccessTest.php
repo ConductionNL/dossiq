@@ -66,6 +66,10 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		'c-4' => ['ct-permit', 'team-vergunningen', 'st-ontvangen', 'geheim', ''],
 		'c-5' => ['ct-other', 'team-vergunningen', 'st-behandeling', 'intern', 'dirk'],
 		'c-6' => ['ct-other', 'team-toezicht', 'st-ontvangen', 'intern', '', 'org-away'],
+		'c-7' => ['ct-other', 'team-toezicht', 'st-ontvangen', 'vertrouwelijk', ''],
+		'c-8' => ['ct-other', 'team-toezicht', 'st-ontvangen', 'confidentieel', ''],
+		'c-9' => ['ct-other', 'team-toezicht', 'st-ontvangen', '', ''],
+		'c-10' => ['ct-other', 'team-toezicht', 'st-ontvangen', 'topgeheim', ''],
 	];
 
 	/**
@@ -356,11 +360,11 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	 */
 	public function testAnIntakerReadsTheirOwnTeamOnBothPaths(): void {
 		self::assertSame(
-			expected: ['c-1', 'c-2', 'c-4', 'c-5'],
+			expected: ['c-1', 'c-2', 'c-5'],
 			actual: $this->admitted(uid: 'anna', action: 'read'),
-			message: 'c-4 and c-5 through her team',
+			message: 'c-5 through her team; c-4 is geheim, above what a team reads',
 		);
-		self::assertSame(expected: ['c-1', 'c-2', 'c-4', 'c-5'], actual: $this->listed(uid: 'anna'));
+		self::assertSame(expected: ['c-1', 'c-2', 'c-5'], actual: $this->listed(uid: 'anna'));
 	}//end testAnIntakerReadsTheirOwnTeamOnBothPaths()
 
 	/**
@@ -406,8 +410,12 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheAssigneeKeepsTheirOwnRights(): void {
-		self::assertSame(expected: ['c-3', 'c-5', 'c-6'], actual: $this->admitted(uid: 'dirk', action: 'read'), message: 'c-3 and c-6 through his team');
-		self::assertSame(expected: ['c-3', 'c-5'], actual: $this->listed(uid: 'dirk'));
+		self::assertSame(
+			expected: ['c-3', 'c-5', 'c-6', 'c-7'],
+			actual: $this->admitted(uid: 'dirk', action: 'read'),
+			message: 'c-3, c-6 and c-7 through his team',
+		);
+		self::assertSame(expected: ['c-3', 'c-5', 'c-7'], actual: $this->listed(uid: 'dirk'));
 		self::assertSame(['c-5'], $this->admitted(uid: 'dirk', action: 'update'));
 		self::assertSame(['c-5'], $this->admitted(uid: 'dirk', action: 'addFiles'));
 	}//end testTheAssigneeKeepsTheirOwnRights()
@@ -418,9 +426,26 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMemberOfTheAssignedGroupReadsTheCase(): void {
-		self::assertSame(expected: ['c-3', 'c-6'], actual: $this->admitted(uid: 'femke', action: 'read'));
-		self::assertSame(expected: ['c-3'], actual: $this->listed(uid: 'femke'), message: 'c-6 belongs to another organisation');
+		self::assertSame(expected: ['c-3', 'c-6', 'c-7'], actual: $this->admitted(uid: 'femke', action: 'read'));
+		self::assertSame(expected: ['c-3', 'c-7'], actual: $this->listed(uid: 'femke'), message: 'c-6 belongs to another organisation');
 	}//end testAMemberOfTheAssignedGroupReadsTheCase()
+
+	/**
+	 * The group reads up to and including vertrouwelijk; above it, or without a known level, it reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheGroupReadStopsAboveVertrouwelijk(): void {
+		$admitted = $this->admitted(uid: 'femke', action: 'read');
+		$listed = $this->listed(uid: 'femke');
+
+		self::assertContains(needle: 'c-7', haystack: $admitted, message: 'vertrouwelijk');
+		self::assertContains(needle: 'c-7', haystack: $listed, message: 'vertrouwelijk');
+		foreach (['c-8' => 'confidentieel', 'c-9' => 'no level', 'c-10' => 'an unknown level'] as $case => $why) {
+			self::assertNotContains(needle: $case, haystack: $admitted, message: $why);
+			self::assertNotContains(needle: $case, haystack: $listed, message: $why);
+		}
+	}//end testTheGroupReadStopsAboveVertrouwelijk()
 
 	/**
 	 * Reading is all the assigned group gives: no change, no move, no files.

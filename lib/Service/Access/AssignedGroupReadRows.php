@@ -10,6 +10,12 @@
  * `assignedGroup` is that group. The active organisation still decides which
  * cases a reader can reach at all.
  *
+ * The group reads up to and including `vertrouwelijk` (Ruben, 3 November
+ * 2026). A case marked confidentieel, geheim or zeer geheim needs its
+ * behandelaar or explicit rights, and so does a case whose level is missing or
+ * unknown: the row names the levels it covers, so anything else is not
+ * matched.
+ *
  * 🔴 ONE ROW PER GROUP, NOT ONE ROW FOR EVERYBODY. OpenRegister drops a
  * provider row that grants `authenticated`, `public` or `admin`, so "anybody
  * whose groups hold the case's group" cannot be one row. A row names the group
@@ -58,6 +64,11 @@ class AssignedGroupReadRows {
 	private const RESERVED_GROUPS = ['public', 'authenticated', 'admin'];
 
 	/**
+	 * The highest confidentiality level the assigned group reads.
+	 */
+	public const HIGHEST_LEVEL = 'vertrouwelijk';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IUserSession  $session The signed-in user.
@@ -72,7 +83,7 @@ class AssignedGroupReadRows {
 	/**
 	 * One read row per group of the signed-in user; none without a user.
 	 *
-	 * @return array<int, array{group: string, values: array<int, string>, actions: array<int, string>}> The rows.
+	 * @return array<int, array{group: string, values: array<int, string>, where: array<string, mixed>, actions: array<int, string>}> The rows.
 	 *
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
@@ -82,6 +93,11 @@ class AssignedGroupReadRows {
 			return [];
 		}
 
+		$levels = array_slice(
+			CaseTypeRightsMatrixRows::LEVELS,
+			0,
+			((int)array_search(self::HIGHEST_LEVEL, CaseTypeRightsMatrixRows::LEVELS, true) + 1)
+		);
 		$rows = [];
 		foreach ($this->groups->getUserGroupIds($user) as $group) {
 			$group = trim((string)$group);
@@ -89,7 +105,12 @@ class AssignedGroupReadRows {
 				continue;
 			}
 
-			$rows[] = ['group' => $group, 'values' => [$group], 'actions' => ['read']];
+			$rows[] = [
+				'group' => $group,
+				'values' => [$group],
+				'where' => ['confidentiality' => ['$in' => $levels]],
+				'actions' => ['read'],
+			];
 		}
 
 		return $rows;

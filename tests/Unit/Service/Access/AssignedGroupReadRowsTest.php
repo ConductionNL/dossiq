@@ -56,10 +56,11 @@ class AssignedGroupReadRowsTest extends TestCase {
 	 * @return void
 	 */
 	public function testEachGroupReadsItsOwnCases(): void {
+		$where = ['confidentiality' => ['$in' => ['openbaar', 'beperkt_openbaar', 'intern', 'zaakvertrouwelijk', 'vertrouwelijk']]];
 		self::assertSame(
 			expected: [
-				['group' => 'team-woo', 'values' => ['team-woo'], 'actions' => ['read']],
-				['group' => 'team-toezicht', 'values' => ['team-toezicht'], 'actions' => ['read']],
+				['group' => 'team-woo', 'values' => ['team-woo'], 'where' => $where, 'actions' => ['read']],
+				['group' => 'team-toezicht', 'values' => ['team-toezicht'], 'where' => $where, 'actions' => ['read']],
 			],
 			actual: $this->rowsFor(groups: ['team-woo', ' team-toezicht ']),
 		);
