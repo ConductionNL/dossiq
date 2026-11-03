@@ -45,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Dashboard\MyTasksWidget
  * @covers \OCA\Dossiq\Dashboard\TaskRemindersWidget
  * @uses   \OCA\Dossiq\Dashboard\QueueWidgetItems
+ * @uses   \OCA\Dossiq\Dashboard\DashboardPageWidget
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class SignaleringWidgetsTest extends TestCase {

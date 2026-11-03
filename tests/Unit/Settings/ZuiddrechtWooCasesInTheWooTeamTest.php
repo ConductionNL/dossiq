@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-woo-team/specs/example-set-woo-team/spec.md#requirement-open-woo-requests-sit-in-the-woo-team
+ * @spec openspec/specs/example-set-zuiddrecht-data/spec.md#requirement-open-woo-requests-sit-in-the-woo-team
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The Woo team owns the open Woo requests.
  *
- * @spec openspec/changes/example-set-woo-team/specs/example-set-woo-team/spec.md#requirement-open-woo-requests-sit-in-the-woo-team
+ * @spec openspec/specs/example-set-zuiddrecht-data/spec.md#requirement-open-woo-requests-sit-in-the-woo-team
  */
 class ZuiddrechtWooCasesInTheWooTeamTest extends TestCase {
 
