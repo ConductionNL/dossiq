@@ -11180,7 +11180,7 @@
 						"gridHeight": 5
 					}
 				],
-				"_headerActionsNote": "dossiq#5109: only dossiq's transition endpoint may move an advice request into advice-issued or inadmissible, and only bezwaarcommissie members and administrators may call it (Awb 7:13). A generic lifecycle write to OpenRegister is refused, so this page has no lifecycleActions. Each action POSTs the target status; the advice fields are already on the record from the edit form, and the endpoint merges the stored request with the body. The endpoint answers with the updated request and the page re-reads it. The buttons show by status only: a reader outside the committee still sees them and gets the endpoint's refusal as an error toast, until nextcloud-vue has a visibility rule by group or role.",
+				"_headerActionsNote": "dossiq#5109: only dossiq's transition endpoint may move an advice request into advice-issued or inadmissible, and only bezwaarcommissie members and administrators may call it (Awb 7:13). A generic lifecycle write to OpenRegister is refused, so this page has no lifecycleActions. Each action POSTs the target status; the advice fields are already on the record from the edit form, and the endpoint merges the stored request with the body. The endpoint answers with the updated request and the page re-reads it. Each button shows by status and only to members of the bezwaarcommissie or admin group (`readerGroups`), so a case handler outside the committee no longer sees a button the endpoint refuses. That hides the button and decides nothing: the endpoint keeps its own check.",
 				"headerActions": [
 					{
 						"id": "start-deliberation",
@@ -11193,6 +11193,10 @@
 						},
 						"successMessage": "Deliberation has started.",
 						"visibleWhen": {
+							"readerGroups": [
+								"bezwaarcommissie",
+								"admin"
+							],
 							"field": "status",
 							"op": "eq",
 							"value": "assigned"
@@ -11211,6 +11215,10 @@
 						"confirmMessage": "Issue the committee's advice? Check the conclusion and the recommendation first.",
 						"successMessage": "The advice has been issued.",
 						"visibleWhen": {
+							"readerGroups": [
+								"bezwaarcommissie",
+								"admin"
+							],
 							"field": "status",
 							"op": "eq",
 							"value": "in-deliberation"
@@ -11229,6 +11237,10 @@
 						"confirmMessage": "Declare this objection inadmissible? The committee then gives no advice on its merits.",
 						"successMessage": "The objection has been declared inadmissible.",
 						"visibleWhen": {
+							"readerGroups": [
+								"bezwaarcommissie",
+								"admin"
+							],
 							"field": "status",
 							"op": "eq",
 							"value": "in-deliberation"
