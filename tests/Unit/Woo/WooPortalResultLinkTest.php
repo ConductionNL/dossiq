@@ -26,14 +26,14 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooCaseLedger;
-use OCA\Dossiq\Woo\WooResultLink;
+use OCA\Dossiq\Service\Publication\PublicationResultLink;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
 /**
  * REQ-WDS-003 through WooCaseLedger::writeCaseState(), the seam publish() and withdraw() write through.
  *
- * @covers \OCA\Dossiq\Woo\WooResultLink
+ * @covers \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @covers \OCA\Dossiq\Woo\WooCaseLedger
  *
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -83,7 +83,7 @@ class WooPortalResultLinkTest extends TestCase {
 		$this->ledger()->writeCaseState(caseId: 'case-87', changes: ['wooPublicationStatus' => 'published', 'wooPublicationUrl' => $url]);
 
 		$case = $this->store->row(schema: 'case', uuid: 'case-87');
-		$this->assertSame(['label' => WooResultLink::LABEL, 'url' => $url], $case['resultLink']);
+		$this->assertSame(['label' => PublicationResultLink::LABEL, 'url' => $url], $case['resultLink']);
 		$this->assertSame($case['wooPublicationUrl'], $case['resultLink']['url']);
 		$this->assertSame([], (new RealSchemaValidator())->errors(slug: 'case', payload: ['resultLink' => $case['resultLink']], creating: false));
 	}//end testPublishingWritesTheLink()
@@ -108,7 +108,7 @@ class WooPortalResultLinkTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoLinkWithoutAPublicationUrl(): void {
-		$links = new WooResultLink();
+		$links = new PublicationResultLink();
 
 		$this->assertSame([], $links->changesFor(state: ['wooPublicationStatus' => 'ready']));
 		$this->assertSame([], $links->changesFor(state: ['wooPublicationStatus' => 'published', 'wooPublicationUrl' => '']));
@@ -124,7 +124,7 @@ class WooPortalResultLinkTest extends TestCase {
 
 		$this->assertSame([], $validator->errors(slug: 'case', payload: [
 			'termNote' => 'De termijn staat stil sinds 6 oktober 2026. Hij loopt weer zodra wij uw antwoord hebben.',
-			'resultLink' => ['label' => WooResultLink::LABEL, 'url' => 'https://zuiddrecht.nl/woo/publicaties/2026-0087'],
+			'resultLink' => ['label' => PublicationResultLink::LABEL, 'url' => 'https://zuiddrecht.nl/woo/publicaties/2026-0087'],
 		], creating: false));
 		$this->assertNotSame([], $validator->errors(slug: 'case', payload: ['termNote' => str_repeat('a', 201)], creating: false));
 		$this->assertNotSame([], $validator->errors(slug: 'case', payload: ['resultLink' => ['url' => 'geen url']], creating: false));
