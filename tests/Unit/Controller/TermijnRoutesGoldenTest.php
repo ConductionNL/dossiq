@@ -43,7 +43,7 @@ use RuntimeException;
  * Pins the answer and the service calls of each term-instance route, reached through routes.php.
  *
  * @covers \OCA\Dossiq\Controller\TermijnController
- * @covers \OCA\Dossiq\Controller\TermijnLegacyPathController
+ * @covers \OCA\Dossiq\Controller\DeadlineInstanceLegacyPathController
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Tests\Support\PhpInputStream
  */

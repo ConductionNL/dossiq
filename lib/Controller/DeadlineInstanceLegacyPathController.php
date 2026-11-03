@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dossiq TermijnLegacyPathController.
+ * Dossiq DeadlineInstanceLegacyPathController.
  *
  * The deprecated `/api/termijn/instances*` addresses of the term-instance
  * lifecycle. Each action answers exactly as its counterpart on
@@ -38,7 +38,7 @@ use OCP\IRequest;
  * @spec openspec/specs/termijn-binding/spec.md
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
-class TermijnLegacyPathController extends Controller {
+class DeadlineInstanceLegacyPathController extends Controller {
 	/**
 	 * Constructor.
 	 *

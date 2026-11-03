@@ -8,7 +8,7 @@
  * or a payment provider configured with it keeps working. Each alias routes to
  * its own delegate, because AppHost Routes::standard() rejects a duplicate
  * route name and ignores `postfix`: `<method>LegacyPath()` on the same
- * controller, or `<method>()` on a `<Controller>LegacyPathController` that
+ * controller, or `<method>()` on a separate `...LegacyPathController` that
  * holds the controller.
  *
  * @category Tests
@@ -109,16 +109,19 @@ class RenamedRouteAliasesTest extends TestCase {
 	}//end target()
 
 	/**
-	 * The route names a delegate of a route may carry.
+	 * Whether a route name is a delegate of a route: `<method>LegacyPath` on the
+	 * same controller, or `<method>` on a `...LegacyPath` controller.
 	 *
-	 * @param string $routeName The `controller#method` route name.
+	 * @param string|null $aliasName The route name the old URL routes to.
+	 * @param string      $routeName The `controller#method` route name.
 	 *
-	 * @return array<int, string> The same-controller and the separate-controller form.
+	 * @return bool True when it is.
 	 */
-	private static function aliasNames(string $routeName): array {
-		[$controller, $method] = explode('#', $routeName);
-		return [$routeName . 'LegacyPath', $controller . 'LegacyPath#' . $method];
-	}//end aliasNames()
+	private static function isAliasOf(?string $aliasName, string $routeName): bool {
+		[, $method] = explode('#', $routeName);
+		return $aliasName === $routeName . 'LegacyPath'
+			|| preg_match('/^\\w+LegacyPath#' . preg_quote($method, '/') . '$/', (string)$aliasName) === 1;
+	}//end isAliasOf()
 
 	/**
 	 * The delegate the old URL routes to.
@@ -147,7 +150,7 @@ class RenamedRouteAliasesTest extends TestCase {
 		$routes = $this->routesByAddress();
 
 		self::assertSame($route, ($routes[$verb . ' ' . $newUrl] ?? null), $verb . ' ' . $newUrl . ' must route to ' . $route);
-		self::assertContains(($routes[$verb . ' ' . $oldUrl] ?? null), self::aliasNames(routeName: $route), $verb . ' ' . $oldUrl . ' must stay routed');
+		self::assertTrue(self::isAliasOf(aliasName: ($routes[$verb . ' ' . $oldUrl] ?? null), routeName: $route), $verb . ' ' . $oldUrl . ' must stay routed');
 	}//end testBothUrlsAreRouted()
 
 	/**
