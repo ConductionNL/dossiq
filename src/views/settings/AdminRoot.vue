@@ -666,7 +666,7 @@ import {
 	storeRegistryFields,
 	textsAndAccessFields,
 } from './adminFields.js'
-import { dsoActivityFormatters } from './dsoActivityFormatters.js'
+import { activityOverviewFormatters } from './activityOverviewFormatters.js'
 
 export default {
 	name: 'AdminRoot',
@@ -727,7 +727,7 @@ export default {
 	data() {
 		return {
 			// Cell formatters for the tables on this page, handed to the shell.
-			adminFormatters: dsoActivityFormatters,
+			adminFormatters: activityOverviewFormatters,
 			storesReady: false,
 			registerConfiguration: {},
 			registerSaving: false,
@@ -973,14 +973,14 @@ export default {
 				{
 					key: 'caseTypes',
 					label: this.t('dossiq', 'Becomes case type'),
-					formatter: 'dsoCaseTypes',
+					formatter: 'activityCaseTypes',
 					cellClass: 'dq-dso-activity__case-types',
 				},
 				{
 					key: 'variant',
 					valueField: 'caseTypes',
 					label: this.t('dossiq', 'Variant'),
-					formatter: 'dsoVariants',
+					formatter: 'activityVariants',
 				},
 				{
 					key: 'lastReceivedAt',

@@ -201,7 +201,7 @@ export default {
 
 		/**
 		 * The case the `zip` mode downloads, resolved the same defensive way
-		 * as BeschikkingComposerDialog / DocumentMetadataDialog: an
+		 * as GenerateDocumentDialog / DocumentMetadataDialog: an
 		 * `open-modal` action's `props` are forwarded verbatim, so a prop
 		 * still holding an `@` token is not a case id — the route is.
 		 *

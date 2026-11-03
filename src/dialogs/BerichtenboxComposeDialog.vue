@@ -183,7 +183,7 @@ export default {
 		 *
 		 * NOT `required`, and it may arrive as the unresolved `@objectId`
 		 * token: `open-modal` forwards an action's props verbatim with no
-		 * token resolution, exactly as it does for BeschikkingComposerDialog
+		 * token resolution, exactly as it does for GenerateDocumentDialog
 		 * and DocumentMetadataDialog. `resolvedCaseId` reads the route in that
 		 * case.
 		 */

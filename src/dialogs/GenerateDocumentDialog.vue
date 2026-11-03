@@ -117,7 +117,7 @@ import { templateFillRows } from '../utils/templateFills.js'
  * @spec openspec/specs/template-library/spec.md
  */
 export default {
-	name: 'BeschikkingComposerDialog',
+	name: 'GenerateDocumentDialog',
 	components: {
 		CnChoiceCards,
 		CnDialog,

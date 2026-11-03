@@ -214,7 +214,7 @@ import {
  * Self-sufficient (documents-on-the-case task 2.2, the CnObjectListWidget
  * swap): opened as a manifest `open-modal` `dropZone`/upload action, which
  * hands it the dropped/picked `File[]` as `props.files` and resolves no
- * other tokens — so, like BeschikkingComposerDialog, this dialog owns
+ * other tokens — so, like GenerateDocumentDialog, this dialog owns
  * fetching the type catalog and performing the upload itself, rather than
  * relying on a parent tab component to do it and pass the results down as
  * props. `caseId` is read the same defensive way: the prop when it does not
@@ -371,7 +371,7 @@ export default {
 		 *
 		 * An `open-modal` action's `props` are forwarded verbatim, so a prop
 		 * still holding an `@` token is not a case id — the route is (mirrors
-		 * BeschikkingComposerDialog.resolvedCaseId).
+		 * GenerateDocumentDialog.resolvedCaseId).
 		 *
 		 * @return {string} The case id, or empty string.
 		 * @spec openspec/specs/document-zaakdossier/spec.md
