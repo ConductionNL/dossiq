@@ -10,6 +10,8 @@
         "version": "1.32.0",
         "properties": {
           "pauseReasons": {
+            "title": "Pause reasons",
+            "description": "The reasons this case type allows a term to be suspended for, each with the chasing that belongs to it. A case type that declares none keeps behaving exactly as it did: a pause takes a free-text rationale and nobody is chased.",
             "items": {
               "properties": {
                 "defaultDays": {

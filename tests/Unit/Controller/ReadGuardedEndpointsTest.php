@@ -79,6 +79,20 @@ final class ReadGuardedEndpointsTest extends TestCase {
 	private bool $answered = false;
 
 	/**
+	 * Whether the endpoint's own read finds nothing, as for a missing object.
+	 *
+	 * @var bool
+	 */
+	private bool $missing = false;
+
+	/**
+	 * The keys the ticket gateway was asked for.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $askedRefs = [];
+
+	/**
 	 * The session of the acting user.
 	 *
 	 * @return IUserSession
@@ -154,9 +168,9 @@ final class ReadGuardedEndpointsTest extends TestCase {
 	private function call(string $endpoint, string $id): JSONResponse {
 		$session = $this->session();
 		$readable = $this->readable(session: $session);
-		$answer = function (): array {
+		$answer = function (): ?array {
 			$this->answered = true;
-			return ['answer' => true];
+			return ($this->missing === true) ? null : ['answer' => true];
 		};
 
 		if ($endpoint === 'next-status') {
@@ -180,13 +194,14 @@ final class ReadGuardedEndpointsTest extends TestCase {
 		$gateway = $this->createMock(originalClassName: PipelinqGateway::class);
 		$tickets = function (array $refs) use ($answer): array {
 			$answer();
+			$this->askedRefs = $refs;
 			return array_fill_keys($refs, [['id' => 't-1']]);
 		};
 		$gateway->method('openTicketsByMasterEntity')->willReturnCallback($tickets);
 		$gateway->method('ticketsByMasterEntity')->willReturnCallback(static fn (array $refs, string $status): array => $tickets($refs));
 		$controller = new PartyTicketController(
 			appName: 'dossiq',
-			request: $this->request(params: ['key' => $id, 'keys' => [$id]]),
+			request: $this->request(params: ['key' => $id, 'keys' => explode(',', $id)]),
 			gateway: $gateway,
 			readable: $readable
 		);
@@ -310,4 +325,49 @@ final class ReadGuardedEndpointsTest extends TestCase {
 		self::assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
 		self::assertFalse(condition: $this->answered);
 	}//end testAFailedReadIsUnavailable()
+	/**
+	 * The endpoints with a not-found answer of their own, for an object that does not exist.
+	 *
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public static function endpointsWithAMissingAnswer(): array {
+		return array_intersect_key(self::endpoints(), array_flip(['next status', 'case type terms', 'reachability']));
+	}//end endpointsWithAMissingAnswer()
+
+	/**
+	 * An unreadable object and a missing one get the same 404 body, so the answer does not tell them apart.
+	 *
+	 * @param string $endpoint The endpoint.
+	 * @param string $schema   The schema of its object.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider endpointsWithAMissingAnswer
+	 */
+	public function testAnUnreadableObjectAnswersAsAMissingOne(string $endpoint, string $schema): void {
+		$this->readableBy = [$schema => ['o-1']];
+		$unreadable = $this->call(endpoint: $endpoint, id: 'o-2');
+
+		$this->missing = true;
+		$missing = $this->call(endpoint: $endpoint, id: 'o-1');
+
+		self::assertTrue(condition: $this->answered, message: 'the missing object reached the endpoint\'s own read');
+		self::assertSame(expected: Http::STATUS_NOT_FOUND, actual: $missing->getStatus());
+		self::assertSame(expected: $missing->getStatus(), actual: $unreadable->getStatus());
+		self::assertSame(expected: $missing->getData(), actual: $unreadable->getData());
+	}//end testAnUnreadableObjectAnswersAsAMissingOne()
+
+	/**
+	 * Counts over readable and unreadable keys answer only the readable ones, and only those reach the gateway.
+	 *
+	 * @return void
+	 */
+	public function testCountsLeaveOutTheUnreadableKeys(): void {
+		$this->readableBy = ['masterEntity' => ['o-1', 'o-3']];
+
+		$response = $this->call(endpoint: 'ticket-counts', id: 'o-1,o-2,o-3');
+
+		self::assertSame(expected: ['available' => true, 'values' => ['o-1' => 1, 'o-3' => 1]], actual: $response->getData());
+		self::assertSame(expected: ['o-1', 'o-3'], actual: $this->askedRefs);
+	}//end testCountsLeaveOutTheUnreadableKeys()
 }//end class

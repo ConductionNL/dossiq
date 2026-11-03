@@ -171,7 +171,7 @@ const FUNCTION = 'function'
 const custodianRow = (name = '', role = '') => ({ name, [FUNCTION]: role })
 
 export default {
-	name: 'WooSearchPlanDialog',
+	name: 'SearchPlanDialog',
 
 	components: {
 		NcButton,

@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
+use OCA\OpenRegister\Mcp\Attribute\McpToolTitle;
 use OCP\IUserSession;
 
 /**
@@ -40,6 +41,13 @@ use OCP\IUserSession;
  * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
  */
 class TaskTools {
+
+	/**
+	 * The longest lead time a task may get, in working days: ten years.
+	 *
+	 * @var int
+	 */
+	private const MAX_LEAD_TIME_DAYS = 3650;
 
 	use ToolEnvelopes;
 
@@ -85,6 +93,7 @@ class TaskTools {
 		subject: 'task',
 		action: 'create'
 	)]
+	#[McpToolTitle('Create a task')]
 	public function createTask(string $caseId, string $title, int $leadTimeDays = 0, string $for = 'handler'): array {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
@@ -93,7 +102,7 @@ class TaskTools {
 
 		$caseId = trim($caseId);
 		$title = trim($title);
-		$invalid = $this->invalidInput(title: $title, for: $for);
+		$invalid = ($this->invalidInput(title: $title, for: $for) ?? $this->invalidLeadTime(days: $leadTimeDays));
 		if ($invalid !== null) {
 			return $invalid;
 		}
@@ -143,4 +152,22 @@ class TaskTools {
 
 		return null;
 	}//end invalidInput()
+
+	/**
+	 * The error for a lead time outside 0 to {@see self::MAX_LEAD_TIME_DAYS} working days, or null.
+	 *
+	 * The due date is counted day by day, so an unbounded lead time would
+	 * hold a worker.
+	 *
+	 * @param int $days The lead time in working days.
+	 *
+	 * @return array{error: string, message: string}|null
+	 */
+	private function invalidLeadTime(int $days): ?array {
+		if ($days < 0 || $days > self::MAX_LEAD_TIME_DAYS) {
+			return $this->error(code: 'lead_time_out_of_range', message: 'A task is due within ten years: 0 to 3650 working days.');
+		}
+
+		return null;
+	}//end invalidLeadTime()
 }//end class

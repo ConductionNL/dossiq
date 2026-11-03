@@ -1,3 +1,3 @@
 # Screens
 
-- DqFlow https://identity.conduction.nl/screens/board?id=dossiq/DqFlow
+- dossiq/DqFlow flow van een zaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqFlow

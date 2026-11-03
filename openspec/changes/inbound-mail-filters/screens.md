@@ -1,6 +1,3 @@
 # Screens
 
-- Design backlog: DqPostvakFilters (decision 157)
-# Screens: inbound-mail-filters
-
-- No screen: the filter pipeline, the outbound transport through the Nextcloud Mail account and the upgrade step are backend; the account picker lives in Nextcloud's admin settings page, not on an app board.
+- No screen: the filter pipeline, the intake log, the junk rules, the outbound transport through the Nextcloud Mail account and the upgrade step are server-side; the account picker lives in Nextcloud's admin settings, not on an app board.
