@@ -366,6 +366,8 @@ final class KpiAggregationServiceTest extends TestCase {
 		$closed = [
 			['startDate' => '2026-09-01', 'endDate' => '2026-09-11', 'deadline' => '2026-09-30'],
 			['startDate' => 'not-a-date', 'endDate' => 'also-not-a-date'],
+			['startDate' => 'not-a-date', 'endDate' => '2026-09-05'],
+			['startDate' => '2026-09-01', 'endDate' => 'not-a-date'],
 			['endDate' => '2026-09-05'],
 		];
 
