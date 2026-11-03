@@ -1,0 +1,23 @@
+{
+    "status": 400,
+    "data": {
+        "message": "Refused by requestExtension"
+    },
+    "calls": [
+        {
+            "call": "extension::requestExtension",
+            "args": [
+                "inst-1",
+                "",
+                "",
+                ""
+            ]
+        },
+        {
+            "call": "logger::info",
+            "args": [
+                "Verleng failed: Refused by requestExtension"
+            ]
+        }
+    ]
+}
