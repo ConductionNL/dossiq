@@ -141,6 +141,9 @@ class ObjectNamingStore {
  * @covers \OCA\Dossiq\Service\Subsidie\BewijsstukService
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
  * @uses \OCA\Dossiq\Service\Support\CallerIdentity
+ * @uses \OCA\Dossiq\Service\AppointmentBackend\JccBackend
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationRecords
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Bezwaar\DecisionValidator

@@ -169,19 +169,11 @@ class BeroepService {
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$appealSchema = $this->settingsService->getConfigValue(
-			key: 'beroep_schema'
-		);
-		$appealDecisionSchema = $this->settingsService->getConfigValue(
-			key: 'appeal_decision_schema'
-		);
+		$appealSchema = $this->settingsService->getConfigValue(key: 'beroep_schema');
+		$appealDecisionSchema = $this->settingsService->getConfigValue(key: 'appeal_decision_schema');
 
-		if ($register === '' || $appealSchema === ''
-			|| $appealDecisionSchema === ''
-		) {
-			throw new RuntimeException(
-				'Beroep schemas are not configured'
-			);
+		if ($register === '' || $appealSchema === '' || $appealDecisionSchema === '') {
+			throw new RuntimeException('Beroep schemas are not configured');
 		}
 
 		$contested = $this->findObjectAsArray(

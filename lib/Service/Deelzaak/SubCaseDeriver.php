@@ -110,12 +110,7 @@ class SubCaseDeriver {
 			return ['ok' => false, 'reason' => 'not_configured'];
 		}
 
-		$parent = $this->findParent(
-			objectService: $objectService,
-			parentCaseUuid: $parentCaseUuid,
-			register: $register,
-			schema: $schema
-		);
+		$parent = $this->findParent(objectService: $objectService, parentCaseUuid: $parentCaseUuid, register: $register, schema: $schema);
 		if ($parent === null) {
 			return ['ok' => false, 'reason' => 'parent_not_found'];
 		}
