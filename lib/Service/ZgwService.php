@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\OpenRegister\Db\Mapping;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -1116,10 +1117,11 @@ class ZgwService {
 				);
 			}
 
+			// `_directFields` reach the payload unmapped, so a create drops the keys that name a stored object.
 			$object = $this->objectService->saveObject(
 				register: $mappingConfig['sourceRegister'],
 				schema: $mappingConfig['sourceSchema'],
-				object: $englishData
+				object: array_diff_key($englishData, CallerIdentity::KEYS)
 			);
 
 			$outbound = $this->mapOutbound(request: $request, zgwApi: $zgwApi, resource: $resource, mappingConfig: $mappingConfig, object: $object);
