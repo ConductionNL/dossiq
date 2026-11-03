@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Dashboard\StalledCasesWidget
  * @covers \OCA\Dossiq\Dashboard\StartCaseWidget
  * @covers \OCA\Dossiq\Dashboard\TaskRemindersWidget
+ * @covers \OCA\Dossiq\Dashboard\DashboardPageWidget
  */
 class DashboardPageWidgetsGoldenTest extends TestCase {
 
