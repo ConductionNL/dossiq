@@ -15,7 +15,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/specs/ai-mcp/spec.md
+ * @spec openspec/specs/mcp-integration/spec.md
  */
 
 declare(strict_types=1);

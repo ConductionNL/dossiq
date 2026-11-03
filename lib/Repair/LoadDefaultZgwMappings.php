@@ -243,9 +243,11 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			if ($entry['schemaSetting'] !== null) {
 				$mappings[$resourceKey] = [
 					'zgwResource' => $entry['mapping']['zgwResource'],
-					'zgwApiVersion' => $entry['mapping']['zgwApiVersion'],
+					'zgwApiVersion' => '1',
 					'sourceRegister' => $registerId,
 					'sourceSchema' => ($settings[$entry['schemaSetting']] ?? ''),
+					'enabled' => true,
+					'propertyMapping' => (DefaultMappingTables::RECORD_IDENTITY + $entry['mapping']['propertyMapping']),
 				] + $entry['mapping'];
 			}
 		}

@@ -39,11 +39,7 @@ final class CaseResourceMappings {
 	 */
 	public const CASE = [
 		'zgwResource' => 'zaak',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'identificatie' => '{{ identifier }}',
 			'bronorganisatie' => '{{ sourceOrganisation }}',
 			'omschrijving' => '{{ title }}',
@@ -162,11 +158,7 @@ final class CaseResourceMappings {
 	 */
 	public const STATUS = [
 		'zgwResource' => 'status',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'zaak' => '{{ _baseUrl | replace({"zaken/v1/statussen": "zaken/v1/zaken"}) }}/{{ case }}',
 			'statustype' => '{{ _baseUrl | replace({"zaken/v1/statussen": "catalogi/v1/statustypen"}) }}/{{ statusType }}',
 			'datumStatusGezet' => '{{ _created }}',
@@ -188,11 +180,7 @@ final class CaseResourceMappings {
 	 */
 	public const RESULT = [
 		'zgwResource' => 'result',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'zaak' => '{{ _baseUrl | replace({"zaken/v1/resultaten": "zaken/v1/zaken"}) }}/{{ case }}',
 			'resultaattype' => '{{ _baseUrl | replace({"zaken/v1/resultaten": "catalogi/v1/resultaattypen"}) }}/{{ resultType }}',
 			'notes' => '{{ description }}',
@@ -214,11 +202,7 @@ final class CaseResourceMappings {
 	 */
 	public const ROLE = [
 		'zgwResource' => 'role',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'zaak' => '{{ _baseUrl | replace({"zaken/v1/rollen": "zaken/v1/zaken"}) }}/{{ case }}',
 			'roltype' => '{{ _baseUrl | replace({"zaken/v1/rollen": "catalogi/v1/roltypen"}) }}/{{ roleType }}',
 			'omschrijving' => '{{ name }}',
@@ -243,11 +227,7 @@ final class CaseResourceMappings {
 	 */
 	public const ZAAKEIGENSCHAP = [
 		'zgwResource' => 'zaakeigenschap',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'zaak' => '{{ _baseUrl | replace({"zaken/v1/zaakeigenschappen": "zaken/v1/zaken"}) }}/{{ case }}',
 			'eigenschap' => '{{ _baseUrl | replace({"zaken/v1/zaakeigenschappen": "catalogi/v1/eigenschappen"}) }}/{{ propertyDefinition }}',
 			'value' => '{{ value }}',
@@ -268,11 +248,7 @@ final class CaseResourceMappings {
 	 */
 	public const ZAAKINFORMATIEOBJECT = [
 		'zgwResource' => 'zaakinformatieobject',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'zaak' => '{{ _baseUrl | replace({"zaken/v1/zaakinformatieobjecten": "zaken/v1/zaken"}) }}/{{ case }}',
 			'informatieobject' => '{{ document }}',
 			'titel' => '{{ title }}',
@@ -305,11 +281,7 @@ final class CaseResourceMappings {
 	 */
 	public const ZAAKOBJECT = [
 		'zgwResource' => 'zaakobject',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'zaak' => '{{ _baseUrl | replace({"zaken/v1/zaakobjecten": "zaken/v1/zaken"}) }}/{{ case }}',
 			'object' => '{{ objectUrl }}',
 			'objectType' => '{{ objectType }}',
@@ -337,11 +309,7 @@ final class CaseResourceMappings {
 	 */
 	public const KLANTCONTACT = [
 		'zgwResource' => 'klantcontact',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'zaak' => '{{ _baseUrl | replace({"zaken/v1/klantcontacten": "zaken/v1/zaken"}) }}/{{ case }}',
 			'datumtijd' => '{{ contactDateTime }}',
 			'kanaal' => '{{ channel }}',

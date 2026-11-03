@@ -62,7 +62,19 @@ final class DefaultMappingTables {
 	];
 
 	/**
+	 * The first two properties of every sourced mapping: the record's own url and uuid.
+	 *
+	 * @var array<string, string>
+	 */
+	public const RECORD_IDENTITY = [
+		'url' => '{{ _baseUrl }}/{{ _uuid }}',
+		'uuid' => '{{ _uuid }}',
+	];
+
+	/**
 	 * Each resource key's default mapping, and the setting that names its source schema (null: no source).
+	 *
+	 * A sourced mapping is stored with API version 1, enabled, and RECORD_IDENTITY ahead of its own properties.
 	 *
 	 * @var array<string, array{schemaSetting: string|null, mapping: array<string, mixed>}>
 	 */

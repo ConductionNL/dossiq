@@ -39,11 +39,7 @@ final class DocumentResourceMappings {
 	 */
 	public const DECISION = [
 		'zgwResource' => 'decision',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'identificatie' => '{{ title }}',
 			'notes' => '{{ explanation }}',
 			'zaak' => '{{ _baseUrl | replace({"besluiten/v1/besluiten": "zaken/v1/zaken"}) }}/{{ case }}',
@@ -80,11 +76,7 @@ final class DocumentResourceMappings {
 	 */
 	public const ENKELVOUDIG_INFORMATIE_OBJECT = [
 		'zgwResource' => 'enkelvoudiginformatieobject',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'identificatie' => '{{ identifier }}',
 			'bronorganisatie' => '{{ sourceOrganisation }}',
 			'creatiedatum' => '{{ creationDate }}',
@@ -163,11 +155,7 @@ final class DocumentResourceMappings {
 	 */
 	public const OBJECT_INFORMATIE_OBJECT = [
 		'zgwResource' => 'objectinformatieobject',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'informatieobject' => '{{ document }}',
 			'object' => '{{ object }}',
 			'objectType' => '{{ objectType | default("") | zgw_enum("objectType", _valueMappings) }}',
@@ -205,11 +193,7 @@ final class DocumentResourceMappings {
 	 */
 	public const GEBRUIKSRECHTEN = [
 		'zgwResource' => 'gebruiksrechten',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'informatieobject' => '{{ document }}',
 			'startdatum' => '{{ startDate }}',
 			'endDate' => '{{ endDate }}',
@@ -232,11 +216,7 @@ final class DocumentResourceMappings {
 	 */
 	public const BESLUITINFORMATIEOBJECT = [
 		'zgwResource' => 'besluitinformatieobject',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'decision' => '{{ _baseUrl | replace({"besluiten/v1/besluitinformatieobjecten": "besluiten/v1/besluiten"}) }}/{{ decision }}',
 			'informatieobject' => '{{ document }}',
 		],
@@ -263,11 +243,7 @@ final class DocumentResourceMappings {
 	 */
 	public const VERZENDING = [
 		'zgwResource' => 'verzending',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'informatieobject' => '{{ document }}',
 			'betrokkene' => '{{ involvedParty }}',
 			'aardRelatie' => '{{ relationshipType }}',
@@ -316,11 +292,7 @@ final class DocumentResourceMappings {
 	 */
 	public const CHANNEL = [
 		'zgwResource' => 'kanaal',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			// Inverted before this: the keys are ZGW field names, which are
 			// `naam` and `documentatieLink`, and the templates read register
 			// properties, which are `name` and `documentationLink`. Both
@@ -353,11 +325,7 @@ final class DocumentResourceMappings {
 	 */
 	public const ABONNEMENT = [
 		'zgwResource' => 'abonnement',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'callbackUrl' => '{{ callbackUrl }}',
 			'auth' => '{{ auth }}',
 			'kanalen' => '{{ kanalen }}',

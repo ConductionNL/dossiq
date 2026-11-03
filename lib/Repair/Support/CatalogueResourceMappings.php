@@ -39,11 +39,7 @@ final class CatalogueResourceMappings {
 	 */
 	public const CATALOGUS = [
 		'zgwResource' => 'catalogus',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'domein' => '{{ domein }}',
 			'rsin' => '{{ rsin }}',
 			// Inverted before this, the same way the kanaal mapping was: the
@@ -87,11 +83,7 @@ final class CatalogueResourceMappings {
 	 */
 	public const CASE_TYPE = [
 		'zgwResource' => 'caseType',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'identificatie' => '{{ identifier }}',
 			'omschrijving' => '{{ title }}',
 			'omschrijvingGeneriek' => '{{ description }}',
@@ -191,11 +183,7 @@ final class CatalogueResourceMappings {
 	 */
 	public const STATUS_TYPE = [
 		'zgwResource' => 'statustype',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'omschrijving' => '{{ name }}',
 			'omschrijvingGeneriek' => '{{ description }}',
 			'caseType' => '{{ _baseUrl | replace({"catalogi/v1/statustypen": "catalogi/v1/zaaktypen"}) }}/{{ caseType }}',
@@ -240,11 +228,7 @@ final class CatalogueResourceMappings {
 	 */
 	public const RESULT_TYPE = [
 		'zgwResource' => 'resultaattype',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'omschrijving' => '{{ name }}',
 			'omschrijvingGeneriek' => '{{ genericDescription }}',
 			'notes' => '{{ description }}',
@@ -291,11 +275,7 @@ final class CatalogueResourceMappings {
 	 */
 	public const ROLE_TYPE = [
 		'zgwResource' => 'roltype',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'omschrijving' => '{{ name }}',
 			'omschrijvingGeneriek' => '{{ description }}',
 			'caseType' => '{{ _baseUrl | replace({"catalogi/v1/roltypen": "catalogi/v1/zaaktypen"}) }}/{{ caseType }}',
@@ -316,11 +296,7 @@ final class CatalogueResourceMappings {
 	 */
 	public const ATTRIBUTE = [
 		'zgwResource' => 'eigenschap',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'name' => '{{ name }}',
 			'definitie' => '{{ definition }}',
 			'notes' => '{{ description }}',
@@ -344,11 +320,7 @@ final class CatalogueResourceMappings {
 	 */
 	public const DECISION_TYPE = [
 		'zgwResource' => 'besluittype',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'omschrijving' => '{{ name }}',
 			'notes' => '{{ description }}',
 			'catalogus' => '{{ _baseUrl | replace({"catalogi/v1/besluittypen": "catalogi/v1/catalogussen"}) }}/{{ catalogus }}',
@@ -401,11 +373,7 @@ final class CatalogueResourceMappings {
 	 */
 	public const INFORMATIE_OBJECT_TYPE = [
 		'zgwResource' => 'informatieobjecttype',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'omschrijving' => '{{ name }}',
 			'notes' => '{{ description }}',
 			'catalogus' => '{{ _baseUrl | replace({"catalogi/v1/informatieobjecttypen": "catalogi/v1/catalogussen"}) }}/{{ catalogus }}',
@@ -451,11 +419,7 @@ final class CatalogueResourceMappings {
 	 */
 	public const CASE_TYPE_INFORMATIEOBJECTTYPE = [
 		'zgwResource' => 'zaaktypeinformatieobjecttype',
-		'zgwApiVersion' => '1',
-		'enabled' => true,
 		'propertyMapping' => [
-			'url' => '{{ _baseUrl }}/{{ _uuid }}',
-			'uuid' => '{{ _uuid }}',
 			'caseType' => '{{ _baseUrl | replace({"catalogi/v1/zaaktype-informatieobjecttypen": "catalogi/v1/zaaktypen"}) }}/{{ caseType }}',
 			'informatieobjecttype' => '{{ _baseUrl | replace({"catalogi/v1/zaaktype-informatieobjecttypen": '
 				. '"catalogi/v1/informatieobjecttypen"}) }}/{{ informatieobjecttype }}',
