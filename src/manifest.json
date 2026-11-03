@@ -11677,6 +11677,7 @@
 								{
 									"key": "caseLabel",
 									"label": "Case",
+									"widget": "link",
 									"cellClass": "cn-cell--wrap"
 								},
 								{
