@@ -375,7 +375,7 @@ export function storeRegistryFields(t) {
 			type: 'status',
 			text: t(
 				'dossiq',
-				'A store registry is another OpenRegister instance that publishes case configuration. Leave the address empty to keep dossiq offline: nothing is requested from the network until one is set.',
+				'A marketplace registry is another OpenRegister instance that publishes case configuration. Leave the address empty to keep dossiq offline: nothing is requested from the network until one is set.',
 			),
 		},
 		{

@@ -464,15 +464,15 @@
 
 			<CnSettingsFieldsSection
 				id="section-store"
-				:name="t('dossiq', 'Store registry')"
+				:name="t('dossiq', 'Marketplace registry')"
 				:description="
 					t(
 						'dossiq',
-						'Connect the OpenRegister instance the Store page browses. Without one, dossiq stays offline and shows only its own templates.',
+						'Connect the OpenRegister instance the Marketplace page browses. Without one, dossiq stays offline and shows only its own templates.',
 					)
 				"
 				url="/apps/dossiq/api/store/settings"
-				:saveLabel="t('dossiq', 'Save store settings')"
+				:saveLabel="t('dossiq', 'Save marketplace settings')"
 				:fields="storeRegistryFields" />
 
 			<CnSettingsSection
