@@ -4057,6 +4057,7 @@
 									"source": "row",
 									"label": "Assessment",
 									"property": "reviewVerdict",
+									"subline": "ground {reviewGrounds|values}",
 									"when": "@context.caseType.documentReview.enabled",
 									"formatter": "optionLabel",
 									"formatterOptions": {
@@ -11893,7 +11894,8 @@
 								"responsePath": "summaryRows"
 							},
 							"meta": "Quarter {quarter} of {year}: {decided} cases decided, {withinTerm} within the statutory or extended term ({share} %).",
-							"emptyText": ""
+							"emptyText": "",
+							"density": "stacked"
 						}
 					},
 					{
@@ -11922,6 +11924,7 @@
 						"subtitle": "Per case type: total, within the term, overruns, processing time, extensions, notices of default and penalty",
 						"content": {
 							"dividers": false,
+							"gap": 12,
 							"sections": [
 								{ "widgetId": "deadline-report-quarter-form" },
 								{ "widgetId": "deadline-report-quarterly" },
@@ -11969,7 +11972,9 @@
 							},
 							"title": "Total penalty in {year}: {totalEuros|currency:EUR}",
 							"meta": "{count} payments, of which {disputedCount} disputed",
-							"emptyText": "No penalty was forfeited in this year"
+							"emptyText": "No penalty was forfeited in this year",
+							"metaBeside": true,
+							"density": "stacked"
 						}
 					},
 					{
@@ -12030,6 +12035,7 @@
 						"subtitle": "Every penalty forfeited in a year, with the payment from the financial administration",
 						"content": {
 							"dividers": false,
+							"gap": 12,
 							"sections": [
 								{ "widgetId": "deadline-report-year-form" },
 								{ "widgetId": "deadline-report-annual-summary" },

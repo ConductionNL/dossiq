@@ -3808,6 +3808,7 @@ OC.L10N.register(
         "Ground %1$s cannot be deleted now, because what cites it could not be checked. Try again later.": "Ground %1$s cannot be deleted now, because what cites it could not be checked. Try again later.",
         "Ground %1$s is cited on an assessment or a decision, so it cannot be deleted. Retire it instead.": "Ground %1$s is cited on an assessment or a decision, so it cannot be deleted. Retire it instead.",
         "Ground for this lookup": "Ground for this lookup",
+        "ground {reviewGrounds|values}": "ground {reviewGrounds|values}",
         "Grounds": "Grounds",
         "Grounds (WOO Art. 5.1/5.2)": "Grounds (WOO Art. 5.1/5.2)",
         "Grounds for objection": "Grounds for objection",
