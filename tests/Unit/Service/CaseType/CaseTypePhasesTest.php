@@ -38,7 +38,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the phases a case type page shows.
  *
  * @covers \OCA\Dossiq\Service\CaseType\CaseTypePhases
- * @uses \OCA\Dossiq\Service\CaseType\AlwaysAvailableActs
+ * @uses \OCA\Dossiq\Service\CaseType\AlwaysAvailableActDeclaration
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Task\TaskDeclaration
