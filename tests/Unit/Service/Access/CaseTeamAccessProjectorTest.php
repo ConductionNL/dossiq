@@ -155,7 +155,7 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 * @return LoggerInterface The logger.
 	 */
 	private function warningLog(): LoggerInterface {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->method('warning')->willReturnCallback(
 			function (string|\Stringable $message): void {
 				$this->warnings[] = (string)$message;
