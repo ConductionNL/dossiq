@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Access;
 use OCA\Dossiq\Listener\CaseTypeRightsRowsListener;
 use OCA\Dossiq\Service\Access\AssignedGroupReadRows;
 use OCA\Dossiq\Service\Access\CaseRightsRowSources;
+use OCA\Dossiq\Service\Access\CaseTeamAccessRules;
 use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
 use OCA\Dossiq\Service\Access\OrganisationRoles;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -162,7 +163,12 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		$schema->setId(71);
 		$schema->setSlug('case');
 		$schema->setProperties($case['properties']);
-		$schema->setAuthorization($case['authorization']);
+		// The handling team rules the projector writes onto the live schema. A
+		// team rule makes OpenRegister drop the organisation filter for a caller
+		// it qualifies, so the teams here hold a case type with no cases: they
+		// grant nothing and still switch that filter off.
+		$teams = [['id' => 'ct-archief', 'teams' => ['team-toezicht', 'team-vergunningen']]];
+		$schema->setAuthorization((new CaseTeamAccessRules())->block(shipped: $case['authorization'], caseTypes: $teams));
 		return $schema;
 	}//end caseSchema()
 
@@ -259,6 +265,24 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 					return $objects;
 				}
 
+				if ($id === 'OCA\\OpenRegister\\Service\\OrganisationService') {
+					return new class {
+						/**
+						 * @return object The caller's active organisation.
+						 */
+						public function getActiveOrganisation(): object {
+							return new class {
+								/**
+								 * @return string The uuid.
+								 */
+								public function getUuid(): string {
+									return 'org-home';
+								}
+							};
+						}
+					};
+				}
+
 				throw new \RuntimeException('Not in this test: ' . $id);
 			}
 		);
@@ -281,9 +305,11 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 		$entityClass = 'OCA\\OpenRegister\\Db\\ObjectEntity';
 
 		$admitted = [];
-		foreach (self::CASES as $uuid => [$caseType, $team, $status, $level, $assignee]) {
+		foreach (self::CASES as $uuid => $row) {
+			[$caseType, $team, $status, $level, $assignee] = $row;
 			$object = new $entityClass();
 			$object->setUuid($uuid);
+			$object->setOrganisation(($row[5] ?? 'org-home'));
 			$object->setOwner('intake');
 			$object->setObject(['caseType' => $caseType, 'assignedGroup' => $team, 'status' => $status, 'confidentiality' => $level, 'assignee' => $assignee]);
 			if ($permissions->hasPermission(schema: $schema, action: $action, userId: $uid, objectOwner: 'intake', object: $object) === true) {
@@ -411,9 +437,9 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	 */
 	public function testTheAssigneeKeepsTheirOwnRights(): void {
 		self::assertSame(
-			expected: ['c-3', 'c-5', 'c-6', 'c-7'],
+			expected: ['c-3', 'c-5', 'c-7'],
 			actual: $this->admitted(uid: 'dirk', action: 'read'),
-			message: 'c-3, c-6 and c-7 through his team',
+			message: 'c-3 and c-7 through his team; c-6 is in another organisation',
 		);
 		self::assertSame(expected: ['c-3', 'c-5', 'c-7'], actual: $this->listed(uid: 'dirk'));
 		self::assertSame(['c-5'], $this->admitted(uid: 'dirk', action: 'update'));
@@ -421,12 +447,22 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	}//end testTheAssigneeKeepsTheirOwnRights()
 
 	/**
+	 * A rights row that names delete does not grant it: deleting a case stays with administrators.
+	 *
+	 * @return void
+	 */
+	public function testARightsRowNeverGrantsDelete(): void {
+		self::assertSame(expected: [], actual: $this->admitted(uid: 'bram', action: 'delete'));
+		self::assertSame(expected: ['c-1', 'c-2', 'c-3', 'c-4'], actual: $this->admitted(uid: 'bram', action: 'update'));
+	}//end testARightsRowNeverGrantsDelete()
+
+	/**
 	 * A member of a case's assigned group reads it, on both paths.
 	 *
 	 * @return void
 	 */
 	public function testAMemberOfTheAssignedGroupReadsTheCase(): void {
-		self::assertSame(expected: ['c-3', 'c-6', 'c-7'], actual: $this->admitted(uid: 'femke', action: 'read'));
+		self::assertSame(expected: ['c-3', 'c-7'], actual: $this->admitted(uid: 'femke', action: 'read'), message: 'c-6 belongs to another organisation');
 		self::assertSame(expected: ['c-3', 'c-7'], actual: $this->listed(uid: 'femke'), message: 'c-6 belongs to another organisation');
 	}//end testAMemberOfTheAssignedGroupReadsTheCase()
 
@@ -466,6 +502,7 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	public function testTheSameGroupInAnotherOrganisationDoesNotList(): void {
 		self::assertNotContains(needle: 'c-6', haystack: $this->listed(uid: 'femke'));
 		self::assertNotContains(needle: 'c-6', haystack: $this->listed(uid: 'dirk'));
+		self::assertNotContains(needle: 'c-6', haystack: $this->admitted(uid: 'femke', action: 'read'), message: 'single read');
 	}//end testTheSameGroupInAnotherOrganisationDoesNotList()
 
 	/**
