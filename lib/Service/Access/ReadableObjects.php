@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Service\Access;
 use OCA\Dossiq\Integration\CaseLeafProvider;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IUserSession;
 
 /**
@@ -101,13 +102,48 @@ class ReadableObjects {
 
 		$carried = [];
 		foreach (CaseLeafProvider::PARTY_SCHEMAS as $schema) {
-			foreach ($this->rowsOf(schema: $schema, filters: ['masterEntityRef' => array_values($refs), '_limit' => count($refs) * 10]) as $party) {
-				$carried[(string)($party['masterEntityRef'] ?? '')] = true;
-			}
+			$open = array_values(array_unique(array_filter($refs, static fn (string $ref): bool => isset($carried[$ref]) === false)));
+			$carried += $this->carriedIn(schema: $schema, refs: $open);
 		}
 
 		return array_values(array_filter($refs, static fn (string $ref): bool => isset($carried[$ref]) === true));
 	}//end readableMasterEntities()
+
+	/**
+	 * The references a readable party of one schema carries.
+	 *
+	 * Reads page by page, each time only for the references not found yet, so
+	 * many parties sharing one reference cannot push another reference out of
+	 * the page. A register without the schema carries none of them.
+	 *
+	 * @param string             $schema The party schema.
+	 * @param array<int, string> $refs   The references not found yet.
+	 *
+	 * @return array<string, true> The carried references.
+	 *
+	 * @throws \Throwable When the register cannot be read.
+	 */
+	private function carriedIn(string $schema, array $refs): array {
+		$carried = [];
+		while ($refs !== []) {
+			$limit = (count($refs) * 10);
+			try {
+				$rows = $this->rowsOf(schema: $schema, filters: ['masterEntityRef' => $refs, '_limit' => $limit]);
+			} catch (DoesNotExistException) {
+				return $carried;
+			}
+
+			$found = array_intersect($refs, array_map(static fn (array $party): string => (string)($party['masterEntityRef'] ?? ''), $rows));
+			$carried += array_fill_keys($found, true);
+			if (count($rows) < $limit || $found === []) {
+				return $carried;
+			}
+
+			$refs = array_values(array_diff($refs, $found));
+		}
+
+		return $carried;
+	}//end carriedIn()
 
 	/**
 	 * Rows of one schema under the caller's own rights; none without a caller or a configured register.

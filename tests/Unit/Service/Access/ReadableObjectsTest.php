@@ -149,4 +149,38 @@ final class ReadableObjectsTest extends TestCase {
 		$this->expectException(exception: RuntimeException::class);
 		$this->readable(register: $failing)->findsAsCaller(schema: 'case', id: 'case-1');
 	}//end testAFailedReadThrows()
+	/**
+	 * Many readable parties that share one reference do not push another reference out of the read.
+	 *
+	 * @return void
+	 */
+	public function testManyPartiesOnOneReferenceKeepTheOthersReadable(): void {
+		$register = new InMemoryRegister();
+		$register->pages = true;
+		for ($i = 0; $i < 25; $i++) {
+			$register->seed(schema: 'brpPerson', uuid: 'crowd-'.$i, row: ['masterEntityRef' => 'me-crowd']);
+		}
+
+		$register->seed(schema: 'brpPerson', uuid: 'p-1', row: ['masterEntityRef' => 'me-person']);
+
+		self::assertSame(
+			expected: ['me-crowd', 'me-person'],
+			actual: $this->readable(register: $register)->readableMasterEntities(refs: ['me-crowd', 'me-person'])
+		);
+	}//end testManyPartiesOnOneReferenceKeepTheOthersReadable()
+
+	/**
+	 * A register without one party schema answers from the schemas it has, rather than failing.
+	 *
+	 * @return void
+	 */
+	public function testARegisterWithoutAPartySchemaReadsTheOthers(): void {
+		$register = $this->register();
+		$register->missingSchemas = ['kvkCompany'];
+
+		self::assertSame(
+			expected: ['me-person'],
+			actual: $this->readable(register: $register)->readableMasterEntities(refs: ['me-person', 'me-company'])
+		);
+	}//end testARegisterWithoutAPartySchemaReadsTheOthers()
 }//end class
