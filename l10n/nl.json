@@ -3900,6 +3900,7 @@
         "Ground %1$s cannot be deleted now, because what cites it could not be checked. Try again later.": "Grond %1$s kan nu niet worden verwijderd, omdat niet kon worden nagegaan wat hem noemt. Probeer het later opnieuw.",
         "Ground %1$s is cited on an assessment or a decision, so it cannot be deleted. Retire it instead.": "Grond %1$s wordt genoemd in een beoordeling of een besluit, dus je kunt hem niet verwijderen. Trek hem in.",
         "Ground for this lookup": "Grond voor deze bevraging",
+        "ground {reviewGrounds|values}": "grond {reviewGrounds|values}",
         "Grounds": "Gronden",
         "Grounds (WOO Art. 5.1/5.2)": "Gronden (WOO Art. 5.1/5.2)",
         "Grounds for objection": "Gronden voor bezwaar",

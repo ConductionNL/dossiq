@@ -255,10 +255,10 @@
               "const body = pm.response.json();",
               "const rows = Array.isArray(body) ? body : (body.results || []);",
               "const records = rows.filter(r => r.targetSchema === 'package' && r.targetObject === 'lhs-matrix');",
-              "pm.test('one version record names the package at 1.0.0', () => {",
+              "pm.test('one version record names the package at the version it declares', () => {",
               "    pm.expect(records).to.have.lengthOf(1);",
               "    pm.expect(records[0].set).to.eql('lhs-matrix');",
-              "    pm.expect(records[0].setVersion).to.eql('1.0.0');",
+              "    pm.expect(records[0].setVersion).to.eql(pm.variables.get('packageVersion'));",
               "});"
             ]
           }

@@ -90,11 +90,8 @@ class DocumentVerdicts {
 
 			$assessed++;
 			$counts[$verdict] = (($counts[$verdict] ?? 0) + 1);
-			foreach ((array)($row[$groundsField] ?? []) as $code) {
-				$code = trim((string)$code);
-				if ($code !== '') {
-					$cited[$code][] = ['documentRef' => $documentRef, 'partial' => ($verdict === $partial)];
-				}
+			foreach ($this->codesOf(value: ($row[$groundsField] ?? [])) as $code) {
+				$cited[$code][] = ['documentRef' => $documentRef, 'partial' => ($verdict === $partial)];
 			}
 		}
 
@@ -119,20 +116,68 @@ class DocumentVerdicts {
 	 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
 	 */
 	public function byDocument(string $caseId): array {
+		$verdictField = $this->settingsService->getConfigValue('document_verdict_field', 'classification');
+
+		return array_map(
+			static fn (?array $row): string => (string)($row[$verdictField] ?? 'open'),
+			$this->latestAssessments(caseId: $caseId)
+		);
+	}//end byDocument()
+
+	/**
+	 * Each document under review with the codes of the grounds its verdict cites, none while it has no verdict.
+	 *
+	 * Reads the same assessments as {@see self::byDocument()}, so it names the same documents.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, list<string>> The cited ground codes per document id.
+	 *
+	 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-each-document-row-carries-its-verdict
+	 */
+	public function groundsByDocument(string $caseId): array {
+		$groundsField = $this->settingsService->getConfigValue('document_grounds_field', 'weigeringsgronden');
+
+		return array_map(
+			fn (?array $row): array => $this->codesOf(value: ($row[$groundsField] ?? [])),
+			$this->latestAssessments(caseId: $caseId)
+		);
+	}//end groundsByDocument()
+
+	/**
+	 * Each document under review with its last assessment that holds a verdict, null while it has none.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, array<string, mixed>|null> The assessment per document id.
+	 */
+	private function latestAssessments(string $caseId): array {
 		$documents = $this->assessments->getDocumentsUnderReview(caseId: $caseId);
 		$verdictField = $this->settingsService->getConfigValue('document_verdict_field', 'classification');
 
-		$verdicts = array_fill_keys(array_map('strval', $documents), 'open');
+		$latest = array_fill_keys(array_map('strval', $documents), null);
 		foreach ($this->assessmentRows(caseId: $caseId) as $row) {
 			$documentRef = (string)($row['documentRef'] ?? '');
-			$verdict = (string)($row[$verdictField] ?? '');
-			if ($verdict !== '' && isset($verdicts[$documentRef]) === true) {
-				$verdicts[$documentRef] = $verdict;
+			if ((string)($row[$verdictField] ?? '') !== '' && array_key_exists($documentRef, $latest) === true) {
+				$latest[$documentRef] = $row;
 			}
 		}
 
-		return $verdicts;
-	}//end byDocument()
+		return $latest;
+	}//end latestAssessments()
+
+	/**
+	 * The ground codes an assessment cites, trimmed, without empty entries.
+	 *
+	 * @param mixed $value The stored grounds field.
+	 *
+	 * @return list<string> The codes.
+	 */
+	private function codesOf(mixed $value): array {
+		$codes = array_map(static fn (mixed $code): string => trim((string)$code), (array)$value);
+
+		return array_values(array_filter($codes, static fn (string $code): bool => $code !== ''));
+	}//end codesOf()
 
 	/**
 	 * Every cited ground in code order, with its label and the documents citing it.
