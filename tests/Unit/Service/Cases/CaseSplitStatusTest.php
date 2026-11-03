@@ -75,6 +75,20 @@ class CaseSplitStatusTest extends TestCase {
 	private InMemoryRegister $register;
 
 	/**
+	 * The result type id of every closing result the engine was asked to resolve.
+	 *
+	 * @var array<int, string|null>
+	 */
+	private array $resolvedWith = [];
+
+	/**
+	 * Whether reading whether a status is final fails.
+	 *
+	 * @var bool
+	 */
+	private bool $finalUnreadable = false;
+
+	/**
 	 * A case under review, of a case type that starts in intake.
 	 *
 	 * @return void
@@ -419,6 +433,57 @@ class CaseSplitStatusTest extends TestCase {
 	}//end testASecondCaseThatCannotBeRemovedOrMarkedIsNamed()
 
 	/**
+	 * Removing a failed second case leaves every other case and status record alone.
+	 *
+	 * @return void
+	 */
+	public function testCleanupTouchesOnlyTheNewCase(): void {
+		$this->register->seed(
+			schema: 'case',
+			uuid: 'case-9',
+			row: ['title' => 'Ander', 'caseType' => 'ct-1', 'status' => 'st-review'],
+		);
+		$this->register->seed(schema: 'statusRecord', uuid: 'sr-1', row: ['case' => 'case-1', 'statusType' => 'st-review']);
+		$this->register->seed(schema: 'statusRecord', uuid: 'sr-9', row: ['case' => 'case-9', 'statusType' => 'st-review']);
+		$this->register->seed(schema: 'statusRecord', uuid: 'sr-0', row: ['case' => '', 'statusType' => 'st-review']);
+
+		$this->refusal(timeline: false);
+
+		$ids = static fn (array $rows): array => array_map(static fn (array $row): string => (string)$row['id'], $rows);
+		self::assertSame(expected: ['sr-1', 'sr-9', 'sr-0'], actual: $ids($this->register->all(schema: 'statusRecord')));
+		self::assertSame(expected: ['case-1', 'case-9'], actual: $ids($this->register->all(schema: 'case')));
+	}//end testCleanupTouchesOnlyTheNewCase()
+
+	/**
+	 * The check before a split names no result, so it can write none.
+	 *
+	 * @return void
+	 */
+	public function testTheCheckBeforeASplitNamesNoResult(): void {
+		$this->split(final: true);
+
+		self::assertNotSame(expected: [], actual: $this->resolvedWith);
+		foreach ($this->resolvedWith as $resultTypeId) {
+			self::assertNull(actual: $resultTypeId);
+		}
+	}//end testTheCheckBeforeASplitNamesNoResult()
+
+	/**
+	 * A status that cannot be read as final or not refuses the split before anything opens.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableStatusRefusesBeforeAnythingOpens(): void {
+		$this->finalUnreadable = true;
+
+		$refused = $this->refusal();
+
+		self::assertSame(expected: CaseSplitExecutor::UNWRITABLE, actual: $refused->getRule());
+		self::assertStringContainsString(needle: 'could not check the status', haystack: $refused->getSentence());
+		$this->assertNothingLeftBehind();
+	}//end testAnUnreadableStatusRefusesBeforeAnythingOpens()
+
+	/**
 	 * The refusal of a split expected to fail.
 	 *
 	 * @param bool $final    Whether every status is final.
@@ -503,7 +568,12 @@ class CaseSplitStatusTest extends TestCase {
 
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$writer = $this->createMock(originalClassName: CaseResultWriter::class);
-		$writer->method('isFinalStatus')->willReturn($final);
+		if ($this->finalUnreadable === true) {
+			$writer->method('isFinalStatus')->willThrowException(new RuntimeException('status types unavailable'));
+		} else {
+			$writer->method('isFinalStatus')->willReturn($final);
+		}
+
 		if ($results === true) {
 			$writer->method('resolveClosingResult')->willThrowException(
 				new RefusedException(
@@ -511,6 +581,14 @@ class CaseSplitStatusTest extends TestCase {
 					sentence: 'Pick a result before closing this case.',
 					status: RefusedException::STATUS_UNPROCESSABLE,
 				)
+			);
+		} else {
+			$writer->method('resolveClosingResult')->willReturnCallback(
+				function (string $caseId, string $caseTypeId, ?string $resultTypeId): ?string {
+					$this->resolvedWith[] = $resultTypeId;
+
+					return null;
+				}
 			);
 		}
 
