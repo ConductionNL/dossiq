@@ -24,13 +24,17 @@ namespace OCA\Dossiq\Tests\Unit\Dashboard;
 
 use OCA\Dossiq\Dashboard\CasesOverviewWidget;
 use OCA\Dossiq\Dashboard\DeadlineAlertsWidget;
+use OCA\Dossiq\Dashboard\MyTasksWidget;
+use OCA\Dossiq\Dashboard\QueueWidgetItems;
 use OCA\Dossiq\Dashboard\OverdueCasesWidget;
 use OCA\Dossiq\Dashboard\StalledCasesWidget;
 use OCA\Dossiq\Dashboard\StartCaseWidget;
 use OCA\Dossiq\Dashboard\TaskRemindersWidget;
 use OCP\Dashboard\IWidget;
 use OCP\IL10N;
+use OCA\Dossiq\Service\Queue\Source\EngineTaskSource;
 use OCP\IURLGenerator;
+use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -42,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Dashboard\StalledCasesWidget
  * @covers \OCA\Dossiq\Dashboard\StartCaseWidget
  * @covers \OCA\Dossiq\Dashboard\TaskRemindersWidget
+ * @covers \OCA\Dossiq\Dashboard\MyTasksWidget
  * @covers \OCA\Dossiq\Dashboard\DashboardPageWidget
  */
 class DashboardPageWidgetsGoldenTest extends TestCase {
@@ -85,4 +90,29 @@ class DashboardPageWidgetsGoldenTest extends TestCase {
 			actual: [$widget->getId(), $widget->getTitle(), $widget->getOrder(), $widget->getIconClass(), $widget->getUrl()]
 		);
 	}//end testTheWidgetAnswersTheDashboard()
+
+	/**
+	 * The task widget answers the dashboard the same way, next to its own items.
+	 *
+	 * @return void
+	 */
+	public function testTheTaskWidgetAnswersTheDashboard(): void {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
+		$url = $this->createMock(originalClassName: IURLGenerator::class);
+		$url->expects($this->once())->method('linkToRouteAbsolute')->with('dossiq.dashboard.page')->willReturn('https://x/apps/dossiq/');
+
+		$widget = new MyTasksWidget(
+			l10n: $l10n,
+			url: $url,
+			tasks: $this->createMock(originalClassName: EngineTaskSource::class),
+			items: $this->createMock(originalClassName: QueueWidgetItems::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
+
+		self::assertSame(
+			expected: ['procest_my_tasks_widget', 'My Tasks', 12, 'icon-dossiq-widget', 'https://x/apps/dossiq/'],
+			actual: [$widget->getId(), $widget->getTitle(), $widget->getOrder(), $widget->getIconClass(), $widget->getUrl()]
+		);
+	}//end testTheTaskWidgetAnswersTheDashboard()
 }//end class
