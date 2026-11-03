@@ -95,6 +95,7 @@ import {
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
 import { templateFillRows } from '../utils/templateFills.js'
 
 /**
@@ -117,7 +118,7 @@ import { templateFillRows } from '../utils/templateFills.js'
  * @spec openspec/specs/template-library/spec.md
  */
 export default {
-	name: 'BeschikkingComposerDialog',
+	name: 'GenerateDocumentDialog',
 	components: {
 		CnChoiceCards,
 		CnDialog,
@@ -164,11 +165,7 @@ export default {
 		 * @spec openspec/specs/beschikking-generatie/spec.md
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
-				return fromProp
-			}
-			return (this.$route && this.$route.params && this.$route.params.id) || ''
+			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**

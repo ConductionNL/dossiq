@@ -67,9 +67,6 @@ import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // @spec openspec/specs/berichtenbox-integration/spec.md
 import AssessmentDecisionDialog from './dialogs/AssessmentDecisionDialog.vue'
 import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
-// Generate document — the CaseDetail header action's template picker.
-// @spec openspec/specs/beschikking-generatie/spec.md
-import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 // The Actions menu's non-lifecycle gestures: copy this case, start a flow
 // its type allows, and plan a follow-up case for a later date.
 // @spec openspec/specs/case-management/spec.md
@@ -104,6 +101,9 @@ import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
 import DocumentCompareDialog from './dialogs/DocumentCompareDialog.vue'
 import FileContactMomentDialog from './dialogs/FileContactMomentDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
+// Generate document — the CaseDetail header action's template picker.
+// @spec openspec/specs/beschikking-generatie/spec.md
+import GenerateDocumentDialog from './dialogs/GenerateDocumentDialog.vue'
 import LinkProgrammeDialog from './dialogs/LinkProgrammeDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import NoticeOfDefaultDialog from './dialogs/NoticeOfDefaultDialog.vue'
@@ -112,7 +112,7 @@ import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
 import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
 import RemindDialog from './dialogs/RemindDialog.vue'
-import WooSearchPlanDialog from './dialogs/WooSearchPlanDialog.vue'
+import SearchPlanDialog from './dialogs/SearchPlanDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 import DeelzaakCreateModal from './modals/DeelzaakCreateModal.vue'
 // The Documents tab's upload dialog and bulk-action dialog
@@ -478,9 +478,9 @@ const registry = {
 	},
 
 	// @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
-	WooSearchPlanDialog: {
+	SearchPlanDialog: {
 		kind: 'modal',
-		component: WooSearchPlanDialog,
+		component: SearchPlanDialog,
 		propsSchema: {},
 		_note: "The search plan of a Woo request (woo-request-corpus-collection REQ-WRC-001): whose files, which systems, the period and the terms, recorded before collection. Gather documents refuses to search or add until it is recorded. Recording again changes the same plan object, so the history under the form is that object's OpenRegister audit trail. Shown on the seeded Woo request case type only; the manifest carries no _note because $defs/action refuses one.",
 	},
@@ -622,7 +622,7 @@ const registry = {
 		kind: 'modal',
 		component: BerichtenboxComposeDialog,
 		propsSchema: {},
-		_note: "Composes one letter to a citizen's digital post and posts it to BerichtenboxController#send, which hands it to IntegriqAdapter and integriq's typed send command. UNTIL 2026-09-18 THIS FILE WAS REFERENCED NOWHERE IN DOSSIQ: not here, not by src/manifest.json, not by another component, and the only occurrence of its name in the repository was its own `name:` line. The CaseDetail `send-digital-post` header action opens it now, and tests/vitest/registryOrphans.spec.js fails on a registered modal that no manifest action names, so it cannot go dark again quietly. It takes `open` beside its older `show` because `open` is what every other registry modal on this page is opened with and an action declaring the wrong one of the two would mount a dialog that renders nothing; `caseId` arrives as the unresolved `@objectId` token, as it does for BeschikkingComposerDialog, and the route answers instead. The recipient is read off the case's `initiatorSourceId` and only for an `initiatorType` of person, because a KvK number is not an address a letter can go to. A REFUSAL DOES NOT CLOSE IT: `sent` is emitted only for a send carrying a tracked message, and the provider's own sentence is shown, because a handler told which credential is missing can ask for it and a handler told \"sending failed\" cannot.",
+		_note: "Composes one letter to a citizen's digital post and posts it to BerichtenboxController#send, which hands it to IntegriqAdapter and integriq's typed send command. UNTIL 2026-09-18 THIS FILE WAS REFERENCED NOWHERE IN DOSSIQ: not here, not by src/manifest.json, not by another component, and the only occurrence of its name in the repository was its own `name:` line. The CaseDetail `send-digital-post` header action opens it now, and tests/vitest/registryOrphans.spec.js fails on a registered modal that no manifest action names, so it cannot go dark again quietly. It takes `open` beside its older `show` because `open` is what every other registry modal on this page is opened with and an action declaring the wrong one of the two would mount a dialog that renders nothing; `caseId` arrives as the unresolved `@objectId` token, as it does for GenerateDocumentDialog, and the route answers instead. The recipient is read off the case's `initiatorSourceId` and only for an `initiatorType` of person, because a KvK number is not an address a letter can go to. A REFUSAL DOES NOT CLOSE IT: `sent` is emitted only for a send carrying a tracked message, and the provider's own sentence is shown, because a handler told which credential is missing can ask for it and a handler told \"sending failed\" cannot.",
 	},
 
 	// --- Message the applicant, the CaseDetail header action (communication-portal-conversation-on-the-case). ---
@@ -636,9 +636,9 @@ const registry = {
 
 	// --- Generate document, the CaseDetail header action (documents-on-the-case). ---
 	// @spec openspec/specs/beschikking-generatie/spec.md
-	BeschikkingComposerDialog: {
+	GenerateDocumentDialog: {
 		kind: 'modal',
-		component: BeschikkingComposerDialog,
+		component: GenerateDocumentDialog,
 		propsSchema: {},
 		_note: "Picks a template from TemplateController#index and has Filinq render the letter and files it on the case through CaseDocumentGenerationService. Opened by the CaseDetail `generate-document` header action as `type: open-modal`, the interim for a `run-action` the library cannot dispatch yet (design D4). The action passes `open: true` because CnAppRoot mounts a registry modal with the action's props verbatim, and the dialog renders on `open`; `caseId` is passed for the same reason and IGNORED when it still holds the unresolved `@objectId` token, because open-modal resolves no tokens.",
 	},
@@ -654,7 +654,7 @@ const registry = {
 		kind: 'modal',
 		component: DocumentMetadataDialog,
 		propsSchema: {},
-		_note: "Upload metadata dialog. Opened by the Documents tab's object-list `dropZone`/upload-button action as `type: open-modal`, which hands over `props.files` (the dropped or picked File[]) the same way a header action's `open-modal` props arrive -- verbatim, no `@`-token resolution. `caseId` is passed for the same reason BeschikkingComposerDialog's is, and falls back to the route when it still holds the literal token. Self-sufficient: fetches the informatieobjecttype catalog and performs the upload itself, since there is no parent DossierTab any more to do either.",
+		_note: "Upload metadata dialog. Opened by the Documents tab's object-list `dropZone`/upload-button action as `type: open-modal`, which hands over `props.files` (the dropped or picked File[]) the same way a header action's `open-modal` props arrive -- verbatim, no `@`-token resolution. `caseId` is passed for the same reason GenerateDocumentDialog's is, and falls back to the route when it still holds the literal token. Self-sufficient: fetches the informatieobjecttype catalog and performs the upload itself, since there is no parent DossierTab any more to do either.",
 	},
 	// @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	FileRequestDialog: {

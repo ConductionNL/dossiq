@@ -15,6 +15,7 @@
             "description": "The \"What now?\" card of a case of this type, per stage: a title, a checklist and what follows. Empty keeps the case page's own texts.",
             "properties": {
               "stages": {
+                "title": "Stages",
                 "type": "object",
                 "description": "Keys are stage values; each holds title, checklist and after."
               }

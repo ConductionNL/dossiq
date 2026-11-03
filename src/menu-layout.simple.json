@@ -5650,7 +5650,7 @@
 								"label": "Generate document",
 								"icon": "FileDocumentPlusOutline",
 								"type": "open-modal",
-								"target": "BeschikkingComposerDialog",
+								"target": "GenerateDocumentDialog",
 								"props": {
 									"caseId": "@objectId",
 									"open": true

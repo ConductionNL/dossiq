@@ -1,4 +1,3 @@
-import { useBezwaarStore } from './modules/bezwaar.js'
 import { useObjectStore } from './modules/object.js'
 import { useSettingsStore } from './modules/settings.js'
 
@@ -195,4 +194,4 @@ export async function initializeStores() {
 	return { settingsStore, objectStore }
 }
 
-export { useBezwaarStore, useObjectStore, useSettingsStore }
+export { useObjectStore, useSettingsStore }

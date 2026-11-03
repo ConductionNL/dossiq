@@ -159,7 +159,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export default {
-	name: 'WooSearchPlanDialog',
+	name: 'SearchPlanDialog',
 
 	components: {
 		NcButton,
