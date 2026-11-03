@@ -5278,7 +5278,7 @@
 						"id": "case-banner-stack",
 						"type": "sections",
 						"title": "Case banners",
-						"_note": "What this case is, what this status asks and what is flagged, in ONE size-to-content row (case-banners in the layout). A grid row is reserved from the layout before a widget decides it has nothing to say, so the strips share one row whose height comes from what rendered. A `sections` widget over three sibling definitions, stacked as strips (`dividers: false`): case-archived (a banner on the record's own @self.archived), case-status-declaration (status-explainer over /available-transitions) and case-attention (attention-flag). An empty section takes no space. What is new since the reader last looked is on the tabs themselves (case-panels `badgeSource: readState`), and Following is the header control only (Ruben, 20 Oct 2026).",
+						"_note": "What this case is, what this status asks and what is flagged, in ONE size-to-content row (case-banners in the layout). A grid row is reserved from the layout before a widget decides it has nothing to say, so the strips share one row whose height comes from what rendered. A `sections` widget over four sibling definitions, stacked as strips (`dividers: false`): case-archived (a banner on the record's own @self.archived), case-claim-banner (claim the case to edit it, while @self.can.update is false), case-status-declaration (status-explainer over /available-transitions) and case-attention (attention-flag). An empty section takes no space. What is new since the reader last looked is on the tabs themselves (case-panels `badgeSource: readState`), and Following is the header control only (Ruben, 20 Oct 2026).",
 						"content": {
 							"dividers": false,
 							"sections": [
