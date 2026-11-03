@@ -256,11 +256,12 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 *
 	 * @param array<string, mixed>|null $baseline The recorded baseline, or null for none.
 	 * @param bool                      $records  Whether a record succeeds.
+	 * @param string                    $throws   The method that throws: `read`, `record`, or none.
 	 *
 	 * @return object The store.
 	 */
-	private static function baselineStore(?array $baseline, bool $records = true): object {
-		return new class($baseline, $records) {
+	private static function baselineStore(?array $baseline, bool $records = true, string $throws = ''): object {
+		return new class($baseline, $records, $throws) {
 			/**
 			 * Every record call.
 			 *
@@ -271,8 +272,9 @@ class CaseTeamAccessProjectorTest extends TestCase {
 			/**
 			 * @param array<string, mixed>|null $baseline The recorded baseline.
 			 * @param bool                      $records  Whether a record succeeds.
+			 * @param string                    $throws   The method that throws, or none.
 			 */
-			public function __construct(public ?array $baseline, private bool $records) {
+			public function __construct(public ?array $baseline, private bool $records, private string $throws) {
 			}
 
 			/**
@@ -290,6 +292,10 @@ class CaseTeamAccessProjectorTest extends TestCase {
 			 * @return array<string, mixed>|null The baseline of the case schema, or null.
 			 */
 			public function read(string $subject): ?array {
+				if ($this->throws === 'read') {
+					throw new \RuntimeException('baseline store unavailable');
+				}
+
 				if ($subject !== 'schema:case') {
 					return null;
 				}
@@ -307,6 +313,10 @@ class CaseTeamAccessProjectorTest extends TestCase {
 			 */
 			public function record(string $subject, array $definition, string $app, string $appVersion): bool {
 				$this->recorded[] = ['subject' => $subject, 'definition' => $definition, 'app' => $app, 'appVersion' => $appVersion];
+				if ($this->throws === 'record') {
+					throw new \RuntimeException('baseline store unavailable');
+				}
+
 				if ($this->records === true) {
 					$this->baseline = ['definition' => $definition, 'app' => $app, 'appVersion' => $appVersion, 'recordedAt' => 'now'];
 				}
@@ -432,6 +442,43 @@ class CaseTeamAccessProjectorTest extends TestCase {
 		self::assertCount(expectedCount: 1, haystack: $this->baselines->recorded);
 		self::assertCount(expectedCount: 1, haystack: $this->warnings);
 	}//end testAFailedRecordKeepsTheSchemaWrite()
+
+	/**
+	 * The baseline keeps the app it was recorded for, whatever that app is.
+	 *
+	 * @return void
+	 */
+	public function testTheBaselineKeepsItsOwnApp(): void {
+		$baseline = self::baselineOf(authorization: $this->projector(rows: [])->shippedBlock());
+		$baseline['app'] = 'x';
+		$baseline['appVersion'] = '9.9.9';
+		$this->baselines = self::baselineStore(baseline: $baseline);
+
+		$this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]])->reapply();
+
+		self::assertSame(expected: ['x', '9.9.9'], actual: [$this->baselines->recorded[0]['app'], $this->baselines->recorded[0]['appVersion']]);
+	}//end testTheBaselineKeepsItsOwnApp()
+
+	/**
+	 * A baseline store that throws leaves the schema write standing, with one warning.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingBaselineStoreKeepsTheSchemaWrite(): void {
+		$shipped = $this->projector(rows: [])->shippedBlock();
+		foreach (['read', 'record'] as $method) {
+			$this->setUp();
+			$this->warnings = [];
+			$this->baselines = self::baselineStore(baseline: self::baselineOf(authorization: $shipped), throws: $method);
+
+			self::assertTrue(
+				condition: $this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]])->reapply(),
+				message: $method,
+			);
+			self::assertSame(expected: 1, actual: $this->mapper->writes, message: $method);
+			self::assertCount(expectedCount: 1, haystack: $this->warnings, message: $method);
+		}
+	}//end testAThrowingBaselineStoreKeepsTheSchemaWrite()
 
 	/**
 	 * After a projector rewrite, OpenRegister's upgrade merge applies a shipped
