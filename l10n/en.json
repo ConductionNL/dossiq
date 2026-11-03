@@ -12083,6 +12083,9 @@
         "Who made the change.": "Who made the change.",
         "Who set the exception.": "Who set the exception.",
         "Why only these people and groups may see the document.": "Why only these people and groups may see the document.",
-        "Why the change was made.": "Why the change was made."
+        "Why the change was made.": "Why the change was made.",
+        "Dossiq handles cases from intake to archive. The next steps offer example data to look around with, then your organisation's name and logo, its house style and the case types you work with. Each one is optional and can be changed later in the admin settings.": "Dossiq handles cases from intake to archive. The next steps offer example data to look around with, then your organisation's name and logo, its house style and the case types you work with. Each one is optional and can be changed later in the admin settings.",
+        "Your organisation's name and logo are kept on the organisation in OpenRegister, so every app shows the same ones. Leave a field blank to keep what is there.": "Your organisation's name and logo are kept on the organisation in OpenRegister, so every app shows the same ones. Leave a field blank to keep what is there.",
+        "Set up Dossiq": "Set up Dossiq"
     }
 }

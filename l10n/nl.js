@@ -11991,7 +11991,10 @@ OC.L10N.register(
         "Who made the change.": "Wie de wijziging deed.",
         "Who set the exception.": "Wie de uitzondering instelde.",
         "Why only these people and groups may see the document.": "Waarom alleen deze mensen en groepen het document mogen zien.",
-        "Why the change was made.": "Waarom de wijziging is gedaan."
+        "Why the change was made.": "Waarom de wijziging is gedaan.",
+        "Dossiq handles cases from intake to archive. The next steps offer example data to look around with, then your organisation's name and logo, its house style and the case types you work with. Each one is optional and can be changed later in the admin settings.": "Dossiq behandelt zaken van intake tot archief. De volgende stappen bieden voorbeeldgegevens om rond te kijken, daarna de naam en het logo van uw organisatie, de huisstijl en de zaaktypen waarmee u werkt. Elke stap is optioneel en later te wijzigen in de beheerinstellingen.",
+        "Your organisation's name and logo are kept on the organisation in OpenRegister, so every app shows the same ones. Leave a field blank to keep what is there.": "De naam en het logo van uw organisatie staan bij de organisatie in OpenRegister, zodat elke app dezelfde toont. Laat een veld leeg om te houden wat er staat.",
+        "Set up Dossiq": "Dossiq inrichten"
     },
     "nplurals=2; plural=(n != 1);"
 )
