@@ -204,6 +204,7 @@ import {
 	DEFAULT_DIRECTION,
 	DOCUMENT_DIRECTIONS,
 } from '../utils/dossierHelpers.js'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * Upload metadata dialog. Collects the required informatieobjecttype and
@@ -377,11 +378,7 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
-				return fromProp
-			}
-			return (this.$route && this.$route.params && this.$route.params.id) || ''
+			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**

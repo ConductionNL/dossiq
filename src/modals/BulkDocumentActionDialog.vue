@@ -113,6 +113,7 @@ import { emit } from '@nextcloud/event-bus'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcNoteCard, NcSelect } from '@nextcloud/vue'
 import { classificationOptions as buildClassificationOptions } from '../utils/dossierHelpers.js'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 export default {
 	name: 'BulkDocumentActionDialog',
@@ -209,11 +210,7 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
-				return fromProp
-			}
-			return (this.$route && this.$route.params && this.$route.params.id) || ''
+			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**
