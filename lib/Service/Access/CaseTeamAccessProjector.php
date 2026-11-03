@@ -226,11 +226,14 @@ class CaseTeamAccessProjector {
 			return null;
 		}
 
+		// An unreadable baseline reads as none: the merge then tells the
+		// projector's rules apart by their shape, which keeps every local rule
+		// and drops a stale team rule, so it widens nothing.
 		try {
 			$baselines = $this->container->get(self::BASELINE_STORE);
 			$baseline = $baselines->read(subject: $baselines->schemaSubject(slug: self::CASE_SCHEMA_SLUG));
 		} catch (Throwable) {
-			return null;
+			$baseline = null;
 		}
 
 		$block = ($baseline['definition']['authorization'] ?? null);
