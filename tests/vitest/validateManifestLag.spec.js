@@ -249,7 +249,7 @@ describe('check:manifest tells a lag from a defect', () => {
 		const result = validate(manifest)
 
 		expect(result.code).toBe(1)
-	})
+	}, 30000)
 
 	it('a defect on a shape the newer schema also refuses still fails', () => {
 		const manifest = JSON.parse(

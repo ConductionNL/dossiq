@@ -26568,6 +26568,78 @@
         "conditions": {},
         "order": 0,
         "active": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "colleague",
+          "slug": "colleague-colleague-1-1"
+        },
+        "userId": "Voorbeeld Userid 1",
+        "displayName": "Voorbeeld Displayname 1",
+        "email": "voorbeeld0@example.invalid",
+        "jobTitle": "Voorbeeld Jobtitle 1",
+        "department": "Voorbeeld Department 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "colleague",
+          "slug": "colleague-colleague-2-2"
+        },
+        "userId": "Voorbeeld Userid 2",
+        "displayName": "Voorbeeld Displayname 2",
+        "email": "voorbeeld1@example.invalid",
+        "jobTitle": "Voorbeeld Jobtitle 2",
+        "department": "Voorbeeld Department 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "colleague",
+          "slug": "colleague-colleague-3-3"
+        },
+        "userId": "Voorbeeld Userid 3",
+        "displayName": "Voorbeeld Displayname 3",
+        "email": "voorbeeld2@example.invalid",
+        "jobTitle": "Voorbeeld Jobtitle 3",
+        "department": "Voorbeeld Department 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "tenantSubscription",
+          "slug": "tenantsubscription-tenantsubscription-1-1"
+        },
+        "tenantRef": "00000000-0000-4000-8000-000000000000",
+        "packageName": "Voorbeeld Packagename 1",
+        "reference": "Voorbeeld Reference 1",
+        "startDate": "2026-03-01",
+        "endDate": "2026-03-01"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "tenantSubscription",
+          "slug": "tenantsubscription-tenantsubscription-2-2"
+        },
+        "tenantRef": "00000000-0000-4000-8000-000000000001",
+        "packageName": "Voorbeeld Packagename 2",
+        "reference": "Voorbeeld Reference 2",
+        "startDate": "2026-03-02",
+        "endDate": "2026-03-02"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "tenantSubscription",
+          "slug": "tenantsubscription-tenantsubscription-3-3"
+        },
+        "tenantRef": "00000000-0000-4000-8000-000000000002",
+        "packageName": "Voorbeeld Packagename 3",
+        "reference": "Voorbeeld Reference 3",
+        "startDate": "2026-03-03",
+        "endDate": "2026-03-03"
       }
     ]
   }

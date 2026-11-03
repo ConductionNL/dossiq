@@ -57,8 +57,6 @@ use Psr\Log\LoggerInterface;
  * Dashboard KPI aggregation.
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — one payload for every count tile, the team queue's included, so the open cases are read once.
  */
 class KpiAggregationService {
 	/**
@@ -541,10 +539,9 @@ class KpiAggregationService {
 			return null;
 		}
 
-		try {
-			$start = new DateTimeImmutable($fromDate);
-			$end = new DateTimeImmutable($toDate);
-		} catch (\Exception $e) {
+		$start = date_create_immutable($fromDate);
+		$end = date_create_immutable($toDate);
+		if ($start === false || $end === false) {
 			return null;
 		}
 

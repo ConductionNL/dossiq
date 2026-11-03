@@ -270,15 +270,15 @@ administrator set stays as it was. `GET /api/setup/status` SHALL report
 - **WHEN** the status is read
 - **THEN** it SHALL carry no `dismissed` key
 
-### Requirement: The wizard follows the board's steps
+### Requirement: The wizard opens with a welcome, then the example data
 
-The setup wizard SHALL offer, in this order: Organisation, House style, Case types, Example data, and Done. It SHALL NOT ask for the dwangsom callback secret: that procedure-specific setting is set under admin settings > Financial integration. `GET /api/setup/status` SHALL report each of them.
+The setup wizard SHALL offer, in this order: Welcome, Example data, Organisation, House style, Case types, and Done (ADR-111 rule 4: say what the app is, then offer the data that shows it working). It SHALL NOT ask for the dwangsom callback secret: that procedure-specific setting is set under admin settings > Financial integration. `GET /api/setup/status` SHALL report each of them, the welcome always as done.
 
-#### Scenario: The status names the board's steps
-@e2e exclude the step contract is the status payload; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testEveryActionableManifestStepIsReported` and `::testTheBoardStepsAreReported`
+#### Scenario: The status names the wizard's steps
+@e2e exclude the step contract is the status payload; covered by `tests/Unit/Controller/SetupControllerStatusTest.php::testEveryActionableManifestStepIsReported` and `::testTheBoardStepsAreReported`, and the order by `tests/vitest/setupWelcomeFirst.spec.js`
 
 - **WHEN** an administrator's wizard asks for the setup status
-- **THEN** `steps` holds `organisation-details`, `house-style`, `case-types`, `demo-data` and `done`
+- **THEN** `steps` holds `welcome`, `demo-data`, `organisation-details`, `house-style`, `case-types` and `done`
 - **AND** it holds no `dwangsom-secret`
 
 ### Requirement: The organisation's name and logo live on the organisation

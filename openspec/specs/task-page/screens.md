@@ -1,3 +1,3 @@
 # Screens
 
-- DqTaak https://identity.conduction.nl/screens/board?id=dossiq/DqTaak
+- dossiq/DqTaak taak https://identity.conduction.nl/screens/board?id=dossiq/DqTaak
