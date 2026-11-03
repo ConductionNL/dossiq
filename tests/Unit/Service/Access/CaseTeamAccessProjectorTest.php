@@ -36,7 +36,7 @@ use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
-use Psr\Log\NullLogger;
+use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\Access\CaseTeamAccessProjector
@@ -68,6 +68,13 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 * @var object|null
 	 */
 	private ?object $baselines = null;
+
+	/**
+	 * Every warning the projector logged.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $warnings = [];
 
 	/**
 	 * Build the schema and the mapper.
@@ -138,9 +145,25 @@ class CaseTeamAccessProjectorTest extends TestCase {
 			slugs: $slugs,
 			fragments: new RegisterFragmentMerger(),
 			container: $container,
-			logger: new NullLogger(),
+			logger: $this->warningLog(),
 		);
 	}//end projector()
+
+	/**
+	 * A logger that keeps the warnings in {@see self::$warnings}.
+	 *
+	 * @return LoggerInterface The logger.
+	 */
+	private function warningLog(): LoggerInterface {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			function (string|\Stringable $message): void {
+				$this->warnings[] = (string)$message;
+			}
+		);
+
+		return $logger;
+	}//end warningLog()
 
 	/**
 	 * The shipped case block closes the case to everybody but the assignee.
@@ -377,9 +400,13 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 */
 	public function testNothingIsRecordedWhenAlignedOrWithoutABaseline(): void {
 		$rows = [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]];
+		$this->projector(rows: $rows)->reapply();
+		self::assertSame(expected: [], actual: $this->warnings, message: 'An OpenRegister without baselines is an ordinary state.');
+
 		$this->baselines = self::baselineStore(baseline: null);
 		$this->projector(rows: $rows)->reapply();
 		self::assertSame(expected: [], actual: $this->baselines->recorded);
+		self::assertSame(expected: [], actual: $this->warnings, message: 'A schema without a baseline is an ordinary state.');
 
 		$this->baselines = self::baselineStore(
 			baseline: self::baselineOf(authorization: $this->schema->authorization)
@@ -403,6 +430,7 @@ class CaseTeamAccessProjectorTest extends TestCase {
 		self::assertTrue(condition: $this->projector(rows: [['id' => 'ct-permit', 'handling' => ['teams' => ['vergunningen']]]])->reapply());
 		self::assertSame(expected: 1, actual: $this->mapper->writes);
 		self::assertCount(expectedCount: 1, haystack: $this->baselines->recorded);
+		self::assertCount(expectedCount: 1, haystack: $this->warnings);
 	}//end testAFailedRecordKeepsTheSchemaWrite()
 
 	/**
