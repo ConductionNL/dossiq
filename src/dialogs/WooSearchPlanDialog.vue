@@ -73,7 +73,7 @@
 				</div>
 				<NcButton
 					data-testid="woo-plan-add-custodian"
-					@click="custodians.push({ name: '', function: '' })">
+					@click="custodians.push(custodianRow())">
 					{{ t('dossiq', 'Add a person or function') }}
 				</NcButton>
 			</fieldset>
@@ -158,6 +158,18 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 const PAGE_REFRESH = 'cn:page:refresh'
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
+// A computed key, because a bare `function:` key stops lizard measuring this file.
+const FUNCTION = 'function'
+
+/**
+ * One custodian row of the form or the recorded plan.
+ *
+ * @param {string} name The person or function.
+ * @param {string} role The department.
+ * @return {{name: string, function: string}} The row.
+ */
+const custodianRow = (name = '', role = '') => ({ name, [FUNCTION]: role })
+
 export default {
 	name: 'WooSearchPlanDialog',
 
@@ -181,7 +193,7 @@ export default {
 
 	data() {
 		return {
-			custodians: [{ name: '', function: '' }],
+			custodians: [custodianRow()],
 			systems: [],
 			periodFrom: '',
 			periodTo: '',
@@ -236,6 +248,7 @@ export default {
 
 	methods: {
 		t,
+		custodianRow,
 
 		/**
 		 * The systems a plan can name, as the case's source list names them.
@@ -285,11 +298,8 @@ export default {
 			const custodians = Array.isArray(plan.custodians) ? plan.custodians : []
 			this.custodians =
 				custodians.length > 0
-					? custodians.map((custodian) => ({
-							name: custodian.name ?? '',
-							function: custodian.function ?? '',
-						}))
-					: [{ name: '', function: '' }]
+					? custodians.map((custodian) => custodianRow(custodian.name ?? '', custodian.function ?? ''))
+					: [custodianRow()]
 			this.systems = Array.isArray(plan.systems) ? [...plan.systems] : []
 			this.periodFrom = plan.periodFrom ?? ''
 			this.periodTo = plan.periodTo ?? ''
@@ -316,13 +326,13 @@ export default {
 			const custodians = (
 				Array.isArray(values.custodians) ? values.custodians : []
 			)
-				.map((custodian) => ({
-					name: String(custodian?.name ?? custodian ?? '').trim(),
-					function: String(custodian?.function ?? '').trim(),
-				}))
+				.map((custodian) => custodianRow(
+					String(custodian?.name ?? custodian ?? '').trim(),
+					String(custodian?.function ?? '').trim(),
+				))
 				.filter((custodian) => custodian.name !== '')
 			this.custodians =
-				custodians.length > 0 ? custodians : [{ name: '', function: '' }]
+				custodians.length > 0 ? custodians : [custodianRow()]
 			this.systems = Array.isArray(values.systems)
 				? values.systems.map(String)
 				: []
@@ -403,10 +413,7 @@ export default {
 				const body = {
 					custodians: this.custodians
 						.filter((custodian) => custodian.name.trim() !== '')
-						.map((custodian) => ({
-							name: custodian.name.trim(),
-							function: custodian.function.trim(),
-						})),
+						.map((custodian) => custodianRow(custodian.name.trim(), custodian.function.trim())),
 
 					systems: this.systems,
 					periodFrom: this.periodFrom,
