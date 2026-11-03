@@ -1,3 +1,3 @@
 # Screens
 
-- DqArchiveren https://identity.conduction.nl/screens/board?id=dossiq/DqArchiveren
+- dossiq/DqArchiveren archiveren, dialoog https://identity.conduction.nl/screens/board?id=dossiq/DqArchiveren

@@ -1,3 +1,3 @@
 # Screens
 
-- DqZaakBetrokkenen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBetrokkenen
+- dossiq/DqZaakBetrokkenen zaak, betrokkenen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBetrokkenen
