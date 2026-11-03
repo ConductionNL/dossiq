@@ -25,8 +25,9 @@ const manifest = read('src/manifest.json')
 const nl = read('l10n/nl.json').translations
 const en = read('l10n/en.json').translations
 const card = caseDetail.configAppend.widgets.find((widget) => widget.id === 'case-access-card')
-const links = card.content.sections[0]
-const grants = card.content.sections[1]
+const sectionOf = (url) => card.content.sections.find((section) => section.endpointSource.url.includes(url))
+const links = sectionOf('/api/access-links/case/')
+const grants = sectionOf('/grants')
 const icons = fs.readFileSync(path.join(ROOT, 'src/icons.js'), 'utf8')
 
 function strings() {
@@ -78,6 +79,13 @@ function originLine(row) {
 }
 
 describe('the Toegang card', () => {
+	it('lists who can open the case first and the access links under them, as the board draws Toegang', () => {
+		expect(card.content.sections.map((section) => section.endpointSource.url)).toEqual([
+			'/apps/openregister/api/objects/dossiq/case/@objectId/grants',
+			'/apps/dossiq/api/access-links/case/@objectId',
+		])
+	})
+
 	it('reads the links the sidebar Sharing tab reads', () => {
 		expect(card.type).toBe('record-list')
 		expect(links.endpointSource).toEqual({ url: '/apps/dossiq/api/access-links/case/@objectId', responsePath: 'results' })
