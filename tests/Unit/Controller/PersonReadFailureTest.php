@@ -109,7 +109,7 @@ final class PersonReadFailureTest extends TestCase {
 	private function readableToTheCaller(): array {
 		$readable = $this->createMock(ReadableObjects::class);
 		$readable->method('hasCaller')->willReturn(true);
-		$readable->method('canRead')->willReturn(true);
+		$readable->method('findsAsCaller')->willReturn(true);
 
 		return ['readable' => $readable];
 	}//end readableToTheCaller()

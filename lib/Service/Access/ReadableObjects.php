@@ -74,14 +74,14 @@ class ReadableObjects {
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	public function canRead(string $schema, string $id): bool {
+	public function findsAsCaller(string $schema, string $id): bool {
 		$id = trim($id);
 		if ($id === '') {
 			return false;
 		}
 
 		return $this->rowsOf(schema: $schema, filters: ['_ids' => [$id], '_limit' => 1]) !== [];
-	}//end canRead()
+	}//end findsAsCaller()
 
 	/**
 	 * The master entities the caller may read: those a person or company the caller may read carries.

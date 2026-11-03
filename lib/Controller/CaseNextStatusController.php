@@ -71,7 +71,7 @@ class CaseNextStatusController extends Controller {
 		}
 
 		try {
-			if ($this->readable->canRead(schema: 'case', id: $caseId) === false) {
+			if ($this->readable->findsAsCaller(schema: 'case', id: $caseId) === false) {
 				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 			}
 

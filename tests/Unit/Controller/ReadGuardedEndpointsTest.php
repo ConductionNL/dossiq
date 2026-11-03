@@ -118,7 +118,7 @@ final class ReadGuardedEndpointsTest extends TestCase {
 			return ($session->getUser()?->getUID() === 'bob' && in_array(trim($id), ($this->readableBy[$schema] ?? []), true) === true);
 		};
 		$readable->method('hasCaller')->willReturnCallback(static fn (): bool => $session->getUser() !== null);
-		$readable->method('canRead')->willReturnCallback($allowed);
+		$readable->method('findsAsCaller')->willReturnCallback($allowed);
 		$readable->method('readableMasterEntities')->willReturnCallback(
 			static fn (array $refs): array => array_values(array_filter($refs, static fn (string $ref): bool => $allowed('masterEntity', $ref)))
 		);

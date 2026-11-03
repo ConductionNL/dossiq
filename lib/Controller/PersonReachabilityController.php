@@ -71,7 +71,7 @@ class PersonReachabilityController extends Controller {
 		}
 
 		try {
-			if ($this->readable->canRead(schema: 'brpPerson', id: $id) === false) {
+			if ($this->readable->findsAsCaller(schema: 'brpPerson', id: $id) === false) {
 				return new JSONResponse(['error' => 'Person not found'], Http::STATUS_NOT_FOUND);
 			}
 

@@ -83,7 +83,7 @@ class CaseTypeTermsController extends Controller {
 		}
 
 		try {
-			$readable = $this->readable->canRead(schema: 'caseType', id: $id);
+			$readable = $this->readable->findsAsCaller(schema: 'caseType', id: $id);
 		} catch (Throwable) {
 			return new JSONResponse(['error' => 'The case type could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}

@@ -81,10 +81,10 @@ final class ReadableObjectsTest extends TestCase {
 	public function testAStoredObjectIsReadableAndAMissingOneIsNot(): void {
 		$readable = $this->readable(register: $this->register());
 
-		self::assertTrue(condition: $readable->canRead(schema: 'case', id: ' case-1 '));
-		self::assertFalse(condition: $readable->canRead(schema: 'case', id: 'case-2'));
-		self::assertFalse(condition: $readable->canRead(schema: 'case', id: ''));
-		self::assertFalse(condition: $readable->canRead(schema: 'brpPerson', id: 'case-1'));
+		self::assertTrue(condition: $readable->findsAsCaller(schema: 'case', id: ' case-1 '));
+		self::assertFalse(condition: $readable->findsAsCaller(schema: 'case', id: 'case-2'));
+		self::assertFalse(condition: $readable->findsAsCaller(schema: 'case', id: ''));
+		self::assertFalse(condition: $readable->findsAsCaller(schema: 'brpPerson', id: 'case-1'));
 	}//end testAStoredObjectIsReadableAndAMissingOneIsNot()
 
 	/**
@@ -97,7 +97,7 @@ final class ReadableObjectsTest extends TestCase {
 		$register->hiddenFromCaller = ['case', 'brpPerson', 'kvkCompany'];
 		$readable = $this->readable(register: $register);
 
-		self::assertFalse(condition: $readable->canRead(schema: 'case', id: 'case-1'));
+		self::assertFalse(condition: $readable->findsAsCaller(schema: 'case', id: 'case-1'));
 		self::assertSame(expected: [], actual: $readable->readableMasterEntities(refs: ['me-person', 'me-company']));
 	}//end testAnObjectHiddenFromTheCallerIsNotReadable()
 
@@ -125,7 +125,7 @@ final class ReadableObjectsTest extends TestCase {
 		$readable = $this->readable(register: $this->register(), signedIn: false);
 
 		self::assertFalse(condition: $readable->hasCaller());
-		self::assertFalse(condition: $readable->canRead(schema: 'case', id: 'case-1'));
+		self::assertFalse(condition: $readable->findsAsCaller(schema: 'case', id: 'case-1'));
 		self::assertSame(expected: [], actual: $readable->readableMasterEntities(refs: ['me-person']));
 	}//end testWithoutACallerNothingIsReadable()
 
@@ -147,6 +147,6 @@ final class ReadableObjectsTest extends TestCase {
 		};
 
 		$this->expectException(exception: RuntimeException::class);
-		$this->readable(register: $failing)->canRead(schema: 'case', id: 'case-1');
+		$this->readable(register: $failing)->findsAsCaller(schema: 'case', id: 'case-1');
 	}//end testAFailedReadThrows()
 }//end class
