@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
+use OCA\OpenRegister\Mcp\Attribute\McpToolTitle;
 use OCP\IUserSession;
 
 /**
@@ -92,6 +93,7 @@ class TaskTools {
 		subject: 'task',
 		action: 'create'
 	)]
+	#[McpToolTitle('Create a task')]
 	public function createTask(string $caseId, string $title, int $leadTimeDays = 0, string $for = 'handler'): array {
 		$user = $this->userSession->getUser();
 		if ($user === null) {

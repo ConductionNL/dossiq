@@ -244,4 +244,18 @@ final class TaskToolsTest extends TestCase {
 		self::assertFalse(condition: $tool->readOnlyHint);
 		self::assertFalse(condition: $tool->destructiveHint);
 	}//end testTheToolIsMarkedAsAWriteThatDestroysNothing()
+
+	/**
+	 * The tool carries the human title a client shows, and that title has a Dutch translation.
+	 *
+	 * @return void
+	 */
+	public function testTheToolHasATranslatedTitle(): void {
+		$method = new ReflectionMethod(TaskTools::class, 'createTask');
+		$title = $method->getAttributes(McpTool::class)[0]->newInstance()->titleOn(method: $method);
+
+		self::assertSame(expected: 'Create a task', actual: $title);
+		$dutch = json_decode((string)file_get_contents(__DIR__.'/../../../../l10n/nl.json'), true);
+		self::assertArrayHasKey(key: $title, array: $dutch['translations']);
+	}//end testTheToolHasATranslatedTitle()
 }//end class
