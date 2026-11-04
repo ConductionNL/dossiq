@@ -32,6 +32,9 @@ use RuntimeException;
  * become an update of the object they name.
  *
  * @covers \OCA\Dossiq\Service\ZgwService
+ * @uses \OCA\Dossiq\Service\Zgw\ResourceRoute
+ * @uses \OCA\Dossiq\Service\Zgw\ResourceWrite
+ * @uses \OCA\Dossiq\Service\Zgw\RuleFlags
  */
 class ZgwCreateDropsCallerIdentityTest extends TestCase {
 
