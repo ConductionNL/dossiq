@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Ai\AiEndpointGuard;
 use OCA\Dossiq\Service\Ai\AiModelIdentity;
 use OCA\Dossiq\Service\Ai\AiPiiRedactor;
 use OCA\Dossiq\Service\Ai\AiPromptFactory;
+use OCA\Dossiq\Service\Ai\AiRequest;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -64,6 +65,60 @@ use RuntimeException;
  * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
  */
 class AiService {
+	/**
+	 * Per operation: the label of its unavailable message, the log line and the
+	 * answer prefix of a failure, the result key recorded as confidence (null:
+	 * none), the answer keys with their defaults (null: the whole result as
+	 * `suggestion`), and whether the shaped answer is recorded as the
+	 * suggestion and the whole subject is logged on failure.
+	 */
+	private const OPERATIONS = [
+		'classification' => [
+			'label' => 'AI document classification',
+			'log' => 'AI classification failed',
+			'fail' => 'AI classification failed',
+			'confidence' => 'confidence',
+			'answer' => null,
+			'logSubject' => true,
+		],
+		'extraction' => [
+			'label' => 'AI data extraction',
+			'log' => 'AI extraction failed',
+			'fail' => 'AI data extraction failed',
+			'confidence' => 'averageConfidence',
+			'answer' => ['fields' => []],
+		],
+		'qa' => [
+			'label' => 'AI knowledge base Q&A',
+			'log' => 'AI Q&A failed',
+			'fail' => 'AI Q&A failed',
+			'confidence' => 'confidence',
+			'answer' => ['answer' => '', 'sources' => []],
+		],
+		'summary' => [
+			'label' => 'AI summarization',
+			'log' => 'AI summarization failed',
+			'fail' => 'AI summarization failed',
+			'confidence' => null,
+			'answer' => ['summary' => ''],
+			'suggestionIsAnswer' => true,
+		],
+		'routing' => [
+			'label' => 'AI case routing',
+			'log' => 'AI routing suggestion failed',
+			'fail' => 'AI routing suggestion failed',
+			'confidence' => 'confidence',
+			'answer' => ['suggestions' => []],
+		],
+		'decision_support' => [
+			'label' => 'AI decision support',
+			'log' => 'AI next-step suggestion failed',
+			'fail' => 'AI next-step suggestion failed',
+			'confidence' => null,
+			'answer' => ['suggestions' => []],
+		],
+	];
+
 	/**
 	 * Constructor for AiService.
 	 *
@@ -207,66 +262,14 @@ class AiService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function classifyDocument(string $caseId, string $documentId, string $userId): array {
-		if ($this->isFeatureEnabled(feature: 'classification') === false) {
-			return [
-				'success' => false,
-				'message' => $this->unavailableMessage(label: 'AI document classification'),
-			];
-		}
-
-		// Built and scrubbed BEFORE the try, so `$prompt` is defined in the
-		// catch and the failure entry can record what was actually sent.
-		$prompt = $this->stripPiiIfEnabled(
-			prompt: $this->prompts->classification(caseId: $caseId, documentId: $documentId)
+		return $this->operate(
+			request: new AiRequest(
+				type: 'classification',
+				subject: ['caseId' => $caseId, 'documentId' => $documentId],
+				userId: $userId,
+				prompt: fn (): string => $this->prompts->classification(caseId: $caseId, documentId: $documentId),
+			)
 		);
-
-		$startTime = microtime(true);
-
-		try {
-			$result = $this->callAiModel(prompt: $prompt);
-
-			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
-
-			$this->recordAuditEntry(
-				entry: [
-					'type' => 'classification',
-					'action' => 'suggestion',
-					'caseId' => $caseId,
-					'documentId' => $documentId,
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'suggestion' => $result,
-					'confidence' => ($result['confidence'] ?? 0.0),
-					'userId' => $userId,
-					'timestamp' => date('c'),
-					'responseTimeMs' => $responseTimeMs,
-				]
-			);
-
-			return [
-				'success' => true,
-				'suggestion' => $result,
-			];
-		} catch (\Exception $e) {
-			$this->recordFailure(
-				entry: [
-					'type' => 'classification',
-					'caseId' => $caseId,
-					'documentId' => $documentId,
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'error' => $e->getMessage(),
-					'userId' => $userId,
-					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
-				],
-				logMessage: 'AI classification failed',
-				logContext: ['caseId' => $caseId, 'documentId' => $documentId, 'error' => $e->getMessage()],
-			);
-			return [
-				'success' => false,
-				'message' => 'AI classification failed: ' . $e->getMessage(),
-			];
-		}//end try
 	}//end classifyDocument()
 
 	/**
@@ -281,64 +284,14 @@ class AiService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function extractData(string $caseId, ?string $documentId, string $userId): array {
-		if ($this->isFeatureEnabled(feature: 'extraction') === false) {
-			return [
-				'success' => false,
-				'message' => $this->unavailableMessage(label: 'AI data extraction'),
-			];
-		}
-
-		$prompt = $this->stripPiiIfEnabled(
-			prompt: $this->prompts->extraction(caseId: $caseId, documentId: $documentId)
+		return $this->operate(
+			request: new AiRequest(
+				type: 'extraction',
+				subject: ['caseId' => $caseId, 'documentId' => ($documentId ?? '')],
+				userId: $userId,
+				prompt: fn (): string => $this->prompts->extraction(caseId: $caseId, documentId: $documentId),
+			)
 		);
-
-		$startTime = microtime(true);
-
-		try {
-			$result = $this->callAiModel(prompt: $prompt);
-
-			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
-
-			$this->recordAuditEntry(
-				entry: [
-					'type' => 'extraction',
-					'action' => 'suggestion',
-					'caseId' => $caseId,
-					'documentId' => ($documentId ?? ''),
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'suggestion' => $result,
-					'confidence' => ($result['averageConfidence'] ?? 0.0),
-					'userId' => $userId,
-					'timestamp' => date('c'),
-					'responseTimeMs' => $responseTimeMs,
-				]
-			);
-
-			return [
-				'success' => true,
-				'fields' => ($result['fields'] ?? []),
-			];
-		} catch (\Exception $e) {
-			$this->recordFailure(
-				entry: [
-					'type' => 'extraction',
-					'caseId' => $caseId,
-					'documentId' => ($documentId ?? ''),
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'error' => $e->getMessage(),
-					'userId' => $userId,
-					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
-				],
-				logMessage: 'AI extraction failed',
-				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
-			);
-			return [
-				'success' => false,
-				'message' => 'AI data extraction failed: ' . $e->getMessage(),
-			];
-		}//end try
 	}//end extractData()
 
 	/**
@@ -353,72 +306,16 @@ class AiService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function askQuestion(string $caseId, string $question, string $userId): array {
-		if ($this->isFeatureEnabled(feature: 'qa') === false) {
-			return [
-				'success' => false,
-				'message' => $this->unavailableMessage(label: 'AI knowledge base Q&A'),
-			];
-		}
-
-		// The ONE prompt in this subsystem that carries free-form text a person
-		// typed, and until now the ONE that was never scrubbed. Every other
-		// prompt interpolates identifiers only (see AiPromptFactory), so this is
-		// the operation PII stripping was actually for.
-		$prompt = $this->stripPiiIfEnabled(
-			prompt: $this->prompts->question(caseId: $caseId, question: $question)
+		// The one prompt carrying free text a person typed: the audit entry
+		// records it as scrubbed, never the raw question.
+		return $this->operate(
+			request: new AiRequest(
+				type: 'qa',
+				subject: ['caseId' => $caseId],
+				userId: $userId,
+				prompt: fn (): string => $this->prompts->question(caseId: $caseId, question: $question),
+			)
 		);
-
-		$startTime = microtime(true);
-
-		try {
-			$result = $this->callAiModel(prompt: $prompt);
-
-			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
-
-			$this->recordAuditEntry(
-				entry: [
-					'type' => 'qa',
-					'action' => 'suggestion',
-					'caseId' => $caseId,
-					'model' => $this->getModelIdentifier(),
-					// The SCRUBBED prompt, not the raw question. This recorded
-					// `$question` verbatim, so a BSN typed into the Q&A box was
-					// written to the audit trail in clear even with PII
-					// stripping switched on — and the schema's own description
-					// of this field promises "PII-stripped if enabled".
-					'prompt' => $prompt,
-					'suggestion' => $result,
-					'confidence' => ($result['confidence'] ?? 0.0),
-					'userId' => $userId,
-					'timestamp' => date('c'),
-					'responseTimeMs' => $responseTimeMs,
-				]
-			);
-
-			return [
-				'success' => true,
-				'answer' => ($result['answer'] ?? ''),
-				'sources' => ($result['sources'] ?? []),
-			];
-		} catch (\Exception $e) {
-			$this->recordFailure(
-				entry: [
-					'type' => 'qa',
-					'caseId' => $caseId,
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'error' => $e->getMessage(),
-					'userId' => $userId,
-					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
-				],
-				logMessage: 'AI Q&A failed',
-				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
-			);
-			return [
-				'success' => false,
-				'message' => 'AI Q&A failed: ' . $e->getMessage(),
-			];
-		}//end try
 	}//end askQuestion()
 
 	/**
@@ -434,63 +331,14 @@ class AiService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function summarize(string $caseId, string $type, ?string $documentId, string $userId): array {
-		if ($this->isFeatureEnabled(feature: 'summary') === false) {
-			return [
-				'success' => false,
-				'message' => $this->unavailableMessage(label: 'AI summarization'),
-			];
-		}
-
-		$prompt = $this->stripPiiIfEnabled(
-			prompt: $this->prompts->summary(caseId: $caseId, type: $type, documentId: $documentId)
+		return $this->operate(
+			request: new AiRequest(
+				type: 'summary',
+				subject: ['caseId' => $caseId, 'documentId' => ($documentId ?? '')],
+				userId: $userId,
+				prompt: fn (): string => $this->prompts->summary(caseId: $caseId, type: $type, documentId: $documentId),
+			)
 		);
-
-		$startTime = microtime(true);
-
-		try {
-			$result = $this->callAiModel(prompt: $prompt);
-
-			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
-
-			$this->recordAuditEntry(
-				entry: [
-					'type' => 'summary',
-					'action' => 'suggestion',
-					'caseId' => $caseId,
-					'documentId' => ($documentId ?? ''),
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'suggestion' => ['summary' => ($result['summary'] ?? '')],
-					'userId' => $userId,
-					'timestamp' => date('c'),
-					'responseTimeMs' => $responseTimeMs,
-				]
-			);
-
-			return [
-				'success' => true,
-				'summary' => ($result['summary'] ?? ''),
-			];
-		} catch (\Exception $e) {
-			$this->recordFailure(
-				entry: [
-					'type' => 'summary',
-					'caseId' => $caseId,
-					'documentId' => ($documentId ?? ''),
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'error' => $e->getMessage(),
-					'userId' => $userId,
-					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
-				],
-				logMessage: 'AI summarization failed',
-				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
-			);
-			return [
-				'success' => false,
-				'message' => 'AI summarization failed: ' . $e->getMessage(),
-			];
-		}//end try
 	}//end summarize()
 
 	/**
@@ -504,60 +352,14 @@ class AiService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestRouting(string $caseId, string $userId): array {
-		if ($this->isFeatureEnabled(feature: 'routing') === false) {
-			return [
-				'success' => false,
-				'message' => $this->unavailableMessage(label: 'AI case routing'),
-			];
-		}
-
-		$prompt = $this->stripPiiIfEnabled(prompt: $this->prompts->routing(caseId: $caseId));
-
-		$startTime = microtime(true);
-
-		try {
-			$result = $this->callAiModel(prompt: $prompt);
-
-			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
-
-			$this->recordAuditEntry(
-				entry: [
-					'type' => 'routing',
-					'action' => 'suggestion',
-					'caseId' => $caseId,
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'suggestion' => $result,
-					'confidence' => ($result['confidence'] ?? 0.0),
-					'userId' => $userId,
-					'timestamp' => date('c'),
-					'responseTimeMs' => $responseTimeMs,
-				]
-			);
-
-			return [
-				'success' => true,
-				'suggestions' => ($result['suggestions'] ?? []),
-			];
-		} catch (\Exception $e) {
-			$this->recordFailure(
-				entry: [
-					'type' => 'routing',
-					'caseId' => $caseId,
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'error' => $e->getMessage(),
-					'userId' => $userId,
-					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
-				],
-				logMessage: 'AI routing suggestion failed',
-				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
-			);
-			return [
-				'success' => false,
-				'message' => 'AI routing suggestion failed: ' . $e->getMessage(),
-			];
-		}//end try
+		return $this->operate(
+			request: new AiRequest(
+				type: 'routing',
+				subject: ['caseId' => $caseId],
+				userId: $userId,
+				prompt: fn (): string => $this->prompts->routing(caseId: $caseId),
+			)
+		);
 	}//end suggestRouting()
 
 	/**
@@ -571,59 +373,14 @@ class AiService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestNextStep(string $caseId, string $userId): array {
-		if ($this->isFeatureEnabled(feature: 'decision_support') === false) {
-			return [
-				'success' => false,
-				'message' => $this->unavailableMessage(label: 'AI decision support'),
-			];
-		}
-
-		$prompt = $this->stripPiiIfEnabled(prompt: $this->prompts->nextStep(caseId: $caseId));
-
-		$startTime = microtime(true);
-
-		try {
-			$result = $this->callAiModel(prompt: $prompt);
-
-			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
-
-			$this->recordAuditEntry(
-				entry: [
-					'type' => 'decision_support',
-					'action' => 'suggestion',
-					'caseId' => $caseId,
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'suggestion' => $result,
-					'userId' => $userId,
-					'timestamp' => date('c'),
-					'responseTimeMs' => $responseTimeMs,
-				]
-			);
-
-			return [
-				'success' => true,
-				'suggestions' => ($result['suggestions'] ?? []),
-			];
-		} catch (\Exception $e) {
-			$this->recordFailure(
-				entry: [
-					'type' => 'decision_support',
-					'caseId' => $caseId,
-					'model' => $this->getModelIdentifier(),
-					'prompt' => $prompt,
-					'error' => $e->getMessage(),
-					'userId' => $userId,
-					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
-				],
-				logMessage: 'AI next-step suggestion failed',
-				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
-			);
-			return [
-				'success' => false,
-				'message' => 'AI next-step suggestion failed: ' . $e->getMessage(),
-			];
-		}//end try
+		return $this->operate(
+			request: new AiRequest(
+				type: 'decision_support',
+				subject: ['caseId' => $caseId],
+				userId: $userId,
+				prompt: fn (): string => $this->prompts->nextStep(caseId: $caseId),
+			)
+		);
 	}//end suggestNextStep()
 
 	/**
@@ -920,6 +677,117 @@ class AiService {
 	}//end recordAuditEntry()
 
 	/**
+	 * Run one AI operation: gate it, scrub its prompt, call the model, record
+	 * the suggestion or the failure, and answer the caller.
+	 *
+	 * The prompt is built and scrubbed before the model call, so a failure
+	 * entry records what was actually sent.
+	 *
+	 * @param AiRequest $request The operation as asked.
+	 *
+	 * @return array<string, mixed> The answer, or `success: false` with a message.
+	 *
+	 * @spec openspec/specs/ai-assistance/spec.md
+	 */
+	private function operate(AiRequest $request): array {
+		$operation = self::OPERATIONS[$request->type];
+		if ($this->isFeatureEnabled(feature: $request->type) === false) {
+			return [
+				'success' => false,
+				'message' => $this->unavailableMessage(label: $operation['label']),
+			];
+		}
+
+		$exchange = [
+			'prompt' => $this->stripPiiIfEnabled(prompt: ($request->prompt)()),
+			'startTime' => microtime(true),
+		];
+
+		try {
+			$exchange['result'] = $this->callAiModel(prompt: $exchange['prompt']);
+			$exchange['responseTimeMs'] = $this->elapsedMs(startTime: $exchange['startTime']);
+			$this->recordAuditEntry(entry: $this->suggestionEntry(request: $request, exchange: $exchange));
+
+			return ['success' => true] + $this->answerOf(type: $request->type, result: $exchange['result']);
+		} catch (\Exception $e) {
+			$this->recordFailure(request: $request, exchange: $exchange + ['error' => $e->getMessage()]);
+
+			return [
+				'success' => false,
+				'message' => $operation['fail'] . ': ' . $e->getMessage(),
+			];
+		}//end try
+	}//end operate()
+
+	/**
+	 * What an operation answers for a model result.
+	 *
+	 * @param string               $type   The operation.
+	 * @param array<string, mixed> $result The model result.
+	 *
+	 * @return array<string, mixed> The answer keys, defaulted when the result lacks them.
+	 *
+	 * @spec openspec/specs/ai-assistance/spec.md
+	 */
+	private function answerOf(string $type, array $result): array {
+		$shape = self::OPERATIONS[$type]['answer'];
+		if ($shape === null) {
+			return ['suggestion' => $result];
+		}
+
+		$answer = [];
+		foreach ($shape as $key => $default) {
+			$answer[$key] = ($result[$key] ?? $default);
+		}
+
+		return $answer;
+	}//end answerOf()
+
+	/**
+	 * The audit entry of a suggestion the model made.
+	 *
+	 * @param AiRequest            $request  The operation as asked.
+	 * @param array<string, mixed> $exchange The prompt sent, the result and the response time.
+	 *
+	 * @return array<string, mixed> The entry, in the trail's field order.
+	 *
+	 * @spec openspec/specs/ai-assistance/spec.md
+	 */
+	private function suggestionEntry(AiRequest $request, array $exchange): array {
+		$operation = self::OPERATIONS[$request->type];
+		$suggestion = $exchange['result'];
+		if (($operation['suggestionIsAnswer'] ?? false) === true) {
+			$suggestion = $this->answerOf(type: $request->type, result: $suggestion);
+		}
+
+		$entry = ['type' => $request->type, 'action' => 'suggestion']
+			+ $request->head(model: $this->getModelIdentifier(), prompt: $exchange['prompt'])
+			+ ['suggestion' => $suggestion];
+		if ($operation['confidence'] !== null) {
+			$entry['confidence'] = ($exchange['result'][$operation['confidence']] ?? 0.0);
+		}
+
+		return $entry + [
+			'userId' => $request->userId,
+			'timestamp' => date('c'),
+			'responseTimeMs' => $exchange['responseTimeMs'],
+		];
+	}//end suggestionEntry()
+
+	/**
+	 * Milliseconds since a microtime() start.
+	 *
+	 * @param float $startTime The start.
+	 *
+	 * @return int The elapsed milliseconds.
+	 *
+	 * @spec openspec/specs/ai-assistance/spec.md
+	 */
+	private function elapsedMs(float $startTime): int {
+		return (int)((microtime(true) - $startTime) * 1000);
+	}//end elapsedMs()
+
+	/**
 	 * Log a failed AI attempt AND record it in the oversight trail.
 	 *
 	 * The trail used to be reachable only from the success path: all six
@@ -935,16 +803,27 @@ class AiService {
 	 * {@see AiAuditLog::record()} swallows its own failures, so an unavailable
 	 * audit sink can never turn a handled AI error into a 500.
 	 *
-	 * @param array $entry The audit entry, without `action` or `timestamp`.
-	 * @param string $logMessage The log line for the operator.
-	 * @param array $logContext The structured log context.
+	 * @param AiRequest            $request  The operation as asked.
+	 * @param array<string, mixed> $exchange The prompt sent, the start time and the error.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/ai-assistance/spec.md
 	 */
-	private function recordFailure(array $entry, string $logMessage, array $logContext): void {
-		$this->logger->error($logMessage, $logContext);
+	private function recordFailure(AiRequest $request, array $exchange): void {
+		$operation = self::OPERATIONS[$request->type];
+		$entry = $request->head(model: $this->getModelIdentifier(), prompt: $exchange['prompt']) + [
+			'error' => $exchange['error'],
+			'userId' => $request->userId,
+			'responseTimeMs' => $this->elapsedMs(startTime: $exchange['startTime']),
+		];
+
+		$logContext = ['caseId' => $request->subject['caseId']];
+		if (($operation['logSubject'] ?? false) === true) {
+			$logContext = $request->subject;
+		}
+
+		$this->logger->error($operation['log'], $logContext + ['error' => $exchange['error']]);
 
 		$this->recordAuditEntry(
 			entry: array_merge(
