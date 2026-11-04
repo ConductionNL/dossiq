@@ -148,6 +148,13 @@ class PartnerShareScopeTest extends TestCase {
 	private PssShareStore $shares;
 
 	/**
+	 * Settings keys answered as unset in the current case.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $unset = [];
+
+	/**
 	 * A Wmo case that may not leave without consent.
 	 *
 	 * @return void
@@ -231,13 +238,6 @@ class PartnerShareScopeTest extends TestCase {
 		self::assertSame(['ondersteuningsplan'], $share['consentScope'], 'The caller is told the same thing that was stored.');
 	}//end testTheShareCarriesTheScopeTheConsentNames()
 
-	/**
-	 * A consent for a different partner writes no share for this one.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
-	 */
 	/**
 	 * Seed a consent that lets zorgpartner-bv receive case-1.
 	 *
@@ -369,6 +369,49 @@ class PartnerShareScopeTest extends TestCase {
 		);
 	}//end testTheWrittenPartnerShareIsValidAgainstTheRealSchema()
 
+	/**
+	 * Without a share register or schema configured, no share is written.
+	 *
+	 * @param string $key The settings key left unset.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider storeKeys
+	 */
+	public function testNoShareIsWrittenWithoutAConfiguredStore(string $key): void {
+		$this->seedConsent();
+		$this->unset = [$key];
+
+		$answer = $this->sharing()->createPartnerShare(
+			caseId: 'case-1',
+			partnerId: 'zorgpartner-bv',
+			permissionLevel: 'read',
+			createdBy: 'jan',
+		);
+
+		self::assertSame(['error' => 'Service unavailable'], $answer);
+		self::assertSame([], $this->shares->shares, 'Nothing reached the register.');
+	}//end testNoShareIsWrittenWithoutAConfiguredStore()
+
+	/**
+	 * The settings keys a share store needs.
+	 *
+	 * @return array<string, array{0: string}>
+	 */
+	public static function storeKeys(): array {
+		return [
+			'no register' => ['register'],
+			'no share schema' => ['case_share_schema'],
+		];
+	}//end storeKeys()
+
+	/**
+	 * A consent for a different partner writes no share for this one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
+	 */
 	public function testAConsentForAnotherPartnerWritesNoShare(): void {
 		$this->store->seed(
 			schema: 'toestemming',
@@ -426,8 +469,13 @@ class PartnerShareScopeTest extends TestCase {
 	private function settings(): SettingsService {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
+		$unset = $this->unset;
 		$settings->method('getConfigValue')->willReturnCallback(
-			static function (string $key, string $default = ''): string {
+			static function (string $key, string $default = '') use ($unset): string {
+				if (in_array($key, $unset, true) === true) {
+					return $default;
+				}
+
 				$map = [
 					'register' => 'dossiq',
 					'case_schema' => 'case',

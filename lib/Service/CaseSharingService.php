@@ -351,6 +351,11 @@ class CaseSharingService {
 			return ['error' => 'OpenRegister is not available'];
 		}
 
+		$store = $this->shareStore(objectService: $objectService);
+		if ($store->isConfigured() === false) {
+			return ['error' => 'Service unavailable'];
+		}
+
 		// A field the allow-list does not name is refused, never dropped: a
 		// handler who meant to hide it must not find it shared after all.
 		$excluded = array_values(array_unique(array_map('strval', $fieldExclusions)));
@@ -368,7 +373,7 @@ class CaseSharingService {
 			'excluded' => $excluded,
 		];
 
-		return $this->sharePartner(objectService: $objectService, request: $request);
+		return $this->sharePartner(store: $store, request: $request);
 	}//end createPartnerShare()
 
 	/**
@@ -381,12 +386,12 @@ class CaseSharingService {
 	 * names; asking the gate twice and writing whichever answer came back
 	 * second is how the refusal and the share end up disagreeing.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param array<string, mixed> $request       The partner share asked for.
+	 * @param ShareStore           $store   The configured share register.
+	 * @param array<string, mixed> $request The partner share asked for.
 	 *
 	 * @return array The created share data, or an error array.
 	 */
-	private function sharePartner(object $objectService, array $request): array {
+	private function sharePartner(ShareStore $store, array $request): array {
 		$verdict = $this->consent->assess(
 			caseId: $request['caseId'],
 			sourceOrganisation: '',
@@ -396,7 +401,7 @@ class CaseSharingService {
 			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];
 		}
 
-		$result = $this->shareStore(objectService: $objectService)->save(
+		$result = $store->save(
 			share: $this->partnerShareFields(request: $request, verdict: $verdict)
 		);
 
