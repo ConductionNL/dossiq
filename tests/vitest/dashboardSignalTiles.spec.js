@@ -7,7 +7,7 @@
  * Taakherinneringen and Woo-termijnen. Each is a library record list over a
  * query, configured in the simple structure's Dashboard overlay.
  *
- * @spec openspec/specs/signalering-widgets/spec.md
+ * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/signalering-widgets/spec.md
  */
 import fs from 'fs'
 import path from 'path'
