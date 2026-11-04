@@ -245,4 +245,59 @@ class CaseSplitAndRebindContractTest extends TestCase {
 		self::assertFalse($response->getData()['mayRebind']);
 		self::assertSame([''], $asked, 'nobody in session is asked about as the empty uid');
 	}//end testPermissionAnswersAnAnonymousCallerWithFalseAndNotAStatusCode()
+
+	/**
+	 * A rebind runs as the session user, whatever actor the request body names.
+	 *
+	 * @return void
+	 */
+	public function testRebindActsAsTheSessionUserNotAForgedActor(): void {
+		$body = [
+			'target' => ' type-2 ',
+			'status' => 'status-1',
+			'reason' => 'new version',
+			'actorUid' => 'mallory',
+			'userId' => 'mallory',
+			'requestedBy' => 'mallory',
+		];
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $name, mixed $default = null): mixed => ($body[$name] ?? $default)
+		);
+
+		$guard = $this->createMock(CaseAccessGuard::class);
+		$guard->method('hasCaseMutationAccess')->willReturnCallback(
+			static fn (string $caseId, \OCP\IUser $user): bool => ($user->getUID() === 'coord')
+		);
+
+		$received = [];
+		$service = $this->createMock(CaseRebindService::class);
+		$service->method('rebind')->willReturnCallback(
+			static function (
+				string $caseId,
+				string $targetCaseTypeId,
+				string $targetStatusId,
+				string $reason,
+				array $properties,
+				string $actorUid,
+			) use (&$received): array {
+				$received = ['caseId' => $caseId, 'targetCaseTypeId' => $targetCaseTypeId, 'actorUid' => $actorUid];
+				return ['rebound' => true];
+			}
+		);
+
+		$response = (new CaseRebindController(
+			appName: 'dossiq',
+			request: $request,
+			rebind: $service,
+			accessGuard: $guard,
+			userSession: $this->session('coord'),
+			logger: $this->createMock(LoggerInterface::class),
+		))->rebind(caseId: self::CASE_ID);
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame('coord', $received['actorUid']);
+		self::assertSame(self::CASE_ID, $received['caseId']);
+		self::assertSame('type-2', $received['targetCaseTypeId']);
+	}//end testRebindActsAsTheSessionUserNotAForgedActor()
 }//end class

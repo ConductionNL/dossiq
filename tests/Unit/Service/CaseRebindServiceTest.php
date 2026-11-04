@@ -52,6 +52,7 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindGate
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindImpact
+ * @uses \OCA\Dossiq\Service\Cases\RebindMove
  * @uses \OCA\Dossiq\Service\Cases\RebindValueConverter
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
