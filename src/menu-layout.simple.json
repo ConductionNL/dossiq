@@ -594,7 +594,10 @@
 								"type": "stat",
 								"title": "Due this week",
 								"content": {
-									"caption": "{count} ends today",
+									"caption": {
+										"singular": "{count} ends today",
+										"plural": "{count} end today"
+									},
 									"captionSource": {
 										"register": "dossiq",
 										"schema": "case",
@@ -5211,15 +5214,23 @@
 								"responsePath": "results"
 							},
 							"presentation": "rows",
-							"avatar": { "text": "{caseTypeTitle}", "size": 32, "tone": "primary" },
+							"avatar": { "text": ["{caseTypeTitle}", "{plannedKind}"], "size": 32, "tone": "primary", "letters": 2 },
 							"ruleAbove": true,
 							"title": "{title}",
-							"meta": [
-								"{identifier} · {caseTypeTitle} · {assigneeName}",
-								"{identifier} · {caseTypeTitle}",
-								"{caseTypeTitle}",
-								"{plannedKind} · {date}"
-							],
+							"meta": {
+								"cases": [
+									{ "when": { "field": "plannedKind", "value": "flow" }, "text": ["Planned flow · makes a case on {date|date}", "Planned flow"] },
+									{ "when": { "all": [{ "field": "plannedKind", "value": "series" }, { "field": "occurrences", "op": "gte", "value": 2 }] }, "text": ["Series · next on {date|date} · {occurrences} cases opened earlier", "Series · {occurrences} cases opened earlier"] },
+									{ "when": { "all": [{ "field": "plannedKind", "value": "series" }, { "field": "occurrences", "value": 1 }] }, "text": ["Series · next on {date|date} · 1 case opened earlier", "Series · 1 case opened earlier"] },
+									{ "when": { "field": "plannedKind", "value": "series" }, "text": ["Series · next on {date|date}", "Series"] }
+								],
+								"text": [
+									"{identifier} · {caseTypeTitle} · {assigneeName}",
+									"{identifier} · {caseTypeTitle}",
+									"{caseTypeTitle}"
+								]
+							},
+							"_metaNote": "Board DqZaakGerelateerd: a planned flow reads \"Geplande flow · maakt op 4 nov een zaak aan\", a series \"Reeks · volgende op 1 jan · 3 zaken eerder geopend\". The avatar of a planned row reads its kind (Reeks: RE), and a one-word case type gives two letters (Omgevingsvergunning: OV), as the board draws them.",
 							"pill": {
 								"field": "statusRole",
 								"labels": {
@@ -5248,7 +5259,11 @@
 							"valueLabels": {
 								"group": {
 									"subject": "Subject of this case",
+									"gaat over": "Subject of this case",
+									"is about": "Subject of this case",
 									"waitsOn": "Waits on",
+									"wacht op": "Waits on",
+									"waits on": "Waits on",
 									"vervolg": "Follow-up",
 									"bijdrage": "Contribution",
 									"samenhang": "Related",
@@ -5650,7 +5665,7 @@
 								"label": "Generate document",
 								"icon": "FileDocumentPlusOutline",
 								"type": "open-modal",
-								"target": "BeschikkingComposerDialog",
+								"target": "GenerateDocumentDialog",
 								"props": {
 									"caseId": "@objectId",
 									"open": true
@@ -5760,14 +5775,17 @@
 							"ai-oversight"
 						],
 						"requiredApp": "hermiq",
-						"_note": "The AI Chat Companion embedded in the Assistant tab (DqZaakAssistent). The library widget renders the companion the launcher hex opens, always open and without the hex; it reads the page context CnDetailPage provides, so the agents offered are the ones relevant to a case. Without hermiq the widget says it is not installed rather than leaving an empty tab. Needs the nextcloud-vue release with the `ai-chat` widget (ai-chat-widget). `openSubjectSession` opens the handler's latest conversation about this case with the proposals the assistant still waits on (nextcloud-vue ai-chat-opens-the-subject-session, hermiq session-about-a-subject); an older library or hermiq leaves an empty thread.",
+						"_note": "The AI Chat Companion embedded in the Assistant tab (DqZaakAssistent). The library widget renders the companion the launcher hex opens, always open and without the hex; it reads the page context CnDetailPage provides, so the agents offered are the ones relevant to a case. Without hermiq the widget says it is not installed rather than leaving an empty tab. Needs the nextcloud-vue release with the `ai-chat` widget (ai-chat-widget). `openSubjectSession` opens the handler's latest conversation about this case with the proposals the assistant still waits on (nextcloud-vue ai-chat-opens-the-subject-session, hermiq session-about-a-subject); an older library or hermiq leaves an empty thread. A proposal the assistant waits on is drawn as the board draws it: Voorstel: before the tool's name, with Uitvoeren and Niet doen (`approvalTitlePrefix`, `allowLabel`, `denyLabel`; an older library keeps the tool's name with Allow and Decline).",
 						"content": {
 							"chatAppId": "hermiq",
 							"pill": "Hermiq",
 							"note": "The assistant sees only what you see on this case. Without Hermiq this panel is off.",
 							"placeholder": "Ask something about this case",
 							"sendLabel": "Ask",
-							"openSubjectSession": true
+							"openSubjectSession": true,
+							"approvalTitlePrefix": "Proposal:",
+							"allowLabel": "Run",
+							"denyLabel": "Don't do it"
 						}
 					},
 					{

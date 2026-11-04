@@ -1,0 +1,7 @@
+{
+    "skipFor": [],
+    "skipPurpose": "handling",
+    "assign": {
+        "handling": "handler"
+    }
+}

@@ -1,7 +1,7 @@
 # Screens
 
-- DqContact https://identity.conduction.nl/screens/board?id=dossiq/DqContact
-- DqOrganisatie https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisatie
-- DqNieuweZaak https://identity.conduction.nl/screens/board?id=dossiq/DqNieuweZaak
-- DqTeamwachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqTeamwachtrij
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqContact contact https://identity.conduction.nl/screens/board?id=dossiq/DqContact
+- dossiq/DqOrganisatie organisatie https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisatie
+- dossiq/DqNieuweZaak nieuwe zaak, dialoog https://identity.conduction.nl/screens/board?id=dossiq/DqNieuweZaak
+- dossiq/DqTeamwachtrij teamwachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqTeamwachtrij
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak

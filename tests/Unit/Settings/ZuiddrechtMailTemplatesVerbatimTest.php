@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-verbatim-fields/specs/example-sets/spec.md#requirement-a-declared-object-may-keep-fields-verbatim
+ * @spec openspec/specs/example-set-zuiddrecht-data/spec.md#requirement-mail-template-placeholders-are-kept-verbatim
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Template placeholders are kept verbatim.
  *
- * @spec openspec/changes/example-set-verbatim-fields/specs/example-sets/spec.md#requirement-a-declared-object-may-keep-fields-verbatim
+ * @spec openspec/specs/example-set-zuiddrecht-data/spec.md#requirement-mail-template-placeholders-are-kept-verbatim
  */
 class ZuiddrechtMailTemplatesVerbatimTest extends TestCase {
 

@@ -1,3 +1,3 @@
 # Screens
 
-- DqBerichtVersturen https://identity.conduction.nl/screens/board?id=dossiq/DqBerichtVersturen
+- dossiq/DqBerichtVersturen bericht via Berichtenbox https://identity.conduction.nl/screens/board?id=dossiq/DqBerichtVersturen

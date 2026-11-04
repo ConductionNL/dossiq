@@ -53,19 +53,43 @@ class LoadDefaultZgwMappingsGoldenTest extends TestCase {
 	}//end testEveryDefaultMappingMatchesTheRecording()
 
 	/**
+	 * Each resource reads its own schema setting, recorded with every schema setting set to a value of its own.
+	 *
+	 * @return void
+	 */
+	public function testEachResourceReadsItsOwnSchemaSetting(): void {
+		$keys = [
+			'abonnement_schema', 'case_document_schema', 'case_object_schema', 'case_property_schema', 'case_schema',
+			'case_type_schema', 'catalogus_schema', 'customer_contact_schema', 'decision_document_schema', 'decision_schema',
+			'decision_type_schema', 'dispatch_schema', 'document_link_schema', 'document_schema', 'document_type_schema',
+			'kanaal_schema', 'property_definition_schema', 'result_schema', 'result_type_schema', 'role_schema',
+			'role_type_schema', 'status_record_schema', 'status_type_schema', 'usage_rights_schema',
+			'zaaktype_informatieobjecttype_schema',
+		];
+		$sources = [];
+		foreach ($this->mappings(settings: array_combine($keys, array_map(static fn (string $k): string => 'schema-of-' . $k, $keys))) as $resource => $mapping) {
+			$sources[$resource] = array_intersect_key($mapping, array_flip(['sourceRegister', 'sourceSchema']));
+		}
+
+		$this->assertMatchesGolden(name: 'load-default-zgw-mappings/sources', value: $sources);
+	}//end testEachResourceReadsItsOwnSchemaSetting()
+
+	/**
 	 * The default mappings over fixed settings.
+	 *
+	 * @param array<string, string>|null $settings The settings to read, null for the fixed four.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function mappings(): array {
-		$settings = $this->createMock(originalClassName: SettingsService::class);
-		$settings->method('getSettings')->willReturn(
-			['register' => 'reg-1', 'case_schema' => 'case-s', 'case_type_schema' => 'ct-s', 'status_schema' => 'st-s']
+	private function mappings(?array $settings = null): array {
+		$service = $this->createMock(originalClassName: SettingsService::class);
+		$service->method('getSettings')->willReturn(
+			($settings ?? ['register' => 'reg-1', 'case_schema' => 'case-s', 'case_type_schema' => 'ct-s', 'status_schema' => 'st-s'])
 		);
 
 		$repair = new LoadDefaultZgwMappings(
 			zgwMappingService: $this->createMock(originalClassName: ZgwMappingService::class),
-			settingsService: $settings,
+			settingsService: $service,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
