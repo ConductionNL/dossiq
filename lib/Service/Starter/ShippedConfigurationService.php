@@ -97,6 +97,13 @@ class ShippedConfigurationService {
 	private ?ShippedLedgerTargets $targets = null;
 
 	/**
+	 * Takes the shipped version over a row, made on first use.
+	 *
+	 * @var ShippedRowAdopter|null
+	 */
+	private ?ShippedRowAdopter $adopter = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param StarterStore       $store       The OpenRegister seam.
@@ -414,22 +421,16 @@ class ShippedConfigurationService {
 		array $newShipped,
 		?string $version = null,
 	): array {
-		return $this->take(
-			targetSchema: $targetSchema,
-			objectsKey: $objectsKey,
-			targetObject: $targetObject,
-			set: $set,
-			newShipped: $newShipped,
-			overLocalChange: false,
-			version: $version,
-			rows: $this->store,
+		return $this->adopter()->take(
+			row: ['targetSchema' => $targetSchema, 'objectsKey' => $objectsKey, 'targetObject' => $targetObject, 'set' => $set, 'newShipped' => $newShipped],
+			how: ['overLocalChange' => false, 'version' => $version, 'rows' => $this->store],
 		);
 	}//end adopt()
 
 	/**
 	 * Bring the rows a set already had here up to the version it now ships.
 	 *
-	 * Each row goes through {@see self::refresh()}; a kept row is logged by id.
+	 * Each row goes through {@see ShippedRowAdopter::refresh()}; a kept row is logged by id.
 	 * A row of a seed file bound for another app's register (`ownRegister`) is
 	 * left as it is, because this ledger reads only dossiq's register.
 	 *
@@ -457,15 +458,15 @@ class ShippedConfigurationService {
 			}
 
 			$rowId = (string)$row['id'];
-			$result = $this->refresh(
-				targetSchema: (string)$row['schema'],
-				objectsKey: (string)$row['schemaKey'],
-				targetObject: $rowId,
-				set: $set,
-				newShipped: (array)$row['row'],
-				version: $version,
-				overLocalChange: $overLocalChanges,
-				rows: $system,
+			$result = $this->adopter()->refresh(
+				row: [
+					'targetSchema' => (string)$row['schema'],
+					'objectsKey' => (string)$row['schemaKey'],
+					'targetObject' => $rowId,
+					'set' => $set,
+					'newShipped' => (array)$row['row'],
+				],
+				how: ['overLocalChange' => $overLocalChanges, 'version' => $version, 'rows' => $system],
 			);
 
 			if ($result['outcome'] === self::REFRESH_DONE) {
@@ -485,75 +486,7 @@ class ShippedConfigurationService {
 		return $refresh;
 	}//end refreshRows()
 
-	/**
-	 * Bring one row a set wrote up to the version that set now ships.
-	 *
-	 * A row whose content already is what the set ships writes nothing. A row
-	 * another set or nobody shipped is kept. Otherwise an untouched row takes
-	 * the new version and is stamped with it; a row changed here is kept,
-	 * unless `$overLocalChange` asks for {@see self::adoptOverLocalChange()}.
-	 *
-	 * @param string               $targetSchema The row's schema, as the ledger records it.
-	 * @param string               $objectsKey   The app config key naming that schema.
-	 * @param string               $targetObject The row's id.
-	 * @param string               $set          The set that ships it.
-	 * @param array<string, mixed> $newShipped   The row as the set now ships it.
-	 * @param string               $version      The set's new version.
-	 * @param boolean              $overLocalChange Whether a row changed here takes the set's keys too.
-	 * @param StarterStore         $rows         The store the row is read from and written to.
-	 *
-	 * @return array{outcome: string, reason: string} `refreshed`, `unchanged` or `kept`, and why it was kept.
-	 *
-	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
-	 */
-	private function refresh(
-		string $targetSchema,
-		string $objectsKey,
-		string $targetObject,
-		string $set,
-		array $newShipped,
-		string $version,
-		bool $overLocalChange,
-		StarterStore $rows,
-	): array {
-		$current = $rows->row(configKey: $objectsKey, id: $targetObject);
-		if ($current === null) {
-			return ['outcome' => self::REFRESH_KEPT, 'reason' => 'not_found'];
-		}
 
-		if ($this->fingerprint->hashOf(object: $current) === $this->fingerprint->hashOf(object: $newShipped)) {
-			return ['outcome' => self::REFRESH_UNCHANGED, 'reason' => ''];
-		}
-
-		$state = $this->stateOf(
-			targetSchema: $targetSchema,
-			targetObject: $targetObject,
-			object: (new ShippedRowShape())->asWritten(object: $current, objectsKey: $objectsKey),
-			shippedKeys: array_map('strval', array_keys($newShipped)),
-		);
-		// A row the ledger does not know ('' as its set), under the id this set ships it by, was written before the
-		// ledger existed: an install over local changes takes it over, a plain install keeps it.
-		$adoptable = [$set, ...array_fill(0, (int) $overLocalChange, '')];
-		if (in_array($state['set'], $adoptable, true) === false) {
-			return ['outcome' => self::REFRESH_KEPT, 'reason' => 'not_shipped_by_this_set'];
-		}
-
-		$adopted = $this->take(
-			targetSchema: $targetSchema,
-			objectsKey: $objectsKey,
-			targetObject: $targetObject,
-			set: $set,
-			newShipped: $newShipped,
-			overLocalChange: $overLocalChange,
-			version: $version,
-			rows: $rows,
-		);
-		if ($adopted['adopted'] === true) {
-			return ['outcome' => self::REFRESH_DONE, 'reason' => ''];
-		}
-
-		return ['outcome' => self::REFRESH_KEPT, 'reason' => $adopted['reason']];
-	}//end refresh()
 
 	/**
 	 * Take the newer shipped version over a change somebody made here.
@@ -580,87 +513,13 @@ class ShippedConfigurationService {
 		string $set,
 		array $newShipped,
 	): array {
-		return $this->take(
-			targetSchema: $targetSchema,
-			objectsKey: $objectsKey,
-			targetObject: $targetObject,
-			set: $set,
-			newShipped: $newShipped,
-			overLocalChange: true,
-			version: null,
-			rows: $this->store,
+		return $this->adopter()->take(
+			row: ['targetSchema' => $targetSchema, 'objectsKey' => $objectsKey, 'targetObject' => $targetObject, 'set' => $set, 'newShipped' => $newShipped],
+			how: ['overLocalChange' => true, 'version' => null, 'rows' => $this->store],
 		);
 	}//end adoptOverLocalChange()
 
-	/**
-	 * What both adoptions do, with the one difference between them.
-	 *
-	 * @param string               $targetSchema    The object's schema slug.
-	 * @param string               $objectsKey      The app config key naming that schema.
-	 * @param string               $targetObject    The object's id.
-	 * @param string               $set             The set the newer version comes from.
-	 * @param array<string, mixed> $newShipped      The object as the newer set ships it.
-	 * @param boolean              $overLocalChange Whether a local change may go.
-	 * @param string|null          $version         The version to stamp; null to look it up in ShippedSets.
-	 * @param StarterStore         $rows            The store the row is read from and written to.
-	 *
-	 * @return array{adopted: bool, reason: string} What happened.
-	 */
-	private function take(
-		string $targetSchema,
-		string $objectsKey,
-		string $targetObject,
-		string $set,
-		array $newShipped,
-		bool $overLocalChange,
-		?string $version,
-		StarterStore $rows,
-	): array {
-		$current = $rows->row(configKey: $objectsKey, id: $targetObject);
-		if ($current === null) {
-			return ['adopted' => false, 'reason' => 'not_found'];
-		}
 
-		$current = (new ShippedRowShape())->asWritten(object: $current, objectsKey: $objectsKey);
-		$state = $this->stateOf(
-			targetSchema: $targetSchema,
-			targetObject: $targetObject,
-			object: $current,
-			shippedKeys: array_map('strval', array_keys($newShipped)),
-		);
-
-		if ($state['state'] === self::STATE_LOCAL && $overLocalChange === false) {
-			return ['adopted' => false, 'reason' => 'not_shipped'];
-		}
-
-		if ($state['state'] === self::STATE_CHANGED && $overLocalChange === false) {
-			return ['adopted' => false, 'reason' => 'changed_locally'];
-		}
-
-		// What the set ships wins; a key it does not ship keeps the value this
-		// instance holds, so a field somebody filled in here survives the write.
-		$payload = array_merge(
-			array_diff_key($current, array_flip(ShippedFingerprint::IGNORED)),
-			$newShipped
-		);
-		$payload['id'] = $targetObject;
-
-		$saved = $rows->save(configKey: $objectsKey, payload: $payload, id: $targetObject);
-		if ($saved === null) {
-			return ['adopted' => false, 'reason' => 'write_failed'];
-		}
-
-		$this->stamp(
-			set: $set,
-			targetSchema: $targetSchema,
-			targetObject: $targetObject,
-			object: (new ShippedRowShape())->asWritten(object: $saved, objectsKey: $objectsKey),
-			version: $version,
-			shipped: $newShipped,
-		);
-
-		return ['adopted' => true, 'reason' => ''];
-	}//end take()
 
 	/**
 	 * Whether a shipped object is untouched since its ledger stamp, as
@@ -717,6 +576,17 @@ class ShippedConfigurationService {
 
 		return $this->targets()->row(ledgerKey: self::LEDGER, targetSchema: $targetSchema, targetObject: $targetObject);
 	}//end ledgerRow()
+
+	/**
+	 * The adopter, over this service's ledger.
+	 *
+	 * @return ShippedRowAdopter The adopter.
+	 */
+	private function adopter(): ShippedRowAdopter {
+		$this->adopter ??= new ShippedRowAdopter(ledger: $this, fingerprint: $this->fingerprint);
+
+		return $this->adopter;
+	}//end adopter()
 
 	/**
 	 * The ledger's schema values, over this service's store.
