@@ -205,6 +205,7 @@ export default {
 			return templateFillRows(this.chosenTemplate?.fills, this.kase)
 		},
 
+		/** @spec openspec/specs/generate-fills-per-template/spec.md */
 		chosenTemplate() {
 			return this.templates.find((template) => template.id === this.templateId) ?? null
 		},

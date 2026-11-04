@@ -37,6 +37,7 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/specs/burger-notifications/spec.md */
 		drawnByDialog() {
 			return dialogDrawsNotices()
 		},

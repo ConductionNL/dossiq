@@ -179,14 +179,17 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/specs/advice-management/spec.md */
 		targetCaseId() {
 			return resolveCaseId(this.caseId, this.$route)
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		eyebrow() {
 			return caseEyebrow(t('dossiq', 'Advice'), this.kase)
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		kindOptions() {
 			return [
 				{ value: 'internal', label: t('dossiq', 'Internal') },
@@ -194,25 +197,30 @@ export default {
 			]
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		adviserId() {
 			return this.adviceKind === 'internal'
 				? String(this.adviser?.id ?? '')
 				: this.organisation.trim()
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		canSubmit() {
 			return !this.busy && this.targetCaseId !== '' && this.adviserId !== '' && this.deadline instanceof Date
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		notice() {
 			return this.error ? dialogNotice('error', t('dossiq', 'Advice not requested'), this.error) : null
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		noticeProps() {
 			return dialogNoticeProps(this.notice)
 		},
 	},
 
+	/** @spec openspec/specs/advice-management/spec.md */
 	mounted() {
 		fetchCaseSummary(this.targetCaseId).then((kase) => {
 			this.kase = kase
@@ -222,6 +230,13 @@ export default {
 	methods: {
 		t,
 
+		/**
+		 * Find internal advisers by what was typed.
+		 *
+		 * @param {string} term What was typed.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/advice-management/spec.md
+		 */
 		async onSearch(term) {
 			this.searching = true
 			this.found = await searchUsers(term)

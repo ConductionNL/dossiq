@@ -21,6 +21,7 @@ import { CnDialog } from '@conduction/nextcloud-vue'
  *
  * @param {object} [dialog] The dialog component, CnDialog by default.
  * @return {boolean} True once the library takes the prop.
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 export function dialogDrawsNotices(dialog = CnDialog) {
 	return Boolean(dialog?.props && Object.hasOwn(dialog.props, 'notices'))
@@ -33,6 +34,7 @@ export function dialogDrawsNotices(dialog = CnDialog) {
  * @param {string} title The bold first line.
  * @param {string} [text] The sentence under it.
  * @return {{variant: string, role: string, layout: string, title: string, text: string}} The notice.
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 export function dialogNotice(variant, title, text = '') {
 	return {
@@ -51,6 +53,7 @@ export function dialogNotice(variant, title, text = '') {
  * @param {object|null} notice The notice, or null for none.
  * @param {object} [dialog] The dialog component, CnDialog by default.
  * @return {object} The props.
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 export function dialogNoticeProps(notice, dialog = CnDialog) {
 	if (!dialogDrawsNotices(dialog)) {

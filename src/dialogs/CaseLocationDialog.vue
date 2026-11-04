@@ -169,6 +169,7 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/specs/bag-location-save-validation/spec.md */
 		noticeProps() {
 			return dialogNoticeProps(this.notice)
 		},

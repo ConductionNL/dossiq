@@ -17,6 +17,7 @@ import { dialogNotice } from './dialogNotice.js'
  *
  * @param {object|undefined} body The error response body.
  * @return {object} The notice.
+ * @spec openspec/specs/bag-location-save-validation/spec.md
  */
 export function locationSaveRefusal(body) {
 	const code = String(body?.code ?? '')

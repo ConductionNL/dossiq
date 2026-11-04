@@ -153,19 +153,23 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/specs/advice-management/spec.md */
 		targetAdviceId() {
 			return resolveCaseId(this.adviceId, this.$route)
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		targetCaseId() {
 			const given = String(this.caseId ?? '')
 			return given !== '' && !given.startsWith('@') ? given : ''
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		eyebrow() {
 			return caseEyebrow(t('dossiq', 'Advice'), this.kase)
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		subtitle() {
 			if (this.advisingBody !== '' && this.reference !== '') {
 				return t('dossiq', 'The form of the consulted department, here {department}, for {reference}.', { department: this.advisingBody, reference: this.reference })
@@ -173,6 +177,7 @@ export default {
 			return t('dossiq', 'The form of the consulted department.')
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		conclusions() {
 			return [
 				{ value: 'positive', label: t('dossiq', 'Positive') },
@@ -182,23 +187,28 @@ export default {
 			]
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		checklist() {
 			return this.conditions.filter((condition) => typeof condition === 'string' && condition.trim() !== '')
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		canSubmit() {
 			return !this.busy && this.targetAdviceId !== '' && this.conclusion !== '' && this.summary.trim() !== ''
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		notice() {
 			return this.error ? dialogNotice('error', t('dossiq', 'Advice not sent'), this.error) : null
 		},
 
+		/** @spec openspec/specs/advice-management/spec.md */
 		noticeProps() {
 			return dialogNoticeProps(this.notice)
 		},
 	},
 
+	/** @spec openspec/specs/advice-management/spec.md */
 	mounted() {
 		if (this.targetCaseId !== '') {
 			fetchCaseSummary(this.targetCaseId).then((kase) => {
@@ -210,6 +220,13 @@ export default {
 	methods: {
 		t,
 
+		/**
+		 * Tick or untick one condition.
+		 *
+		 * @param {string} condition The condition.
+		 * @param {boolean} on Whether it is checked.
+		 * @spec openspec/specs/advice-management/spec.md
+		 */
 		toggle(condition, on) {
 			this.checked = on
 				? [...new Set([...this.checked, condition])]

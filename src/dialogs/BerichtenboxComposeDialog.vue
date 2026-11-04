@@ -255,6 +255,7 @@ export default {
 			return this.sendError ? dialogNotice('error', this.sendError) : null
 		},
 
+		/** @spec openspec/specs/burger-notifications/spec.md */
 		noticeProps() {
 			return dialogNoticeProps(this.sendNotice)
 		},

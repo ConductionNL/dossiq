@@ -20,6 +20,7 @@ const SHARE_TYPE_USER = 0
  *
  * @param {string} term What was typed.
  * @return {Promise<Array<{id: string, label: string}>>} The users.
+ * @spec openspec/specs/advice-management/spec.md
  */
 export async function searchUsers(term) {
 	const search = String(term ?? '').trim()
