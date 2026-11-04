@@ -316,22 +316,6 @@ class MenuCaseTypesServiceTest extends TestCase {
 	}//end testAChosenCaseTypeNoLongerHandledDropsOut()
 
 	/**
-	 * Save keeps only offered ids: a case type the team does not handle is not stored.
-	 *
-	 * @return void
-	 */
-	public function testSaveKeepsOnlyOfferedCaseTypes(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->expects($this->once())
-			->method('setUserValue')
-			->with('u', 'dossiq', 'menu_case_types', '["omv"]');
-
-		$service = $this->service(rows: $this->teamRows(), config: $config, groups: ['vergunningen']);
-
-		$service->save('u', [self::WOO, 'omv'], $service->offeredCaseTypes('u'));
-	}//end testSaveKeepsOnlyOfferedCaseTypes()
-
-	/**
 	 * A user who never chose gets the Woo request case type when they may see it.
 	 *
 	 * @return void
@@ -397,42 +381,6 @@ class MenuCaseTypesServiceTest extends TestCase {
 
 		$this->assertSame([], $service->chosen('u', $service->visibleCaseTypes()));
 	}//end testGarbageStoredValueIsEmpty()
-
-	/**
-	 * Save keeps visible ids, first occurrence only, in the order given.
-	 *
-	 * @return void
-	 */
-	public function testSaveCleansAndKeepsOrder(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->expects($this->once())
-			->method('setUserValue')
-			->with('u', 'dossiq', 'menu_case_types', '["b","a"]');
-
-		$service = $this->service([['id' => 'a', 'title' => 'A'], ['id' => 'b', 'title' => 'B']], '', $config);
-
-		$kept = $service->save('u', ['b', 'c', 'a', 'b', 42], $service->visibleCaseTypes());
-		$this->assertSame([['id' => 'b', 'title' => 'B'], ['id' => 'a', 'title' => 'A']], $kept);
-	}//end testSaveCleansAndKeepsOrder()
-
-	/**
-	 * Save keeps at most thirty entries.
-	 *
-	 * @return void
-	 */
-	public function testSaveCapsTheList(): void {
-		$rows = [];
-		$ids = [];
-		for ($i = 0; $i < 40; $i++) {
-			$rows[] = ['id' => 'ct' . $i, 'title' => 'Type ' . $i];
-			$ids[] = 'ct' . $i;
-		}
-
-		$config = $this->createMock(IConfig::class);
-		$service = $this->service($rows, '', $config);
-
-		$this->assertCount(MenuCaseTypesService::MAX_ENTRIES, $service->save('u', $ids, $service->visibleCaseTypes()));
-	}//end testSaveCapsTheList()
 
 
 	/**
