@@ -2,6 +2,7 @@
     "translations": {
         " and ": " and ",
         " days": " days",
+        "\"%s\" is not a time zone dossiq can use.": "\"%s\" is not a time zone dossiq can use.",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} but has no weigeringsgrond selected.",
         "#": "#",
         "%1$d documents to review in the batch \"%2$s\".": "%1$d documents to review in the batch \"%2$s\".",
@@ -4366,6 +4367,7 @@
         "In progress": "In progress",
         "In review": "In review",
         "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.": "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.",
+        "In sight": "In sight",
         "In sight within (days)": "In sight within (days)",
         "In status": "In status",
         "In statuses": "In statuses",
@@ -10352,6 +10354,7 @@
         "This template is gone, or you may not use it. Pick another one or fill in the plan yourself.": "This template is gone, or you may not use it. Pick another one or fill in the plan yourself.",
         "This transfer link is invalid, expired or already resolved.": "This transfer link is invalid, expired or already resolved.",
         "This value does not fit this field.": "This value does not fit this field.",
+        "This value is not allowed (%s).": "This value is not allowed (%s).",
         "This value is not shown.": "This value is not shown.",
         "This version is already published": "This version is already published",
         "This version of the case type has been replaced. Cases already running on it continue. New cases go on the current version.": "This version of the case type has been replaced. Cases already running on it continue. New cases go on the current version.",

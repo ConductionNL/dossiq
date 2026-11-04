@@ -60,7 +60,14 @@ class QueueUrgencySettingsTest extends TestCase {
 	 */
 	public function testNothingStoredReadsAsTheDefaults(): void {
 		$this->assertSame(
-			['criticalDays' => 3, 'warningDays' => 7, 'priorityWeight' => 10.0, 'idleWeight' => 0.5],
+			[
+				'criticalDays' => 3,
+				'warningDays' => 7,
+				'priorityWeight' => 10.0,
+				'idleWeight' => 0.5,
+				'inSightDays' => 10,
+				'residentWaitWeight' => 5.0,
+			],
 			$this->read(config: [])->toArray()
 		);
 	}//end testNothingStoredReadsAsTheDefaults()
@@ -77,10 +84,22 @@ class QueueUrgencySettingsTest extends TestCase {
 				'queue_warning_days' => '10',
 				'queue_priority_weight' => '20',
 				'queue_idle_weight' => '1.25',
+				'queue_in_sight_days' => '14',
+				'queue_resident_wait_weight' => '7.5',
 			]
 		);
 
-		$this->assertSame(['criticalDays' => 5, 'warningDays' => 10, 'priorityWeight' => 20.0, 'idleWeight' => 1.25], $profile->toArray());
+		$this->assertSame(
+			[
+				'criticalDays' => 5,
+				'warningDays' => 10,
+				'priorityWeight' => 20.0,
+				'idleWeight' => 1.25,
+				'inSightDays' => 14,
+				'residentWaitWeight' => 7.5,
+			],
+			$profile->toArray()
+		);
 	}//end testStoredValuesAreRead()
 
 	/**
@@ -107,10 +126,22 @@ class QueueUrgencySettingsTest extends TestCase {
 				'queue_warning_days' => '500',
 				'queue_priority_weight' => '80',
 				'queue_idle_weight' => '9',
+				'queue_in_sight_days' => '900',
+				'queue_resident_wait_weight' => '-3',
 			]
 		);
 
-		$this->assertSame(['criticalDays' => 0, 'warningDays' => 120, 'priorityWeight' => 50.0, 'idleWeight' => 1.5], $profile->toArray());
+		$this->assertSame(
+			[
+				'criticalDays' => 0,
+				'warningDays' => 120,
+				'priorityWeight' => 50.0,
+				'idleWeight' => 1.5,
+				'inSightDays' => 180,
+				'residentWaitWeight' => 0.0,
+			],
+			$profile->toArray()
+		);
 	}//end testOutOfBoundsValuesAreClamped()
 
 	/**

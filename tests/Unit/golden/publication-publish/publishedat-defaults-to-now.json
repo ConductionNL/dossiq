@@ -45,6 +45,14 @@
                 "case"
             ],
             [
+                "getConfigValue",
+                "publication_date_rule"
+            ],
+            [
+                "getConfigValue",
+                "publication_template"
+            ],
+            [
                 "dispatchTyped",
                 "OCA\\Integriq\\Event\\DeliveryRequestedEvent"
             ],
@@ -88,6 +96,7 @@
                 "channel": "pdc",
                 "publishedAt": "<now>",
                 "notes": null,
+                "template": "",
                 "besluitDocument": "doc-7",
                 "identifier": "Z-2026-0042"
             },

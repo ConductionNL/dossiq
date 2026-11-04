@@ -18,5 +18,11 @@
 - [x] 1.6 Case types list: All / Published / Draft with counts, All versions last (DqZaaktypen)
   - Files: src/manifest.json
   - Test: tests/vitest/caseTypeAuthoringManifest.spec.js
-- [ ] 2.1 Backend: the new config keys saved and read (queue_in_sight_days, queue_resident_wait_weight, timezone, date_format, feature_new_case_page, publication_template, publication_date_rule)
+- [x] 2.1 Backend: the new config keys saved and read (queue_in_sight_days, queue_resident_wait_weight, timezone, date_format, feature_new_case_page, publication_template, publication_date_rule)
+  - Files: lib/Service/Settings/ConfigKeys.php, lib/Service/Settings/SettingValueRules.php, lib/Service/Queue/*, lib/Service/CaseDateNormaliser.php, lib/Listener/DisplaySettingsInitialStateListener.php, lib/Service/PublicationService.php, lib/Service/Publication/PublicationDateRule.php
+  - Test: tests/Unit/Service/Settings/SettingValueRulesTest.php, tests/Unit/Service/Queue/*, tests/Unit/Listener/DisplaySettingsInitialStateListenerTest.php, tests/Unit/Service/Publication/PublicationDateRuleTest.php
+- [x] 2.3 Backend: a case type a package placed carries `shipped` and `package`; a copy does not
+  - Files: lib/Settings/dossiq_register.json, lib/Service/CaseDefinition/PackageWriter.php, lib/Service/CaseType/DerivedCaseTypePayload.php
+  - Test: tests/Unit/Service/CaseDefinition/PackageWriterGoldenTest.php, tests/Unit/Service/CaseType/DerivedCaseTypePayloadTest.php
+- [ ] 2.4 Case types list: the quick filter Shipped and the row line Shipped / Own, once 2.3 is on the instance
 - [ ] 2.2 OpenRegister: rows in the tables and in the index, what a run indexed, and a POST that queues a maintenance run

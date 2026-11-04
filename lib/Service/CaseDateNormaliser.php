@@ -421,14 +421,15 @@ class CaseDateNormaliser {
 	}//end engineCalendarZone()
 
 	/**
-	 * The zone this tenant administers.
+	 * The zone this tenant administers, or the app's own `timezone` setting
+	 * when no tenant is bound.
 	 *
 	 * @return string|null The IANA identifier, or null.
 	 */
 	private function tenantZone(): ?string {
 		try {
 			if ($this->tenantContext->isBound() === false) {
-				return null;
+				return $this->acceptZone(identifier: $this->settingsService->getConfigValue('timezone', ''));
 			}
 
 			$config = $this->tenantConfiguration->getConfig($this->tenantContext->getTenantId());

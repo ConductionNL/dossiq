@@ -46,7 +46,14 @@ class UrgencyScorer {
 	private const DEADLINE_TIER_OVERDUE = 'overdue';
 	private const DEADLINE_TIER_CRITICAL = 'critical';
 	private const DEADLINE_TIER_WARNING = 'warning';
+	private const DEADLINE_TIER_IN_SIGHT = 'inSight';
 	private const DEADLINE_TIER_NORMAL = 'normal';
+
+	/**
+	 * What the priority, idle and resident wait parts may add together, so
+	 * the tier still decides first.
+	 */
+	private const MAX_EXTRA_POINTS = 249.0;
 
 	/**
 	 * Base score per deadline tier. Higher tiers score higher; the deadline
@@ -61,6 +68,9 @@ class UrgencyScorer {
 		self::DEADLINE_TIER_OVERDUE => 1000.0,
 		self::DEADLINE_TIER_CRITICAL => 750.0,
 		self::DEADLINE_TIER_WARNING => 500.0,
+		// In sight is a grey label inside the normal band: it names the term
+		// coming up without moving it ahead of anything.
+		self::DEADLINE_TIER_IN_SIGHT => 250.0,
 		self::DEADLINE_TIER_NORMAL => 250.0,
 	];
 
@@ -194,6 +204,32 @@ class UrgencyScorer {
 	}//end scoreItem()
 
 	/**
+	 * A scored item with the resident wait part added while the case waits on
+	 * the resident (`waitingOnApplicant`), capped so the tier still decides first.
+	 *
+	 * @param array<string, mixed> $scoring The result of {@see scoreItem()}.
+	 * @param bool                 $waiting Whether the case waits on the resident.
+	 * @param UrgencyProfile       $profile The weights.
+	 *
+	 * @return array<string, mixed> The result, with `scoreBreakdown.residentWait`.
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
+	 */
+	public function withResidentWait(array $scoring, bool $waiting, UrgencyProfile $profile): array {
+		$breakdown = $scoring['scoreBreakdown'];
+		$part = 0.0;
+		if ($waiting === true) {
+			$room = (self::MAX_EXTRA_POINTS - $breakdown['priority'] - $breakdown['idle']);
+			$part = max(0.0, min($profile->residentWaitWeight(), $room));
+		}
+
+		$scoring['scoreBreakdown']['residentWait'] = round($part, 2);
+		$scoring['score'] = round(((float)$scoring['score'] + $part), 2);
+
+		return $scoring;
+	}//end withResidentWait()
+
+	/**
 	 * Determine the deadline tier for a given business-day offset.
 	 *
 	 * @param int $daysUntilDeadline Signed business-day offset (negative = overdue).
@@ -214,6 +250,10 @@ class UrgencyScorer {
 
 		if ($daysUntilDeadline <= $profile->warningDays) {
 			return self::DEADLINE_TIER_WARNING;
+		}
+
+		if ($daysUntilDeadline <= $profile->inSightDays()) {
+			return self::DEADLINE_TIER_IN_SIGHT;
 		}
 
 		return self::DEADLINE_TIER_NORMAL;

@@ -3,6 +3,7 @@ OC.L10N.register(
     {
         " and ": " en ",
         " days": " dagen",
+        "\"%s\" is not a time zone dossiq can use.": "\"%s\" is geen tijdzone die dossiq kan gebruiken.",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} maar heeft geen weigeringsgrond geselecteerd.",
         "#": "#",
         "%1$d documents to review in the batch \"%2$s\".": "%1$d documenten te beoordelen in de partij \"%2$s\".",
@@ -4262,6 +4263,7 @@ OC.L10N.register(
         "In progress": "In behandeling",
         "In review": "In beoordeling",
         "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.": "In zeven stappen registreer je je eerste zaak en zie je waar die terechtkomt. De zaak die je opslaat is een echte registratie, geen demo.",
+        "In sight": "In zicht",
         "In sight within (days)": "In zicht binnen (dagen)",
         "In status": "In status",
         "In statuses": "In statussen",
@@ -10248,6 +10250,7 @@ OC.L10N.register(
         "This template is gone, or you may not use it. Pick another one or fill in the plan yourself.": "Dit sjabloon bestaat niet meer, of je mag het niet gebruiken. Kies een ander sjabloon of vul het plan zelf in.",
         "This transfer link is invalid, expired or already resolved.": "Deze overdrachtslink is ongeldig, verlopen of al afgehandeld.",
         "This value does not fit this field.": "Deze waarde past niet in dit veld.",
+        "This value is not allowed (%s).": "Deze waarde is niet toegestaan (%s).",
         "This value is not shown.": "Deze waarde wordt niet getoond.",
         "This version is already published": "Deze versie is al gepubliceerd",
         "This version of the case type has been replaced. Cases already running on it continue. New cases go on the current version.": "Deze versie van het zaaktype is vervangen. Zaken die er al op lopen gaan door. Nieuwe zaken komen op de huidige versie.",

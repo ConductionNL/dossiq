@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\DisplaySettingsInitialStateListener;
 use OCA\Dossiq\Listener\RolePermissionsInitialStateListener;
 use OCA\Dossiq\Listener\SupportNoteInitialStateListener;
 use OCA\Dossiq\Listener\WalkthroughSeenInitialStateListener;
@@ -56,6 +57,10 @@ class OnboardingListenerRegistrar {
 		$context->registerEventListener(
 			event: BeforeTemplateRenderedEvent::class,
 			listener: RolePermissionsInitialStateListener::class
+		);
+		$context->registerEventListener(
+			event: BeforeTemplateRenderedEvent::class,
+			listener: DisplaySettingsInitialStateListener::class
 		);
 	}//end register()
 }//end class

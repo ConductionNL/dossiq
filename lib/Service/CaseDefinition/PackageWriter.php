@@ -153,6 +153,7 @@ class PackageWriter {
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
 	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
 	 */
 	public function writePackage(string $package, array $groups): array {
 		$target = $this->target(strategy: self::STRATEGY_SKIP);
@@ -160,7 +161,16 @@ class PackageWriter {
 			return $this->packageFailure(message: "Package '{$package}' was not installed: this instance has no OpenRegister register configured.");
 		}
 
-		$run = ['target' => $target, 'written' => [], 'skipped' => [], 'adopted' => [], 'held' => [], 'ids' => [], 'caseTypes' => []];
+		$run = [
+			'target' => $target,
+			'package' => $package,
+			'written' => [],
+			'skipped' => [],
+			'adopted' => [],
+			'held' => [],
+			'ids' => [],
+			'caseTypes' => [],
+		];
 
 		try {
 			foreach ($groups as $group) {
@@ -265,10 +275,12 @@ class PackageWriter {
 	private function writeGroup(array $group, array &$run): void {
 		$target = $this->groupTarget(base: $run['target'], group: $group);
 		foreach ($group['rows'] as $row) {
-			$this->placeRow(
-				placement: ['group' => $group, 'target' => $target, 'row' => $this->pointedAtAdopted(row: $row, ids: $run['ids'])],
-				run: $run
-			);
+			$row = $this->pointedAtAdopted(row: $row, ids: $run['ids']);
+			if (($group['schemaKey'] ?? '') === ExistingRowMatcher::CASE_TYPE_KEY && ($group['schema'] ?? null) === null) {
+				$row += ['shipped' => true, 'package' => (string)($run['package'] ?? '')];
+			}
+
+			$this->placeRow(placement: ['group' => $group, 'target' => $target, 'row' => $row], run: $run);
 		}
 	}//end writeGroup()
 

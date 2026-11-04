@@ -299,7 +299,7 @@ export default {
 
 	/**
 	 * The urgency tier of a work queue row as its pill reads ("Late",
-	 * "Critical", "Soon", "Normal"); '' for an unknown tier.
+	 * "Critical", "Soon", "In sight", "Normal"); '' for an unknown tier.
 	 *
 	 * @param {string} value The row's `deadlineTier`.
 	 * @return {string}
@@ -310,6 +310,7 @@ export default {
 			overdue: t('dossiq', 'Late'),
 			critical: t('dossiq', 'Critical'),
 			warning: t('dossiq', 'Soon'),
+			inSight: t('dossiq', 'In sight'),
 			normal: t('dossiq', 'Normal'),
 		}
 		return labels[value] ?? ''

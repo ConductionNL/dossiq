@@ -1598,7 +1598,9 @@
                         "id": "ct-1",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     }
                 },
                 {
@@ -1699,7 +1701,9 @@
                     "object": {
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "register": "dossiq",
                     "schema": "caseType",
@@ -1860,7 +1864,9 @@
                     "row": {
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "ownRegister": false
                 },
@@ -1960,7 +1966,9 @@
                         "id": "ct-1",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     }
                 }
             ],
@@ -2017,7 +2025,9 @@
                     "object": {
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "register": "dossiq",
                     "schema": "caseType",
@@ -2117,7 +2127,9 @@
                     "object": {
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "register": "dossiq",
                     "schema": "caseType",
@@ -2248,7 +2260,9 @@
                     "object": {
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "register": "dossiq",
                     "schema": "caseType",
@@ -2372,10 +2386,14 @@
                         "id": "ct-old",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "fill": {
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     }
                 },
                 {
@@ -2513,9 +2531,14 @@
                     "row": {
                         "id": "ct-old",
                         "identifier": "melding",
-                        "title": "Melding"
+                        "title": "Melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
-                    "fill": []
+                    "fill": {
+                        "shipped": true,
+                        "package": "jeugdwet"
+                    }
                 }
             ],
             "held": []
@@ -2585,10 +2608,14 @@
                         "id": "ct-old",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "D"
+                        "description": "D",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "fill": {
-                        "description": "D"
+                        "description": "D",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     }
                 }
             ],
@@ -2673,11 +2700,15 @@
                         "id": "ct-a",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "fill": {
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     }
                 }
             ],
@@ -2733,7 +2764,9 @@
                         "id": "ct-1",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     }
                 }
             ],
@@ -2779,7 +2812,9 @@
                     "object": {
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "register": "dossiq",
                     "schema": "caseType",
@@ -3072,7 +3107,9 @@
                         "id": "ct-1",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     }
                 },
                 {
@@ -3151,7 +3188,9 @@
                     "object": {
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding"
+                        "description": "Een melding",
+                        "shipped": true,
+                        "package": "jeugdwet"
                     },
                     "register": "dossiq",
                     "schema": "caseType",
