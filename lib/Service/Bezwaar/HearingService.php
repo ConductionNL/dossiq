@@ -80,6 +80,16 @@ class HearingService {
 	];
 
 	/**
+	 * The lifecycle field a created session is moved along, by event; '' for none.
+	 *
+	 * A waived hearing is born past the schema's initial state.
+	 */
+	private const BORN_PAST_INITIAL = [
+		'hearing-scheduled' => '',
+		'hearing-waived' => 'status',
+	];
+
+	/**
 	 * The invitee a seeded default hearing is created with.
 	 */
 	private const SEED_INVITEES = [
@@ -213,7 +223,6 @@ class HearingService {
 					'reason' => $reason,
 				],
 				tag: self::TAG_WAIVER,
-				lifecycleField: 'status',
 			)
 		);
 	}//end waive()
@@ -506,7 +515,12 @@ class HearingService {
 		try {
 			$saved = $this->createThenMove(
 				objectService: $store->objectService,
-				write: ['register' => $store->register, 'schema' => $store->schema, 'object' => $session->record, 'field' => $session->lifecycleField]
+				write: [
+					'register' => $store->register,
+					'schema' => $store->schema,
+					'object' => $session->record,
+					'field' => self::BORN_PAST_INITIAL[$session->event],
+				]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
