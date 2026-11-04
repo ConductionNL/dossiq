@@ -226,4 +226,48 @@ class CaseTemplateTest extends TestCase {
 		self::assertSame(expected: 'st-intake', actual: $register->row('case', (string)$result['case']['id'])['status']);
 		self::assertSame(expected: 'st-review', actual: $register->row('case', 'tpl-1')['status']);
 	}//end testACaseStartedFromATemplateOpensInItsTypesInitialStatus()
+
+	/**
+	 * A status the handler sends reaches the register and is judged there: the
+	 * type's initial status is accepted, any other one is refused.
+	 *
+	 * @return void
+	 */
+	public function testAStatusTheHandlerSendsIsJudgedByTheRegister(): void {
+		$register  = new LifecycleRegister();
+		$harness   = new StarterStoreHarness(test: $this, register: $register);
+		$templates = new CaseTemplateService($harness->store, new NullLogger());
+		$harness->seed(schema: 'caseType', uuid: 'ct-vth', row: ['initialStatus' => 'st-intake']);
+		$harness->seed(schema: 'case', uuid: 'tpl-1', row: ['isTemplate' => true, 'title' => 'Sloopmelding', 'caseType' => 'ct-vth']);
+
+		$refused  = $templates->startFrom(templateId: 'tpl-1', overrides: ['status' => 'st-review']);
+		$accepted = $templates->startFrom(templateId: 'tpl-1', overrides: ['status' => 'st-intake']);
+
+		self::assertSame(expected: ['ok' => false, 'reason' => 'write_failed', 'case' => []], actual: $refused);
+		self::assertTrue(condition: $accepted['ok']);
+		self::assertSame(expected: 'st-intake', actual: $register->row('case', (string)$accepted['case']['id'])['status']);
+		self::assertCount(expectedCount: 2, haystack: $register->all('case'));
+	}//end testAStatusTheHandlerSendsIsJudgedByTheRegister()
+
+	/**
+	 * An id the handler sends opens a new case and leaves the case it names as it was.
+	 *
+	 * @return void
+	 */
+	public function testAForgedIdInTheOverridesDoesNotTouchTheNamedCase(): void {
+		$register  = new LifecycleRegister();
+		$harness   = new StarterStoreHarness(test: $this, register: $register);
+		$templates = new CaseTemplateService($harness->store, new NullLogger());
+		$harness->seed(schema: 'case', uuid: 'tpl-1', row: ['isTemplate' => true, 'title' => 'Sloopmelding', 'caseType' => 'ct-vth']);
+		$harness->seed(schema: 'case', uuid: 'victim-1', row: ['title' => 'Andermans zaak', 'caseType' => 'ct-other']);
+
+		$result = $templates->startFrom(
+			templateId: 'tpl-1',
+			overrides: ['id' => 'victim-1', 'uuid' => 'victim-1', '@self' => ['id' => 'victim-1'], 'title' => 'Overgenomen'],
+		);
+
+		self::assertTrue(condition: $result['ok']);
+		self::assertNotSame(expected: 'victim-1', actual: $result['case']['id']);
+		self::assertSame(expected: ['title' => 'Andermans zaak', 'caseType' => 'ct-other', 'id' => 'victim-1'], actual: $register->row('case', 'victim-1'));
+	}//end testAForgedIdInTheOverridesDoesNotTouchTheNamedCase()
 }//end class

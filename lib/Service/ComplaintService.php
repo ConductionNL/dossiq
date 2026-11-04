@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Term\TermResolution;
@@ -156,6 +157,7 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function createComplaint(array $data): array {
+		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$this->validateRequired(data: $data, required: ['subject', 'description', 'receiptDate']);
 
 		$objectService = $this->settingsService->getObjectService();

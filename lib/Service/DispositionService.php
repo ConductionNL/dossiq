@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -132,6 +133,7 @@ class DispositionService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	private function createDisposition(string $complaintId, array $data, string $approval): array {
+		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$this->validateDisposition(data: $data);
 
 		$objectService = $this->settingsService->getObjectService();

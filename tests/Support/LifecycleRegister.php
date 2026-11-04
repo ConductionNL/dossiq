@@ -12,6 +12,12 @@
  * unless a declared transition allows the move. A schema without transitions
  * leaves its moves to the app, as OpenRegister does.
  *
+ * A create whose payload carries `@self.id` or `id` writes that object, as
+ * OpenRegister's saveObject() does, so a forged id shows up as an update.
+ * `patchObject()` reads, merges and saves as OpenRegister's does, and a schema
+ * listed in `callerMayOnlyCreate` refuses the caller every update and delete
+ * that is not run with `_rbac: false`.
+ *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Support
  *
@@ -60,6 +66,27 @@ class LifecycleRegister extends RefusableRegister {
 	public bool $judgesMoves = true;
 
 	/**
+	 * Schemas whose objects the caller may create but not update or delete.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $callerMayOnlyCreate = [];
+
+	/**
+	 * How many writes came through patchObject().
+	 *
+	 * @var int
+	 */
+	public int $patches = 0;
+
+	/**
+	 * Every delete, as `schema/uuid`.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $deletes = [];
+
+	/**
 	 * Save one row, judged against the schema's declared lifecycle.
 	 *
 	 * @param array<string, mixed> $object        The row.
@@ -81,13 +108,19 @@ class LifecycleRegister extends RefusableRegister {
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$uuid ??= $this->payloadId(object: $object);
+		$stored  = [];
+		if ($uuid !== null) {
+			$stored = $this->row(schema: (string)$schema, uuid: $uuid);
+		}
+
+		if ($stored !== [] && $_rbac === true && in_array((string)$schema, $this->callerMayOnlyCreate, true) === true) {
+			throw new RuntimeException("The caller may not update objects in schema '" . (string)$schema . "'.");
+		}
+
 		$configuration = (self::configurations()[(string)$schema] ?? []);
 		$lifecycle     = ($configuration['x-openregister-lifecycle'] ?? null);
 		if (is_array($lifecycle) === true) {
-			$stored = [];
-			if ($uuid !== null) {
-				$stored = $this->row(schema: (string)$schema, uuid: $uuid);
-			}
 
 			if ($stored === []) {
 				$object = $this->judgeCreate(schema: (string)$schema, object: $object);
@@ -98,6 +131,76 @@ class LifecycleRegister extends RefusableRegister {
 
 		return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac, _multitenancy: $_multitenancy);
 	}//end saveObject()
+
+	/**
+	 * Merge fields onto a stored object and save it, as ObjectService::patchObject() does.
+	 *
+	 * @param string               $objectId      The uuid.
+	 * @param array<string, mixed> $data          The fields to change.
+	 * @param int|string|null      $register      The register.
+	 * @param int|string|null      $schema        The schema slug.
+	 * @param bool                 $_rbac         Whether the caller's rights apply.
+	 * @param bool                 $_multitenancy Passed on.
+	 *
+	 * @return array<string, mixed> The saved row.
+	 *
+	 * @throws RuntimeException When there is no such object, or the save is refused.
+	 */
+	public function patchObject(
+		string $objectId,
+		array $data,
+		int|string|null $register = null,
+		int|string|null $schema = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): array {
+		$this->patches += 1;
+		$stored = $this->row(schema: (string)$schema, uuid: $objectId);
+		if ($stored === []) {
+			throw new RuntimeException('No object ' . $objectId . ' to patch.');
+		}
+
+		return $this->saveObject(object: array_merge($stored, $data), register: (string)$register, schema: (string)$schema, uuid: $objectId, _rbac: $_rbac, _multitenancy: $_multitenancy);
+	}//end patchObject()
+
+	/**
+	 * Remove one object, refused to the caller on a schema it may only create in.
+	 *
+	 * @param int|string $register      The register.
+	 * @param int|string $schema        The schema slug.
+	 * @param string     $uuid          The uuid.
+	 * @param bool       $_rbac         Whether the caller's rights apply.
+	 * @param bool       $_multitenancy Passed on.
+	 *
+	 * @return bool True when a row was removed.
+	 *
+	 * @throws RuntimeException When the caller may not delete in the schema.
+	 */
+	public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = '', bool $_rbac = true, bool $_multitenancy = true): bool {
+		if ($_rbac === true && in_array((string)$schema, $this->callerMayOnlyCreate, true) === true) {
+			throw new RuntimeException("The caller may not delete objects in schema '" . (string)$schema . "'.");
+		}
+
+		$this->deletes[] = (string)$schema . '/' . $uuid;
+
+		return parent::deleteObject(register: $register, schema: $schema, uuid: $uuid);
+	}//end deleteObject()
+
+	/**
+	 * The object a payload names, as OpenRegister reads it: `@self.id`, else `id`.
+	 *
+	 * @param array<string, mixed> $object The payload.
+	 *
+	 * @return string|null The uuid, or null when it names none.
+	 */
+	private function payloadId(array $object): ?string {
+		$named = trim((string)($object['@self']['id'] ?? ($object['id'] ?? '')));
+		if ($named === '') {
+			return null;
+		}
+
+		return $named;
+	}//end payloadId()
 
 	/**
 	 * The new row with its initial state filled in, or a refusal.

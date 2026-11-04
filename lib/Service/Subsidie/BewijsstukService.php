@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
@@ -178,6 +179,7 @@ class BewijsstukService {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-007-bewijsstukken-management-with-bewaartermijn
 	 */
 	public function create(array $payload, ?string $contents = null, ?int $regelingRetention = null): array {
+		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		$linkedIn = (string)($payload['linkedIn'] ?? '');
 		$type = (string)($payload['evidenceType'] ?? '');
 		if ($this->isTypeAllowed(linkedIn: $linkedIn, type: $type) === false) {

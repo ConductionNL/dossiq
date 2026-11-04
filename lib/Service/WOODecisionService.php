@@ -168,7 +168,7 @@ class WOODecisionService {
 				'assessmentCount' => $record['assessmentCount'],
 				'decidedBy' => $userId,
 			],
-			$decisionData,
+			array_diff_key($decisionData, ['id' => true, 'uuid' => true, '@self' => true]),
 		);
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);

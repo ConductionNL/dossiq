@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -137,6 +138,7 @@ class BeschikkingService {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-001-multi-year-beschikking-with-voorschot-schema
 	 */
 	public function createDraft(string $requestId, array $payload, int $sequence): array {
+		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		$this->assertDraftValid(payload: $payload);
 		[$objectService, $register, $schema] = $this->resolve();
 

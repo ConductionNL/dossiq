@@ -52,6 +52,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -266,7 +267,7 @@ class IntakeFanOut {
 
 		// Each destination's case opens in its own case type's initial status,
 		// which OpenRegister fills in; a status the submission names is not it.
-		unset($submission['status']);
+		$submission = array_diff_key($submission, CallerIdentity::KEYS + ['status' => true]);
 		$payload = array_merge(
 			$submission,
 			[

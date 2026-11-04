@@ -52,6 +52,12 @@ class WOODocumentAssessmentService {
 	use SearchesObjects;
 
 	/**
+	 * The keys that name a stored object, dropped from each caller assessment
+	 * (Support\CallerIdentity::KEYS, written out to keep this class's coupling down).
+	 */
+	private const CALLER_IDENTITY = ['id' => true, 'uuid' => true, '@self' => true];
+
+	/**
 	 * The settled list of Woo refusal grounds.
 	 *
 	 * @var WooRefusalGrounds
@@ -144,7 +150,7 @@ class WOODocumentAssessmentService {
 		$judged = [];
 
 		foreach ($assessments as $assessment) {
-			$unseen = [];
+			[$assessment, $unseen] = [array_diff_key((array)$assessment, self::CALLER_IDENTITY), []];
 			if ($this->reviews !== null) {
 				$unseen = $this->reviews->pages()->refusalFor(caseId: $caseId, assessment: $assessment);
 			}

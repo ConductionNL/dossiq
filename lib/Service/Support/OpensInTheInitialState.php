@@ -59,7 +59,7 @@ trait OpensInTheInitialState {
 	 * @spec openspec/specs/bezwaar-hearing/spec.md#requirement-hearing-waiver-afzien-van-hoorrecht
 	 */
 	protected function createThenMove(object $objectService, array $write): array {
-		$object = (array)$write['object'];
+		$object = array_diff_key((array)$write['object'], CallerIdentity::KEYS);
 		$field  = (string)$write['field'];
 		$state  = ($object[$field] ?? null);
 		unset($object[$field]);

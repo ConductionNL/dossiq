@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -286,8 +287,7 @@ class BezwaarCreationHook {
 		// server-derived registrar so a caller can never point the objection
 		// at a different case/decision nor forge who registered it. The status
 		// is the schema's initial one, which OpenRegister fills in.
-		$objection = $payload;
-		unset($objection['status']);
+		$objection = array_diff_key($payload, CallerIdentity::KEYS + ['status' => true]);
 		$objection['case'] = $objectionCaseId;
 		$objection['contestedDecision'] = $contestedDecisionId;
 		$objection['registeredBy'] = $this->resolveUserId();

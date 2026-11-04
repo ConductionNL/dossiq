@@ -57,6 +57,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -158,6 +159,7 @@ class DecisionService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function draft(string $objectionId, array $payload): array {
+		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		$store = $this->requireDecisionStore();
 		$this->validator->assertDraftable(payload: $payload);
 
