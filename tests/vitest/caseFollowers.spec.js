@@ -131,7 +131,7 @@ describe('following is declared on the case page', () => {
 
 	it('leaves no Follow strip in the banner row', () => {
 		const stack = caseDetail.config.widgets.find((w) => w.id === 'case-banner-stack')
-		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-status-declaration', 'case-attention'])
+		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-claim-banner', 'case-status-declaration', 'case-attention'])
 		expect(fs.existsSync(path.join(ROOT, 'src', 'components', 'case', 'CaseFollowStrip.vue'))).toBe(false)
 		expect(fs.existsSync(path.join(ROOT, 'src', 'components', 'case', 'CaseFollowersPanel.vue'))).toBe(false)
 	})

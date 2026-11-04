@@ -344,13 +344,15 @@ describe('DocumentReviewPanel', () => {
 		).toBe('Custodian is A. de Wit and the text contains fietspad')
 		expect(rows[1].text()).toContain('Switched off')
 
-		const apply = wrapper.find('[data-testid="document-review-apply-rules"]')
-		expect(apply.text()).toBe('Apply the rules to 1 document')
-		await apply.trigger('click')
-		await flushPromises()
-		expect(axios.post).toHaveBeenCalledWith(
+		const applySelector = '[data-testid="document-review-apply-rules"]'
+		expect(wrapper.find(applySelector).text()).toBe('Apply the rules to 1 document')
+		// Under a loaded runner the button can still be re-rendering: click the current, enabled one.
+		await vi.waitFor(() => expect(wrapper.find(applySelector).attributes('disabled')).toBeUndefined())
+		await wrapper.find(applySelector).trigger('click')
+		await vi.waitFor(() => expect(axios.post).toHaveBeenCalledWith(
 			'/index.php/apps/dossiq/api/cases/case-x/review/triage/apply',
-		)
+		))
+		await flushPromises()
 		expect(wrapper.find('[data-testid="document-review-applied"]').text()).toBe(
 			'The rules marked 1 document.',
 		)

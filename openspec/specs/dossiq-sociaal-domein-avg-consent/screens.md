@@ -1,4 +1,3 @@
 # Screens
 
-- Design backlog: DqZaakBehandelketen (decision 157)
-- DqSociaalDomein https://identity.conduction.nl/screens/board?id=dossiq/DqSociaalDomein
+- dossiq/DqSociaalDomein sociaal domein, Jeugdwet https://identity.conduction.nl/screens/board?id=dossiq/DqSociaalDomein

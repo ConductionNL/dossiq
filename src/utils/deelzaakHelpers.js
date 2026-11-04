@@ -68,3 +68,19 @@ export function refusalMessage(err) {
 	}
 	return t('dossiq', 'The case could not be deleted. Please try again.')
 }
+
+/**
+ * The status a new sub-case starts in: its case type's `initialStatus`.
+ *
+ * OpenRegister starts a created case in that status and refuses another
+ * start state, so a sub-case type without one sends no status at all.
+ *
+ * @param {object|null} caseType The selected sub-case type.
+ * @return {string|null} The status id, or null when the type declares none.
+ * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+ */
+export function subCaseInitialStatus(caseType) {
+	const initial = caseType?.initialStatus
+	const id = typeof initial === 'object' && initial !== null ? initial.id : initial
+	return typeof id === 'string' && id !== '' ? id : null
+}

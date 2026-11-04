@@ -896,7 +896,7 @@ class SetupControllerStatusTest extends TestCase {
 
 	}//end testNoCloseNoDismissedKey()
 	/**
-	 * The board's three opening steps are reported, and the old welcome is gone.
+	 * The welcome and the board's three steps are reported.
 	 *
 	 * @return void
 	 */
@@ -906,7 +906,7 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertTrue($data['steps']['organisation-details']['done'], 'a named organisation settles the optional step');
 		$this->assertTrue($data['steps']['house-style']['done'], 'the house style is a hand-off, never outstanding');
 		$this->assertFalse($data['steps']['case-types']['done'], 'nothing chosen and nothing installed leaves the step open');
-		$this->assertArrayNotHasKey('welcome', $data['steps']);
+		$this->assertTrue($data['steps']['welcome']['done'], 'the welcome asks nothing, so it is never outstanding');
 
 	}//end testTheBoardStepsAreReported()
 

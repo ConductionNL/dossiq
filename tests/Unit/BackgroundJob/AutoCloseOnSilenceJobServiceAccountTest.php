@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps;
 use DateTimeImmutable;
 use OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob;
 use OCA\Dossiq\Exception\RefusedException;
@@ -57,6 +58,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob
  * @covers \OCA\Dossiq\Service\Lifecycle\LifecycleActorGate
  * @covers \OCA\Dossiq\Service\Lifecycle\LifecycleCaseTypeRules
+ * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseSteps
  * @uses \OCA\Dossiq\Service\Lifecycle\SilenceCloseService
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
@@ -299,9 +301,11 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 			time: $this->createMock(ITimeFactory::class),
 			silence: new SilenceCloseService(
 				store: $store,
-				rules: new LifecycleCaseTypeRules(settingsService: $this->settings()),
-				endings: $endings,
-				journal: new CaseJournal(userSession: $this->backgroundSession()),
+				steps: new SilenceCloseSteps(
+					rules: new LifecycleCaseTypeRules(settingsService: $this->settings()),
+					endings: $endings,
+					journal: new CaseJournal(userSession: $this->backgroundSession()),
+				),
 				dates: $this->caseDates(),
 				logger: new NullLogger(),
 			),

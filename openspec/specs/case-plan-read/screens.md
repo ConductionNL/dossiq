@@ -1,3 +1,3 @@
 # Screens
 
-- No screen: backend: the case page asks for a plan only when the case can hold one
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak

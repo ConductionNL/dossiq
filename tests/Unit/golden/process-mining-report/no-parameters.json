@@ -1,0 +1,684 @@
+{
+    "no parameters": {
+        "period": {
+            "from": "2025-09-20",
+            "to": "2026-09-20"
+        },
+        "clock": "wall-clock",
+        "caseTypeFilter": null,
+        "truncated": false,
+        "caseTypes": [
+            {
+                "id": "ct-2",
+                "title": "Melding",
+                "caseVolume": 2,
+                "dwellTime": [
+                    {
+                        "statusId": "st-rev",
+                        "statusName": "Review",
+                        "statusPhase": "Beoordeling",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    },
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "statusPhase": "Ontvangst",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    }
+                ],
+                "dwellTimeCompleted": [
+                    {
+                        "statusId": "st-rev",
+                        "statusName": "Review",
+                        "statusPhase": "Beoordeling",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    },
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "statusPhase": "Ontvangst",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    }
+                ],
+                "dwellDaysHeld": [],
+                "dwellByAssignee": [
+                    {
+                        "actor": "",
+                        "visitCount": 2,
+                        "medianWorkingHours": 344.0,
+                        "p90WorkingHours": 344.0,
+                        "meanWorkingHours": 344.0,
+                        "medianHours": 344.0,
+                        "p90Hours": 344.0,
+                        "meanHours": 344.0
+                    }
+                ],
+                "bottlenecks": [
+                    {
+                        "statusId": "st-rev",
+                        "statusName": "Review",
+                        "visitCount": 1,
+                        "medianHours": 344.0,
+                        "score": 344.0
+                    },
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "visitCount": 1,
+                        "medianHours": 344.0,
+                        "score": 344.0
+                    }
+                ],
+                "transitionMatrix": [],
+                "reworkPercent": 0.0,
+                "transitionCount": 0
+            },
+            {
+                "id": "ct-1",
+                "title": "Omgevingsvergunning",
+                "caseVolume": 1,
+                "dwellTime": [
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "statusPhase": "Ontvangst",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 2,
+                        "medianWorkingHours": 72.0,
+                        "p90WorkingHours": 168.0,
+                        "meanWorkingHours": 120.0,
+                        "medianHours": 72.0,
+                        "p90Hours": 168.0,
+                        "meanHours": 120.0
+                    },
+                    {
+                        "statusId": "st-rev",
+                        "statusName": "Review",
+                        "statusPhase": "Beoordeling",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 96.0,
+                        "p90WorkingHours": 96.0,
+                        "meanWorkingHours": 96.0,
+                        "medianHours": 96.0,
+                        "p90Hours": 96.0,
+                        "meanHours": 96.0
+                    },
+                    {
+                        "statusId": "st-out",
+                        "statusName": "Besluit",
+                        "statusPhase": "Afronding",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 104.0,
+                        "p90WorkingHours": 104.0,
+                        "meanWorkingHours": 104.0,
+                        "medianHours": 104.0,
+                        "p90Hours": 104.0,
+                        "meanHours": 104.0
+                    }
+                ],
+                "dwellTimeCompleted": [
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "statusPhase": "Ontvangst",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 2,
+                        "medianWorkingHours": 72.0,
+                        "p90WorkingHours": 168.0,
+                        "meanWorkingHours": 120.0,
+                        "medianHours": 72.0,
+                        "p90Hours": 168.0,
+                        "meanHours": 120.0
+                    },
+                    {
+                        "statusId": "st-rev",
+                        "statusName": "Review",
+                        "statusPhase": "Beoordeling",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 96.0,
+                        "p90WorkingHours": 96.0,
+                        "meanWorkingHours": 96.0,
+                        "medianHours": 96.0,
+                        "p90Hours": 96.0,
+                        "meanHours": 96.0
+                    },
+                    {
+                        "statusId": "st-out",
+                        "statusName": "Besluit",
+                        "statusPhase": "Afronding",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 104.0,
+                        "p90WorkingHours": 104.0,
+                        "meanWorkingHours": 104.0,
+                        "medianHours": 104.0,
+                        "p90Hours": 104.0,
+                        "meanHours": 104.0
+                    }
+                ],
+                "dwellDaysHeld": {
+                    "st-in": 3,
+                    "st-rev": 2
+                },
+                "dwellByAssignee": [
+                    {
+                        "actor": "",
+                        "visitCount": 4,
+                        "medianWorkingHours": 96.0,
+                        "p90WorkingHours": 168.0,
+                        "meanWorkingHours": 110.0,
+                        "medianHours": 96.0,
+                        "p90Hours": 168.0,
+                        "meanHours": 110.0
+                    }
+                ],
+                "bottlenecks": [
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "visitCount": 2,
+                        "medianHours": 72.0,
+                        "score": 144.0
+                    },
+                    {
+                        "statusId": "st-out",
+                        "statusName": "Besluit",
+                        "visitCount": 1,
+                        "medianHours": 104.0,
+                        "score": 104.0
+                    },
+                    {
+                        "statusId": "st-rev",
+                        "statusName": "Review",
+                        "visitCount": 1,
+                        "medianHours": 96.0,
+                        "score": 96.0
+                    }
+                ],
+                "transitionMatrix": [
+                    {
+                        "from": "st-in",
+                        "fromName": "Intake",
+                        "to": "st-rev",
+                        "toName": "Review",
+                        "count": 1,
+                        "reworkCount": 0
+                    },
+                    {
+                        "from": "st-rev",
+                        "fromName": "Review",
+                        "to": "st-in",
+                        "toName": "Intake",
+                        "count": 1,
+                        "reworkCount": 1
+                    },
+                    {
+                        "from": "st-in",
+                        "fromName": "Intake",
+                        "to": "st-out",
+                        "toName": "Besluit",
+                        "count": 1,
+                        "reworkCount": 0
+                    }
+                ],
+                "reworkPercent": 33.3,
+                "transitionCount": 3
+            },
+            {
+                "id": "omgeving",
+                "title": "Omgevingsvergunning",
+                "caseVolume": 1,
+                "dwellTime": [
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "statusPhase": "Ontvangst",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 720.0,
+                        "p90WorkingHours": 720.0,
+                        "meanWorkingHours": 720.0,
+                        "medianHours": 720.0,
+                        "p90Hours": 720.0,
+                        "meanHours": 720.0
+                    },
+                    {
+                        "statusId": "st-out",
+                        "statusName": "Besluit",
+                        "statusPhase": "Afronding",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 224.0,
+                        "p90WorkingHours": 224.0,
+                        "meanWorkingHours": 224.0,
+                        "medianHours": 224.0,
+                        "p90Hours": 224.0,
+                        "meanHours": 224.0
+                    }
+                ],
+                "dwellTimeCompleted": [
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "statusPhase": "Ontvangst",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 720.0,
+                        "p90WorkingHours": 720.0,
+                        "meanWorkingHours": 720.0,
+                        "medianHours": 720.0,
+                        "p90Hours": 720.0,
+                        "meanHours": 720.0
+                    },
+                    {
+                        "statusId": "st-out",
+                        "statusName": "Besluit",
+                        "statusPhase": "Afronding",
+                        "statusFinal": false,
+                        "statusOrder": null,
+                        "visitCount": 1,
+                        "medianWorkingHours": 224.0,
+                        "p90WorkingHours": 224.0,
+                        "meanWorkingHours": 224.0,
+                        "medianHours": 224.0,
+                        "p90Hours": 224.0,
+                        "meanHours": 224.0
+                    }
+                ],
+                "dwellDaysHeld": [],
+                "dwellByAssignee": [
+                    {
+                        "actor": "",
+                        "visitCount": 2,
+                        "medianWorkingHours": 224.0,
+                        "p90WorkingHours": 720.0,
+                        "meanWorkingHours": 472.0,
+                        "medianHours": 224.0,
+                        "p90Hours": 720.0,
+                        "meanHours": 472.0
+                    }
+                ],
+                "bottlenecks": [
+                    {
+                        "statusId": "st-in",
+                        "statusName": "Intake",
+                        "visitCount": 1,
+                        "medianHours": 720.0,
+                        "score": 720.0
+                    },
+                    {
+                        "statusId": "st-out",
+                        "statusName": "Besluit",
+                        "visitCount": 1,
+                        "medianHours": 224.0,
+                        "score": 224.0
+                    }
+                ],
+                "transitionMatrix": [
+                    {
+                        "from": "st-in",
+                        "fromName": "Intake",
+                        "to": "st-out",
+                        "toName": "Besluit",
+                        "count": 1,
+                        "reworkCount": 0
+                    }
+                ],
+                "reworkPercent": 0.0,
+                "transitionCount": 1
+            }
+        ],
+        "throughputTrend": [
+            {
+                "week": "2025-W38",
+                "count": 0
+            },
+            {
+                "week": "2025-W39",
+                "count": 0
+            },
+            {
+                "week": "2025-W40",
+                "count": 0
+            },
+            {
+                "week": "2025-W41",
+                "count": 0
+            },
+            {
+                "week": "2025-W42",
+                "count": 0
+            },
+            {
+                "week": "2025-W43",
+                "count": 0
+            },
+            {
+                "week": "2025-W44",
+                "count": 0
+            },
+            {
+                "week": "2025-W45",
+                "count": 0
+            },
+            {
+                "week": "2025-W46",
+                "count": 0
+            },
+            {
+                "week": "2025-W47",
+                "count": 0
+            },
+            {
+                "week": "2025-W48",
+                "count": 0
+            },
+            {
+                "week": "2025-W49",
+                "count": 0
+            },
+            {
+                "week": "2025-W50",
+                "count": 0
+            },
+            {
+                "week": "2025-W51",
+                "count": 0
+            },
+            {
+                "week": "2025-W52",
+                "count": 0
+            },
+            {
+                "week": "2026-W01",
+                "count": 0
+            },
+            {
+                "week": "2026-W02",
+                "count": 0
+            },
+            {
+                "week": "2026-W03",
+                "count": 0
+            },
+            {
+                "week": "2026-W04",
+                "count": 0
+            },
+            {
+                "week": "2026-W05",
+                "count": 0
+            },
+            {
+                "week": "2026-W06",
+                "count": 0
+            },
+            {
+                "week": "2026-W07",
+                "count": 0
+            },
+            {
+                "week": "2026-W08",
+                "count": 0
+            },
+            {
+                "week": "2026-W09",
+                "count": 0
+            },
+            {
+                "week": "2026-W10",
+                "count": 0
+            },
+            {
+                "week": "2026-W11",
+                "count": 0
+            },
+            {
+                "week": "2026-W12",
+                "count": 1
+            },
+            {
+                "week": "2026-W13",
+                "count": 0
+            },
+            {
+                "week": "2026-W14",
+                "count": 0
+            },
+            {
+                "week": "2026-W15",
+                "count": 1
+            },
+            {
+                "week": "2026-W16",
+                "count": 0
+            },
+            {
+                "week": "2026-W17",
+                "count": 0
+            },
+            {
+                "week": "2026-W18",
+                "count": 0
+            },
+            {
+                "week": "2026-W19",
+                "count": 0
+            },
+            {
+                "week": "2026-W20",
+                "count": 1
+            },
+            {
+                "week": "2026-W21",
+                "count": 0
+            },
+            {
+                "week": "2026-W22",
+                "count": 0
+            },
+            {
+                "week": "2026-W23",
+                "count": 0
+            },
+            {
+                "week": "2026-W24",
+                "count": 0
+            },
+            {
+                "week": "2026-W25",
+                "count": 1
+            },
+            {
+                "week": "2026-W26",
+                "count": 0
+            },
+            {
+                "week": "2026-W27",
+                "count": 0
+            },
+            {
+                "week": "2026-W28",
+                "count": 0
+            },
+            {
+                "week": "2026-W29",
+                "count": 0
+            },
+            {
+                "week": "2026-W30",
+                "count": 0
+            },
+            {
+                "week": "2026-W31",
+                "count": 0
+            },
+            {
+                "week": "2026-W32",
+                "count": 0
+            },
+            {
+                "week": "2026-W33",
+                "count": 0
+            },
+            {
+                "week": "2026-W34",
+                "count": 0
+            },
+            {
+                "week": "2026-W35",
+                "count": 0
+            },
+            {
+                "week": "2026-W36",
+                "count": 0
+            },
+            {
+                "week": "2026-W37",
+                "count": 0
+            },
+            {
+                "week": "2026-W38",
+                "count": 0
+            }
+        ],
+        "phaseDays": {
+            "mean": {
+                "columns": [
+                    "Beoordeling",
+                    "Ontvangst",
+                    "Afronding"
+                ],
+                "rows": [
+                    {
+                        "label": "Melding",
+                        "values": [
+                            14,
+                            14,
+                            "none"
+                        ]
+                    },
+                    {
+                        "label": "Omgevingsvergunning",
+                        "values": [
+                            4,
+                            5,
+                            4
+                        ]
+                    },
+                    {
+                        "label": "Omgevingsvergunning",
+                        "values": [
+                            "none",
+                            30,
+                            9
+                        ]
+                    }
+                ]
+            },
+            "median": {
+                "columns": [
+                    "Beoordeling",
+                    "Ontvangst",
+                    "Afronding"
+                ],
+                "rows": [
+                    {
+                        "label": "Melding",
+                        "values": [
+                            14,
+                            14,
+                            "none"
+                        ]
+                    },
+                    {
+                        "label": "Omgevingsvergunning",
+                        "values": [
+                            4,
+                            3,
+                            4
+                        ]
+                    },
+                    {
+                        "label": "Omgevingsvergunning",
+                        "values": [
+                            "none",
+                            30,
+                            9
+                        ]
+                    }
+                ]
+            }
+        },
+        "stuck": [
+            {
+                "id": "omgeving:st-in",
+                "caseType": "Omgevingsvergunning",
+                "phase": "Intake",
+                "days": 30,
+                "visits": 1,
+                "level": "bottleneck"
+            },
+            {
+                "id": "ct-2:st-rev",
+                "caseType": "Melding",
+                "phase": "Review",
+                "days": 14,
+                "visits": 1,
+                "level": "watch"
+            },
+            {
+                "id": "ct-1:st-in",
+                "caseType": "Omgevingsvergunning",
+                "phase": "Intake",
+                "days": 3,
+                "visits": 2,
+                "level": "watch"
+            }
+        ]
+    }
+}

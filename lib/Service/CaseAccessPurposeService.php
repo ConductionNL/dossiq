@@ -287,11 +287,9 @@ class CaseAccessPurposeService {
 	 * @return array{skipFor: array<int, string>, skipPurpose: string, assign: array<string, string>} The rules.
 	 *
 	 * @spec openspec/specs/case-access-purpose/spec.md
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) fromConfig() is a pure reader of the configured JSON.
 	 */
 	private function rules(): array {
-		return AccessPurposeRules::fromConfig(raw: $this->settingsService->getConfigValue(self::ROLES_KEY), purposes: self::PURPOSES);
+		return (new AccessPurposeRules())->fromConfig(raw: $this->settingsService->getConfigValue(self::ROLES_KEY), purposes: self::PURPOSES);
 	}//end rules()
 
 	/**

@@ -1,3 +1,3 @@
 # Screens
 
-- DqZaaktypeVelden https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypeVelden
+- dossiq/DqZaaktypeVelden zaaktype, velden https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypeVelden
