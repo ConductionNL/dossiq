@@ -586,9 +586,8 @@ The admin settings MUST handle error conditions gracefully, preserving user data
 #### Scenario: Delete published case type with only completed cases
 - GIVEN published case type "Klacht behandeling" has 5 cases, all with final status
 - WHEN the admin tries to delete the case type
-- THEN the system MUST display a warning: "This case type has 5 completed cases. Deleting it will make those cases reference a missing type. Proceed?"
-- AND upon confirmation, the case type MUST be deleted
-- AND the system SHOULD set `isDraft = true` or mark it as archived rather than hard-deleting
+- THEN the system MUST offer Intrekken in place of a delete, as board DqZaaktypen draws it: "Een ingetrokken zaaktype staat niet meer bij Nieuwe zaak"
+- AND the 5 cases MUST stay readable, and Herstellen MUST put the case type back under Nieuwe zaak
 
 #### Scenario: Save fails due to network error
 - GIVEN the admin edits a case type and clicks Save

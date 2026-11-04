@@ -67,11 +67,11 @@ Every Participatiewet case contains sensitive financial data; the `avgClassifica
 ### Requirement: Access control limited to work-and-income team
 Only the assigned klantmanager and their werk-en-inkomentteam MAY read zaak content; others MUST be blocked, with an FG-audit metadata-only mode.
 
-#### Scenario: Out-of-team staff see metadata only
+#### Scenario: Out-of-team staff see only that the case exists
 - **GIVEN** a bijstandsaanvraag is assigned to klantmanager-477 (werk-en-inkomentteam)
 - **WHEN** a staff member from a different wijkteam queries the zaak
-- **THEN** only metadata (zaak number, status, dates) is returned
-- **AND** all financial and personal details are blocked
+- **THEN** only that a case exists in Werk en inkomen is returned, with the contact person to ask, as board DqSociaalDomein shows it ("Alleen dat hij bestaat")
+- **AND** no content, status, dates or zaak number is returned, and all financial and personal details are blocked
 
 #### Scenario: FG audit mode returns metadata and auditLog only
 - **GIVEN** a functionaris gegevensbescherming needs to audit the case

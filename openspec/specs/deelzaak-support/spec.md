@@ -74,7 +74,7 @@ The case detail view SHALL display a "Sub-cases" section
 #### Scenario: Parent case with no sub-cases shows empty state
 
 - **WHEN** user views a case that has no sub-cases but whose case type has `subCaseTypes` configured
-- **THEN** the "Sub-cases" section MUST display an empty state message: "No sub-cases yet"
+- **THEN** the "Sub-cases" section MUST display an empty state message: "Nog geen deelzaken." (No sub-cases yet), as board DqZaakGerelateerd draws it
 - **AND** the "Create Sub-case" button MUST be visible
 
 #### Scenario: Case without sub-case type support hides section

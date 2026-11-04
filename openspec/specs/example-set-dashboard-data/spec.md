@@ -13,7 +13,7 @@ current end date is the install day.
 #### Scenario: Vandaag eerst
 
 - **GIVEN** the set installed today
-- **THEN** My work's First today names Parkeervergunningen binnenstad
+- **THEN** My work's week strip names Parkeervergunningen binnenstad with "vandaag", as board DqMijnWerk draws it, while Vandaag eerst leads with the case furthest over its term
 
 ### Requirement: Pieter covers for a colleague
 
