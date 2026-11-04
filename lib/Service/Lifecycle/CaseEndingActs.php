@@ -124,10 +124,7 @@ class CaseEndingActs {
 	public function finish(string $caseId, string $reason, string $resultTypeId, string $toStatus = ''): array {
 		return $this->end(
 			act: 'finish',
-			caseId: $caseId,
-			reason: $reason,
-			resultTypeId: $resultTypeId,
-			toStatus: $toStatus,
+			request: ['caseId' => $caseId, 'reason' => $reason, 'resultTypeId' => $resultTypeId, 'toStatus' => $toStatus],
 		);
 	}//end finish()
 
@@ -154,10 +151,7 @@ class CaseEndingActs {
 	public function abort(string $caseId, string $reason, string $resultTypeId, string $toStatus = ''): array {
 		return $this->end(
 			act: 'abort',
-			caseId: $caseId,
-			reason: $reason,
-			resultTypeId: $resultTypeId,
-			toStatus: $toStatus,
+			request: ['caseId' => $caseId, 'reason' => $reason, 'resultTypeId' => $resultTypeId, 'toStatus' => $toStatus],
 		);
 	}//end abort()
 
@@ -182,44 +176,21 @@ class CaseEndingActs {
 		$case = $this->load(caseId: $caseId);
 		$this->requireReason(reason: $reason);
 		$this->gate->require(act: 'archive', case: $case);
-
-		if ($this->isEnded(case: $case) === false) {
-			throw new RefusedException(
-				rule: 'case-not-ended',
-				sentence: 'Finish or abort this case before archiving it.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		$endDate = (string)($case['endDate'] ?? '');
-		if ($endDate === '') {
-			$endDate = (new DateTimeImmutable())->format('Y-m-d');
-		}
+		$this->requireEnded(case: $case);
 
 		$future = $this->results->archivalFuture(
 			case: $case,
 			resultTypeId: $this->resultTypeOn(case: $case),
-			endDate: $endDate,
+			endDate: $this->archiveEndDate(case: $case),
 		);
-
-		$case = array_merge($case, $future);
-		$case['archiveStatus'] = 'archived';
-		if (($future['archiveActionDate'] ?? '') === '') {
-			// ZGW rule zrc-021 leaves the date underivable when the result
-			// type states no period. The case is archived either way and an archivist can
-			// see which ones carry no date, which is a better answer than
-			// refusing the act or inventing a destruction date.
-			$case['archiveStatus'] = 'archived_retention_period_unknown';
-		}
+		$nomination = [
+			'archiveNomination' => ($future['archiveNomination'] ?? null),
+			'archiveActionDate' => ($future['archiveActionDate'] ?? null),
+		];
 
 		$case = $this->journal->append(
-			case: $case,
-			entry: [
-				'type' => 'archive',
-				'reason' => $reason,
-				'archiveNomination' => (string)($future['archiveNomination'] ?? ''),
-				'archiveActionDate' => (string)($future['archiveActionDate'] ?? ''),
-			],
+			case: $this->archivedCase(case: $case, future: $future),
+			entry: ['type' => 'archive', 'reason' => $reason] + array_map('strval', $nomination),
 		);
 		$this->store->saveCase(case: $case);
 
@@ -232,18 +203,76 @@ class CaseEndingActs {
 
 		$this->logger->info(
 			'CaseEndingActs: case archived',
-			['caseId' => $caseId, 'nomination' => ($future['archiveNomination'] ?? null)],
+			['caseId' => $caseId, 'nomination' => $nomination['archiveNomination']],
 		);
 
-		return [
-			'caseId' => $caseId,
-			'act' => 'archive',
-			'archiveStatus' => $case['archiveStatus'],
-			'archiveNomination' => ($future['archiveNomination'] ?? null),
-			'archiveActionDate' => ($future['archiveActionDate'] ?? null),
-			'archived' => ($marker['archived'] ?? null),
-		];
+		return ['caseId' => $caseId, 'act' => 'archive', 'archiveStatus' => $case['archiveStatus']]
+			+ $nomination
+			+ ['archived' => ($marker['archived'] ?? null)];
 	}//end archive()
+
+	/**
+	 * Only an ended case can be archived.
+	 *
+	 * @param array<string, mixed> $case The loaded case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case is still open.
+	 *
+	 * @spec exclude one guard of archive(), which carries the requirement
+	 */
+	private function requireEnded(array $case): void {
+		if ($this->isEnded(case: $case) === false) {
+			throw new RefusedException(
+				rule: 'case-not-ended',
+				sentence: 'Finish or abort this case before archiving it.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+	}//end requireEnded()
+
+	/**
+	 * The end date the archive act derives the retention from.
+	 *
+	 * @param array<string, mixed> $case The ended case.
+	 *
+	 * @return string The case's end date, today when it carries none.
+	 *
+	 * @spec exclude one field read behind archive(), which carries the requirement
+	 */
+	private function archiveEndDate(array $case): string {
+		$endDate = (string)($case['endDate'] ?? '');
+		if ($endDate === '') {
+			return (new DateTimeImmutable())->format('Y-m-d');
+		}
+
+		return $endDate;
+	}//end archiveEndDate()
+
+	/**
+	 * The case with its archival future and the archive status that follows from it.
+	 *
+	 * @param array<string, mixed> $case   The ended case.
+	 * @param array<string, mixed> $future The nomination and action date from the result type.
+	 *
+	 * @return array<string, mixed> The case to save.
+	 *
+	 * @spec exclude one step of archive(), which carries the requirement
+	 */
+	private function archivedCase(array $case, array $future): array {
+		$case = array_merge($case, $future);
+		$case['archiveStatus'] = 'archived';
+		if (($future['archiveActionDate'] ?? '') === '') {
+			// ZGW rule zrc-021 leaves the date underivable when the result
+			// type states no period. The case is archived either way and an archivist can
+			// see which ones carry no date, which is a better answer than
+			// refusing the act or inventing a destruction date.
+			$case['archiveStatus'] = 'archived_retention_period_unknown';
+		}
+
+		return $case;
+	}//end archivedCase()
 
 	/**
 	 * Take a case back out of the archive.
@@ -358,10 +387,7 @@ class CaseEndingActs {
 	 * both.
 	 *
 	 * @param string $act `finish` or `abort`.
-	 * @param string $caseId The case UUID.
-	 * @param string $reason Why.
-	 * @param string $resultTypeId The result type the handler picked.
-	 * @param string $toStatus The terminal status, resolved when empty.
+	 * @param array<string, string> $request caseId, reason, resultTypeId and toStatus (resolved when empty).
 	 *
 	 * @return array<string, mixed> What was recorded.
 	 *
@@ -369,9 +395,9 @@ class CaseEndingActs {
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
-	private function end(string $act, string $caseId, string $reason, string $resultTypeId, string $toStatus): array {
-		$case = $this->load(caseId: $caseId);
-		$this->requireReason(reason: $reason);
+	private function end(string $act, array $request): array {
+		$case = $this->load(caseId: $request['caseId']);
+		$this->requireReason(reason: $request['reason']);
 		$this->gate->require(act: $act, case: $case);
 
 		if ($act === 'finish') {
@@ -383,86 +409,135 @@ class CaseEndingActs {
 			$this->incompleteness->requireComplete(case: $case);
 		}
 
+		$ending = ['act' => $act] + $request + $this->landing(case: $case, request: $request);
+		$this->writeEnding(case: $this->endedCase(case: $case, ending: $ending), ending: $ending);
+
+		$this->logger->info(
+			'CaseEndingActs: case ended',
+			['caseId' => $request['caseId'], 'act' => $act, 'skipped' => count($ending['skippedPhases'])],
+		);
+
+		return [
+			'caseId' => $request['caseId'],
+			'act' => $act,
+			'status' => $ending['status'],
+			'endDate' => $ending['endDate'],
+			'result' => $ending['result'],
+			'skippedPhases' => $ending['skippedPhases'],
+		];
+	}//end end()
+
+	/**
+	 * Where the case lands: its terminal status, its result, its end date and the phases it skips.
+	 *
+	 * The result is resolved BEFORE anything is written. `resolveClosingResult`
+	 * refuses a close with no result on a case type that offers some, and a
+	 * refusal after the status had moved would leave a case closed with no
+	 * outcome, which is the state nobody can read afterwards.
+	 *
+	 * @param array<string, mixed> $case The loaded case.
+	 * @param array<string, string> $request The act's caseId, reason, resultTypeId and toStatus.
+	 *
+	 * @return array{from: string, status: string, result: ?string, endDate: string, skippedPhases: list<string>} The landing.
+	 *
+	 * @throws RefusedException When the case type has no terminal status, or no result can be named.
+	 *
+	 * @spec exclude one step of end(), which carries the requirement
+	 */
+	private function landing(array $case, array $request): array {
 		$caseTypeId = (string)($case['caseType'] ?? '');
 		$fromStatus = (string)($case['status'] ?? '');
-		$target = $this->terminalStatus(caseTypeId: $caseTypeId, named: $toStatus);
+		$target = $this->terminalStatus(caseTypeId: $caseTypeId, named: $request['toStatus']);
 
-		// The result is resolved BEFORE anything is written. `resolveClosingResult`
-		// refuses a close with no result on a case type that offers some, and a
-		// refusal after the status had moved would leave a case closed with no
-		// outcome, which is the state nobody can read afterwards.
 		$chosenResult = null;
-		if ($resultTypeId !== '') {
-			$chosenResult = $resultTypeId;
+		if ($request['resultTypeId'] !== '') {
+			$chosenResult = $request['resultTypeId'];
 		}
 
 		$resultId = $this->results->resolveClosingResult(
-			caseId: $caseId,
+			caseId: $request['caseId'],
 			caseTypeId: $caseTypeId,
 			resultTypeId: $chosenResult,
 		);
 
-		$endDate = (new DateTimeImmutable())->format('Y-m-d');
-		$skipped = $this->skippedPhases(caseTypeId: $caseTypeId, fromStatus: $fromStatus, toStatus: $target);
+		return [
+			'from' => $fromStatus,
+			'status' => $target,
+			'result' => $resultId,
+			'endDate' => (new DateTimeImmutable())->format('Y-m-d'),
+			'skippedPhases' => $this->skippedPhases(caseTypeId: $caseTypeId, fromStatus: $fromStatus, toStatus: $target),
+		];
+	}//end landing()
 
-		$case['status'] = $target;
-		$case['endDate'] = $endDate;
-		$case[self::ENDING_FIELD] = $act;
-		if ($resultId !== null) {
-			$case['result'] = $resultId;
+	/**
+	 * The case as the ending leaves it.
+	 *
+	 * @param array<string, mixed> $case   The loaded case.
+	 * @param array<string, mixed> $ending The act, its request and its landing.
+	 *
+	 * @return array<string, mixed> The case to save.
+	 *
+	 * @spec exclude one step of end(), which carries the requirement
+	 */
+	private function endedCase(array $case, array $ending): array {
+		$case['status'] = $ending['status'];
+		$case['endDate'] = $ending['endDate'];
+		$case[self::ENDING_FIELD] = $ending['act'];
+		if ($ending['result'] !== null) {
+			$case['result'] = $ending['result'];
 		}
 
-		if ($skipped !== []) {
-			$case['skippedPhases'] = json_encode($skipped);
+		if ($ending['skippedPhases'] !== []) {
+			$case['skippedPhases'] = json_encode($ending['skippedPhases']);
 		}
 
-		if ($act === 'finish' && $resultTypeId !== '') {
+		if ($ending['act'] === 'finish' && $ending['resultTypeId'] !== '') {
 			// Only finishing takes the nomination from the result type here.
 			// An abort has a result and no besluit, and its retention is
 			// committed by the archive act, which is where an archivist is.
 			$case = array_merge($case, $this->results->archivalFuture(
 				case: $case,
-				resultTypeId: $resultTypeId,
-				endDate: $endDate,
+				resultTypeId: $ending['resultTypeId'],
+				endDate: $ending['endDate'],
 			));
 		}
 
+		return $case;
+	}//end endedCase()
+
+	/**
+	 * Journal the ending on the case, save it and write the status record.
+	 *
+	 * @param array<string, mixed> $case   The ended case.
+	 * @param array<string, mixed> $ending The act, its request and its landing.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude one step of end(), which carries the requirement
+	 */
+	private function writeEnding(array $case, array $ending): void {
 		$case = $this->journal->append(
 			case: $case,
 			entry: [
-				'type' => $act,
-				'reason' => $reason,
-				'resultType' => $resultTypeId,
-				'skippedPhases' => $skipped,
-				'besluit' => ($act === 'finish'),
+				'type' => $ending['act'],
+				'reason' => $ending['reason'],
+				'resultType' => $ending['resultTypeId'],
+				'skippedPhases' => $ending['skippedPhases'],
+				'besluit' => ($ending['act'] === 'finish'),
 			],
 		);
 		$this->store->saveCase(case: $case);
 
 		$this->store->writeStatusRecord(
-			caseId: $caseId,
-			toStatus: $target,
-			fromStatus: $fromStatus,
-			label: ucfirst($act),
-			comment: $reason,
+			caseId: $ending['caseId'],
+			toStatus: $ending['status'],
+			fromStatus: $ending['from'],
+			label: ucfirst($ending['act']),
+			comment: $ending['reason'],
 			evaluatedGuards: [],
 			noWorkflowTemplate: true,
 		);
-
-		$this->logger->info(
-			'CaseEndingActs: case ended',
-			['caseId' => $caseId, 'act' => $act, 'skipped' => count($skipped)],
-		);
-
-		return [
-			'caseId' => $caseId,
-			'act' => $act,
-			'status' => $target,
-			'endDate' => $endDate,
-			'result' => $resultId,
-			'skippedPhases' => $skipped,
-		];
-	}//end end()
+	}//end writeEnding()
 
 	/**
 	 * The terminal status the act lands the case on.
