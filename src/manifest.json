@@ -12,7 +12,7 @@
 			{
 				"id": "welcome",
 				"type": "info",
-				"title": "Set up Dossiq",
+				"title": "Welcome",
 				"body": "Dossiq handles cases from intake to archive. The next steps offer example data to look around with, then your organisation's name and logo, its house style and the case types you work with. Each one is optional and can be changed later in the admin settings."
 			},
 			{
@@ -12899,14 +12899,31 @@
 					"filterField": "category",
 					"allLabel": "All case types"
 				},
-				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. Current versions is the DEFAULT chip and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under both chips, which is right: a draft is the version you are about to publish.",
+				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. All is the DEFAULT chip (board DqZaaktypen \"Alles\", beside Published and Draft, each counted) and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under All and Draft, which is right: a draft is the version you are about to publish.",
 				"quickFilters": [
 					{
-						"label": "Current versions",
+						"label": "All",
 						"filter": {
 							"supersededBy": "IS NULL"
 						},
-						"default": true
+						"default": true,
+						"showCount": true
+					},
+					{
+						"label": "Published",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": false
+						},
+						"showCount": true
+					},
+					{
+						"label": "Draft",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": true
+						},
+						"showCount": true
 					},
 					{
 						"label": "All versions",

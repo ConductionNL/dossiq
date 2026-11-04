@@ -4,7 +4,7 @@
 -->
 <template>
 	<div class="deadline-definitions-tab">
-		<div class="deadline-definitions-tab__header">
+		<div v-if="!summary" class="deadline-definitions-tab__header">
 			<p
 				v-if="timezone"
 				class="deadline-definitions-tab__calendar"
@@ -57,7 +57,7 @@
 			data-testid="deadline-definitions-table">
 			<thead>
 				<tr>
-					<th v-if="showCaseType" scope="col">
+					<th v-if="showCaseType && !summary" scope="col">
 						{{ t('dossiq', 'Case type') }}
 					</th>
 					<th scope="col">
@@ -70,18 +70,33 @@
 						{{ t('dossiq', 'Version') }}
 					</th>
 					<th scope="col">
-						{{ t('dossiq', 'Counting') }}
+						<template v-if="summary">
+							{{ t('dossiq', 'Counts in') }}
+						</template>
+						<template v-else>
+							{{ t('dossiq', 'Counting') }}
+						</template>
 					</th>
 					<th scope="col">
-						{{ t('dossiq', 'Closed day') }}
+						<template v-if="summary">
+							{{ t('dossiq', 'On a closed day') }}
+						</template>
+						<template v-else>
+							{{ t('dossiq', 'Closed day') }}
+						</template>
 					</th>
 					<th scope="col">
 						{{ t('dossiq', 'Valid') }}
 					</th>
 					<th scope="col">
-						{{ t('dossiq', 'State') }}
+						<template v-if="summary">
+							{{ t('dossiq', 'Status') }}
+						</template>
+						<template v-else>
+							{{ t('dossiq', 'State') }}
+						</template>
 					</th>
-					<th scope="col">
+					<th v-if="!summary" scope="col">
 						{{ t('dossiq', 'Actions') }}
 					</th>
 				</tr>
@@ -92,7 +107,7 @@
 					:key="def.id"
 					class="deadline-definitions-tab__row"
 					:class="{ 'deadline-definitions-tab__row--inactive': !isActive(def) }">
-					<td v-if="showCaseType" class="deadline-definitions-tab__row-name">
+					<td v-if="showCaseType && !summary" class="deadline-definitions-tab__row-name">
 						{{ caseTypeOf(def) }}
 					</td>
 					<td>{{ basisOf(def) || t('dossiq', '(no grondslag)') }}</td>
@@ -121,7 +136,7 @@
 							}}
 						</span>
 					</td>
-					<td class="deadline-definitions-tab__row-actions">
+					<td v-if="!summary" class="deadline-definitions-tab__row-actions">
 						<NcButton variant="secondary" @click="openEdit(def)">
 							{{ t('dossiq', 'New version') }}
 						</NcButton>
@@ -157,6 +172,18 @@ export default {
 		NcNoteCard,
 		TimerSand,
 		DeadlineDefinitionEditor,
+	},
+
+	props: {
+		/**
+		 * One table of every term without the case type, the calendar line and
+		 * the row actions: the Integrations tab's "Term definitions (Awb)". The
+		 * section header carries Add definition and calls `openNew()`.
+		 */
+		summary: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	data() {

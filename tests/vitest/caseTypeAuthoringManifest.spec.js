@@ -392,8 +392,14 @@ describe('the Case types index shows one row per case type', () => {
 
 	it('defaults to the version nothing has superseded', () => {
 		const current = chips().find((chip) => chip.default === true)
-		expect(current.label).toBe('Current versions')
+		expect(current.label).toBe('All')
 		expect(current.filter).toEqual({ supersededBy: 'IS NULL' })
+	})
+
+	it('counts All, Published and Draft as board DqZaaktypen draws them', () => {
+		const tabs = chips().filter((chip) => chip.showCount === true)
+		expect(tabs.map((chip) => [chip.label, chip.filter.isDraft])).toEqual([['All', undefined], ['Published', false], ['Draft', true]])
+		expect(tabs.every((chip) => chip.filter.supersededBy === 'IS NULL')).toBe(true)
 	})
 
 	it('spells the empty test as the sentinel the team queue uses', () => {
