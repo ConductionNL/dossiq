@@ -11818,6 +11818,81 @@
 						"_noticesNote": "DqTermijnen draws one row per notice of default: the case (opens it), when it came in, the assessment, the penalty it started and where that money stands. GET /api/deadlines/notices joins notice, term, case and penalty calculation (NoticeOfDefaultRows); a fixed penalty is ready for payout until one is prepared, then reads the payout's status (prepared, signal sent, paid, rejected, on hold), a running one is not fixed yet, a notice without a penalty is not applicable (nextcloud-vue column emptyLabel)."
 					},
 					{
+						"id": "deadline-report-ending-first",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"all": [
+								{
+									"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+									"field": "visible.deadline-report-ending-first",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/deadlines/ending-first",
+									"field": "available",
+									"op": "eq",
+									"value": true
+								}
+							]
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page: the running terms of every case are the gemeente's figures about its own timeliness.",
+						"type": "object-table",
+						"title": "Ending first",
+						"subtitle": "Progress and days left are worked out when you open this, not stored",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/deadlines/ending-first",
+								"responsePath": "terms"
+							},
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
+							"limit": 5,
+							"columns": [
+								{
+									"key": "caseLabel",
+									"label": "Case",
+									"widget": "link",
+									"cellClass": "cn-cell--wrap"
+								},
+								{
+									"key": "endDate",
+									"label": "Term",
+									"widget": "date"
+								},
+								{
+									"key": "progressPercent",
+									"label": "Progress",
+									"widget": "progress"
+								},
+								{
+									"key": "endDate",
+									"label": "Left",
+									"widget": "date",
+									"widgetProps": {
+										"due": {
+											"todayLabel": "Ends today",
+											"overdueLabel": {
+												"one": "{count} day late",
+												"other": "{count} days late"
+											},
+											"upcomingLabel": {
+												"one": "{count} day left",
+												"other": "{count} days left"
+											}
+										}
+									}
+								}
+							],
+							"emptyText": "No term is running"
+						},
+						"_endingFirstNote": "Board DqTermijnen \"Verloopt het eerst\" (termijn-reporting): the running terms that end first, with the share of the term that has passed and the days left. GET /api/deadlines/ending-first is SIG's (R20/DQB-C/FOR-SIG.md) and answers `available: true`; until it does the card is not drawn, so the page never shows a card whose source is missing."
+					},
+					{
 						"id": "deadline-report-quarterly",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
@@ -12140,10 +12215,19 @@
 						"sizeToContent": true
 					},
 					{
+						"id": 5,
+						"widgetId": "deadline-report-ending-first",
+						"gridX": 0,
+						"gridY": 7,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
 						"id": 3,
 						"widgetId": "deadline-report-quarterly-card",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 11,
 						"gridWidth": 12,
 						"gridHeight": 7,
 						"sizeToContent": true
@@ -12152,7 +12236,7 @@
 						"id": 4,
 						"widgetId": "deadline-report-annual-card",
 						"gridX": 0,
-						"gridY": 14,
+						"gridY": 18,
 						"gridWidth": 12,
 						"gridHeight": 8,
 						"sizeToContent": true
