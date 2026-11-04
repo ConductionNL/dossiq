@@ -119,6 +119,32 @@ class UnmatchedMailIntake {
 			return null;
 		}
 
+		$store = $this->caseStore(caseTypeId: $caseTypeId);
+		if ($store === null) {
+			return null;
+		}
+
+		$caseId = $this->file(store: $store, payload: $this->payloadFor(message: $message, caseTypeId: $caseTypeId));
+		if ($caseId === null) {
+			return null;
+		}
+
+		$this->logger->info(
+			'UnmatchedMailIntake: filed an unmatched mail as case {case}',
+			['case' => $caseId, 'caseType' => $caseTypeId]
+		);
+
+		return $caseId;
+	}//end caseFor()
+
+	/**
+	 * Where the case is written, or null when the register is not configured.
+	 *
+	 * @param string $caseTypeId The fallback case type.
+	 *
+	 * @return array{objectService: object, register: string, schema: string, caseType: string}|null The store.
+	 */
+	private function caseStore(string $caseTypeId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
@@ -131,6 +157,18 @@ class UnmatchedMailIntake {
 			return null;
 		}
 
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $caseSchema, 'caseType' => $caseTypeId];
+	}//end caseStore()
+
+	/**
+	 * The case a mail becomes.
+	 *
+	 * @param array<string, mixed> $message    The normalised message row.
+	 * @param string               $caseTypeId The fallback case type.
+	 *
+	 * @return array<string, mixed> The case.
+	 */
+	private function payloadFor(array $message, string $caseTypeId): array {
 		$payload = [
 			'title' => $this->titleFor(message: $message),
 			'description' => $this->descriptionFor(message: $message),
@@ -155,16 +193,28 @@ class UnmatchedMailIntake {
 			$payload['initiatorType'] = 'contact';
 		}
 
+		return $payload;
+	}//end payloadFor()
+
+	/**
+	 * Write the case and answer its id, or null when it was not written or answered no id.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, caseType: string} $store   Where the case is written.
+	 * @param array<string, mixed>                                                               $payload The case.
+	 *
+	 * @return string|null The new case's id.
+	 */
+	private function file(array $store, array $payload): ?string {
 		try {
-			$created = $objectService->saveObject(
+			$created = $store['objectService']->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $caseSchema,
+				register: $store['register'],
+				schema: $store['schema'],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'UnmatchedMailIntake: could not file the mail as a case',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+				['caseType' => $store['caseType'], 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -173,18 +223,13 @@ class UnmatchedMailIntake {
 		if ($caseId === '') {
 			$this->logger->error(
 				'UnmatchedMailIntake: the case was written but answered no id, so the mail cannot be linked to it',
-				['caseType' => $caseTypeId]
+				['caseType' => $store['caseType']]
 			);
 			return null;
 		}
 
-		$this->logger->info(
-			'UnmatchedMailIntake: filed an unmatched mail as case {case}',
-			['case' => $caseId, 'caseType' => $caseTypeId]
-		);
-
 		return $caseId;
-	}//end caseFor()
+	}//end file()
 
 	/**
 	 * The address this mail came from, when it is one.
