@@ -102,6 +102,19 @@ class AdminSettings implements IDelegatedSettings {
 				'shillinq' => $this->appManager->isInstalled(appId: 'shillinq'),
 			]
 		);
+		// The siblings named by product name, with the app id each was found under.
+		$this->initialState->provideInitialState(
+			'dependencyApps',
+			DependencyApps::read(appManager: $this->appManager)
+		);
+		// The publication card on VTH: the template and the publication date rule.
+		$this->initialState->provideInitialState(
+			'publicationSettings',
+			[
+				'template' => $this->settingsService->getConfigValue('publication_template', ''),
+				'dateRule' => $this->settingsService->getConfigValue('publication_date_rule', ''),
+			]
+		);
 		$this->initialState->provideInitialState(
 			'consultationSettings',
 			$this->consultationSettings()

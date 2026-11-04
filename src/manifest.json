@@ -12,7 +12,7 @@
 			{
 				"id": "welcome",
 				"type": "info",
-				"title": "Set up Dossiq",
+				"title": "Welcome",
 				"body": "Dossiq handles cases from intake to archive. The next steps offer example data to look around with, then your organisation's name and logo, its house style and the case types you work with. Each one is optional and can be changed later in the admin settings."
 			},
 			{
