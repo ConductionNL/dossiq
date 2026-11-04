@@ -75,7 +75,7 @@ class FakeCaseTypeObjectService {
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\CaseTypeViews
- * @uses \OCA\Dossiq\Service\CaseType\OpenCaseCounts
+ * @uses \OCA\Dossiq\Service\CaseType\SupersededCaseTypes
  */
 class ManifestControllerTest extends TestCase {
 
