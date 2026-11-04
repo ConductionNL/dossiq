@@ -1,0 +1,13 @@
+{
+    "calls": [
+        {
+            "error": "Dossiq: Could not get ObjectService",
+            "context": {
+                "exception": "container down"
+            }
+        }
+    ],
+    "answer": {
+        "error": "OpenRegister is not available"
+    }
+}

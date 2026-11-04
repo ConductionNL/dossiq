@@ -1,0 +1,24 @@
+{
+  "_note": "Who may read a case's grants list (dossiq change case-access-card-lists-team-and-group-grants, design D-4): the case's assignee and the background service. OpenRegister answers GET /api/objects/dossiq/case/{id}/grants only for a caller its readGrants rule admits, beside the owner, the owning group, administrators, manage holders and grant_manage holders (openregister change an-object-lists-its-grants-with-their-origin). readGrants never resolves default-open, so without this rule an assignee reads the Toegang card's refusal text. The match is the one the case's read and update rules carry, so the people who see a case's links see its grants too. CaseTeamAccessProjector starts from the merged fragments and only appends the handling team entries to read and update, so this key survives a recompute. authorization is a key the schema importer compares, so the case version stays.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "authorization": {
+          "readGrants": [
+            {
+              "group": "authenticated",
+              "match": {
+                "assignee": "$userId"
+              }
+            },
+            "dossiq-background-service"
+          ]
+        }
+      }
+    }
+  }
+}

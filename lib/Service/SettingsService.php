@@ -399,11 +399,9 @@ class SettingsService {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) — WooReportSwitches is a pure key map
 	 */
 	public function updateSettings(array $data): array {
-		$data = WooReportSwitches::withCurrentKeys(data: $data);
+		$data = $this->withCurrentReportKeys(data: $data);
 		// Refused before anything is written, so a refused save changes nothing.
 		// Only a save that touches the throughput switch or its readers is checked.
 		if (array_key_exists(WooReportSwitches::THROUGHPUT, $data) === true
@@ -422,6 +420,29 @@ class SettingsService {
 
 		return $this->getSettings();
 	}//end updateSettings()
+
+	/**
+	 * A save with each report switch posted under its earlier key carried onto its current key.
+	 *
+	 * A value posted under the current key wins. Written here rather than through
+	 * {@see \OCA\Dossiq\Service\Settings\RenamedSettingKeys} to keep this class's
+	 * coupling at phpmd's limit.
+	 *
+	 * @param array<string, mixed> $data The settings as posted.
+	 *
+	 * @return array<string, mixed> The settings, current keys filled in.
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	private function withCurrentReportKeys(array $data): array {
+		foreach (array_diff_key(WooReportSwitches::LEGACY_KEYS, $data) as $current => $earlier) {
+			if (array_key_exists($earlier, $data) === true) {
+				$data[$current] = $data[$earlier];
+			}
+		}
+
+		return $data;
+	}//end withCurrentReportKeys()
 
 	/**
 	 * The Woo review report switches, built on the group manager the container holds.

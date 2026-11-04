@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
@@ -41,7 +42,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMiningService
- *
+ * @covers \OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers
  * @uses \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
  * @uses \OCA\Dossiq\Service\ProcessMining\DwellWindow
  * @uses \OCA\Dossiq\Service\ProcessMining\CaseDwell
@@ -83,9 +84,11 @@ class ProcessMiningServiceTest extends TestCase {
 
 		$this->service = new ProcessMiningService(
 			new ProcessMiningDataLoader($settings),
-			new DwellTimeAnalyzer(dates: $this->caseDates()),
-			new TransitionMatrixBuilder(),
-			new ThroughputTrendCalculator(dates: $this->caseDates()),
+			new ProcessMiningAnalysers(
+				dwellTimeAnalyzer: new DwellTimeAnalyzer(dates: $this->caseDates()),
+				transitionBuilder: new TransitionMatrixBuilder(),
+				throughputCalculator: new ThroughputTrendCalculator(dates: $this->caseDates()),
+			),
 			$this->caseDates(),
 		);
 	}//end setUp()

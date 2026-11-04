@@ -44,10 +44,6 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeResolver;
-use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
-use OCA\Dossiq\Service\Intake\CaseClassification;
-use OCA\Dossiq\Service\Intake\DuplicatePolicy;
-use OCA\Dossiq\Service\Intake\IntakeRequirements;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -76,10 +72,7 @@ class IntakeRequirementsListener implements IEventListener {
 	 *
 	 * @param SettingsService    $settingsService  Schema slug bridge.
 	 * @param CaseTypeResolver   $caseTypeResolver The effective case type.
-	 * @param IntakeRequirements $requirements     What must be answered, and when.
-	 * @param CaseClassification $classification   The facets and the access rule.
-	 * @param AssigneeNarrowing  $narrowing        Who may hold the case.
-	 * @param DuplicatePolicy    $duplicates       What this case type does about a case that already exists.
+	 * @param IntakeDeclarations $declarations The intake requirements, classification, assignee narrowing and duplicate policy of a case type.
 	 * @param IUserSession       $userSession      Who is filing the case.
 	 * @param LoggerInterface    $logger           Logger.
 	 * @param ReceiptMoment      $receipt          Tells a receipt from a draft save (decision 180).
@@ -87,10 +80,7 @@ class IntakeRequirementsListener implements IEventListener {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $caseTypeResolver,
-		private readonly IntakeRequirements $requirements,
-		private readonly CaseClassification $classification,
-		private readonly AssigneeNarrowing $narrowing,
-		private readonly DuplicatePolicy $duplicates,
+		private readonly IntakeDeclarations $declarations,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
@@ -176,16 +166,16 @@ class IntakeRequirementsListener implements IEventListener {
 
 		try {
 			if ($creating === true) {
-				$this->requirements->assertCreatable(case: $payload, caseType: $caseType);
-				$this->classification->assertCreatable(case: $payload, caseType: $caseType);
-				$this->duplicates->assertCreatable(
+				$this->declarations->requirements->assertCreatable(case: $payload, caseType: $caseType);
+				$this->declarations->classification->assertCreatable(case: $payload, caseType: $caseType);
+				$this->declarations->duplicates->assertCreatable(
 					case: $payload,
 					caseType: $caseType,
 					user: $this->userSession->getUser()
 				);
 			}
 
-			$this->narrowing->assertWritable(case: $payload, caseType: $caseType);
+			$this->declarations->narrowing->assertWritable(case: $payload, caseType: $caseType);
 		} catch (RefusedException $e) {
 			$event->setErrors(
 				[

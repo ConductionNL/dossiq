@@ -1,0 +1,103 @@
+{
+    "catalogus": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-catalogus_schema"
+    },
+    "zaak": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-case_schema"
+    },
+    "caseType": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-case_type_schema"
+    },
+    "status": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-status_record_schema"
+    },
+    "statustype": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-status_type_schema"
+    },
+    "result": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-result_schema"
+    },
+    "resultaattype": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-result_type_schema"
+    },
+    "role": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-role_schema"
+    },
+    "roltype": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-role_type_schema"
+    },
+    "eigenschap": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-property_definition_schema"
+    },
+    "decision": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-decision_schema"
+    },
+    "besluittype": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-decision_type_schema"
+    },
+    "informatieobjecttype": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-document_type_schema"
+    },
+    "zaaktypeinformatieobjecttype": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-zaaktype_informatieobjecttype_schema"
+    },
+    "enkelvoudiginformatieobject": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-document_schema"
+    },
+    "objectinformatieobject": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-document_link_schema"
+    },
+    "gebruiksrechten": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-usage_rights_schema"
+    },
+    "zaakeigenschap": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-case_property_schema"
+    },
+    "zaakinformatieobject": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-case_document_schema"
+    },
+    "zaakobject": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-case_object_schema"
+    },
+    "klantcontact": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-customer_contact_schema"
+    },
+    "besluitinformatieobject": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-decision_document_schema"
+    },
+    "verzending": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-dispatch_schema"
+    },
+    "applicatie": [],
+    "kanaal": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-kanaal_schema"
+    },
+    "abonnement": {
+        "sourceRegister": "reg-1",
+        "sourceSchema": "schema-of-abonnement_schema"
+    }
+}

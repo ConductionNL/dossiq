@@ -12,7 +12,7 @@ Provide VTH enforcement (handhaving) support in Dossiq based on the Landelijke H
 
 ### Requirement: LHS matrix configuration
 
-The system SHALL support configuring the Landelijke Handhavingsstrategie (LHS) 4x4 matrix (ernst x gedrag = interventie) in admin settings, with a default national configuration and per-municipality customization.
+The system SHALL support configuring the Landelijke Handhavingsstrategie (LHS) 4x4 matrix (ernst x gedrag = interventie) as a decision table in OpenRegister, with a default national configuration and per-municipality customization. dossiq's VTH settings SHALL show which table is in use and link to it, as board DqVthInstellingen draws it; they SHALL NOT offer an editable grid of their own.
 
 **Feature tier**: V1
 **ZGW mapping**: Custom extension (no ZGW equivalent for LHS matrix)
@@ -31,9 +31,9 @@ The system SHALL support configuring the Landelijke Handhavingsstrategie (LHS) 4
 #### Scenario: Customize LHS matrix
 
 - **WHEN** the beheerder navigates to Dossiq Admin > VTH Instellingen > Handhavingsstrategie
-- **THEN** the system SHALL display the 4x4 matrix as an editable grid
-- **THEN** each cell SHALL be editable with a dropdown of intervention types: Waarschuwing, Herstelactie, Last onder dwangsom, Last + PV, PV + Bestuursdwang, Bestuursdwang
-- **THEN** the beheerder SHALL be able to save the customized matrix
+- **THEN** the system SHALL show the matrix ("Landelijke Handhavingsstrategie, 16 vakken"), the decision table in use with its version ("Handhavingsmatrix Zuiddrecht, versie 2 in OpenRegister"), who changed it last and when, and "Eerdere versies"
+- **THEN** "Beslistabel openen in OpenRegister" SHALL open the decision table, where the beheerder sets each cell to an intervention type (Waarschuwing, Herstelactie, Last onder dwangsom, Last + PV, PV + Bestuursdwang, Bestuursdwang) and saves a new version
+- **THEN** dossiq SHALL NOT show an editable grid or a save button for the matrix
 
 ### Requirement: Enforcement action schema
 

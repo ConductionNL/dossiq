@@ -1,0 +1,11 @@
+{
+    "throws": "Refused by getTermijnInstance",
+    "calls": [
+        {
+            "call": "term::getTermijnInstance",
+            "args": [
+                "inst-1"
+            ]
+        }
+    ]
+}
