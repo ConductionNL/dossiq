@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Deelzaak;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -97,6 +98,7 @@ class SubCaseDeriver {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function derive(string $parentCaseUuid, array $childData): array {
+		$childData = array_diff_key($childData, CallerIdentity::KEYS);
 		if ($parentCaseUuid === '') {
 			return ['ok' => false, 'reason' => 'parent_not_found'];
 		}
