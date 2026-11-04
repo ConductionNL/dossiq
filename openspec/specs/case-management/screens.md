@@ -14,3 +14,8 @@
 - dossiq/DqZaken alle zaken https://identity.conduction.nl/screens/board?id=dossiq/DqZaken
 - dossiq/DqZaakBetrokkenen zaak, betrokkenen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBetrokkenen
 - dossiq/DqZaakContact the live conversation recorded on the case (REQ-LIVE-02) https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact
+- dossiq/DqOverdragen overdragen en doorzenden https://identity.conduction.nl/screens/board?id=dossiq/DqOverdragen
+- dossiq/DqZakenBulkactie bulkactie op zaken https://identity.conduction.nl/screens/board?id=dossiq/DqZakenBulkactie
+- dossiq/DqNieuweZaak nieuwe zaak https://identity.conduction.nl/screens/board?id=dossiq/DqNieuweZaak
+
+Components: CnActionButtons, CnActionDialog, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnChoiceCards, CnConfirmDialog, CnDashboardGrid, CnDashboardPage, CnDataTable, CnDeleteDialog, CnDetailCard, CnDetailGrid, CnDetailPage, CnFactsWidget, CnFilterBar, CnFormDialog, CnIndexPage, CnKpiGrid, CnMapWidget, CnMassActionBar, CnNextStepCard, CnNoteCard, CnNotesCard, CnNoticeWidget, CnObjectListWidget, CnPageHeader, CnPagination, CnPresenceAvatars, CnProgressBar, CnQuickFilterBar, CnRecordListWidget, CnRelatedCollections, CnRetentionWidget, CnRowActions, CnStatsBlock, CnStatusBadge, CnTabs, CnTimelineStages, CnTransitionInputDialog, CnWidgetWrapper

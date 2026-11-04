@@ -8,3 +8,5 @@
 - werkplek/DqKop bovenbalk over de volle breedte https://identity.conduction.nl/screens/board?id=werkplek/DqKop
 - dossiq/DqZaakMeer zaak, menu Meer en tabbladoverloop https://identity.conduction.nl/screens/board?id=dossiq/DqZaakMeer
 - dossiq/DqDocumentVersies versies van een document https://identity.conduction.nl/screens/board?id=dossiq/DqDocumentVersies
+
+Components: CnActionButtons, CnActionDialog, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFactsWidget, CnFileField, CnFilesCard, CnFormDialog, CnMapWidget, CnMassActionBar, CnNextStepCard, CnNoteCard, CnNoticeWidget, CnPageHeader, CnPresenceAvatars, CnProgressBar, CnRecordListWidget, CnRelatedCollections, CnRowActions, CnStatusBadge, CnTabs, CnTimelineStages, CnVersionHistory
