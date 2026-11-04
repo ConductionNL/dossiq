@@ -6180,12 +6180,42 @@
 					{
 						"id": "case-merge",
 						"type": "open-modal",
-						"target": "CaseMergeDialog",
+						"target": "CnActionDialog",
 						"label": "Merge into",
 						"icon": "CallMerge",
 						"props": {
-							"caseId": "@objectId",
-							"open": true
+							"objectId": "@objectId",
+							"config": {
+								"title": "Merge with another case",
+								"subtitle": "Parties, documents and objects move to the case you pick.",
+								"doneText": "The case is merged into the case you picked.",
+								"fields": [
+									{
+										"field": "into",
+										"type": "search",
+										"label": "Search the case to merge into",
+										"placeholder": "Case number or a word from the title",
+										"source": {
+											"register": "dossiq",
+											"schema": "case"
+										},
+										"optionLabel": "{title}",
+										"optionSecondary": "{identifier} · {initiatorDisplayName}",
+										"excludeSelf": true
+									}
+								],
+								"reason": {
+									"label": "Why these are one case"
+								},
+								"confirm": {
+									"label": "Merge",
+									"icon": "CallMerge",
+									"request": {
+										"method": "POST",
+										"url": "/apps/dossiq/api/case/@objectId/merge"
+									}
+								}
+							}
 						},
 						"visibleWhen": {
 							"field": "isFinalStatus",
