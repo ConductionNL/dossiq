@@ -60,7 +60,7 @@ class QueueUrgencySettingsTest extends TestCase {
 	 */
 	public function testNothingStoredReadsAsTheDefaults(): void {
 		$this->assertSame(
-			[
+			expected: [
 				'criticalDays' => 3,
 				'warningDays' => 7,
 				'priorityWeight' => 10.0,
@@ -90,7 +90,7 @@ class QueueUrgencySettingsTest extends TestCase {
 		);
 
 		$this->assertSame(
-			[
+			expected: [
 				'criticalDays' => 5,
 				'warningDays' => 10,
 				'priorityWeight' => 20.0,
@@ -98,7 +98,7 @@ class QueueUrgencySettingsTest extends TestCase {
 				'inSightDays' => 14,
 				'residentWaitWeight' => 7.5,
 			],
-			$profile->toArray()
+			actual: $profile->toArray()
 		);
 	}//end testStoredValuesAreRead()
 
@@ -132,7 +132,7 @@ class QueueUrgencySettingsTest extends TestCase {
 		);
 
 		$this->assertSame(
-			[
+			expected: [
 				'criticalDays' => 0,
 				'warningDays' => 120,
 				'priorityWeight' => 50.0,
@@ -140,7 +140,7 @@ class QueueUrgencySettingsTest extends TestCase {
 				'inSightDays' => 180,
 				'residentWaitWeight' => 0.0,
 			],
-			$profile->toArray()
+			actual: $profile->toArray()
 		);
 	}//end testOutOfBoundsValuesAreClamped()
 
