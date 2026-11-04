@@ -5560,7 +5560,6 @@ OC.L10N.register(
         "No open work to reassign": "Geen openstaand werk om over te dragen",
         "No organisation calendar is answering, so a term set to move off a weekend or a holiday will not move.": "Er antwoordt geen organisatiekalender, dus een termijn die van een weekend of feestdag af moet schuiven blijft staan.",
         "No organisational roles": "Geen organisatierollen",
-        "No other case matches those words.": "Geen andere zaak past bij die woorden.",
         "No other cases in this household that you may see": "Geen andere zaken in dit huishouden die u mag zien",
         "No overdue cases": "Geen zaken over termijn",
         "No overlay layers configured": "Geen overlaylagen geconfigureerd",
@@ -9914,7 +9913,6 @@ OC.L10N.register(
         "These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.": "Deze zaaktypen staan in je linkermenu van dossiq, onder Mijn zaaktypen. Eén klik opent hun zaaklijst. Sleep aan de greep om de volgorde te wijzigen.",
         "These cases are already linked through the main/sub-case hierarchy.": "Deze zaken zijn al gekoppeld via de hoofdzaak/deelzaak-hiërarchie.",
         "These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.": "Deze zaken lopen op versies {versions} van {caseType}. Een veld betekent per versie iets anders, dus kies één versie en probeer opnieuw.",
-        "These cases were not merged.": "Deze zaken zijn niet samengevoegd.",
         "These rights stood on that date. Nobody is named as setting them.": "Deze rechten stonden op die datum. Er is niemand genoemd die ze heeft ingesteld.",
         "These settings could not be saved.": "Deze instellingen konden niet worden opgeslagen.",
         "These tour steps point at a screen that is gone, so they teach nobody: {steps}": "Deze rondleidingsstappen wijzen naar een scherm dat er niet meer is, dus ze leren niemand iets: {steps}",
@@ -12038,7 +12036,8 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "Bij {value} van je zaken is de termijn verstreken of loopt die vandaag af.",
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "The case is merged into the case you picked.": "De zaak is samengevoegd met de zaak die je koos."
     },
     "nplurals=2; plural=(n != 1);"
 )
