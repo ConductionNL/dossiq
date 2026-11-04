@@ -450,49 +450,73 @@ class CaseTypeCopyService {
 		$copy = $copy->forSchema(schema: $schema);
 		$map = [];
 		foreach ($this->findChildren(target: $copy->target, caseTypeId: $derivation->sourceId) as $child) {
-			$map = array_replace($map, $this->copyChild(copy: $copy, child: $child));
+			try {
+				$created = $this->saveChild(copy: $copy, child: $child);
+			} catch (\Throwable $e) {
+				$this->childNotCopied(copy: $copy, child: $child, error: $e);
+				continue;
+			}
+
+			$map = array_replace($map, $this->idPair(child: $child, created: $created));
 		}
 
 		return $map;
 	}//end copyChildren()
 
 	/**
-	 * Copy one child object onto the new case type.
+	 * Save one child object under the new case type.
 	 *
-	 * @param CaseTypeChildCopy    $copy  Where to write, and the new case type's id.
-	 * @param array<string, mixed> $child The child object.
+	 * @param CaseTypeChildCopy    $copy  Where the child goes.
+	 * @param array<string, mixed> $child The child row.
 	 *
-	 * @return array<string, string> Old id to new id, or empty when the write
-	 *                               failed or either id is empty.
+	 * @return mixed What the store answers.
 	 */
-	private function copyChild(CaseTypeChildCopy $copy, array $child): array {
-		$target = $copy->target;
-		$oldId = $this->store->referenceId(value: ($child['id'] ?? ''));
+	private function saveChild(CaseTypeChildCopy $copy, array $child): mixed {
 		$payload = $this->stripIdentity(data: $child);
 		$payload['caseType'] = $copy->newCaseTypeId;
 
-		try {
-			$created = $target->objectService->saveObject(
-				object: $payload,
-				register: $target->register,
-				schema: $target->schema,
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'CaseTypeCopyService: failed to copy child object',
-				['schema' => $target->schema, 'exception' => $e->getMessage()]
-			);
-			$this->notCarried[] = ($copy->configKey . ':' . $this->text->textOr(value: ($child['name'] ?? ($child['title'] ?? null)), fallback: $oldId));
-			return [];
-		}
+		return $copy->target->objectService->saveObject(
+			object: $payload,
+			register: $copy->target->register,
+			schema: $copy->target->schema,
+		);
+	}//end saveChild()
 
+	/**
+	 * Log a child that could not be copied and record it as not carried.
+	 *
+	 * @param CaseTypeChildCopy    $copy  Where the child went.
+	 * @param array<string, mixed> $child The child row.
+	 * @param \Throwable           $error Why the save failed.
+	 *
+	 * @return void
+	 */
+	private function childNotCopied(CaseTypeChildCopy $copy, array $child, \Throwable $error): void {
+		$this->logger->warning(
+			'CaseTypeCopyService: failed to copy child object',
+			['schema' => $copy->target->schema, 'exception' => $error->getMessage()]
+		);
+		$oldId = $this->store->referenceId(value: ($child['id'] ?? ''));
+		$this->notCarried[] = ($copy->configKey . ':' . $this->text->textOr(value: ($child['name'] ?? ($child['title'] ?? null)), fallback: $oldId));
+	}//end childNotCopied()
+
+	/**
+	 * The old id mapped to the new one, or nothing when either is missing.
+	 *
+	 * @param array<string, mixed> $child   The source row.
+	 * @param mixed                $created What the store answered.
+	 *
+	 * @return array<string, string> The pair.
+	 */
+	private function idPair(array $child, mixed $created): array {
+		$oldId = $this->store->referenceId(value: ($child['id'] ?? ''));
 		$newId = $this->store->referenceId(value: ($this->store->asRow(value: $created)['id'] ?? ''));
 		if ($oldId !== '' && $newId !== '') {
 			return [$oldId => $newId];
 		}
 
 		return [];
-	}//end copyChild()
+	}//end idPair()
 
 	/**
 	 * Find every object of a schema owned by (filtered on `caseType` ==)

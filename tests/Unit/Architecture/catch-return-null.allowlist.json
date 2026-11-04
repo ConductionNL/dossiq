@@ -363,10 +363,10 @@
     },
     {
       "file": "lib/Service/CaseTypeCopyService.php",
-      "method": "findChildren",
+      "method": "listChildren",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`findChildren()` answers `return []` when the read fails; the catch logs at warning (\"CaseTypeCopyService: failed to list child objects\"), so a failed read and an absent record are the same answer."
+      "reason": "`listChildren()` answers `return null` when the read fails; the catch logs at warning (\"CaseTypeCopyService: failed to list child objects\") and records the schema as not carried, so the copy reports the partial instead of reading it as a case type without children."
     },
     {
       "file": "lib/Service/CaseTypeCopyService.php",
