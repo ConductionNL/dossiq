@@ -58,11 +58,11 @@ describe('the team-queue view', () => {
 describe('the my-work view', () => {
 	const overrides = view('my-work').overrides
 
-	it('opens on the urgency order, in cards, with the table offered', () => {
+	it('opens on the urgency order, as a list, with the cards offered', () => {
 		expect(overrides.sortOption).toBe('urgency')
 		expect(cases.sortSelectOptions.map((option) => option.value)).toContain('urgency')
-		expect(overrides.viewMode).toBe('cards')
-		expect(overrides.viewModes).toEqual(['cards', 'table'])
+		expect(overrides.viewMode).toBe('list')
+		expect(overrides.viewModes).toEqual(['list', 'cards'])
 	})
 
 	it('locks the reader to their own cases, as the page did', () => {

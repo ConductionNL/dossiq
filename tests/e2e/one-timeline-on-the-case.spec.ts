@@ -38,6 +38,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -465,7 +466,7 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
  */
 async function openTimelineTab(page: Page, id: string): Promise<void> {
 	await page.goto(`/apps/dossiq/cases/${id}`, PAGE_LOAD)
-	await page.getByRole('tab', { name: 'Timeline' }).click()
+	await openCaseTab(page, /^(Case history|Historie)\b/)
 	await expect(page.getByTestId('case-timeline')).toBeVisible(PAGE_LOAD)
 }
 

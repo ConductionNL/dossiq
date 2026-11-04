@@ -161,7 +161,7 @@ export function asTaskRow(row) {
 	// never once reached the uuid and this mapping was a no-op on real data.
 	// No route or verb accepts the numeric key: `/tasks/:id` and every
 	// `/api/flow-tasks/{uuid}/…` verb take the uuid, so the surfaces
-	// (MyTasksWidget, TaskRemindersWidget) built a deep link
+	// (TaskRemindersWidget) built a deep link
 	// like `/apps/dossiq/tasks/153` that resolves to nothing. It answered no
 	// error, it just went nowhere. Uuid first is the precedence every reader
 	// needs, kept here in the one place they all go through.

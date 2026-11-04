@@ -29,8 +29,6 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\Dashboard\CasesOverviewWidget;
 use OCA\Dossiq\Dashboard\DeadlineAlertsWidget;
 use OCA\Dossiq\Dashboard\MyOpenWorkWidget;
-use OCA\Dossiq\Dashboard\MyTasksWidget;
-use OCA\Dossiq\Dashboard\OverdueCasesWidget;
 use OCA\Dossiq\Dashboard\StalledCasesWidget;
 use OCA\Dossiq\Dashboard\StartCaseWidget;
 use OCA\Dossiq\Dashboard\TaskRemindersWidget;
@@ -51,9 +49,7 @@ class DashboardWidgetList {
 	public function classes(): array {
 		return [
 			CasesOverviewWidget::class,
-			MyTasksWidget::class,
 			MyOpenWorkWidget::class,
-			OverdueCasesWidget::class,
 			DeadlineAlertsWidget::class,
 			TaskRemindersWidget::class,
 			StalledCasesWidget::class,

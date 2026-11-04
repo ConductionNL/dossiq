@@ -140,8 +140,8 @@ describe('CaseDetail — the audit log is not also a body tab (task 4.1)', () =>
 		// trail under the same name, which is the failure A05 exists to catch.
 		const config = caseDetail().config
 		const panels = config.widgets.find((widget) => widget.id === 'case-panels')
-		const tab = panels.content.tabs.find((entry) => entry.label === 'Timeline')
-		expect(tab, 'the Timeline tab is gone').toBeTruthy()
+		const tab = panels.content.tabs.find((entry) => entry.label === 'Case history')
+		expect(tab, 'the Case history tab is gone').toBeTruthy()
 		expect(tab.widgetId).toBe('case-timeline-panel')
 
 		const pane = config.widgets.find(

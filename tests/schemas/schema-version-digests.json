@@ -1783,6 +1783,10 @@
         "version": "1.7.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-term-signal-from.json::case": {
+        "version": "1.62.0",
+        "digest": "b882f4ab6453b1660546da19507b194c7d5626a26774632f6ca9d95f21ae2ba7"
+    },
     "lib/Settings/register.d/99-case-type-field-rule-statuses.json::caseType": {
         "version": "1.41.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
