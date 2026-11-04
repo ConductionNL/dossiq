@@ -4,3 +4,5 @@
 - dossiq/DqZaaktypen zaaktypen https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypen
 - dossiq/DqInspectie inspectie in het veld, mobiel https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie
 - dossiq/DqHandhaving handhavingsadvies (LHS) https://identity.conduction.nl/screens/board?id=dossiq/DqHandhaving
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAdminSettingsShell, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnCameraCapture, CnCardGrid, CnChartWidget, CnChecklistRunWidget, CnChecklistWidget, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnNextStepCard, CnNoteCard, CnObjectCard, CnOfflineQueue, CnPageHeader, CnPagination, CnProgressBar, CnQuickFilterBar, CnRowActions, CnSettingsSection, CnStatusBadge, CnTimelineStages

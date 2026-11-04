@@ -4,3 +4,5 @@
 - portaliq/MobielZaak uw zaak https://identity.conduction.nl/screens/board?id=portaliq/MobielZaak
 - portaliq/ZaakWooVerzoek Mijn Zuiddrecht: uw Woo-verzoek https://identity.conduction.nl/screens/board?id=portaliq/ZaakWooVerzoek
 - portaliq/PtFormulierInsluiten portaliq: de bevestiging na het versturen, met zaaknummer https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInsluiten
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnFormDialog, CnIndexPage, CnJsonViewer, CnPagination, CnQuickFilterBar, CnRowActions, CnStatusBadge, CnTabs
