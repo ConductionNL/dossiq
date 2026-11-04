@@ -4,19 +4,22 @@
             "getConfigValue": "register"
         },
         {
+            "getConfigValue": "advies_aanvraag_schema"
+        },
+        {
             "saveObject": {
                 "object": {
-                    "caseRef": "case-1",
+                    "case": "case-1",
                     "requestedBy": "bob",
                     "advisor": "alice",
+                    "type": "intern",
+                    "subject": "",
                     "deadline": null,
-                    "status": "open",
-                    "question": "",
-                    "adviceText": "",
-                    "addedToFile": false
+                    "status": "requested",
+                    "questions": ""
                 },
                 "register": "dossiq",
-                "schema": "adviceRequest",
+                "schema": "adviesAanvraag",
                 "uuid": null
             }
         },
@@ -34,13 +37,16 @@
             }
         },
         {
+            "getConfigValue": "advies_aanvraag_schema"
+        },
+        {
             "saveObject": {
                 "object": {
                     "id": "advice-6",
                     "decisionRef": "decision-9"
                 },
                 "register": "dossiq",
-                "schema": "adviceRequest",
+                "schema": "adviesAanvraag",
                 "uuid": "advice-6"
             }
         },
@@ -48,14 +54,14 @@
             "notifyAdviseur": {
                 "caseId": "case-1",
                 "payload": {
-                    "caseRef": "case-1",
+                    "case": "case-1",
                     "requestedBy": "bob",
                     "advisor": "alice",
+                    "type": "intern",
+                    "subject": "",
                     "deadline": null,
-                    "status": "open",
-                    "question": "",
-                    "adviceText": "",
-                    "addedToFile": false
+                    "status": "requested",
+                    "questions": ""
                 },
                 "saved": {
                     "id": "advice-6"

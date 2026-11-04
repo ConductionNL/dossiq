@@ -61,6 +61,20 @@ use Throwable;
  * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  */
 class LocationBagValidationListener implements IEventListener {
+
+	/**
+	 * The refusal code a location dialog shows its own title and text for:
+	 * the BAG does not know the address, or the check could not run.
+	 *
+	 * @var array<string, string>
+	 */
+	private const REFUSAL_CODES = [
+		'nummeraanduidingId.unknown' => 'bag-address-unknown',
+		'nummeraanduidingId.unchecked' => 'bag-check-unavailable',
+		'nummeraanduidingId.integriq-missing' => 'bag-check-unavailable',
+		'nummeraanduidingId.integriq-outdated' => 'bag-check-unavailable',
+	];
+
 	/**
 	 * 16-digit BAG nummeraanduiding identificatie shape.
 	 */
@@ -155,12 +169,20 @@ class LocationBagValidationListener implements IEventListener {
 			return;
 		}
 
-		$event->setErrors(
-			[
-				'message' => $this->buildMessage(code: $outcome),
-				'codes' => [$outcome],
-			]
-		);
+		$errors = [
+			'message' => $this->buildMessage(code: $outcome),
+			'codes' => [$outcome],
+		];
+		$refusal = (self::REFUSAL_CODES[$outcome] ?? null);
+		if ($refusal !== null) {
+			$errors['code'] = $refusal;
+		}
+
+		if ($refusal === 'bag-address-unknown') {
+			$errors['addressId'] = trim((string)($payload['addressDesignationId'] ?? ''));
+		}
+
+		$event->setErrors($errors);
 		$event->stopPropagation();
 	}//end inspect()
 
