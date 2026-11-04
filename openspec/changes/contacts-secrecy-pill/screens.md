@@ -1,3 +1,3 @@
 # Screens
 
-- DqContacten https://identity.conduction.nl/screens/board?id=dossiq/DqContacten
+- dossiq/DqContacten contacten https://identity.conduction.nl/screens/board?id=dossiq/DqContacten

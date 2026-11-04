@@ -35,12 +35,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\Access\ReadableObjects;
 use OCA\Dossiq\Service\Pipelinq\PipelinqGateway;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use Throwable;
 
 /**
  * Read parties' open pipelinq tickets by master entity.
@@ -61,18 +63,21 @@ class PartyTicketController extends Controller {
 	 *
 	 * @param string          $appName The app name.
 	 * @param IRequest        $request The HTTP request.
-	 * @param PipelinqGateway $gateway The one seam that names pipelinq.
+	 * @param PipelinqGateway $gateway     The one seam that names pipelinq.
+	 * @param ReadableObjects $readable    Whether a caller is signed in, and which master entities they may read.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly PipelinqGateway $gateway,
+		private readonly ReadableObjects $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
-	 * One open ticket count per master entity.
+	 * One open ticket count per master entity the caller may read. A master
+	 * entity that no party the caller may read carries is left out, as a missing one is.
 	 *
 	 * @return JSONResponse `{available, values: {ref: count}}`, or `{available: false}`.
 	 *
@@ -80,9 +85,19 @@ class PartyTicketController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function openTicketCounts(): JSONResponse {
+		if ($this->readable->hasCaller() === false) {
+			return new JSONResponse(['error' => 'Sign in to read these parties.'], Http::STATUS_UNAUTHORIZED);
+		}
+
 		$keys = $this->keys(raw: $this->request->getParam('keys', []));
 		if (count($keys) > self::MAX_KEYS) {
 			return new JSONResponse(['error' => 'Too many parties in one read.'], Http::STATUS_BAD_REQUEST);
+		}
+
+		try {
+			$keys = $this->readable->readableMasterEntities(refs: $keys);
+		} catch (Throwable) {
+			return new JSONResponse(['error' => 'The parties could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
 		if ($keys === []) {
@@ -113,9 +128,23 @@ class PartyTicketController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function openTickets(): JSONResponse {
+		if ($this->readable->hasCaller() === false) {
+			return new JSONResponse(['error' => 'Sign in to read this party.'], Http::STATUS_UNAUTHORIZED);
+		}
+
 		$key = trim((string)$this->request->getParam('key', ''));
 		if ($key === '') {
 			return new JSONResponse(['available' => true, 'results' => [], 'total' => 0]);
+		}
+
+		try {
+			$readable = $this->readable->readableMasterEntities(refs: [$key]);
+		} catch (Throwable) {
+			return new JSONResponse(['error' => 'The party could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		if ($readable === []) {
+			return new JSONResponse(['error' => 'Party not found'], Http::STATUS_NOT_FOUND);
 		}
 
 		$status = (string)$this->request->getParam('status', 'open');

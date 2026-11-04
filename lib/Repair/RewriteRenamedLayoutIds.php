@@ -141,8 +141,6 @@ class RewriteRenamedLayoutIds implements IRepairStep {
 	 * @param object $objects The ObjectService.
 	 *
 	 * @return int How many were written.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) — RenamedLayoutIds is a pure rewrite helper
 	 */
 	private function rewriteAll(object $objects): int {
 		try {
@@ -169,7 +167,7 @@ class RewriteRenamedLayoutIds implements IRepairStep {
 				continue;
 			}
 
-			$rewritten = RenamedLayoutIds::rewrite(value: $delta);
+			$rewritten = (new RenamedLayoutIds())->rewrite(value: $delta);
 			if ($rewritten === $delta) {
 				continue;
 			}

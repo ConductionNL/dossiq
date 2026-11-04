@@ -49,6 +49,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Dashboard\MyOpenWorkWidget
  * @covers \OCA\Dossiq\Dashboard\MyTasksWidget
  * @uses   \OCA\Dossiq\Dashboard\QueueWidgetItems
+ * @uses   \OCA\Dossiq\Dashboard\DashboardPageWidget
  * @uses   \OCA\Dossiq\Service\Queue\QueueItem
  * @uses   \OCA\Dossiq\Service\Queue\Source\EngineTaskSource
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser

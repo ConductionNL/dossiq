@@ -119,6 +119,7 @@ final class PssShareStore {
  *
  * @covers \OCA\Dossiq\Service\CaseSharingService
  * @uses \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
+ * @uses \OCA\Dossiq\Service\Custody\ConsentStanding
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessLinkService
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessPolicy

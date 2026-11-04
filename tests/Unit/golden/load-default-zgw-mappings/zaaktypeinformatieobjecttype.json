@@ -1,0 +1,46 @@
+{
+    "zgwResource": "zaaktypeinformatieobjecttype",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "caseType": "{{ _baseUrl | replace({\"catalogi/v1/zaaktype-informatieobjecttypen\": \"catalogi/v1/zaaktypen\"}) }}/{{ caseType }}",
+        "informatieobjecttype": "{{ _baseUrl | replace({\"catalogi/v1/zaaktype-informatieobjecttypen\": \"catalogi/v1/informatieobjecttypen\"}) }}/{{ informatieobjecttype }}",
+        "volgnummer": "{{ sequenceNumber }}",
+        "richting": "{{ direction | default(\"\") | zgw_enum(\"direction\", _valueMappings) }}",
+        "statustype": "{{ statustype }}"
+    },
+    "reverseMapping": {
+        "caseType": "{{ zaaktype | zgw_extract_uuid }}",
+        "informatieobjecttype": "{{ informatieobjecttype | zgw_extract_uuid }}",
+        "sequenceNumber": "{{ volgnummer }}",
+        "direction": "{{ richting | default(\"\") | zgw_enum_reverse(\"direction\", _valueMappings) }}",
+        "statustype": "{{ statustype }}"
+    },
+    "reverseCast": {
+        "sequenceNumber": "int"
+    },
+    "cast": {
+        "volgnummer": "int"
+    },
+    "valueMapping": {
+        "direction": {
+            "inbound": "inkomend",
+            "internal": "intern",
+            "outbound": "uitgaand"
+        }
+    },
+    "queryParameterMapping": {
+        "caseType": {
+            "field": "caseType",
+            "extractUuid": true
+        },
+        "informatieobjecttype": {
+            "field": "informatieobjecttype",
+            "extractUuid": true
+        }
+    }
+}

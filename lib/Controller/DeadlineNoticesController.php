@@ -41,8 +41,6 @@ use Throwable;
 /**
  * Notices of default REST surface.
  *
- * @psalm-suppress UnusedClass
- *
  * @spec openspec/specs/termijn-reporting/spec.md
  */
 class DeadlineNoticesController extends Controller {

@@ -60,6 +60,17 @@ class CaseTypeRuleFlowDocument {
 	];
 
 	/**
+	 * The edges every rule flow has: trigger, filter, action, end.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const EDGES = [
+		['id' => 'trigger-conditions', 'from' => ['trigger'], 'to' => ['conditions']],
+		['id' => 'conditions-action', 'from' => ['conditions'], 'to' => ['action']],
+		['id' => 'action-end', 'from' => ['action'], 'to' => ['end']],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param RuleConditionLogic $logic Writes the filter's condition.
@@ -93,36 +104,57 @@ class CaseTypeRuleFlowDocument {
 	/**
 	 * The flow document for one action of one rule, or null when the action has no flow step.
 	 *
-	 * @param array<string, mixed> $rule The rule.
+	 * @param array<string, mixed> $rule   The rule.
 	 * @param array<string, mixed> $action One of its actions.
-	 * @param string $caseTypeId The case type uuid.
-	 * @param string $caseTypeTitle The case type's title, for the flow's name.
-	 * @param string $register The register slug cases live in.
-	 * @param string $schema The case schema slug.
-	 * @param array<int, string> $definitionNames The case type's property definition names, inherited ones included.
+	 * @param RuleFlowScope        $scope  The case type the flow belongs to.
 	 *
 	 * @return array<string, mixed>|null The flow document.
 	 *
 	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
 	 */
-	public function build(
-		array $rule,
-		array $action,
-		string $caseTypeId,
-		string $caseTypeTitle,
-		string $register,
-		string $schema,
-		array $definitionNames = []
-	): ?array {
-		$step = $this->step(rule: $rule, action: $action, caseTypeId: $caseTypeId, definitionNames: $definitionNames);
+	public function build(array $rule, array $action, RuleFlowScope $scope): ?array {
+		$step = $this->step(rule: $rule, action: $action, scope: $scope);
 		$ruleId = (string)($rule['id'] ?? '');
 		if ($step === null || $ruleId === '') {
 			return null;
 		}
 
+		$conditions = $this->conditionsOf(rule: $rule, step: $step);
+		$step['config'] = $this->actionConfig(step: $step, scope: $scope);
+
+		return [
+			'name' => $scope->caseTypeTitle . ': ' . $this->nameOf(rule: $rule),
+			'description' => 'Projected from rule "' . $ruleId . '" of case type ' . $scope->caseTypeTitle
+				. ' when the case type was published. Edit the rule on the case type, not this flow.',
+			'app' => Application::APP_ID,
+			'enabled' => true,
+			'executionMode' => 'async',
+			'notes' => $this->marker(caseTypeId: $scope->caseTypeId, ruleId: $ruleId),
+			'nodes' => [
+				$this->trigger(rule: $rule, scope: $scope),
+				[
+					'id' => 'conditions',
+					'type' => 'openregister.filter',
+					'config' => ['condition' => $this->logic->forRule(caseTypeId: $scope->caseTypeId, conditions: $conditions)],
+				],
+				['id' => 'action', 'type' => $step['type'], 'config' => $step['config']],
+				['id' => 'end', 'type' => 'openregister.end'],
+			],
+			'edges' => self::EDGES,
+		];
+	}//end build()
+
+	/**
+	 * The rule's conditions, with its status and the step's guard added.
+	 *
+	 * @param array<string, mixed>                                                 $rule The rule.
+	 * @param array{type: string, config: array<string, mixed>, guard?: array<string, mixed>} $step The action's step.
+	 *
+	 * @return array<int|string, mixed> The conditions the filter holds besides the case type guard.
+	 */
+	private function conditionsOf(array $rule, array $step): array {
 		$when = (array)($rule['when'] ?? []);
-		$event = (self::EVENTS[(string)($when['event'] ?? '')] ?? self::EVENTS['saved']);
 		$conditions = (array)($rule['conditions'] ?? []);
 		if (($when['event'] ?? null) === 'statusEntered') {
 			$conditions[] = ['kind' => 'statusIs', 'status' => (string)($when['status'] ?? '')];
@@ -132,49 +164,63 @@ class CaseTypeRuleFlowDocument {
 			$conditions[] = $step['guard'];
 		}
 
-		if ($step['type'] === 'openregister.object-write') {
-			$step['config'] = array_merge(['register' => $register, 'schema' => $schema], $step['config']);
+		return $conditions;
+	}//end conditionsOf()
+
+	/**
+	 * The step's config; an object write is aimed at the register and schema cases live in.
+	 *
+	 * @param array{type: string, config: array<string, mixed>} $step  The action's step.
+	 * @param RuleFlowScope                                     $scope The case type the flow belongs to.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function actionConfig(array $step, RuleFlowScope $scope): array {
+		if ($step['type'] !== 'openregister.object-write') {
+			return $step['config'];
 		}
 
+		return array_merge(['register' => $scope->register, 'schema' => $scope->schema], $step['config']);
+	}//end actionConfig()
+
+	/**
+	 * The rule's name, or its id when it has none.
+	 *
+	 * @param array<string, mixed> $rule The rule.
+	 *
+	 * @return string The name.
+	 */
+	private function nameOf(array $rule): string {
 		$name = trim((string)($rule['name'] ?? ''));
 		if ($name === '') {
-			$name = $ruleId;
+			return (string)($rule['id'] ?? '');
 		}
 
+		return $name;
+	}//end nameOf()
+
+	/**
+	 * The trigger node: the rule's moment on a case of this case type.
+	 *
+	 * @param array<string, mixed> $rule  The rule.
+	 * @param RuleFlowScope        $scope The case type the flow belongs to.
+	 *
+	 * @return array<string, mixed> The node.
+	 */
+	private function trigger(array $rule, RuleFlowScope $scope): array {
+		$when = (array)($rule['when'] ?? []);
+
 		return [
-			'name' => $caseTypeTitle . ': ' . $name,
-			'description' => 'Projected from rule "' . $ruleId . '" of case type ' . $caseTypeTitle
-				. ' when the case type was published. Edit the rule on the case type, not this flow.',
-			'app' => Application::APP_ID,
-			'enabled' => true,
-			'executionMode' => 'async',
-			'notes' => $this->marker(caseTypeId: $caseTypeId, ruleId: $ruleId),
-			'nodes' => [
-				[
-					'id' => 'trigger',
-					'type' => 'openregister.trigger-object',
-					'config' => [
-						'event' => $event,
-						'register' => $register,
-						'schema' => $schema,
-						'scope' => ['property' => 'caseType', 'value' => $caseTypeId],
-					],
-				],
-				[
-					'id' => 'conditions',
-					'type' => 'openregister.filter',
-					'config' => ['condition' => $this->logic->forRule(caseTypeId: $caseTypeId, conditions: $conditions)],
-				],
-				['id' => 'action', 'type' => $step['type'], 'config' => $step['config']],
-				['id' => 'end', 'type' => 'openregister.end'],
-			],
-			'edges' => [
-				['id' => 'trigger-conditions', 'from' => ['trigger'], 'to' => ['conditions']],
-				['id' => 'conditions-action', 'from' => ['conditions'], 'to' => ['action']],
-				['id' => 'action-end', 'from' => ['action'], 'to' => ['end']],
+			'id' => 'trigger',
+			'type' => 'openregister.trigger-object',
+			'config' => [
+				'event' => (self::EVENTS[(string)($when['event'] ?? '')] ?? self::EVENTS['saved']),
+				'register' => $scope->register,
+				'schema' => $scope->schema,
+				'scope' => ['property' => 'caseType', 'value' => $scope->caseTypeId],
 			],
 		];
-	}//end build()
+	}//end trigger()
 
 	/**
 	 * The flow step an action becomes, or null when no flow step performs it.
@@ -184,22 +230,21 @@ class CaseTypeRuleFlowDocument {
 	 * A written field carries a guard that it does not hold the value yet, so
 	 * the write it causes does not fire the rule again.
 	 *
-	 * @param array<string, mixed> $rule The rule.
+	 * @param array<string, mixed> $rule   The rule.
 	 * @param array<string, mixed> $action The action.
-	 * @param string $caseTypeId The case type uuid.
-	 * @param array<int, string> $definitionNames The case type's property definition names.
+	 * @param RuleFlowScope        $scope  The case type the flow belongs to.
 	 *
 	 * @return array{type: string, config: array<string, mixed>, guard?: array<string, mixed>}|null The step.
 	 */
-	private function step(array $rule, array $action, string $caseTypeId, array $definitionNames): ?array {
+	private function step(array $rule, array $action, RuleFlowScope $scope): ?array {
 		return match ($action['action'] ?? null) {
-			'addTask' => $this->addTask(rule: $rule, action: $action, caseTypeId: $caseTypeId),
+			'addTask' => $this->addTask(rule: $rule, action: $action, caseTypeId: $scope->caseTypeId),
 			'setField' => $this->writeField(
 				field: trim((string)($action['field'] ?? '')),
 				value: ($action['value'] ?? null),
-				definitionNames: $definitionNames
+				definitionNames: $scope->definitionNames
 			),
-			'sendMessage' => $this->sendMessage(rule: $rule, action: $action, caseTypeId: $caseTypeId),
+			'sendMessage' => $this->sendMessage(rule: $rule, action: $action, caseTypeId: $scope->caseTypeId),
 			'chooseVariant' => $this->writeField(field: 'variant', value: trim((string)($action['variant'] ?? '')), definitionNames: []),
 			default => null,
 		};

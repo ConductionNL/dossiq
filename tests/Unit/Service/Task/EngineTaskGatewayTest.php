@@ -382,10 +382,15 @@ class EngineTaskGatewayTest extends TestCase {
 	 * @return void
 	 */
 	public function testNamesTheClassWhenOpenRegisterIsPresentButTheServiceIsNot(): void {
-		// Installed, but the container hands back nothing and the class is
-		// absent from this test runtime (OpenRegister is not autoloadable in
-		// dossiq's unit suite), which is exactly the rename shape.
-		$gateway = new EngineTaskGateway($this->settings('1', true, null), $this->container(null), new NullLogger());
+		// Installed, but the class is absent, which is exactly the rename shape.
+		$gateway = new class ($this->settings('1', true, null), $this->container(null), new NullLogger()) extends EngineTaskGateway {
+			/**
+			 * @return boolean The class is absent.
+			 */
+			protected function taskServiceExists(): bool {
+				return false;
+			}
+		};
 
 		$this->assertFalse($gateway->isEnabled());
 
