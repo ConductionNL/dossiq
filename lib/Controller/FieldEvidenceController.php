@@ -46,6 +46,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\EvidenceMetadataService;
@@ -73,7 +74,6 @@ class FieldEvidenceController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                  $appName       The app name.
 	 * @param IRequest                $request       The request.
 	 * @param EvidenceMetadataService $metadata      Validates the capture and builds the record.
 	 * @param TranscriptionService    $transcription Queues a voice memo to be transcribed.
@@ -86,7 +86,6 @@ class FieldEvidenceController extends Controller {
 	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly EvidenceMetadataService $metadata,
 		private readonly TranscriptionService $transcription,
@@ -94,7 +93,7 @@ class FieldEvidenceController extends Controller {
 		private readonly CaseAccessGuard $accessGuard,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

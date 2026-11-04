@@ -118,7 +118,6 @@ class StarterContentControllerTest extends TestCase {
 		);
 
 		$this->controller = new StarterContentController(
-			appName: 'dossiq',
 			request: $request,
 			shipped: $this->shipped,
 			retirement: $this->retirement,

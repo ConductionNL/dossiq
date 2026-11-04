@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
@@ -75,7 +76,6 @@ class CaseTaskController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                $appName     The app name.
 	 * @param IRequest              $request     The HTTP request.
 	 * @param CaseTaskActions       $tasks       Completes and claims a task, with dossiq's refusals in front.
 	 * @param TaskAttachmentService $attachments Holds a file against an open task.
@@ -84,7 +84,6 @@ class CaseTaskController extends Controller {
 	 * @param LoggerInterface       $logger      The logger.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly CaseTaskActions $tasks,
 		private readonly TaskAttachmentService $attachments,
@@ -92,7 +91,7 @@ class CaseTaskController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

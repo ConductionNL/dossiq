@@ -329,7 +329,6 @@ class CaseHandoverControllerTest extends TestCase {
 	 */
 	private function controller(): CaseHandoverController {
 		return new CaseHandoverController(
-			appName: 'dossiq',
 			request: $this->request,
 			transfers: $this->transfers,
 			accessGuard: $this->guard,

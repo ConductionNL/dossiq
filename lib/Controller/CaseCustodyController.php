@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Custody\CaseCustodyChain;
 use OCA\Dossiq\Service\Custody\CaseCustodyQuery;
@@ -56,7 +57,6 @@ class CaseCustodyController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string           $appName     The app name.
 	 * @param IRequest         $request     The request.
 	 * @param CaseCustodyChain $chain       The chain of holdings.
 	 * @param CaseCustodyQuery $query       The two questions the chain exists for.
@@ -69,7 +69,6 @@ class CaseCustodyController extends Controller {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly CaseCustodyChain $chain,
 		private readonly CaseCustodyQuery $query,
@@ -77,7 +76,7 @@ class CaseCustodyController extends Controller {
 		private readonly IGroupManager $groups,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

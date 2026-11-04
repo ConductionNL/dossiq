@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\AiService;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -69,7 +70,6 @@ class AiController extends Controller {
 	/**
 	 * Constructor for AiController.
 	 *
-	 * @param string $appName The application name
 	 * @param IRequest $request The request object
 	 * @param AiService $aiService The AI service
 	 * @param AiAuditService $auditService The AI oversight audit service
@@ -80,7 +80,6 @@ class AiController extends Controller {
 	 * @return void
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private AiService $aiService,
 		private AiAuditService $auditService,
@@ -88,7 +87,7 @@ class AiController extends Controller {
 		private LoggerInterface $logger,
 		private readonly CaseAccessGuard $caseAccessGuard,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

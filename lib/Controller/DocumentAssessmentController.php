@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Assessment\AssessedDocuments;
 use OCA\Dossiq\Service\Assessment\OutstandingDocuments;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -51,7 +52,6 @@ class DocumentAssessmentController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string               $appName     The app name.
 	 * @param IRequest             $request     The request.
 	 * @param OutstandingDocuments $outstanding Names the documents that wait for an assessment.
 	 * @param AssessedDocuments    $assessed    Lists every document under review with its assessment.
@@ -60,7 +60,6 @@ class DocumentAssessmentController extends Controller {
 	 * @param IL10N                $l10n        Translates the refusal the dialog shows.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly OutstandingDocuments $outstanding,
 		private readonly AssessedDocuments $assessed,
@@ -68,7 +67,7 @@ class DocumentAssessmentController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

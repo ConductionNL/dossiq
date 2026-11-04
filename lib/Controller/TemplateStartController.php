@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Starter\CaseTemplateService;
 use OCA\Dossiq\Service\Starter\ContentTemplateService;
@@ -57,7 +58,6 @@ class TemplateStartController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                 $appName  The app name.
 	 * @param IRequest               $request  The HTTP request.
 	 * @param CaseTemplateService    $cases    The case templates.
 	 * @param ContentTemplateService $content  The template library.
@@ -66,7 +66,6 @@ class TemplateStartController extends Controller {
 	 * @param LoggerInterface        $logger   Logger.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly CaseTemplateService $cases,
 		private readonly ContentTemplateService $content,
@@ -74,7 +73,7 @@ class TemplateStartController extends Controller {
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
