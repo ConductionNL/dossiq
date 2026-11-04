@@ -1,22 +1,26 @@
 # case-map-via-maps-leaf Specification
 
 ## Purpose
-TBD - created by archiving change migrate-maps-to-maps-leaf. Update Purpose after archive.
+A handler sees where a case is without leaving the case page. The map comes from OpenRegister's
+`maps` integration leaf and sits in the Locaties card on the Overzicht tab; dossiq keeps the
+location data and draws no map of its own.
 ## Requirements
 ### Requirement: Case Detail Renders Its Location Through The OR Maps Leaf
 
 The case detail page SHALL render the case's geographic location using OpenRegister's `maps`
 integration leaf (ADR-019) instead of an in-app Leaflet component. Dossiq SHALL NOT register
-its own map UI, tile source, or layer switcher.
+its own map UI, tile source, or layer switcher. The map SHALL sit in a Locaties card in the
+main column of the Overzicht tab, as board DqZaak draws it: the heading Locaties, the count
+("1 locatie"), the map with a pin per location, and the address under it.
 
 @e2e exclude Map rendering (tiles, marker placement, empty/no-location state) is owned by OpenRegister's `maps` integration leaf (cross-app, ADR-019); the leaf tab surfaces via `@conduction/nextcloud-vue`'s builtin integration registry and fetches from the OR integrations endpoint. Without the OR maps leaf installed it cannot be exercised by a dossiq-only UI e2e. The dossiq-side change is the removal of the bespoke `CaseMap.vue`/Leaflet surface (a static no-parallel-UI check) plus the registry/manifest tab wiring (gate-22 manifest validation), not a dossiq UI surface.
 
-#### Scenario: Case with a location shows the maps leaf tab
+#### Scenario: Case with a location shows the Locaties card
 
 - **GIVEN** a `case` object whose `location` geo property contains a valid GeoJSON Point
 - **AND** the OR maps leaf is enabled and whitelisted on the `case` schema `configuration.linkedTypes`
 - **WHEN** a handler opens the case detail page
-- **THEN** the maps leaf tab SHALL be present in the object sidebar
+- **THEN** the Locaties card SHALL be present in the main column of the Overzicht tab, not as a sidebar tab
 - **AND** the leaf SHALL place a marker at the coordinates from the case `location` property
 - **AND** no in-app `CaseMap.vue` / Leaflet component SHALL be mounted
 
@@ -49,7 +53,7 @@ parallel location store or write map-UI state to its register.
 - **GIVEN** the dossiq codebase after this migration
 - **WHEN** `src/views/cases/components/` is inspected
 - **THEN** the bespoke per-case `LocationTab.vue` (single-case Leaflet surface) SHALL NOT be present
-- **AND** the case detail SHALL surface the maps leaf tab instead
+- **AND** the case detail SHALL surface the maps leaf in the Locaties card instead
 
 > NOTE (scope): RESOLVED (issue #112, change `migrate-cases-on-map-to-maps-overview-leaf`).
 > The **multi-object** cases-on-map overview (then `CasesOnMapView` on `/map`; since

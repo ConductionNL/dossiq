@@ -596,8 +596,8 @@
         "digest": "f4a93f76ff3c94c12182673a2d2c25df33790289e2022f899e21181f24056203"
     },
     "lib/Settings/dossiq_register.json::bacAdviceRequest": {
-        "version": "1.0.0",
-        "digest": "bd97b84e4e59f5ed2063ac3999ab1f7e0ec65881be35022acb420b88149b757f"
+        "version": "1.0.1",
+        "digest": "84df72b37f1ce5bfc66db77981e756c338f266cf245fd16bd4a62bde32f09b2c"
     },
     "lib/Settings/dossiq_register.json::beroep": {
         "version": "1.0.0",
@@ -712,8 +712,8 @@
         "digest": "972486cb47511ec19d9c2a2bca84d2d484349feb2af0d140042c26d5756a5a73"
     },
     "lib/Settings/dossiq_register.json::document": {
-        "version": "1.1.2",
-        "digest": "fb2c41864a5e6b70f15ff4f581bc8964495cf0be4bfab101fdd20092119af210"
+        "version": "1.2.0",
+        "digest": "10ff7dd3d97131219f194541ebc24b500dc7ba57110b18141b7206efbfe6f4c9"
     },
     "lib/Settings/dossiq_register.json::documentLink": {
         "version": "1.0.1",
@@ -912,7 +912,7 @@
         "digest": "37037a79164866402611a7fde656e53659f9c7ef950599be682aaada89cfa8be"
     },
     "lib/Settings/register.d/30-beschikking.json::beschikking": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "329e9dff1c44db3345bc05096cc589c1bd935176dadc5cc6e82e174b0949100e"
     },
     "lib/Settings/register.d/30-beschikking.json::bezwaarTrigger": {
@@ -1056,7 +1056,7 @@
         "digest": "ff3be2dd7a8840aba06cbf57225d0bca40eb4a2f16bddefa7ee745f1d96aa667"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::conflictRecord": {
-        "version": "1.0.1",
+        "version": "1.1.0",
         "digest": "bf0f2bc9dec97a02f23dd130a21cd8a28b4e90d295aa46193e0491b8671e280a"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::fieldEvidence": {
@@ -1156,8 +1156,8 @@
         "digest": "263e846261b0ad0aa8666a43d43b74c32c95eb7b55521eb26800e13c76f29b74"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::reIntegratieTraject": {
-        "version": "1.2.0",
-        "digest": "de8cb58bdbd44cd9a6aeb6a3ce4947b1cbae9c5e6bfe8479c66e4c1da927de62"
+        "version": "1.2.1",
+        "digest": "93a9357b4fd41a755be980b7b6f23a6fd508be20cb196f6bd3a4591300ee2080"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::sociaalDomeinAuditLog": {
         "version": "1.2.1",
@@ -1236,7 +1236,7 @@
         "digest": "07eefb766e6f75a558f5d26fca5c4d2c344de6f6de84e8a71aebb3f8d6028068"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::noticeOfDefault": {
-        "version": "1.1.2",
+        "version": "1.2.0",
         "digest": "59e7a80ed4c1e91ce6b9691df689397d59f6751cad2a09b9dc64abb787656d8d"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::penaltyPaymentCalculation": {
@@ -1745,6 +1745,10 @@
     },
     "lib/Settings/register.d/99-case-dedup-threshold.json::case": {
         "version": "1.57.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-grants-read.json::case": {
+        "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-handoff-case-type.json::case": {

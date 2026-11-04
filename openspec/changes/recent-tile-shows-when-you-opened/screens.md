@@ -1,3 +1,3 @@
 # Screens
 
-- DqDashboard https://identity.conduction.nl/screens/board?id=dossiq/DqDashboard
+- dossiq/DqDashboard dashboard https://identity.conduction.nl/screens/board?id=dossiq/DqDashboard

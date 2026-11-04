@@ -1,0 +1,86 @@
+{
+    "calls": [
+        {
+            "adapter": [
+                "111222333",
+                "Uw aanvraag",
+                "Wij hebben uw aanvraag ontvangen.",
+                "T1",
+                null,
+                "statutory",
+                "case-1"
+            ]
+        },
+        {
+            "getConfigValue": "register"
+        },
+        {
+            "getConfigValue": "berichtenbox_message_schema"
+        },
+        {
+            "saveObject": {
+                "object": {
+                    "caseId": "case-1",
+                    "bsn": "111222333",
+                    "subject": "Uw aanvraag",
+                    "body": "Wij hebben uw aanvraag ontvangen.",
+                    "berichtTypeCode": "T1",
+                    "attachmentFileId": null,
+                    "externalMessageId": null,
+                    "status": "refused",
+                    "sentAt": null,
+                    "lastError": ""
+                },
+                "named": [
+                    [],
+                    7,
+                    9,
+                    null,
+                    true,
+                    true,
+                    false,
+                    true,
+                    null,
+                    null,
+                    false
+                ]
+            }
+        },
+        {
+            "timeline": {
+                "caseId": "case-1",
+                "kind": "portaalbericht",
+                "message": "Uw aanvraag -- not sent: ",
+                "fields": {
+                    "subject": "Uw aanvraag",
+                    "messageId": "",
+                    "status": "refused"
+                },
+                "visibility": "internal"
+            }
+        },
+        {
+            "warning": "Dossiq: digital post was not sent",
+            "context": {
+                "caseId": "case-1",
+                "reason": ""
+            }
+        }
+    ],
+    "answer": {
+        "caseId": "case-1",
+        "bsn": "111222333",
+        "subject": "Uw aanvraag",
+        "body": "Wij hebben uw aanvraag ontvangen.",
+        "berichtTypeCode": "T1",
+        "attachmentFileId": null,
+        "externalMessageId": null,
+        "status": "refused",
+        "sentAt": null,
+        "lastError": "",
+        "id": "message-1",
+        "refused": true,
+        "error": "",
+        "code": "refused"
+    }
+}

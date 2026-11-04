@@ -188,6 +188,8 @@ class CaseTemplateService {
 	 * carrying the same one is an archive problem, not a cosmetic one. The
 	 * dates go because a case starts when it is started, not when its template
 	 * was written. `templateName` goes because the new row is not a template.
+	 * `status` goes because the template's own status is not where a new case
+	 * starts: OpenRegister opens it in its case type's initial status.
 	 *
 	 * @param array<string, mixed> $template The template row.
 	 *
@@ -203,6 +205,7 @@ class CaseTemplateService {
 			$template['endDate'],
 			$template['deadline'],
 			$template['plannedEndDate'],
+			$template['status'],
 			$template['statusHistory'],
 			$template['startedFromTemplate'],
 		);

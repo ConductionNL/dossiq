@@ -144,6 +144,7 @@ import SendIcon from 'vue-material-design-icons/Send.vue'
 import MessageTemplateSelect from '../components/case/MessageTemplateSelect.vue'
 import { sendMessage } from '../services/berichtenboxApi.js'
 import { caseEyebrow } from '../services/caseSummary.js'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * Compose one letter to a citizen's digital post, from the case.
@@ -183,7 +184,7 @@ export default {
 		 *
 		 * NOT `required`, and it may arrive as the unresolved `@objectId`
 		 * token: `open-modal` forwards an action's props verbatim with no
-		 * token resolution, exactly as it does for BeschikkingComposerDialog
+		 * token resolution, exactly as it does for GenerateDocumentDialog
 		 * and DocumentMetadataDialog. `resolvedCaseId` reads the route in that
 		 * case.
 		 */
@@ -273,11 +274,7 @@ export default {
 		 * @spec openspec/specs/berichtenbox-integration/spec.md
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
-				return fromProp
-			}
-			return (this.$route && this.$route.params && this.$route.params.id) || ''
+			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**

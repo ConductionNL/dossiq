@@ -149,17 +149,85 @@ class AanvullingsverzoekService {
 		string $party = '',
 		?string $question = null,
 	): array {
-		$kind = self::KIND_DOCUMENTS;
-		$asked = $items;
-		if ($question !== null) {
-			$kind = self::KIND_CLARIFICATION;
-			$this->assertClarification(caseId: $caseId, items: $items, question: $question);
-			// The letter carries the question as the one thing asked; the
-			// record keeps it as the summary and lists no documents.
-			$asked = [trim($question)];
+		$ask = compact('caseId', 'items', 'recipient', 'durationDays', 'userId', 'pauseReason', 'rationale', 'party');
+		$ask += $this->kindOf(ask: $ask, question: $question);
+
+		$instance = $this->sentInstance(ask: $ask);
+		$ask['now'] = (new DateTimeImmutable())->format('c');
+
+		$request = $this->requestRow(ask: $ask, instance: $instance);
+		$written = $this->write(request: $request);
+		$written = $this->raisePortalTask(written: $written, userId: $userId);
+		$this->markCaseWaiting(caseId: $caseId, since: $ask['now']);
+
+		$this->logger->info(
+			'Dossiq: an aanvullingsverzoek was sent and written down',
+			['app' => Application::APP_ID, 'case' => $caseId, 'items' => count($request['missingItems'])]
+		);
+
+		return $written;
+	}//end ask()
+
+	/**
+	 * The kind of request and what its letter asks: the documents, or the one question of a clarification.
+	 *
+	 * A clarification the case cannot take is refused before any letter goes
+	 * out: a `verduidelijking` asks one question on a Woo case and lists no
+	 * documents (woo-dossier-shared-with-the-requester REQ-WDS-004).
+	 *
+	 * @param array{caseId: string, items: array<int, string>} $ask      The case and the documents asked for.
+	 * @param string|null                                      $question The question of a clarification, or null.
+	 *
+	 * @return array{kind: string, asked: array<int, string>} The kind and the lines the letter asks.
+	 *
+	 * @throws RefusedException When a clarification is not one question on a Woo case.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
+	 */
+	private function kindOf(array $ask, ?string $question): array {
+		if ($question === null) {
+			return ['kind' => self::KIND_DOCUMENTS, 'asked' => $ask['items']];
 		}
 
-		if ($this->openFor(caseId: $caseId) !== null) {
+		// A Woo request on any version of the case type: the first version by
+		// its fixed id, a later one by the identifier the chain shares.
+		$wooKeys = [WooRequestIntake::CASE_TYPE_ID, WooRequestIntake::CASE_TYPE_IDENTIFIER];
+		if (in_array($this->caseTypeOf(caseId: $ask['caseId']), $wooKeys, true) === false) {
+			throw new RefusedException(
+				rule: 'aanvullingsverzoek-clarification-woo-only',
+				sentence: 'A clarification can only be asked on a Woo request.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		if (trim($question) === '' || array_filter(array_map('trim', array_map('strval', $ask['items']))) !== []) {
+			throw new RefusedException(
+				rule: 'aanvullingsverzoek-clarification-one-question',
+				sentence: 'A clarification asks one question and lists no documents.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		// The letter carries the question as the one thing asked; the
+		// record keeps it as the summary and lists no documents.
+		return ['kind' => self::KIND_CLARIFICATION, 'asked' => [trim($question)]];
+	}//end kindOf()
+
+	/**
+	 * Refuse while a request is open, else send the letter and suspend the term, and answer the suspended term instance.
+	 *
+	 * THE ACT FIRST. It refuses when there is no running term, it sends the
+	 * letter, and only a send that worked suspends the clock. A record
+	 * written before this would survive a failed send.
+	 *
+	 * @param array{caseId: string, asked: array, recipient: string, durationDays: int, rationale: string, pauseReason: string} $ask The ask.
+	 *
+	 * @return array<string, mixed> The term instance the act suspended.
+	 *
+	 * @throws RefusedException When a request is open, the act refuses or the letter was not sent.
+	 */
+	private function sentInstance(array $ask): array {
+		if ($this->openFor(caseId: $ask['caseId']) !== null) {
 			throw new RefusedException(
 				rule: 'aanvullingsverzoek-already-open',
 				sentence: 'This case is already waiting on the applicant. Record the answer to the open request, or withdraw it, before asking again.',
@@ -167,16 +235,13 @@ class AanvullingsverzoekService {
 			);
 		}
 
-		// THE ACT FIRST. It refuses when there is no running term, it sends the
-		// letter, and only a send that worked suspends the clock. A record
-		// written before this would survive a failed send.
 		$outcome = $this->act->ask(
-			caseId: $caseId,
-			items: $asked,
-			recipient: $recipient,
-			durationDays: $durationDays,
-			rationale: $rationale,
-			pauseReason: $pauseReason,
+			caseId: $ask['caseId'],
+			items: $ask['asked'],
+			recipient: $ask['recipient'],
+			durationDays: $ask['durationDays'],
+			rationale: $ask['rationale'],
+			pauseReason: $ask['pauseReason'],
 		);
 
 		if (($outcome['sent'] ?? false) !== true) {
@@ -187,20 +252,29 @@ class AanvullingsverzoekService {
 			);
 		}
 
-		$instance = (array)($outcome['instance'] ?? []);
-		$now = new DateTimeImmutable();
+		return (array)($outcome['instance'] ?? []);
+	}//end sentInstance()
 
+	/**
+	 * The request as it is written down, after the letter went out.
+	 *
+	 * @param array<string, mixed> $ask      The ask, its kind, what was asked, who asked and when.
+	 * @param array<string, mixed> $instance The suspended term instance.
+	 *
+	 * @return array<string, mixed> The request row.
+	 */
+	private function requestRow(array $ask, array $instance): array {
 		$request = [
-			'case' => $caseId,
-			'summary' => $this->summaryOf(items: $asked),
-			'party' => trim($party),
-			'recipient' => trim($recipient),
-			'pauseReason' => trim($pauseReason),
-			'rationale' => trim($rationale),
-			'missingItems' => $this->itemRows(items: $items),
-			'kind' => $kind,
-			'requestedBy' => $userId,
-			'requestedAt' => $now->format('c'),
+			'case' => $ask['caseId'],
+			'summary' => $this->summaryOf(items: $ask['asked']),
+			'party' => trim($ask['party']),
+			'recipient' => trim($ask['recipient']),
+			'pauseReason' => trim($ask['pauseReason']),
+			'rationale' => trim($ask['rationale']),
+			'missingItems' => $this->itemRows(items: $ask['items']),
+			'kind' => $ask['kind'],
+			'requestedBy' => $ask['userId'],
+			'requestedAt' => $ask['now'],
 			// The date the applicant is held to is the one the ACT computed and
 			// suspended the term to, read back off the instance. Computing it
 			// again here would be a second arithmetic that can disagree with
@@ -208,7 +282,7 @@ class AanvullingsverzoekService {
 			'hersteltermijn' => (string)($instance['pauseDeadline'] ?? ''),
 			'state' => 'open',
 			'deadlineInstance' => (string)($instance['id'] ?? ($instance['@self']['id'] ?? '')),
-			'pauseDays' => max(1, $durationDays),
+			'pauseDays' => max(1, $ask['durationDays']),
 		];
 
 		// WHOSE PORTAL ACCOUNT MAY READ THIS. Copied from the case, because
@@ -216,22 +290,8 @@ class AanvullingsverzoekService {
 		// follow `case` to find it (site-resident-portal-design D1). A case
 		// without a portal subject leaves this empty, and the request then
 		// reaches nobody rather than everybody.
-		$portalSubject = $this->portalSubjectOf(caseId: $caseId);
-		if ($portalSubject !== '') {
-			$request['portalSubject'] = $portalSubject;
-		}
-
-		$written = $this->write(request: $request);
-		$written = $this->raisePortalTask(written: $written, userId: $userId);
-		$this->markCaseWaiting(caseId: $caseId, since: $now->format('c'));
-
-		$this->logger->info(
-			'Dossiq: an aanvullingsverzoek was sent and written down',
-			['app' => Application::APP_ID, 'case' => $caseId, 'items' => count($request['missingItems'])]
-		);
-
-		return $written;
-	}//end ask()
+		return $request + array_diff(['portalSubject' => $this->portalSubjectOf(caseId: $ask['caseId'])], ['']);
+	}//end requestRow()
 
 	/**
 	 * Raise the resident's portal task for a request just written, and
@@ -287,43 +347,6 @@ class AanvullingsverzoekService {
 
 		return array_merge($written, ['portalTask' => $task]);
 	}//end raisePortalTask()
-
-	/**
-	 * Refuse a clarification the case cannot take, before any letter goes out.
-	 *
-	 * A `verduidelijking` asks one question on a Woo case and lists no
-	 * documents (woo-dossier-shared-with-the-requester REQ-WDS-004).
-	 *
-	 * @param string             $caseId   The case UUID.
-	 * @param array<int, string> $items    The documents asked for.
-	 * @param string             $question The question.
-	 *
-	 * @return void
-	 *
-	 * @throws RefusedException When the case is no Woo request, or the request is not one question.
-	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
-	 */
-	private function assertClarification(string $caseId, array $items, string $question): void {
-		// A Woo request on any version of the case type: the first version by
-		// its fixed id, a later one by the identifier the chain shares.
-		$wooKeys = [WooRequestIntake::CASE_TYPE_ID, WooRequestIntake::CASE_TYPE_IDENTIFIER];
-		if (in_array($this->caseTypeOf(caseId: $caseId), $wooKeys, true) === false) {
-			throw new RefusedException(
-				rule: 'aanvullingsverzoek-clarification-woo-only',
-				sentence: 'A clarification can only be asked on a Woo request.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		if (trim($question) === '' || array_filter(array_map('trim', array_map('strval', $items))) !== []) {
-			throw new RefusedException(
-				rule: 'aanvullingsverzoek-clarification-one-question',
-				sentence: 'A clarification asks one question and lists no documents.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-	}//end assertKind()
 
 	/**
 	 * The case's type: the identifier its version chain shares when the case
@@ -610,18 +633,30 @@ class AanvullingsverzoekService {
 	 * @return array<int, array<string, mixed>> The rows, none received yet.
 	 */
 	private function itemRows(array $items): array {
-		$rows = [];
+		return array_map(
+			static fn (string $text): array => ['item' => $text, 'received' => false],
+			$this->cleanLines(items: $items)
+		);
+	}//end itemRows()
+
+	/**
+	 * The asked-for lines, trimmed, without the blank ones.
+	 *
+	 * @param array<int, string> $items What was asked for.
+	 *
+	 * @return array<int, string> The non-blank lines, in order.
+	 */
+	private function cleanLines(array $items): array {
+		$clean = [];
 		foreach ($items as $item) {
 			$text = trim((string)$item);
-			if ($text === '') {
-				continue;
+			if ($text !== '') {
+				$clean[] = $text;
 			}
-
-			$rows[] = ['item' => $text, 'received' => false];
 		}
 
-		return $rows;
-	}//end itemRows()
+		return $clean;
+	}//end cleanLines()
 
 	/**
 	 * One line naming what a request is about.
@@ -631,14 +666,7 @@ class AanvullingsverzoekService {
 	 * @return string The summary.
 	 */
 	private function summaryOf(array $items): string {
-		$clean = [];
-		foreach ($items as $item) {
-			$text = trim((string)$item);
-			if ($text !== '') {
-				$clean[] = $text;
-			}
-		}
-
+		$clean = $this->cleanLines(items: $items);
 		if ($clean === []) {
 			return 'Aanvullingsverzoek';
 		}

@@ -57,7 +57,7 @@
 				"breadcrumb": { "label": "Mailbox", "route": "Postvak" },
 				"headerMeta": "messages for the whole organisation that belong to no case yet",
 				"countText": "{shown} of {total} messages",
-				"footerNote": "{shown} of {total} · 20 per page",
+				"footerNote": "20 per page",
 				"searchPlaceholder": "Search sender or subject",
 				"showAdd": false,
 				"showViewAction": false,

@@ -1,5 +1,5 @@
 # Screens
 
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
-- DqZaakBesluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
-- DqUwWachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqUwWachtrij
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqZaakBesluiten zaak, besluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
+- dossiq/DqUwWachtrij uw wachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqUwWachtrij

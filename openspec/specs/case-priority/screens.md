@@ -1,4 +1,4 @@
 # Screens
 
-- DqUwWachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqUwWachtrij
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqUwWachtrij uw wachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqUwWachtrij
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak

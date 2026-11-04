@@ -90,98 +90,128 @@ class BeschikkingGenerationService {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
 	 */
 	public function generateBeschikking(string $caseId, string $outcome, string $motivation): array {
-		$templateKey = 'dso_beschikking_template_verleend';
-		if ($outcome === 'refused') {
-			$templateKey = 'dso_beschikking_template_geweigerd';
-		}
-
-		$templateId = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: $templateKey,
-			default: ''
-		);
-
+		$ask = ['caseId' => $caseId, 'outcome' => $outcome, 'motivation' => $motivation];
+		$templateId = $this->templateFor(outcome: $outcome);
 		$documentService = $this->resolveDocumentService();
 		$userId = $this->currentUserId();
 
 		if ($documentService === null || $templateId === '' || $userId === '') {
-			$this->logger->warning(
-				'Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.',
-				[
-					'app' => Application::APP_ID,
-					'caseId' => $caseId,
-					'outcome' => $outcome,
-					'templateId' => $templateId,
-					'hasDocumentService' => ($documentService !== null),
-					'hasUser' => ($userId !== ''),
-				]
+			return $this->unavailableAnswer(
+				ask: $ask,
+				found: ['templateId' => $templateId, 'hasDocumentService' => ($documentService !== null), 'hasUser' => ($userId !== '')]
 			);
-
-			$bijlageId = $this->createStubBijlage(
-				caseId: $caseId,
-				outcome: $outcome,
-				motivation: $motivation
-			);
-
-			return [
-				'success' => true,
-				'bijlageId' => $bijlageId,
-				'message' => 'Stub beschikking bijlage created (document generation not available or template not configured).',
-			];
-		}//end if
+		}
 
 		try {
 			$generated = $documentService->generateDocument(
 				$templateId,
 				[],
-				[
-					'format' => 'pdf',
-					'caseId' => $caseId,
-					'userId' => $userId,
-					'filename' => 'beschikking_' . $outcome,
-					'adHocData' => [
-						'caseId' => $caseId,
-						'outcome' => $outcome,
-						'motivation' => $motivation,
-						'date' => date('Y-m-d'),
-					],
-					'output' => ['mode' => 'files'],
-				]
-			);
-
-			$bijlageId = $this->attachBijlageToZaak(
-				caseId: $caseId,
-				generated: $generated,
-				outcome: $outcome
+				$this->generationOptions(ask: $ask, userId: $userId)
 			);
 
 			return [
 				'success' => true,
-				'bijlageId' => $bijlageId,
+				'bijlageId' => $this->attachBijlageToZaak(caseId: $caseId, generated: $generated, outcome: $outcome),
 				'message' => 'Beschikking generated and attached.',
 			];
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq BeschikkingGenerationService: document generation failed: ' . $e->getMessage(),
-				[
-					'app' => Application::APP_ID,
-					'caseId' => $caseId,
-				]
-			);
-
-			$bijlageId = $this->createStubBijlage(
-				caseId: $caseId,
-				outcome: $outcome,
-				motivation: $motivation
-			);
-
-			return [
-				'success' => true,
-				'bijlageId' => $bijlageId,
-				'message' => 'Stub beschikking bijlage created (document generation failed).',
-			];
+			return $this->failedAnswer(ask: $ask, error: $e);
 		}//end try
 	}//end generateBeschikking()
+
+	/**
+	 * The configured template for an outcome: the refusal template for `refused`, the grant template otherwise.
+	 *
+	 * @param string $outcome The outcome.
+	 *
+	 * @return string The template id, or '' when none is configured.
+	 */
+	private function templateFor(string $outcome): string {
+		$templateKey = 'dso_beschikking_template_verleend';
+		if ($outcome === 'refused') {
+			$templateKey = 'dso_beschikking_template_geweigerd';
+		}
+
+		return $this->appConfig->getValueString(
+			app: Application::APP_ID,
+			key: $templateKey,
+			default: ''
+		);
+	}//end templateFor()
+
+	/**
+	 * What the document app is asked to render: a PDF owned by the session user, written to files.
+	 *
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask    The case, outcome and motivation.
+	 * @param string                                                      $userId The session user.
+	 *
+	 * @return array<string, mixed> The generation options.
+	 */
+	private function generationOptions(array $ask, string $userId): array {
+		return [
+			'format' => 'pdf',
+			'caseId' => $ask['caseId'],
+			'userId' => $userId,
+			'filename' => 'beschikking_' . $ask['outcome'],
+			'adHocData' => [
+				'caseId' => $ask['caseId'],
+				'outcome' => $ask['outcome'],
+				'motivation' => $ask['motivation'],
+				'date' => date('Y-m-d'),
+			],
+			'output' => ['mode' => 'files'],
+		];
+	}//end generationOptions()
+
+	/**
+	 * Say why the document could not be generated, and answer with a stub attachment.
+	 *
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask   The case, outcome and motivation.
+	 * @param array<string, mixed>                                        $found The template, and whether the document app and a session were found.
+	 *
+	 * @return array{success: bool, bijlageId: string, message: string} The answer.
+	 */
+	private function unavailableAnswer(array $ask, array $found): array {
+		$this->logger->warning(
+			'Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.',
+			['app' => Application::APP_ID, 'caseId' => $ask['caseId'], 'outcome' => $ask['outcome']] + $found
+		);
+
+		return $this->stubAnswer(ask: $ask, message: 'Stub beschikking bijlage created (document generation not available or template not configured).');
+	}//end unavailableAnswer()
+
+	/**
+	 * Log a failed generation, and answer with a stub attachment.
+	 *
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask   The case, outcome and motivation.
+	 * @param \Throwable                                                  $error What the document app threw.
+	 *
+	 * @return array{success: bool, bijlageId: string, message: string} The answer.
+	 */
+	private function failedAnswer(array $ask, \Throwable $error): array {
+		$this->logger->error(
+			'Dossiq BeschikkingGenerationService: document generation failed: ' . $error->getMessage(),
+			['app' => Application::APP_ID, 'caseId' => $ask['caseId']]
+		);
+
+		return $this->stubAnswer(ask: $ask, message: 'Stub beschikking bijlage created (document generation failed).');
+	}//end failedAnswer()
+
+	/**
+	 * Save a stub attachment in place of the document, and answer with it.
+	 *
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask     The case, outcome and motivation.
+	 * @param string                                                      $message Why a stub was saved.
+	 *
+	 * @return array{success: bool, bijlageId: string, message: string} The answer.
+	 */
+	private function stubAnswer(array $ask, string $message): array {
+		return [
+			'success' => true,
+			'bijlageId' => $this->createStubBijlage(caseId: $ask['caseId'], outcome: $ask['outcome'], motivation: $ask['motivation']),
+			'message' => $message,
+		];
+	}//end stubAnswer()
 
 	/**
 	 * Resolve filinq's DocumentService, whatever namespace it ships under.
