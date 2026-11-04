@@ -553,7 +553,7 @@
 			"from": "no",
 			"to": "yes",
 			"cause": "corrected",
-			"reason": "Merge into is a header action on the case (`src/manifest.json:3367`) opening `CaseMergeDialog`, where the surviving case is searched for and a reason is required. `CaseMergeService` asks OpenRegister to merge (`ObjectsMergedEvent`), `CaseMergedListener` moves the declared rows and completes the merged case's term, a reply quoting the old number reaches the survivor, and the merge can be reversed for seven days. Shipped by dossiq#2916."
+			"reason": "Merge into is a header action on the case (`src/manifest.json:3367`) opening the library `CnActionDialog`, where the surviving case is searched for and a reason is required. `CaseMergeService` asks OpenRegister to merge (`ObjectsMergedEvent`), `CaseMergedListener` moves the declared rows and completes the merged case's term, a reply quoting the old number reaches the survivor, and the merge can be reversed for seven days. Shipped by dossiq#2916."
 		},
 		{
 			"id": "2.24",
