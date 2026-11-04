@@ -163,61 +163,79 @@ class BeroepService {
 		array $payload = [],
 	): array {
 		$payload = array_diff_key($payload, CallerIdentity::KEYS);
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$appealSchema = $this->settingsService->getConfigValue(key: 'beroep_schema');
-		$appealDecisionSchema = $this->settingsService->getConfigValue(key: 'appeal_decision_schema');
-
-		if ($register === '' || $appealSchema === '' || $appealDecisionSchema === '') {
+		$store = $this->appealStore(otherSchemaKey: 'appeal_decision_schema');
+		if (in_array('', [$store['register'], $store['schema'], $store['otherSchema']], true) === true) {
 			throw new RuntimeException('Beroep schemas are not configured');
 		}
 
-		$contested = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $appealDecisionSchema,
-			id: $contestedDecisionId
-		);
+		$contested = $this->findIn(store: ['schema' => $store['otherSchema']] + $store, id: $contestedDecisionId);
 		if ($contested === null) {
 			throw new RuntimeException('Contested beslissing not found');
 		}
 
-		$effective = (string)($contested['effectiveDate'] ?? '');
-		$deadline = $this->computeFilingDeadline(effective: $effective);
-		$late = $this->isLateFiling(
-			filingDate: $filingDate,
-			deadline: $deadline,
-		);
+		$filing = [
+			'case' => $caseId,
+			'sourceObjection' => $sourceObjectionId,
+			'contestedDecision' => $contestedDecisionId,
+			'appellantFilingDate' => $filingDate,
+		];
 
-		$record = array_merge(
+		return $this->saveAppeal(store: $store, record: $this->appealRecord(filing: $filing + ['payload' => $payload], contested: $contested));
+	}//end register()
+
+	/**
+	 * The new appeal record: defaults, then the caller's extra fields, then
+	 * the filing facts and the computed deadline, which the extra fields
+	 * cannot override.
+	 *
+	 * @param array<string, mixed> $filing    The filing facts, with the caller's extra fields under `payload`.
+	 * @param array<string, mixed> $contested The contested decision.
+	 *
+	 * @return array<string, mixed> The record to save.
+	 */
+	private function appealRecord(array $filing, array $contested): array {
+		$payload = $filing['payload'];
+		unset($filing['payload']);
+
+		$deadline = $this->computeFilingDeadline(effective: (string)($contested['effectiveDate'] ?? ''));
+		$filing['filingDeadline'] = $deadline;
+		$filing['latefilingNotice'] = $this->isLateFiling(filingDate: $filing['appellantFilingDate'], deadline: $deadline);
+
+		return array_merge(
 			[
 				'responsibleChamber' => 'enkelvoudig',
 				'provisionRequested' => false,
 			],
 			$payload,
-			[
-				'case' => $caseId,
-				'sourceObjection' => $sourceObjectionId,
-				'contestedDecision' => $contestedDecisionId,
-				'appellantFilingDate' => $filingDate,
-				'filingDeadline' => $deadline,
-				'latefilingNotice' => $late,
-			]
+			$filing
 		);
+	}//end appealRecord()
 
+	/**
+	 * Save a new appeal record, answering the record itself when the store answers nothing.
+	 *
+	 * @param array<string, mixed> $store  The object service, register and appeal schema.
+	 * @param array<string, mixed> $record The record to save.
+	 *
+	 * @return array<string, mixed> The saved record.
+	 *
+	 * @throws RuntimeException When the save fails.
+	 */
+	private function saveAppeal(array $store, array $record): array {
 		try {
-			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $appealSchema, object: $record) ?? $record);
+			return ($this->saveObjectAsArray(
+				objectService: $store['objectService'],
+				register: $store['register'],
+				schema: $store['schema'],
+				object: $record
+			) ?? $record);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq beroep: failed to register: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not register beroep');
 		}
-	}//end register()
+	}//end saveAppeal()
 
 	/**
 	 * Append a file-inspection request (Awb 8:42) sub-record.
@@ -242,34 +260,12 @@ class BeroepService {
 		string $requestedAt,
 		?string $fileBundle = null,
 	): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$appealSchema = $this->settingsService->getConfigValue(
-			key: 'beroep_schema'
-		);
-
-		$current = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $appealSchema,
-			id: $appealId
-		);
-		if ($current === null) {
-			throw new RuntimeException('Beroep not found');
-		}
-
-		$deadline = $this->shiftDate(
-			base: $requestedAt,
-			modifier: self::FILE_INSPECTION_WINDOW,
-		);
+		$store = $this->appealStore(otherSchemaKey: null);
+		$current = $this->requireAppeal(store: $store, appealId: $appealId);
 
 		$entry = [
 			'requestedAt' => $requestedAt,
-			'deadline' => $deadline,
+			'deadline' => $this->shiftDate(base: $requestedAt, modifier: self::FILE_INSPECTION_WINDOW),
 		];
 		if ($fileBundle !== null && $fileBundle !== '') {
 			$entry['fileBundle'] = $fileBundle;
@@ -278,23 +274,16 @@ class BeroepService {
 		$requests = (array)($current['fileInspectionRequests'] ?? []);
 		$requests[] = $entry;
 
-		try {
-			return ($this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $appealSchema,
-				id: (string)$appealId,
-				changes: ['fileInspectionRequests' => $requests]
-			) ?? array_merge($current, ['fileInspectionRequests' => $requests]));
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq beroep: failed to add file-inspection request: '
-				. $e->getMessage()
-			);
-			throw new RuntimeException(
-				'Could not add file-inspection request'
-			);
-		}
+		return $this->patchAppeal(
+			store: $store,
+			patch: [
+				'id' => $appealId,
+				'current' => $current,
+				'changes' => ['fileInspectionRequests' => $requests],
+				'log' => 'Dossiq beroep: failed to add file-inspection request: ',
+				'error' => 'Could not add file-inspection request',
+			]
+		);
 	}//end addFileInspectionRequest()
 
 	/*
@@ -339,77 +328,60 @@ class BeroepService {
 			throw new RuntimeException('Invalid cascade action');
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$store = $this->appealStore(otherSchemaKey: 'bezwaar_schema');
+		$cascade = [
+			'appealId' => $appealId,
+			'action' => $action,
+			'current' => $this->requireAppeal(store: $store, appealId: $appealId),
+		];
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$appealSchema = $this->settingsService->getConfigValue(
-			key: 'beroep_schema'
+		return $this->patchAppeal(
+			store: $store,
+			patch: [
+				'id' => $appealId,
+				'current' => $cascade['current'],
+				'changes' => $this->cascadeChanges(store: $store, cascade: $cascade),
+				'log' => 'Dossiq beroep: failed to persist cascade: ',
+				'error' => 'Could not persist cascade',
+			]
 		);
-		$objectionSchema = $this->settingsService->getConfigValue(
-			key: 'bezwaar_schema'
-		);
+	}//end executeCascade()
 
-		$current = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $appealSchema,
-			id: $appealId
-		);
-		if ($current === null) {
-			throw new RuntimeException('Beroep not found');
-		}
+	/**
+	 * Run the side effect of one cascade action and say what to record on the appeal.
+	 *
+	 * @param array<string, mixed> $store   The object service, register, appeal and objection schema.
+	 * @param array<string, mixed> $cascade The appeal id, the action and the appeal record.
+	 *
+	 * @return array<string, mixed> The changes to record.
+	 */
+	private function cascadeChanges(array $store, array $cascade): array {
+		$patch = ['cascadeAction' => $cascade['action']];
 
-		$patch = ['cascadeAction' => $action];
-
-		if ($action === 'reopen_objection') {
+		if ($cascade['action'] === 'reopen_objection') {
 			// Defer to the status-transition-engine to re-open the source
 			// bezwaar. The engine owns the transition + guards; this
 			// service only triggers it and links the resulting case back
 			// to the beroep.
-			$reopenedCaseId = $this->reopenSourceObjectionCase(
-				objectService: $objectService,
-				register: $register,
-				objectionSchema: $objectionSchema,
-				current: $current,
-				appealId: $appealId,
-			);
+			$reopenedCaseId = $this->reopenSourceObjectionCase(store: $store, cascade: $cascade);
 			if ($reopenedCaseId !== null) {
-				// Link the (newly reopened) bezwaar case back to the beroep.
-				// The engine returns the updated case; we surface the link on
-				// the beroep record.
 				$patch['cascadeObjectionCase'] = $reopenedCaseId;
 			}
-		}//end if
+		}
 
-		if ($action === 'new_primary_decision') {
+		if ($cascade['action'] === 'new_primary_decision') {
 			// The follow-up primary-decision case is opened via the
 			// status-transition-engine on the original primary case. The
 			// engine + workflow template own the new-case fork; we only
 			// record the chosen cascade on the beroep for traceability.
 			$this->logger->info(
 				'Dossiq beroep: new_primary_decision cascade requested',
-				['beroepId' => $appealId]
+				['beroepId' => $cascade['appealId']]
 			);
 		}
 
-		try {
-			return ($this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $appealSchema,
-				id: (string)$appealId,
-				changes: $patch
-			) ?? array_merge($current, $patch));
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq beroep: failed to persist cascade: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not persist cascade');
-		}
-	}//end executeCascade()
+		return $patch;
+	}//end cascadeChanges()
 
 	/**
 	 * Ask the status-transition-engine to re-open the bezwaar case behind a beroep.
@@ -418,37 +390,13 @@ class BeroepService {
 	 * re-open (no source bezwaar, no bezwaar schema, missing source, no case) or the transition
 	 * failed — a failure is logged, never raised, exactly as before.
 	 *
-	 * @param object $objectService The OpenRegister object service
-	 * @param string $register The register slug
-	 * @param string $objectionSchema The bezwaar schema slug
-	 * @param array<string, mixed> $current The beroep record
-	 * @param string $appealId UUID of the beroep
+	 * @param array<string, mixed> $store   The object service, register, appeal and objection schema.
+	 * @param array<string, mixed> $cascade The appeal id, the action and the appeal record.
 	 *
 	 * @return string|null The re-opened bezwaar case UUID, or null.
 	 */
-	private function reopenSourceObjectionCase(
-		object $objectService,
-		string $register,
-		string $objectionSchema,
-		array $current,
-		string $appealId,
-	): ?string {
-		$sourceObjectionId = (string)($current['sourceObjection'] ?? '');
-		if ($sourceObjectionId === '' || $objectionSchema === '') {
-			return null;
-		}
-
-		$sourceObjection = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $objectionSchema,
-			id: $sourceObjectionId
-		);
-		if ($sourceObjection === null) {
-			return null;
-		}
-
-		$sourceCaseId = (string)($sourceObjection['case'] ?? '');
+	private function reopenSourceObjectionCase(array $store, array $cascade): ?string {
+		$sourceCaseId = $this->sourceObjectionCase(store: $store, current: $cascade['current']);
 		if ($sourceCaseId === '') {
 			return null;
 		}
@@ -457,7 +405,7 @@ class BeroepService {
 			$this->transitions->execute(
 				caseId: $sourceCaseId,
 				transitionId: 'beroep-reopen',
-				comment: 'Reopened via beroep ' . $appealId,
+				comment: 'Reopened via beroep ' . $cascade['appealId'],
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -468,7 +416,114 @@ class BeroepService {
 		}
 
 		return $sourceCaseId;
-	}//end reopenSourceBezwaarCase()
+	}//end reopenSourceObjectionCase()
+
+	/**
+	 * The case of the objection an appeal escalates, or '' when there is none to find.
+	 *
+	 * @param array<string, mixed> $store   The object service, register and objection schema.
+	 * @param array<string, mixed> $current The appeal record.
+	 *
+	 * @return string The case UUID, or ''.
+	 */
+	private function sourceObjectionCase(array $store, array $current): string {
+		$sourceObjectionId = (string)($current['sourceObjection'] ?? '');
+		if ($sourceObjectionId === '' || $store['otherSchema'] === '') {
+			return '';
+		}
+
+		$sourceObjection = $this->findIn(store: ['schema' => $store['otherSchema']] + $store, id: $sourceObjectionId);
+
+		return (string)($sourceObjection['case'] ?? '');
+	}//end sourceObjectionCase()
+
+	/**
+	 * The object service with the register, the appeal schema and optionally one other schema.
+	 *
+	 * @param string|null $otherSchemaKey The setting naming the other schema, or null for none.
+	 *
+	 * @return array<string, mixed> `objectService`, `register`, `schema` and, when asked, `otherSchema`.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable.
+	 */
+	private function appealStore(?string $otherSchemaKey): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		$store = [
+			'objectService' => $objectService,
+			'register' => $this->settingsService->getConfigValue(key: 'register'),
+			'schema' => $this->settingsService->getConfigValue(key: 'beroep_schema'),
+		];
+		if ($otherSchemaKey !== null) {
+			$store['otherSchema'] = $this->settingsService->getConfigValue(key: $otherSchemaKey);
+		}
+
+		return $store;
+	}//end appealStore()
+
+	/**
+	 * Read one object from the store's register and schema.
+	 *
+	 * @param array<string, mixed> $store The object service, register and schema.
+	 * @param string               $id    The object.
+	 *
+	 * @return array<string, mixed>|null The object, or null.
+	 */
+	private function findIn(array $store, string $id): ?array {
+		return $this->findObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			id: $id
+		);
+	}//end findIn()
+
+	/**
+	 * Read the appeal, or refuse when it is not there.
+	 *
+	 * @param array<string, mixed> $store    The object service, register and appeal schema.
+	 * @param string               $appealId The appeal.
+	 *
+	 * @return array<string, mixed> The appeal record.
+	 *
+	 * @throws RuntimeException When the appeal cannot be loaded.
+	 */
+	private function requireAppeal(array $store, string $appealId): array {
+		$current = $this->findIn(store: $store, id: $appealId);
+		if ($current === null) {
+			throw new RuntimeException('Beroep not found');
+		}
+
+		return $current;
+	}//end requireAppeal()
+
+	/**
+	 * Write changes onto the appeal, answering the merged record when the store answers nothing.
+	 *
+	 * @param array<string, mixed> $store The object service, register and appeal schema.
+	 * @param array<string, mixed> $patch The appeal id and record, the changes, and the log line and error a failure gives.
+	 *
+	 * @return array<string, mixed> The updated appeal record.
+	 *
+	 * @throws RuntimeException When the write fails.
+	 */
+	private function patchAppeal(array $store, array $patch): array {
+		try {
+			return ($this->patchObjectAsArray(
+				objectService: $store['objectService'],
+				register: $store['register'],
+				schema: $store['schema'],
+				id: (string)$patch['id'],
+				changes: $patch['changes']
+			) ?? array_merge($patch['current'], $patch['changes']));
+		} catch (Throwable $e) {
+			$this->logger->error($patch['log'] . $e->getMessage());
+			throw new RuntimeException($patch['error']);
+		}
+	}//end patchAppeal()
 
 	/**
 	 * Compute the 6-week filing deadline (Awb 6:7, 6:8).
