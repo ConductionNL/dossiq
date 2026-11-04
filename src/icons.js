@@ -105,6 +105,7 @@ import DatabaseCogOutline from 'vue-material-design-icons/DatabaseCogOutline.vue
 import Delete from 'vue-material-design-icons/Delete.vue'
 import DeleteClockOutline from 'vue-material-design-icons/DeleteClockOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
+import DomainSwitch from 'vue-material-design-icons/DomainSwitch.vue'
 import Download from 'vue-material-design-icons/Download.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
 import EmailAlert from 'vue-material-design-icons/EmailAlert.vue'
@@ -164,6 +165,7 @@ import InboxOutline from 'vue-material-design-icons/InboxOutline.vue'
 import LayersOutline from 'vue-material-design-icons/LayersOutline.vue'
 import Lightbulb from 'vue-material-design-icons/Lightbulb.vue'
 import LinkVariant from 'vue-material-design-icons/LinkVariant.vue'
+import LinkVariantOff from 'vue-material-design-icons/LinkVariantOff.vue'
 import ListBoxOutline from 'vue-material-design-icons/ListBoxOutline.vue'
 import ListStatus from 'vue-material-design-icons/ListStatus.vue'
 import LockOpenVariantOutline from 'vue-material-design-icons/LockOpenVariantOutline.vue'
@@ -340,6 +342,7 @@ export default {
 	CurrencyEur,
 	DatabaseCogOutline,
 	Domain,
+	DomainSwitch,
 	Earth,
 	EmailAlert,
 	EmailMarkAsUnread,
@@ -401,6 +404,7 @@ export default {
 	LayersOutline,
 	Lightbulb,
 	LinkVariant,
+	LinkVariantOff,
 	ListBoxOutline,
 	ListStatus,
 	LockOpenVariantOutline,

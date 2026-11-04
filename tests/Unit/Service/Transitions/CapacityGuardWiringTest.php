@@ -139,7 +139,7 @@ class CapacityGuardWiringTest extends TestCase {
 		// An unregistered type is LOGGED and skipped, not refused, so a guard
 		// the registry does not know evaluates as nothing at all.
 		$this->assertStringContainsString(
-			'self::STATUS_CAPACITY => $capacity,',
+			'self::STATUS_CAPACITY => $statusEntry->capacity,',
 			$source,
 			'the registry must map the type to the evaluator, or the guard is skipped in silence'
 		);

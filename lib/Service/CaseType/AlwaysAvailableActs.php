@@ -101,60 +101,11 @@ class AlwaysAvailableActs {
 		}
 
 		return $this->decided(
-			declared: self::declaredOn(caseType: $caseType),
+			declared: (new AlwaysAvailableActDeclaration())->actsOn(caseType: $caseType),
 			case: $case,
 			userId: $userId
 		);
 	}//end forCase()
-
-	/**
-	 * The acts a case type declares, normalised and in declared order.
-	 *
-	 * An act with no id names nothing a surface can invoke and is dropped: an
-	 * unidentifiable button is one that fails when pressed.
-	 *
-	 * @param array<string, mixed> $caseType The case type.
-	 *
-	 * @return array<int, array<string, mixed>> The declared acts.
-	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
-	 */
-	public static function declaredOn(array $caseType): array {
-		$raw = ($caseType[self::DECLARATION] ?? []);
-		if (is_string($raw) === true) {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
-
-		$acts = [];
-		foreach ($raw as $act) {
-			if (is_array($act) === false) {
-				continue;
-			}
-
-			$id = trim((string)($act['id'] ?? ''));
-			if ($id === '') {
-				continue;
-			}
-
-			$acts[] = [
-				'id' => $id,
-				'label' => trim((string)($act['label'] ?? $id)),
-				'description' => trim((string)($act['description'] ?? '')),
-				'effect' => trim((string)($act['effect'] ?? '')),
-				'requiredRole' => trim((string)($act['requiredRole'] ?? '')),
-			];
-		}
-
-		return $acts;
-	}//end declaredOn()
 
 	/**
 	 * Decide each act's availability for this reader.

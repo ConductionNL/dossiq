@@ -44,10 +44,7 @@ class CaseActsOverview {
 	 * Constructor.
 	 *
 	 * @param CaseStatusStore $store Reads the case the overview is about.
-	 * @param CaseActsMenu $menu What the caller may do, and who the case waits on.
-	 * @param CaseEndingActs $endings Whether and how the case ended.
-	 * @param CaseHoldActs $holds Whether the case is held.
-	 * @param DraftCaseActs $drafts Whether the case is still a draft.
+	 * @param CaseActSources $acts The menu and the ending, hold and draft acts a case offers.
 	 * @param CaseIncompleteness $incompleteness What the case is knowingly missing.
 	 * @param ProcessOwnedStatusRule $processStatus Whether a status may be hand-set.
 	 * @param CaseArchiveState|null $archiveState Reads the platform's archive marker, so the
@@ -58,10 +55,7 @@ class CaseActsOverview {
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
-		private readonly CaseActsMenu $menu,
-		private readonly CaseEndingActs $endings,
-		private readonly CaseHoldActs $holds,
-		private readonly DraftCaseActs $drafts,
+		private readonly CaseActSources $acts,
 		private readonly CaseIncompleteness $incompleteness,
 		private readonly ProcessOwnedStatusRule $processStatus,
 		private readonly ?CaseArchiveState $archiveState = null,
@@ -107,19 +101,19 @@ class CaseActsOverview {
 				'archivedAt' => (string)($marker['at'] ?? ''),
 				'archivedBy' => (string)($marker['by'] ?? ''),
 				'archivedReason' => (string)($marker['reason'] ?? ''),
-				'held' => $this->holds->isHeld(case: $case),
+				'held' => $this->acts->holds->isHeld(case: $case),
 				'heldUntil' => (string)($case[CaseHoldActs::UNTIL_FIELD] ?? ''),
-				'draft' => $this->drafts->isDraft(case: $case),
+				'draft' => $this->acts->drafts->isDraft(case: $case),
 				'incomplete' => ($missing !== []),
 				'missingFields' => $missing,
 				'endingAct' => (string)($case[CaseEndingActs::ENDING_FIELD] ?? ''),
-				'ending' => $this->endings->endingOf(case: $case),
-				'resultTypes' => $this->endings->resultChoicesOn(case: $case),
+				'ending' => $this->acts->endings->endingOf(case: $case),
+				'resultTypes' => $this->acts->endings->resultChoicesOn(case: $case),
 				'statusIsHandSettable' => $this->processStatus->allowsHandSet(
 					caseTypeId: (string)($case['caseType'] ?? '')
 				),
 			],
-			$this->menu->forCase(caseId: $caseId, case: $case)
+			$this->acts->menu->forCase(caseId: $caseId, case: $case)
 		);
 	}//end overview()
 

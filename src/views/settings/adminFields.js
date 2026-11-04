@@ -726,6 +726,350 @@ const CASE_MATCHING_URL = '/apps/dossiq/api/settings/email-case-matching/instanc
 const DOSSIQ_SETTINGS_URL = '/apps/dossiq/api/settings'
 
 /**
+ * Where a field kept in dossiq's own settings is read and saved.
+ *
+ * @param {string} key The settings key.
+ * @return {object} The url, value path and save method.
+ */
+function dossiqSetting(key) {
+	return {
+		url: DOSSIQ_SETTINGS_URL,
+		valuePath: `config.${key}`,
+		saveMethod: 'PUT',
+	}
+}
+
+/**
+ * The explanation above the shared mailbox fields.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function mailboxExplanationField(t) {
+	return {
+		key: 'mailbox-explanation',
+		type: 'status',
+		advanced: true,
+		foldable: true,
+		text: t(
+			'dossiq',
+			'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.',
+		),
+	}
+}
+
+/**
+ * The Mail account intake reads.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function intakeAccountField(t) {
+	return {
+		key: 'email_mail_account_id',
+		label: t('dossiq', 'Intake mail account'),
+		type: 'select',
+		optionsUrl: '/apps/dossiq/api/settings/email/mail-accounts',
+		optionsPath: 'accounts',
+		optionLabel: 'name',
+		optionValue: 'id',
+		optionDetail: 'email',
+		placeholder: t('dossiq', 'Pick the mailbox intake reads'),
+		hint: t('dossiq', 'Nextcloud Mail keeps the account and the password. Pick the mailbox dossiq reads. Dossiq stores no password of its own.'),
+	}
+}
+
+/**
+ * The warning shown while the Mail app is missing.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function mailAppMissingField(t) {
+	return {
+		key: 'mail-app-missing',
+		type: 'status',
+		tone: 'warning',
+		url: '/apps/dossiq/api/settings/email/mail-accounts',
+		valuePath: 'available',
+		textMap: {
+			false: t('dossiq', 'The Mail app is not installed, so intake reads nothing. Your messages stay in the mailbox and none are lost. Install Mail to start reading them.'),
+			'*': '',
+		},
+	}
+}
+
+/**
+ * The folder intake reads.
+ *
+ * @return {object} The field.
+ */
+function intakeFolderField() {
+	return {
+		key: 'email_imap_folder',
+		// The section translates a label itself. Translated here too, the
+		// Dutch "Map" would be read as the key "Map" and show "Kaart".
+		label: 'Folder',
+		placeholder: 'INBOX',
+		default: 'INBOX',
+	}
+}
+
+/**
+ * The case-correspondence source account.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function transportField(t) {
+	return {
+		key: 'email_transport',
+		advanced: true,
+		label: t('dossiq', 'Transport / source mailbox account'),
+		placeholder: t('dossiq', 'Nextcloud Mail account or functional mailbox id'),
+		hint: t(
+			'dossiq',
+			'Which Nextcloud Mail account or functional mailbox is the case-correspondence source. No per-user SMTP send credentials are configured here.',
+		),
+	}
+}
+
+/**
+ * How often intake fetches.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function pollIntervalField(t) {
+	return {
+		key: 'email_poll_interval',
+		label: t('dossiq', 'Fetch every (seconds)'),
+		type: 'number',
+		integer: true,
+		min: 0,
+		default: 300,
+	}
+}
+
+/**
+ * How many messages one fetch takes.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function pollBatchSizeField(t) {
+	return {
+		key: 'email_poll_batch_size',
+		label: t('dossiq', 'Messages per fetch'),
+		type: 'number',
+		integer: true,
+		min: 0,
+		default: 50,
+	}
+}
+
+/**
+ * The case type for mail nobody claims.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function fallbackCaseTypeField(t) {
+	return {
+		key: 'email_fallback_case_type',
+		label: t('dossiq', 'Case type for mail nobody claims'),
+		type: 'select',
+		optionsUrl: '/apps/openregister/api/objects/dossiq/caseType?_limit=100&isDraft=false',
+		optionsPath: 'results',
+		optionLabel: 'title',
+		optionValue: 'id',
+		placeholder: t('dossiq', 'Leave it in the mailbox'),
+		hint: t('dossiq', 'A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.'),
+	}
+}
+
+/**
+ * Whether mail is linked to cases by case number.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function caseMatchingField(t) {
+	return {
+		key: 'email_case_matching_enabled',
+		label: t('dossiq', 'Link mail to cases by case number'),
+		type: 'switch',
+		trueValue: 'yes',
+		falseValue: 'no',
+		url: CASE_MATCHING_URL,
+		saveMethod: 'PUT',
+		wide: true,
+		hint: t('dossiq', 'Each user still switches it on for their own mailbox. Until then, nothing is linked.'),
+	}
+}
+
+/**
+ * The case number pattern.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function caseMatchingPatternField(t) {
+	return {
+		key: 'email_case_matching_pattern',
+		advanced: true,
+		label: t('dossiq', 'Case number pattern'),
+		url: CASE_MATCHING_URL,
+		saveMethod: 'PUT',
+		placeholder: DEFAULT_CASE_PATTERN,
+		hint: [
+			t('dossiq', 'Leave it empty to match numbers like 2026-0042 and [ZAAK-2026-0042]. The first group in the pattern must capture the case number.'),
+			t('dossiq', 'Only the subject and the start of each message are read. A case number further down is missed.'),
+		].join(' '),
+	}
+}
+
+/**
+ * The address dossiq sends its own mail from.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function senderAddressField(t) {
+	return {
+		key: 'email_from_address',
+		advanced: true,
+		label: t('dossiq', 'Sender address'),
+		placeholder: 'zaken@gemeente.nl',
+		...dossiqSetting('email_from_address'),
+		hint: t(
+			'dossiq',
+			'The address term notices and service mail are sent from. Leave it empty and dossiq does not send them. Mail a handler writes about a case leaves from the Nextcloud Mail account.',
+		),
+	}
+}
+
+/**
+ * The name dossiq sends its own mail under.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function senderNameField(t) {
+	return {
+		key: 'email_from_name',
+		advanced: true,
+		label: t('dossiq', 'Sender name'),
+		placeholder: 'Gemeente Voorbeeld',
+		...dossiqSetting('email_from_name'),
+	}
+}
+
+/**
+ * Who dossiq may send case mail to.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function recipientAllowlistField(t) {
+	return {
+		key: 'email_recipient_allowlist',
+		advanced: true,
+		label: t('dossiq', 'Allowed recipients'),
+		placeholder: '@gemeente.nl, team@gemeente.nl',
+		...dossiqSetting('email_recipient_allowlist'),
+		hint: t(
+			'dossiq',
+			'List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.',
+		),
+	}
+}
+
+/**
+ * The group that runs intake.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function intakeRoleField(t) {
+	return {
+		key: 'email_intake_role',
+		advanced: true,
+		label: t('dossiq', 'Group that runs intake'),
+		placeholder: 'zaakbehandelaars',
+		hint: t(
+			'dossiq',
+			'Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.',
+		),
+	}
+}
+
+/**
+ * The senders that may not open a case.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function intakeBlocklistField(t) {
+	return {
+		key: 'email_intake_blocklist',
+		advanced: true,
+		label: t('dossiq', 'Senders that may not open a case'),
+		placeholder: 'spam@voorbeeld.nl, @voorbeeld.nl',
+		hint: t(
+			'dossiq',
+			'List addresses, or whole domains written as @voorbeeld.nl. A blocked sender opens no case by mail. They can still mail a colleague. The allow half of this list is Nextcloud Mail’s trusted senders.',
+		),
+	}
+}
+
+/**
+ * The junk rules.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function junkRulesField(t) {
+	return {
+		key: 'email_intake_junk_rules',
+		advanced: true,
+		label: t('dossiq', 'Junk rules'),
+		type: 'textarea',
+		rows: 3,
+		wide: true,
+		placeholder: 'X-Spam-Status: Yes',
+		hint: t(
+			'dossiq',
+			'Write one rule per line: a header name, a colon, the text to find. Plain text on its own is matched against the subject. A message a rule calls junk is held, never deleted. The intake log names the rule that held it.',
+		),
+	}
+}
+
+/**
+ * The shared mailbox field builders, in the order the card shows them.
+ *
+ * @type {Array<(t: (app: string, text: string, vars?: object) => string) => object>}
+ */
+const SHARED_MAILBOX_FIELDS = [
+	mailboxExplanationField,
+	intakeAccountField,
+	mailAppMissingField,
+	intakeFolderField,
+	transportField,
+	pollIntervalField,
+	pollBatchSizeField,
+	fallbackCaseTypeField,
+	caseMatchingField,
+	caseMatchingPatternField,
+	senderAddressField,
+	senderNameField,
+	recipientAllowlistField,
+	intakeRoleField,
+	intakeBlocklistField,
+	junkRulesField,
+]
+
+/**
  * The shared mailbox: the Mail account and folder intake reads, how often and
  * how much, what unclaimed mail becomes, matching mail to cases by number,
  * the sender of dossiq's own mail and who may receive it, and who runs and
@@ -739,191 +1083,7 @@ const DOSSIQ_SETTINGS_URL = '/apps/dossiq/api/settings'
  * @spec openspec/specs/case-email-integration/spec.md
  */
 export function sharedMailboxFields(t) {
-	const own = (key) => ({
-		url: DOSSIQ_SETTINGS_URL,
-		valuePath: `config.${key}`,
-		saveMethod: 'PUT',
-	})
-	return [
-		{
-			key: 'mailbox-explanation',
-			type: 'status',
-			advanced: true,
-			foldable: true,
-			text: t(
-				'dossiq',
-				'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.',
-			),
-		},
-		{
-			key: 'email_mail_account_id',
-			label: t('dossiq', 'Intake mail account'),
-			type: 'select',
-			optionsUrl: '/apps/dossiq/api/settings/email/mail-accounts',
-			optionsPath: 'accounts',
-			optionLabel: 'name',
-			optionValue: 'id',
-			optionDetail: 'email',
-			placeholder: t('dossiq', 'Pick the mailbox intake reads'),
-			hint: t(
-				'dossiq',
-				'Nextcloud Mail keeps the account and the password. Pick the mailbox dossiq reads. Dossiq stores no password of its own.',
-			),
-		},
-		{
-			key: 'mail-app-missing',
-			type: 'status',
-			tone: 'warning',
-			url: '/apps/dossiq/api/settings/email/mail-accounts',
-			valuePath: 'available',
-			textMap: {
-				false: t(
-					'dossiq',
-					'The Mail app is not installed, so intake reads nothing. Your messages stay in the mailbox and none are lost. Install Mail to start reading them.',
-				),
-				'*': '',
-			},
-		},
-		{
-			key: 'email_imap_folder',
-			// The section translates a label itself. Translated here too, the
-			// Dutch "Map" would be read as the key "Map" and show "Kaart".
-			label: 'Folder',
-			placeholder: 'INBOX',
-			default: 'INBOX',
-		},
-		{
-			key: 'email_transport',
-			advanced: true,
-			label: t('dossiq', 'Transport / source mailbox account'),
-			placeholder: t('dossiq', 'Nextcloud Mail account or functional mailbox id'),
-			hint: t(
-				'dossiq',
-				'Which Nextcloud Mail account or functional mailbox is the case-correspondence source. No per-user SMTP send credentials are configured here.',
-			),
-		},
-		{
-			key: 'email_poll_interval',
-			label: t('dossiq', 'Fetch every (seconds)'),
-			type: 'number',
-			integer: true,
-			min: 0,
-			default: 300,
-		},
-		{
-			key: 'email_poll_batch_size',
-			label: t('dossiq', 'Messages per fetch'),
-			type: 'number',
-			integer: true,
-			min: 0,
-			default: 50,
-		},
-		{
-			key: 'email_fallback_case_type',
-			label: t('dossiq', 'Case type for mail nobody claims'),
-			type: 'select',
-			optionsUrl: '/apps/openregister/api/objects/dossiq/caseType?_limit=100&isDraft=false',
-			optionsPath: 'results',
-			optionLabel: 'title',
-			optionValue: 'id',
-			placeholder: t('dossiq', 'Leave it in the mailbox'),
-			hint: t(
-				'dossiq',
-				'A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.',
-			),
-		},
-		{
-			key: 'email_case_matching_enabled',
-			label: t('dossiq', 'Link mail to cases by case number'),
-			type: 'switch',
-			trueValue: 'yes',
-			falseValue: 'no',
-			url: CASE_MATCHING_URL,
-			saveMethod: 'PUT',
-			wide: true,
-			hint: t(
-				'dossiq',
-				'Each user still switches it on for their own mailbox. Until then, nothing is linked.',
-			),
-		},
-		{
-			key: 'email_case_matching_pattern',
-			advanced: true,
-			label: t('dossiq', 'Case number pattern'),
-			url: CASE_MATCHING_URL,
-			saveMethod: 'PUT',
-			placeholder: DEFAULT_CASE_PATTERN,
-			hint: `${t(
-				'dossiq',
-				'Leave it empty to match numbers like 2026-0042 and [ZAAK-2026-0042]. The first group in the pattern must capture the case number.',
-			)} ${t(
-				'dossiq',
-				'Only the subject and the start of each message are read. A case number further down is missed.',
-			)}`,
-		},
-		{
-			key: 'email_from_address',
-			advanced: true,
-			label: t('dossiq', 'Sender address'),
-			placeholder: 'zaken@gemeente.nl',
-			...own('email_from_address'),
-			hint: t(
-				'dossiq',
-				'The address term notices and service mail are sent from. Leave it empty and dossiq does not send them. Mail a handler writes about a case leaves from the Nextcloud Mail account.',
-			),
-		},
-		{
-			key: 'email_from_name',
-			advanced: true,
-			label: t('dossiq', 'Sender name'),
-			placeholder: 'Gemeente Voorbeeld',
-			...own('email_from_name'),
-		},
-		{
-			key: 'email_recipient_allowlist',
-			advanced: true,
-			label: t('dossiq', 'Allowed recipients'),
-			placeholder: '@gemeente.nl, team@gemeente.nl',
-			...own('email_recipient_allowlist'),
-			hint: t(
-				'dossiq',
-				'List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.',
-			),
-		},
-		{
-			key: 'email_intake_role',
-			advanced: true,
-			label: t('dossiq', 'Group that runs intake'),
-			placeholder: 'zaakbehandelaars',
-			hint: t(
-				'dossiq',
-				'Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.',
-			),
-		},
-		{
-			key: 'email_intake_blocklist',
-			advanced: true,
-			label: t('dossiq', 'Senders that may not open a case'),
-			placeholder: 'spam@voorbeeld.nl, @voorbeeld.nl',
-			hint: t(
-				'dossiq',
-				'List addresses, or whole domains written as @voorbeeld.nl. A blocked sender opens no case by mail. They can still mail a colleague. The allow half of this list is Nextcloud Mail’s trusted senders.',
-			),
-		},
-		{
-			key: 'email_intake_junk_rules',
-			advanced: true,
-			label: t('dossiq', 'Junk rules'),
-			type: 'textarea',
-			rows: 3,
-			wide: true,
-			placeholder: 'X-Spam-Status: Yes',
-			hint: t(
-				'dossiq',
-				'Write one rule per line: a header name, a colon, the text to find. Plain text on its own is matched against the subject. A message a rule calls junk is held, never deleted. The intake log names the rule that held it.',
-			),
-		},
-	]
+	return SHARED_MAILBOX_FIELDS.map((build) => build(t))
 }
 
 /**

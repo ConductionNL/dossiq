@@ -98,7 +98,10 @@ A case SHALL carry two named seats: the handler doing the work, which
 remains `assignee`, and a coordinator answerable for it, bound as a role
 on the case rather than a second assignee field. Both SHALL be assignable,
 both SHALL be searchable, and both SHALL be shown on the case's people
-panel.
+panel, as board DqZaakBetrokkenen draws them: the handler in the Zetels card
+(Behandelaar), the coordinator under Partijen with the role, so there is one
+place to look for everyone on the case. The Zetels card SHALL NOT repeat the
+coordinator.
 
 #### Scenario: behandelaar and casemanager are two people
 @e2e tests/e2e/handing-a-case-over.spec.ts
@@ -106,7 +109,7 @@ panel.
 - **GIVEN** a case
 - **WHEN** a teamleider names a handler and a coordinator
 - **THEN** the case SHALL carry both
-- **AND** the people panel SHALL show both with their roles
+- **AND** the people panel SHALL show the handler under Zetels and the coordinator under Partijen, each with their role
 
 #### Scenario: a coordinator finds their cases
 @e2e tests/e2e/handing-a-case-over.spec.ts
