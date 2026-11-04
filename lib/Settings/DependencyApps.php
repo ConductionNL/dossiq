@@ -55,7 +55,7 @@ class DependencyApps {
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
-	public static function read(IAppManager $appManager): array {
+	public function read(IAppManager $appManager): array {
 		$rows = [];
 		foreach (self::APPS as $canonical => $app) {
 			$found  = FleetAppId::resolve(appManager: $appManager, canonical: $canonical);

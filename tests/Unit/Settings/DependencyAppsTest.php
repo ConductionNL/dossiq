@@ -40,7 +40,7 @@ class DependencyAppsTest extends TestCase {
 			static fn (string $appId): bool => in_array($appId, $installed, true)
 		);
 
-		return array_column(DependencyApps::read(appManager: $appManager), null, 'name');
+		return array_column((new DependencyApps())->read(appManager: $appManager), null, 'name');
 	}//end rows()
 
 	/**
