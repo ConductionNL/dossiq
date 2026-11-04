@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Email\OutboundMailRules;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
@@ -75,19 +76,15 @@ class CaseEmailService {
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseEmailRepository $repository OpenRegister reads/writes for case email
 	 * @param CaseContactDirectory $contactDirectory Contact addresses registered on a case
-	 * @param OutboundCaseMail $outbound The case's Mail account, which sends and files the message
-	 * @param RecipientAllowlist $allowlist Outbound recipient policy
+	 * @param OutboundMailRules $sending The outbound mail, the recipient allowlist and the opt-out.
 	 * @param CaseTimeline $timeline The one seam that writes a timeline entry
-	 * @param CaseMailOptOut $optOut Asks integriq first and places its unsubscribe link
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
 		private readonly CaseEmailRepository $repository,
 		private readonly CaseContactDirectory $contactDirectory,
-		private readonly OutboundCaseMail $outbound,
-		private readonly RecipientAllowlist $allowlist,
+		private readonly OutboundMailRules $sending,
 		private readonly CaseTimeline $timeline,
-		private readonly CaseMailOptOut $optOut,
 	) {
 	}//end __construct()
 
@@ -142,7 +139,7 @@ class CaseEmailService {
 		// Through the Mail account: the case type's declared account, else the
 		// one an administrator picked; an address no account holds is refused
 		// here, before anything is built (REQ-IMF-12).
-		$sender      = $this->outbound->senderFor(caseData: $caseData);
+		$sender      = $this->sending->outbound->senderFor(caseData: $caseData);
 		$fromAddress = $sender['from'];
 
 		// H4: Validate the recipient against the allow-list. This prevents
@@ -156,7 +153,7 @@ class CaseEmailService {
 
 		// Ask integriq after the allow-list and before anything is built or
 		// sent (opt-out-before-send). A refusal leaves no mail and no record.
-		$decision = $this->optOut->decide(recipient: $to, category: $category, caseId: $caseId);
+		$decision = $this->sending->optOut->decide(recipient: $to, category: $category, caseId: $caseId);
 		if ($decision['send'] === false) {
 			$this->logger->info(
 				'Case mail not sent: integriq said this person may not be sent it',
@@ -169,7 +166,7 @@ class CaseEmailService {
 		// Mail reads them from that folder and checks the download permission.
 		// Through the Mail account the unsubscribe link travels in the body
 		// only, because Mail builds its own headers.
-		$delivery = $this->outbound->send(
+		$delivery = $this->sending->outbound->send(
 			sender: $sender,
 			to: $to,
 			subject: $subject,
@@ -292,10 +289,10 @@ class CaseEmailService {
 			throw new RuntimeException('Ongeldig e-mailadres opgegeven.');
 		}
 
-		$entries = $this->allowlist->entriesFor(fromAddress: $fromAddress);
+		$entries = $this->sending->allowlist->entriesFor(fromAddress: $fromAddress);
 		$caseContacts = $this->contactDirectory->collectAddresses(caseData: $caseData);
 
-		$permitted = $this->allowlist->permits(
+		$permitted = $this->sending->allowlist->permits(
 			recipient: $recipient,
 			entries: $entries,
 			caseContacts: $caseContacts,

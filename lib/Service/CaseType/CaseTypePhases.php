@@ -237,11 +237,9 @@ class CaseTypePhases {
 	 * @param array<string, mixed> $caseType The effective case type.
 	 *
 	 * @return array<int, array<string, mixed>> The acts.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) declaredOn() is the one normaliser of the declaration, a pure function.
 	 */
 	private function alwaysAvailable(array $caseType): array {
-		return AlwaysAvailableActs::declaredOn(caseType: $caseType);
+		return (new AlwaysAvailableActDeclaration())->actsOn(caseType: $caseType);
 	}//end alwaysAvailable()
 
 	/**

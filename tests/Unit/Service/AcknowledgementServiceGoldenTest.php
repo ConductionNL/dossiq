@@ -26,6 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\AcknowledgementDelivery;
+use OCA\Dossiq\Service\AcknowledgementTerms;
+use OCA\Dossiq\Service\AcknowledgementDeclaration;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\PortalContributionProvider;
@@ -50,6 +53,9 @@ use RuntimeException;
  * Golden test for AcknowledgementService::acknowledge().
  *
  * @covers \OCA\Dossiq\Service\AcknowledgementService
+ * @covers \OCA\Dossiq\Service\AcknowledgementDeclaration
+ * @covers \OCA\Dossiq\Service\AcknowledgementTerms
+ * @covers \OCA\Dossiq\Service\AcknowledgementDelivery
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
@@ -203,32 +209,44 @@ class AcknowledgementServiceGoldenTest extends TestCase {
 		$caseType = ($world['caseType'] ?? ['id' => 'ct-1', 'identifier' => 'omgeving', 'responsible' => 'Team Vergunningen']);
 		$service = new AcknowledgementService(
 			settingsService: $settings,
-			caseTypeResolver: $this->double(CaseTypeResolver::class, ['effectiveCaseType' => $caseType]),
-			store: $this->double(CaseTypeStore::class, ['referenceId' => static fn (mixed $value): string => (is_string($value) === true ? $value : '')]),
-			declaration: $this->double(
-				CaseTypeAcknowledgement::class,
-				[
-					'owesAcknowledgement' => ($world['owes'] ?? true),
-					'channelFor' => ($world['channel'] ?? 'portal'),
-					'contentStaysOnPlatform' => ($world['withheld'] ?? false),
-					'addressesOn' => ($world['declared'] ?? []),
-					'languageFor' => 'nl',
-					'sendsEmailCopy' => ($world['copy'] ?? false),
-				]
+			caseTypes: new AcknowledgementDeclaration(
+				caseTypeResolver: $this->double(class: CaseTypeResolver::class, behaviour: ['effectiveCaseType' => $caseType]),
+				store: $this->double(
+					class: CaseTypeStore::class,
+					behaviour: ['referenceId' => fn (mixed $value): string => $this->stringOrEmpty(value: $value)]
+				),
+				declaration: $this->double(
+					class: CaseTypeAcknowledgement::class,
+					behaviour: [
+						'owesAcknowledgement' => ($world['owes'] ?? true),
+						'channelFor' => ($world['channel'] ?? 'portal'),
+						'contentStaysOnPlatform' => ($world['withheld'] ?? false),
+						'addressesOn' => ($world['declared'] ?? []),
+						'languageFor' => 'nl',
+						'sendsEmailCopy' => ($world['copy'] ?? false),
+					]
+				),
 			),
-			termService: $this->double(TermijnService::class, ['getTermijnInstanceForZaak' => ($world['term'] ?? null)]),
-			notifications: $this->double(TermijnNotificationService::class, ['sendTermijnNotification' => $send]),
-			contacts: $this->double(CaseContactDirectory::class, ['collectAddresses' => ($world['contacts'] ?? [])]),
-			portal: $this->double(PortalContributionProvider::class, ['citizenCaseFields' => ['identifier', 'title', 'deadline', 'receivedAt', 'termStartsAt', 'receivedOutsideWorkingHours']]),
-			writer: $this->double(
-				CaseFieldWriter::class,
-				[
-					'write' => static function (mixed ...$named) use ($world): void {
-						if (($world['writeFails'] ?? false) === true) {
-							throw new RuntimeException('write refused');
-						}
-					},
-				]
+			terms: new AcknowledgementTerms(
+				termService: $this->double(class: TermijnService::class, behaviour: ['getTermijnInstanceForZaak' => ($world['term'] ?? null)]),
+				notifications: $this->double(class: TermijnNotificationService::class, behaviour: ['sendTermijnNotification' => $send]),
+			),
+			delivery: new AcknowledgementDelivery(
+				contacts: $this->double(class: CaseContactDirectory::class, behaviour: ['collectAddresses' => ($world['contacts'] ?? [])]),
+				portal: $this->double(
+					class: PortalContributionProvider::class,
+					behaviour: ['citizenCaseFields' => ['identifier', 'title', 'deadline', 'receivedAt', 'termStartsAt', 'receivedOutsideWorkingHours']]
+				),
+				writer: $this->double(
+					class: CaseFieldWriter::class,
+					behaviour: [
+						'write' => static function (mixed ...$named) use ($world): void {
+							if (($world['writeFails'] ?? false) === true) {
+								throw new RuntimeException('write refused');
+							}
+						},
+					]
+				),
 			),
 			logger: $logger,
 			timeline: $this->double(CaseTimeline::class, ['record' => 'tl-1']),
@@ -368,4 +386,18 @@ class AcknowledgementServiceGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden(name: 'acknowledgement-service-lookups', value: $observed);
 	}//end testGoldenDutyLookups()
+	/**
+	 * The value when it is a string, else ''.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return string
+	 */
+	private function stringOrEmpty(mixed $value): string {
+		if (is_string($value) === true) {
+			return $value;
+		}
+
+		return '';
+	}//end stringOrEmpty()
 }//end class

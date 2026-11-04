@@ -44,6 +44,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
+use OCA\Dossiq\Service\InternalWriteMarker;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -58,6 +59,7 @@ use RuntimeException;
 class AdvisoryCommitteeService {
 
 	use SearchesObjects;
+	use ReadsPanelMembers;
 
 	/**
 	 * Allowed advice-request lifecycle states.
@@ -104,6 +106,11 @@ class AdvisoryCommitteeService {
 	private const DEFAULT_DEADLINE_DAYS = 84;
 
 	/**
+	 * The code of the RuntimeException raised for an advice request that does not exist.
+	 */
+	public const NOT_FOUND = 404;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge
@@ -112,6 +119,7 @@ class AdvisoryCommitteeService {
 	 * @param BezwaarAuditTrail $auditTrail Writes each entry onto OpenRegister's audit trail
 	 * @param PanelIndependenceChecker $independence Awb Art. 7:13 lid 3 panel check
 	 * @param GovernanceBodyReader|null $governanceBodies Reads the committee back from decidiq, falling back locally
+	 * @param InternalWriteMarker $internalWrites Marks the transition's own save for DeliberationStartGuard
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -120,6 +128,7 @@ class AdvisoryCommitteeService {
 		private readonly BezwaarAuditTrail $auditTrail,
 		private readonly PanelIndependenceChecker $independence,
 		private readonly ?GovernanceBodyReader $governanceBodies = null,
+		private readonly InternalWriteMarker $internalWrites = new InternalWriteMarker(),
 	) {
 	}//end __construct()
 
@@ -468,10 +477,12 @@ class AdvisoryCommitteeService {
 		$store = ($this->requestStore() ?? throw new RuntimeException('OpenRegister is not available'));
 		$current = $this->findRequest(store: $store, requestId: $requestId);
 		if ($current === null) {
-			throw new RuntimeException('Advice request not found');
+			throw new RuntimeException('Advice request not found', self::NOT_FOUND);
 		}
 
-		return $store + ['id' => $requestId, 'current' => $current];
+		// Keyed on the stored request's own id, so a slug or other id form the
+		// store resolves still names the object the guard sees being saved.
+		return $store + ['id' => (string)($current['id'] ?? ($current['@self']['id'] ?? $requestId)), 'current' => $current];
 	}//end loadAdviceRequest()
 
 	/**
@@ -490,13 +501,17 @@ class AdvisoryCommitteeService {
 	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
 	 */
 	private function applyTransition(array $request, array $update): array {
-		$apply = fn (): array => ($this->patchObjectAsArray(
-			objectService: $request['objectService'],
-			register: $request['register'],
-			schema: $request['schema'],
-			id: $request['id'],
-			changes: $update
-		) ?? array_merge($request['current'], $update));
+		// Marked so DeliberationStartGuard lets this save reach an outcome status.
+		$apply = fn (): array => $this->internalWrites->runInternal(
+			objectId: $request['id'],
+			write: fn (): array => ($this->patchObjectAsArray(
+				objectService: $request['objectService'],
+				register: $request['register'],
+				schema: $request['schema'],
+				id: $request['id'],
+				changes: $update
+			) ?? array_merge($request['current'], $update))
+		);
 
 		if (isset($update['adviceIssuedAt']) === false) {
 			return $apply();
@@ -653,16 +668,11 @@ class AdvisoryCommitteeService {
 	 *
 	 * @return void
 	 *
-	 * @throws RuntimeException When no panel has been set
+	 * @throws RuntimeException When no panel has been set, it holds only blank members, or a member is not a user id
 	 * @throws GuardFailedException When a panel member is not independent, or independence cannot be verified
 	 */
 	private function guardPanel(array $request): void {
-		$panel = (array)($request['current']['panel'] ?? []);
-		if ($panel === []) {
-			throw new RuntimeException(
-				'Panel must be set before deliberation can start'
-			);
-		}
+		$panel = $this->requirePanelMembers(panel: (array)($request['current']['panel'] ?? []));
 
 		$independence = $this->independence->check(
 			objectionId: $this->objectionIdOf(request: $request['current']),

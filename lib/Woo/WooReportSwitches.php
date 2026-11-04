@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Settings\RenamedSettingKeys;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -191,7 +192,7 @@ class WooReportSwitches {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function assertSaveAllowed(array $data): void {
-		$data = self::withCurrentKeys(data: $data);
+		$data = (new RenamedSettingKeys(earlierKeys: self::LEGACY_KEYS))->carry(data: $data);
 		if (array_key_exists(self::THROUGHPUT, $data) === false && array_key_exists(self::READERS, $data) === false) {
 			return;
 		}
@@ -212,27 +213,6 @@ class WooReportSwitches {
 			status: RefusedException::STATUS_UNPROCESSABLE,
 		);
 	}//end assertSaveAllowed()
-
-	/**
-	 * A settings save with every earlier key carried onto its current key.
-	 *
-	 * A value posted under the current key wins over one under the old key.
-	 *
-	 * @param array<string, mixed> $data The settings as posted.
-	 *
-	 * @return array<string, mixed> The settings, current keys filled in.
-	 *
-	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
-	 */
-	public static function withCurrentKeys(array $data): array {
-		foreach (self::LEGACY_KEYS as $current => $legacy) {
-			if (array_key_exists($legacy, $data) === true && array_key_exists($current, $data) === false) {
-				$data[$current] = $data[$legacy];
-			}
-		}
-
-		return $data;
-	}//end withCurrentKeys()
 
 	/**
 	 * Whether a stored or posted value means yes.
