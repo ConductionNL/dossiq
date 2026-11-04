@@ -1,0 +1,72 @@
+{
+    "calls": [
+        {
+            "getConfigValue": "register"
+        },
+        {
+            "saveObject": {
+                "object": {
+                    "caseRef": "case-1",
+                    "requestedBy": "bob",
+                    "advisor": "alice",
+                    "deadline": null,
+                    "status": "open",
+                    "question": "",
+                    "adviceText": "",
+                    "addedToFile": false
+                },
+                "register": "dossiq",
+                "schema": "adviceRequest",
+                "uuid": null
+            }
+        },
+        {
+            "raiseAdviceDecision": {
+                "subjectSchema": "adviesAanvraag",
+                "subjectId": "advice-6",
+                "payload": {
+                    "subjectRegister": "dossiq",
+                    "externalReference": "case-1",
+                    "subjectLabel": "Adviesaanvraag",
+                    "question": "",
+                    "advisor": "alice"
+                }
+            }
+        },
+        {
+            "saveObject": {
+                "object": {
+                    "id": "advice-6",
+                    "decisionRef": "decision-9"
+                },
+                "register": "dossiq",
+                "schema": "adviceRequest",
+                "uuid": "advice-6"
+            }
+        },
+        {
+            "notifyAdviseur": {
+                "caseId": "case-1",
+                "payload": {
+                    "caseRef": "case-1",
+                    "requestedBy": "bob",
+                    "advisor": "alice",
+                    "deadline": null,
+                    "status": "open",
+                    "question": "",
+                    "adviceText": "",
+                    "addedToFile": false
+                },
+                "saved": {
+                    "id": "advice-6"
+                }
+            }
+        },
+        {
+            "info": "Advice request created for case case-1 by bob"
+        }
+    ],
+    "answer": {
+        "id": "advice-6"
+    }
+}
