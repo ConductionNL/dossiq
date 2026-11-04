@@ -52,24 +52,54 @@ class TermsEndingFirstTest extends TestCase {
 	 */
 	public function testListsRunningStatutoryTermsSoonestFirst(): void {
 		$rows = [
-			['id' => 't1', 'case' => 'c1', 'kind' => 'statutory', 'status' => 'lopend', 'startDate' => '2026-11-01', 'endDateCurrent' => '2026-11-21'],
+			[
+				'id' => 't1',
+				'case' => 'c1',
+				'kind' => 'statutory',
+				'status' => 'lopend',
+				'startDate' => '2026-11-01',
+				'endDateCurrent' => '2026-11-21',
+			],
 			['id' => 't2', 'case' => 'c2', 'status' => 'verlengd', 'startDate' => '2026-10-01', 'endDateCurrent' => '2026-11-06'],
 			['id' => 't3', 'case' => 'c3', 'kind' => 'internal', 'status' => 'lopend', 'startDate' => '2026-10-01', 'endDateCurrent' => '2026-11-05'],
-			['id' => 't4', 'case' => 'c4', 'kind' => 'statutory', 'status' => 'voltooid', 'startDate' => '2026-10-01', 'endDateCurrent' => '2026-11-05'],
-			['id' => 't5', 'case' => 'c5', 'kind' => 'statutory', 'status' => 'paused', 'startDate' => '2026-10-01', 'endDateCurrent' => '2026-12-30'],
+			[
+				'id' => 't4',
+				'case' => 'c4',
+				'kind' => 'statutory',
+				'status' => 'voltooid',
+				'startDate' => '2026-10-01',
+				'endDateCurrent' => '2026-11-05',
+			],
+			[
+				'id' => 't5',
+				'case' => 'c5',
+				'kind' => 'statutory',
+				'status' => 'paused',
+				'startDate' => '2026-10-01',
+				'endDateCurrent' => '2026-12-30',
+			],
 		];
-		$cases = ['c1' => ['identifier' => '2026-0110', 'title' => 'Verlichting fietspad Lindelaan'], 'c2' => ['identifier' => '2026-0042', 'title' => 'Kapvergunning']];
+		$cases = [
+			'c1' => ['identifier' => '2026-0110', 'title' => 'Verlichting fietspad Lindelaan'],
+			'c2' => ['identifier' => '2026-0042', 'title' => 'Kapvergunning'],
+		];
 
 		$answer = $this->service(rows: $rows, cases: $cases)->list(limit: 2, now: new DateTimeImmutable('2026-11-11'));
 
-		$this->assertTrue($answer['available']);
-		$this->assertSame(['in' => ['lopend', 'verlengd', 'paused']], $this->asked['status']);
-		$this->assertSame(['c2', 'c1'], array_column($answer['terms'], 'caseId'));
+		$this->assertTrue(condition: $answer['available']);
+		$this->assertSame(expected: ['in' => ['lopend', 'verlengd', 'paused']], actual: $this->asked['status']);
+		$this->assertSame(expected: ['c2', 'c1'], actual: array_column($answer['terms'], 'caseId'));
 		$this->assertSame(
-			['caseId' => 'c1', 'caseLabel' => '2026-0110 Verlichting fietspad Lindelaan', 'endDate' => '2026-11-21', 'progressPercent' => 50, 'daysLeft' => 10],
-			$answer['terms'][1]
+			expected: [
+				'caseId' => 'c1',
+				'caseLabel' => '2026-0110 Verlichting fietspad Lindelaan',
+				'endDate' => '2026-11-21',
+				'progressPercent' => 50,
+				'daysLeft' => 10,
+			],
+			actual: $answer['terms'][1]
 		);
-		$this->assertSame(-5, $answer['terms'][0]['daysLeft']);
+		$this->assertSame(expected: -5, actual: $answer['terms'][0]['daysLeft']);
 	}//end testListsRunningStatutoryTermsSoonestFirst()
 
 	/**
@@ -78,11 +108,11 @@ class TermsEndingFirstTest extends TestCase {
 	 * @return void
 	 */
 	public function testUnavailableWithoutTheTermSchema(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 		$service = new TermsEndingFirst(settingsService: $settings, terms: $this->terms());
 
-		$this->assertSame(['available' => false, 'terms' => []], $service->list());
+		$this->assertSame(expected: ['available' => false, 'terms' => []], actual: $service->list());
 	}//end testUnavailableWithoutTheTermSchema()
 
 	/**
@@ -114,14 +144,16 @@ class TermsEndingFirstTest extends TestCase {
 			}
 
 			/**
-			 * @param string $id The id.
+			 * @param string     $id       The id.
+			 * @param int|string $register The register.
+			 * @param int|string $schema   The schema.
 			 * @return array<string, mixed>
 			 */
 			public function find(string $id, int|string $register, int|string $schema): array {
 				return ($this->cases[$id] ?? []);
 			}
 		};
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnMap([['register', '', '1'], ['termijn_instance_schema', '', '2'], ['case_schema', '', '3']]);
 
@@ -135,11 +167,11 @@ class TermsEndingFirstTest extends TestCase {
 	 */
 	private function terms(): CaseTermsService {
 		$sources = new CaseTermSources(
-			termService: $this->createMock(TermijnService::class),
-			declarations: $this->createMock(TermDeclarationReader::class),
-			timers: $this->createMock(TermijnTimerService::class),
+			termService: $this->createMock(originalClassName: TermijnService::class),
+			declarations: $this->createMock(originalClassName: TermDeclarationReader::class),
+			timers: $this->createMock(originalClassName: TermijnTimerService::class),
 		);
 
-		return new CaseTermsService(sources: $sources, logger: $this->createMock(LoggerInterface::class));
+		return new CaseTermsService(sources: $sources, logger: $this->createMock(originalClassName: LoggerInterface::class));
 	}//end terms()
 }//end class

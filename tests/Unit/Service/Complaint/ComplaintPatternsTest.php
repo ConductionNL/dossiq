@@ -43,14 +43,14 @@ class ComplaintPatternsTest extends TestCase {
 	 */
 	public function testQuarterFromParam(): void {
 		$last = QuarterPeriod::fromParam(param: '', now: new DateTimeImmutable('2026-01-15'));
-		$this->assertSame([2025, 4], [$last->year, $last->quarter]);
-		$this->assertSame(['2025-10-01', '2025-12-31'], [$last->firstDay(), $last->lastDay()]);
+		$this->assertSame(expected: [2025, 4], actual: [$last->year, $last->quarter]);
+		$this->assertSame(expected: ['2025-10-01', '2025-12-31'], actual: [$last->firstDay(), $last->lastDay()]);
 
 		$named = QuarterPeriod::fromParam(param: '2026-Q3', now: new DateTimeImmutable());
-		$this->assertSame('2026-04-01', $named->previous()->firstDay());
-		$this->assertSame(['2025-10', '2026-09'], [$named->trailingMonths()[0], $named->trailingMonths()[11]]);
+		$this->assertSame(expected: '2026-04-01', actual: $named->previous()->firstDay());
+		$this->assertSame(expected: ['2025-10', '2026-09'], actual: [$named->trailingMonths()[0], $named->trailingMonths()[11]]);
 
-		$this->expectException(InvalidArgumentException::class);
+		$this->expectException(exception: InvalidArgumentException::class);
 		QuarterPeriod::fromParam(param: '2026-Q5', now: new DateTimeImmutable());
 	}//end testQuarterFromParam()
 
@@ -70,16 +70,19 @@ class ComplaintPatternsTest extends TestCase {
 			],
 		);
 
-		$this->assertSame(['Wachttijd balie', 'Bejegening'], $figures['byCategory']['labels']);
-		$this->assertSame([3, 1], $figures['byCategory']['counts']);
-		$this->assertSame([200, null], $figures['byCategory']['risePercent']);
-		$this->assertSame(['labels' => ['email'], 'counts' => [4]], $figures['byChannel']);
-		$this->assertSame(4, $figures['count']);
-		$this->assertSame([2, 1, 1], array_slice($figures['byMonth']['counts'], 9));
-		$this->assertSame(2, $figures['handling']['handled']);
-		$this->assertSame(50, $figures['handling']['withinAwbPercent']);
-		$this->assertSame(50, $figures['handling']['upheldPercent']);
-		$this->assertSame(['category' => 'Wachttijd balie', 'count' => 3, 'averageDays' => 54, 'upheldPercent' => 50], $figures['handling']['resolutionByCategory'][0]);
+		$this->assertSame(expected: ['Wachttijd balie', 'Bejegening'], actual: $figures['byCategory']['labels']);
+		$this->assertSame(expected: [3, 1], actual: $figures['byCategory']['counts']);
+		$this->assertSame(expected: [200, null], actual: $figures['byCategory']['risePercent']);
+		$this->assertSame(expected: ['labels' => ['email'], 'counts' => [4]], actual: $figures['byChannel']);
+		$this->assertSame(expected: 4, actual: $figures['count']);
+		$this->assertSame(expected: [2, 1, 1], actual: array_slice($figures['byMonth']['counts'], 9));
+		$this->assertSame(expected: 2, actual: $figures['handling']['handled']);
+		$this->assertSame(expected: 50, actual: $figures['handling']['withinAwbPercent']);
+		$this->assertSame(expected: 50, actual: $figures['handling']['upheldPercent']);
+		$this->assertSame(
+			expected: ['category' => 'Wachttijd balie', 'count' => 3, 'averageDays' => 54, 'upheldPercent' => 50],
+			actual: $figures['handling']['resolutionByCategory'][0]
+		);
 	}//end testFiguresCountTheQuarterAgainstTheOneBefore()
 
 	/**
@@ -104,25 +107,33 @@ class ComplaintPatternsTest extends TestCase {
 				return $this->rows;
 			}
 		};
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
-		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ['register' => '1', 'complaint_schema' => '2', 'complaint_target_per_month' => '0'][$key] ?? $default);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => [
+			'register' => '1',
+			'complaint_schema' => '2',
+			'complaint_target_per_month' => '0',
+		][$key] ?? $default);
 
-		$answer = (new ComplaintPatterns(settingsService: $settings, l10n: $this->l10n(), figures: new ComplaintPatternFigures()))->forQuarter(period: new QuarterPeriod(year: 2026, quarter: 3));
+		$answer = (new ComplaintPatterns(
+			settingsService: $settings,
+			l10n: $this->l10n(),
+			figures: new ComplaintPatternFigures()
+		))->forQuarter(period: new QuarterPeriod(year: 2026, quarter: 3));
 
-		$this->assertTrue($answer['available']);
-		$this->assertSame('Third quarter 2026', $answer['quarterLabel']);
-		$this->assertSame('Target: at most 0. Above target', $answer['kpis']['perMonthNote']);
-		$this->assertSame('No complaint was handled this quarter', $answer['kpis']['upheldNote']);
-		$this->assertSame(array_fill(0, 12, 0), $answer['byMonth']['target']);
-		$this->assertStringContainsString('Wachttijd balie (3 complaints, from 1 to 3)', $answer['findings'][0]['text']);
-		$this->assertStringNotContainsString('j.jansen', json_encode($answer));
-		$this->assertArrayNotHasKey('employeeAlerts', $answer);
+		$this->assertTrue(condition: $answer['available']);
+		$this->assertSame(expected: 'Third quarter 2026', actual: $answer['quarterLabel']);
+		$this->assertSame(expected: 'Target: at most 0. Above target', actual: $answer['kpis']['perMonthNote']);
+		$this->assertSame(expected: 'No complaint was handled this quarter', actual: $answer['kpis']['upheldNote']);
+		$this->assertSame(expected: array_fill(0, 12, 0), actual: $answer['byMonth']['target']);
+		$this->assertStringContainsString(needle: 'Wachttijd balie (3 complaints, from 1 to 3)', haystack: $answer['findings'][0]['text']);
+		$this->assertStringNotContainsString(needle: 'j.jansen', haystack: json_encode($answer));
+		$this->assertArrayNotHasKey(key: 'employeeAlerts', array: $answer);
 
 		$pdf = (new ComplaintPatternsPdf(l10n: $this->l10n(), writer: new PlainTextPdf()))->render(patterns: $answer);
-		$this->assertStringStartsWith('%PDF-1.4', $pdf);
-		$this->assertStringEndsWith("%%EOF\n", $pdf);
-		$this->assertStringContainsString('(Third quarter 2026) Tj', $pdf);
+		$this->assertStringStartsWith(prefix: '%PDF-1.4', string: $pdf);
+		$this->assertStringEndsWith(suffix: "%%EOF\n", string: $pdf);
+		$this->assertStringContainsString(needle: '(Third quarter 2026) Tj', haystack: $pdf);
 	}//end testTheAnswerCarriesNoEmployee()
 
 	/**
@@ -131,12 +142,16 @@ class ComplaintPatternsTest extends TestCase {
 	 * @return void
 	 */
 	public function testUnavailableWithoutTheComplaintSchema(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 
-		$answer = (new ComplaintPatterns(settingsService: $settings, l10n: $this->l10n(), figures: new ComplaintPatternFigures()))->forQuarter(period: new QuarterPeriod(year: 2026, quarter: 3));
+		$answer = (new ComplaintPatterns(
+			settingsService: $settings,
+			l10n: $this->l10n(),
+			figures: new ComplaintPatternFigures()
+		))->forQuarter(period: new QuarterPeriod(year: 2026, quarter: 3));
 
-		$this->assertSame(['available' => false], $answer);
+		$this->assertSame(expected: ['available' => false], actual: $answer);
 	}//end testUnavailableWithoutTheComplaintSchema()
 
 	/**
@@ -145,7 +160,14 @@ class ComplaintPatternsTest extends TestCase {
 	 * @return list<array<string, mixed>>
 	 */
 	private function complaints(): array {
-		$row = static fn (string $id, string $date, string $category): array => ['id' => $id, 'receiptDate' => $date, 'category' => $category, 'receiptChannel' => 'email', 'involvedDepartment' => 'Publiekszaken', 'involvedEmployee' => 'j.jansen'];
+		$row = static fn (string $id, string $date, string $category): array => [
+			'id' => $id,
+			'receiptDate' => $date,
+			'category' => $category,
+			'receiptChannel' => 'email',
+			'involvedDepartment' => 'Publiekszaken',
+			'involvedEmployee' => 'j.jansen',
+		];
 
 		return [
 			$row('a1', '2026-07-01', 'Wachttijd balie'),
@@ -163,9 +185,18 @@ class ComplaintPatternsTest extends TestCase {
 	 * @return IL10N
 	 */
 	private function l10n(): IL10N {
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
-		$l10n->method('n')->willReturnCallback(static fn (string $one, string $many, int $count, array $parameters = []): string => vsprintf(str_replace('%n', (string)$count, ($count === 1 ? $one : $many)), $parameters));
+		$l10n->method('n')->willReturnCallback(
+			static function (string $one, string $many, int $count, array $parameters = []): string {
+				$text = $many;
+				if ($count === 1) {
+					$text = $one;
+				}
+
+				return vsprintf(str_replace('%n', (string)$count, $text), $parameters);
+			}
+		);
 
 		return $l10n;
 	}//end l10n()

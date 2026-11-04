@@ -36,7 +36,10 @@ class QueueSourceStatusTest extends TestCase {
 	 * @return void
 	 */
 	public function testEverySourceAnswered(): void {
-		$this->assertSame(['available' => true, 'unavailable' => [], 'unavailableText' => ''], $this->sourceStatus(unavailable: [])->forReader(userId: 'anouk'));
+		$this->assertSame(
+			expected: ['available' => true, 'unavailable' => [], 'unavailableText' => ''],
+			actual: $this->sourceStatus(unavailable: [])->forReader(userId: 'anouk')
+		);
 	}//end testEverySourceAnswered()
 
 	/**
@@ -45,10 +48,17 @@ class QueueSourceStatusTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailedSourceIsNamed(): void {
-		$answer = $this->sourceStatus(unavailable: [['source' => 'engine-tasks', 'label' => 'Tasks', 'reason' => 'timeout']])->forReader(userId: 'anouk');
+		$answer = $this->sourceStatus(unavailable: [[
+			'source' => 'engine-tasks',
+			'label' => 'Tasks',
+			'reason' => 'timeout',
+		]])->forReader(userId: 'anouk');
 
-		$this->assertSame([['source' => 'engine-tasks', 'label' => 'Tasks']], $answer['unavailable']);
-		$this->assertSame('Source not available: Tasks. Those are not in this queue now. The cases of dossiq itself are complete.', $answer['unavailableText']);
+		$this->assertSame(expected: [['source' => 'engine-tasks', 'label' => 'Tasks']], actual: $answer['unavailable']);
+		$this->assertSame(
+			expected: 'Source not available: Tasks. Those are not in this queue now. The cases of dossiq itself are complete.',
+			actual: $answer['unavailableText']
+		);
 	}//end testAFailedSourceIsNamed()
 
 	/**
@@ -59,7 +69,10 @@ class QueueSourceStatusTest extends TestCase {
 	public function testTheCasesAreNotCalledCompleteWhenTheirSourceFailed(): void {
 		$answer = $this->sourceStatus(unavailable: [['source' => 'assigned-cases', 'label' => 'Cases assigned to you']])->forReader(userId: 'anouk');
 
-		$this->assertSame('Source not available: Cases assigned to you. Those are not in this queue now.', $answer['unavailableText']);
+		$this->assertSame(
+			expected: 'Source not available: Cases assigned to you. Those are not in this queue now.',
+			actual: $answer['unavailableText']
+		);
 	}//end testTheCasesAreNotCalledCompleteWhenTheirSourceFailed()
 
 	/**
@@ -70,9 +83,9 @@ class QueueSourceStatusTest extends TestCase {
 	 * @return QueueSourceStatus
 	 */
 	private function sourceStatus(array $unavailable): QueueSourceStatus {
-		$queue = $this->createMock(PersonalQueueService::class);
+		$queue = $this->createMock(originalClassName: PersonalQueueService::class);
 		$queue->expects($this->once())->method('forPerson')->with('anouk')->willReturn(['items' => [], 'unavailable' => $unavailable]);
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
 
 		return new QueueSourceStatus(queue: $queue, l10n: $l10n);

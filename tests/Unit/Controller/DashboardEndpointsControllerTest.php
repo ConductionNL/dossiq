@@ -50,13 +50,13 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
 	 */
 	public function testEndingFirstAnswersTheTerms(): void {
-		$terms = $this->createMock(TermsEndingFirst::class);
+		$terms = $this->createMock(originalClassName: TermsEndingFirst::class);
 		$terms->expects($this->once())->method('list')->with(7)->willReturn(['available' => true, 'terms' => []]);
 
 		$response = $this->endingFirst(terms: $terms, inAudience: true)->index(limit: 7);
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertTrue($response->getData()['available']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertTrue(condition: $response->getData()['available']);
 	}//end testEndingFirstAnswersTheTerms()
 
 	/**
@@ -65,10 +65,10 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testEndingFirstRefusesOutsideTheAudience(): void {
-		$terms = $this->createMock(TermsEndingFirst::class);
+		$terms = $this->createMock(originalClassName: TermsEndingFirst::class);
 		$terms->expects($this->never())->method('list');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $this->endingFirst(terms: $terms, inAudience: false)->index()->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->endingFirst(terms: $terms, inAudience: false)->index()->getStatus());
 	}//end testEndingFirstRefusesOutsideTheAudience()
 
 	/**
@@ -77,13 +77,13 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testEndingFirstMasksAReadFailure(): void {
-		$terms = $this->createMock(TermsEndingFirst::class);
+		$terms = $this->createMock(originalClassName: TermsEndingFirst::class);
 		$terms->method('list')->willThrowException(new RuntimeException('register offline'));
 
 		$response = $this->endingFirst(terms: $terms, inAudience: true)->index();
 
-		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
-		$this->assertSame('Internal error', $response->getData()['message']);
+		$this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $response->getStatus());
+		$this->assertSame(expected: 'Internal error', actual: $response->getData()['message']);
 	}//end testEndingFirstMasksAReadFailure()
 
 	/**
@@ -94,10 +94,10 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function testPatternsRefuseOutsideTheAudience(): void {
-		$patterns = $this->createMock(ComplaintPatterns::class);
+		$patterns = $this->createMock(originalClassName: ComplaintPatterns::class);
 		$patterns->expects($this->never())->method('forQuarter');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $this->patterns(patterns: $patterns, inAudience: false)->index()->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->patterns(patterns: $patterns, inAudience: false)->index()->getStatus());
 	}//end testPatternsRefuseOutsideTheAudience()
 
 	/**
@@ -106,10 +106,13 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testPatternsRefuseAMalformedQuarter(): void {
-		$patterns = $this->createMock(ComplaintPatterns::class);
+		$patterns = $this->createMock(originalClassName: ComplaintPatterns::class);
 		$patterns->expects($this->never())->method('forQuarter');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->patterns(patterns: $patterns, inAudience: true)->index(quarter: '2026-5')->getStatus());
+		$this->assertSame(
+			expected: Http::STATUS_BAD_REQUEST,
+			actual: $this->patterns(patterns: $patterns, inAudience: true)->index(quarter: '2026-5')->getStatus()
+		);
 	}//end testPatternsRefuseAMalformedQuarter()
 
 	/**
@@ -118,15 +121,15 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testPatternsAnswerTheNamedQuarter(): void {
-		$patterns = $this->createMock(ComplaintPatterns::class);
+		$patterns = $this->createMock(originalClassName: ComplaintPatterns::class);
 		$patterns->expects($this->once())->method('forQuarter')
-			->with($this->callback(static fn ($period): bool => $period->year === 2026 && $period->quarter === 3))
+			->with($this->callback(callback: static fn ($period): bool => $period->year === 2026 && $period->quarter === 3))
 			->willReturn(['available' => true, 'quarterLabel' => 'Third quarter 2026']);
 
 		$response = $this->patterns(patterns: $patterns, inAudience: true)->index(quarter: '2026-Q3');
 
-		$this->assertInstanceOf(JSONResponse::class, $response);
-		$this->assertSame('Third quarter 2026', $response->getData()['quarterLabel']);
+		$this->assertInstanceOf(expected: JSONResponse::class, actual: $response);
+		$this->assertSame(expected: 'Third quarter 2026', actual: $response->getData()['quarterLabel']);
 	}//end testPatternsAnswerTheNamedQuarter()
 
 	/**
@@ -135,16 +138,16 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testPatternsAnswerAPdfDownload(): void {
-		$patterns = $this->createMock(ComplaintPatterns::class);
+		$patterns = $this->createMock(originalClassName: ComplaintPatterns::class);
 		$patterns->method('forQuarter')->willReturn(['available' => true]);
-		$pdf = $this->createMock(ComplaintPatternsPdf::class);
+		$pdf = $this->createMock(originalClassName: ComplaintPatternsPdf::class);
 		$pdf->expects($this->once())->method('render')->willReturn('%PDF-1.4');
 
 		$response = $this->patterns(patterns: $patterns, inAudience: true, pdf: $pdf)->index(quarter: '2026-Q3', format: 'pdf');
 
-		$this->assertInstanceOf(DataDownloadResponse::class, $response);
-		$this->assertSame('application/pdf', $response->getHeaders()['Content-Type']);
-		$this->assertStringContainsString('complaint-patterns-2026-Q3.pdf', $response->getHeaders()['Content-Disposition']);
+		$this->assertInstanceOf(expected: DataDownloadResponse::class, actual: $response);
+		$this->assertSame(expected: 'application/pdf', actual: $response->getHeaders()['Content-Type']);
+		$this->assertStringContainsString(needle: 'complaint-patterns-2026-Q3.pdf', haystack: $response->getHeaders()['Content-Disposition']);
 	}//end testPatternsAnswerAPdfDownload()
 
 	/**
@@ -155,12 +158,22 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function testSourcesReadTheReadersOwnQueue(): void {
-		$status = $this->createMock(QueueSourceStatus::class);
-		$status->expects($this->once())->method('forReader')->with('anouk')->willReturn(['available' => true, 'unavailable' => [], 'unavailableText' => '']);
+		$status = $this->createMock(originalClassName: QueueSourceStatus::class);
+		$status->expects($this->once())->method('forReader')->with('anouk')->willReturn([
+			'available' => true,
+			'unavailable' => [],
+			'unavailableText' => '',
+		]);
 
-		$response = new WorkQueueSourcesController('dossiq', $this->createMock(IRequest::class), $this->session(uid: 'anouk'), $this->createMock(LoggerInterface::class), $status);
+		$response = new WorkQueueSourcesController(
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			userSession: $this->session(uid: 'anouk'),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			status: $status
+		);
 
-		$this->assertSame('', $response->index()->getData()['unavailableText']);
+		$this->assertSame(expected: '', actual: $response->index()->getData()['unavailableText']);
 	}//end testSourcesReadTheReadersOwnQueue()
 
 	/**
@@ -169,12 +182,18 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testSourcesRefuseAnAnonymousCaller(): void {
-		$status = $this->createMock(QueueSourceStatus::class);
+		$status = $this->createMock(originalClassName: QueueSourceStatus::class);
 		$status->expects($this->never())->method('forReader');
 
-		$controller = new WorkQueueSourcesController('dossiq', $this->createMock(IRequest::class), $this->session(uid: null), $this->createMock(LoggerInterface::class), $status);
+		$controller = new WorkQueueSourcesController(
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			userSession: $this->session(uid: null),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			status: $status
+		);
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->index()->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $controller->index()->getStatus());
 	}//end testSourcesRefuseAnAnonymousCaller()
 
 	/**
@@ -186,7 +205,14 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return DeadlineEndingFirstController
 	 */
 	private function endingFirst(TermsEndingFirst $terms, bool $inAudience): DeadlineEndingFirstController {
-		return new DeadlineEndingFirstController('dossiq', $this->createMock(IRequest::class), $this->session(uid: 'ctrl'), $this->createMock(LoggerInterface::class), $this->audience(inAudience: $inAudience), $terms);
+		return new DeadlineEndingFirstController(
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			userSession: $this->session(uid: 'ctrl'),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			audience: $this->audience(inAudience: $inAudience),
+			terms: $terms
+		);
 	}//end endingFirst()
 
 	/**
@@ -199,7 +225,15 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return ComplaintPatternsController
 	 */
 	private function patterns(ComplaintPatterns $patterns, bool $inAudience, ?ComplaintPatternsPdf $pdf = null): ComplaintPatternsController {
-		return new ComplaintPatternsController('dossiq', $this->createMock(IRequest::class), $this->session(uid: 'ctrl'), $this->createMock(LoggerInterface::class), $this->audience(inAudience: $inAudience), $patterns, ($pdf ?? $this->createMock(ComplaintPatternsPdf::class)));
+		return new ComplaintPatternsController(
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			userSession: $this->session(uid: 'ctrl'),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			audience: $this->audience(inAudience: $inAudience),
+			patterns: $patterns,
+			pdf: ($pdf ?? $this->createMock(originalClassName: ComplaintPatternsPdf::class))
+		);
 	}//end patterns()
 
 	/**
@@ -210,10 +244,10 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return IUserSession
 	 */
 	private function session(?string $uid): IUserSession {
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$user = null;
 		if ($uid !== null) {
-			$user = $this->createMock(IUser::class);
+			$user = $this->createMock(originalClassName: IUser::class);
 			$user->method('getUID')->willReturn($uid);
 		}
 
@@ -230,7 +264,7 @@ class DashboardEndpointsControllerTest extends TestCase {
 	 * @return ReportingAudience
 	 */
 	private function audience(bool $inAudience): ReportingAudience {
-		$audience = $this->createMock(ReportingAudience::class);
+		$audience = $this->createMock(originalClassName: ReportingAudience::class);
 		$audience->method('isInAudience')->willReturn($inAudience);
 
 		return $audience;
