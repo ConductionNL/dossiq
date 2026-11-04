@@ -286,13 +286,17 @@ class SessionService {
 	 *
 	 * @return array<string, mixed> The updated session.
 	 *
-	 * @throws InvalidArgumentException When minutes are missing or consent is absent.
+	 * @throws InvalidArgumentException When minutes are missing, consent is absent, or the payload changes a stored denial.
 	 * @throws RuntimeException When the session cannot be read or written.
 	 *
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-attendance-and-minutes-follow-the-session-definition-req-css-3
 	 */
 	public function addMinutes(string $sessionId, array $payload): array {
 		[$objectService, $register, $current, $definition] = $this->loadSession(sessionId: $sessionId);
+		$definition->rules()->assertDenialKept(
+			stored: (string)($current['recordingConsent'] ?? ''),
+			asked: (string)($payload['recordingConsent'] ?? 'denied')
+		);
 
 		$summary  = $this->field(primary: $payload, fallback: $current, key: 'minutesSummary');
 		$document = $this->field(primary: $payload, fallback: $current, key: 'minutesDocument');

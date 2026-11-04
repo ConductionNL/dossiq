@@ -170,10 +170,8 @@ class IntakeLog {
 		string $reason,
 		string $caseId = '',
 	): string {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = $this->target();
+		if ($target === null) {
 			$this->logger->warning(
 				'Dossiq: the intake log is not provisioned, so a processed message was not recorded',
 				['messageId' => $message->messageId, 'outcome' => $outcome]
@@ -181,58 +179,20 @@ class IntakeLog {
 			return '';
 		}
 
-		$original = $message->source;
-		$truncated = false;
-		if (strlen($original) > self::ORIGINAL_LIMIT_BYTES) {
-			$original = substr($original, 0, self::ORIGINAL_LIMIT_BYTES);
-			$truncated = true;
-		}
+		$payload = $this->messageFields(message: $message)
+			+ $this->verdictFields(verdict: $verdict, results: $results)
+			+ ['outcome' => $outcome, 'reason' => $reason, 'case' => $caseId]
+			+ $this->originalFields(message: $message);
 
-		$payload = [
-			'mailMessageId' => $message->messageId,
-			'accountId' => $message->accountId,
-			'mailbox' => $message->mailbox,
-			'uid' => $message->uid,
-			'sender' => $message->senderAddress(),
-			'recipient' => InboundMessage::addressIn(value: $message->to),
-			'subject' => mb_substr($message->subject, 0, 255),
-			'receivedAt' => $this->time->getDateTime()->format(DATE_ATOM),
-			'sentAt' => $message->sentAt,
-			'decidingFilter' => $verdict->filterName,
-			'filterOutcome' => $verdict->outcome,
-			'filterReason' => $verdict->reason,
-			'spfResult' => ($results['spf'] ?? AuthenticationResult::UNAVAILABLE),
-			'dkimResult' => ($results['dkim'] ?? AuthenticationResult::UNAVAILABLE),
-			'dmarcResult' => ($results['dmarc'] ?? AuthenticationResult::UNAVAILABLE),
-			'threadingResult' => ($results['threading'] ?? AuthenticationResult::UNAVAILABLE),
-			'outcome' => $outcome,
-			'reason' => $reason,
-			'case' => $caseId,
-			'original' => $original,
-			'originalTruncated' => $truncated,
-		];
-
-		try {
-			$stored = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $payload
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: writing an intake log entry failed',
-				['messageId' => $message->messageId, 'error' => $e->getMessage()]
-			);
+		$entryId = $this->saveEntry(
+			write: $target + ['object' => $payload],
+			failure: ['Dossiq: writing an intake log entry failed', ['messageId' => $message->messageId]]
+		);
+		if ($entryId === null) {
 			return '';
 		}
 
-		if ($stored === null) {
-			return '';
-		}
-
-		$entryId = (string)($stored['@self']['id'] ?? ($stored['id'] ?? ''));
-		$this->recordOnTimeline(message: $message, outcome: $outcome, caseId: $caseId, entryId: $entryId);
+		$this->recordOnTimeline(message: $message, placed: ['outcome' => $outcome, 'caseId' => $caseId, 'entryId' => $entryId]);
 
 		return $entryId;
 	}//end record()
@@ -280,10 +240,8 @@ class IntakeLog {
 		string $reason,
 		string $caseId = '',
 	): string {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = $this->target();
+		if ($target === null) {
 			$this->logger->warning(
 				'Dossiq: the intake log is not provisioned, so a channel message was not recorded',
 				['channel' => $channel, 'message' => $channelMessageId, 'outcome' => $outcome]
@@ -291,37 +249,20 @@ class IntakeLog {
 			return '';
 		}
 
-		$payload = [
-			'channel' => mb_substr($channel, 0, 255),
-			'channelMessageId' => mb_substr($channelMessageId, 0, 255),
-			'sender' => mb_substr($sender, 0, 255),
-			'subject' => mb_substr($subject, 0, 255),
+		$payload = array_map(
+			static fn (string $value): string => mb_substr($value, 0, 255),
+			['channel' => $channel, 'channelMessageId' => $channelMessageId, 'sender' => $sender, 'subject' => $subject]
+		) + [
 			'receivedAt' => $this->time->getDateTime()->format(DATE_ATOM),
 			'outcome' => $outcome,
 			'reason' => $reason,
 			'case' => $caseId,
 		];
 
-		try {
-			$stored = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $payload
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: writing a channel intake log entry failed',
-				['channel' => $channel, 'message' => $channelMessageId, 'error' => $e->getMessage()]
-			);
-			return '';
-		}
-
-		if ($stored === null) {
-			return '';
-		}
-
-		return (string)($stored['@self']['id'] ?? ($stored['id'] ?? ''));
+		return ($this->saveEntry(
+			write: $target + ['object' => $payload],
+			failure: ['Dossiq: writing a channel intake log entry failed', ['channel' => $channel, 'message' => $channelMessageId]]
+		) ?? '');
 	}//end recordChannelMessage()
 
 	/**
@@ -375,21 +316,16 @@ class IntakeLog {
 	 * filter verdict and the four authentication results: facts about this
 	 * instance rather than about the sender, and not the applicant's to read.
 	 *
-	 * @param InboundMessage $message The message.
-	 * @param string         $outcome What became of it.
-	 * @param string         $caseId  The case it reached, or ''.
-	 * @param string         $entryId The log entry just written.
+	 * @param InboundMessage                                         $message The message.
+	 * @param array{outcome: string, caseId: string, entryId: string} $placed  What became of it, the case it reached
+	 *                                                                        (or '') and the log entry just written.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
-	private function recordOnTimeline(
-		InboundMessage $message,
-		string $outcome,
-		string $caseId,
-		string $entryId,
-	): void {
+	private function recordOnTimeline(InboundMessage $message, array $placed): void {
+		$caseId = $placed['caseId'];
 		if (trim($caseId) === '') {
 			return;
 		}
@@ -407,8 +343,8 @@ class IntakeLog {
 			fields: [
 				'sender' => $message->senderAddress(),
 				'subject' => $subject,
-				'outcome' => $outcome,
-				'intakeEntryId' => $entryId,
+				'outcome' => $placed['outcome'],
+				'intakeEntryId' => $placed['entryId'],
 			],
 			visibility: CaseTimeline::INTERNAL,
 		);
@@ -425,18 +361,16 @@ class IntakeLog {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function amend(string $entryId, array $changes): bool {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
-		if ($entryId === '' || $objectService === null || $register === '' || $schema === '') {
+		$target = $this->target();
+		if ($entryId === '' || $target === null) {
 			return false;
 		}
 
 		try {
 			$patched = $this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $target['objectService'],
+				register: $target['register'],
+				schema: $target['schema'],
 				id: $entryId,
 				changes: $changes
 			);
@@ -461,18 +395,16 @@ class IntakeLog {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function find(string $entryId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
-		if ($entryId === '' || $objectService === null || $register === '' || $schema === '') {
+		$target = $this->target();
+		if ($entryId === '' || $target === null) {
 			return null;
 		}
 
 		try {
 			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $target['objectService'],
+				register: $target['register'],
+				schema: $target['schema'],
 				id: $entryId
 			);
 		} catch (Throwable $e) {
@@ -494,18 +426,16 @@ class IntakeLog {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function search(array $filters = []): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = $this->target();
+		if ($target === null) {
 			return [];
 		}
 
 		try {
 			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $target['objectService'],
+				register: $target['register'],
+				schema: $target['schema'],
 				filters: $filters
 			);
 		} catch (Throwable $e) {
@@ -516,4 +446,114 @@ class IntakeLog {
 			return [];
 		}
 	}//end search()
+
+	/**
+	 * Where entries are stored, or null when the log is not provisioned.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store, register and schema.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function target(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end target()
+
+	/**
+	 * Store one entry and answer its id; a failure is logged, never thrown.
+	 *
+	 * @param array<string, mixed>                       $write   The target plus the `object` to store.
+	 * @param array{0: string, 1: array<string, string>} $failure The log line and its context for a failed write.
+	 *
+	 * @return string|null The stored entry's id ('' when it has none), or null when nothing was stored.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function saveEntry(array $write, array $failure): ?string {
+		$stored = null;
+		try {
+			$stored = $this->saveObjectAsArray(
+				objectService: $write['objectService'],
+				register: $write['register'],
+				schema: $write['schema'],
+				object: $write['object']
+			);
+		} catch (Throwable $e) {
+			$this->logger->error($failure[0], $failure[1] + ['error' => $e->getMessage()]);
+		}
+
+		if ($stored === null) {
+			return null;
+		}
+
+		return (string)($stored['@self']['id'] ?? ($stored['id'] ?? ''));
+	}//end saveEntry()
+
+	/**
+	 * The entry fields that describe the message itself.
+	 *
+	 * @param InboundMessage $message The message.
+	 *
+	 * @return array<string, mixed> Identity, correspondents, subject and dates.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function messageFields(InboundMessage $message): array {
+		return [
+			'mailMessageId' => $message->messageId,
+			'accountId' => $message->accountId,
+			'mailbox' => $message->mailbox,
+			'uid' => $message->uid,
+			'sender' => $message->senderAddress(),
+			'recipient' => InboundMessage::addressIn(value: $message->to),
+			'subject' => mb_substr($message->subject, 0, 255),
+			'receivedAt' => $this->time->getDateTime()->format(DATE_ATOM),
+			'sentAt' => $message->sentAt,
+		];
+	}//end messageFields()
+
+	/**
+	 * The entry fields that hold the filter's decision and the authentication results.
+	 *
+	 * @param FilterVerdict         $verdict The filter's decision.
+	 * @param array<string, string> $results The four authentication results.
+	 *
+	 * @return array<string, string> The verdict, then spf, dkim, dmarc and threading.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function verdictFields(FilterVerdict $verdict, array $results): array {
+		return [
+			'decidingFilter' => $verdict->filterName,
+			'filterOutcome' => $verdict->outcome,
+			'filterReason' => $verdict->reason,
+			'spfResult' => ($results['spf'] ?? AuthenticationResult::UNAVAILABLE),
+			'dkimResult' => ($results['dkim'] ?? AuthenticationResult::UNAVAILABLE),
+			'dmarcResult' => ($results['dmarc'] ?? AuthenticationResult::UNAVAILABLE),
+			'threadingResult' => ($results['threading'] ?? AuthenticationResult::UNAVAILABLE),
+		];
+	}//end verdictFields()
+
+	/**
+	 * The kept original, cut at ORIGINAL_LIMIT_BYTES, and whether it was cut.
+	 *
+	 * @param InboundMessage $message The message.
+	 *
+	 * @return array{original: string, originalTruncated: bool} The original fields.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function originalFields(InboundMessage $message): array {
+		if (strlen($message->source) > self::ORIGINAL_LIMIT_BYTES) {
+			return ['original' => substr($message->source, 0, self::ORIGINAL_LIMIT_BYTES), 'originalTruncated' => true];
+		}
+
+		return ['original' => $message->source, 'originalTruncated' => false];
+	}//end originalFields()
 }//end class

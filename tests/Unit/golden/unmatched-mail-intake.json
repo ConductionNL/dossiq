@@ -1,0 +1,1819 @@
+{
+    "filed": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "bob",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "no fallback case type": {
+        "answer": null,
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "blank fallback case type": {
+        "answer": null,
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "no object service": {
+        "answer": null,
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "UnmatchedMailIntake: a fallback case type is configured but the register is not, so the mail stays in the mailbox",
+                {
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "no register": {
+        "answer": null,
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "UnmatchedMailIntake: a fallback case type is configured but the register is not, so the mail stays in the mailbox",
+                {
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "no case schema": {
+        "answer": null,
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "UnmatchedMailIntake: a fallback case type is configured but the register is not, so the mail stays in the mailbox",
+                {
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "no case type schema": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "case type does not exist": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "case type names a handler block": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "carol",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "case type names nobody": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "case type read as an entity": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "no subject": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Bericht zonder onderwerp",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: anna@example.nl",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "long subject": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababa",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: anna@example.nl",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "sender without a name": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna@Example.NL",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "sender not an address": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": ""
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "sender with a broken address": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna <not an address>",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": ""
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "no sender and no date": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": ""
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "date only": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nVerzonden: 2026-11-02",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": ""
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "empty message": {
+        "answer": "case-9",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Bericht zonder onderwerp",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": ""
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-9",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "save fails": {
+        "answer": null,
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "error",
+                "UnmatchedMailIntake: could not file the mail as a case",
+                {
+                    "caseType": "ct-mail",
+                    "error": "the store refused it"
+                }
+            ]
+        ]
+    },
+    "saved without an id": {
+        "answer": null,
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "error",
+                "UnmatchedMailIntake: the case was written but answered no id, so the mail cannot be linked to it",
+                {
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "saved as nothing": {
+        "answer": null,
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "error",
+                "UnmatchedMailIntake: the case was written but answered no id, so the mail cannot be linked to it",
+                {
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "saved as an entity": {
+        "answer": "case-uuid-7",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-uuid-7",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    },
+    "saved with an id object": {
+        "answer": "case-obj",
+        "calls": [
+            [
+                "getValueString",
+                {
+                    "app": "dossiq",
+                    "key": "email_fallback_case_type",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_type_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "ct-mail",
+                    "register": "reg-1",
+                    "schema": "case-type"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Vraag over mijn aanvraag",
+                        "description": "Deze zaak is aangemaakt uit een e-mail aan de functionele mailbox.\nAfzender: Anna de Vries <ANNA@Example.nl>\nVerzonden: 2026-11-02T09:00:00+01:00",
+                        "caseType": "ct-mail",
+                        "intakeChannel": "email",
+                        "assignee": "",
+                        "initiatorSourceId": "anna@example.nl",
+                        "initiatorType": "contact"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "UnmatchedMailIntake: could not read the fallback case type",
+                {
+                    "caseType": "ct-mail",
+                    "error": "Object not found"
+                }
+            ],
+            [
+                "info",
+                "UnmatchedMailIntake: filed an unmatched mail as case {case}",
+                {
+                    "case": "case-obj",
+                    "caseType": "ct-mail"
+                }
+            ]
+        ]
+    }
+}

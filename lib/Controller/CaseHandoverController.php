@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -63,7 +64,6 @@ class CaseHandoverController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string              $appName     The app name.
 	 * @param IRequest            $request     The request.
 	 * @param CaseTransferService $transfers   The one door to every case move.
 	 * @param CaseAccessGuard     $accessGuard Per-case authorization, failing closed.
@@ -76,7 +76,6 @@ class CaseHandoverController extends Controller {
 	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly CaseTransferService $transfers,
 		private readonly CaseAccessGuard $accessGuard,
@@ -84,7 +83,7 @@ class CaseHandoverController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

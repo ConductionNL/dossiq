@@ -118,8 +118,13 @@ class SubCaseDeriver {
 		$childData[self::PARENT_PROPERTY] = $parentCaseUuid;
 
 		$applied = $this->inherit(link: $link, childData: $childData);
-		$saved   = $this->save(store: $store, childData: $applied['data']);
-		if ($saved === null) {
+		try {
+			$saved = $this->save(store: $store, childData: $applied['data']);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the sub-case could not be created',
+				['parent' => $store->parentCaseUuid, 'error' => $e->getMessage()]
+			);
 			return ['ok' => false, 'reason' => 'create_failed'];
 		}
 
@@ -196,27 +201,21 @@ class SubCaseDeriver {
 	}//end inherit()
 
 	/**
-	 * Save the child, or null when the store refused it.
+	 * Save the child.
 	 *
 	 * @param SubCaseStore $store     Where the child is saved.
 	 * @param mixed        $childData The child.
 	 *
-	 * @return array{created: mixed}|null The created child.
+	 * @return array{created: mixed} The created child.
+	 *
+	 * @throws \Throwable When the store refuses it.
 	 */
-	private function save(SubCaseStore $store, mixed $childData): ?array {
-		try {
-			$created = $store->objectService->saveObject(
-				object: $childData,
-				register: $store->register,
-				schema: $store->schema
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the sub-case could not be created',
-				['parent' => $store->parentCaseUuid, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
+	private function save(SubCaseStore $store, mixed $childData): array {
+		$created = $store->objectService->saveObject(
+			object: $childData,
+			register: $store->register,
+			schema: $store->schema
+		);
 
 		return ['created' => $created];
 	}//end save()

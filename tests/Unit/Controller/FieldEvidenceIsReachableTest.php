@@ -375,7 +375,6 @@ class FieldEvidenceIsReachableTest extends TestCase {
 		$settings = $this->settings(configured: $configured);
 
 		return new FieldEvidenceController(
-			appName: 'dossiq',
 			request: $request,
 			metadata: new EvidenceMetadataService(),
 			transcription: new TranscriptionService(

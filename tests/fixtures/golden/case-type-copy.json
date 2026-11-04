@@ -1,0 +1,5985 @@
+{
+    "clean store / copy": {
+        "answer": {
+            "title": "Copy of Source type",
+            "identifier": "CT-1-copy-<random>",
+            "isDraft": true,
+            "publicationRequired": false,
+            "publicationText": "",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [],
+            "initialStatus": "new-4",
+            "version": 1,
+            "subCaseTypes": [],
+            "previousVersion": null,
+            "supersededBy": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "clean store / copyReport": {
+        "answer": {
+            "caseType": {
+                "title": "Copy of Source type",
+                "identifier": "CT-1-copy-<random>",
+                "isDraft": true,
+                "publicationRequired": false,
+                "publicationText": "",
+                "workflowDefinition": null,
+                "relatedCaseTypes": [],
+                "initialStatus": "new-4",
+                "version": 1,
+                "subCaseTypes": [],
+                "previousVersion": null,
+                "supersededBy": null,
+                "id": "new-2"
+            },
+            "complete": true,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "clean store / newVersion": {
+        "answer": {
+            "title": "Source type",
+            "identifier": "CT-1",
+            "isDraft": true,
+            "publicationRequired": true,
+            "publicationText": "x",
+            "workflowDefinition": "new-18",
+            "relatedCaseTypes": [
+                "ct-9"
+            ],
+            "initialStatus": "new-4",
+            "version": 3,
+            "previousVersion": "ct-1",
+            "supersededBy": null,
+            "validFrom": null,
+            "validUntil": null,
+            "versionDate": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "workflowTemplate",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Route",
+                        "version": 3
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "new-18",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "new-4",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": true,
+                    "version": 3
+                }
+            }
+        ]
+    },
+    "no object service / copy": {
+        "answer": null,
+        "calls": [],
+        "log": []
+    },
+    "no object service / copyReport": {
+        "answer": {
+            "caseType": null,
+            "complete": false,
+            "notCarried": []
+        },
+        "calls": [],
+        "log": []
+    },
+    "no object service / newVersion": {
+        "answer": null,
+        "calls": [],
+        "log": []
+    },
+    "no register / copy": {
+        "answer": null,
+        "calls": [],
+        "log": []
+    },
+    "no register / copyReport": {
+        "answer": {
+            "caseType": null,
+            "complete": false,
+            "notCarried": []
+        },
+        "calls": [],
+        "log": []
+    },
+    "no register / newVersion": {
+        "answer": null,
+        "calls": [],
+        "log": []
+    },
+    "no case type schema / copy": {
+        "answer": null,
+        "calls": [],
+        "log": []
+    },
+    "no case type schema / copyReport": {
+        "answer": {
+            "caseType": null,
+            "complete": false,
+            "notCarried": []
+        },
+        "calls": [],
+        "log": []
+    },
+    "no case type schema / newVersion": {
+        "answer": null,
+        "calls": [],
+        "log": []
+    },
+    "no role type schema / copy": {
+        "answer": {
+            "title": "Copy of Source type",
+            "identifier": "CT-1-copy-<random>",
+            "isDraft": true,
+            "publicationRequired": false,
+            "publicationText": "",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [],
+            "initialStatus": "new-4",
+            "version": 1,
+            "subCaseTypes": [],
+            "previousVersion": null,
+            "supersededBy": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "no role type schema / copyReport": {
+        "answer": {
+            "caseType": {
+                "title": "Copy of Source type",
+                "identifier": "CT-1-copy-<random>",
+                "isDraft": true,
+                "publicationRequired": false,
+                "publicationText": "",
+                "workflowDefinition": null,
+                "relatedCaseTypes": [],
+                "initialStatus": "new-4",
+                "version": 1,
+                "subCaseTypes": [],
+                "previousVersion": null,
+                "supersededBy": null,
+                "id": "new-2"
+            },
+            "complete": true,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "no role type schema / newVersion": {
+        "answer": {
+            "title": "Source type",
+            "identifier": "CT-1",
+            "isDraft": true,
+            "publicationRequired": true,
+            "publicationText": "x",
+            "workflowDefinition": "new-16",
+            "relatedCaseTypes": [
+                "ct-9"
+            ],
+            "initialStatus": "new-4",
+            "version": 3,
+            "previousVersion": "ct-1",
+            "supersededBy": null,
+            "validFrom": null,
+            "validUntil": null,
+            "versionDate": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "workflowTemplate",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Route",
+                        "version": 3
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "new-16",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "new-4",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": true,
+                    "version": 3
+                }
+            }
+        ]
+    },
+    "no workflow schema / copy": {
+        "answer": {
+            "title": "Copy of Source type",
+            "identifier": "CT-1-copy-<random>",
+            "isDraft": true,
+            "publicationRequired": false,
+            "publicationText": "",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [],
+            "initialStatus": "new-4",
+            "version": 1,
+            "subCaseTypes": [],
+            "previousVersion": null,
+            "supersededBy": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "no workflow schema / copyReport": {
+        "answer": {
+            "caseType": {
+                "title": "Copy of Source type",
+                "identifier": "CT-1-copy-<random>",
+                "isDraft": true,
+                "publicationRequired": false,
+                "publicationText": "",
+                "workflowDefinition": null,
+                "relatedCaseTypes": [],
+                "initialStatus": "new-4",
+                "version": 1,
+                "subCaseTypes": [],
+                "previousVersion": null,
+                "supersededBy": null,
+                "id": "new-2"
+            },
+            "complete": true,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "no workflow schema / newVersion": {
+        "answer": {
+            "title": "Source type",
+            "identifier": "CT-1",
+            "isDraft": true,
+            "publicationRequired": true,
+            "publicationText": "x",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [
+                "ct-9"
+            ],
+            "initialStatus": "new-4",
+            "version": 3,
+            "previousVersion": "ct-1",
+            "supersededBy": null,
+            "validFrom": null,
+            "validUntil": null,
+            "versionDate": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "new-4",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": true,
+                    "version": 3
+                }
+            }
+        ]
+    },
+    "source missing / copy": {
+        "answer": null,
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-404",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": []
+    },
+    "source missing / copyReport": {
+        "answer": {
+            "caseType": null,
+            "complete": false,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-404",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": []
+    },
+    "source missing / newVersion": {
+        "answer": null,
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-404",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": []
+    },
+    "empty source id / copy": {
+        "answer": null,
+        "calls": [],
+        "log": []
+    },
+    "empty source id / copyReport": {
+        "answer": {
+            "caseType": null,
+            "complete": false,
+            "notCarried": []
+        },
+        "calls": [],
+        "log": []
+    },
+    "empty source id / newVersion": {
+        "answer": null,
+        "calls": [],
+        "log": []
+    },
+    "find throws / copy": {
+        "answer": null,
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "debug",
+                "message": "CaseTypeCopyService: object lookup failed",
+                "context": {
+                    "id": "ct-1",
+                    "schema": "caseType",
+                    "exception": "find failed"
+                }
+            }
+        ]
+    },
+    "find throws / copyReport": {
+        "answer": {
+            "caseType": null,
+            "complete": false,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "debug",
+                "message": "CaseTypeCopyService: object lookup failed",
+                "context": {
+                    "id": "ct-1",
+                    "schema": "caseType",
+                    "exception": "find failed"
+                }
+            }
+        ]
+    },
+    "find throws / newVersion": {
+        "answer": null,
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "debug",
+                "message": "CaseTypeCopyService: object lookup failed",
+                "context": {
+                    "id": "ct-1",
+                    "schema": "caseType",
+                    "exception": "find failed"
+                }
+            }
+        ]
+    },
+    "case type write fails / copy": {
+        "answer": null,
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "error",
+                "message": "CaseTypeCopyService: failed to create the new case type",
+                "context": {
+                    "caseTypeId": "ct-1",
+                    "exception": "write failed for caseType"
+                }
+            }
+        ]
+    },
+    "case type write fails / copyReport": {
+        "answer": {
+            "caseType": null,
+            "complete": false,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "error",
+                "message": "CaseTypeCopyService: failed to create the new case type",
+                "context": {
+                    "caseTypeId": "ct-1",
+                    "exception": "write failed for caseType"
+                }
+            }
+        ]
+    },
+    "case type write fails / newVersion": {
+        "answer": null,
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "error",
+                "message": "CaseTypeCopyService: failed to create the new case type",
+                "context": {
+                    "caseTypeId": "ct-1",
+                    "exception": "write failed for caseType"
+                }
+            }
+        ]
+    },
+    "created without id / copy": {
+        "answer": null,
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": []
+    },
+    "created without id / copyReport": {
+        "answer": {
+            "caseType": null,
+            "complete": false,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": []
+    },
+    "created without id / newVersion": {
+        "answer": null,
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": []
+    },
+    "one child write fails / copy": {
+        "answer": {
+            "title": "Copy of Source type",
+            "identifier": "CT-1-copy-<random>",
+            "isDraft": true,
+            "publicationRequired": false,
+            "publicationText": "",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [],
+            "initialStatus": "new-4",
+            "version": 1,
+            "subCaseTypes": [],
+            "previousVersion": null,
+            "supersededBy": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to copy child object",
+                "context": {
+                    "schema": "documentType",
+                    "exception": "write failed for documentType"
+                }
+            },
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to copy child object",
+                "context": {
+                    "schema": "documentType",
+                    "exception": "write failed for documentType"
+                }
+            },
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "one child write fails / copyReport": {
+        "answer": {
+            "caseType": {
+                "title": "Copy of Source type",
+                "identifier": "CT-1-copy-<random>",
+                "isDraft": true,
+                "publicationRequired": false,
+                "publicationText": "",
+                "workflowDefinition": null,
+                "relatedCaseTypes": [],
+                "initialStatus": "new-4",
+                "version": 1,
+                "subCaseTypes": [],
+                "previousVersion": null,
+                "supersededBy": null,
+                "id": "new-2"
+            },
+            "complete": false,
+            "notCarried": [
+                "document_type_schema:Drawing",
+                "document_type_schema:"
+            ]
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to copy child object",
+                "context": {
+                    "schema": "documentType",
+                    "exception": "write failed for documentType"
+                }
+            },
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to copy child object",
+                "context": {
+                    "schema": "documentType",
+                    "exception": "write failed for documentType"
+                }
+            },
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "one child write fails / newVersion": {
+        "answer": {
+            "title": "Source type",
+            "identifier": "CT-1",
+            "isDraft": true,
+            "publicationRequired": true,
+            "publicationText": "x",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [
+                "ct-9"
+            ],
+            "initialStatus": "new-4",
+            "version": 3,
+            "previousVersion": "ct-1",
+            "supersededBy": null,
+            "validFrom": null,
+            "validUntil": null,
+            "versionDate": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "workflowTemplate",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Route",
+                        "version": 3
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "new-4",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to copy child object",
+                "context": {
+                    "schema": "documentType",
+                    "exception": "write failed for documentType"
+                }
+            },
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to copy child object",
+                "context": {
+                    "schema": "documentType",
+                    "exception": "write failed for documentType"
+                }
+            },
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to copy child object",
+                "context": {
+                    "schema": "workflowTemplate",
+                    "exception": "write failed for workflowTemplate"
+                }
+            },
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": true,
+                    "version": 3
+                }
+            }
+        ]
+    },
+    "a child list fails / copy": {
+        "answer": {
+            "title": "Copy of Source type",
+            "identifier": "CT-1-copy-<random>",
+            "isDraft": true,
+            "publicationRequired": false,
+            "publicationText": "",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [],
+            "initialStatus": "new-4",
+            "version": 1,
+            "subCaseTypes": [],
+            "previousVersion": null,
+            "supersededBy": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to list child objects",
+                "context": {
+                    "schema": "resultType",
+                    "exception": "list failed"
+                }
+            },
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "a child list fails / copyReport": {
+        "answer": {
+            "caseType": {
+                "title": "Copy of Source type",
+                "identifier": "CT-1-copy-<random>",
+                "isDraft": true,
+                "publicationRequired": false,
+                "publicationText": "",
+                "workflowDefinition": null,
+                "relatedCaseTypes": [],
+                "initialStatus": "new-4",
+                "version": 1,
+                "subCaseTypes": [],
+                "previousVersion": null,
+                "supersededBy": null,
+                "id": "new-2"
+            },
+            "complete": false,
+            "notCarried": [
+                "resultType"
+            ]
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to list child objects",
+                "context": {
+                    "schema": "resultType",
+                    "exception": "list failed"
+                }
+            },
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "a child list fails / newVersion": {
+        "answer": {
+            "title": "Source type",
+            "identifier": "CT-1",
+            "isDraft": true,
+            "publicationRequired": true,
+            "publicationText": "x",
+            "workflowDefinition": "new-17",
+            "relatedCaseTypes": [
+                "ct-9"
+            ],
+            "initialStatus": "new-4",
+            "version": 3,
+            "previousVersion": "ct-1",
+            "supersededBy": null,
+            "validFrom": null,
+            "validUntil": null,
+            "versionDate": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "workflowTemplate",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Route",
+                        "version": 3
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "new-17",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "new-4",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "warning",
+                "message": "CaseTypeCopyService: failed to list child objects",
+                "context": {
+                    "schema": "resultType",
+                    "exception": "list failed"
+                }
+            },
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": true,
+                    "version": 3
+                }
+            }
+        ]
+    },
+    "wrapped list answer / copy": {
+        "answer": {
+            "title": "Copy of Source type",
+            "identifier": "CT-1-copy-<random>",
+            "isDraft": true,
+            "publicationRequired": false,
+            "publicationText": "",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [],
+            "initialStatus": "new-4",
+            "version": 1,
+            "subCaseTypes": [],
+            "previousVersion": null,
+            "supersededBy": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "wrapped list answer / copyReport": {
+        "answer": {
+            "caseType": {
+                "title": "Copy of Source type",
+                "identifier": "CT-1-copy-<random>",
+                "isDraft": true,
+                "publicationRequired": false,
+                "publicationText": "",
+                "workflowDefinition": null,
+                "relatedCaseTypes": [],
+                "initialStatus": "new-4",
+                "version": 1,
+                "subCaseTypes": [],
+                "previousVersion": null,
+                "supersededBy": null,
+                "id": "new-2"
+            },
+            "complete": true,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "wrapped list answer / newVersion": {
+        "answer": {
+            "title": "Source type",
+            "identifier": "CT-1",
+            "isDraft": true,
+            "publicationRequired": true,
+            "publicationText": "x",
+            "workflowDefinition": "new-18",
+            "relatedCaseTypes": [
+                "ct-9"
+            ],
+            "initialStatus": "new-4",
+            "version": 3,
+            "previousVersion": "ct-1",
+            "supersededBy": null,
+            "validFrom": null,
+            "validUntil": null,
+            "versionDate": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "workflowTemplate",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Route",
+                        "version": 3
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "new-18",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "new-4",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": true,
+                    "version": 3
+                }
+            }
+        ]
+    },
+    "malformed list answer / copy": {
+        "answer": {
+            "title": "Copy of Source type",
+            "identifier": "CT-1-copy-<random>",
+            "isDraft": true,
+            "publicationRequired": false,
+            "publicationText": "",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [],
+            "initialStatus": "new-4",
+            "version": 1,
+            "subCaseTypes": [],
+            "previousVersion": null,
+            "supersededBy": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "malformed list answer / copyReport": {
+        "answer": {
+            "caseType": {
+                "title": "Copy of Source type",
+                "identifier": "CT-1-copy-<random>",
+                "isDraft": true,
+                "publicationRequired": false,
+                "publicationText": "",
+                "workflowDefinition": null,
+                "relatedCaseTypes": [],
+                "initialStatus": "new-4",
+                "version": 1,
+                "subCaseTypes": [],
+                "previousVersion": null,
+                "supersededBy": null,
+                "id": "new-2"
+            },
+            "complete": true,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "new-4",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "malformed list answer / newVersion": {
+        "answer": {
+            "title": "Source type",
+            "identifier": "CT-1",
+            "isDraft": true,
+            "publicationRequired": true,
+            "publicationText": "x",
+            "workflowDefinition": "new-17",
+            "relatedCaseTypes": [
+                "ct-9"
+            ],
+            "initialStatus": "new-4",
+            "version": 3,
+            "previousVersion": "ct-1",
+            "supersededBy": null,
+            "validFrom": null,
+            "validUntil": null,
+            "versionDate": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "workflowTemplate",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Route",
+                        "version": 3
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "new-17",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "new-4",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": true,
+                    "version": 3
+                }
+            }
+        ]
+    },
+    "a status copy without id / copy": {
+        "answer": {
+            "title": "Copy of Source type",
+            "identifier": "CT-1-copy-<random>",
+            "isDraft": true,
+            "publicationRequired": false,
+            "publicationText": "",
+            "workflowDefinition": null,
+            "relatedCaseTypes": [],
+            "initialStatus": "st-1",
+            "version": 1,
+            "subCaseTypes": [],
+            "previousVersion": null,
+            "supersededBy": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "a status copy without id / copyReport": {
+        "answer": {
+            "caseType": {
+                "title": "Copy of Source type",
+                "identifier": "CT-1-copy-<random>",
+                "isDraft": true,
+                "publicationRequired": false,
+                "publicationText": "",
+                "workflowDefinition": null,
+                "relatedCaseTypes": [],
+                "initialStatus": "st-1",
+                "version": 1,
+                "subCaseTypes": [],
+                "previousVersion": null,
+                "supersededBy": null,
+                "id": "new-2"
+            },
+            "complete": true,
+            "notCarried": []
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Copy of Source type",
+                        "identifier": "CT-1-copy-<random>",
+                        "isDraft": true,
+                        "publicationRequired": false,
+                        "publicationText": "",
+                        "workflowDefinition": null,
+                        "relatedCaseTypes": [],
+                        "initialStatus": "st-1",
+                        "version": 1,
+                        "subCaseTypes": [],
+                        "previousVersion": null,
+                        "supersededBy": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": false,
+                    "version": 1
+                }
+            }
+        ]
+    },
+    "a status copy without id / newVersion": {
+        "answer": {
+            "title": "Source type",
+            "identifier": "CT-1",
+            "isDraft": true,
+            "publicationRequired": true,
+            "publicationText": "x",
+            "workflowDefinition": "new-18",
+            "relatedCaseTypes": [
+                "ct-9"
+            ],
+            "initialStatus": "st-1",
+            "version": 3,
+            "previousVersion": "ct-1",
+            "supersededBy": null,
+            "validFrom": null,
+            "validUntil": null,
+            "versionDate": null,
+            "id": "new-2"
+        },
+        "calls": [
+            {
+                "find": {
+                    "id": "ct-1",
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "wf-1",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "statusType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Received",
+                        "order": 1
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": {
+                            "nl": "Besluit",
+                            "en": "Decision"
+                        },
+                        "order": 2
+                    },
+                    "register": "dossiq",
+                    "schema": "statusType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "resultType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Granted"
+                    },
+                    "register": "dossiq",
+                    "schema": "resultType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "roleType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Handler"
+                    },
+                    "register": "dossiq",
+                    "schema": "roleType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "propertyDefinition",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "size"
+                    },
+                    "register": "dossiq",
+                    "schema": "propertyDefinition"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "documentType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Drawing"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "documentType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "decisionType",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "name": "Grant"
+                    },
+                    "register": "dossiq",
+                    "schema": "decisionType"
+                }
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "register": "dossiq",
+                        "schema": "workflowTemplate",
+                        "caseType": "ct-1"
+                    },
+                    "limit": 500
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "caseType": "new-2",
+                        "title": "Route",
+                        "version": 3
+                    },
+                    "register": "dossiq",
+                    "schema": "workflowTemplate"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "title": "Source type",
+                        "identifier": "CT-1",
+                        "isDraft": true,
+                        "publicationRequired": true,
+                        "publicationText": "x",
+                        "workflowDefinition": "new-18",
+                        "relatedCaseTypes": [
+                            "ct-9"
+                        ],
+                        "initialStatus": "st-1",
+                        "version": 3,
+                        "previousVersion": "ct-1",
+                        "supersededBy": null,
+                        "validFrom": null,
+                        "validUntil": null,
+                        "versionDate": null,
+                        "id": "new-2"
+                    },
+                    "register": "dossiq",
+                    "schema": "caseType"
+                }
+            }
+        ],
+        "log": [
+            {
+                "level": "info",
+                "message": "CaseTypeCopyService: derived a new case type",
+                "context": {
+                    "source": "ct-1",
+                    "created": "new-2",
+                    "asVersion": true,
+                    "version": 3
+                }
+            }
+        ]
+    }
+}

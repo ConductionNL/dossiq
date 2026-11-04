@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * The calculator answers from the administered calendar when one answers.
@@ -220,4 +221,40 @@ class WorkingDaysAreAdministeredTest extends TestCase {
 		self::assertFalse($calculator->isWorkingDay(date: new DateTimeImmutable('2026-12-25')));
 		self::assertTrue($calculator->isWorkingDay(date: new DateTimeImmutable('2026-09-01')));
 	}//end testASilentCalendarFallsBackRatherThanAnsweringNull()
+	/**
+	 * A calendar without a single working day ends the search with an error instead of looping for ever.
+	 *
+	 * @return void
+	 */
+	public function testACalendarWithoutWorkingDaysEndsTheSearch(): void {
+		$calculator = new WorkingDayCalculator(administered: $this->administering(closures: [], weekdays: []));
+		$start = new DateTimeImmutable('2026-09-01');
+
+		foreach ([static fn () => $calculator->nextWorkingDay(date: $start), static fn () => $calculator->addWorkingDays(start: $start, days: 1)] as $search) {
+			try {
+				$search();
+				self::fail('a calendar without working days answered a date');
+			} catch (RuntimeException $e) {
+				self::assertStringContainsString(needle: 'no working day', haystack: $e->getMessage());
+			}
+		}
+	}//end testACalendarWithoutWorkingDaysEndsTheSearch()
+
+	/**
+	 * A closure of almost a year is still crossed: the bound only ends a search that cannot succeed.
+	 *
+	 * @return void
+	 */
+	public function testALongClosureIsStillCrossed(): void {
+		$closed = [];
+		$day = new DateTimeImmutable('2026-01-01');
+		for ($i = 0; $i < 360; $i++) {
+			$closed[] = $day->modify('+'.$i.' days')->format('Y-m-d');
+		}
+
+		$calculator = new WorkingDayCalculator(administered: $this->administering(closures: $closed, weekdays: [1, 2, 3, 4, 5, 6, 7]));
+
+		self::assertSame(expected: '2026-12-27', actual: $calculator->nextWorkingDay(date: $day)->format('Y-m-d'));
+		self::assertSame(expected: '2026-12-28', actual: $calculator->addWorkingDays(start: $day, days: 2)->format('Y-m-d'));
+	}//end testALongClosureIsStillCrossed()
 }//end class

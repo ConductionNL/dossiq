@@ -1,0 +1,97 @@
+{
+    "case without title or identifier": {
+        "answer": {
+            "caseId": "case-1",
+            "channel": "website",
+            "publishedAt": "2026-05-01 10:00",
+            "publications": [
+                {
+                    "channel": "website",
+                    "publishedAt": "2026-05-01 10:00",
+                    "notes": null,
+                    "delivery": {
+                        "status": "requested",
+                        "eventId": "evt-9",
+                        "correlationId": "<correlation-id>",
+                        "matchedSubscriptions": 3,
+                        "requestedAt": "<now>"
+                    }
+                }
+            ],
+            "delivery": {
+                "status": "requested",
+                "eventId": "evt-9",
+                "correlationId": "<correlation-id>",
+                "matchedSubscriptions": 3,
+                "requestedAt": "<now>"
+            }
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-1",
+                "dossiq",
+                "case"
+            ],
+            [
+                "dispatchTyped",
+                "OCA\\Integriq\\Event\\DeliveryRequestedEvent"
+            ],
+            [
+                "saveObject",
+                {
+                    "id": "case-1",
+                    "publications": [
+                        {
+                            "channel": "website",
+                            "publishedAt": "2026-05-01 10:00",
+                            "notes": null,
+                            "delivery": {
+                                "status": "requested",
+                                "eventId": "evt-9",
+                                "correlationId": "<correlation-id>",
+                                "matchedSubscriptions": 3,
+                                "requestedAt": "<now>"
+                            }
+                        }
+                    ],
+                    "publishedAt": "2026-05-01 10:00"
+                },
+                "dossiq",
+                "case"
+            ]
+        ],
+        "request": {
+            "sourceApp": "dossiq",
+            "subjectRegister": "dossiq",
+            "subjectSchema": "case",
+            "subjectId": "case-1",
+            "subjectLabel": "case-1",
+            "deliveryKind": "besluit-publication",
+            "channel": "website",
+            "payload": {
+                "caseId": "case-1",
+                "channel": "website",
+                "publishedAt": "2026-05-01 10:00",
+                "notes": null,
+                "besluitDocument": null,
+                "identifier": null
+            },
+            "correlationId": "<correlation-id>",
+            "externalReference": "",
+            "userId": null
+        },
+        "logs": []
+    }
+}

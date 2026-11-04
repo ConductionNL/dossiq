@@ -109,7 +109,6 @@ class SubstitutionControllerContractTest extends TestCase {
 	 */
 	private function controller(SubstitutionAccessGuard $accessGuard): SubstitutionController {
 		return new SubstitutionController(
-			appName: 'dossiq',
 			request: $this->request,
 			substitutionService: $this->substitutionService,
 			auditService: $this->auditService,

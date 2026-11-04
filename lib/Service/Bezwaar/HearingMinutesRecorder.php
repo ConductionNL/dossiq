@@ -70,7 +70,7 @@ class HearingMinutesRecorder {
 	 *
 	 * @return void
 	 *
-	 * @throws RuntimeException When consent for the recording is absent.
+	 * @throws RuntimeException When consent for the recording is absent, or the minutes would change a stored denial.
 	 *
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
@@ -81,6 +81,12 @@ class HearingMinutesRecorder {
 		string $register,
 		string $schema,
 	): void {
+		$this->guardStoredDenial(
+			payload: $payload,
+			current: $current,
+			session: ['id' => $sessionId, 'register' => $register, 'schema' => $schema]
+		);
+
 		$hasAudio = isset($payload['audioRecording']) === true
 			&& (string)$payload['audioRecording'] !== '';
 		if ($hasAudio === false) {
@@ -107,6 +113,41 @@ class HearingMinutesRecorder {
 			'Bezwaarmaker heeft geen toestemming gegeven voor audio-opname'
 		);
 	}//end guardRecordingConsent()
+
+	/**
+	 * Refuse minutes that would change a stored recording consent denial.
+	 *
+	 * The refusal is recorded on the session's OpenRegister trail.
+	 *
+	 * @param array<string, mixed>  $payload Minutes payload.
+	 * @param array<string, mixed>  $current Current hearingSession record.
+	 * @param array<string, string> $session The session's `id`, `register` and `schema`.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the payload carries another consent than a stored denial.
+	 */
+	private function guardStoredDenial(array $payload, array $current, array $session): void {
+		if (($current['recordingConsent'] ?? null) !== 'denied'
+			|| array_key_exists('recordingConsent', $payload) === false
+			|| (string)$payload['recordingConsent'] === 'denied'
+		) {
+			return;
+		}
+
+		$this->auditTrail->recordRefusal(
+			register: $session['register'],
+			schema: $session['schema'],
+			objectUuid: $session['id'],
+			event: 'recording-consent-change-refused',
+			payload: ['consent' => (string)$payload['recordingConsent']],
+			tag: BezwaarAuditTrail::TAG_RECORDING_CONSENT,
+		);
+
+		throw new RuntimeException(
+			'De geweigerde toestemming voor audio-opname kan niet met het verslag worden gewijzigd'
+		);
+	}//end guardStoredDenial()
 
 	/**
 	 * Build the hearingSession update payload for a minutes submission.
@@ -179,4 +220,59 @@ class HearingMinutesRecorder {
 			'correctionReason' => (string)$entry['correctionReason'],
 		];
 	}//end lateCorrectionPayload()
+
+	/**
+	 * The audit payload of each late correction; none inside the window.
+	 * Validates every reason before anything is written.
+	 *
+	 * @param array<int, array<string, mixed>> $entries  The attendance entries.
+	 * @param bool                             $isFrozen Whether the window has passed.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @throws RuntimeException When a late correction lacks a reason.
+	 *
+	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 */
+	public function lateCorrections(array $entries, bool $isFrozen): array {
+		if ($isFrozen === false) {
+			return [];
+		}
+
+		$corrections = [];
+		foreach ($entries as $entry) {
+			$corrections[] = $this->lateCorrectionPayload(entry: $entry);
+		}
+
+		return $corrections;
+	}//end lateCorrections()
+
+	/**
+	 * The minutes summary and document, from the payload or the stored session.
+	 *
+	 * @param array<string, mixed> $payload The minutes payload.
+	 * @param array<string, mixed> $current The stored session.
+	 *
+	 * @return array{0: string, 1: string}
+	 *
+	 * @throws RuntimeException When both are blank.
+	 *
+	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 */
+	public function minutesTexts(array $payload, array $current): array {
+		$summary = (string)(
+			$payload['minutesSummary'] ?? ($current['minutesSummary'] ?? '')
+		);
+		$document = (string)(
+			$payload['minutesDocument'] ?? ($current['minutesDocument'] ?? '')
+		);
+
+		if (trim($summary) === '' && trim($document) === '') {
+			throw new RuntimeException(
+				'Verslag (art. 7:7) ontbreekt — vul minutesSummary of upload minutesDocument'
+			);
+		}
+
+		return [$summary, $document];
+	}//end minutesTexts()
 }//end class

@@ -1,0 +1,14 @@
+{
+    "no store": {
+        "exception": [
+            "RuntimeException",
+            "OpenRegister is not available"
+        ],
+        "calls": [
+            [
+                "getObjectService"
+            ]
+        ],
+        "logs": []
+    }
+}

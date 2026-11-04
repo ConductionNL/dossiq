@@ -74,7 +74,6 @@ class DocumentAssessmentControllerTest extends TestCase {
 		}
 
 		return new DocumentAssessmentController(
-			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			outstanding: $outstanding,
 			assessed: $assessed,
