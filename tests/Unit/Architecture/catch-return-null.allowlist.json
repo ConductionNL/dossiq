@@ -1,8 +1,9 @@
 {
-  "ceiling": 250,
+  "ceiling": 249,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-04, HearingService split (#4983): the existing-session lookup moved into `mayHaveSession()`, which answers true when the lookup fails, so a failed read still seeds nothing but no longer answers null. The ceiling went 250 to 249.",
     "2026-10-14, Q-dossiq-L11-3 (decision 224, guards refuse when unsure): three sites left. `Zgw/ZgwRuleLookups::findObjectByField`, `findAllObjectsByField` and `findBySchemaKey` throw `LookupNotCompleted` when the store cannot be read, and `ZgwBusinessRulesService::validate` refuses the request with 503 `check-not-completed`. An object the store does not hold, or does not show the caller, still reads as none. The ceiling went 254 to 251.",
     "2026-10-12, decision 224 (guards refuse when unsure): two sites left. `Zgw/DrcDocumentRelations::findOioRelationsForDocument` (drc-007) and `Zgw/ZtcPublishAndDeleteChecks::loadFinalStatusSlugs` (the case type delete check) throw when the store cannot be read, and their rule refuses with 503 `check-not-completed` instead of reading \"none\". The ceiling went 256 to 254.",
     "2026-10-12, openspec/changes/brp-client-retired: the conflict-of-interest check reads relations through integriq, and `ConflictOfInterestService::lookupRelationViaBrp` left with dossiq's BRP client. A read that gives no answer now blocks instead of answering null. The ceiling went 259 to 258 (263 to 262 before development was merged in).",
@@ -183,13 +184,6 @@
       "file": "lib/Service/Bezwaar/HearingService.php",
       "method": "seedDefaultHearing",
       "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`seedDefaultHearing()` answers `return null` when the read fails; the catch logs at debug (\"Dossiq hearing: lookup for existing sessions failed\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Bezwaar/HearingService.php",
-      "method": "seedDefaultHearing",
-      "occurrence": 2,
       "class": "read-miss",
       "reason": "`seedDefaultHearing()` answers `return null` when the read fails; the catch logs at info (\"Dossiq hearing: seedDefaultHearing skipped for bezwaar\"), so a failed read and an absent record are the same answer."
     },

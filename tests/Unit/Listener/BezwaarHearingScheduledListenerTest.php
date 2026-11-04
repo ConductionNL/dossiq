@@ -43,6 +43,10 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  * @uses \OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner
  * @uses \OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder
+ * @uses \OCA\Dossiq\Service\Hearing\HearingPlan
+ * @uses \OCA\Dossiq\Service\Hearing\NewSession
+ * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
+ * @uses \OCA\Dossiq\Service\Hearing\SessionStore
  */
 class BezwaarHearingScheduledListenerTest extends TestCase {
 	use MakesBezwaarAuditTrail;

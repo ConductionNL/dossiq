@@ -179,4 +179,59 @@ class HearingMinutesRecorder {
 			'correctionReason' => (string)$entry['correctionReason'],
 		];
 	}//end lateCorrectionPayload()
+
+	/**
+	 * The audit payload of each late correction; none inside the window.
+	 * Validates every reason before anything is written.
+	 *
+	 * @param array<int, array<string, mixed>> $entries  The attendance entries.
+	 * @param bool                             $isFrozen Whether the window has passed.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @throws RuntimeException When a late correction lacks a reason.
+	 *
+	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 */
+	public function lateCorrections(array $entries, bool $isFrozen): array {
+		if ($isFrozen === false) {
+			return [];
+		}
+
+		$corrections = [];
+		foreach ($entries as $entry) {
+			$corrections[] = $this->lateCorrectionPayload(entry: $entry);
+		}
+
+		return $corrections;
+	}//end lateCorrections()
+
+	/**
+	 * The minutes summary and document, from the payload or the stored session.
+	 *
+	 * @param array<string, mixed> $payload The minutes payload.
+	 * @param array<string, mixed> $current The stored session.
+	 *
+	 * @return array{0: string, 1: string}
+	 *
+	 * @throws RuntimeException When both are blank.
+	 *
+	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 */
+	public function minutesTexts(array $payload, array $current): array {
+		$summary = (string)(
+			$payload['minutesSummary'] ?? ($current['minutesSummary'] ?? '')
+		);
+		$document = (string)(
+			$payload['minutesDocument'] ?? ($current['minutesDocument'] ?? '')
+		);
+
+		if (trim($summary) === '' && trim($document) === '') {
+			throw new RuntimeException(
+				'Verslag (art. 7:7) ontbreekt — vul minutesSummary of upload minutesDocument'
+			);
+		}
+
+		return [$summary, $document];
+	}//end minutesTexts()
 }//end class
