@@ -1056,7 +1056,7 @@
         "digest": "ff3be2dd7a8840aba06cbf57225d0bca40eb4a2f16bddefa7ee745f1d96aa667"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::conflictRecord": {
-        "version": "1.0.1",
+        "version": "1.1.0",
         "digest": "bf0f2bc9dec97a02f23dd130a21cd8a28b4e90d295aa46193e0491b8671e280a"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::fieldEvidence": {

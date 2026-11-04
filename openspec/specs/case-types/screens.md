@@ -7,3 +7,4 @@
 - dossiq/DqZaaktype zaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktype
 - dossiq/DqZaaktypeStatussen the blueprint summary card with its facts in two columns https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypeStatussen
 - dossiq/DqZaaktypeRegels the Rules tab, every row in Dutch https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypeRegels
+- dossiq/DqBeheerGeavanceerd beheerinstellingen in Nextcloud, tab geavanceerd, met de zoekindex https://identity.conduction.nl/screens/board?id=dossiq/DqBeheerGeavanceerd

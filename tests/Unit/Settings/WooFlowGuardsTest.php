@@ -29,6 +29,9 @@ use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard;
 use OCA\Dossiq\Service\Transitions\FourEyesRule;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\StatusEntryGuards;
+use OCA\Dossiq\Service\Transitions\ActorGuards;
+use OCA\Dossiq\Service\Transitions\CaseContentGuards;
 use OCA\Dossiq\Service\Transitions\GuardResult;
 use OCA\Dossiq\Service\Transitions\OfferedTransitions;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
@@ -147,16 +150,21 @@ class WooFlowGuardsTest extends TestCase {
 		$capacity->method('evaluate')->willReturn($passing);
 
 		$registry = new GuardRegistry(
-			$this->createMock(originalClassName: ChecklistGuard::class),
-			new RequiredFieldGuard(l10n: new SourceL10n()),
-			new RequiredDocumentGuard(l10n: new SourceL10n()),
-			$this->createMock(originalClassName: RoleGuard::class),
-			$this->createMock(originalClassName: DelegatedAuthorityGuard::class),
-			$statusChecklist,
-			$capacity,
-			new NullLogger(),
-			null,
-			new DocumentAssessmentGuard(assessments: $assessments, logger: new NullLogger(), l10n: new SourceL10n()),
+			caseContent: new CaseContentGuards(
+				checklist: $this->createMock(originalClassName: ChecklistGuard::class),
+				requiredField: new RequiredFieldGuard(l10n: new SourceL10n()),
+				requiredDocument: new RequiredDocumentGuard(l10n: new SourceL10n()),
+				statusChecklist: $statusChecklist,
+			),
+			actor: new ActorGuards(
+				roleGuard: $this->createMock(originalClassName: RoleGuard::class),
+				authority: $this->createMock(originalClassName: DelegatedAuthorityGuard::class),
+			),
+			statusEntry: new StatusEntryGuards(
+				capacity: $capacity,
+				documentAssessment: new DocumentAssessmentGuard(assessments: $assessments, logger: new NullLogger(), l10n: new SourceL10n()),
+			),
+			logger: new NullLogger(),
 		);
 
 		$resultWriter = $this->createMock(originalClassName: CaseResultWriter::class);

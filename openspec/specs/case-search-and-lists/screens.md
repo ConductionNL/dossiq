@@ -7,3 +7,4 @@
 - dossiq/DqFilterBeheren opgeslagen weergaven beheren in het zijpaneel https://identity.conduction.nl/screens/board?id=dossiq/DqFilterBeheren
 - dossiq/IndexZijpaneel zijpaneel van een overzicht (zoeken, kolommen, weergaven) https://identity.conduction.nl/screens/board?id=dossiq/IndexZijpaneel
 - dossiq/DqZaaktypeVelden zaaktype, velden https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypeVelden
+- dossiq/DqAanMijToegewezen aan mij toegewezen https://identity.conduction.nl/screens/board?id=dossiq/DqAanMijToegewezen
