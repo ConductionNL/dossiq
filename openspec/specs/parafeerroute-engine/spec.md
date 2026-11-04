@@ -70,40 +70,29 @@ registered so a reader can still open a legacy route object, and so the frozen
 
 **Feature tier**: V1
 
-#### Scenario: Create a new approval route
+#### Scenario: dossiq offers no route editor
 
-- **WHEN** the beheerder authors the approval route in the decision app
-- **THEN** the beheerder SHALL be able to create a new route with a name
-- **AND** the beheerder SHALL be able to add steps with: step type (advies/parafering/accordering), actor type (user/group/role), actor selection, mandatory flag
-- **AND** the beheerder SHALL be able to reorder steps on the canvas
-
-#### Scenario: Link route to case type
-
-- **WHEN** the beheerder creates a parafeerroute
-- **THEN** the beheerder SHALL be able to link it to a case type and voorstel type
-- **AND** when a steller creates a voorstel of that type on a case of that type, the linked route SHALL be loaded as default
-
-#### Scenario: Edit existing parafeerroute
-
-- **WHEN** the beheerder edits an existing parafeerroute that is not in active use
-- **THEN** the beheerder SHALL be able to add, remove, or reorder steps
-- **AND** voorstellen already using this route SHALL NOT be affected (they keep a snapshot of the route at submission time)
+- **GIVEN** a beheerder in dossiq's settings
+- **WHEN** they look for a way to create or edit an approval route
+- **THEN** dossiq SHALL offer no page to create, link, reorder or edit a route
+- **AND** the route SHALL be authored in the decision app
+- **AND** `/settings/parafeerroutes/:id` SHALL still open a legacy route object read-only
 
 ### Requirement: Override Route on Specific Voorstel
 
-The system SHALL allow authorized users to modify the parafeerroute on a specific voorstel (skip steps, add ad-hoc steps) with mandatory reason.
+Skipping a step or adding an ad-hoc step on a specific voorstel SHALL happen in
+the decision app, which runs the route. dossiq SHALL NOT offer to change a
+running route.
+
+AMENDED 2026-11-04 (decision 332). The route editor and the per-voorstel
+override are not drawn on any dossiq board, because dossiq no longer runs the
+route.
 
 **Feature tier**: V1
 
-#### Scenario: Skip a step
+#### Scenario: A step is skipped where the route runs
 
-- **WHEN** an authorized manager skips the "Adviseur vakinhoud" step on a specific voorstel
-- **THEN** the step SHALL be marked as skipped
-- **AND** a mandatory reason text SHALL be recorded
-- **AND** the audit trail SHALL record: "Stap overgeslagen: [step name] door [manager], reden: [text]"
-
-#### Scenario: Add ad-hoc step
-
-- **WHEN** the steller adds an ad-hoc advisory step "Financieel adviseur" between steps 2 and 3
-- **THEN** the route for this voorstel SHALL be adjusted: existing steps after insertion point SHALL be renumbered
-- **AND** the audit trail SHALL record: "Stap toegevoegd: [step name] door [user]"
+- **GIVEN** a voorstel whose route runs in the decision app
+- **WHEN** an authorized manager wants to skip a step with a reason
+- **THEN** they SHALL do so in the decision app
+- **AND** dossiq SHALL show the outcome the decision app records

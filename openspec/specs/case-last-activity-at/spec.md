@@ -30,4 +30,4 @@ list and its View all link SHALL sort on `lastActivityAt` ascending.
 #### Scenario: DqMijnTeam "Vastgelopen zaken"
 
 - **GIVEN** open cases last worked on 12, 8 and 6 days ago and others worked on today
-- **THEN** the card lists the three, longest idle first, with "12 dagen stil", "8 dagen stil", "6 dagen stil"
+- **THEN** the stalled-cases list lists the three, longest idle first, with "12 dagen stil", "8 dagen stil", "6 dagen stil", as board DqNextcloudDashboard draws its three rows ("31 dagen stil", "19 dagen stil", "15 dagen stil")

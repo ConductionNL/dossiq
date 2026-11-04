@@ -16,8 +16,8 @@ not be read. A candidate changed today but not opened by the reader SHALL NOT co
 #### Scenario: Recorded today after a reload
 
 - **GIVEN** Pieter recorded a note on a case at 15:40 today
-- **WHEN** he reloads "Close out your day"
-- **THEN** the case is under "Recorded today" with the note and 15:40, and not under "Still open from today"
+- **WHEN** he reloads "Dag afsluiten"
+- **THEN** the case is under "Vandaag vastgelegd" with the note and 15:40, and not under "Nog open van vandaag"
 
 ### Requirement: Each row names its case
 
@@ -29,19 +29,21 @@ task "bij 2026-4836 · 11:15"). What cannot be read is left out of the line; the
 #### Scenario: A task names its case
 
 - **GIVEN** Pieter opened the task "Advies boomdeskundige beoordelen" on case 2026-4839 "Kapvergunning essen Parkweg" today
-- **WHEN** he opens "Close out your day"
+- **WHEN** he opens "Dag afsluiten"
 - **THEN** its row reads "bij 2026-4839 Kapvergunning essen Parkweg" under the title
 
 ### Requirement: The page is manifest config and keeps what the screen held
 
-"Close out your day" SHALL be a manifest dashboard on `/end-of-day` with: a note field per opened row recorded on the
+"Dag afsluiten" (en "Close out your day") SHALL be a manifest dashboard on `/end-of-day` with: a note field per opened row recorded on the
 row's own case or task, humaniq's hours leaf per row (none without humaniq, a sentence when humaniq is installed and the
 leaf is not), a "ready to record" figure of typed notes kept in the browser, one button that records all, the recorded
-list, the reader's figures, "First thing tomorrow" when something is due, how it works, and a breadcrumb to My work with
-today's date. It SHALL have no time field of its own.
+list, the reader's figures, "Morgen eerst" when something is due, how it works, and a breadcrumb to My work with
+today's date. It SHALL have no time field of its own. Its labels follow board
+DqDagAfsluiten: "Nog open van vandaag", "Vandaag vastgelegd" and "Morgen eerst" (en "Still open
+from today", "Recorded today" and "First thing tomorrow").
 
 #### Scenario: Close out the day
 
 - **GIVEN** two opened rows with a typed note each
-- **WHEN** the reader presses "Close out your day"
-- **THEN** each note lands on its own case or task and both rows move to "Recorded today"
+- **WHEN** the reader presses "Dag afsluiten"
+- **THEN** each note lands on its own case or task and both rows move to "Vandaag vastgelegd"

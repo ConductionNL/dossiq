@@ -101,13 +101,11 @@ The admin settings MUST display a list of all case types with key metadata, foll
   | Bezwaarschrift       | true    | P84D              | 2           | 0               | (not set)  | (none)     | false     |
 - WHEN the admin views the case type list
 - THEN all 4 case types MUST be displayed
-- AND each case type entry MUST show:
-  - Title
-  - Processing deadline in human-readable form (e.g., "56 days")
-  - Count of linked status types (e.g., "4 statuses")
-  - Count of linked result types (e.g., "3 result types")
-  - Published/Draft badge
-  - Validity period (e.g., "Jan 2026 -- Dec 2027" or "Jan 2026 -- (no end)")
+- AND the list MUST show the columns of the board `DqZaaktypen`: Zaaktype, Domein, Doorlooptijd, Versie, Status and Acties
+- AND the Zaaktype cell MUST name the origin ("Meegeleverd" or "Eigen") and the number of running cases (e.g., "19 lopende zaken")
+- AND the Doorlooptijd cell MUST read the processing deadline with its extension (e.g., "8 weken, +6")
+- AND the Status cell MUST read "Gepubliceerd" or "Concept"
+- AND the list MUST offer the lenses "Alles", "Gepubliceerd", "Concept" and "Meegeleverd", each with its count
 
 #### Scenario: Draft types visually distinguished
 
@@ -115,8 +113,7 @@ The admin settings MUST display a list of all case types with key metadata, foll
 
 - GIVEN case type "Bezwaarschrift" has `isDraft = true`
 - WHEN the admin views the case type list
-- THEN the draft type MUST display a warning badge (e.g., "DRAFT" in amber/yellow)
-- AND the draft type SHOULD have a visually different background or border to distinguish it from published types
+- THEN the draft type MUST show the status "Concept" where a published type shows "Gepubliceerd", as the board `DqZaaktypen` draws it
 - AND the validity period MUST show "(not set)" when `validFrom` is not configured
 
 #### Scenario: Click to edit case type
@@ -130,9 +127,8 @@ The admin settings MUST display a list of all case types with key metadata, foll
 #### Scenario: Empty case type list
 - GIVEN no case types have been created
 - WHEN the admin views the case type list
-- THEN the system MUST display an empty state message (e.g., "No case types configured yet")
-- AND the "+ Add Case Type" button MUST be prominently displayed
-- AND the system SHOULD provide guidance (e.g., "Create your first case type to start managing cases")
+- THEN the system MUST display the empty state of the board `DqZaaktypen`: "Maak het eerste zaaktype aan, of importeer er een uit een JSON-bestand. Een nieuw zaaktype begint als concept."
+- AND the actions "Nieuw zaaktype" and "Importeren" MUST be offered
 
 ### Requirement: Create Case Type [MVP]
 
@@ -140,7 +136,7 @@ The admin MUST be able to create new case types that start in draft status, foll
 
 #### Scenario: Add a new case type
 - GIVEN the admin is on the case type list
-- WHEN they click "+ Add Case Type"
+- WHEN they choose "Nieuw zaaktype" under Acties
 - THEN the system MUST present a case type creation form or navigate to a new case type detail view
 - AND the new case type MUST have `isDraft = true` by default
 - AND the admin MUST be able to fill in at minimum: title, purpose, trigger, subject, processingDeadline, origin, confidentiality, and responsibleUnit (all required fields per ARCHITECTURE.md)
@@ -181,16 +177,8 @@ The case type detail view MUST use a tabbed interface for organizing the various
 
 #### Scenario: Tab layout
 - GIVEN the admin opens the detail view for case type "Omgevingsvergunning"
-- THEN the view MUST display the following tabs:
-  - **General** (MVP) -- case type core fields
-  - **Statuses** (MVP) -- status type management
-  - **Results** (V1) -- result type management
-  - **Roles** (V1) -- role type management
-  - **Properties** (V1) -- property definition management
-  - **Documents** (V1) -- document type management
-  - **Decisions** (V1) -- decision type management
-- AND the "General" tab MUST be selected by default
-- AND V1 tabs (Results, Roles, Properties, Documents, Decisions) MAY be hidden or disabled until V1 is implemented
+- THEN the view MUST display the tabs of the board `DqZaaktypeOverzicht`: Overzicht, Velden, Statussen, Fasen en taken, Regels, Rechten, Privacy, Vertalingen, Versies and Historie
+- AND the "Overzicht" tab MUST be selected by default
 
 #### Scenario: Save button placement
 - GIVEN the admin is editing a case type
@@ -200,16 +188,15 @@ The case type detail view MUST use a tabbed interface for organizing the various
 #### Scenario: Tab switching preserves unsaved changes
 - GIVEN the admin has made unsaved changes on the General tab
 - WHEN they switch to the Statuses tab
-- THEN the unsaved changes on the General tab MUST be preserved in memory
-- AND switching back to the General tab MUST show the unsaved changes
-- AND clicking Save on any tab MUST save all pending changes across all tabs
+- THEN the system MUST ask "U heeft niet-opgeslagen wijzigingen. Weggooien?" with the choices "Weggooien" and "Terug naar bewerken", as the board `DqZaaktypeOverzicht` draws it
+- AND "Terug naar bewerken" MUST keep the admin on the General tab with the changes in the form
 
 #### Scenario: Back navigation with unsaved changes
 - GIVEN the admin is on the case type detail view with unsaved changes
 - WHEN they click the breadcrumb link "Dossiq" to return to the case type list
-- THEN the system SHOULD prompt: "You have unsaved changes. Discard?"
-- AND confirming MUST navigate back without saving
-- AND canceling MUST keep the admin on the detail view
+- THEN the system SHOULD ask: "U heeft niet-opgeslagen wijzigingen. Weggooien?"
+- AND "Weggooien" MUST navigate back without saving
+- AND "Terug naar bewerken" MUST keep the admin on the detail view
 
 ### Requirement: General Tab [MVP]
 
@@ -219,26 +206,9 @@ The General tab MUST allow editing all core case type fields, as implemented in 
 
 #### Scenario: Display and edit general fields
 - GIVEN the admin is on the General tab for "Omgevingsvergunning"
-- THEN the following fields MUST be editable:
-  | Field               | Value                              | Type          |
-  |---------------------|------------------------------------|---------------|
-  | Title               | Omgevingsvergunning                | text input    |
-  | Description         | Vergunning voor bouwactiviteiten   | textarea      |
-  | Purpose             | Beoordelen bouwplannen             | text input    |
-  | Trigger             | Aanvraag van burger/bedrijf        | text input    |
-  | Subject             | Bouw- en verbouwactiviteiten       | text input    |
-  | Processing deadline | 56 (displayed as "P56D")           | number + unit |
-  | Service target      | 42 (displayed as "P42D")           | number + unit |
-  | Extension allowed   | checked                            | checkbox      |
-  | Extension period    | 28 (displayed as "P28D")           | number + unit |
-  | Suspension allowed  | checked                            | checkbox      |
-  | Origin              | External                           | radio buttons |
-  | Confidentiality     | Internal                           | select        |
-  | Publication req.    | checked                            | checkbox      |
-  | Publication text    | Bouwvergunning verleend...         | text input    |
-  | Valid from          | 2026-01-01                         | date picker   |
-  | Valid until         | 2027-12-31                         | date picker   |
-  | Status              | Published / Draft                  | radio buttons |
+- THEN the Overzicht tab MUST show the cards of the board `DqZaaktypeOverzicht`: Statussen, Regels, Rechten, Privacy, Vertalingen, Versies and Gegevens
+- AND the Gegevens card MUST show Domein, Herkomst, Behandelende teams, Lopende zaken, Iv3-taakveld, Kleur en pictogram and Wachtrij
+- AND "Bewerken" MUST open the core fields for editing, among them Behandeltermijn, Geldig vanaf, Geldig tot, Verlenging toegestaan and Verlengingstermijn
 
 #### Scenario: Processing deadline format validation
 - GIVEN the admin enters "abc" in the processing deadline field
@@ -250,7 +220,7 @@ The General tab MUST allow editing all core case type fields, as implemented in 
 #### Scenario: Extension period required when extension allowed
 - GIVEN the admin checks "Extension allowed"
 - WHEN they leave the "Extension period" field empty and try to save
-- THEN the system MUST display a validation error: "Extension period is required when extension is allowed"
+- THEN the system MUST display the validation error "Verlengingstermijn is verplicht als verlenging aan staat"
 
 #### Scenario: Extension period hidden when extension not allowed
 - GIVEN the admin unchecks "Extension allowed"
@@ -344,13 +314,13 @@ The admin MUST be able to publish a draft case type after validating its complet
 #### Scenario: Publish incomplete case type -- no statuses
 - GIVEN draft case type "Bezwaarschrift" with no status types defined
 - WHEN the admin tries to publish it
-- THEN the system MUST display a validation error: "At least one status type is required before publishing"
+- THEN the system MUST refuse with the message of the board `DqZaaktypeStatussen`: "Publiceren geweigerd, versie 5 blijft concept. Minstens één status is nodig voor het publiceren."
 - AND the case type MUST remain as draft
 
 #### Scenario: Publish incomplete case type -- no validFrom
 - GIVEN draft case type "Bezwaarschrift" with status types but no `validFrom` date
 - WHEN the admin tries to publish it
-- THEN the system MUST display a validation error: "Valid from date is required before publishing"
+- THEN the system MUST refuse with "Publiceren geweigerd" and the line "Geldig vanaf is nodig voor het publiceren.", each missing condition on its own line
 - AND the case type MUST remain as draft
 
 #### Scenario: Publish incomplete case type -- missing required general fields
@@ -447,7 +417,7 @@ The Roles tab SHALL allow managing role types with generic role mapping per case
 #### Scenario: Delete a role type with active assignments
 - GIVEN role type "Technisch adviseur" has 2 active role assignments on cases
 - WHEN the admin tries to delete it
-- THEN the system MUST display a warning: "This role type is in use by 2 case role assignments"
+- THEN the system MUST display the refusal "Verwijderen van Technisch adviseur: dit roltype is in gebruik bij 2 betrokkenen op zaken."
 - AND the system SHOULD either block deletion or offer to remove the assignments first
 
 #### Scenario: Multiple role types with the same generic role

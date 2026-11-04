@@ -9,5 +9,5 @@ The case page SHALL open the same archive dialog from the closed stage's button 
 
 - **GIVEN** a handler on a closed, ended case that is not archived
 - **WHEN** they press Archive it in the what-now card
-- **THEN** the dialog SHALL read "Close off · {case number}"
+- **THEN** the dialog SHALL read "Afronden · {case number}" (en "Close off · {case number}"), as board DqArchiveren draws "Afronden · 2026-0110"
 - **AND** it SHALL offer to let the requester know the case is completed

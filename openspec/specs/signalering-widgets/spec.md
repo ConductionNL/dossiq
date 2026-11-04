@@ -48,7 +48,7 @@ The dashboard SHALL display a Deadline Alerts widget that lists cases approachin
 #### Scenario: No deadline alerts
 @e2e exclude The "No deadline alerts" empty message lives inside DeadlineAlertsWidget.vue, which only mounts on the Nextcloud SYSTEM dashboard (OCA.Dashboard.register) after the user adds it via the widget picker; the in-app dashboard grid renders only the titled placeholder card (covered by default-layout-includes-signalering-row), so the widget-internal empty-state is not reachable as an in-app browser surface.
 - **WHEN** all open cases have deadlines more than 3 days away (or no deadline)
-- **THEN** the widget MUST display a positive message such as "No deadline alerts"
+- **THEN** the widget MUST display "Geen termijnsignalen" (en "No deadline alerts"), as board DqNextcloudDashboard draws it
 - **THEN** the widget MUST NOT show an error or empty broken state
 
 #### Scenario: Clicking a deadline alert row navigates to case detail
@@ -76,7 +76,7 @@ The dashboard SHALL display a Task Due Reminders widget showing the current user
 @e2e exclude Requires seeded overdue tasks and ordering/severity assertions; data-dependent, not testable without pre-seeded tasks.
 - **WHEN** the current user has 2 tasks past their due date (2 days overdue, 1 day overdue)
 - **THEN** the widget MUST display overdue tasks above upcoming tasks
-- **THEN** overdue tasks MUST show "N days overdue" with a red/error visual indicator
+- **THEN** overdue tasks MUST show "N dagen te laat" (en "N days overdue") with a red/error visual indicator, as the board `DqNextcloudDashboard` draws "2 dagen te laat"
 - **THEN** overdue tasks MUST be sorted by days overdue descending
 
 #### Scenario: No task reminders
@@ -135,19 +135,19 @@ The system SHALL register Nextcloud-native dashboard widgets (IWidget) for the s
 
 #### Scenario: Deadline Alerts Nextcloud widget available
 - **WHEN** the user views the main Nextcloud dashboard widget picker
-- **THEN** a "Deadline Alerts" widget MUST be available for selection
+- **THEN** a "Termijnsignalen" (en "Deadline Alerts") widget MUST be available for selection
 - **THEN** the widget MUST show the top 5 at-risk and overdue cases with title, days remaining/overdue, and severity indicator
 - **THEN** clicking the widget header MUST navigate to the Dossiq dashboard
 
 #### Scenario: Task Reminders Nextcloud widget available
 - **WHEN** the user views the main Nextcloud dashboard widget picker
-- **THEN** a "Task Reminders" widget MUST be available for selection
+- **THEN** a "Taakherinneringen" (en "Task Reminders") widget MUST be available for selection
 - **THEN** the widget MUST show the top 5 urgent tasks with title, due date info, and parent case
 - **THEN** clicking a task MUST navigate to the task detail in Dossiq
 
 #### Scenario: Stalled Cases Nextcloud widget available
 - **WHEN** the user views the main Nextcloud dashboard widget picker
-- **THEN** a "Stalled Cases" widget MUST be available for selection
+- **THEN** a "Stilstaande zaken" (en "Stalled Cases") widget MUST be available for selection
 - **THEN** the widget MUST show the top 5 most stalled cases with title, days inactive, and handler
 
 ### Requirement: Signalering Helper Functions [V1]

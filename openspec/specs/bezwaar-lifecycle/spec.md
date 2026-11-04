@@ -102,7 +102,7 @@ The system SHALL provide pre-seeded status types for the Bezwaar case type that 
 
 - **WHEN** the bezwaarmaker waives the right to a hearing (afzien van hoorrecht)
 - **THEN** the case SHALL be able to transition from "Ontvankelijkheidstoets" or "In behandeling" directly to "Advies uitgebracht" or "Beslissing op bezwaar"
-- **AND** the skip SHALL be recorded in the case audit trail with reason "Belanghebbende heeft afgezien van het recht te worden gehoord"
+- **AND** the skip SHALL be recorded in the case audit trail with the reason the handler entered under "Reden van het afzien (verplicht)", as the board `DqZaak` draws "Afzien van hoorrecht"
 
 ### Requirement: Bezwaar Role Types
 

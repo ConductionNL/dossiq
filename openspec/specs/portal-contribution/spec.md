@@ -224,13 +224,13 @@ and from a notice link.
 #### Scenario: The resident menu
 - **GIVEN** a resident signed in on the site
 - **WHEN** the site builds the menu from dossiq's contribution
-- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Voortgang van uw zaken", "Een bericht beantwoorden" and "Mijn verzoeken"
+- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Mijn verzoeken" and "Mijn afspraken", beside the site's "Mijn taken", as the menu board `MijnMenu` draws it
 - **AND** "Mijn zaken" and "Berichten" MUST appear once, as the site's own sections
 
 #### Scenario: A case opens from the site's case list
 - **GIVEN** a resident with a dossiq case in the site's "Mijn zaken"
 - **WHEN** they open it
-- **THEN** the page "Voortgang van uw zaken" MUST open with that case selected
+- **THEN** the case MUST open on its own case page, as the board `Zaak` draws it
 
 ### Requirement: The decision notice says what happened
 When the decision on a Woo request case is published for the first time and a resident follows the case

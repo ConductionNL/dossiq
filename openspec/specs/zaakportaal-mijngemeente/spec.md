@@ -129,7 +129,7 @@ REQ-POR-004: Upon login, the system SHALL retrieve all cases from Dossiq where t
 #### Scenario: No cases for a citizen
 - **GIVEN** a burger with BSN 999999999 has no active cases in Dossiq
 - **WHEN** she logs in and navigates to "Mijn zaken"
-- **THEN** the portal displays a message: "Je hebt momenteel geen actieve zaken. Dien een nieuwe aanvraag in op [link to gemeente website]."
+- **THEN** the portal displays the message of the board `MijnZaken`: "U heeft nog geen zaken."
 
 ### Requirement: Document access control — only citizen-addressable documents
 
