@@ -19,6 +19,7 @@
 		:eyebrow="eyebrow"
 		width="wizard"
 		data-testid="case-location-dialog"
+		v-bind="noticeProps"
 		@closing="$emit('close')">
 		<div class="case-location-dialog">
 			<CnAddressSearch
@@ -82,9 +83,7 @@
 				</section>
 			</div>
 
-			<NcNoteCard v-if="error" type="error" data-testid="case-location-error">
-				{{ error }}
-			</NcNoteCard>
+			<DialogNotice :notice="notice" data-testid="case-location-error" />
 		</div>
 
 		<template #actions>
@@ -114,12 +113,14 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
+import DialogNotice from '../components/dialog/DialogNotice.vue'
 import { lookupParcel } from '../services/brkApi.js'
 import { caseLocationRecord, parcelOf, saveCaseLocation } from '../services/caseLocationApi.js'
 import { fetchCaseSummary } from '../services/caseSummary.js'
 import { lookupWozValueByNummeraanduiding } from '../services/wozApi.js'
+import { dialogNoticeProps } from '../utils/dialogNotice.js'
+import { locationSaveRefusal } from '../utils/locationSaveRefusal.js'
 
 /** The centre of the Netherlands, before an address is chosen. */
 const DEFAULT_CENTER = [52.13, 5.29]
@@ -131,10 +132,10 @@ export default {
 		CnAddressSearch,
 		CnDialog,
 		CnMapWidget,
+		DialogNotice,
 		MapMarkerOutline,
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcNoteCard,
 	},
 
 	props: {
@@ -160,13 +161,18 @@ export default {
 			/** The cadastral parcel for the address, or null. */
 			parcel: null,
 			saving: false,
-			error: '',
+			/** The refusal of the last save, as a dialog notice, or null. */
+			notice: null,
 			/** The case, for the eyebrow. */
 			kase: null,
 		}
 	},
 
 	computed: {
+		noticeProps() {
+			return dialogNoticeProps(this.notice)
+		},
+
 		/**
 		 * @return {string} The case id, from the prop or the route.
 		 *
@@ -329,7 +335,7 @@ export default {
 		 */
 		async onSelect(chosen) {
 			this.chosen = chosen
-			this.error = ''
+			this.notice = null
 			this.woz = null
 			this.parcel = null
 			const designation = chosen?.result?.nummeraanduiding_id
@@ -352,7 +358,7 @@ export default {
 				return
 			}
 			this.saving = true
-			this.error = ''
+			this.notice = null
 			try {
 				const saved = await saveCaseLocation(caseLocationRecord(this.targetCaseId, this.chosen))
 				showSuccess(t('dossiq', 'Location added to the case.'))
@@ -360,7 +366,7 @@ export default {
 				this.$emit('saved', saved)
 				this.$emit('close')
 			} catch (error) {
-				this.error = error?.response?.data?.message || t('dossiq', 'The location could not be saved.')
+				this.notice = locationSaveRefusal(error?.response?.data)
 			} finally {
 				this.saving = false
 			}

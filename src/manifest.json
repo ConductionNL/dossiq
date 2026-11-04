@@ -635,7 +635,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -1172,7 +1172,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -5952,6 +5952,20 @@
 						}
 					},
 					{
+						"id": "advice-request",
+						"type": "open-modal",
+						"target": "AdviceRequestDialog",
+						"label": "Ask for advice",
+						"icon": "CommentQuestionOutline",
+						"props": {
+							"caseId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "empty"
+						}
+					},
+					{
 						"id": "case-lifecycle-menu",
 						"type": "open-modal",
 						"label": "Lifecycle",
@@ -5959,7 +5973,8 @@
 						"target": "CaseLifecycleMenuDialog",
 						"props": {
 							"actDialogs": {
-								"archive": "case-archive"
+								"archive": "case-archive",
+								"objection": "remedy-lodge"
 							}
 						}
 					},
@@ -8025,6 +8040,23 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "adviesAanvraag",
+				"headerActions": [
+					{
+						"id": "advice-respond",
+						"type": "open-modal",
+						"target": "AdviceResponseDialog",
+						"label": "Give advice",
+						"icon": "CommentQuestionOutline",
+						"props": {
+							"adviceId": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "status",
+							"op": "eq",
+							"value": "requested"
+						}
+					}
+				],
 				"_note": "ADVICE-REQUEST archetype (adviesAanvraag on a case). No comms linkedTypes and no child schemas point at it, so it stays lean: the Data widget carries the request and its clock (case, adviseur, type, onderwerp, deadline, requestedAt, receivedAt, the questions[] and the returned adviesDocument), a Related panel exposes the parent case and adviser links, and lifecycleActions drive the status (aangevraagd → ontvangen / verlopen) — deadline-vs-received being the primary at-a-glance signal. No files/notes/contacts/calendar leaves: the advice document is a plain field and comms live on the parent case. Audit history is a sidebar tab.",
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
@@ -14050,7 +14082,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -14837,7 +14869,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
 								"label": "Requester"
 							},
 							"confidentiality": {

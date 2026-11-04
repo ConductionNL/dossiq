@@ -65,6 +65,8 @@ import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
+import AdviceRequestDialog from './dialogs/AdviceRequestDialog.vue'
+import AdviceResponseDialog from './dialogs/AdviceResponseDialog.vue'
 import AssessmentDecisionDialog from './dialogs/AssessmentDecisionDialog.vue'
 import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // The Actions menu's non-lifecycle gestures: copy this case, start a flow
@@ -515,6 +517,22 @@ const registry = {
 	CaseShareOrganisationDialog: {
 		kind: 'modal',
 		component: CaseShareOrganisationDialog,
+		propsSchema: {},
+	},
+
+	// --- Asking for advice on the case (board DqZaakBesluiten, "Advies vragen"). ---
+	// @spec openspec/specs/advice-management/spec.md
+	AdviceRequestDialog: {
+		kind: 'modal',
+		component: AdviceRequestDialog,
+		propsSchema: {},
+	},
+
+	// --- The consulted department gives its advice (board DqZaak, "Advies uitbrengen"). ---
+	// @spec openspec/specs/advice-management/spec.md
+	AdviceResponseDialog: {
+		kind: 'modal',
+		component: AdviceResponseDialog,
 		propsSchema: {},
 	},
 

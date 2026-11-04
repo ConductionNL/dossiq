@@ -39,8 +39,15 @@
 							<dd>{{ kase.resultPublicLabel }}</dd>
 						</div>
 						<div v-for="fill in chosenTemplateFills" :key="fill.label">
-							<dt>{{ t('dossiq', fill.label) }}</dt>
-							<dd>{{ fill.value }}</dd>
+							<dt>
+								{{ t('dossiq', fill.label) }}
+								<span v-if="fill.required" class="generate-document__required" data-testid="generate-document-required">
+									{{ t('dossiq', 'Required') }}
+								</span>
+							</dt>
+							<dd :class="{ 'generate-document__missing': fill.missing }">
+								{{ fill.fixed ? t('dossiq', fill.value) : fill.value }}
+							</dd>
 						</div>
 					</dl>
 				</section>
@@ -51,6 +58,16 @@
 					</template>
 					{{ t('dossiq', 'The document is added to the case as a draft, under Documents. You sign and send it afterwards, from Decisions.') }}
 				</NcNoteCard>
+				<p v-if="missingRequired.length > 0" class="generate-document__note" data-testid="generate-document-missing">
+					{{ n('dossiq', 'A required field is missing: {fields}. The draft stays in Draft until you have filled it in; approval can only come after that.', 'Required fields are missing: {fields}. The draft stays in Draft until you have filled them in; approval can only come after that.', missingRequired.length, { fields: missingRequired.join(', ') }) }}
+				</p>
+				<p
+					v-for="note in chosenTemplateNotes"
+					:key="note"
+					class="generate-document__note"
+					data-testid="generate-document-template-note">
+					{{ note }}
+				</p>
 				<NcNoteCard v-if="error" type="error">
 					{{ error }}
 				</NcNoteCard>
@@ -86,7 +103,7 @@
 <script>
 import { CnChoiceCards, CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
-import { translate as t } from '@nextcloud/l10n'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
@@ -185,8 +202,35 @@ export default {
 		 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
 		 */
 		chosenTemplateFills() {
-			const chosen = this.templates.find((template) => template.id === this.templateId)
-			return templateFillRows(chosen?.fills, this.kase)
+			return templateFillRows(this.chosenTemplate?.fills, this.kase)
+		},
+
+		chosenTemplate() {
+			return this.templates.find((template) => template.id === this.templateId) ?? null
+		},
+
+		/**
+		 * The labels of the required fills the case does not have yet.
+		 *
+		 * @return {Array<string>} The translated labels, lower case as in a sentence.
+		 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
+		 */
+		missingRequired() {
+			return this.chosenTemplateFills
+				.filter((fill) => fill.missing)
+				.map((fill) => t('dossiq', fill.label).toLocaleLowerCase())
+		},
+
+		/**
+		 * What the chosen template says happens after it is sent, as its
+		 * library entry states it (`notes`).
+		 *
+		 * @return {Array<string>} The sentences.
+		 * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
+		 */
+		chosenTemplateNotes() {
+			const notes = this.chosenTemplate?.notes
+			return Array.isArray(notes) ? notes.filter((note) => typeof note === 'string' && note.trim() !== '') : []
 		},
 
 		templateOptions() {
@@ -231,6 +275,7 @@ export default {
 
 	methods: {
 		t,
+		n,
 		/**
 		 * Fetch the templates TemplateController#index returns.
 		 *
@@ -360,6 +405,26 @@ export default {
 	margin: 3px 0 0;
 	font-size: 15px;
 	font-weight: 500;
+}
+
+.generate-document__required {
+	display: inline-block;
+	margin-inline-start: 4px;
+	padding: 1px 8px;
+	border-radius: var(--border-radius-pill);
+	background: color-mix(in srgb, var(--color-error) 10%, var(--color-main-background));
+	color: var(--color-error-text);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.generate-document__fills-grid dd.generate-document__missing {
+	color: var(--color-error-text);
+}
+
+.generate-document__note {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
 }
 
 .generate-document__intro {

@@ -6,6 +6,7 @@
 		:subtitle="t('dossiq', 'Digital post to the applicant, in MijnOverheid. Only when the applicant is a person.')"
 		width="form"
 		:noClose="sending"
+		v-bind="noticeProps"
 		@closing="$emit('close')">
 		<div class="compose-dialog">
 			<div class="compose-dialog__row">
@@ -106,11 +107,7 @@ class="compose-dialog__field"
 				{{ t('dossiq', 'The message goes through integriq to the Berichtenbox of MijnOverheid. Delivered and read come back on the case, under Contact and History.') }}
 			</NcNoteCard>
 
-			<div v-if="sendError" role="alert">
-				<NcNoteCard type="error">
-					{{ sendError }}
-				</NcNoteCard>
-			</div>
+			<DialogNotice :notice="sendNotice" />
 		</div>
 
 		<template #actions>
@@ -142,8 +139,10 @@ import {
 import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
 import SendIcon from 'vue-material-design-icons/Send.vue'
 import MessageTemplateSelect from '../components/case/MessageTemplateSelect.vue'
+import DialogNotice from '../components/dialog/DialogNotice.vue'
 import { sendMessage } from '../services/berichtenboxApi.js'
 import { caseEyebrow } from '../services/caseSummary.js'
+import { dialogNotice, dialogNoticeProps } from '../utils/dialogNotice.js'
 import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
@@ -168,6 +167,7 @@ export default {
 	name: 'BerichtenboxComposeDialog',
 	components: {
 		CnDialog,
+		DialogNotice,
 		EmailFastOutline,
 		MessageTemplateSelect,
 		SendIcon,
@@ -230,10 +230,35 @@ export default {
 			errors: {},
 			sending: false,
 			sendError: null,
+			sendCode: '',
 		}
 	},
 
 	computed: {
+		/**
+		 * The refusal as the banner above the buttons: a missing Berichtenbox
+		 * connection gets the board's title and what the administrator does,
+		 * any other refusal its own sentence (board DqBerichtVersturen).
+		 *
+		 * @return {object|null} The notice, or null.
+		 * @spec openspec/specs/burger-notifications/spec.md
+		 */
+		sendNotice() {
+			if (this.sendCode === 'provider-not-configured') {
+				return dialogNotice(
+					'error',
+					t('dossiq', 'Not sent: no Berichtenbox connection is set up'),
+					t('dossiq', 'An administrator sets up the connection under Settings, Connections (key berichtenbox_provider in integriq). Dossiq sends no post without a connection and does not pretend to: the Berichtenbox row under Connections then says Not set up, never Simulated. The message is recorded as not sent under Contact, with this reason.'),
+				)
+			}
+
+			return this.sendError ? dialogNotice('error', this.sendError) : null
+		},
+
+		noticeProps() {
+			return dialogNoticeProps(this.sendNotice)
+		},
+
 		/**
 		 * Whether the BSN is the case's requester's, so the handler need not type one.
 		 *
@@ -462,6 +487,7 @@ export default {
 			if (!this.validate()) return
 			this.sending = true
 			this.sendError = null
+			this.sendCode = ''
 			try {
 				const answer = await sendMessage({
 					caseId: this.resolvedCaseId,
@@ -481,6 +507,7 @@ export default {
 				// close this dialog over a letter nobody received, which is the
 				// whole failure this change is about, one layer up.
 				if (answer?.success === false || answer?.message?.refused === true) {
+					this.sendCode = String(answer?.code || answer?.message?.code || '')
 					this.sendError =
 						this.refusalText(answer?.code || answer?.message?.code)
 						|| answer?.error
@@ -497,6 +524,7 @@ export default {
 				// The provider's OWN words, whenever there are any. "Sending
 				// failed" tells a handler nothing they can act on; "no
 				// PKIoverheid certificate is configured" tells them who to ask.
+				this.sendCode = String(e.response?.data?.code || '')
 				this.sendError =
 					this.refusalText(e.response?.data?.code)
 					|| e.response?.data?.error
