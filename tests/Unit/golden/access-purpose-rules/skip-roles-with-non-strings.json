@@ -1,0 +1,10 @@
+{
+    "skipFor": [
+        "coordinator",
+        "advisor"
+    ],
+    "skipPurpose": "handling",
+    "assign": {
+        "handling": "handler"
+    }
+}

@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\PartyTicketController;
+use OCA\Dossiq\Service\Access\ReadableObjects;
 use OCA\Dossiq\Service\Pipelinq\PipelinqGateway;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -57,7 +58,11 @@ class PartyTicketControllerTest extends TestCase {
 			}
 		);
 
-		return new PartyTicketController(appName: 'dossiq', request: $request, gateway: $gateway);
+		$readable = $this->createMock(originalClassName: ReadableObjects::class);
+		$readable->method('hasCaller')->willReturn(true);
+		$readable->method('readableMasterEntities')->willReturnArgument(0);
+
+		return new PartyTicketController(appName: 'dossiq', request: $request, gateway: $gateway, readable: $readable);
 	}//end controller()
 
 	/**

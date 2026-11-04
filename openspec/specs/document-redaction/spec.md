@@ -82,13 +82,14 @@ For a partly public document the officer SHALL be able to upload a version redac
 
 ### Requirement: The redaction panel follows board OcLakken (REQ-DRD-005)
 
-The case header SHALL offer the redaction step for a case type that configures it. The panel SHALL show, per partly public document, the document text with the passages marked, and beside it the proposal: the number of passages found and, per passage, its type and text with a verdict (Akkoord, Aanpassen, Niet lakken) and "Passage toevoegen". "Lakken vastleggen" SHALL be enabled only when every passage has a verdict; pressing it SHALL record the check of the passages to redact and then ask for the copy. "Vorig document" and "Volgende document" SHALL move between the partly public documents. "Gelakte versie uploaden" SHALL upload a version instead. A refusal SHALL be shown as the server's sentence.
+The case header SHALL offer the redaction step for a case type that configures it. The panel SHALL show, per partly public document, the document text with the passages marked, and beside it the proposal: the number of passages found and, per passage, what it is, its ground for refusal and page, and its verdict in the words board OcLakken uses: a passage found and kept reads "gevonden, behouden door <name>", one added by hand reads "met de hand toegevoegd door <name>", and one turned down is afgewezen with its reason. The list's heading SHALL count both ("6 behouden · 1 afgewezen"), and "Passage toevoegen" SHALL add a passage. "Lakken gecontroleerd" SHALL be enabled only when every passage is behouden or afgewezen; pressing it SHALL record the check of the passages to redact and then ask for the copy. Until someone has checked the redacted version, the document SHALL read "Lakken niet gecontroleerd" with the line "iemand moet alle <n> gelakte delen controleren". "Vorig document" and "Volgende document" SHALL move between the partly public documents. "Gelakte versie uploaden" SHALL upload a version instead. A refusal SHALL be shown as the server's sentence.
 
 @e2e exclude The panel's detection and redaction need filinq, which the e2e environment does not install. The component is covered by its vitest spec.
 
 #### Scenario: Every passage needs a verdict
 
-- **GIVEN** four passages, three with a verdict
-- **THEN** "Lakken vastleggen" is disabled
-- **WHEN** the fourth gets "Niet lakken"
-- **THEN** "Lakken vastleggen" is enabled and the check covers the three passages to redact
+- **GIVEN** four passages, three of them behouden
+- **THEN** "Lakken gecontroleerd" is disabled
+- **WHEN** the fourth is afgewezen
+- **THEN** "Lakken gecontroleerd" is enabled and the check covers the three passages to redact
+- **AND** the heading reads "3 behouden · 1 afgewezen"

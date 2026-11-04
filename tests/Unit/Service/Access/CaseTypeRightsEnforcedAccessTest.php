@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\Access\CaseTypeRightsMatrixRows;
 use OCA\Dossiq\Service\Access\OrganisationRoles;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Tests\Support\SiblingOpenRegister;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IDBConnection;
@@ -49,8 +50,6 @@ use Psr\Log\NullLogger;
  * @preserveGlobalState disabled
  */
 class CaseTypeRightsEnforcedAccessTest extends TestCase {
-
-	private const OPENREGISTER = __DIR__ . '/../../../../../openregister';
 
 	/**
 	 * Cases: case type, team, status, confidentiality, assignee.
@@ -108,11 +107,8 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$lib = realpath(self::OPENREGISTER . '/lib');
-		$dbal = realpath(self::OPENREGISTER . '/vendor/doctrine/dbal/src');
-		if ($lib === false || $dbal === false) {
-			self::markTestSkipped('No sibling openregister checkout with its vendor at ' . self::OPENREGISTER . '. CI clones it, so this runs there.');
-		}
+		$lib = SiblingOpenRegister::path(relative: 'lib');
+		$dbal = SiblingOpenRegister::path(relative: 'vendor/doctrine/dbal/src');
 
 		spl_autoload_register(
 			static function (string $class) use ($lib, $dbal): void {

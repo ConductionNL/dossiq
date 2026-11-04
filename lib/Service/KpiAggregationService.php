@@ -46,11 +46,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Queue\QueueOldestNote;
-use OCA\Dossiq\Service\Support\LanguageMapText;
-use OCA\Dossiq\Service\Term\DayCount;
-use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IL10N;
@@ -61,8 +57,6 @@ use Psr\Log\LoggerInterface;
  * Dashboard KPI aggregation.
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — one payload for every count tile, the team queue's included, so the open cases are read once.
  */
 class KpiAggregationService {
 	/**
@@ -112,12 +106,9 @@ class KpiAggregationService {
 	 * @param IAppConfig $appConfig The app configuration service.
 	 * @param ContainerInterface $container The DI container.
 	 * @param IAppManager $appManager Used to establish that OpenRegister is present.
-	 * @param EngineTaskInbox $engineTasks The engine's task counter.
-	 * @param QueueFigures $queueFigures Folds the team queue's figures.
+	 * @param KpiSources $sources The engine task inbox, the queue figures, the translatable text reader and the day count.
 	 * @param IL10N $l10n The app's translator, for the month names.
 	 * @param LoggerInterface $logger The logger interface.
-	 * @param LanguageMapText $text Reads a translatable case type title as text.
-	 * @param DayCount $days The one place days between two dates are counted.
 	 *
 	 * @return void
 	 */
@@ -125,12 +116,9 @@ class KpiAggregationService {
 		private IAppConfig $appConfig,
 		private ContainerInterface $container,
 		private IAppManager $appManager,
-		private EngineTaskInbox $engineTasks,
-		private QueueFigures $queueFigures,
+		private readonly KpiSources $sources,
 		private IL10N $l10n,
 		private LoggerInterface $logger,
-		private LanguageMapText $text = new LanguageMapText(),
-		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -165,7 +153,7 @@ class KpiAggregationService {
 			filters: self::OPEN_WORK
 		);
 
-		$queue = $this->queueFigures->foldFor(
+		$queue = $this->sources->queueFigures->foldFor(
 			userId: $userId,
 			openCases: $openCases,
 			today: $now,
@@ -200,8 +188,8 @@ class KpiAggregationService {
 			// to be object counts over `caseTask`; the terminality split and
 			// the due window are now predicates the engine understands, so
 			// dossiq neither derives overdue-ness nor counts a page.
-			'taskCount' => $this->engineTasks->countOpenForAssignee(actor: $userId),
-			'tasksDueToday' => $this->engineTasks->countOpenForAssignee(
+			'taskCount' => $this->sources->engineTasks->countOpenForAssignee(actor: $userId),
+			'tasksDueToday' => $this->sources->engineTasks->countOpenForAssignee(
 				actor: $userId,
 				dueAfter: ($today . 'T00:00:00+00:00'),
 				dueBefore: ($today . 'T23:59:59+00:00')
@@ -230,7 +218,7 @@ class KpiAggregationService {
 		foreach ($this->rows(ids: $ids, schema: $schema, filters: []) as $row) {
 			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 			if ($id !== '') {
-				$titles[$id] = $this->text->textOr(value: ($row['title'] ?? ''), fallback: $id, language: $this->l10n->getLanguageCode());
+				$titles[$id] = $this->sources->text->textOr(value: ($row['title'] ?? ''), fallback: $id, language: $this->l10n->getLanguageCode());
 			}
 		}
 
@@ -551,14 +539,13 @@ class KpiAggregationService {
 			return null;
 		}
 
-		try {
-			$start = new DateTimeImmutable($fromDate);
-			$end = new DateTimeImmutable($toDate);
-		} catch (\Exception $e) {
+		$start = date_create_immutable($fromDate);
+		$end = date_create_immutable($toDate);
+		if ($start === false || $end === false) {
 			return null;
 		}
 
-		return $this->days->signed(from: $start, to: $end);
+		return $this->sources->days->signed(from: $start, to: $end);
 	}//end daysBetween()
 
 	/**

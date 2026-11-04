@@ -1,3 +1,3 @@
 # Screens
 
-- DqFunctionaliteiten https://identity.conduction.nl/screens/board?id=dossiq/DqFunctionaliteiten
+- dossiq/DqFunctionaliteiten functionaliteiten en roadmap https://identity.conduction.nl/screens/board?id=dossiq/DqFunctionaliteiten

@@ -1,4 +1,4 @@
 # Screens
 
-- DqTaak https://identity.conduction.nl/screens/board?id=dossiq/DqTaak
-- DqZaakTaken https://identity.conduction.nl/screens/board?id=dossiq/DqZaakTaken
+- dossiq/DqTaak taak https://identity.conduction.nl/screens/board?id=dossiq/DqTaak
+- dossiq/DqZaakTaken zaak, tabblad taken https://identity.conduction.nl/screens/board?id=dossiq/DqZaakTaken

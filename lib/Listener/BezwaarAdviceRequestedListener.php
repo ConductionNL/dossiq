@@ -35,11 +35,10 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Dossiq\Listener\Support\ActsOnStatusEntry;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Auto-assigns the default BAC when bezwaar enters "Hearing planned".
@@ -49,7 +48,19 @@ use Throwable;
  * @spec openspec/specs/bezwaar-advisory-committee/spec.md
  */
 class BezwaarAdviceRequestedListener implements IEventListener {
+	use ActsOnStatusEntry;
+
 	private const TRIGGER_STATUS = 'Hearing planned';
+
+	/**
+	 * The objection schema's config key, and the status this listener acts on.
+	 */
+	private const ENTRY = ['schemaKey' => 'bezwaar_schema', 'status' => self::TRIGGER_STATUS];
+
+	/**
+	 * What a swallowed failure is logged as.
+	 */
+	private const FAILURE_LOG = 'Dossiq BAC: advice-requested listener swallowed exception: ';
 
 	/**
 	 * Constructor.
@@ -78,145 +89,9 @@ class BezwaarAdviceRequestedListener implements IEventListener {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectUpdatedEvent === false) {
-			return;
-		}
-
-		try {
-			$object = $this->extractObject(event: $event);
-			if ($object === null) {
-				return;
-			}
-
-			if ($this->isObjectionSchema(object: $object) === false) {
-				return;
-			}
-
-			$status = (string)($object['status'] ?? '');
-			if ($status !== self::TRIGGER_STATUS) {
-				return;
-			}
-
-			// Avoid re-triggering: only act on the actual transition.
-			$previous = $this->extractPreviousStatus(event: $event);
-			if ($previous === self::TRIGGER_STATUS) {
-				return;
-			}
-
-			$objectionId = (string)(
-				$object['@self']['id'] ?? ($object['id'] ?? ($object['uuid'] ?? ''))
-			);
-			if ($objectionId === '') {
-				return;
-			}
-
-			$this->bacService->autoAssignDefaultCommittee(
-				objectionId: $objectionId
-			);
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq BAC: advice-requested listener swallowed '
-				. 'exception: ' . $e->getMessage(),
-			);
-		}//end try
+		$this->actOnStatusEntry(
+			event: $event,
+			act: fn (string $objectionId): ?array => $this->bacService->autoAssignDefaultCommittee(objectionId: $objectionId)
+		);
 	}//end handle()
-
-	/**
-	 * Whether the object belongs to the `bezwaar` schema.
-	 *
-	 * @param array<string, mixed> $object The object payload
-	 *
-	 * @return bool
-	 */
-	private function isObjectionSchema(array $object): bool {
-		$schemaSlug = $this->settingsService->getConfigValue(
-			key: 'bezwaar_schema'
-		);
-		if ($schemaSlug === '') {
-			return false;
-		}
-
-		$candidate = (string)(
-			$object['@self']['schema'] ?? ($object['schema'] ?? '')
-		);
-
-		return $candidate !== '' && (
-			$candidate === $schemaSlug
-			|| str_ends_with($candidate, '/' . $schemaSlug)
-		);
-	}//end isBezwaarSchema()
-
-	/**
-	 * Extract the new object payload from the update event.
-	 *
-	 * @param Event $event The event
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function extractObject(Event $event): ?array {
-		foreach (['getNewObject', 'getObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$value = $event->{$method}();
-			$array = $this->normalise(value: $value);
-			if ($array !== null) {
-				return $array;
-			}
-		}
-
-		return null;
-	}//end extractObject()
-
-	/**
-	 * Extract the previous status from the old object payload (if any).
-	 *
-	 * @param Event $event The event
-	 *
-	 * @return string Previous status or empty string when unknown
-	 */
-	private function extractPreviousStatus(Event $event): string {
-		if (method_exists($event, 'getOldObject') === false) {
-			return '';
-		}
-
-		$array = $this->normalise(value: $event->getOldObject());
-		if ($array === null) {
-			return '';
-		}
-
-		return (string)($array['status'] ?? '');
-	}//end extractPreviousStatus()
-
-	/**
-	 * Normalise a getter return value to an associative array.
-	 *
-	 * @param mixed $value The raw value
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-		}
-
-		return null;
-	}//end normalise()
 }//end class

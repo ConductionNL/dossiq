@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Notification\RequesterNoticeSender
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount

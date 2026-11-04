@@ -1,4 +1,4 @@
 # Screens
 
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
-- DqZaakContact https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqZaakContact zaak, tabblad contact https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact

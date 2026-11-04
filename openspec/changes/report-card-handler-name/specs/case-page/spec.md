@@ -10,12 +10,13 @@
 
 ### Requirement: The report card names the handler
 
-The report card of a case SHALL show the handler by display name, not by user id.
+The report card of a case SHALL show the handler by display name and team, not by user id, under the case type's
+handler label (`case-type-handler-label`: "Behandelaar" when the case type declares none).
 
 #### Scenario: DqSociaalDomein
 
-- **GIVEN** a youth case handled by Fatma Kaya
-- **THEN** De melding reads "Behandelaar: Fatma Kaya"
+- **GIVEN** a youth case of the Melding Jeugdwet case type, whose handler label is "Regisseur", handled by Fatma Kaya of the jeugdteam
+- **THEN** De melding's field Regisseur reads "Fatma Kaya, jeugdteam", as board DqSociaalDomein draws it
 
 ### Requirement: The report card lays its facts out in three columns
 

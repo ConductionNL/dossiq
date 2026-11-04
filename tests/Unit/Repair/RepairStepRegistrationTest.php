@@ -69,6 +69,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'CarryRenamedSettingKeys' => 'carries settings stored under their earlier keys; a fresh install has none',
 		'RewriteRenamedLayoutIds' => 'rewrites renamed ids in stored buildiq arrangements; a fresh install has none',
 		'MigratePayoutRowsToFinance' => 'hands the payout rows dossiq kept to the finance app; a fresh install has none',
+		'RestoreDeclaredBackgroundJobs' => 'puts back declared jobs cron dropped; a fresh install lists every declared job itself',
 		'RecolourShippedStatusTypes' => 'recolours status rows an earlier version seeded; a fresh install seeds them in their board colour',
 		'RenameDutchDeadlineColumns' => 'renames columns over existing rows',
 		'RenameDutchDirectionValues' => 'rewrites values in existing rows',

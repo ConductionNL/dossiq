@@ -4,14 +4,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -84,7 +84,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -94,6 +93,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -236,14 +272,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -285,6 +321,18 @@
                     "roleType": "initiator",
                     "name": "Klaas"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -293,14 +341,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -380,7 +428,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -390,6 +437,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -557,14 +641,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -609,6 +693,18 @@
                     "name": "Klaas",
                     "id": "role-2"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -617,14 +713,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -683,7 +779,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -693,6 +788,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -795,14 +927,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -853,6 +985,18 @@
                     "name": "Piet",
                     "id": "new-3"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -861,14 +1005,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [],
             "refused": [],
@@ -908,7 +1052,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -918,6 +1061,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -992,14 +1172,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -1050,6 +1230,18 @@
                     "name": "Klaas",
                     "id": "new-3"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -1058,14 +1250,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -1124,7 +1316,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -1134,6 +1325,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -1237,14 +1465,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -1294,6 +1522,18 @@
                     "roleType": "belanghebbende",
                     "name": "Piet",
                     "id": "new-3"
+                }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
                 }
             }
         }
@@ -1607,14 +1847,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -1662,7 +1902,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -1672,6 +1911,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -1761,14 +2037,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -1813,6 +2089,18 @@
                     "roleType": "initiator",
                     "name": "Klaas"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -1821,14 +2109,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -1882,7 +2170,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -1892,6 +2179,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -1981,14 +2305,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -2033,6 +2357,18 @@
                     "roleType": "initiator",
                     "name": "Klaas"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -2041,14 +2377,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [],
             "refused": [
@@ -2094,7 +2430,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -2104,6 +2439,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -2165,14 +2537,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -2216,6 +2588,18 @@
                     "case": "case-1",
                     "roleType": "initiator",
                     "name": "Klaas"
+                }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
                 }
             }
         }
@@ -2413,14 +2797,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -2468,7 +2852,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -2478,6 +2861,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -2567,14 +2987,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -2618,6 +3038,18 @@
                     "case": "case-1",
                     "roleType": "initiator",
                     "name": "Klaas"
+                }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
                 }
             }
         }
@@ -2723,14 +3155,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -2778,7 +3210,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -2788,6 +3219,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -2880,14 +3348,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -2931,6 +3399,18 @@
                     "case": "case-1",
                     "roleType": "initiator",
                     "name": "Klaas"
+                }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
                 }
             }
         }
@@ -3131,14 +3611,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -3186,7 +3666,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -3196,6 +3675,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -3285,14 +3801,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -3337,6 +3853,18 @@
                     "roleType": "initiator",
                     "name": "Klaas"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -3345,14 +3873,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -3400,7 +3928,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -3410,6 +3937,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -3496,14 +4060,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -3548,6 +4112,18 @@
                     "roleType": "initiator",
                     "name": "Klaas"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -3556,7 +4132,6 @@
             "case": {
                 "title": "Split from Kaal",
                 "caseType": "  ",
-                "status": "",
                 "assignedGroup": "",
                 "assignee": "",
                 "impact": "medium",
@@ -3603,7 +4178,6 @@
                     "object": {
                         "title": "Split from Kaal",
                         "caseType": "  ",
-                        "status": "",
                         "assignedGroup": "",
                         "assignee": "",
                         "impact": "medium",
@@ -3692,7 +4266,6 @@
                 "new-2": {
                     "title": "Split from Kaal",
                     "caseType": "  ",
-                    "status": "",
                     "assignedGroup": "",
                     "assignee": "",
                     "impact": "medium",
@@ -3752,7 +4325,6 @@
             "case": {
                 "title": "Split from ",
                 "caseType": "",
-                "status": "",
                 "assignedGroup": "",
                 "assignee": "",
                 "impact": "medium",
@@ -3799,7 +4371,6 @@
                     "object": {
                         "title": "Split from ",
                         "caseType": "",
-                        "status": "",
                         "assignedGroup": "",
                         "assignee": "",
                         "impact": "medium",
@@ -3884,7 +4455,6 @@
                 "new-2": {
                     "title": "Split from ",
                     "caseType": "",
-                    "status": "",
                     "assignedGroup": "",
                     "assignee": "",
                     "impact": "medium",
@@ -3944,14 +4514,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -3999,7 +4569,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -4009,6 +4578,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -4098,14 +4704,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -4149,6 +4755,18 @@
                     "case": "case-1",
                     "roleType": "initiator",
                     "name": "Klaas"
+                }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
                 }
             }
         }
@@ -4407,14 +5025,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -4462,7 +5080,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -4472,6 +5089,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -4571,14 +5225,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -4623,6 +5277,18 @@
                     "roleType": "initiator",
                     "name": "Klaas"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -4631,14 +5297,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -4697,7 +5363,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -4707,6 +5372,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -4806,14 +5508,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -4857,6 +5559,18 @@
                     "case": "case-1",
                     "roleType": "initiator",
                     "name": "Klaas"
+                }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
                 }
             }
         }
@@ -5001,14 +5715,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -5056,7 +5770,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -5066,6 +5779,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -5190,14 +5940,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -5238,6 +5988,18 @@
                     "case": "case-1",
                     "roleType": "initiator",
                     "name": "Klaas"
+                }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
                 }
             }
         }
@@ -5284,7 +6046,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -5408,7 +6169,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -5553,7 +6313,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -5563,6 +6322,36 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "x",
+                        "identifier": "  ",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -5711,6 +6500,18 @@
                     "name": "Piet",
                     "id": "new-3"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -5766,7 +6567,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -5776,6 +6576,36 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "id": "new-js",
+                        "identifier": "ZAAK-9",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-js",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -5905,6 +6735,18 @@
                     "roleType": "initiator",
                     "name": "Klaas"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-js",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -5913,14 +6755,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -5968,7 +6810,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -5978,6 +6819,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -6067,14 +6945,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -6119,6 +6997,18 @@
                     "roleType": "initiator",
                     "name": "Klaas"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -6127,14 +7017,14 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "s-1",
                 "assignedGroup": "team",
                 "assignee": "anna",
                 "impact": "medium",
                 "urgency": "high",
                 "splitFrom": "case-1",
                 "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                "id": "new-2"
+                "id": "new-2",
+                "status": "s-1"
             },
             "moved": [
                 {
@@ -6193,7 +7083,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "s-1",
                         "assignedGroup": "team",
                         "assignee": "anna",
                         "impact": "medium",
@@ -6203,6 +7092,43 @@
                     },
                     "register": "dossiq",
                     "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "title": "De tweede",
+                        "caseType": "ct-1",
+                        "assignedGroup": "team",
+                        "assignee": "anna",
+                        "impact": "medium",
+                        "urgency": "high",
+                        "splitFrom": "case-1",
+                        "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
+                        "id": "new-2",
+                        "status": "s-1"
+                    },
+                    "register": "dossiq",
+                    "schema": "case",
+                    "uuid": null
+                }
+            ],
+            [
+                "save",
+                {
+                    "object": {
+                        "case": "new-2",
+                        "statusType": "s-1",
+                        "transitionLabel": "Split from ZAAK-1",
+                        "evaluatedGuards": [],
+                        "dispatchedActions": [],
+                        "noWorkflowTemplate": true,
+                        "actor": "jan"
+                    },
+                    "register": "dossiq",
+                    "schema": "statusRecord",
                     "uuid": null
                 }
             ],
@@ -6334,14 +7260,14 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "s-1",
                     "assignedGroup": "team",
                     "assignee": "anna",
                     "impact": "medium",
                     "urgency": "high",
                     "splitFrom": "case-1",
                     "relatedCases": "[{\"caseId\":\"case-1\",\"aardRelatie\":\"vervolg\",\"toelichting\":\"Split from this case by jan\"}]",
-                    "id": "new-2"
+                    "id": "new-2",
+                    "status": "s-1"
                 }
             },
             "caseDocument": {
@@ -6386,6 +7312,18 @@
                     "roleType": "initiator",
                     "name": "Klaas"
                 }
+            },
+            "statusRecord": {
+                "new-1": {
+                    "case": "new-2",
+                    "statusType": "s-1",
+                    "transitionLabel": "Split from ZAAK-1",
+                    "evaluatedGuards": [],
+                    "dispatchedActions": [],
+                    "noWorkflowTemplate": true,
+                    "actor": "jan",
+                    "id": "new-1"
+                }
             }
         }
     },
@@ -6394,7 +7332,6 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "",
                 "assignedGroup": "",
                 "assignee": "",
                 "impact": "medium",
@@ -6467,7 +7404,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "",
                         "assignedGroup": "",
                         "assignee": "",
                         "impact": "medium",
@@ -6593,7 +7529,6 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "",
                     "assignedGroup": "",
                     "assignee": "",
                     "impact": "medium",
@@ -6653,7 +7588,6 @@
             "case": {
                 "title": "De tweede",
                 "caseType": "ct-1",
-                "status": "",
                 "assignedGroup": "",
                 "assignee": "",
                 "impact": "medium",
@@ -6708,7 +7642,6 @@
                     "object": {
                         "title": "De tweede",
                         "caseType": "ct-1",
-                        "status": "",
                         "assignedGroup": "",
                         "assignee": "",
                         "impact": "medium",
@@ -6795,7 +7728,6 @@
                 "new-2": {
                     "title": "De tweede",
                     "caseType": "ct-1",
-                    "status": "",
                     "assignedGroup": "",
                     "assignee": "",
                     "impact": "medium",
