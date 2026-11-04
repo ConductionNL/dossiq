@@ -11,7 +11,7 @@ retrofit_extensions:
 
 The admin settings page provides a Nextcloud admin panel for configuring Dossiq. Administrators manage case types and all their related type definitions: statuses, results, roles, properties, documents, and decisions. The case type system is the behavioral engine of Dossiq -- every aspect of how a case behaves (allowed statuses, deadlines, required fields, archival rules) is defined here. The admin settings UI follows a list-detail pattern: a case type list on the main page, and a tabbed detail/edit view per case type.
 
-**Feature tiers**: MVP (admin page registration, access control, case type list, case type CRUD, status type CRUD with reorder, default case type, publish action, general tab); V1 (results tab, roles tab, properties tab, documents tab, decisions tab, case type versioning, import/export)
+**Feature tiers**: MVP (admin page registration, access control, case type list, case type CRUD, status type CRUD with reorder, publish action, general tab); V1 (results tab, roles tab, properties tab, documents tab, decisions tab, case type versioning, import/export)
 
 **Competitive context**: Dimpact ZAC provides per-zaaktype configuration with parameters, mail templates, reference tables, and an inrichtingscheck validation system. xxllnc Zaken supports case type versioning with draft/active states and template-based folder hierarchies. Flowable provides visual CMMN/BPMN modelers for case type design. Dossiq takes a simpler, form-based approach that is more accessible to non-technical administrators while maintaining ZGW-compliant data structures.
 
@@ -108,7 +108,6 @@ The admin settings MUST display a list of all case types with key metadata, foll
   - Count of linked result types (e.g., "3 result types")
   - Published/Draft badge
   - Validity period (e.g., "Jan 2026 -- Dec 2027" or "Jan 2026 -- (no end)")
-- AND the default case type MUST be marked with a star icon or "(default)" label
 
 #### Scenario: Draft types visually distinguished
 
@@ -309,27 +308,20 @@ The Statuses tab MUST allow managing the ordered list of status types for a case
 - AND the admin MUST be able to enter text such as "Uw zaak is in behandeling genomen"
 - AND when the toggle is OFF, the notification text field MUST be hidden
 
-### Requirement: Default Case Type Selection [MVP]
+### Requirement: A new case starts with no case type chosen [MVP]
 
-The admin MUST be able to designate one case type as the default, persisted via the `SettingsService` config key `default_case_type`.
+The admin pages MUST NOT offer a default case type, as boards DqZaaktypen and DqNieuweZaak draw it. A person creating a case MUST choose its case type.
 
-@e2e exclude Default case type selection requires published case types to exist; data-dependent interaction not testable without pre-seeded case types.
+@e2e exclude The list needs published case types to exist; data-dependent interaction not testable without pre-seeded case types.
 
-#### Scenario: Set default case type
-- GIVEN case types "Omgevingsvergunning" (default), "Subsidieaanvraag", "Klacht behandeling" exist
-- WHEN the admin clicks the default indicator (star/checkbox) on "Subsidieaanvraag"
-- THEN "Subsidieaanvraag" MUST become the default case type
-- AND "Omgevingsvergunning" MUST lose its default status (only one default at a time)
-- AND the star/indicator MUST move to "Subsidieaanvraag"
+#### Scenario: The case type list marks no default
+- GIVEN published case types "Omgevingsvergunning", "Subsidieaanvraag" and "Klacht behandeling"
+- WHEN the admin opens the case type list
+- THEN no row MUST carry a default marker
+- AND no row action MUST set a default
 
-#### Scenario: Default case type must be published
-- GIVEN a draft case type "Bezwaarschrift"
-- WHEN the admin tries to set it as default
-- THEN the system MUST display an error: "Only published case types can be set as default"
-- AND the default MUST NOT change
-
-#### Scenario: No default set
-- GIVEN no case type is marked as default
+#### Scenario: New case asks for a case type
+- GIVEN published case types exist
 - WHEN a user creates a new case
 - THEN the case creation form MUST require explicit case type selection (no pre-selection)
 
@@ -1470,7 +1462,6 @@ The term definitions SHALL be listed as a table with the columns basis, duration
 - General tab (`src/views/settings/tabs/GeneralTab.vue`) with fields: title, description, purpose, trigger, subject, processing deadline, service target, extension allowed/period, suspension allowed, origin, confidentiality, publication required/text, valid from/until, draft/published status.
 - Statuses tab (`src/views/settings/tabs/StatusesTab.vue`) with ordered list, drag-and-drop reorder, inline editing, add/delete, isFinal checkbox, notifyInitiator toggle with notification text field.
 - Case type CRUD via OpenRegister object store (`src/store/modules/object.js` using `createObjectStore` from `@conduction/nextcloud-vue`).
-- Default case type selection persisted via `SettingsService` (`lib/Service/SettingsService.php`, config key `default_case_type`).
 - Settings controller (`lib/Controller/SettingsController.php`) with index/create/load endpoints.
 - Register configuration auto-import from `dossiq_register.json` (`lib/Service/SettingsService.php::loadConfiguration`).
 - Case type admin orchestrator component (`src/views/settings/CaseTypeAdmin.vue`) managing list/detail view switching.

@@ -1,0 +1,11 @@
+[
+    {
+        "executeQuery": "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+        "params": [
+            "dossiq%"
+        ]
+    },
+    {
+        "output": "RenameDutchColumns: no dossiq shard tables on this install; nothing to do."
+    }
+]

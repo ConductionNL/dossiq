@@ -1,4 +1,4 @@
 # Screens
 
-- DqFlow https://identity.conduction.nl/screens/board?id=dossiq/DqFlow
-- DqZaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktype
+- dossiq/DqFlow flow van een zaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqFlow
+- dossiq/DqZaaktype zaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktype

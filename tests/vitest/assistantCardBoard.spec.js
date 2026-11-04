@@ -29,6 +29,20 @@ describe('the assistant card', () => {
 		})
 	})
 
+	it('opens the handler\'s conversation about this case, with its pending proposal', () => {
+		expect(chat.content.openSubjectSession).toBe(true)
+	})
+
+	it('words the proposal card as the board: a prefix before the tool, carry out or not', () => {
+		expect(chat.content).toMatchObject({
+			approvalTitlePrefix: 'Proposal:',
+			allowLabel: 'Run',
+			denyLabel: 'Don\'t do it',
+		})
+		expect([nl[chat.content.approvalTitlePrefix], nl[chat.content.allowLabel], nl[chat.content.denyLabel]])
+			.toEqual(['Voorstel:', 'Uitvoeren', 'Niet doen'])
+	})
+
 	it('reads as the board in Dutch', () => {
 		expect(nl[chat.title]).toBe('Assistent')
 		expect(nl[chat.content.note]).toBe('De assistent ziet alleen wat u op deze zaak ziet. Is Hermiq er niet, dan staat dit paneel uit.')

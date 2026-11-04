@@ -129,7 +129,36 @@ class RecordImportReferences {
 	}//end caseOfSameNumber()
 
 	/**
+	 * Where a record goes, from the case it already has and the case its number became.
+	 *
+	 * A record without a case joins its number's case, if any. A record with
+	 * a case completes onto it, unless its number became another case: that
+	 * is a conflict, because completing would give one number two cases and
+	 * joining would leave the record's own case behind.
+	 *
+	 * @param string $existing The case the record already has, or ''.
+	 * @param string $numbered The case its number became, or ''.
+	 *
+	 * @return array{existing: string, duplicateOf: string}|array{conflict: string} The placement, or why it conflicts.
+	 *
+	 * @spec openspec/specs/case-record-import/spec.md
+	 */
+	public function placement(string $existing, string $numbered): array {
+		if ($existing === '') {
+			return ['existing' => '', 'duplicateOf' => $numbered];
+		}
+
+		if ($numbered !== '' && $numbered !== $existing) {
+			return ['conflict' => 'The record already has case ' . $existing . ', but its number became case ' . $numbered . ', so it was not imported.'];
+		}
+
+		return ['existing' => $existing, 'duplicateOf' => ''];
+	}//end placement()
+
+	/**
 	 * Remember the case a record's number became, so a later record with it joins that case.
+	 *
+	 * A number keeps the first case it became: a later record never moves it.
 	 *
 	 * @param array<string, mixed>       $import The declaration.
 	 * @param array<string, mixed>       $source The source record.
@@ -142,7 +171,7 @@ class RecordImportReferences {
 	 */
 	public function rememberNumber(array $import, array $source, string $caseId, ?array &$cache): void {
 		$number = $this->numberOf(import: $import, source: $source);
-		if ($number !== '') {
+		if ($number !== '' && isset($cache[$number]) === false) {
 			$cache[$number] = $caseId;
 		}
 	}//end rememberNumber()

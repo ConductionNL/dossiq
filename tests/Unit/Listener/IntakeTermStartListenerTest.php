@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\ReceiptClock;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
@@ -63,15 +64,16 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Listener\IntakeTermStartListener
  * @covers \OCA\Dossiq\Service\Intake\CaseReceiptDates
+ * @covers \OCA\Dossiq\Listener\ReceiptClock
  * @uses   \OCA\Dossiq\Service\Intake\IntakeTermStart
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses   \OCA\Dossiq\Portal\CitizenManifest
  * @uses   \OCA\Dossiq\Portal\PortalConversation
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  *
  * @spec openspec/specs/burger-notifications/spec.md
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md
- * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class IntakeTermStartListenerTest extends TestCase {
 
@@ -616,9 +618,11 @@ class IntakeTermStartListenerTest extends TestCase {
 			slugResolver: $slugs,
 			settingsService: $settings,
 			logger: $this->createMock(LoggerInterface::class),
-			receiptDates: new CaseReceiptDates(intake: $intake, caseTypes: $caseTypes, dates: $dates),
-			receipt: new ReceiptMoment(),
-			time: $time,
+			clock: new ReceiptClock(
+				receiptDates: new CaseReceiptDates(intake: $intake, caseTypes: $caseTypes, dates: $dates),
+				receipt: new ReceiptMoment(),
+				time: $time,
+			),
 		);
 	}//end listener()
 
