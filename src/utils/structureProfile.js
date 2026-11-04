@@ -180,7 +180,7 @@ function mergePatch(list, item, change) {
  * @param {unknown} item A list item from a page config.
  * @return {string|undefined} Its name, or undefined when it has none.
  *
- * @spec openspec/specs/dashboard/spec.md#REQ-DASH-025
+ * @spec openspec/changes/archive/2026-10-10-simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-025
  */
 export function overlayItemName(item) {
 	if (typeof item === 'string') {

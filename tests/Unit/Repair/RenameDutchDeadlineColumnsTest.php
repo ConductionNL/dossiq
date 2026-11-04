@@ -44,6 +44,8 @@ use ReflectionMethod;
 
 /**
  * @covers \OCA\Dossiq\Repair\RenameDutchDeadlineColumns
+ * @covers \OCA\Dossiq\Repair\Support\ReadsRegisterShards
+ * @covers \OCA\Dossiq\Repair\Support\ListsOpenRegisterTables
  */
 class RenameDutchDeadlineColumnsTest extends TestCase {
 	// PHPUnit assertions take positional ($actual, $expected) arguments; the

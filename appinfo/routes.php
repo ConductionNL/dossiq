@@ -1032,6 +1032,10 @@ $extra = [
         // schema has no manifest page, so this is the only way in.
     ['name' => 'bezwaarHearing#recordAttendance', 'url' => '/api/bezwaar/hearings/{sessionId}/attendance', 'verb' => 'POST'],
 
+    // The advisory committee's move of an advice request (Awb 7:13). The only
+    // writer DeliberationStartGuard lets into advice-issued or inadmissible.
+    ['name' => 'bezwaarAdviceRequest#transition', 'url' => '/api/bezwaar/advice-requests/{id}/transition', 'verb' => 'POST'],
+
     // The decision on an objection, Awb 7:11. `DecisionService` has held the
     // whole disposition matrix since the bezwaar lifecycle shipped and no
     // route reached any of it, so a jurist could hold the hearing and had
@@ -1143,12 +1147,12 @@ $extra = [
     ['name' => 'termijn#verleng',    'url' => '/api/deadlines/instances/{id}/extend',    'verb' => 'POST'],
     ['name' => 'termijn#voltooi',    'url' => '/api/deadlines/instances/{id}/complete',  'verb' => 'POST'],
         // deprecated alias: /api/deadlines/instances*, remove after the next major.
-    ['name' => 'termijn#createLegacyPath',  'url' => '/api/termijn/instances',             'verb' => 'POST'],
-    ['name' => 'termijn#showLegacyPath',    'url' => '/api/termijn/instances/{id}',        'verb' => 'GET'],
-    ['name' => 'termijn#pauzeLegacyPath',   'url' => '/api/termijn/instances/{id}/pauze',  'verb' => 'POST'],
-    ['name' => 'termijn#hervatLegacyPath',  'url' => '/api/termijn/instances/{id}/hervat', 'verb' => 'POST'],
-    ['name' => 'termijn#verlengLegacyPath', 'url' => '/api/termijn/instances/{id}/verleng', 'verb' => 'POST'],
-    ['name' => 'termijn#voltooiLegacyPath', 'url' => '/api/termijn/instances/{id}/voltooi', 'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#create',  'url' => '/api/termijn/instances',             'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#show',    'url' => '/api/termijn/instances/{id}',        'verb' => 'GET'],
+    ['name' => 'deadlineInstanceLegacyPath#pauze',   'url' => '/api/termijn/instances/{id}/pauze',  'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#hervat',  'url' => '/api/termijn/instances/{id}/hervat', 'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#verleng', 'url' => '/api/termijn/instances/{id}/verleng', 'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#voltooi', 'url' => '/api/termijn/instances/{id}/voltooi', 'verb' => 'POST'],
         // The four clocks on ONE CASE. Addressed by case and not by instance,
         // because a case page holds a case id and there are four instances
         // behind it: a statutory term, a planned end, an internal target and a

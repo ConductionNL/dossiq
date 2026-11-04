@@ -33,6 +33,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @uses \OCA\Dossiq\Service\InternalWriteMarker
  */
 class AdvisoryCommitteeServiceTest extends TestCase {
 	use MakesBezwaarAuditTrail;
@@ -58,6 +59,25 @@ class AdvisoryCommitteeServiceTest extends TestCase {
 			'recommendation' => 'herroepen',
 		]);
 	}
+
+	/**
+	 * A request that does not exist is refused with the not-found code the endpoint answers 404 for.
+	 *
+	 * @return void
+	 */
+	public function testAMissingRequestCarriesTheNotFoundCode(): void {
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+
+		try {
+			$service->transitionAdviceStatus(requestId: 'req-404', newStatus: 'in-deliberation');
+			$this->fail(message: 'a missing request must be refused');
+		} catch (\RuntimeException $missing) {
+			$this->assertSame(
+				expected: [\OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService::NOT_FOUND, 'Advice request not found'],
+				actual: [$missing->getCode(), $missing->getMessage()]
+			);
+		}
+	}//end testAMissingRequestCarriesTheNotFoundCode()
 
 	/**
 	 * The chair's signature is recorded before the status moves (REQ-BAT-003).
@@ -133,5 +153,31 @@ class AdvisoryCommitteeServiceTest extends TestCase {
 		}
 
 		$this->assertSame('assigned', $this->store->row('bacAdviceRequest', 'req-1')['status']);
+	}
+
+	/**
+	 * A panel whose independence cannot be verified does not start deliberating, and the refusal is recorded.
+	 *
+	 * @return void
+	 */
+	public function testAnUnverifiablePanelIsRecordedAndRefused(): void {
+		$reason = 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)';
+		$this->store->seed('bacAdviceRequest', 'req-1', ['bezwaar' => 'bezwaar-1', 'status' => 'assigned', 'panel' => ['member-1']]);
+		$this->independenceVerdict = ['ok' => false, 'member' => null, 'reason' => $reason];
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+
+		try {
+			$service->transitionAdviceStatus(requestId: 'req-1', newStatus: 'in-deliberation');
+			$this->fail(message: 'an unverifiable panel must be refused');
+		} catch (GuardFailedException $refused) {
+			$this->assertStringStartsWith(prefix: 'Panel independence could not be verified', string: $refused->getMessage());
+		}
+
+		$this->assertSame(expected: ['dossiq.bezwaar.independence-check-unverifiable'], actual: $this->trail->actionsOn('req-1'));
+		$this->assertSame(
+			expected: ['conflictingMember' => null, 'reason' => $reason],
+			actual: $this->rowContext(uuid: 'req-1', action: 'dossiq.bezwaar.independence-check-unverifiable')['payload']
+		);
+		$this->assertSame(expected: 'assigned', actual: $this->store->row('bacAdviceRequest', 'req-1')['status']);
 	}
 }

@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\Access\ReadableObjects;
 use OCA\Dossiq\Service\Cases\CaseNextStatus;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -42,12 +43,14 @@ class CaseNextStatusController extends Controller {
 	 *
 	 * @param string         $appName    The app name.
 	 * @param IRequest       $request    The request.
-	 * @param CaseNextStatus $nextStatus Reads the next status.
+	 * @param CaseNextStatus  $nextStatus  Reads the next status.
+	 * @param ReadableObjects $readable    Whether the caller may read the case.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly CaseNextStatus $nextStatus,
+		private readonly ReadableObjects $readable,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -63,7 +66,15 @@ class CaseNextStatusController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(string $caseId): JSONResponse {
+		if ($this->readable->hasCaller() === false) {
+			return new JSONResponse(['error' => 'Sign in to read this case.'], Http::STATUS_UNAUTHORIZED);
+		}
+
 		try {
+			if ($this->readable->findsAsCaller(schema: 'case', id: $caseId) === false) {
+				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
+			}
+
 			$next = $this->nextStatus->forCase(caseId: trim($caseId));
 		} catch (Throwable) {
 			return new JSONResponse(['error' => 'The case could not be read. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);

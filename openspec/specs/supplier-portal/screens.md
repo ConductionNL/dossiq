@@ -1,3 +1,3 @@
 # Screens
 
-- No screen: no screen: supplier portal screens belong to the portaliq row
+- portaliq/PtLeverancier leveranciersportaal: facturen, aanbestedingen en contracten https://identity.conduction.nl/screens/board?id=portaliq/PtLeverancier

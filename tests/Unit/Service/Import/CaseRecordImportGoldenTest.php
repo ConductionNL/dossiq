@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Import;
 
+use OCA\Dossiq\Service\Import\RecordImportSteps;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\Import\CaseRecordImport;
 use OCA\Dossiq\Service\Import\RecordCaseMapping;
@@ -43,6 +44,8 @@ use RuntimeException;
  * Golden test for CaseRecordImport.
  *
  * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
+ * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
+ * @uses \OCA\Dossiq\Service\Import\RecordImportReferences
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Import\RecordImportStore
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -328,9 +331,11 @@ class CaseRecordImportGoldenTest extends TestCase {
 		$import = new CaseRecordImport(
 			settingsService: $settings,
 			appManager: $apps,
-			mapping: $mapping,
-			term: $term,
-			store: $this->store(),
+			steps: new RecordImportSteps(
+				mapping: $mapping,
+				term: $term,
+				store: $this->store(),
+			),
 			references: $this->references(),
 		);
 
