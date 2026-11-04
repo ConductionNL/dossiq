@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.172.0",
+	"version": "2.173.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -3751,6 +3751,11 @@
 					"type": "string",
 					"minLength": 1,
 					"description": "Nextcloud app id that must be installed and enabled for the guarded element to show. A PRECONDITION rather than a fourth mode: it is checked before anything else, and on its own it is the whole condition. Combined with endpoint/source/field it gates that mode too, so both must hold. It exists because the menu's `visibleIf` already spoke this word and `visibleWhen` did not, so the same manifest vocabulary meant two different things in two places. Use it on an action that writes into a sibling app, so an install without that app shows no button rather than a form that saves nowhere."
+				},
+				"readerGroups": {
+					"type": "array",
+					"items": { "type": "string", "minLength": 1 },
+					"description": "Nextcloud group ids; the reader must be in at least one of them (2.173.0, visible-when-reader-groups). A PRECONDITION like `appInstalled`: on its own it is the whole condition, next to endpoint/source/field both must hold. Administrators are the `admin` group, so list it to include them. While the reader's groups load, and when the lookup fails, it reads false, so the element stays hidden. It hides a control and is never an authorization decision: the endpoint behind the element keeps its own check."
 				},
 				"endpoint": {
 					"type": "string",

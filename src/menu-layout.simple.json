@@ -594,7 +594,10 @@
 								"type": "stat",
 								"title": "Due this week",
 								"content": {
-									"caption": "{count} ends today",
+									"caption": {
+										"singular": "{count} ends today",
+										"plural": "{count} end today"
+									},
 									"captionSource": {
 										"register": "dossiq",
 										"schema": "case",

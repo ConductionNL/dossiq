@@ -20,6 +20,7 @@ const page = manifest.pages.find((entry) => entry.id === 'BezwaarAdviceRequestDe
 const actions = page.config.headerActions || []
 const byId = (id) => actions.find((action) => action.id === id)
 const TRANSITION_URL = '/apps/dossiq/api/bezwaar/advice-requests/@objectId/transition'
+const COMMITTEE = { readerGroups: ['bezwaarcommissie', 'admin'] }
 
 describe('BezwaarAdviceRequestDetail status actions', () => {
 	it('declares no lifecycleActions, so nothing writes status straight to OpenRegister', () => {
@@ -42,21 +43,27 @@ describe('BezwaarAdviceRequestDetail status actions', () => {
 		const action = byId('start-deliberation')
 		expect(action.payload).toEqual({ status: 'in-deliberation' })
 		expect(action.confirm).toBeUndefined()
-		expect(action.visibleWhen).toEqual({ field: 'status', op: 'eq', value: 'assigned' })
+		expect(action.visibleWhen).toEqual({ ...COMMITTEE, field: 'status', op: 'eq', value: 'assigned' })
 	})
 
 	it('issues the advice from deliberation, after a confirmation', () => {
 		const action = byId('issue-advice')
 		expect(action.payload).toEqual({ status: 'advice-issued' })
 		expect(action.confirm).toBe(true)
-		expect(action.visibleWhen).toEqual({ field: 'status', op: 'eq', value: 'in-deliberation' })
+		expect(action.visibleWhen).toEqual({ ...COMMITTEE, field: 'status', op: 'eq', value: 'in-deliberation' })
 	})
 
 	it('declares the objection inadmissible from deliberation, after a confirmation', () => {
 		const action = byId('declare-inadmissible')
 		expect(action.payload).toEqual({ status: 'inadmissible' })
 		expect(action.confirm).toBe(true)
-		expect(action.visibleWhen).toEqual({ field: 'status', op: 'eq', value: 'in-deliberation' })
+		expect(action.visibleWhen).toEqual({ ...COMMITTEE, field: 'status', op: 'eq', value: 'in-deliberation' })
+	})
+
+	it('shows each action only to the bezwaarcommissie and admin groups, as the endpoint allows', () => {
+		for (const action of actions) {
+			expect(action.visibleWhen.readerGroups).toEqual(COMMITTEE.readerGroups)
+		}
 	})
 
 	it('refreshes the page after a transition, so the new status shows', () => {
