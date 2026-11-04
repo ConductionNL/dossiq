@@ -182,8 +182,6 @@ class PersonReachability {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @throws Throwable When the register cannot be read.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Whether the read needs the BSN is the one thing that differs.
 	 */
 	private function rows(string $schema, array $filters, bool $trusted): array {
 		$objectService = $this->settingsService->getObjectService();

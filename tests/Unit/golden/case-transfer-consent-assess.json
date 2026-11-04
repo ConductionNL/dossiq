@@ -275,9 +275,9 @@
     },
     "internal move, case missing": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -302,13 +302,22 @@
                 "case"
             ]
         ],
-        "logs": []
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-404",
+                    "exception": "Case not found"
+                }
+            ]
+        ]
     },
     "internal move, case without a case type": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -333,13 +342,22 @@
                 "case"
             ]
         ],
-        "logs": []
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "case-1",
+                    "exception": "Case has no case type"
+                }
+            ]
+        ]
     },
     "internal move, case read throws": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -377,9 +395,9 @@
     },
     "internal move, no store": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -403,9 +421,9 @@
     },
     "internal move, no register": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -433,9 +451,9 @@
     },
     "internal move, no case type schema": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
@@ -477,16 +495,25 @@
     },
     "internal move, empty case id": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
+            "allowed": false,
+            "rule": "consent-unchecked",
+            "sentence": "Consent could not be checked, so the case was not handed on.",
             "consent": null,
             "scope": [],
             "until": "",
             "crossesOrganisation": false
         },
         "calls": [],
-        "logs": []
+        "logs": [
+            [
+                "warning",
+                "Dossiq consent: the case type could not be read for the internal-move rule",
+                {
+                    "caseId": "  ",
+                    "exception": "No case id"
+                }
+            ]
+        ]
     },
     "empty source crosses": {
         "verdict": {
@@ -937,32 +964,14 @@
         ],
         "logs": []
     },
-    "withdrawn as a string is not withdrawn": {
+    "withdrawn as a string is withdrawn": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
-            "consent": {
-                "withdrawn": "true",
-                "id": "consent-1",
-                "caseId": "case-1",
-                "grantedDate": "2026-01-10",
-                "validTo": "2026-12-31",
-                "recipientParties": [
-                    "zorgpartner-bv"
-                ],
-                "tegegevens": [
-                    "ondersteuningsplan",
-                    " ",
-                    "beschikking "
-                ],
-                "scope": "Alleen het ondersteuningsplan"
-            },
-            "scope": [
-                "ondersteuningsplan",
-                "beschikking"
-            ],
-            "until": "2026-12-31",
+            "allowed": false,
+            "rule": "consent-withdrawn",
+            "sentence": "The consent for zorgpartner-bv was withdrawn, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
             "crossesOrganisation": true
         },
         "calls": [
@@ -1195,32 +1204,14 @@
         ],
         "logs": []
     },
-    "unreadable dates cover": {
+    "unreadable dates do not cover": {
         "verdict": {
-            "allowed": true,
-            "rule": "",
-            "sentence": "",
-            "consent": {
-                "grantedDate": "soon",
-                "validTo": "later",
-                "id": "consent-1",
-                "caseId": "case-1",
-                "withdrawn": false,
-                "recipientParties": [
-                    "zorgpartner-bv"
-                ],
-                "tegegevens": [
-                    "ondersteuningsplan",
-                    " ",
-                    "beschikking "
-                ],
-                "scope": "Alleen het ondersteuningsplan"
-            },
-            "scope": [
-                "ondersteuningsplan",
-                "beschikking"
-            ],
-            "until": "later",
+            "allowed": false,
+            "rule": "consent-missing",
+            "sentence": "There is no recorded consent for zorgpartner-bv covering today, so the case was not handed on.",
+            "consent": null,
+            "scope": [],
+            "until": "",
             "crossesOrganisation": true
         },
         "calls": [

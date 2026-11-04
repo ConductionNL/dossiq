@@ -287,11 +287,13 @@
 				"@self": {
 					"register": "dossiq",
 					"schema": "caseType",
-					"slug": "voorbeeld-avg-verzoek"
+					"slug": "voorbeeld-avg-verzoek",
+					"version": "1.0.1"
 				},
 				"title": "AVG-verzoek",
 				"colour": "purple",
 				"icon": "ShieldAccountOutline",
+				"initialStatus": "@ref:statusType:voorbeeld-avg-status-1",
 				"description": "Behandeling van een verzoek van een betrokkene onder de AVG.",
 				"processingDeadline": "P1M",
 				"confidentiality": "vertrouwelijk",

@@ -287,6 +287,16 @@ describe('deadline reports', () => {
 		}
 	})
 
+	it('spaces each report card 12px and sets its summary as one line, as board DqTermijnen does', () => {
+		// The board draws form, table, summary line and figure 12px apart; the
+		// annual total carries its count beside it, both lines unpadded.
+		for (const id of ['deadline-report-quarterly-card', 'deadline-report-annual-card']) {
+			expect(widget('TermijnDashboard', id).content).toMatchObject({ dividers: false, gap: 12 })
+		}
+		expect(widget('TermijnDashboard', 'deadline-report-quarterly-summary').content.density).toBe('stacked')
+		expect(widget('TermijnDashboard', 'deadline-report-annual-summary').content).toMatchObject({ density: 'stacked', metaBeside: true })
+	})
+
 	it('names the week and the quarter\'s decided terms, as board DqTermijnen does', () => {
 		// "Week 41 · alle teams" (nextcloud-vue description-today-week) and
 		// "Kwartaal 3 van 2026: 72 zaken beslist, 67 binnen ... (93 %)." under

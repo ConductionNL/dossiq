@@ -1,0 +1,14 @@
+{
+    "status": 404,
+    "data": {
+        "message": "TermijnInstance not found: inst-1"
+    },
+    "calls": [
+        {
+            "call": "term::getTermijnInstance",
+            "args": [
+                "inst-1"
+            ]
+        }
+    ]
+}

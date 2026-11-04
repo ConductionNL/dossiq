@@ -281,4 +281,175 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 			);
 		}
 	}//end testMissingSchemasRefuseThePanel()
+
+	/**
+	 * Without an object store the panel is refused as unverifiable, not cleared.
+	 *
+	 * @return void
+	 */
+	public function testNoObjectStoreRefusesThePanel(): void {
+		$observed = $this->observe(world: ['noStore' => true, 'objects' => [], 'objections' => []]);
+
+		$this->assertSame(
+			expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+			actual: $observed['verdict']
+		);
+		$this->assertSame(expected: 'warning', actual: ($observed['logs'][0][0] ?? null), message: 'the reason is logged');
+	}//end testNoObjectStoreRefusesThePanel()
+
+	/**
+	 * A request without an objection is refused as unverifiable, not cleared.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyObjectionRefusesThePanel(): void {
+		$objects = ['decision' => ['dec-1' => ['id' => 'dec-1', 'createdBy' => 'alice']]];
+		$observed = $this->observe(world: ['objectionId' => '', 'objects' => $objects, 'objections' => []]);
+
+		$this->assertSame(
+			expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+			actual: $observed['verdict']
+		);
+		$this->assertSame(expected: [], actual: $observed['calls'], message: 'an empty objection reads nothing');
+	}//end testAnEmptyObjectionRefusesThePanel()
+
+	/**
+	 * A contested decision without a recorded author is refused as unverifiable, not cleared.
+	 *
+	 * @return void
+	 */
+	public function testADecisionWithoutAnAuthorRefusesThePanel(): void {
+		$objects = ['bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']], 'decision' => ['dec-1' => ['id' => 'dec-1']]];
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		foreach (['a panel' => ['alice', 'bob'], 'a blank member on the panel' => ['', 'alice']] as $name => $panel) {
+			$observed = $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => $panel]);
+			$this->assertSame(
+				expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+				actual: $observed['verdict'],
+				message: $name
+			);
+		}
+	}//end testADecisionWithoutAnAuthorRefusesThePanel()
+
+	/**
+	 * A contested decision that cannot be established is refused as unverifiable, not cleared.
+	 *
+	 * @return void
+	 */
+	public function testAnUnestablishedContestedDecisionRefusesThePanel(): void {
+		$objects = [
+			'bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']],
+			'decision' => ['dec-1' => ['id' => 'dec-1', 'createdBy' => 'alice']],
+		];
+		$worlds = [
+			'no objection record for the case' => [],
+			'an objection without a contested decision' => [['id' => 'obj-1', 'case' => 'case-1']],
+			'a contested decision that does not resolve' => [['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-404']],
+		];
+		foreach ($worlds as $name => $objections) {
+			$observed = $this->observe(world: ['objects' => $objects, 'objections' => $objections, 'panel' => ['alice', 'bob']]);
+			$this->assertSame(
+				expected: ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'],
+				actual: $observed['verdict'],
+				message: $name
+			);
+		}
+	}//end testAnUnestablishedContestedDecisionRefusesThePanel()
+
+	/**
+	 * Every recorded author counts: decidedBy, the owner, createdBy and steller each make a panel member a conflict.
+	 *
+	 * @return void
+	 */
+	public function testEveryRecordedAuthorIsAConflict(): void {
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		$verdict = function (array $decision) use ($objection): array {
+			$objects = ['bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']], 'decision' => ['dec-1' => ['id' => 'dec-1'] + $decision]];
+			return $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => ['alice', 'bob']])['verdict'];
+		};
+
+		$this->assertTrue(condition: $verdict(['decidedBy' => 'eve'])['ok'], message: 'only decidedBy, not on the panel: independent');
+		$this->assertSame(expected: 'alice', actual: $verdict(['decidedBy' => 'alice'])['member'], message: 'decidedBy on the panel');
+		$hidden = $verdict(['decidedBy' => 'alice', '@self' => ['owner' => '']]);
+		$this->assertSame(expected: 'alice', actual: $hidden['member'], message: 'an empty owner does not hide decidedBy');
+		$owner = $verdict(['decidedBy' => 'eve', '@self' => ['owner' => 'bob']]);
+		$this->assertSame(expected: 'bob', actual: $owner['member'], message: 'an owner on the panel who is not decidedBy');
+		$createdBy = $verdict(['decidedBy' => 'eve', '@self' => ['owner' => 'carol'], 'createdBy' => 'bob']);
+		$this->assertSame(expected: 'bob', actual: $createdBy['member'], message: 'createdBy on the panel');
+		$steller = $verdict(['decidedBy' => 'eve', '@self' => ['owner' => 'carol'], 'createdBy' => 'dave', 'steller' => 'bob']);
+		$this->assertSame(expected: 'bob', actual: $steller['member'], message: 'steller on the panel');
+		$clear = $verdict(['decidedBy' => 'eve', '@self' => ['owner' => 'carol'], 'createdBy' => 'dave', 'steller' => 'frank']);
+		$this->assertTrue(condition: $clear['ok'], message: 'no recorded author on the panel: independent');
+
+		$objects = [
+			'bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']],
+			'decision' => ['dec-1' => ['id' => 'dec-1', '@self' => ['owner' => ''], 'decidedBy' => 'eve']],
+		];
+		$blank = $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => ['', 'alice']])['verdict'];
+		$this->assertTrue(condition: $blank['ok'], message: 'an empty owner is no author, so a blank panel member is not matched');
+		$emptyOnly = $verdict(['@self' => ['owner' => '']]);
+		$this->assertSame(expected: [false, null], actual: [$emptyOnly['ok'], $emptyOnly['member']], message: 'only an empty owner: unverifiable');
+	}//end testEveryRecordedAuthorIsAConflict()
+
+	/**
+	 * Authors and panel members are compared trimmed; blanks are neither an author nor a member.
+	 *
+	 * @return void
+	 */
+	public function testAuthorsAndMembersAreComparedTrimmed(): void {
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		$verdict = function (array $decision, array $panel) use ($objection): array {
+			$objects = ['bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']], 'decision' => ['dec-1' => ['id' => 'dec-1'] + $decision]];
+			return $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => $panel])['verdict'];
+		};
+		$unverifiable = ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'];
+
+		$this->assertSame(expected: $unverifiable, actual: $verdict(['decidedBy' => ' '], ['alice', 'bob']), message: 'a blank author is no author');
+		$this->assertSame(expected: 'alice', actual: $verdict(['decidedBy' => 'alice '], ['alice', 'bob'])['member'], message: 'a padded author');
+		$this->assertSame(expected: 'alice', actual: $verdict(['decidedBy' => 'alice'], [' alice', 'bob'])['member'], message: 'a padded member');
+		$blankPair = $verdict(['decidedBy' => ' '], [' ', 'bob']);
+		$this->assertSame(expected: $unverifiable, actual: $blankPair, message: 'a blank author does not match a blank member');
+		$this->assertSame(expected: $unverifiable, actual: $verdict(['decidedBy' => 'alice'], ['', ' ']), message: 'a blank-only panel');
+	}//end testAuthorsAndMembersAreComparedTrimmed()
+
+	/**
+	 * Unicode whitespace is trimmed too, and a panel entry that is not a UID fails closed.
+	 *
+	 * @return void
+	 */
+	public function testUnicodeWhitespaceIsTrimmedAndOddEntriesFailClosed(): void {
+		$objection = ['id' => 'obj-1', 'case' => 'case-1', 'contestedDecision' => 'dec-1'];
+		$verdict = function (array $decision, array $panel) use ($objection): array {
+			$objects = ['bezwaar' => ['bz-1' => ['id' => 'bz-1', 'case' => 'case-1']], 'decision' => ['dec-1' => ['id' => 'dec-1'] + $decision]];
+			return $this->observe(world: ['objects' => $objects, 'objections' => [$objection], 'panel' => $panel])['verdict'];
+		};
+		$unverifiable = ['ok' => false, 'member' => null, 'reason' => 'Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)'];
+		$nbsp = "\u{00A0}";
+
+		$this->assertSame(
+			expected: $unverifiable,
+			actual: $verdict(['decidedBy' => $nbsp], ['alice', 'bob']),
+			message: 'a non-breaking space is no author'
+		);
+		$this->assertSame(
+			expected: 'alice',
+			actual: $verdict(['decidedBy' => 'alice'.$nbsp], ['alice', 'bob'])['member'],
+			message: 'an author padded with a non-breaking space'
+		);
+		$this->assertSame(
+			expected: 'alice',
+			actual: $verdict(['decidedBy' => 'alice'], ['alice'.$nbsp, 'bob'])['member'],
+			message: 'a member padded with a non-breaking space'
+		);
+		$this->assertSame(
+			expected: $unverifiable,
+			actual: $verdict(['decidedBy' => 'eve'], [['alice'], 'bob']),
+			message: 'a panel entry that is not a UID'
+		);
+		$this->assertSame(
+			expected: 'alice',
+			actual: $verdict(['decidedBy' => 'alice'], [null, 'alice'])['member'],
+			message: 'a null entry is a blank, not an odd entry'
+		);
+	}//end testUnicodeWhitespaceIsTrimmedAndOddEntriesFailClosed()
 }//end class

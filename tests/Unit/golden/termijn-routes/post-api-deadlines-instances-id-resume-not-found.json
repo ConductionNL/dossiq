@@ -1,0 +1,13 @@
+{
+    "status": 200,
+    "data": [],
+    "calls": [
+        {
+            "call": "pause::resumeAfterPauze",
+            "args": [
+                "inst-1",
+                null
+            ]
+        }
+    ]
+}

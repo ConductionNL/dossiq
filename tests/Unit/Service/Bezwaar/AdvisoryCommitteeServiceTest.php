@@ -33,6 +33,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @uses \OCA\Dossiq\Service\InternalWriteMarker
  */
 class AdvisoryCommitteeServiceTest extends TestCase {
 	use MakesBezwaarAuditTrail;
@@ -58,6 +59,25 @@ class AdvisoryCommitteeServiceTest extends TestCase {
 			'recommendation' => 'herroepen',
 		]);
 	}
+
+	/**
+	 * A request that does not exist is refused with the not-found code the endpoint answers 404 for.
+	 *
+	 * @return void
+	 */
+	public function testAMissingRequestCarriesTheNotFoundCode(): void {
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+
+		try {
+			$service->transitionAdviceStatus(requestId: 'req-404', newStatus: 'in-deliberation');
+			$this->fail(message: 'a missing request must be refused');
+		} catch (\RuntimeException $missing) {
+			$this->assertSame(
+				expected: [\OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService::NOT_FOUND, 'Advice request not found'],
+				actual: [$missing->getCode(), $missing->getMessage()]
+			);
+		}
+	}//end testAMissingRequestCarriesTheNotFoundCode()
 
 	/**
 	 * The chair's signature is recorded before the status moves (REQ-BAT-003).

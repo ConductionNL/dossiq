@@ -34,6 +34,7 @@ use RuntimeException;
  * Golden test for CaseTransferConsentGate::assess(): the verdict, every store and settings call, and the logs.
  *
  * @covers \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
+ * @uses   \OCA\Dossiq\Service\Custody\ConsentStanding
  */
 class CaseTransferConsentGateGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -151,7 +152,12 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			atDate: ($world['at'] ?? '2026-05-01'),
 		);
 
-		return ['verdict' => $verdict, 'calls' => $calls, 'logs' => $logger->lines];
+		$observed = ['verdict' => $verdict, 'calls' => $calls, 'logs' => $logger->lines];
+		if (($world['askRequired'] ?? false) === true) {
+			$observed['required'] = $gate->consentRequiredInside(caseId: ($world['caseId'] ?? 'case-1'));
+		}
+
+		return $observed;
 	}//end observe()
 
 	/**
@@ -216,7 +222,7 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			'until trimmed' => ['consents' => [$this->consent(fields: ['validTo' => ' 2026-12-31 '])]] + $base,
 			'lapsed' => ['consents' => [$this->consent(fields: ['validTo' => '2026-04-01'])]] + $base,
 			'withdrawn' => ['consents' => [$this->consent(fields: ['withdrawn' => true])]] + $base,
-			'withdrawn as a string is not withdrawn' => ['consents' => [$this->consent(fields: ['withdrawn' => 'true'])]] + $base,
+			'withdrawn as a string is withdrawn' => ['consents' => [$this->consent(fields: ['withdrawn' => 'true'])]] + $base,
 			'lapsed and withdrawn' => [
 				'consents' => [$this->consent(fields: ['withdrawn' => true]), $this->consent(fields: ['id' => 'c2', 'validTo' => '2026-03-01'])],
 			] + $base,
@@ -226,7 +232,7 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			'not yet granted' => ['consents' => [$this->consent(fields: ['grantedDate' => '2026-06-01'])]] + $base,
 			'granted on the day' => ['at' => '2026-01-10', 'consents' => [$this->consent()]] + $base,
 			'ends on the day' => ['at' => '2026-12-31', 'consents' => [$this->consent()]] + $base,
-			'unreadable dates cover' => ['consents' => [$this->consent(fields: ['grantedDate' => 'soon', 'validTo' => 'later'])]] + $base,
+			'unreadable dates do not cover' => ['consents' => [$this->consent(fields: ['grantedDate' => 'soon', 'validTo' => 'later'])]] + $base,
 			'no dates cover' => ['consents' => [$this->consent(fields: ['grantedDate' => '', 'validTo' => ''])]] + $base,
 			'first covering consent wins' => [
 				'consents' => [
@@ -252,4 +258,95 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden(name: 'case-transfer-consent-assess', value: $observed);
 	}//end testGoldenAssess()
+
+	/**
+	 * A consent whose start or end date cannot be read does not cover the hand-off.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableDateDoesNotCover(): void {
+		$objects = ['case' => ['case-1' => ['id' => 'case-1', 'caseType' => 'ct-wmo']], 'caseType' => ['ct-wmo' => ['id' => 'ct-wmo']]];
+		foreach (['grantedDate', 'validTo'] as $field) {
+			$verdict = $this->observe(world: ['objects' => $objects, 'consents' => [$this->consent(fields: [$field => 'soon'])]])['verdict'];
+			$this->assertFalse(condition: $verdict['allowed'], message: $field);
+			$this->assertSame(expected: CaseTransferConsentGate::NO_CONSENT, actual: $verdict['rule'], message: $field);
+		}
+
+		$verdict = $this->observe(
+			world: ['objects' => $objects, 'consents' => [$this->consent(fields: ['validTo' => 'later']), $this->consent(fields: ['id' => 'c2'])]]
+		)['verdict'];
+		$this->assertTrue(condition: $verdict['allowed'], message: 'a readable consent after it still covers');
+		$this->assertSame(expected: 'c2', actual: $verdict['consent']['id']);
+	}//end testAnUnreadableDateDoesNotCover()
+
+	/**
+	 * The truthy forms the register can hold mark a consent withdrawn; the falsy forms do not.
+	 *
+	 * @return void
+	 */
+	public function testTruthyWithdrawnFormsAreWithdrawn(): void {
+		$objects = ['case' => ['case-1' => ['id' => 'case-1', 'caseType' => 'ct-wmo']], 'caseType' => ['ct-wmo' => ['id' => 'ct-wmo']]];
+		foreach ([true, 'true', ' TRUE ', 1, '1'] as $value) {
+			$verdict = $this->observe(world: ['objects' => $objects, 'consents' => [$this->consent(fields: ['withdrawn' => $value])]])['verdict'];
+			$this->assertFalse(condition: $verdict['allowed'], message: var_export($value, true));
+			$this->assertSame(expected: CaseTransferConsentGate::CONSENT_WITHDRAWN, actual: $verdict['rule'], message: var_export($value, true));
+		}
+
+		foreach ([false, 'false', 0, '0', '', null] as $value) {
+			$verdict = $this->observe(world: ['objects' => $objects, 'consents' => [$this->consent(fields: ['withdrawn' => $value])]])['verdict'];
+			$this->assertTrue(condition: $verdict['allowed'], message: var_export($value, true));
+		}
+	}//end testTruthyWithdrawnFormsAreWithdrawn()
+
+	/**
+	 * A move inside one organisation is refused when the case or its case type cannot be read, or the case has none.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableInternalMoveIsRefused(): void {
+		$objects = [
+			'case' => ['case-1' => ['id' => 'case-1', 'caseType' => 'ct-wmo']],
+			'caseType' => ['ct-wmo' => ['id' => 'ct-wmo']],
+		];
+		$inside = ['objects' => $objects, 'receiver' => 'gemeente-delft', 'consents' => []];
+		$worlds = [
+			'case read throws' => ['objects' => ['case' => ['case-1' => 'throw']] + $objects] + $inside,
+			'case missing' => ['caseId' => 'case-404'] + $inside,
+			'case type read throws' => ['objects' => ['caseType' => ['ct-wmo' => 'throw']] + $objects] + $inside,
+			'case type missing' => ['objects' => ['caseType' => []] + $objects] + $inside,
+			'no store' => ['noStore' => true] + $inside,
+			'no register' => ['config' => ['register' => '']] + $inside,
+			'no case schema' => ['config' => ['case_schema' => '']] + $inside,
+			'no case type schema' => ['config' => ['case_type_schema' => '']] + $inside,
+			'empty case id' => ['caseId' => ' '] + $inside,
+			'case without a case type' => ['objects' => ['case' => ['case-1' => ['id' => 'case-1']]] + $objects] + $inside,
+		];
+
+		foreach ($worlds as $name => $world) {
+			$observed = $this->observe(world: $world);
+			$this->assertFalse(condition: $observed['verdict']['allowed'], message: $name);
+			$this->assertSame(expected: CaseTransferConsentGate::CONSENT_UNCHECKED, actual: $observed['verdict']['rule'], message: $name);
+			$this->assertSame(
+				expected: 'Consent could not be checked, so the case was not handed on.',
+				actual: $observed['verdict']['sentence'],
+				message: $name
+			);
+			$this->assertFalse(condition: $observed['verdict']['crossesOrganisation'], message: $name);
+			$this->assertSame(expected: 'warning', actual: ($observed['logs'][0][0] ?? null), message: $name);
+		}
+
+		$unreadable = $this->observe(world: ['askRequired' => true] + $worlds['case missing']);
+		$this->assertTrue(condition: $unreadable['required'], message: 'unreadable is required');
+		$demanding = ['caseType' => ['ct-wmo' => ['consentRequiredInsideOrganisation' => true]]] + $objects;
+		$this->assertTrue(
+			condition: $this->observe(world: ['askRequired' => true, 'objects' => $demanding] + $inside)['required'],
+			message: 'the case type demands consent'
+		);
+
+		$readable = $this->observe(world: ['askRequired' => true] + $inside);
+		$this->assertFalse(condition: $readable['required'], message: 'a readable case type without the rule is not required');
+		$this->assertTrue(condition: $readable['verdict']['allowed'], message: 'a readable case type without the rule');
+		$noType = $this->observe(world: ['askRequired' => true] + $worlds['case without a case type']);
+		$this->assertTrue(condition: $noType['required'], message: 'a case without a case type needs consent');
+	}//end testAnUnreadableInternalMoveIsRefused()
 }//end class

@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks;
 use DateTime;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
@@ -57,6 +58,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\CaseTypePublishService
  * @covers \OCA\Dossiq\Service\CaseType\PublicationChecks
+ * @covers \OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks
  *
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\CaseTypeAcknowledgement
@@ -167,11 +169,13 @@ class CaseTypePublishValidationTest extends TestCase {
 			checks: new PublicationChecks(
 				caseTypeResolver: new CaseTypeResolver(store: $store),
 				store: $store,
-				acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+				declarations: new CaseTypeDeclarationChecks(
+					acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+					admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+					remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
+					handling: new CaseTypeHandling(),
+				),
 				unreadTriggers: new UnreadTriggerService(l10n: new SourceL10n()),
-				admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
-				remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
-				handling: new CaseTypeHandling(),
 				reachability: new CaseTypeReachability(),
 				senders: $this->createMock(originalClassName: SenderIdentity::class),
 			),

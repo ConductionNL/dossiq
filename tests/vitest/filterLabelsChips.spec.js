@@ -8,7 +8,7 @@
  * `filterLabels` the chips read "Is Final Status: false" and a raw due-date
  * key.
  *
- * @spec openspec/changes/index-filter-labels/specs/active-filter-line-board-look/spec.md
+ * @spec openspec/specs/cases-filter-labels-for-views/spec.md
  */
 
 import fs from 'fs'
