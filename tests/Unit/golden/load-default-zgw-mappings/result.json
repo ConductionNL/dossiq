@@ -1,0 +1,27 @@
+{
+    "zgwResource": "result",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "zaak": "{{ _baseUrl | replace({\"zaken/v1/resultaten\": \"zaken/v1/zaken\"}) }}/{{ case }}",
+        "resultaattype": "{{ _baseUrl | replace({\"zaken/v1/resultaten\": \"catalogi/v1/resultaattypen\"}) }}/{{ resultType }}",
+        "notes": "{{ description }}"
+    },
+    "reverseMapping": {
+        "name": "{{ toelichting }}",
+        "case": "{{ zaak | zgw_extract_uuid }}",
+        "resultType": "{{ resultaattype | zgw_extract_uuid }}",
+        "description": "{{ toelichting }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "zaak": {
+            "field": "case",
+            "extractUuid": true
+        }
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "zgwResource": "status",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "zaak": "{{ _baseUrl | replace({\"zaken/v1/statussen\": \"zaken/v1/zaken\"}) }}/{{ case }}",
+        "statustype": "{{ _baseUrl | replace({\"zaken/v1/statussen\": \"catalogi/v1/statustypen\"}) }}/{{ statusType }}",
+        "datumStatusGezet": "{{ _created }}",
+        "statustoelichting": "{{ description }}"
+    },
+    "reverseMapping": {
+        "case": "{{ zaak | zgw_extract_uuid }}",
+        "statusType": "{{ statustype | zgw_extract_uuid }}",
+        "description": "{{ statustoelichting }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "zaak": {
+            "field": "case",
+            "extractUuid": true
+        }
+    }
+}

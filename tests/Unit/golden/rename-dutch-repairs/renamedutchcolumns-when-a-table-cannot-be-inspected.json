@@ -1,0 +1,68 @@
+[
+    {
+        "executeQuery": "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+        "params": [
+            "dossiq%"
+        ]
+    },
+    {
+        "prepare": "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+    },
+    {
+        "bindValue": [
+            "pattern",
+            "%openregister\\_table\\_%"
+        ]
+    },
+    {
+        "execute": {
+            "pattern": "%openregister\\_table\\_%"
+        }
+    },
+    {
+        "prepare": "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+    },
+    {
+        "bindValue": [
+            "table",
+            "oc_openregister_table_17_85"
+        ]
+    },
+    {
+        "execute": {
+            "table": "oc_openregister_table_17_85"
+        }
+    },
+    {
+        "executeStatement": "UPDATE \"oc_openregister_table_17_85\" SET \"requested_on\" = \"aangevraagd_op\" WHERE \"requested_on\" IS NULL AND \"aangevraagd_op\" IS NOT NULL",
+        "params": []
+    },
+    {
+        "executeStatement": "ALTER TABLE \"oc_openregister_table_17_85\" RENAME COLUMN \"onderwerp\" TO \"subject\"",
+        "params": []
+    },
+    {
+        "prepare": "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+    },
+    {
+        "bindValue": [
+            "table",
+            "oc_openregister_table_17_86"
+        ]
+    },
+    {
+        "execute": {
+            "table": "oc_openregister_table_17_86"
+        }
+    },
+    {
+        "warning": "RenameDutchColumns: could not read columns; skipping table.",
+        "context": {
+            "table": "oc_openregister_table_17_86",
+            "exception": "columns unreadable"
+        }
+    },
+    {
+        "output": "RenameDutchColumns: 1 renamed, 1 back-filled, 0 refused, across 2 shard table(s)."
+    }
+]

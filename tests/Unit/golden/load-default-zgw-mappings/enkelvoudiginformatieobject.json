@@ -1,0 +1,81 @@
+{
+    "zgwResource": "enkelvoudiginformatieobject",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "identificatie": "{{ identifier }}",
+        "bronorganisatie": "{{ sourceOrganisation }}",
+        "creatiedatum": "{{ creationDate }}",
+        "titel": "{{ title }}",
+        "vertrouwelijkheidaanduiding": "{{ confidentiality }}",
+        "auteur": "{{ author }}",
+        "status": "{{ status | default(\"\") | zgw_enum(\"status\", _valueMappings) }}",
+        "format": "{{ format }}",
+        "taal": "{{ language }}",
+        "fileName": "{{ fileName }}",
+        "bestandsomvang": "{{ fileSize }}",
+        "inhoud": "{{ _downloadUrl }}",
+        "link": "{{ link }}",
+        "beschrijving": "{{ description }}",
+        "informatieobjecttype": "{{ _baseUrl | replace({\"documenten/v1/enkelvoudiginformatieobjecten\": \"catalogi/v1/informatieobjecttypen\"}) }}/{{ documentType }}",
+        "locked": "{{ locked }}",
+        "registrationDate": "{{ _created }}",
+        "indicatieGebruiksrecht": "{{ usageRightsIndication is same as(true) ? \"true\" : (usageRightsIndication is same as(false) ? \"false\" : \"\") }}"
+    },
+    "reverseMapping": {
+        "identifier": "{{ identificatie }}",
+        "sourceOrganisation": "{{ bronorganisatie }}",
+        "creationDate": "{{ creatiedatum }}",
+        "title": "{{ titel }}",
+        "confidentiality": "{{ vertrouwelijkheidaanduiding }}",
+        "author": "{{ auteur }}",
+        "status": "{{ status | default(\"\") | zgw_enum_reverse(\"status\", _valueMappings) }}",
+        "format": "{{ formaat }}",
+        "language": "{{ taal }}",
+        "fileName": "{{ bestandsnaam }}",
+        "fileSize": "{{ bestandsomvang }}",
+        "link": "{{ link }}",
+        "description": "{{ beschrijving }}",
+        "documentType": "{{ informatieobjecttype | zgw_extract_uuid }}",
+        "usageRightsIndication": "{{ indicatieGebruiksrecht }}"
+    },
+    "valueMapping": {
+        "confidentiality": {
+            "openbaar": "openbaar",
+            "beperkt_openbaar": "beperkt_openbaar",
+            "intern": "intern",
+            "zaakvertrouwelijk": "zaakvertrouwelijk",
+            "vertrouwelijk": "vertrouwelijk",
+            "confidentieel": "confidentieel",
+            "geheim": "geheim",
+            "zeer_geheim": "zeer_geheim"
+        },
+        "status": {
+            "in_bewerking": "in_bewerking",
+            "for_determination": "ter_vaststelling",
+            "final": "definitief",
+            "archived": "gearchiveerd"
+        }
+    },
+    "reverseCast": {
+        "fileSize": "int"
+    },
+    "cast": {
+        "bestandsomvang": "int",
+        "locked": "bool",
+        "indicatieGebruiksrecht": "?bool"
+    },
+    "queryParameterMapping": {
+        "informatieobjecttype": {
+            "field": "documentType",
+            "extractUuid": true
+        },
+        "bronorganisatie": {
+            "field": "sourceOrganisation"
+        }
+    }
+}

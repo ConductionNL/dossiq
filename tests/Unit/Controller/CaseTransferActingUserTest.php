@@ -123,25 +123,26 @@ class CaseTransferActingUserTest extends TestCase {
 	}//end testInitiateWithoutASessionWritesNothing()
 
 	/**
-	 * A local accept moves custody for the stored initiator and stays local,
-	 * even when the request names a remote and another actor.
+	 * A local accept names the session user who accepts it as trail actor,
+	 * audit actor and custody mover, and stays local, even when the request
+	 * names a remote and another actor.
 	 *
 	 * @return void
 	 */
-	public function testLocalAcceptActsForTheStoredInitiatorNotTheRequest(): void {
+	public function testLocalAcceptActsForTheSessionUserNotTheRequest(): void {
 		$params = self::FORGED + ['action' => 'accept', 'remoteCloudId' => 'evil@forged.example', 'sharedWith' => 'evil@forged.example'];
 		$response = $this->sharing(session: 'alice', params: $params, stored: self::PENDING)->handleTransfer('t-1');
 
 		$this->assertSame(200, $response->getStatus());
 		$saved = $this->objects->saved['t-1'];
 		$this->assertSame('accepted', $saved['status']);
-		$this->assertSame(['event' => 'accepted', 'actor' => '', 'actorType' => 'local', 'cloudId' => ''], array_diff_key($saved['custodyAuditTrail'][0], ['timestamp' => 1]));
-		$this->assertSame('bob', $this->custodyMovedBy());
-		$this->assertSame('local', $this->auditActor(action: 'case_transfer_accepted'));
+		$this->assertSame(['event' => 'accepted', 'actor' => 'alice', 'actorType' => 'local', 'cloudId' => ''], array_diff_key($saved['custodyAuditTrail'][0], ['timestamp' => 1]));
+		$this->assertSame('alice', $this->custodyMovedBy());
+		$this->assertSame('alice', $this->auditActor(action: 'case_transfer_accepted'));
 		$this->assertSame([['case-1', 'alice']], $this->accessAsked);
 		$this->assertStringNotContainsString('mallory', (string)json_encode($this->calls));
 		$this->assertStringNotContainsString('evil@', (string)json_encode($this->calls));
-	}//end testLocalAcceptActsForTheStoredInitiatorNotTheRequest()
+	}//end testLocalAcceptActsForTheSessionUserNotTheRequest()
 
 	/**
 	 * A caller without access to the transfer's case cannot accept it.
@@ -171,7 +172,8 @@ class CaseTransferActingUserTest extends TestCase {
 		$saved = $this->objects->saved['t-1'];
 		$this->assertSame('rejected', $saved['status']);
 		$this->assertSame('not ours', $saved['rejectionReason']);
-		$this->assertSame('local', $saved['custodyAuditTrail'][0]['actorType']);
+		$this->assertSame(['alice', 'local'], [$saved['custodyAuditTrail'][0]['actor'], $saved['custodyAuditTrail'][0]['actorType']]);
+		$this->assertSame('alice', $this->auditActor(action: 'case_transfer_rejected'));
 		$this->assertNull($this->custodyMovedBy());
 		$this->assertStringNotContainsString('mallory', (string)json_encode($this->calls));
 		$this->assertStringNotContainsString('evil@', (string)json_encode($this->calls));

@@ -199,23 +199,18 @@ class CitizenManifest {
 	];
 
 	/**
-	 * The four steps of the request (site-woo-request-in-steps D1). Every
+	 * The three steps of the request, as the portal boards draw them. Every
 	 * field of `WOO_FIELDS` sits in exactly one of them, which is what
 	 * portaliq requires to keep a step at all, and the last one reviews the
-	 * answers instead of asking for more.
+	 * answers instead of asking for more. The first step asks the request
+	 * itself, the period and the kinds of document included.
 	 */
 	private const WOO_STEPS = [
 		[
 			'id' => 'vraag',
-			'title' => 'Uw vraag',
-			'description' => 'Vertel ons waar uw vraag over gaat.',
-			'fields' => ['onderwerp', 'omschrijving'],
-		],
-		[
-			'id' => 'periode',
-			'title' => 'Periode en documenten',
-			'description' => 'Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.',
-			'fields' => ['periodeVan', 'periodeTot', 'documentSoorten', 'toelichting'],
+			'title' => 'Uw verzoek',
+			'description' => 'Vertel ons welke informatie u zoekt. Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.',
+			'fields' => ['onderwerp', 'omschrijving', 'periodeVan', 'periodeTot', 'documentSoorten', 'toelichting'],
 		],
 		[
 			'id' => 'gegevens',
@@ -523,7 +518,7 @@ class CitizenManifest {
 		// THE DOSSIER GOES IN THE FIRST STEP, hidden. Portaliq gathers every
 		// whitelisted field that no step names into a loose step of its own
 		// ("more", with no title), so leaving `collectionId` out gave the
-		// dossier variant a titleless fourth step holding one invisible field.
+		// dossier variant a titleless extra step holding one invisible field.
 		// Measured through portaliq's own resolvers.
 		$steps = self::WOO_STEPS;
 		$steps[0]['fields'] = array_merge(['collectionId'], $steps[0]['fields']);

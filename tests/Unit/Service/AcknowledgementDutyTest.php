@@ -28,6 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\AcknowledgementDelivery;
+use OCA\Dossiq\Service\AcknowledgementTerms;
+use OCA\Dossiq\Service\AcknowledgementDeclaration;
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\AcknowledgementService;
@@ -106,11 +110,15 @@ class AcknowledgementCaseStore {
  * Confirming receipt, recording it, and refusing when there is nowhere to send.
  *
  * @covers \OCA\Dossiq\Service\AcknowledgementService
+ * @covers \OCA\Dossiq\Service\AcknowledgementDelivery
+ * @covers \OCA\Dossiq\Service\AcknowledgementTerms
+ * @covers \OCA\Dossiq\Service\AcknowledgementDeclaration
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  *
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
@@ -119,6 +127,7 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
+ * @uses \OCA\Dossiq\Service\Term\TermNoticeSources
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  * @uses \OCA\Dossiq\Service\Term\TermLetter
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -217,23 +226,28 @@ class AcknowledgementDutyTest extends TestCase {
 
 		return new AcknowledgementService(
 			settingsService: $settings,
-			caseTypeResolver: $resolver,
-			store: $store,
-			declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
-			termService: $terms,
-			notifications: new TermijnNotificationService(
-				termService: $noticeTerms,
-				sender: ($sender ?? $this->sentNotices()),
-				logger: $logger,
-				requester: ($requester ?? new RequesterNoticeSender(
-					email: ($sender ?? $this->sentNotices()),
-					settings: $settings,
-					writer: new CaseFieldWriter(),
-				)),
+			caseTypes: new AcknowledgementDeclaration(
+				caseTypeResolver: $resolver,
+				store: $store,
+				declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
 			),
-			contacts: new CaseContactDirectory(),
-			portal: new PortalContributionProvider(),
-			writer: new CaseFieldWriter(),
+			terms: new AcknowledgementTerms(
+				termService: $terms,
+				notifications: new TermijnNotificationService(
+					notices: new TermNoticeSources(termService: $noticeTerms, sender: ($sender ?? $this->sentNotices())),
+					logger: $logger,
+					requester: ($requester ?? new RequesterNoticeSender(
+						email: ($sender ?? $this->sentNotices()),
+						settings: $settings,
+						writer: new CaseFieldWriter(),
+					)),
+				),
+			),
+			delivery: new AcknowledgementDelivery(
+				contacts: new CaseContactDirectory(),
+				portal: new PortalContributionProvider(),
+				writer: new CaseFieldWriter(),
+			),
 			logger: $logger,
 			timeline: $this->timeline,
 		);

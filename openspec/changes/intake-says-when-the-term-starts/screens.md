@@ -1,5 +1,4 @@
 # Screens
 
-- Design backlog: DqIntakeBevestiging (decision 157)
-- DqNieuweZaak https://identity.conduction.nl/screens/board?id=dossiq/DqNieuweZaak
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqNieuweZaak nieuwe zaak, dialoog https://identity.conduction.nl/screens/board?id=dossiq/DqNieuweZaak
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak

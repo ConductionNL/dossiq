@@ -1,0 +1,53 @@
+{
+    "zgwResource": "besluittype",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "omschrijving": "{{ name }}",
+        "notes": "{{ description }}",
+        "catalogus": "{{ _baseUrl | replace({\"catalogi/v1/besluittypen\": \"catalogi/v1/catalogussen\"}) }}/{{ catalogus }}",
+        "zaaktypen": "caseTypes",
+        "concept": "{{ isDraft }}",
+        "publicatieIndicatie": "{{ publicationRequired }}",
+        "informatieobjecttypen": "documentTypes",
+        "startValidity": "{{ validFrom }}",
+        "endValidity": "{{ validUntil }}"
+    },
+    "reverseMapping": {
+        "name": "{{ omschrijving }}",
+        "description": "{{ toelichting }}",
+        "catalogus": "{{ catalogus | zgw_extract_uuid }}",
+        "isDraft": "{{ concept }}",
+        "publicationRequired": "{{ publicatieIndicatie }}",
+        "caseTypes": "zaaktypen",
+        "documentTypes": "informatieobjecttypen",
+        "validFrom": "{{ beginGeldigheid }}",
+        "validUntil": "{{ eindeGeldigheid }}"
+    },
+    "reverseCast": {
+        "isDraft": "bool",
+        "publicationRequired": "bool"
+    },
+    "cast": {
+        "concept": "bool",
+        "publicatieIndicatie": "bool"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "zaaktypen": {
+            "field": "caseType",
+            "extractUuid": true
+        },
+        "catalogus": {
+            "field": "catalogus",
+            "extractUuid": true
+        },
+        "omschrijving": {
+            "field": "name"
+        }
+    }
+}

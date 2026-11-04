@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Dossiq\Listener\Support\ReadsEventObjects;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -51,7 +52,7 @@ use Throwable;
  * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-marker-rule-derives-a-flag-on-the-referenced-object-req-lcr-4
  */
 class LinkMarkerListener implements IEventListener {
-
+	use ReadsEventObjects;
 	use SearchesObjects;
 
 	/**
@@ -216,12 +217,7 @@ class LinkMarkerListener implements IEventListener {
 	 * @return array<string, mixed>|null The object, or null.
 	 */
 	private function objectOf(Event $event): ?array {
-		foreach (['getNewObject', 'getObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$value = $event->{$method}();
+		foreach ($this->eventObjectValues(event: $event) as $value) {
 			if (is_array($value) === true) {
 				return $value;
 			}
