@@ -89,10 +89,14 @@ class CaseShareList {
 			$status    = (self::STATUS[(string)($share['state'] ?? '')] ?? 'active');
 			$documents = $this->documentsOf(share: $share);
 			$url       = (string)($share['accessLinkUrl'] ?? '');
+			$kind      = 'case';
+			if ($documents > 0) {
+				$kind = 'file';
+			}
 
 			$rows[] = [
 				'id' => (string)$linkId,
-				'kind' => ($documents > 0) ? 'file' : 'case',
+				'kind' => $kind,
 				'title' => $this->titleOf(share: $share, documents: $documents),
 				'meta' => $this->metaOf(share: $share),
 				'status' => $status,

@@ -80,6 +80,7 @@ class CaseRelationController extends Controller {
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
 	 * @param CaseRelationDetails $caseRelationDetails Number, case type, status and handler per related case.
 	 * @param CaseFlowActions $flowActions The case's planned follow-ups, listed with `?planned=1`.
+	 * @param IL10N $l10n Translates the refusal notices.
 	 */
 	public function __construct(
 		IRequest $request,
