@@ -183,4 +183,56 @@ final class ReadableObjectsTest extends TestCase {
 			actual: $this->readable(register: $register)->readableMasterEntities(refs: ['me-person', 'me-company'])
 		);
 	}//end testARegisterWithoutAPartySchemaReadsTheOthers()
+	/**
+	 * A store that answers every party search with a full page for another reference ends the read
+	 * at once: one search per party schema, and nothing readable.
+	 *
+	 * @return void
+	 */
+	public function testAFullPageOfOtherReferencesEndsTheRead(): void {
+		$store = new class {
+			/**
+			 * How many searches ran.
+			 *
+			 * @var int
+			 */
+			public int $calls = 0;
+
+			/**
+			 * A full page whose rows all carry another reference.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(): array {
+				$this->calls++;
+				$filters = (func_get_args()[2] ?? []);
+
+				return array_fill(0, (int)($filters['_limit'] ?? 10), ['masterEntityRef' => 'someone-else']);
+			}
+		};
+
+		self::assertSame(expected: [], actual: $this->readable(register: $store)->readableMasterEntities(refs: ['me-1']));
+		self::assertLessThanOrEqual(expected: 2, actual: $store->calls);
+	}//end testAFullPageOfOtherReferencesEndsTheRead()
+
+	/**
+	 * A party search that fails for another reason than a missing schema still throws, so the caller answers 503.
+	 *
+	 * @return void
+	 */
+	public function testAFailedPartyReadThrows(): void {
+		$failing = new class {
+			/**
+			 * Always fails.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(): array {
+				throw new RuntimeException('store down');
+			}
+		};
+
+		$this->expectException(exception: RuntimeException::class);
+		$this->readable(register: $failing)->readableMasterEntities(refs: ['me-person']);
+	}//end testAFailedPartyReadThrows()
 }//end class
