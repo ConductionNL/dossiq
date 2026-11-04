@@ -46,6 +46,8 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * The answer names the actions that did not run.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionStep
  * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
  * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
