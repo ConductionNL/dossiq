@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Dashboard;
 
 use OCA\Dossiq\Dashboard\QueueWidgetItems;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 
@@ -32,10 +33,13 @@ use PHPUnit\Framework\TestCase;
  * The My work widget's links.
  *
  * @covers \OCA\Dossiq\Dashboard\QueueWidgetItems
+ * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class QueueWidgetItemsTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	/**
-	 * My work and the icon are absolute addresses under the app.
+	 * My work and the icon are absolute addresses under the app; today is the organisation's.
 	 *
 	 * @return void
 	 */
@@ -47,9 +51,10 @@ class QueueWidgetItemsTest extends TestCase {
 		$url->method('imagePath')->willReturn('/apps/dossiq/img/app-dark.svg');
 		$url->method('getAbsoluteURL')->willReturnCallback(static fn (string $path): string => 'https://cloud.example' . $path);
 
-		$links = new QueueWidgetItems(url: $url);
+		$links = new QueueWidgetItems(url: $url, dates: $this->caseDatesFrozenAt(instant: '2026-10-12T23:30:00+02:00'));
 
 		$this->assertSame(expected: 'https://cloud.example/apps/dossiq/my-work', actual: $links->myWorkUrl());
 		$this->assertSame(expected: 'https://cloud.example/apps/dossiq/img/app-dark.svg', actual: $links->iconUrl());
+		$this->assertSame(expected: '2026-10-12', actual: $links->today());
 	}//end testLinksToMyWorkAndTheAppIcon()
 }//end class

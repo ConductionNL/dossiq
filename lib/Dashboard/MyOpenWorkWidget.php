@@ -61,8 +61,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @param IL10N                $l10n    Translations.
 	 * @param PersonalQueueService $queue   The one personal queue.
-	 * @param QueueWidgetItems     $items   The My work link and the app icon.
-	 * @param OpenWorkSummary      $summary Counts the queue into summary rows.
+	 * @param OpenWorkSummary      $summary Counts the queue into summary rows, and holds the links.
 	 *
 	 * @return void
 	 *
@@ -71,7 +70,6 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	public function __construct(
 		private readonly IL10N $l10n,
 		private readonly PersonalQueueService $queue,
-		private readonly QueueWidgetItems $items,
 		private readonly OpenWorkSummary $summary,
 	) {
 	}//end __construct()
@@ -130,7 +128,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
 	 */
 	public function getIconUrl(): string {
-		return $this->items->iconUrl();
+		return $this->summary->links()->iconUrl();
 	}//end getIconUrl()
 
 	/**
@@ -141,7 +139,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
 	 */
 	public function getUrl(): ?string {
-		return $this->items->myWorkUrl();
+		return $this->summary->links()->myWorkUrl();
 	}//end getUrl()
 
 	/**
@@ -196,7 +194,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 		// The button is the same for everyone.
 		unset($userId);
 		return [
-			new WidgetButton(WidgetButton::TYPE_MORE, $this->items->myWorkUrl(), $this->l10n->t('Go to My work')),
+			new WidgetButton(WidgetButton::TYPE_MORE, $this->summary->links()->myWorkUrl(), $this->l10n->t('Go to My work')),
 		];
 	}//end getWidgetButtons()
 

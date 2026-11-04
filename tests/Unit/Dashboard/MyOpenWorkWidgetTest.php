@@ -195,12 +195,11 @@ class MyOpenWorkWidgetTest extends TestCase {
 	 */
 	private function widget(PersonalQueueService $queue): MyOpenWorkWidget {
 		$dates = $this->caseDatesFrozenAt(instant: '2026-10-12T09:00:00+02:00');
-		$items = new QueueWidgetItems(url: $this->url);
+		$items = new QueueWidgetItems(url: $this->url, dates: $dates);
 		return new MyOpenWorkWidget(
 			l10n: $this->l10n,
 			queue: $queue,
-			items: $items,
-			summary: new OpenWorkSummary(l10n: $this->l10n, items: $items, dates: $dates)
+			summary: new OpenWorkSummary(l10n: $this->l10n, items: $items)
 		);
 
 	}//end widget()

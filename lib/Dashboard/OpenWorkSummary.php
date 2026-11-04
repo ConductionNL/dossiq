@@ -28,7 +28,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Dashboard;
 
-use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCP\Dashboard\Model\WidgetItem;
 use OCP\IL10N;
@@ -42,9 +41,8 @@ class OpenWorkSummary {
 	/**
 	 * Constructor.
 	 *
-	 * @param IL10N              $l10n  Translations.
-	 * @param QueueWidgetItems   $items The My work link and the app icon.
-	 * @param CaseDateNormaliser $dates Today, on the organisation's calendar.
+	 * @param IL10N            $l10n  Translations.
+	 * @param QueueWidgetItems $items The links and today's date.
 	 *
 	 * @return void
 	 *
@@ -53,9 +51,19 @@ class OpenWorkSummary {
 	public function __construct(
 		private readonly IL10N $l10n,
 		private readonly QueueWidgetItems $items,
-		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
+
+	/**
+	 * The widget's links and today's date.
+	 *
+	 * @return QueueWidgetItems The links.
+	 *
+	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 */
+	public function links(): QueueWidgetItems {
+		return $this->items;
+	}//end links()
 
 	/**
 	 * The summary rows: cases, then tasks; a kind with nothing open is left out.
@@ -112,7 +120,7 @@ class OpenWorkSummary {
 			return null;
 		}
 
-		$today = $this->dates->todayAsCalendarDate();
+		$today = $this->items->today();
 		$late = count(array_filter($tasks, static fn (QueueItem $item): bool => $item->dueAt !== null && substr($item->dueAt, 0, 10) < $today));
 		$dueToday = count(array_filter($tasks, static fn (QueueItem $item): bool => $item->dueAt !== null && substr($item->dueAt, 0, 10) === $today));
 		$subtitle = $this->l10n->t('%1$s late, %2$s today', [(string)$late, (string)$dueToday]);

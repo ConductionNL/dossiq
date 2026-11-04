@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The My work widget's links: the My work page and the app icon.
+ * What the My work widget reads besides the queue: its links and today's date.
  *
  * @category Dashboard
  * @package  OCA\Dossiq\Dashboard
@@ -25,10 +25,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Dashboard;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCP\IURLGenerator;
 
 /**
- * Absolute addresses the My work widget links to.
+ * The My work widget's links, and today on the organisation's calendar.
  *
  * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
  */
@@ -36,7 +37,8 @@ class QueueWidgetItems {
 	/**
 	 * Constructor.
 	 *
-	 * @param IURLGenerator $url Builds absolute addresses.
+	 * @param IURLGenerator      $url   Builds absolute addresses.
+	 * @param CaseDateNormaliser $dates The organisation's calendar.
 	 *
 	 * @return void
 	 *
@@ -44,6 +46,7 @@ class QueueWidgetItems {
 	 */
 	public function __construct(
 		private readonly IURLGenerator $url,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -68,6 +71,17 @@ class QueueWidgetItems {
 	public function iconUrl(): string {
 		return $this->url->getAbsoluteURL($this->url->imagePath(Application::APP_ID, 'app-dark.svg'));
 	}//end iconUrl()
+
+	/**
+	 * Today, `Y-m-d`, on the organisation's calendar.
+	 *
+	 * @return string The date.
+	 *
+	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 */
+	public function today(): string {
+		return $this->dates->todayAsCalendarDate();
+	}//end today()
 
 	/**
 	 * An absolute address inside the app.
