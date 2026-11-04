@@ -46,6 +46,9 @@ use Throwable;
 /**
  * Whether this case may be handed to this receiver now, and under what scope.
  *
+ * @phpstan-type Outcome array{allowed: bool, rule: string, sentence: string, consent: array<string, mixed>|null}
+ * @psalm-type   Outcome = array{allowed: bool, rule: string, sentence: string, consent: array<string, mixed>|null}
+ *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class CaseTransferConsentGate {
@@ -74,11 +77,25 @@ class CaseTransferConsentGate {
 	public const CONSENT_WITHDRAWN = 'consent-withdrawn';
 
 	/**
+	 * The refusal when a move inside one organisation cannot be checked against its case type.
+	 *
+	 * @var string
+	 */
+	public const CONSENT_UNCHECKED = 'consent-unchecked';
+
+	/**
 	 * How many consents one case read takes at most.
 	 *
 	 * @var int
 	 */
 	public const PAGE_SIZE = 100;
+
+	/**
+	 * Where each recorded consent stands.
+	 *
+	 * @var ConsentStanding
+	 */
+	private readonly ConsentStanding $standings;
 
 	/**
 	 * Constructor.
@@ -92,6 +109,7 @@ class CaseTransferConsentGate {
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->standings = new ConsentStanding();
 	}//end __construct()
 
 	/**
@@ -133,67 +151,98 @@ class CaseTransferConsentGate {
 			receivingOrg: $receiver,
 		);
 
-		if ($crosses === false && $this->consentRequiredInside(caseId: $caseId) === false) {
-			// A move between two teams of one organisation is not a
-			// disclosure (D-7), so there is nothing to consent to.
-			return $this->verdict(allowed: true, rule: '', sentence: '', consent: null, crosses: false);
+		if ($crosses === false) {
+			$inside = $this->insideOutcome(caseId: $caseId);
+			if ($inside !== null) {
+				return $this->verdict(outcome: $inside, crosses: false);
+			}
 		}
 
 		$moment = $this->instant(value: $atDate) ?? new DateTimeImmutable();
 		$candidates = $this->consentsFor(caseId: $caseId, receiver: $receiver);
-
-		if ($candidates === []) {
-			return $this->verdict(
-				allowed: false,
-				rule: self::NO_CONSENT,
-				sentence: 'There is no recorded consent for ' . $receiver . ', so the case was not handed on.',
-				consent: null,
-				crosses: $crosses,
-			);
-		}
-
 		$scan = $this->scanConsents(candidates: $candidates, moment: $moment);
 		if ($scan['covering'] !== null) {
-			return $this->verdict(
-				allowed: true,
-				rule: '',
-				sentence: '',
-				consent: $scan['covering'],
-				crosses: $crosses,
-			);
+			return $this->verdict(outcome: $this->granted(consent: $scan['covering']), crosses: $crosses);
 		}
 
-		$lapsedOn = $scan['lapsedOn'];
-		$withdrawn = $scan['withdrawn'];
+		$refusal = $this->refusal(scan: $scan + ['none' => ($candidates === [])], receiver: $receiver);
 
-		if ($lapsedOn !== '') {
-			return $this->verdict(
-				allowed: false,
-				rule: self::CONSENT_LAPSED,
-				sentence: 'The consent for ' . $receiver . ' ran to ' . $lapsedOn . ' and has ended, so the case was not handed on.',
-				consent: null,
-				crosses: $crosses,
-			);
-		}
-
-		if ($withdrawn === true) {
-			return $this->verdict(
-				allowed: false,
-				rule: self::CONSENT_WITHDRAWN,
-				sentence: 'The consent for ' . $receiver . ' was withdrawn, so the case was not handed on.',
-				consent: null,
-				crosses: $crosses,
-			);
-		}
-
-		return $this->verdict(
-			allowed: false,
-			rule: self::NO_CONSENT,
-			sentence: 'There is no recorded consent for ' . $receiver . ' covering today, so the case was not handed on.',
-			consent: null,
-			crosses: $crosses,
-		);
+		return $this->verdict(outcome: $refusal, crosses: $crosses);
 	}//end assess()
+
+	/**
+	 * The outcome of a move inside one organisation, or null when it needs a consent check.
+	 *
+	 * A move between two teams of one organisation is not a disclosure (D-7),
+	 * so it proceeds unless its case type demands consent. When the case or
+	 * its case type cannot be read, or the case has none, the move is refused.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return Outcome|null The outcome, or null to check the recorded consents.
+	 *
+	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function insideOutcome(string $caseId): ?array {
+		try {
+			$required = $this->readInsideRule(caseId: trim($caseId));
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq consent: the case type could not be read for the internal-move rule',
+				['caseId' => $caseId, 'exception' => $e->getMessage()],
+			);
+
+			return [
+				'allowed' => false,
+				'rule' => self::CONSENT_UNCHECKED,
+				'sentence' => 'Consent could not be checked, so the case was not handed on.',
+				'consent' => null,
+			];
+		}
+
+		if ($required === true) {
+			return null;
+		}
+
+		return $this->granted(consent: null);
+	}//end insideOutcome()
+
+	/**
+	 * The outcome of a hand-off that may proceed.
+	 *
+	 * @param array<string, mixed>|null $consent The covering consent, or null when none is needed.
+	 *
+	 * @return Outcome The outcome.
+	 */
+	private function granted(?array $consent): array {
+		return ['allowed' => true, 'rule' => '', 'sentence' => '', 'consent' => $consent];
+	}//end granted()
+
+	/**
+	 * The outcome of a hand-off no recorded consent covers, with the sentence that says why.
+	 *
+	 * @param array{covering: array<string, mixed>|null, lapsedOn: string, withdrawn: bool, none: bool} $scan     What the consents amount to.
+	 * @param string                                                                                     $receiver The receiving organisation.
+	 *
+	 * @return Outcome The outcome.
+	 *
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 */
+	private function refusal(array $scan, string $receiver): array {
+		$rule = self::NO_CONSENT;
+		$sentence = 'There is no recorded consent for ' . $receiver . ' covering today, so the case was not handed on.';
+		if ($scan['none'] === true) {
+			$sentence = 'There is no recorded consent for ' . $receiver . ', so the case was not handed on.';
+		} else if ($scan['lapsedOn'] !== '') {
+			$rule = self::CONSENT_LAPSED;
+			$sentence = 'The consent for ' . $receiver . ' ran to ' . $scan['lapsedOn'] . ' and has ended, so the case was not handed on.';
+		} else if ($scan['withdrawn'] === true) {
+			$rule = self::CONSENT_WITHDRAWN;
+			$sentence = 'The consent for ' . $receiver . ' was withdrawn, so the case was not handed on.';
+		}
+
+		return ['allowed' => false, 'rule' => $rule, 'sentence' => $sentence, 'consent' => null];
+	}//end refusal()
 
 	/**
 	 * Read the recorded consents once, and say what they amount to.
@@ -216,27 +265,23 @@ class CaseTransferConsentGate {
 		$withdrawn = false;
 
 		foreach ($candidates as $consent) {
-			if (($consent['withdrawn'] ?? false) === true) {
+			$standing = $this->standings->standingOf(consent: $consent, moment: $moment);
+			if ($standing === ConsentStanding::COVERS) {
+				return ['covering' => $consent, 'lapsedOn' => $lapsedOn, 'withdrawn' => $withdrawn];
+			}
+
+			if ($standing === ConsentStanding::WITHDRAWN) {
 				$withdrawn = true;
-				continue;
 			}
 
-			$grantedOn = $this->instant(value: (string)($consent['grantedDate'] ?? ''));
-			if ($grantedOn !== null && $grantedOn > $moment) {
-				continue;
-			}
-
-			$expiresOn = $this->instant(value: (string)($consent['validTo'] ?? ''));
-			if ($expiresOn !== null && $expiresOn < $moment) {
+			if ($standing === ConsentStanding::LAPSED) {
 				$lapsedOn = (string)$consent['validTo'];
-				continue;
 			}
-
-			return ['covering' => $consent, 'lapsedOn' => $lapsedOn, 'withdrawn' => $withdrawn];
 		}
 
 		return ['covering' => null, 'lapsedOn' => $lapsedOn, 'withdrawn' => $withdrawn];
 	}//end scanConsents()
+
 
 	/**
 	 * Whether the hand-off leaves the organisation.
@@ -303,53 +348,63 @@ class CaseTransferConsentGate {
 	 * administrator can read which case types may not move without one, and a
 	 * Jeugdwet file and a parking permit are not the same question (D-7).
 	 *
-	 * An unreadable case or case type answers FALSE, and deliberately: this
-	 * branch only ever runs for a move that stays inside one organisation,
-	 * where the default is that no consent is needed. The cross-organisation
-	 * refusal does not pass through here at all.
+	 * A case or case type that cannot be read answers true: consent is then
+	 * treated as needed, because whether it is cannot be checked.
 	 *
 	 * @param string $caseId The case.
 	 *
 	 * @return bool Whether an internal move needs consent too.
 	 *
-	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function consentRequiredInside(string $caseId): bool {
-		$caseId = trim($caseId);
+		return (($this->insideOutcome(caseId: $caseId)['allowed'] ?? false) === false);
+	}//end consentRequiredInside()
+
+	/**
+	 * Read the case and its case type, and answer the case type's internal-move rule.
+	 *
+	 * @param string $caseId The trimmed case id.
+	 *
+	 * @return bool The case type's rule.
+	 *
+	 * @throws RuntimeException When the case or its case type cannot be read, or the case has none.
+	 *
+	 * @spec openspec/changes/an-internal-move-whose-case-cannot-be-read-is-refused/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 */
+	private function readInsideRule(string $caseId): bool {
 		if ($caseId === '') {
-			return false;
+			throw new RuntimeException('No case id');
 		}
 
-		try {
-			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				id: $caseId,
-			);
-			$caseTypeId = trim((string)($case['caseType'] ?? ''));
-			if ($caseTypeId === '') {
-				return false;
-			}
+		[$objectService, $register] = $this->context();
+		$case = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_schema'),
+			id: $caseId,
+		);
+		if ($case === null) {
+			throw new RuntimeException('Case not found');
+		}
 
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_type_schema'),
-				id: $caseTypeId,
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq consent: the case type could not be read for the internal-move rule',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
+		$caseTypeId = trim((string)($case['caseType'] ?? ''));
+		if ($caseTypeId === '') {
+			throw new RuntimeException('Case has no case type');
+		}
 
-			return false;
+		$caseType = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->schema(key: 'case_type_schema'),
+			id: $caseTypeId,
+		);
+		if ($caseType === null) {
+			throw new RuntimeException('Case type not found');
 		}
 
 		return (($caseType['consentRequiredInsideOrganisation'] ?? false) === true);
-	}//end consentRequiredInside()
+	}//end readInsideRule()
 
 	/**
 	 * The consents recorded for a case that name this receiver.
@@ -398,11 +453,8 @@ class CaseTransferConsentGate {
 	/**
 	 * Shape one verdict.
 	 *
-	 * @param bool                      $allowed  Whether the hand-off may proceed.
-	 * @param string                    $rule     The refusal rule slug, empty when allowed.
-	 * @param string                    $sentence The refusal sentence, empty when allowed.
-	 * @param array<string, mixed>|null $consent  The covering consent, when there is one.
-	 * @param bool                      $crosses  Whether the boundary was crossed.
+	 * @param Outcome $outcome Whether it may proceed, the refusal rule and sentence, and the covering consent.
+	 * @param bool    $crosses Whether the boundary was crossed.
 	 *
 	 * @return array{
 	 *     allowed: bool,
@@ -414,11 +466,12 @@ class CaseTransferConsentGate {
 	 *     crossesOrganisation: bool
 	 * } The verdict.
 	 */
-	private function verdict(bool $allowed, string $rule, string $sentence, ?array $consent, bool $crosses): array {
+	private function verdict(array $outcome, bool $crosses): array {
+		$consent = $outcome['consent'];
 		return [
-			'allowed' => $allowed,
-			'rule' => $rule,
-			'sentence' => $sentence,
+			'allowed' => $outcome['allowed'],
+			'rule' => $outcome['rule'],
+			'sentence' => $outcome['sentence'],
 			'consent' => $consent,
 			'scope' => $this->scopeOf(consent: $consent),
 			'until' => trim((string)($consent['validTo'] ?? '')),
@@ -434,16 +487,12 @@ class CaseTransferConsentGate {
 	 * @return DateTimeImmutable|null The moment.
 	 */
 	private function instant(string $value): ?DateTimeImmutable {
-		$value = trim($value);
-		if ($value === '') {
+		$date = $this->standings->dateOf(value: $value);
+		if ($date === false) {
 			return null;
 		}
 
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return null;
-		}
+		return $date;
 	}//end instant()
 
 	/**

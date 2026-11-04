@@ -1919,7 +1919,7 @@
               "pm.test('a ledger row names the package and its version', () => {",
               "    pm.expect(row, 'ledger row for the case type').to.be.an('object');",
               "    pm.expect(row.set).to.eql('vth');",
-              "    pm.expect(row.setVersion).to.eql('1.0.0');",
+              "    pm.expect(row.setVersion).to.eql(pm.variables.get('packageVersion'));",
               "});"
             ]
           }

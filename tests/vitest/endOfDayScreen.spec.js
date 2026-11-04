@@ -155,8 +155,8 @@ describe('Ready for today? as its own card (DqDagAfsluiten r34)', () => {
 		const ready = widget('eod-ready')
 		expect(ready.type).toBe('text')
 		expect(ready.title).toBe('Ready for today?')
-		expect(ready.content.text).toBe(widget('eod-open').content.noteAction.recordAll.text)
-		expect(widget('eod-open').content.noteAction.recordAll.placement).toEqual({ widget: 'eod-ready' })
+		expect(ready.content.text).toBe(widget('eod-open').content.noteAction.recordAll.text.zero)
+		expect(widget('eod-open').content.noteAction.recordAll.placement).toEqual({ widget: 'eod-ready', sentence: true })
 		const at = (id) => page.config.layout.find((item) => item.widgetId === id)
 		const recorded = at('eod-recorded')
 		expect(at('eod-ready')).toMatchObject({ gridX: 0, gridWidth: 8, track: 'main', sizeToContent: true })
@@ -184,5 +184,15 @@ describe('Recorded today as drawn (DqDagAfsluiten r36)', () => {
 		expect(content.ruleAbove).toBe(true)
 		expect(content.chevron).toBe(false)
 		expect(content.text).toBe('{note}')
+	})
+})
+
+describe('Ready for today? counts the notes filled in (DqDagAfsluiten r43)', () => {
+	it('has a sentence per count, the card\'s own text as the zero form', () => {
+		const text = widget('eod-open').content.noteAction.recordAll.text
+		expect(Object.keys(text).sort()).toEqual(['one', 'other', 'zero'])
+		expect(text.other).toContain('{count}')
+		expect(text.one).not.toContain('{count}')
+		expect(text.zero).toBe(widget('eod-ready').content.text)
 	})
 })

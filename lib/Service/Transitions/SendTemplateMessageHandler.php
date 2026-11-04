@@ -22,12 +22,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Termijn\TermNoticeLedger;
-use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -53,22 +51,18 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param AssigneeResolver     $assignees The case's id.
+	 * @param RecipientResolvers $recipients The assignee and role resolvers and the user manager.
 	 * @param CaseContactDirectory $contacts  The addresses of a role on the case.
 	 * @param CaseEmailService     $mail      Renders and sends a template.
 	 * @param LoggerInterface      $logger    The logger.
 	 * @param TermNoticeLedger     $ledger    Claims a send-once key.
-	 * @param RoleResolverService  $roles     The participants holding a role on the case.
-	 * @param IUserManager         $users     A participant user's address.
 	 */
 	public function __construct(
-		private readonly AssigneeResolver $assignees,
+		private readonly RecipientResolvers $recipients,
 		private readonly CaseContactDirectory $contacts,
 		private readonly CaseEmailService $mail,
 		private readonly LoggerInterface $logger,
 		private readonly TermNoticeLedger $ledger,
-		private readonly RoleResolverService $roles,
-		private readonly IUserManager $users,
 	) {
 	}//end __construct()
 
@@ -85,7 +79,7 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		$template = trim((string)($actionConfig['emailTemplate'] ?? ''));
-		$caseId = $this->assignees->caseId(case: $case);
+		$caseId = $this->recipients->assignees->caseId(case: $case);
 		if ($template === '' || $caseId === '') {
 			return new ActionResult(succeeded: false, error: 'send_message_incomplete');
 		}
@@ -148,7 +142,8 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 		}
 
 		$addresses = [];
-		foreach ($this->roles->resolve(rule: ['strategy' => RoleResolverService::STRATEGY_SINGLE_ROLE, 'roleType' => $role], case: $case) as $participant) {
+		$rule = ['strategy' => RoleResolverService::STRATEGY_SINGLE_ROLE, 'roleType' => $role];
+		foreach ($this->recipients->roles->resolve(rule: $rule, case: $case) as $participant) {
 			$address = $this->addressOf(participant: (string)$participant);
 			if ($address !== '') {
 				$addresses[] = $address;
@@ -171,7 +166,7 @@ class SendTemplateMessageHandler implements ActionHandlerInterface {
 			return strtolower($participant);
 		}
 
-		$address = (string)($this->users->get($participant)?->getEMailAddress() ?? '');
+		$address = (string)($this->recipients->users->get($participant)?->getEMailAddress() ?? '');
 
 		return strtolower(trim($address));
 	}//end addressOf()

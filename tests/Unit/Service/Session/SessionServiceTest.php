@@ -33,7 +33,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\Session\SessionService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -41,6 +41,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Session\SessionService
+ * @covers \OCA\Dossiq\Service\Support\OpensInTheInitialState
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinition
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinitionReader
  * @uses   \OCA\Dossiq\Service\Session\SessionRules
@@ -89,11 +90,11 @@ class SessionServiceTest extends TestCase {
 	];
 
 	/**
-	 * The register.
+	 * The register, judging the session's lifecycle as OpenRegister does.
 	 *
-	 * @var InMemoryRegister
+	 * @var LifecycleRegister
 	 */
-	private InMemoryRegister $store;
+	private LifecycleRegister $store;
 
 	/**
 	 * The real schemas.
@@ -131,7 +132,11 @@ class SessionServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->store = new InMemoryRegister();
+		$this->store = new LifecycleRegister();
+		// Recording minutes moves a planned session to executed, which the
+		// schema's transitions do not declare; the tests that write a status
+		// on create judge the move themselves.
+		$this->store->judgesMoves = false;
 		$this->store->seed(schema: 'caseType', uuid: 'ct-1', row: ['title' => 'fixture-session', 'sessions' => self::SESSIONS]);
 		$this->store->seed(schema: 'caseType', uuid: 'ct-bare', row: ['title' => 'fixture-bare']);
 		$this->store->seed(schema: 'case', uuid: self::CASE_ID, row: ['title' => 'Case', 'caseType' => 'ct-1']);
@@ -220,9 +225,12 @@ class SessionServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheCaseTypesStatusNamesAreWritten(): void {
+		$this->store->judgesMoves = true;
 		$saved = $this->service->schedule(caseId: self::CASE_ID, sessionKey: 'site-visit', scheduledDate: '2026-10-11T09:30:00+00:00', chairpersonId: self::CHAIR, invitees: []);
 
 		self::assertSame('uitgenodigd', $saved['status']);
+		self::assertSame('uitgenodigd', $this->store->row('hearingSession', (string)$saved['id'])['status']);
+		self::assertSame(['hearingSession: planned -> uitgenodigd'], $this->store->moves);
 		self::assertSame([], self::$schemas->errors(slug: 'hearingSession', payload: $saved));
 	}//end testTheCaseTypesStatusNamesAreWritten()
 
@@ -232,10 +240,13 @@ class SessionServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testOnlyAWaivableSessionIsWaived(): void {
+		$this->store->judgesMoves = true;
 		$saved = $this->service->waive(caseId: self::CASE_ID, sessionKey: 'hearing', chairpersonId: self::CHAIR, reason: 'Applicant does not want to be heard');
 
 		self::assertTrue($saved['hearingWaived']);
 		self::assertSame('afgezien', $saved['status']);
+		self::assertSame('afgezien', $this->store->row('hearingSession', (string)$saved['id'])['status']);
+		self::assertSame(['hearingSession: planned -> afgezien'], $this->store->moves);
 		self::assertSame('hearing', $saved['sessionKey']);
 		self::assertSame([], self::$schemas->errors(slug: 'hearingSession', payload: $saved));
 

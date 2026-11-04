@@ -1,0 +1,12 @@
+{
+    "zgwResource": "applicatie",
+    "zgwApiVersion": "1",
+    "enabled": true,
+    "fieldMapping": {
+        "clientIds[0]": "name",
+        "label": "description",
+        "uuid": "uuid",
+        "heeftAlleAutorisaties": "authorizationConfiguration.superuser",
+        "autorisaties": "authorizationConfiguration.scopes"
+    }
+}

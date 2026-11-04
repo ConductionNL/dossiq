@@ -11,15 +11,16 @@ The Zuiddrecht example set SHALL hold the six supplier contracts and suppliers
 DqContracten names, as it draws them, among 34 contracts from 18 suppliers,
 each contract pointing at a supplier of the set. With the four contracts dossiq
 ships, each of which SHALL carry a status, the contracts SHALL count as the
-board does: 38 in all, 29 active, one renewal and one termination waiting on a
-decision, 7 ended, and 5 with a renewal warning. A supplier's KvK number in the
+board does: 38 contracts at 25 suppliers in the subtitle, and the lenses Alles
+32, Actief 26, Verloopt binnen 6 maanden 2 and Besluit nodig 2 (one renewal and
+one termination waiting on a decision). A supplier's KvK number in the
 set SHALL be in the example range `000020xx`.
 
 #### Scenario: The contracts list
 - **GIVEN** the set is installed
 - **WHEN** a handler opens Contracts
-- **THEN** 38 contracts SHALL be listed, the six the board names among them with their supplier, value, end date and status
-- **AND** the lenses SHALL count 29 active, 5 expiring within six months and 2 needing a decision
+- **THEN** the subtitle SHALL read "38 contracten bij 25 leveranciers", the six the board names among the contracts with their supplier, value, end date and status
+- **AND** the lenses SHALL count Alles 32, Actief 26, Verloopt binnen 6 maanden 2 and Besluit nodig 2
 
 ### Requirement: A contract status is named by its label
 

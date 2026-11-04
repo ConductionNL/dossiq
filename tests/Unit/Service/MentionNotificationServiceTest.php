@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\MentionNotificationService;
+use OCA\Dossiq\Service\Notes\MentionedNote;
 use OCA\Dossiq\Service\Queue\MentionQueueRecords;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
@@ -36,6 +37,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the MentionNotificationService class.
  *
  * @covers \OCA\Dossiq\Service\MentionNotificationService
+ * @covers \OCA\Dossiq\Service\Notes\MentionedNote
+ * @covers \OCA\Dossiq\Service\Notes\NoteMention
  */
 class MentionNotificationServiceTest extends TestCase {
 
@@ -116,10 +119,7 @@ class MentionNotificationServiceTest extends TestCase {
 		$notified = $this->service->notifyMention(
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
-			objectId: 'case-1',
-			register: 'dossiq',
-			schema: 'case',
-			noteId: 'note-9',
+			note: new MentionedNote(objectId: 'case-1', register: 'dossiq', schema: 'case', noteId: 'note-9'),
 			mentionedUserIds: ['bob', 'carol'],
 		);
 
@@ -139,10 +139,7 @@ class MentionNotificationServiceTest extends TestCase {
 		$notified = $this->service->notifyMention(
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
-			objectId: 'case-1',
-			register: 'dossiq',
-			schema: 'case',
-			noteId: 'note-9',
+			note: new MentionedNote(objectId: 'case-1', register: 'dossiq', schema: 'case', noteId: 'note-9'),
 			mentionedUserIds: ['alice', 'bob'],
 		);
 
@@ -162,10 +159,7 @@ class MentionNotificationServiceTest extends TestCase {
 		$notified = $this->service->notifyMention(
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
-			objectId: 'case-1',
-			register: 'dossiq',
-			schema: 'case',
-			noteId: 'note-9',
+			note: new MentionedNote(objectId: 'case-1', register: 'dossiq', schema: 'case', noteId: 'note-9'),
 			mentionedUserIds: ['bob', 'bob'],
 		);
 
@@ -218,10 +212,7 @@ class MentionNotificationServiceTest extends TestCase {
 		$this->service->notifyMention(
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
-			objectId: 'case-1',
-			register: 'dossiq',
-			schema: 'case',
-			noteId: 'note-9',
+			note: new MentionedNote(objectId: 'case-1', register: 'dossiq', schema: 'case', noteId: 'note-9'),
 			mentionedUserIds: ['bob'],
 		);
 	}//end testNotificationShapeIsCorrect()
@@ -241,10 +232,7 @@ class MentionNotificationServiceTest extends TestCase {
 		$this->service->notifyMention(
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
-			objectId: 'case-1',
-			register: '',
-			schema: '',
-			noteId: 'note-9',
+			note: new MentionedNote(objectId: 'case-1', register: '', schema: '', noteId: 'note-9'),
 			mentionedUserIds: ['bob'],
 		);
 	}//end testFallsBackToNoteObjectTypeWhenSchemaMissing()
@@ -279,13 +267,28 @@ class MentionNotificationServiceTest extends TestCase {
 		$notified = $this->service->notifyMention(
 			actorUserId: 'alice',
 			actorDisplayName: 'Alice',
-			objectId: 'case-1',
-			register: 'dossiq',
-			schema: 'case',
-			noteId: 'note-9',
+			note: new MentionedNote(objectId: 'case-1', register: 'dossiq', schema: 'case', noteId: 'note-9'),
 			mentionedUserIds: ['bob', 'carol'],
 		);
 
 		$this->assertSame(1, $notified);
 	}//end testExceptionForOneRecipientIsCaughtAndOthersStillNotified()
+
+	/**
+	 * An empty recipient is skipped; the others are still notified.
+	 *
+	 * @return void
+	 */
+	public function testSkipsAnEmptyRecipient(): void {
+		$this->notificationManager->expects($this->once())->method('notify');
+
+		$notified = $this->service->notifyMention(
+			actorUserId: 'alice',
+			actorDisplayName: 'Alice',
+			note: new MentionedNote(objectId: 'case-1', register: 'dossiq', schema: 'case', noteId: 'note-9'),
+			mentionedUserIds: ['', 'bob'],
+		);
+
+		$this->assertSame(1, $notified);
+	}//end testSkipsAnEmptyRecipient()
 }//end class

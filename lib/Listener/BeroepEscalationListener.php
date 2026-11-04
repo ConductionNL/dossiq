@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Dossiq\Listener\Support\ObjectUpdatePayload;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -54,6 +55,7 @@ use Throwable;
  */
 class BeroepEscalationListener implements IEventListener {
 
+	use ObjectUpdatePayload;
 	use SearchesObjects;
 
 	/**
@@ -132,7 +134,7 @@ class BeroepEscalationListener implements IEventListener {
 	 * @return void
 	 */
 	private function deriveDwingendStatus(Event $event): void {
-		$object = $this->extractObject(event: $event);
+		$object = $this->updatedObject(event: $event);
 		if ($object === null) {
 			return;
 		}
@@ -272,74 +274,6 @@ class BeroepEscalationListener implements IEventListener {
 	 * @return bool
 	 */
 	private function isAppealSchema(array $object): bool {
-		$schemaSlug = $this->settingsService->getConfigValue(
-			key: 'beroep_schema'
-		);
-		if ($schemaSlug === '') {
-			return false;
-		}
-
-		$candidate = (string)(
-			$object['@self']['schema'] ?? ($object['@self']['schemaSlug'] ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
-		);
-
-		return $candidate !== '' && (
-			$candidate === $schemaSlug
-			|| str_ends_with($candidate, '/' . $schemaSlug)
-		);
-	}//end isBeroepSchema()
-
-	/**
-	 * Extract the new object payload from an event.
-	 *
-	 * @param Event $event Event instance
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function extractObject(Event $event): ?array {
-		foreach (['getNewObject', 'getObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$value = $event->{$method}();
-			$array = $this->normalise(value: $value);
-			if ($array !== null) {
-				return $array;
-			}
-		}
-
-		return null;
-	}//end extractObject()
-
-	/**
-	 * Normalise a getter return value to an associative array.
-	 *
-	 * @param mixed $value The raw value
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-		}
-
-		return null;
-	}//end normalise()
+		return $this->matchesConfiguredSchema(candidate: $this->schemaNamedAnywhere(object: $object), schemaKey: 'beroep_schema');
+	}//end isAppealSchema()
 }//end class

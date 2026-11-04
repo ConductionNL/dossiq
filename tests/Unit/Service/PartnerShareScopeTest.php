@@ -117,16 +117,17 @@ final class PssShareStore {
 /**
  * No share without a scope, and no scope without a consent.
  *
- * @covers \OCA\Dossiq\Service\CaseSharingService::createPartnerShare
+ * @covers \OCA\Dossiq\Service\CaseSharingService
  * @uses \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
+ * @uses \OCA\Dossiq\Service\Custody\ConsentStanding
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessLinkService
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessPolicy
  * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
  * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
- * @uses \OCA\Dossiq\Service\CaseSharingService
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\CaseShare\ShareStore
  *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
