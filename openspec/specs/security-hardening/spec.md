@@ -1,7 +1,7 @@
 # security-hardening Specification
 
 ## Purpose
-TBD - created by archiving change dossiq-security-hardening. Update Purpose after archive.
+Close the security gaps found in the portals and validators: scope comes from the session, the citizen portal uses a guarded resolver, and validators sit on their write paths.
 
 ## Requirements
 
