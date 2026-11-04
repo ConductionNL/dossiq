@@ -81,7 +81,11 @@ class HearingMinutesRecorder {
 		string $register,
 		string $schema,
 	): void {
-		$this->guardStoredDenial(sessionId: $sessionId, payload: $payload, current: $current, register: $register, schema: $schema);
+		$this->guardStoredDenial(
+			payload: $payload,
+			current: $current,
+			session: ['id' => $sessionId, 'register' => $register, 'schema' => $schema]
+		);
 
 		$hasAudio = isset($payload['audioRecording']) === true
 			&& (string)$payload['audioRecording'] !== '';
@@ -115,17 +119,15 @@ class HearingMinutesRecorder {
 	 *
 	 * The refusal is recorded on the session's OpenRegister trail.
 	 *
-	 * @param string $sessionId UUID of the hearingSession.
-	 * @param array<string, mixed> $payload Minutes payload.
-	 * @param array<string, mixed> $current Current hearingSession record.
-	 * @param string $register The register id.
-	 * @param string $schema The hearingSession schema id.
+	 * @param array<string, mixed>  $payload Minutes payload.
+	 * @param array<string, mixed>  $current Current hearingSession record.
+	 * @param array<string, string> $session The session's `id`, `register` and `schema`.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When the payload carries another consent than a stored denial.
 	 */
-	private function guardStoredDenial(string $sessionId, array $payload, array $current, string $register, string $schema): void {
+	private function guardStoredDenial(array $payload, array $current, array $session): void {
 		if (($current['recordingConsent'] ?? null) !== 'denied'
 			|| array_key_exists('recordingConsent', $payload) === false
 			|| (string)$payload['recordingConsent'] === 'denied'
@@ -134,9 +136,9 @@ class HearingMinutesRecorder {
 		}
 
 		$this->auditTrail->recordRefusal(
-			register: $register,
-			schema: $schema,
-			objectUuid: $sessionId,
+			register: $session['register'],
+			schema: $session['schema'],
+			objectUuid: $session['id'],
 			event: 'recording-consent-change-refused',
 			payload: ['consent' => (string)$payload['recordingConsent']],
 			tag: BezwaarAuditTrail::TAG_RECORDING_CONSENT,
