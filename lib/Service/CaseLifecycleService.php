@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
@@ -70,25 +71,18 @@ class CaseLifecycleService {
 	 *
 	 * @param CaseStatusStore $store OpenRegister reads/writes for the case
 	 * @param CaseTypeReader $caseTypes The case type's own rules
-	 * @param TermijnService $termService Statutory-term instances
-	 * @param DeadlinePauseService $pauseService Opschorten / hervatten (Awb 4:5)
-	 * @param DeadlineExtensionService $extensionService Verlengen (Awb 4:14)
+	 * @param CaseDeadlineServices $deadlines The term, pause and extension services and the engine calendar bridge.
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseEndingActs $endings Reads which act ended the case, so a reopen keeps it
-	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
-	 *        statutory term end lands on a day the administered calendar works.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
 		private readonly CaseTypeReader $caseTypes,
-		private readonly TermijnService $termService,
-		private readonly DeadlinePauseService $pauseService,
-		private readonly DeadlineExtensionService $extensionService,
+		private readonly CaseDeadlineServices $deadlines,
 		private readonly LoggerInterface $logger,
 		private readonly CaseEndingActs $endings,
-		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -130,7 +124,7 @@ class CaseLifecycleService {
 			'deadline' => (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? '')),
 			'statusName' => $this->store->lookupStatusName(statusTypeId: (string)($case['status'] ?? '')),
 			'caseType' => (string)($case['caseType'] ?? ''),
-			'pauseReasons' => $this->pauseService->offeredReasons(caseId: $caseId),
+			'pauseReasons' => $this->deadlines->pauseService->offeredReasons(caseId: $caseId),
 		];
 	}//end state()
 
@@ -163,7 +157,7 @@ class CaseLifecycleService {
 		}
 
 		if ($key !== '') {
-			$rationale = $this->pauseService->suspendRationale(caseId: $caseId, reason: $reason, pauseReason: $key);
+			$rationale = $this->deadlines->pauseService->suspendRationale(caseId: $caseId, reason: $reason, pauseReason: $key);
 		}
 
 		$caseType = $this->caseTypes->read(caseTypeId: (string)($case['caseType'] ?? ''));
@@ -183,7 +177,7 @@ class CaseLifecycleService {
 		$this->onTermInstance(
 			caseId: $caseId,
 			gesture: 'suspend',
-			apply: fn (string $instanceId): array => $this->pauseService->registerPauze(
+			apply: fn (string $instanceId): array => $this->deadlines->pauseService->registerPauze(
 				termInstanceId: $instanceId,
 				durationDays: $duration,
 				rationale: $rationale,
@@ -223,7 +217,7 @@ class CaseLifecycleService {
 		$this->onTermInstance(
 			caseId: $caseId,
 			gesture: 'resume',
-			apply: fn (string $instanceId): array => $this->pauseService->resumeAfterPauze(
+			apply: fn (string $instanceId): array => $this->deadlines->pauseService->resumeAfterPauze(
 				termInstanceId: $instanceId,
 			),
 		);
@@ -282,7 +276,7 @@ class CaseLifecycleService {
 		$extended = $this->onTermInstance(
 			caseId: $caseId,
 			gesture: 'extend',
-			apply: fn (string $instanceId): array => $this->extensionService->requestExtension(
+			apply: fn (string $instanceId): array => $this->deadlines->extensionService->requestExtension(
 				termInstanceId: $instanceId,
 				rationale: $reason,
 				newEndDate: $newEnd,
@@ -499,7 +493,7 @@ class CaseLifecycleService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function onTermInstance(string $caseId, string $gesture, callable $apply): ?array {
-		$instance = $this->termService->getTermijnInstanceForZaak(caseId: $caseId);
+		$instance = $this->deadlines->termService->getTermijnInstanceForZaak(caseId: $caseId);
 		$instanceId = (string)($instance['id'] ?? ($instance['@self']['id'] ?? ''));
 		if ($instanceId === '') {
 			$this->logger->info(
@@ -603,7 +597,7 @@ class CaseLifecycleService {
 		// organisation's calendar decides the day it lands on (Awt art. 1).
 		$end = $start->add($interval);
 
-		return ($this->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
+		return ($this->deadlines->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
 	}//end addPeriod()
 
 	/**

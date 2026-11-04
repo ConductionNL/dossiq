@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
@@ -97,9 +98,11 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$this->outService = new PayoutService(settingsService: $settings, dates: $this->caseDates());
 		$this->bezService = new AmountObjectionService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
-			$this->termService,
-			$this->createMock(TermNoticeSender::class),
-			$logger
+			notices: new TermNoticeSources(
+				termService: $this->termService,
+				sender: $this->createMock(originalClassName: TermNoticeSender::class),
+			),
+			logger: $logger
 		);
 		// The retired daily scan's role is now split: the engine sweep
 		// fires the armed timers, and this listener does the domain side.

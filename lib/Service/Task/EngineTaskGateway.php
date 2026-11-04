@@ -251,7 +251,7 @@ class EngineTaskGateway {
             return 'openregister is not installed or not enabled';
         }
 
-        if (class_exists(self::TASK_SERVICE) === false) {
+        if ($this->taskServiceExists() === false) {
             return sprintf(
                 'openregister is installed but %s does not exist: the namespace moved and dossiq tasks are NOT reaching the engine',
                 self::TASK_SERVICE
@@ -875,6 +875,20 @@ class EngineTaskGateway {
     }//end listFrom()
 
     /**
+     * Whether OpenRegister's task service class is declared.
+     *
+     * Protected, as a testing seam: in dossiq's unit suite whether
+     * OpenRegister loads depends on the run, and a test fixes the answer here.
+     *
+     * @return boolean True when the class exists.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    protected function taskServiceExists(): bool {
+        return class_exists(self::TASK_SERVICE);
+    }//end taskServiceExists()
+
+    /**
      * Resolve OpenRegister's task service, or null.
      *
      * PROTECTED, not private, and that is a testing seam rather than an
@@ -894,7 +908,7 @@ class EngineTaskGateway {
             return null;
         }
 
-        if (class_exists(self::TASK_SERVICE) === false) {
+        if ($this->taskServiceExists() === false) {
             return null;
         }
 

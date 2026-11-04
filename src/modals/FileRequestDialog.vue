@@ -114,6 +114,7 @@ import {
 	NcModal,
 	NcTextField,
 } from '@nextcloud/vue'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * Ask a party of the case for a file.
@@ -174,12 +175,7 @@ export default {
 		 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && fromProp.startsWith('@') === false) {
-				return fromProp
-			}
-
-			return this.$route?.params?.id || this.$route?.params?.objectId || ''
+			return resolveCaseId(this.caseId, this.$route, ['id', 'objectId'])
 		},
 	},
 

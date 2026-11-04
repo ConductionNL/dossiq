@@ -59,7 +59,7 @@
 				},
 				"showTitle": true,
 				"countText": "{total} results in cases, objects and documents, only what you may see",
-				"footerNote": "{shown} of {total} · 20 per page",
+				"footerNote": "20 per page",
 				"searchPlaceholder": "Search cases, objects and documents",
 				"showAdd": false,
 				"headerButtons": [

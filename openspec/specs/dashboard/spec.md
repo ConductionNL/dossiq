@@ -933,18 +933,19 @@ to visible.
 - **WHEN** an administrator reads the configuration report
 - **THEN** it SHALL name the widget and the missing role
 
-### Requirement: The simple cases list leads with five counted views and six columns (REQ-DASH-026)
-In the simple structure the cases list MUST lead with the views All, Mine, Due
-this week, Waiting on the applicant and Woo requests, each with a count, and
-MUST keep every other lens reachable. It MUST show the columns number, title,
-type, status, handler and deadline.
+### Requirement: The simple cases list leads with three counted views and six columns (REQ-DASH-026)
+In the simple structure the cases list MUST lead with the views Alles, Mijn
+zaken and Termijn deze week, each with a count, as board DqZaken draws them, and
+MUST keep every other lens reachable behind the overflow chip after them. It
+MUST show the columns Zaak (the title with the case number under it), Type,
+Status, Behandelaar, Team and Termijn.
 
-#### Scenario: Five views and the rest behind the chip
+#### Scenario: Three views and the rest behind the chip
 @e2e exclude The counts need library 2.60.0 on a live instance; the lenses, their order and their filters are asserted in simpleListAndDashboard.spec.js.
 - **GIVEN** the simple structure
 - **WHEN** a handler opens the cases list
-- **THEN** the strip MUST show the five views with a count each
-- **AND** the other fifteen lenses MUST be offered behind the overflow chip
+- **THEN** the strip MUST show Alles, Mijn zaken and Termijn deze week with a count each
+- **AND** every other lens MUST be offered behind the overflow chip, which names how many it holds ("Nog 18 filters")
 
 ### Requirement: A deadline that ends today is late in the simple structure (REQ-DASH-027)
 In the simple structure a case whose deadline is today MUST be marked late on

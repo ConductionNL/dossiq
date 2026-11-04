@@ -85,6 +85,7 @@ consults for the day a date lands on, after this change.
 |---|---|---|---|---|
 | `lib/BackgroundJob/AcknowledgementDispatchJob.php` | 136 | neither | | the retry counter for an acknowledgement that failed to send, `attempt + 1` passed to `IJobList::add()`. It is one of the `->add(` matches the pattern cannot anchor to a date type |
 | `lib/BackgroundJob/LinkCollectionToCaseJob.php` | 90 | neither | | queues the same dossier link again when the service account is missing, through `IJobList::add()`. One of the `->add(` matches the pattern cannot anchor to a date type |
+| `lib/Repair/RestoreDeclaredBackgroundJobs.php` | 81 | neither | | puts a declared background job back on the job list through `IJobList::add()`. One of the `->add(` matches the pattern cannot anchor to a date type |
 | `lib/BackgroundJob/AdviceDeadlineJob.php` | 89 | neither | | a look-ahead window the daily scan uses to pick which advices to remind on, not a date anyone is held to |
 | `lib/Service/Setup/ExampleDataFragments.php` | 177 | neither | | example data dates relative to the moment the set is loaded (`@today+2d`), so a fresh install shows deadlines this week; fictional data, not a term anyone is held to |
 | `lib/BackgroundJob/DsoDeadlineJob.php` | 196, 205 | statutory | `WorkingDayCalculator` | the Omgevingswet decision term; the day walk is already the calculator's |

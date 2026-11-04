@@ -44,7 +44,7 @@ describe('the conversation message lines (DqZaakContact)', () => {
 	it('reads the subject above the summary and the note with the attachment count under it', () => {
 		const content = widget('case-resident-thread').content
 		// The full message where the contact has one, else its summary; the table keeps the summary.
-		// @spec openspec/changes/contact-message-text/specs/contact-message-text/spec.md#requirement-a-contact-moment-carries-its-full-message
+		// @spec openspec/specs/contact-message-subject-note/spec.md#requirement-a-contact-moment-carries-its-subject-note-and-attachment-count
 		expect(content.bodyField).toEqual(['message', 'summary'])
 		expect(content.subjectField).toBe('subject')
 		expect(content.noteField).toBe('note')

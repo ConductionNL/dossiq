@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
 use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
@@ -43,6 +44,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for DsoCaseService.
  *
  * @covers \OCA\Dossiq\Service\DsoCaseService
+ * @covers \OCA\Dossiq\Service\Dso\DsoCaseSteps
  *
  * @uses \OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
@@ -104,18 +106,20 @@ class DsoCaseServiceTest extends TestCase {
 		$this->service = new DsoCaseService(
 			appConfig: $this->appConfig,
 			container: $this->container,
-			notifier: new DsoStatusChangeNotifier(eventDispatcher: $this->eventDispatcher),
+			steps: new DsoCaseSteps(
+				notifier: new DsoStatusChangeNotifier(eventDispatcher: $this->eventDispatcher),
+				intakeCases: new DsoIntakeCasePayload(
+					caseTypes: $this->caseTypes(),
+					journal: new CaseJournal(userSession: $this->createMock(originalClassName: IUserSession::class))
+				),
+				journal: new CaseJournal(userSession: $this->createMock(originalClassName: IUserSession::class)),
+			),
 			logger: $this->logger,
 			// ADR-084: mock the published CONTRACT. The concrete ObjectService
 			// does not load in this app's test environment — that is the whole
 			// reason the interface exists.
 			objectService: $this->createMock(ObjectServiceInterface::class),
 			workingDays: new WorkingDayCalculator(),
-			intakeCases: new DsoIntakeCasePayload(
-				caseTypes: $this->caseTypes(),
-				journal: new CaseJournal(userSession: $this->createMock(IUserSession::class))
-			),
-			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
 		);
 	}//end setUp()
 
@@ -339,15 +343,17 @@ class DsoCaseServiceTest extends TestCase {
 		$service = new DsoCaseService(
 			appConfig: $this->appConfig,
 			container: $this->container,
-			notifier: new DsoStatusChangeNotifier(eventDispatcher: $this->eventDispatcher),
+			steps: new DsoCaseSteps(
+				notifier: new DsoStatusChangeNotifier(eventDispatcher: $this->eventDispatcher),
+				intakeCases: new DsoIntakeCasePayload(
+					caseTypes: $this->caseTypes(),
+					journal: new CaseJournal(userSession: $this->createMock(originalClassName: IUserSession::class))
+				),
+				journal: new CaseJournal(userSession: $this->createMock(originalClassName: IUserSession::class)),
+			),
 			logger: $this->logger,
 			objectService: $objectServiceMock,
 			workingDays: new WorkingDayCalculator(),
-			intakeCases: new DsoIntakeCasePayload(
-				caseTypes: $this->caseTypes(),
-				journal: new CaseJournal(userSession: $this->createMock(IUserSession::class))
-			),
-			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
 		);
 
 		$result = $service->createZaakFromVergunningaanvraag(

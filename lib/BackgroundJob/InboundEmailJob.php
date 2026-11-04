@@ -50,8 +50,6 @@ namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Email\InboundMailIntake;
-use OCA\Dossiq\Service\Email\IntakeAccount;
-use OCA\Dossiq\Service\Email\MailGatewayInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
@@ -86,9 +84,7 @@ class InboundEmailJob extends TimedJob {
 	 * @param ITimeFactory             $time           Time factory.
 	 * @param IAppConfig               $appConfig      App config.
 	 * @param IAppManager              $appManager     App manager.
-	 * @param MailGatewayInterface     $gateway        The mail gateway.
-	 * @param IntakeAccount            $account        The account and folder intake reads.
-	 * @param InboundMailIntake        $intake         The intake path.
+	 * @param MailIntakeSource $mail The mail gateway, the intake account and the inbound mail intake.
 	 * @param LoggerInterface          $logger         Logger.
 	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
@@ -96,9 +92,7 @@ class InboundEmailJob extends TimedJob {
 		ITimeFactory $time,
 		private readonly IAppConfig $appConfig,
 		private readonly IAppManager $appManager,
-		private readonly MailGatewayInterface $gateway,
-		private readonly IntakeAccount $account,
-		private readonly InboundMailIntake $intake,
+		private readonly MailIntakeSource $mail,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
@@ -149,7 +143,7 @@ class InboundEmailJob extends TimedJob {
 				return;
 			}
 
-			if ($this->gateway->isAvailable() === false) {
+			if ($this->mail->gateway->isAvailable() === false) {
 				$this->logger->info(
 					'Dossiq: mail intake is unavailable because the Mail app is not installed',
 					['app' => Application::APP_ID]
@@ -157,23 +151,23 @@ class InboundEmailJob extends TimedJob {
 				return;
 			}
 
-			if ($this->account->isConfigured() === false) {
+			if ($this->mail->account->isConfigured() === false) {
 				return;
 			}
 
-			$messages = $this->gateway->messages(
-				$this->account->accountId(),
-				$this->account->folder(),
+			$messages = $this->mail->gateway->messages(
+				$this->mail->account->accountId(),
+				$this->mail->account->folder(),
 				$this->batchSize()
 			);
 			if ($messages === []) {
 				return;
 			}
 
-			$counts = $this->intake->processBatch(
+			$counts = $this->mail->intake->processBatch(
 				rows: $messages,
-				accountId: $this->account->accountId(),
-				mailbox: $this->account->folder()
+				accountId: $this->mail->account->accountId(),
+				mailbox: $this->mail->account->folder()
 			);
 
 			$this->logger->info(

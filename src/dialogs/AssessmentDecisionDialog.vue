@@ -188,7 +188,7 @@
 					{{ error }}
 				</p>
 			</template>
-			<BeschikkingComposerDialog
+			<GenerateDocumentDialog
 				v-if="composing"
 				:open="true"
 				:caseId="targetCaseId"
@@ -234,7 +234,7 @@ import AccountGroupOutline from 'vue-material-design-icons/AccountGroupOutline.v
 import CalendarBlankOutline from 'vue-material-design-icons/CalendarBlankOutline.vue'
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
-import BeschikkingComposerDialog from './BeschikkingComposerDialog.vue'
+import GenerateDocumentDialog from './GenerateDocumentDialog.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { nextStepOf } from '../utils/caseNextStep.js'
 
@@ -258,7 +258,7 @@ export default {
 	components: {
 		AccountGroupOutline,
 		CalendarBlankOutline,
-		BeschikkingComposerDialog,
+		GenerateDocumentDialog,
 		CnChoiceCards,
 		FileDocumentCheckOutline,
 		CnDialog,
