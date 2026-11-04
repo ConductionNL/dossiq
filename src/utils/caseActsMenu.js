@@ -422,6 +422,7 @@ export const ACT_ICONS = {
 	archive: 'ArchiveOutline',
 	unarchive: 'Restore',
 	reopen: 'History',
+	remedy: 'ScaleBalance',
 }
 
 /**
@@ -437,6 +438,9 @@ export function iconFor(entry) {
 	}
 	if (entry?.kind === 'always') {
 		return String(entry.icon ?? '')
+	}
+	if (entry?.kind === 'remedy') {
+		return ACT_ICONS.remedy
 	}
 
 	return ACT_ICONS[String(entry?.id ?? '')] ?? ''
@@ -478,7 +482,35 @@ export function buildActsMenu({ transitions, state, acts } = {}) {
 		...transitionEntries(transitions),
 		...alwaysAvailableEntries(acts),
 		...acting,
+		...remedyEntries(acts),
 	]
+}
+
+/**
+ * The remedies the case type declares against its decisions, last in the
+ * menu as board DqVolgendeStap draws "Bezwaar registreren".
+ *
+ * The server answers whether each is open now (a decision was made known)
+ * and says why not; the label and description are the case type's own, so
+ * nothing here names a procedure.
+ *
+ * @param {object|null} acts The `/acts` answer.
+ * @return {Array<object>} The entries.
+ * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-from-the-case-page-req-rml-003
+ */
+function remedyEntries(acts) {
+	const declared = Array.isArray(acts?.remedies) ? acts.remedies : []
+
+	return declared
+		.filter((remedy) => String(remedy?.id ?? '').trim() !== '')
+		.map((remedy) => ({
+			kind: 'remedy',
+			id: String(remedy.id).trim(),
+			label: String(remedy.label ?? remedy.id).trim(),
+			explainer: String(remedy.description ?? '').trim(),
+			disabled: remedy.available === false,
+			reason: remedy.available === false ? String(remedy.reason ?? '').trim() : '',
+		}))
 }
 
 /**
