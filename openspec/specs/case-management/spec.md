@@ -2543,9 +2543,11 @@ the applicant.
 A case SHALL be able to declare that it is homed in another application,
 naming the application, the identifier there and a link to it. Such a case
 SHALL still carry its type, status, terms and parties, and SHALL appear in
-the central list beside the cases dossiq handles. dossiq SHALL NOT offer
-to perform work on an externally homed case, and SHALL show where the work
-is instead.
+the central list beside the cases dossiq handles. The case page SHALL show
+the field "Elders behandeld" in the case's details, reading "Nee" for a case
+dossiq handles and the application and the identifier there for an externally
+homed case, as the board `DqZaak` draws "Elders behandeld: Nee". dossiq SHALL
+NOT offer to perform work on an externally homed case.
 
 #### Scenario: one list answers for both kinds
 @e2e tests/e2e/handing-a-case-over.spec.ts
@@ -2559,7 +2561,7 @@ is instead.
 
 - **GIVEN** an externally homed case
 - **WHEN** a handler opens it
-- **THEN** it SHALL name the application and the identifier there
+- **THEN** the field "Elders behandeld" SHALL name the application and the identifier there
 - **AND** it SHALL offer the link
 
 #### Scenario: dossiq does not pretend to hold the work
@@ -2567,7 +2569,7 @@ is instead.
 - **GIVEN** an externally homed case
 - **WHEN** a handler opens the lifecycle menu
 - **THEN** the acts that perform the work SHALL be disabled
-- **AND** they SHALL say where the work is done
+- **AND** the disabled acts SHALL name the application in "Elders behandeld" as the reason
 
 ### Requirement: One menu holds every lifecycle act (REQ-LIFE-10)
 
@@ -3393,7 +3395,7 @@ A case type MAY list `requestFields`, the facts entries the request card on a ca
 The Cases page SHALL name the assignee value `@me` "My cases" on its own in a saved view's summary.
 
 #### Scenario: Termijn deze week
-- THEN its summary reads "Mijn zaken, deadline binnen 7 dagen"
+- THEN its summary reads "Mijn zaken, termijn binnen 7 dagen"
 
 ### Requirement: Finishing or aborting a case picks its result from the case type (REQ-CM-80)
 

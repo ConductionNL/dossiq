@@ -273,8 +273,8 @@ Dwell SHALL be reported per phase and per assignee.
 
 - **GIVEN** the Process mining page
 - **WHEN** you read the dwell table
-- **THEN** the headline column SHALL be titled Working hours
-- **AND** a second column SHALL be titled Wall-clock hours
+- **THEN** the headline column SHALL be titled "Werkuren" (en "Working hours")
+- **AND** a second column SHALL be titled "Klokuren" (en "Wall-clock hours"), as board DqProcesanalyse draws them
 
 #### Scenario: Per assignee
 @e2e tests/e2e/dwell-time-clock.spec.ts

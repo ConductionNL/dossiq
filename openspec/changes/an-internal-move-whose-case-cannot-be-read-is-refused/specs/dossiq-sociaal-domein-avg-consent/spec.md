@@ -2,7 +2,7 @@
 
 ### Requirement: An internal move whose consent rule cannot be read is refused (REQ-CST-01a)
 
-A move of a case between teams of one organisation SHALL be refused when its case or its case type cannot be read. The refusal SHALL have the rule `consent-unchecked` and the sentence "Consent could not be checked, so the case was not handed on." This covers an empty case id, and a case or case type that is not found. It also covers a read that fails, and a store, register or case or case-type schema that is not configured. A case without a case type SHALL be refused the same way, because its rule cannot be checked.
+A move of a case between teams of one organisation SHALL be refused when its case or its case type cannot be read. The refusal SHALL have the rule `consent-unchecked` and the sentence "De toestemming kon niet worden gecontroleerd, dus de zaak is niet overgedragen" (en "Consent could not be checked, so the case was not handed on."), as board DqOverdragen draws it in the move dialog This covers an empty case id, and a case or case type that is not found. It also covers a read that fails, and a store, register or case or case-type schema that is not configured. A case without a case type SHALL be refused the same way, because its rule cannot be checked.
 
 #### Scenario: The case type cannot be read
 @e2e exclude unit; CaseTransferConsentGateGoldenTest

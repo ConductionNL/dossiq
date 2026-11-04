@@ -3,6 +3,8 @@ kind: code
 depends_on: []
 ---
 
+> SUPERSEDED 2026-11-04 (decision 335): overtaken by `case-type-pins-are-views` and the boards. The menu has no "My case types" heading; a pinned case type is a view under "Mijn weergaven" (DqZijbalk), chosen under "Weergaven in mijn menu" (DqPersoonlijkeInstellingen). Its delta was not synced; REQ-CTN-006 is not drawn.
+
 # Proposal: case-types-in-my-menu
 
 Brings the dossiq sidebar and Nextcloud's personal settings to the boards

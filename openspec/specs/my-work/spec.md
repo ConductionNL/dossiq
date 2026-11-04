@@ -141,11 +141,12 @@ covered by PHPUnit + smoke tests, not Playwright browser assertions.
 
 #### Scenario: My Tasks / Overdue widgets
 - GIVEN the Nextcloud dashboard is displayed
-- THEN the Dossiq "My Tasks" widget (`lib/Dashboard/MyTasksWidget.php`) MUST
-  summarise the user's assigned tasks
-- AND the "Overdue Cases" widget (`lib/Dashboard/OverdueCasesWidget.php`) MUST
-  summarise overdue cases with a red indicator
-- AND clicking a widget MUST navigate into the app
+- THEN the Dossiq "Mijn werk" widget MUST summarise the user's open work in
+  one widget, as the board `DqNextcloudDashboard` draws it: open cases on the
+  user's name, open tasks with how many are late, cases in the user's queue
+  and archive reviews, read from the same source as My Work
+- AND late cases and tasks MUST be shown in red
+- AND "Naar Mijn werk" MUST navigate into the app
 
 #### Scenario: Dashboard preview panel
 - GIVEN the user opens the Dossiq app dashboard (home view)

@@ -20,7 +20,7 @@ the conditions of the case list's Suspended lens).
 ### Requirement: A colleague shares a view with Pieter
 
 The set SHALL give Anouk Bakker the case-list view "Woo-verzoeken team", shared to use with the group Woo en
-informatie, with the conditions of the default view "Woo requests".
+informatie, with the conditions of the default view "Woo-verzoeken" ("Zaaktype Woo-verzoek, status open", en "Woo requests"), as board IndexZijpaneel draws it.
 
 #### Scenario: Gedeeld met mij
 

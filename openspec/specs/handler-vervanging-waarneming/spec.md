@@ -73,7 +73,7 @@ While a substitution is active (status `active` and today within the period), th
 - **GIVEN** an active substitution where Marieke covers Jan with scope `all`
 - **WHEN** Marieke opens My Work
 - **THEN** she MUST see her own cases and tasks unchanged
-- **AND** additionally Jan's open cases and tasks, each marked "waargenomen voor Jan"
+- **AND** additionally Jan's open cases and tasks, each marked "Voor Jan, tot" and the last day of the substitution, as the board `DqAanMijToegewezen` draws "Voor Esra Demir, tot 2 nov"
 - **AND** the substituted items MUST be filterable (show/hide substituted work)
 
 #### Scenario: Scope-limited substitution only routes matching items

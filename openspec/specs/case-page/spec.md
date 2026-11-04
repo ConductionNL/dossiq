@@ -177,7 +177,7 @@ The case's Zetels card SHALL show the subtitle "Wie het werk doet en wie ervoor 
 
 #### Scenario: no hand-over
 - **GIVEN** a case with a handler and no hand-over
-- **THEN** the card reads "Wacht op oppakken: Nee" and "Doorgegeven aan: Niemand"
+- **THEN** the card shows the label "Wacht op oppakken" with the value "Nee", and the label "Doorgegeven aan" with the value "Niemand", label and value apart as the board draws them
 
 ### Requirement: The case's next actions are ruled rows
 

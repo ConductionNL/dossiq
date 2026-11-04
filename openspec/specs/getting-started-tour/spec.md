@@ -16,13 +16,13 @@ foldout, the task SHALL say to open Advanced first.
 
 - **GIVEN** the simple menu structure, where "Cases" is a caption and the item is "All cases"
 - **WHEN** the tour reaches the cases step
-- **THEN** the task reads "Click All cases in the menu"
+- **THEN** the task reads "Klik op Alle zaken in het menu" (en "Click All cases in the menu"), as board DqRondleiding draws it
 
 #### Scenario: The case types step
 
 - **GIVEN** either menu structure, with Case types in the Advanced foldout
 - **WHEN** the tour reaches the case types step
-- **THEN** the task reads "Open Advanced, then Case types"
+- **THEN** the task reads "Open Geavanceerd, daarna Zaaktypen" (en "Open Advanced, then Case types")
 
 #### Scenario: A renamed menu item
 
@@ -61,4 +61,4 @@ The getting-started tour SHALL auto-start only on the Dashboard route. A user wh
 - **GIVEN** a staff user who never saw the tour
 - **WHEN** they open a link to a Woo request
 - **THEN** the case page shows without the welcome card
-- **AND** when they open the dashboard the tour starts at "Welcome to Dossiq"
+- **AND** when they open the dashboard the tour starts at "Welkom bij Dossiq" (en "Welcome to Dossiq")

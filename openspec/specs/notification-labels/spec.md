@@ -41,8 +41,8 @@ helper SHALL fail.
 Every step of every tour in the manifest SHALL have a title with an English
 and a Dutch entry.
 
-#### Scenario: Step 2 of the getting-started tour
+#### Scenario: Step 3 of the getting-started tour
 
-- **GIVEN** the getting-started tour at step 2
+- **GIVEN** the getting-started tour at step 3
 - **WHEN** the popover opens
-- **THEN** it shows the title "All your cases" and a screen reader hears "Step 2 of 7: All your cases"
+- **THEN** it shows the title "Alle zaken" (en "All cases") and a screen reader hears "Stap 3 van 6: Alle zaken", as board DqRondleiding draws "Stap 3 van 6"
