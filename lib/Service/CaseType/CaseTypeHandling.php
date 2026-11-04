@@ -195,6 +195,9 @@ final class CaseTypeHandling {
 	/**
 	 * The user a new case of this type falls to.
 	 *
+	 * The legacy `defaultAssignee` is a user or group id string; a value of
+	 * any other shape names nobody.
+	 *
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
 	 * @return string The user id, or '' when the case stays unclaimed.
@@ -207,7 +210,12 @@ final class CaseTypeHandling {
 			return $declared;
 		}
 
-		return (string)($caseType['defaultAssignee'] ?? '');
+		$legacy = ($caseType['defaultAssignee'] ?? '');
+		if (is_string($legacy) === false && is_int($legacy) === false) {
+			return '';
+		}
+
+		return (string)$legacy;
 	}//end defaultHandler()
 
 	/**

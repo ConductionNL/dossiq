@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  * @uses \OCA\Dossiq\Listener\LinkMarkerListener
+ * @uses \OCA\Dossiq\Listener\Support\ReadsEventObjects
  * @uses \OCA\Dossiq\Review\DocumentRelevance
  * @uses \OCA\Dossiq\Review\StoppingRules
  */

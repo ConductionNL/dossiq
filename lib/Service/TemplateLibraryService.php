@@ -28,6 +28,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\TemplateLibrary\TemplateActivation;
+use OCA\Dossiq\Service\TemplateLibrary\TemplateRows;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -44,14 +46,29 @@ class TemplateLibraryService {
 	private const TEMPLATES_DIR = __DIR__ . '/../Settings/templates';
 
 	/**
+	 * The collections a template declares beside its case type, in the order
+	 * they are saved: the answer's key, the template's key and the setting
+	 * naming the schema.
+	 */
+	private const LINKED_COLLECTIONS = [
+		'statuses' => ['statusTypes', 'status_type_schema'],
+		'properties' => ['propertyDefinitions', 'property_definition_schema'],
+		'documents' => ['documentTypes', 'document_type_schema'],
+		'decisions' => ['decisionTypes', 'decision_type_schema'],
+		'roles' => ['roleTypes', 'role_type_schema'],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service for register/schema references
-	 * @param LoggerInterface $logger Logger
+	 * @param LoggerInterface $logger          Logger
+	 * @param string          $templatesDir    Directory holding the template JSON files
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly string $templatesDir=self::TEMPLATES_DIR,
 	) {
 	}//end __construct()
 
@@ -66,18 +83,8 @@ class TemplateLibraryService {
 	 */
 	public function listTemplates(): array {
 		$templates = [];
-		$dir = self::TEMPLATES_DIR;
 
-		if (is_dir($dir) === false) {
-			return $templates;
-		}
-
-		$files = glob($dir . '/*.json');
-		if ($files === false) {
-			return $templates;
-		}
-
-		foreach ($files as $file) {
+		foreach ($this->templateFiles() as $file) {
 			$content = file_get_contents($file);
 			if ($content === false) {
 				continue;
@@ -107,6 +114,26 @@ class TemplateLibraryService {
 	}//end listTemplates()
 
 	/**
+	 * The template JSON files in the templates directory.
+	 *
+	 * @return array<int, string> File paths, or an empty list when the directory is missing or unreadable.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function templateFiles(): array {
+		if (is_dir($this->templatesDir) === false) {
+			return [];
+		}
+
+		$files = glob($this->templatesDir . '/*.json');
+		if ($files === false) {
+			return [];
+		}
+
+		return $files;
+	}//end templateFiles()
+
+	/**
 	 * What a template fills in from the case, for the generate dialog.
 	 *
 	 * @param array<string, mixed> $data The template file's content.
@@ -133,18 +160,7 @@ class TemplateLibraryService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadTemplate(string $templateId): ?array {
-		$dir = self::TEMPLATES_DIR;
-
-		if (is_dir($dir) === false) {
-			return null;
-		}
-
-		$files = glob($dir . '/*.json');
-		if ($files === false) {
-			return null;
-		}
-
-		foreach ($files as $file) {
+		foreach ($this->templateFiles() as $file) {
 			$content = file_get_contents($file);
 			if ($content === false) {
 				continue;
@@ -186,21 +202,7 @@ class TemplateLibraryService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function activateTemplate(string $templateId): array {
-		$template = $this->loadTemplate(templateId: $templateId);
-		if ($template === null) {
-			throw new RuntimeException('Template not found: ' . $templateId);
-		}
-
-		// The library holds two kinds: zaaktype bundles, which describe a case
-		// type, and DOCUMENT templates, which carry a `body` a letter is
-		// rendered from and no case type at all. Activating the latter would
-		// save an EMPTY caseType object and report a uuid for it, so the
-		// refusal is here rather than in whatever calls this.
-		if (is_array(($template['caseType'] ?? null)) === false) {
-			throw new RuntimeException(
-				'Template is not a case type and cannot be activated: ' . $templateId
-			);
-		}
+		$template = $this->caseTypeTemplate(templateId: $templateId);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -225,22 +227,11 @@ class TemplateLibraryService {
 		$caseTypeId = $caseType->getUuid();
 
 		$created = $this->createTemplateEntities(
-			objectService: $objectService,
-			register: $register,
+			activation: new TemplateActivation(objectService: $objectService, register: $register, caseTypeId: $caseTypeId),
 			template: $template,
-			caseTypeId: $caseTypeId,
 		);
 
-		$result = [
-			'templateId' => $templateId,
-			'caseType' => $caseTypeId,
-			'statuses' => $created['statuses'],
-			'properties' => $created['properties'],
-			'documents' => $created['documents'],
-			'decisions' => $created['decisions'],
-			'roles' => $created['roles'],
-			'workflow' => $created['workflow'],
-		];
+		$result = array_merge(['templateId' => $templateId, 'caseType' => $caseTypeId], $created);
 
 		$this->logger->info(
 			'Template activated: ' . $templateId . ' -> caseType ' . $caseTypeId,
@@ -251,101 +242,104 @@ class TemplateLibraryService {
 	}//end activateTemplate()
 
 	/**
+	 * The template to activate, refused when it is missing or describes no case type.
+	 *
+	 * The library holds two kinds: zaaktype bundles, which describe a case
+	 * type, and DOCUMENT templates, which carry a `body` a letter is
+	 * rendered from and no case type at all. Activating the latter would
+	 * save an EMPTY caseType object and report a uuid for it, so the
+	 * refusal is here rather than in whatever calls this.
+	 *
+	 * @param string $templateId The template id.
+	 *
+	 * @return array<string, mixed> The template, with an array `caseType`.
+	 *
+	 * @throws RuntimeException When the template is missing or not a case type.
+	 */
+	private function caseTypeTemplate(string $templateId): array {
+		$template = $this->loadTemplate(templateId: $templateId);
+		if ($template === null) {
+			throw new RuntimeException('Template not found: ' . $templateId);
+		}
+
+		if (is_array(($template['caseType'] ?? null)) === false) {
+			throw new RuntimeException(
+				'Template is not a case type and cannot be activated: ' . $templateId
+			);
+		}
+
+		return $template;
+	}//end caseTypeTemplate()
+
+	/**
 	 * Create every entity a template declares alongside its case type, each linked to the
 	 * freshly-created caseType id.
 	 *
-	 * @param object $objectService The OpenRegister object service
-	 * @param string $register The Dossiq register slug
-	 * @param array<string, mixed> $template The loaded template definition
-	 * @param string $caseTypeId UUID of the caseType just created
+	 * The name of each status is kept against the uuid it was given, because a
+	 * transition is written by an author in status NAMES and read by the engine
+	 * as status IDS, and nothing in between was translating.
+	 *
+	 * @param TemplateActivation   $activation Where to save, and the case type.
+	 * @param array<string, mixed> $template   The loaded template definition.
 	 *
 	 * @return array<string, mixed> The created object ids, keyed by collection, plus the workflow uuid.
 	 */
-	private function createTemplateEntities(object $objectService, string $register, array $template, string $caseTypeId): array {
-		$created = [
-			'statuses' => [],
-			'properties' => [],
-			'documents' => [],
-			'decisions' => [],
-			'roles' => [],
-			'workflow' => '',
-		];
-
-		// Create status types. The name of each is kept against the uuid it
-		// was given, because a transition is written by an author in status
-		// NAMES and read by the engine as status IDS, and nothing in between
-		// was translating.
-		$statusIds = [];
-		$statusTypeSchema = $this->settingsService->getConfigValue('status_type_schema');
-		foreach (($template['statusTypes'] ?? []) as $statusData) {
-			$statusData['caseType'] = $caseTypeId;
-			$status = $objectService->saveObject(
-				object: $statusData,
-				register: $register,
-				schema: $statusTypeSchema,
+	private function createTemplateEntities(TemplateActivation $activation, array $template): array {
+		$created = [];
+		foreach (self::LINKED_COLLECTIONS as $collection => [$templateKey, $schemaKey]) {
+			$created[$collection] = $this->saveLinked(
+				activation: $activation,
+				rows: new TemplateRows(schemaKey: $schemaKey, rows: ($template[$templateKey] ?? []))
 			);
-			$created['statuses'][] = $status->getUuid();
-			$statusIds[trim((string)($statusData['name'] ?? ''))] = $status->getUuid();
 		}
 
-		// Create property definitions.
-		$propertySchema = $this->settingsService->getConfigValue('property_definition_schema');
-		foreach (($template['propertyDefinitions'] ?? []) as $propData) {
-			$propData['caseType'] = $caseTypeId;
-			$prop = $objectService->saveObject(
-				object: $propData,
-				register: $register,
-				schema: $propertySchema,
-			);
-			$created['properties'][] = $prop->getUuid();
-		}
-
-		// Create document types.
-		$docTypeSchema = $this->settingsService->getConfigValue('document_type_schema');
-		foreach (($template['documentTypes'] ?? []) as $docData) {
-			$docData['caseType'] = $caseTypeId;
-			$doc = $objectService->saveObject(
-				object: $docData,
-				register: $register,
-				schema: $docTypeSchema,
-			);
-			$created['documents'][] = $doc->getUuid();
-		}
-
-		// Create decision types.
-		$decisionTypeSchema = $this->settingsService->getConfigValue('decision_type_schema');
-		foreach (($template['decisionTypes'] ?? []) as $decData) {
-			$decData['caseType'] = $caseTypeId;
-			$dec = $objectService->saveObject(
-				object: $decData,
-				register: $register,
-				schema: $decisionTypeSchema,
-			);
-			$created['decisions'][] = $dec->getUuid();
-		}
-
-		// Create role types.
-		$roleTypeSchema = $this->settingsService->getConfigValue('role_type_schema');
-		foreach (($template['roleTypes'] ?? []) as $roleData) {
-			$roleData['caseType'] = $caseTypeId;
-			$role = $objectService->saveObject(
-				object: $roleData,
-				register: $register,
-				schema: $roleTypeSchema,
-			);
-			$created['roles'][] = $role->getUuid();
-		}
-
-		$created['workflow'] = $this->createWorkflowTemplate(
-			objectService: $objectService,
-			register: $register,
-			template: $template,
-			caseTypeId: $caseTypeId,
-			statusIds: $statusIds,
-		);
+		$statusIds = $this->statusIdsByName(rows: ($template['statusTypes'] ?? []), uuids: $created['statuses']);
+		$created['workflow'] = $this->createWorkflowTemplate(activation: $activation->withStatusIds(statusIds: $statusIds), template: $template);
 
 		return $created;
 	}//end createTemplateEntities()
+
+	/**
+	 * Save the rows of one collection, each linked to the activation's case type.
+	 *
+	 * @param TemplateActivation $activation Where to save, and the case type.
+	 * @param TemplateRows       $rows       The rows and their schema setting.
+	 *
+	 * @return array<int, string> The saved uuids, in order.
+	 */
+	private function saveLinked(TemplateActivation $activation, TemplateRows $rows): array {
+		$schema = $this->settingsService->getConfigValue($rows->schemaKey);
+		$uuids = [];
+		foreach ($rows->rows as $row) {
+			$row['caseType'] = $activation->caseTypeId;
+			$uuids[] = $activation->objectService->saveObject(
+				object: $row,
+				register: $activation->register,
+				schema: $schema,
+			)->getUuid();
+		}
+
+		return $uuids;
+	}//end saveLinked()
+
+	/**
+	 * Each status name against the uuid its row was saved under; a later row with the same name wins.
+	 *
+	 * @param mixed              $rows  The status rows as the template declares them.
+	 * @param array<int, string> $uuids The uuids they were saved under, in order.
+	 *
+	 * @return array<string, string> Status name to uuid.
+	 */
+	private function statusIdsByName(mixed $rows, array $uuids): array {
+		$statusIds = [];
+		$index = 0;
+		foreach ($rows as $row) {
+			$statusIds[trim((string)($row['name'] ?? ''))] = $uuids[$index];
+			$index++;
+		}
+
+		return $statusIds;
+	}//end statusIdsByName()
 
 	/**
 	 * Create the workflow a template declares, with its transitions resolved.
@@ -366,64 +360,82 @@ class TemplateLibraryService {
 	 * because a transition with an empty `fromStatus` is offered from every
 	 * status in the case type.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $register      The Dossiq register slug.
-	 * @param array<string, mixed> $template      The loaded template definition.
-	 * @param string               $caseTypeId    UUID of the caseType just created.
-	 * @param array<string, string> $statusIds    Status name to uuid, from this activation.
+	 * @param TemplateActivation   $activation Where to save, the case type and the statuses it created.
+	 * @param array<string, mixed> $template   The loaded template definition.
 	 *
 	 * @return string The workflow uuid, or the empty string when the template declares none.
 	 *
 	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
-	private function createWorkflowTemplate(
-		object $objectService,
-		string $register,
-		array $template,
-		string $caseTypeId,
-		array $statusIds,
-	): string {
+	private function createWorkflowTemplate(TemplateActivation $activation, array $template): string {
 		$workflow = ($template['workflowTemplate'] ?? null);
 		if (is_array($workflow) === false) {
 			return '';
 		}
 
+		$transitions = $this->resolvedTransitions(activation: $activation, workflow: $workflow);
+		if ($transitions === []) {
+			return '';
+		}
+
+		$workflow['caseType'] = $activation->caseTypeId;
+		$workflow['transitions'] = $transitions;
+
+		return $activation->objectService->saveObject(
+			object: $workflow,
+			register: $activation->register,
+			schema: $this->settingsService->getConfigValue('workflow_template_schema'),
+		)->getUuid();
+	}//end createWorkflowTemplate()
+
+	/**
+	 * The workflow's transitions with their status names resolved to uuids; the rest dropped.
+	 *
+	 * @param TemplateActivation   $activation The statuses this activation created.
+	 * @param array<string, mixed> $workflow   The workflow the template declares.
+	 *
+	 * @return array<int, array<string, mixed>> The resolved transitions.
+	 */
+	private function resolvedTransitions(TemplateActivation $activation, array $workflow): array {
 		$transitions = [];
 		foreach ((array)($workflow['transitions'] ?? []) as $transition) {
 			if (is_array($transition) === false) {
 				continue;
 			}
 
-			$from = ($statusIds[trim((string)($transition['fromStatusName'] ?? ''))] ?? '');
-			$to = ($statusIds[trim((string)($transition['toStatusName'] ?? ''))] ?? '');
-			if ($from === '' || $to === '') {
-				$this->logger->warning(
-					'Template transition names a status the template does not declare, dropped: '
-					. (string)($transition['label'] ?? ''),
-					['app' => Application::APP_ID]
-				);
-				continue;
+			$resolved = $this->resolvedTransition(activation: $activation, transition: $transition);
+			if ($resolved !== null) {
+				$transitions[] = $resolved;
 			}
-
-			unset($transition['fromStatusName'], $transition['toStatusName']);
-			$transition['fromStatus'] = $from;
-			$transition['toStatus'] = $to;
-			$transitions[] = $transition;
-		}//end foreach
-
-		if ($transitions === []) {
-			return '';
 		}
 
-		$workflow['caseType'] = $caseTypeId;
-		$workflow['transitions'] = $transitions;
+		return $transitions;
+	}//end resolvedTransitions()
 
-		$saved = $objectService->saveObject(
-			object: $workflow,
-			register: $register,
-			schema: $this->settingsService->getConfigValue('workflow_template_schema'),
-		);
+	/**
+	 * One transition with `fromStatus` and `toStatus` as uuids, or null when it names an undeclared status.
+	 *
+	 * @param TemplateActivation   $activation The statuses this activation created.
+	 * @param array<string, mixed> $transition The transition as the template writes it.
+	 *
+	 * @return array<string, mixed>|null The resolved transition.
+	 */
+	private function resolvedTransition(TemplateActivation $activation, array $transition): ?array {
+		$from = $activation->statusId(name: ($transition['fromStatusName'] ?? ''));
+		$to = $activation->statusId(name: ($transition['toStatusName'] ?? ''));
+		if ($from === '' || $to === '') {
+			$this->logger->warning(
+				'Template transition names a status the template does not declare, dropped: '
+				. (string)($transition['label'] ?? ''),
+				['app' => Application::APP_ID]
+			);
+			return null;
+		}
 
-		return $saved->getUuid();
-	}//end createWorkflowTemplate()
+		unset($transition['fromStatusName'], $transition['toStatusName']);
+		$transition['fromStatus'] = $from;
+		$transition['toStatus'] = $to;
+
+		return $transition;
+	}//end resolvedTransition()
 }//end class

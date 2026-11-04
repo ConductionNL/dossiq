@@ -45,10 +45,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
+use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -69,6 +71,16 @@ class CaseTeamAccessProjector {
 	 * OpenRegister's schema mapper, by the name the container knows it under.
 	 */
 	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+
+	/**
+	 * OpenRegister's record of what an app shipped for a schema.
+	 */
+	private const BASELINE_STORE = 'OCA\\OpenRegister\\Service\\ShippedBaseline\\ShippedBaselineStore';
+
+	/**
+	 * The app config key that lists every team the projector has written a rule for.
+	 */
+	public const MANAGED_TEAMS_KEY = 'case_team_access_managed_teams';
 
 	/**
 	 * Constructor.
@@ -191,19 +203,195 @@ class CaseTeamAccessProjector {
 		}
 
 		$caseTypes = $this->caseTypeTeams();
-		$block = $this->rules->block(shipped: $this->shippedBlock(), caseTypes: $caseTypes);
-		if ($block === $schema->getAuthorization()) {
-			return false;
+		$desired = $this->rules->block(shipped: $this->shippedBlock(), caseTypes: $caseTypes);
+		$live = ($schema->getAuthorization() ?? []);
+		$managed = $this->managedTeams(current: $caseTypes);
+		$merge = (new CaseAuthorizationMerge())->merge(
+			desired: $desired,
+			live: $live,
+			baseline: $this->recordedAuthorization(),
+			managed: $managed,
+		);
+		$block = $merge['block'];
+		$this->reportKeptLocal(conflicts: $merge['conflicts']);
+		$this->reportRestored(restored: $merge['restored']);
+		$changed = ($block !== $live);
+		if ($changed === true) {
+			$schema->setAuthorization($block);
+			$schemaMapper->update($schema);
+			$this->logger->info(
+				'Dossiq: wrote the handling team rules onto the case schema',
+				['teams' => count($this->rules->teamEntries(caseTypes: $caseTypes))]
+			);
 		}
 
-		$schema->setAuthorization($block);
-		$schemaMapper->update($schema);
+		$this->alignShippedBaseline(block: $desired);
+		$this->rememberManagedTeams(teams: $managed);
 
-		$this->logger->info(
-			'Dossiq: wrote the handling team rules onto the case schema',
-			['teams' => count($this->rules->teamEntries(caseTypes: $caseTypes))]
-		);
-
-		return true;
+		return $changed;
 	}//end writeToSchema()
+
+	/**
+	 * Every team the projector manages: the teams the case types name now, and every team it wrote a rule for before.
+	 *
+	 * A team rule for one of these is the projector's to rewrite or remove,
+	 * whatever the baseline says, so a team that left every case type loses
+	 * its rule even when the baseline lags.
+	 *
+	 * @param array<int, array{id: string, teams: array<int, string>}> $current Every case type, with its handling teams.
+	 *
+	 * @return array<int, string> The teams, sorted.
+	 */
+	private function managedTeams(array $current): array {
+		$teams = array_column($this->rules->teamEntries(caseTypes: $current), 'group');
+		$stored = json_decode($this->appConfig()->getValueString(app: Application::APP_ID, key: self::MANAGED_TEAMS_KEY, default: '[]'), true);
+		if (is_array($stored) === true) {
+			$teams = array_merge($teams, array_filter($stored, 'is_string'));
+		}
+
+		$teams = array_values(array_unique(array_map('strval', $teams)));
+		sort($teams, SORT_STRING);
+
+		return $teams;
+	}//end managedTeams()
+
+	/**
+	 * Remember the managed teams, so a team that leaves every case type is still known as the projector's.
+	 *
+	 * @param array<int, string> $teams The managed teams.
+	 *
+	 * @return void
+	 */
+	private function rememberManagedTeams(array $teams): void {
+		$this->appConfig()->setValueString(app: Application::APP_ID, key: self::MANAGED_TEAMS_KEY, value: (string)json_encode($teams));
+	}//end rememberManagedTeams()
+
+	/**
+	 * The app config, from the container the projector already holds.
+	 *
+	 * @return IAppConfig The app config.
+	 */
+	private function appConfig(): IAppConfig {
+		return $this->container->get(IAppConfig::class);
+	}//end appConfig()
+
+	/**
+	 * The authorization the projector recorded last, as the case schema's shipped baseline.
+	 *
+	 * @return array<string, mixed>|null The block, or null when none was recorded or it cannot be read.
+	 */
+	private function recordedAuthorization(): ?array {
+		if ($this->container->has(self::BASELINE_STORE) === false) {
+			return null;
+		}
+
+		// An unreadable baseline reads as none (null, never an empty baseline).
+		// The merge then keeps every rule that is not a managed team rule, does
+		// not bring back a shipped rule missing from the live block, keeps a map
+		// that differs, and reports each; managed team rules follow the case
+		// types. So it widens nothing an administrator narrowed.
+		try {
+			$baselines = $this->container->get(self::BASELINE_STORE);
+			$baseline = $baselines->read(subject: $baselines->schemaSubject(slug: self::CASE_SCHEMA_SLUG));
+		} catch (Throwable) {
+			$baseline = null;
+		}
+
+		$block = ($baseline['definition']['authorization'] ?? null);
+		if (is_array($block) === false) {
+			return null;
+		}
+
+		return $block;
+	}//end recordedAuthorization()
+
+	/**
+	 * Log the projector rules an administrator changed, which the projector left as they are.
+	 *
+	 * @param array<int, string> $conflicts The `action` or `action[rule]` paths kept local.
+	 *
+	 * @return void
+	 */
+	private function reportKeptLocal(array $conflicts): void {
+		if ($conflicts === []) {
+			return;
+		}
+
+		$this->logger->warning(
+			'Dossiq: the case schema kept local changes to handling team rules; the projector did not overwrite them',
+			['keptLocal' => $conflicts]
+		);
+	}//end reportKeptLocal()
+
+	/**
+	 * Log the handling team rules an administrator edited or added that the projector restored to what the case types grant.
+	 *
+	 * Ruben decided on 3 November 2026 that the case types win for a team
+	 * rule, and that the overwrite is reported, so the edit is not lost in silence.
+	 *
+	 * @param array<int, string> $restored The `action[rule]` paths restored.
+	 *
+	 * @return void
+	 */
+	private function reportRestored(array $restored): void {
+		if ($restored === []) {
+			return;
+		}
+
+		$this->logger->warning(
+			'Dossiq: the case schema had local changes to handling team rules, which were replaced. '
+			. 'These rules follow the case type\'s teams; change the case type instead.',
+			['restored' => $restored]
+		);
+	}//end reportRestored()
+
+	/**
+	 * Record the projector's own block as the case schema's shipped authorization.
+	 *
+	 * OpenRegister keeps what an app shipped beside what the instance runs, and
+	 * on an upgrade it keeps a part the instance changed instead of the newly
+	 * shipped one. Without this, the block written above reads as a local edit,
+	 * so a later shipped change to the case schema's authorization is kept out
+	 * as a conflict. With it, the upgrade applies the shipped change and the
+	 * next reapply puts the team rules back on top of it.
+	 *
+	 * Only an existing baseline is aligned: without one the import has nothing
+	 * to compare against and writes the shipped block anyway. A failure is
+	 * logged and does not undo the schema write.
+	 *
+	 * @param array<string, mixed> $block The block the projector derives: shipped plus team rules, without local rules.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function alignShippedBaseline(array $block): void {
+		if ($this->container->has(self::BASELINE_STORE) === false) {
+			return;
+		}
+
+		try {
+			$baselines = $this->container->get(self::BASELINE_STORE);
+			$subject = $baselines->schemaSubject(slug: self::CASE_SCHEMA_SLUG);
+			$baseline = $baselines->read(subject: $subject);
+			if (is_array($baseline['definition'] ?? null) === false || ($baseline['definition']['authorization'] ?? null) === $block) {
+				return;
+			}
+
+			$definition = $baseline['definition'];
+			$definition['authorization'] = $block;
+			$recorded = $baselines->record(
+				subject: $subject,
+				definition: $definition,
+				app: $baseline['app'],
+				appVersion: $baseline['appVersion'],
+			);
+		} catch (Throwable) {
+			$recorded = false;
+		}
+
+		if ($recorded === false) {
+			$this->logger->warning('Dossiq: the case schema\'s shipped baseline was not aligned with the handling team rules');
+		}
+	}//end alignShippedBaseline()
 }//end class

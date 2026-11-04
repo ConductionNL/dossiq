@@ -1,6 +1,6 @@
 # Screens
 
-- DqUwWachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqUwWachtrij
-- DqAanMijToegewezen https://identity.conduction.nl/screens/board?id=dossiq/DqAanMijToegewezen
-- DqTeamwachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqTeamwachtrij
-- DqMijnTeam https://identity.conduction.nl/screens/board?id=dossiq/DqMijnTeam
+- dossiq/DqUwWachtrij uw wachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqUwWachtrij
+- dossiq/DqAanMijToegewezen aan mij toegewezen https://identity.conduction.nl/screens/board?id=dossiq/DqAanMijToegewezen
+- dossiq/DqTeamwachtrij teamwachtrij https://identity.conduction.nl/screens/board?id=dossiq/DqTeamwachtrij
+- dossiq/DqMijnTeam mijn werk, mijn team https://identity.conduction.nl/screens/board?id=dossiq/DqMijnTeam

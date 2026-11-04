@@ -61,35 +61,25 @@ class BerichtenboxJournal {
 	 * able to see what became of the letter they wrote. It carries status
 	 * `refused`, no external id, no sent time and the reason.
 	 *
-	 * @param string               $caseId           The case.
-	 * @param string               $bsn              Who it was addressed to.
-	 * @param string               $subject          The subject.
-	 * @param string               $body             The body.
-	 * @param string               $typeCode         The bericht type.
-	 * @param string|null          $attachmentFileId The attachment, when there is one.
-	 * @param array<string, mixed> $result           What the adapter answered.
+	 * @param array<string, mixed> $letter The letter: `caseId`, `bsn` (who it was addressed to), `subject`, `body`,
+	 *                                     `typeCode` (the bericht type) and `attachmentFileId` (or null).
+	 * @param array<string, mixed> $result What the adapter answered.
 	 *
 	 * @return array<string, mixed> The record to store.
 	 *
 	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
-	public function messageRecord(
-		string $caseId,
-		string $bsn,
-		string $subject,
-		string $body,
-		string $typeCode,
-		?string $attachmentFileId,
-		array $result,
-	): array {
+	public function messageRecord(array $letter, array $result): array {
+		$record = [
+			'caseId' => $letter['caseId'],
+			'bsn' => $letter['bsn'],
+			'subject' => $letter['subject'],
+			'body' => $letter['body'],
+			'berichtTypeCode' => $letter['typeCode'],
+			'attachmentFileId' => $letter['attachmentFileId'],
+		];
 		if ((($result['refused'] ?? false) === true)) {
-			return [
-				'caseId' => $caseId,
-				'bsn' => $bsn,
-				'subject' => $subject,
-				'body' => $body,
-				'berichtTypeCode' => $typeCode,
-				'attachmentFileId' => $attachmentFileId,
+			return $record + [
 				'externalMessageId' => null,
 				'status' => 'refused',
 				'sentAt' => null,
@@ -97,13 +87,7 @@ class BerichtenboxJournal {
 			];
 		}
 
-		return [
-			'caseId' => $caseId,
-			'bsn' => $bsn,
-			'subject' => $subject,
-			'body' => $body,
-			'berichtTypeCode' => $typeCode,
-			'attachmentFileId' => $attachmentFileId,
+		return $record + [
 			'externalMessageId' => $result['messageId'] ?? null,
 			'status' => $result['status'] ?? 'sent',
 			'sentAt' => $result['sentAt'] ?? (new DateTime())->format('c'),
