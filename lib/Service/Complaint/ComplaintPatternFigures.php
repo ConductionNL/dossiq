@@ -215,7 +215,12 @@ class ComplaintPatternFigures {
 		$rows = [];
 		foreach ($perCategory as $category => $sum) {
 			if ($category !== '' && $sum['handled'] > 0) {
-				$rows[] = ['category' => $category, 'count' => $sum['count'], 'averageDays' => $this->share(part: $sum['days'], whole: $sum['handled'], scale: 1), 'upheldPercent' => $this->share(part: $sum['upheld'], whole: $sum['handled'], scale: 100)];
+				$rows[] = [
+					'category' => $category,
+					'count' => $sum['count'],
+					'averageDays' => $this->share(part: $sum['days'], whole: $sum['handled'], scale: 1),
+					'upheldPercent' => $this->share(part: $sum['upheld'], whole: $sum['handled'], scale: 100),
+				];
 			}
 		}
 

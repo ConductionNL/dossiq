@@ -80,6 +80,8 @@ final class QuarterPeriod {
 	 * The quarter before this one.
 	 *
 	 * @return self
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function previous(): self {
 		if ($this->quarter === 1) {
@@ -93,6 +95,8 @@ final class QuarterPeriod {
 	 * The first day, `Y-m-d`.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function firstDay(): string {
 		return sprintf('%04d-%02d-01', $this->year, ((($this->quarter - 1) * 3) + 1));
@@ -102,6 +106,8 @@ final class QuarterPeriod {
 	 * The last day, `Y-m-d`.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function lastDay(): string {
 		return (new DateTimeImmutable($this->firstDay()))->modify('+3 months -1 day')->format('Y-m-d');
@@ -111,6 +117,8 @@ final class QuarterPeriod {
 	 * The twelve months that end with this quarter, oldest first, as `Y-m`.
 	 *
 	 * @return list<string>
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function trailingMonths(): array {
 		$first = (new DateTimeImmutable($this->firstDay()))->modify('-9 months');
@@ -128,6 +136,8 @@ final class QuarterPeriod {
 	 * @param string $date A date that starts with `Y-m-d`.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
 	public function holds(string $date): bool {
 		$day = substr($date, 0, 10);

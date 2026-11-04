@@ -113,6 +113,8 @@ class ComplaintPatternsController extends Controller {
 			return new JSONResponse($answer);
 		}
 
-		return new DataDownloadResponse($this->pdf->render(patterns: $answer), 'complaint-patterns-'.$period->year.'-Q'.$period->quarter.'.pdf', 'application/pdf');
+		$name = 'complaint-patterns-'.$period->year.'-Q'.$period->quarter.'.pdf';
+
+		return new DataDownloadResponse($this->pdf->render(patterns: $answer), $name, 'application/pdf');
 	}//end index()
 }//end class

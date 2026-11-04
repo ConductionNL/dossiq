@@ -60,12 +60,23 @@ class PlainTextPdf {
 			$pages = [[]];
 		}
 
-		$objects = ['<< /Type /Catalog /Pages 2 0 R >>', '', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'];
+		$objects = [
+			'<< /Type /Catalog /Pages 2 0 R >>',
+			'',
+			'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+			'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+		];
 		$kids = [];
 		foreach ($pages as $index => $pageLines) {
-			$stream = $this->pageStream(title: ($index === 0 ? $title : ''), lines: $pageLines);
+			$heading = '';
+			if ($index === 0) {
+				$heading = $title;
+			}
+
+			$stream = $this->pageStream(title: $heading, lines: $pageLines);
 			$objects[] = '<< /Length '.strlen($stream)." >>\nstream\n".$stream."\nendstream";
-			$objects[] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents '.count($objects).' 0 R >>';
+			$resources = '/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >>';
+			$objects[] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] '.$resources.' /Contents '.count($objects).' 0 R >>';
 			$kids[] = count($objects).' 0 R';
 		}
 

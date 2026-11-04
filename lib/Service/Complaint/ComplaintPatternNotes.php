@@ -70,13 +70,32 @@ class ComplaintPatternNotes {
 
 		return [
 			'perMonth' => $perMonth,
-			'perMonthNote' => $this->l10n->t('Target: at most %s.', [(string)$perMonthTarget]).' '.$this->verdict(onTarget: $perMonth <= $perMonthTarget, over: true),
+			'perMonthNote' => $this->l10n->t('Target: at most %s.', [(string)$perMonthTarget]).' '
+				.$this->verdict(onTarget: $perMonth <= $perMonthTarget, over: true),
 			'withinAwbPercent' => $withinAwb,
-			'withinAwbNote' => $this->noted(value: $withinAwb, none: $noneHandled, note: $this->l10n->t('Target: more than %s %%.', [(string)$awbTarget]), onTarget: ($withinAwb ?? 0) > $awbTarget, over: false),
+			'withinAwbNote' => $this->noted(
+				value: $withinAwb,
+				none: $noneHandled,
+				note: $this->l10n->t('Target: more than %s %%.', [(string)$awbTarget]),
+				onTarget: ($withinAwb ?? 0) > $awbTarget,
+				over: false
+			),
 			'upheldPercent' => $upheld,
-			'upheldNote' => $this->noted(value: $upheld, none: $noneHandled, note: $this->l10n->t('Target: less than %s %%.', [(string)$upheldTarget]), onTarget: ($upheld ?? 0) < $upheldTarget, over: true),
+			'upheldNote' => $this->noted(
+				value: $upheld,
+				none: $noneHandled,
+				note: $this->l10n->t('Target: less than %s %%.', [(string)$upheldTarget]),
+				onTarget: ($upheld ?? 0) < $upheldTarget,
+				over: true
+			),
 			'averageDays' => $averageDays,
-			'averageDaysNote' => $this->noted(value: $averageDays, none: $noneHandled, note: $this->l10n->t('Awb term 6 weeks (%s d).', [(string)ComplaintPatternFigures::AWB_TERM_DAYS]), onTarget: ($averageDays ?? 0) <= ComplaintPatternFigures::AWB_TERM_DAYS, over: true),
+			'averageDaysNote' => $this->noted(
+				value: $averageDays,
+				none: $noneHandled,
+				note: $this->l10n->t('Awb term 6 weeks (%s d).', [(string)ComplaintPatternFigures::AWB_TERM_DAYS]),
+				onTarget: ($averageDays ?? 0) <= ComplaintPatternFigures::AWB_TERM_DAYS,
+				over: true
+			),
 		];
 	}//end kpis()
 

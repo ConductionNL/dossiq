@@ -81,7 +81,8 @@ class ComplaintPatternsPdf {
 		$lines[] = '';
 		$lines[] = $this->l10n->t('Average handling time per category');
 		foreach ($patterns['resolutionByCategory'] as $row) {
-			$lines[] = '  '.$this->l10n->t('%1$s: %2$s complaints, %3$s days on average, %4$s %% well-founded', [$row['category'], (string)$row['count'], (string)$row['averageDays'], (string)$row['upheldPercent']]);
+			$values = [$row['category'], (string)$row['count'], (string)$row['averageDays'], (string)$row['upheldPercent']];
+			$lines[] = '  '.$this->l10n->t('%1$s: %2$s complaints, %3$s days on average, %4$s %% well-founded', $values);
 		}
 
 		return $this->writer->render(title: $this->l10n->t('Complaints: recurring patterns'), lines: $lines);

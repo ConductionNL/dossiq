@@ -97,9 +97,13 @@ class ComplaintPatterns {
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			filters: ['receiptDate' => ['gte' => min($months[0].'-01', $period->previous()->firstDay()), 'lte' => $period->lastDay()], '_limit' => 10000]
+			filters: [
+				'receiptDate' => ['gte' => min($months[0].'-01', $period->previous()->firstDay()), 'lte' => $period->lastDay()],
+				'_limit' => 10000,
+			]
 		);
-		$figures = $this->figures->compute(period: $period, complaints: $complaints, dispositions: $this->dispositions(objectService: $objectService, register: $register));
+		$dispositions = $this->dispositions(objectService: $objectService, register: $register);
+		$figures = $this->figures->compute(period: $period, complaints: $complaints, dispositions: $dispositions);
 		$targets = $this->targets();
 
 		return [
@@ -130,7 +134,8 @@ class ComplaintPatterns {
 		}
 
 		$final = [];
-		foreach ($this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 10000]) as $row) {
+		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 10000]);
+		foreach ($rows as $row) {
 			$complaint = (string)($row['complaint'] ?? '');
 			if ($complaint !== '' && (string)($row['approvalStatus'] ?? '') !== 'awaiting_approval') {
 				$final[$complaint] = $row;
@@ -190,7 +195,12 @@ class ComplaintPatterns {
 			if ($rise !== null) {
 				$count = $byCategory['counts'][$index];
 				$before = (string)$byCategory['previousCounts'][$index];
-				$parts[] = $this->l10n->n('%1$s (%2$s complaint, from %3$s to %2$s)', '%1$s (%2$s complaints, from %3$s to %2$s)', $count, [$byCategory['labels'][$index], (string)$count, $before]);
+				$parts[] = $this->l10n->n(
+					'%1$s (%2$s complaint, from %3$s to %2$s)',
+					'%1$s (%2$s complaints, from %3$s to %2$s)',
+					$count,
+					[$byCategory['labels'][$index], (string)$count, $before]
+				);
 			}
 		}
 
@@ -199,7 +209,12 @@ class ComplaintPatterns {
 		}
 
 		return [[
-			'title' => $this->l10n->n('%n category rose by more than half in the %s', '%n categories rose by more than half in the %s', count($parts), [mb_strtolower($this->quarterLabel(period: $period))]),
+			'title' => $this->l10n->n(
+				'%n category rose by more than half in the %s',
+				'%n categories rose by more than half in the %s',
+				count($parts),
+				[mb_strtolower($this->quarterLabel(period: $period))]
+			),
 			'text' => implode('; ', $parts).'.',
 		]];
 	}//end findings()
