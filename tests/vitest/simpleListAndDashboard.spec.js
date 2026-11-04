@@ -40,6 +40,9 @@ const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const iconsSource = read('src', 'icons.js')
 const registrySource = read('src', 'registry.js')
 
+/** The signal tiles board DqDashboard draws under the case tiles (signalering-widgets). */
+const SIGNAL_TILES = ['my-open-work', 'teams-queue-signal', 'deadline-signals', 'task-reminders', 'woo-deadlines']
+
 const WOO = '3c0f5a00-0000-4000-a000-00000000a001'
 
 // The case schema is the main register plus what the fragments add to it.
@@ -556,7 +559,9 @@ describe('the landing page', () => {
 		// the simple structure draws, and the three case tiles, which it draws
 		// as rows (see below).
 		const asRows = ['stalled-cases', 'favourite-cases', 'recent-cases']
-		const kept = (list) => list.filter((item) => item.id !== 'layout-note' && !asRows.includes(item.id))
+		// The five signal tiles (DqDashboard, signalering-widgets) are the
+		// simple structure's own as well.
+		const kept = (list) => list.filter((item) => item.id !== 'layout-note' && !asRows.includes(item.id) && !SIGNAL_TILES.includes(item.id))
 		expect(kept(dashboard.config.widgets)).toEqual(sameButBars(kept(before.config.widgets)))
 		expect(dashboard.config.widgets.map((item) => item.id)).toContain('layout-note')
 		expect(dashboard.config.kpiRow).toEqual([
@@ -572,6 +577,7 @@ describe('the landing page', () => {
 			'stalled-cases',
 			'favourite-cases',
 			'recent-cases',
+			...SIGNAL_TILES,
 			'layout-note',
 		])
 		expect(dashboard.config.showHeader).toBeUndefined()
