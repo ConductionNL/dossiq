@@ -122,7 +122,12 @@ describe('the scan can actually see a broken step', () => {
 	})
 
 	it('classifies a DOM target as unverifiable rather than broken', () => {
-		const unverifiable = scan(tours, surfaces()).filter(
+		// The shipped tour names only pages and menu entries, so one step gets a
+		// test id target here.
+		const withElement = JSON.parse(JSON.stringify(tours))
+		withElement[0].steps[1].target = { kind: 'element', ref: 'index-add' }
+
+		const unverifiable = scan(withElement, surfaces()).filter(
 			(step) => step.state === 'unverifiable',
 		)
 

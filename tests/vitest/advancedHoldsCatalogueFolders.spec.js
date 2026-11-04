@@ -163,6 +163,6 @@ describe('the tour', () => {
 	it('opens Advanced, then Case types', () => {
 		expect(step.target).toEqual({ kind: 'nav-item', ref: 'CaseTypes' })
 		expect(step.task).toBe('Open Advanced, then Case types')
-		expect(nl[step.task]).toBe('Open Geavanceerd, dan Zaaktypen')
+		expect(nl[step.task]).toBe('Open Geavanceerd, daarna Zaaktypen')
 	})
 })

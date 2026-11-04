@@ -95,7 +95,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "center",
 						"title": "Welcome to Dossiq",
-						"body": "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.",
+						"body": "A short tour of the menu. It takes less than a minute.",
 						"target": {
 							"kind": "page",
 							"ref": "Dashboard"
@@ -105,11 +105,26 @@
 						}
 					},
 					{
+						"id": "go-dashboard",
+						"sinceVersion": "0.2.17",
+						"placement": "right",
+						"title": "Dashboard",
+						"body": "Your teams at a glance: terms, queue and signals.",
+						"task": "Click Dashboard in the menu",
+						"target": {
+							"kind": "nav-item",
+							"ref": "Dashboard"
+						},
+						"advanceOn": {
+							"type": "click-target"
+						}
+					},
+					{
 						"id": "go-cases",
 						"sinceVersion": "0.2.17",
 						"placement": "right",
-						"title": "All your cases",
-						"body": "You work from this list: the open cases in your teams.",
+						"title": "All cases",
+						"body": "Open All cases: the open cases in your teams, sorted by term.",
 						"task": "Click All cases in the menu",
 						"target": {
 							"kind": "nav-item",
@@ -121,34 +136,27 @@
 						}
 					},
 					{
-						"id": "create-case",
+						"id": "go-tasks",
 						"sinceVersion": "0.2.17",
-						"placement": "bottom",
-						"allowManualNext": true,
-						"title": "Register a case",
-						"body": "Register your first case. Give it a title, pick a case type, then save. You can add tasks, decisions and documents later.",
-						"task": "Click New and save a case",
+						"placement": "right",
+						"title": "Tasks",
+						"body": "What is in your name, by deadline.",
+						"task": "Click Tasks in the menu",
 						"target": {
-							"kind": "element",
-							"ref": "index-add"
+							"kind": "nav-item",
+							"ref": "Tasks"
 						},
 						"advanceOn": {
-							"type": "object-created",
-							"register": "dossiq",
-							"schema": "case",
-							"capture": {
-								"caseId": ":id"
-							}
+							"type": "route-match",
+							"route": "Tasks"
 						}
 					},
 					{
 						"id": "see-case-types",
 						"sinceVersion": "1.2.0",
 						"placement": "right",
-						"optional": true,
-						"allowManualNext": true,
-						"title": "Where case types come from",
-						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look. You do not need to make one: dossiq ships with a set of them.",
+						"title": "Case types",
+						"body": "The case types your organisation works with; this is where the administrator sets them up.",
 						"task": "Open Advanced, then Case types",
 						"target": {
 							"kind": "nav-item",
@@ -160,51 +168,19 @@
 						}
 					},
 					{
-						"id": "see-flows",
-						"sinceVersion": "1.2.0",
+						"id": "done",
+						"sinceVersion": "0.2.17",
 						"placement": "right",
-						"optional": true,
-						"allowManualNext": true,
-						"title": "Where the automation lives",
-						"body": "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.",
-						"task": "Open Advanced, then Flows",
+						"title": "Dashboard",
+						"body": "Back to the dashboard, your starting point every day.",
+						"task": "Click Dashboard in the menu",
 						"target": {
 							"kind": "nav-item",
-							"ref": "Flows"
+							"ref": "Dashboard"
 						},
 						"advanceOn": {
 							"type": "route-match",
-							"route": "Flows"
-						}
-					},
-					{
-						"id": "go-tasks",
-						"sinceVersion": "0.2.17",
-						"placement": "right",
-						"title": "Your own work",
-						"body": "Your work lives here: today's tasks, deadlines and open cases in one place.",
-						"task": "This is your My work section",
-						"target": {
-							"kind": "nav-item",
-							"ref": "MyWorkHome"
-						},
-						"advanceOn": {
-							"type": "manual"
-						}
-					},
-					{
-						"id": "done",
-						"sinceVersion": "0.2.17",
-						"placement": "top",
-						"title": "Your first case is on the dashboard",
-						"body": "The dashboard tracks progress as cases move through it. The documentation covers the rest.",
-						"task": "Open the documentation",
-						"target": {
-							"kind": "selector",
-							"selector": "[data-testid=\"cn-nav-entry-Documentation\"]"
-						},
-						"advanceOn": {
-							"type": "manual"
+							"route": "Dashboard"
 						}
 					}
 				]
