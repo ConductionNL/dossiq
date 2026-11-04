@@ -77,7 +77,8 @@ list contents are not assertable without pre-seeded per-user data.
 
 - GIVEN Jan is viewing My Work
 - THEN the cases MUST show as one list of rows sorted on urgency, the most
-  urgent first, with no card/table toggle
+  urgent first, with no table view; the same list as cards is one click away
+  under Cards, as board DqAanMijToegewezen draws it
 - AND the line under the title MUST say how many cases are on Jan's name and
   that they are sorted most urgent first ("10 zaken op uw naam · meest urgente
   eerst")

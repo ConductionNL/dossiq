@@ -632,7 +632,7 @@ describe('the tabs', () => {
 		// The trail ends in the case number, as DqZaak draws "Alle zaken / 2026-0082".
 		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases', currentField: 'identifier', separator: '/' })
 		expect(original.showTypeEyebrow).toBeUndefined()
-		expect(original.breadcrumb).toBeUndefined()
+		expect(original.breadcrumb).toEqual(simple.breadcrumb)
 		expect(casePage(simpleFile).route).toBeDefined()
 		expect(
 			build(simpleFile).pages.some(

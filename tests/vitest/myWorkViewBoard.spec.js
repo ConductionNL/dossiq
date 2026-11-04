@@ -38,6 +38,18 @@ describe('DqAanMijToegewezen', () => {
 		expect(menu.items).toEqual(['header-actions', 'export', 'copy-selected', 'delete-selected'])
 	})
 
+	it('opens as one list of rows, with the same list as cards one click away and no table', () => {
+		expect(overrides.viewMode).toBe('list')
+		expect(overrides.viewModes).toEqual(['list', 'cards'])
+	})
+
+	it('puts the urgency pill first, the case type, requester and cover line under the title, the status and term last', () => {
+		const list = overrides.listConfig
+		expect(list.leading).toMatchObject({ key: 'deadlineTier', formatter: 'deadlineTierLabel', widget: 'badge' })
+		expect(list.subtitleTemplate).toBe('{identifier} · {caseType|caseTypeName} · {initiatorDisplayName} · {coveredFor|coveredFor}')
+		expect(list.trailing.map((cell) => cell.key)).toEqual(['status', 'deadline'])
+	})
+
 	it('counts once, in the note after the breadcrumb', () => {
 		expect(overrides.headerMeta).toContain('{total}')
 		expect(overrides.countText).toBe('')

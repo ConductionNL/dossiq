@@ -18,7 +18,7 @@
  * language of the e2e instance, so no assertion here turns on English chrome:
  * the only text asserted is text this fixture seeded.
  *
- * WHAT THE SEED HAS TO CONTROL. `deadlines` shows ten rows ordered by deadline
+ * WHAT THE SEED HAS TO CONTROL. `deadlines` (Deadline signals) shows ten rows ordered by deadline
  * ascending, and this spec used to reason about them on the assumption that the
  * demo caseload already carried more than ten overdue cases. It does not.
  * `ci-seed.sh` skips the demo dataset deliberately, so the window held two rows
@@ -79,7 +79,7 @@ const ROW_LIMIT = 10
  *     effective rows are the first `limit` of them.
  *
  * So the footer exists only when the fetch comes back with eleven rows, which
- * needs eleven open cases whose deadline is on or before today plus three days.
+ * needs eleven open cases that are late or in the last quarter of their term.
  * Hiding the control when nothing is hidden is correct, so the fixture is what
  * has to change.
  *
@@ -90,11 +90,13 @@ const ROW_LIMIT = 10
  * failing run's snapshot showed this tile holding TWO rows and the Overdue KPI
  * reading "1 action needed".
  *
- * ⚠️ EVERY FILLER SITS AT THE WINDOW'S FAR EDGE, deadline exactly today+3, and
- * that placement is the point rather than an accident. The tile orders by
- * deadline ascending, so fillers sort AFTER every case this spec names and
- * cannot displace `OVERDUE_CASE` or `SOON_CASE` from the rows that render.
- * Move them earlier and the scenarios above start failing on the fixture.
+ * ⚠️ EVERY FILLER SITS AT THE WINDOW'S FAR EDGE, deadline exactly today+2, the
+ * last day a seven-day term is still in its last quarter (REQ-SIG-004: the
+ * signal starts at start + round(7 x 0.75) = start + 5 days). The tile orders
+ * by deadline ascending, so fillers sort no earlier than every case this spec
+ * names and cannot displace `OVERDUE_CASE`; `SOON_CASE` shares their deadline,
+ * which is why the near-deadline scenario reads the tile's own filter when the
+ * table is full.
  */
 const DEADLINE_FILLERS = 9
 
@@ -439,13 +441,13 @@ test.describe('Dashboard tiles', () => {
 
 		// The fillers that truncate the tile. See `DEADLINE_FILLERS` for why
 		// the footer cannot appear without them, and why the deadline is
-		// exactly today+3 rather than anywhere else inside the window.
+		// exactly today+2 rather than anywhere else inside the window.
 		for (let n = 1; n <= DEADLINE_FILLERS; n++) {
 			await seedCase(api, token, {
 				title: FILLER_CASE(n),
 				caseType: caseTypeId,
 				status: objectId(open),
-				startDate: isoDay(3 - PROCESSING_DAYS),
+				startDate: isoDay(2 - PROCESSING_DAYS),
 			})
 		}
 
@@ -731,7 +733,7 @@ test.describe('Dashboard tiles', () => {
 			await expect(rows(table).filter({ hasText: SOON_CASE })).toHaveCount(1)
 		} else {
 			const viaFilter = await listObjects(api, 'case', {
-				'deadline[lte]': isoDay(3),
+				'termSignalFrom[lte]': isoDay(0),
 				isFinalStatus: 'false',
 				_limit: '200',
 			})
