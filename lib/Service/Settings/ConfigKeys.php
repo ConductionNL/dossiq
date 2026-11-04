@@ -98,6 +98,11 @@ class ConfigKeys {
 		'handhavingsactie_schema',
 		'advies_aanvraag_schema',
 		'advice_reminder_days',
+		// The complaint targets the process analysis page holds a quarter against
+		// (ComplaintPatterns); empty reads the default.
+		'complaint_target_per_month',
+		'complaint_target_within_awb_percent',
+		'complaint_target_upheld_percent',
 		'tenant_schema',
 		'appointment_schema',
 		'appointment_product_schema',

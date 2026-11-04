@@ -463,6 +463,29 @@ class CaseTermsService {
 	}//end citizenTermsFor()
 
 	/**
+	 * How far one term instance has run and how long it has left, counted the
+	 * way the case page counts it (REQ-TERM-068).
+	 *
+	 * @param array<string, mixed> $instance The term instance row.
+	 * @param DateTimeImmutable|null $now The moment to judge against (default now).
+	 *
+	 * @return array{endDate: string, progressPercent: int, daysLeft: int}
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+	 */
+	public function standingOf(array $instance, ?DateTimeImmutable $now = null): array {
+		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);
+		$end = (string)($instance['endDateCurrent'] ?? ($instance['endDateCalculated'] ?? ''));
+		$term = ['startDate' => (string)($instance['startDate'] ?? ''), 'endDate' => $end];
+
+		return [
+			'endDate' => $end,
+			'progressPercent' => $this->consumedPercent(term: $term, today: $today),
+			'daysLeft' => $this->daysLeft(end: $end, today: $today),
+		];
+	}//end standingOf()
+
+	/**
 	 * How much of a term has been consumed, as a percentage.
 	 *
 	 * @param array<string, mixed>|null $term One shaped term from `termsForCase()`.
