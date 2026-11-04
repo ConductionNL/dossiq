@@ -58,7 +58,7 @@ class DeadlineAlertsWidget extends DashboardPageWidget {
 	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getTitle(): string {
-		return $this->l10n->t('Deadline Alerts');
+		return $this->l10n->t('Deadline signals');
 	}//end getTitle()
 
 	/**

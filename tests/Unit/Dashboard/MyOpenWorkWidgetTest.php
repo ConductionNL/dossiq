@@ -25,12 +25,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Dashboard;
 
 use OCA\Dossiq\Dashboard\MyOpenWorkWidget;
-use OCA\Dossiq\Dashboard\MyTasksWidget;
+use OCA\Dossiq\Dashboard\OpenWorkSummary;
 use OCA\Dossiq\Dashboard\QueueWidgetItems;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCA\Dossiq\Service\Queue\QueueItem;
-use OCA\Dossiq\Service\Queue\Source\EngineTaskSource;
-use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\Dashboard\IAPIWidgetV2;
 use OCP\Dashboard\IButtonWidget;
 use OCP\Dashboard\IIconWidget;
@@ -41,17 +39,15 @@ use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * The start page widgets answer through Nextcloud's item API.
  *
  * @covers \OCA\Dossiq\Dashboard\MyOpenWorkWidget
- * @covers \OCA\Dossiq\Dashboard\MyTasksWidget
+ * @covers \OCA\Dossiq\Dashboard\OpenWorkSummary
  * @uses   \OCA\Dossiq\Dashboard\QueueWidgetItems
  * @uses   \OCA\Dossiq\Dashboard\DashboardPageWidget
  * @uses   \OCA\Dossiq\Service\Queue\QueueItem
- * @uses   \OCA\Dossiq\Service\Queue\Source\EngineTaskSource
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class MyOpenWorkWidgetTest extends TestCase {
@@ -94,57 +90,53 @@ class MyOpenWorkWidgetTest extends TestCase {
 	}//end setUp()
 
 	/**
-	 * Two cases and a task on the queue: three items, soonest due first, with links.
+	 * Two cases and three tasks: a cases row and a tasks row with late and today counted.
 	 *
 	 * @return void
 	 */
-	public function testListsTheQueueSoonestDueFirst(): void {
+	public function testSummarisesCasesAndTasks(): void {
 		$queue = $this->createMock(PersonalQueueService::class);
 		$queue->expects($this->once())->method('forPerson')->with('handler')->willReturn(
 			[
 				'items' => [
-					$this->item(source: 'assigned', type: 'case', id: 'c-late', title: 'Kapvergunning', due: '2026-10-20', route: 'CaseDetail'),
+					$this->item(source: 'assigned', type: 'case', id: 'c-1', title: 'Kapvergunning', due: '2026-10-20', route: 'CaseDetail'),
 					$this->item(source: 'tasks', type: 'task', id: 't-1', title: 'Advies opvragen', due: '2026-10-11', route: 'TaskDetail'),
-					$this->item(source: 'assigned', type: 'case', id: 'c-soon', title: 'Bouwvergunning', due: '2026-10-15', route: 'CaseDetail'),
+					$this->item(source: 'tasks', type: 'task', id: 't-2', title: 'Besluit opstellen', due: '2026-10-12', route: 'TaskDetail'),
+					$this->item(source: 'tasks', type: 'task', id: 't-3', title: 'Hoorzitting plannen', due: '2026-10-20', route: 'TaskDetail'),
+					$this->item(source: 'assigned', type: 'case', id: 'c-2', title: 'Bouwvergunning', due: '2026-10-15', route: 'CaseDetail'),
 				],
 				'unavailable' => [],
-				'total' => 3,
+				'total' => 5,
 			]
 		);
 
-		$items = $this->widget(queue: $queue)->getItemsV2('handler', null, 7);
+		$items = $this->widget(queue: $queue)->getItemsV2('handler', null, 7)->getItems();
 
 		$this->assertSame(
-			['Advies opvragen', 'Bouwvergunning', 'Kapvergunning'],
-			array_map(static fn (WidgetItem $item): string => $item->getTitle(), $items->getItems())
+			[['2 open cases on your name', ''], ['3 open tasks', '1 late, 1 today']],
+			array_map(static fn (WidgetItem $item): array => [$item->getTitle(), $item->getSubtitle()], $items)
 		);
-		$this->assertSame('https://cloud.example/apps/dossiq/tasks/t-1', $items->getItems()[0]->getLink());
-		$this->assertSame('https://cloud.example/apps/dossiq/cases/c-soon', $items->getItems()[1]->getLink());
-		$this->assertSame('Nothing waiting for you.', $items->getEmptyContentMessage());
+		$this->assertSame('https://cloud.example/apps/dossiq/my-work', $items[0]->getLink());
 
-	}//end testListsTheQueueSoonestDueFirst()
+	}//end testSummarisesCasesAndTasks()
 
 	/**
-	 * Twelve items and a host asking for seven: six and "6 more in My work".
+	 * Cases held as substitute are counted under the cases row.
 	 *
 	 * @return void
 	 */
-	public function testMoreWorkThanFits(): void {
-		$rows = [];
-		for ($day = 1; $day <= 12; $day++) {
-			$rows[] = $this->item(source: 'assigned', type: 'case', id: 'c-' . $day, title: 'Case ' . $day, due: sprintf('2026-10-%02d', $day), route: 'CaseDetail');
-		}
-
+	public function testCountsCasesHeldAsSubstitute(): void {
+		$covered = new QueueItem(source: 'covered', subjectType: 'case', subjectId: 'c-9', title: 'Subsidie', coveredFor: 'esra');
 		$queue = $this->createMock(PersonalQueueService::class);
-		$queue->method('forPerson')->willReturn(['items' => $rows, 'unavailable' => [], 'total' => 12]);
+		$queue->method('forPerson')->willReturn(['items' => [$covered], 'unavailable' => [], 'total' => 1]);
 
-		$items = $this->widget(queue: $queue)->getItemsV2('handler', null, 7)->getItems();
+		$items = $this->widget(queue: $queue)->getItemsV2('handler')->getItems();
 
-		$this->assertCount(7, $items);
-		$this->assertSame('6 more in My work', $items[6]->getTitle());
-		$this->assertSame('https://cloud.example/apps/dossiq/my-work', $items[6]->getLink());
+		$this->assertCount(1, $items);
+		$this->assertSame('1 open case on your name', $items[0]->getTitle());
+		$this->assertSame('1 as substitute', $items[0]->getSubtitle());
 
-	}//end testMoreWorkThanFits()
+	}//end testCountsCasesHeldAsSubstitute()
 
 	/**
 	 * An empty queue answers no items and the empty message.
@@ -178,11 +170,11 @@ class MyOpenWorkWidgetTest extends TestCase {
 		$buttons = $widget->getWidgetButtons('handler');
 		$this->assertCount(1, $buttons);
 		$this->assertSame(WidgetButton::TYPE_MORE, $buttons[0]->getType());
-		$this->assertSame('Open my work', $buttons[0]->getText());
+		$this->assertSame('Go to My work', $buttons[0]->getText());
 		$this->assertSame('https://cloud.example/apps/dossiq/my-work', $buttons[0]->getLink());
 
 		$this->assertSame('dossiq_my_open_work_widget', $widget->getId());
-		$this->assertSame('My open work', $widget->getTitle());
+		$this->assertSame('My work', $widget->getTitle());
 		$this->assertSame('https://cloud.example/apps/dossiq/my-work', $widget->getUrl());
 		$this->assertSame('https://cloud.example/apps/dossiq/img/app-dark.svg', $widget->getIconUrl());
 		$this->assertSame('icon-dossiq-widget', $widget->getIconClass());
@@ -195,54 +187,6 @@ class MyOpenWorkWidgetTest extends TestCase {
 	}//end testDeclaresTheItemApiAndTheButton()
 
 	/**
-	 * My tasks keeps its id and answers two open tasks from the engine, each with a link.
-	 *
-	 * The engine source is the real one; only the inbox it reads is doubled.
-	 *
-	 * @return void
-	 */
-	public function testMyTasksAnswersItsOpenTasksThroughTheItemApi(): void {
-		$inbox = $this->createMock(EngineTaskInbox::class);
-		$inbox->method('openForAssignee')->with('handler')->willReturn(
-			[
-				['uuid' => 't-2', 'title' => 'Besluit tekenen', 'dueAt' => '2026-10-18'],
-				['uuid' => 't-1', 'title' => 'Advies opvragen', 'dueAt' => '2026-10-12'],
-			]
-		);
-		$inbox->method('lastError')->willReturn('');
-
-		$widget = $this->myTasks(source: new EngineTaskSource(inbox: $inbox, l10n: $this->l10n));
-		$items = $widget->getItemsV2('handler')->getItems();
-
-		$this->assertSame('procest_my_tasks_widget', $widget->getId());
-		$this->assertCount(2, $items);
-		$this->assertSame('Advies opvragen', $items[0]->getTitle());
-		$this->assertSame('https://cloud.example/apps/dossiq/tasks/t-1', $items[0]->getLink());
-		$this->assertSame('https://cloud.example/apps/dossiq/tasks/t-2', $items[1]->getLink());
-
-	}//end testMyTasksAnswersItsOpenTasksThroughTheItemApi()
-
-	/**
-	 * When the engine cannot be read, My tasks says so instead of claiming there are no tasks.
-	 *
-	 * @return void
-	 */
-	public function testMyTasksSaysWhenTheEngineCannotBeRead(): void {
-		$inbox = $this->createMock(EngineTaskInbox::class);
-		$inbox->method('openForAssignee')->willReturn([]);
-		$inbox->method('lastError')->willReturn('engine offline');
-
-		$logger = $this->createMock(LoggerInterface::class);
-		$logger->expects($this->once())->method('warning');
-
-		$items = $this->myTasks(source: new EngineTaskSource(inbox: $inbox, l10n: $this->l10n), logger: $logger)->getItemsV2('handler');
-
-		$this->assertSame([], $items->getItems());
-		$this->assertSame('Your tasks could not be read just now.', $items->getEmptyContentMessage());
-
-	}//end testMyTasksSaysWhenTheEngineCannotBeRead()
-
-	/**
 	 * The widget under test.
 	 *
 	 * @param PersonalQueueService $queue The queue double.
@@ -250,32 +194,16 @@ class MyOpenWorkWidgetTest extends TestCase {
 	 * @return MyOpenWorkWidget The widget.
 	 */
 	private function widget(PersonalQueueService $queue): MyOpenWorkWidget {
+		$dates = $this->caseDatesFrozenAt(instant: '2026-10-12T09:00:00+02:00');
+		$items = new QueueWidgetItems(url: $this->url);
 		return new MyOpenWorkWidget(
 			l10n: $this->l10n,
 			queue: $queue,
-			items: new QueueWidgetItems(url: $this->url, l10n: $this->l10n, dates: $this->caseDates())
+			items: $items,
+			summary: new OpenWorkSummary(l10n: $this->l10n, items: $items, dates: $dates)
 		);
 
 	}//end widget()
-
-	/**
-	 * The My tasks widget over a given engine source.
-	 *
-	 * @param EngineTaskSource     $source The engine source.
-	 * @param LoggerInterface|null $logger The logger, a silent double when null.
-	 *
-	 * @return MyTasksWidget The widget.
-	 */
-	private function myTasks(EngineTaskSource $source, ?LoggerInterface $logger = null): MyTasksWidget {
-		return new MyTasksWidget(
-			l10n: $this->l10n,
-			url: $this->url,
-			tasks: $source,
-			items: new QueueWidgetItems(url: $this->url, l10n: $this->l10n, dates: $this->caseDates()),
-			logger: ($logger ?? $this->createMock(LoggerInterface::class))
-		);
-
-	}//end myTasks()
 
 	/**
 	 * A queue item.
