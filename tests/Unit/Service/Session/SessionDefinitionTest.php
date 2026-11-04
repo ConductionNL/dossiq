@@ -105,6 +105,23 @@ class SessionDefinitionTest extends TestCase {
 	}//end testTheInspectionFloorIsKept()
 
 	/**
+	 * A stored recording consent denial only accepts minutes that keep it.
+	 *
+	 * @return void
+	 */
+	public function testAStoredDenialIsKept(): void {
+		$rules = (new SessionDefinition(config: ['key' => 'hearing']))->rules();
+
+		$rules->assertDenialKept(stored: 'denied', asked: 'denied');
+		$rules->assertDenialKept(stored: 'not_requested', asked: 'granted');
+		$rules->assertDenialKept(stored: '', asked: 'granted');
+		$rules->assertDenialKept(stored: 'granted', asked: 'denied');
+
+		$this->expectException(InvalidArgumentException::class);
+		$rules->assertDenialKept(stored: 'denied', asked: 'granted');
+	}//end testAStoredDenialIsKept()
+
+	/**
 	 * Only declared invitee roles are accepted, and the minimum is kept.
 	 *
 	 * @return void
