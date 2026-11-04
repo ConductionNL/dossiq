@@ -5548,7 +5548,6 @@ OC.L10N.register(
         "No open work to reassign": "No open work to reassign",
         "No organisation calendar is answering, so a term set to move off a weekend or a holiday will not move.": "No organisation calendar is answering, so a term set to move off a weekend or a holiday will not move.",
         "No organisational roles": "No organisational roles",
-        "No other case matches those words.": "No other case matches those words.",
         "No other cases in this household that you may see": "No other cases in this household that you may see",
         "No overdue cases": "No overdue cases",
         "No overlay layers configured": "No overlay layers configured",
@@ -9898,7 +9897,6 @@ OC.L10N.register(
         "These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.": "These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.",
         "These cases are already linked through the main/sub-case hierarchy.": "These cases are already linked through the main/sub-case hierarchy.",
         "These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.": "These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.",
-        "These cases were not merged.": "These cases were not merged.",
         "These rights stood on that date. Nobody is named as setting them.": "These rights stood on that date. Nobody is named as setting them.",
         "These settings could not be saved.": "These settings could not be saved.",
         "These tour steps point at a screen that is gone, so they teach nobody: {steps}": "These tour steps point at a screen that is gone, so they teach nobody: {steps}",
@@ -12020,7 +12018,8 @@ OC.L10N.register(
         "{value} of your cases are past their deadline or end today.": "{value} of your cases are past their deadline or end today.",
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "The case is merged into the case you picked.": "The case is merged into the case you picked."
     },
     "nplurals=2; plural=(n != 1);"
 )

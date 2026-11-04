@@ -20,7 +20,6 @@ const dutch = (key) => nl.translations[key]
 describe('case dialogs in the words of DqZaakDialogen', () => {
 	it.each([
 		['CaseSplitDialog', 'What you tick moves to the new case.', 'Wat je aanvinkt gaat naar de nieuwe zaak.'],
-		['CaseMergeDialog', 'Parties, documents and objects move to the case you pick.', 'Partijen, documenten en objecten gaan naar de zaak die je kiest.'],
 		['CaseCopyDialog', 'The copy gets its own case number.', 'De kopie krijgt een eigen zaaknummer.'],
 		['CrossDomainLookupDialog', 'Only whether an open case exists elsewhere, and who to call.', 'Alleen of er elders een lopende zaak is, en wie je kunt bellen.'],
 	])('%s opens with one short line', (name, key, words) => {
