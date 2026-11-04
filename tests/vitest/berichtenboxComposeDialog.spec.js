@@ -273,6 +273,35 @@ describe('BerichtenboxComposeDialog', () => {
 		expect(wrapper.emitted('sent')).toBeUndefined()
 	})
 
+	it('says what the administrator sets up when no Berichtenbox connection exists (DqBerichtVersturen)', async () => {
+		mockPost.mockRejectedValue({ response: { status: 400, data: { code: 'provider-not-configured', error: 'No provider.' } } })
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(wrapper.vm.sendNotice).toMatchObject({
+			variant: 'error',
+			role: 'alert',
+			title: 'Not sent: no Berichtenbox connection is set up',
+		})
+		expect(wrapper.vm.sendNotice.text).toContain('berichtenbox_provider in integriq')
+		const banner = wrapper.find('[data-testid="dialog-notice"]')
+		expect(banner.exists()).toBe(true)
+		expect(banner.attributes('role')).toBe('alert')
+		expect(wrapper.emitted('sent')).toBeUndefined()
+	})
+
+	it('shows any other refusal as its own sentence in the same banner', async () => {
+		mockPost.mockRejectedValue({ response: { status: 400, data: { error: 'No PKIoverheid certificate is configured.' } } })
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(wrapper.vm.sendNotice).toMatchObject({ variant: 'error', title: 'No PKIoverheid certificate is configured.', text: '' })
+	})
+
 	it('emits sent for a letter integriq accepted', async () => {
 		mockPost.mockResolvedValue({
 			data: { success: true, message: { externalMessageId: 'dp-4711' } },

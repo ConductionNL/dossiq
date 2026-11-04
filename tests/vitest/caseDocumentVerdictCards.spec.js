@@ -46,7 +46,8 @@ function filesTab(node) {
 
 describe('the Files tab on a case type that reviews its documents', () => {
 	it('holds the folder with the verdicts inside its card, then the grounds', () => {
-		expect(filesTab(simple).widgetIds).toEqual(['case-files', 'case-refusal-grounds-card'])
+		// DqZaakDocumenten: Volledigheid van de aanvraag sits between the files and the grounds.
+		expect(filesTab(simple).widgetIds).toEqual(['case-files', 'case-completeness-card', 'case-refusal-grounds-card'])
 		expect(simple.configPatch.widgets['case-files'].content.view).toBe('tab')
 		expect(simple.configPatch.widgets['case-files'].content.leadWidgetIds).toEqual(['case-document-verdicts-card'])
 	})

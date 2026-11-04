@@ -148,7 +148,7 @@
 						"widget": "textarea"
 					},
 					"requester": {
-						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+						"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
 						"label": "Requester"
 					},
 					"confidentiality": {
@@ -1522,6 +1522,148 @@
 					},
 					"case-assistant-chat",
 					{
+						"id": "side-access",
+						"_note": "DqZaak Toegang: who may open this case and why, as a short side card beside the Overview tab only (the People tab draws the full card with links and Delen). The same grants read as case-access-card's first section; a reader the grants refuse sees the refusal sentence instead of names.",
+						"tabs": [
+							"overview"
+						],
+						"type": "record-list",
+						"title": "Access",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/openregister/api/objects/dossiq/case/@objectId/grants",
+								"params": {
+									"principalTypes": "user,group"
+								},
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"density": "compact",
+							"headerSubtitle": "{total} with access",
+							"title": [
+								"{principal.displayName}",
+								"{principal.id}"
+							],
+							"meta": {
+								"cases": [
+									{
+										"when": {
+											"all": [
+												{
+													"field": "origin",
+													"op": "eq",
+													"value": "rule"
+												},
+												{
+													"field": "matchedOn",
+													"op": "contains",
+													"value": "caseType"
+												}
+											]
+										},
+										"text": "via the case type"
+									},
+									{
+										"when": {
+											"all": [
+												{
+													"field": "origin",
+													"op": "eq",
+													"value": "rule"
+												},
+												{
+													"field": "role",
+													"op": "notEmpty"
+												}
+											]
+										},
+										"text": "via the role {role}"
+									},
+									{
+										"when": {
+											"field": "origin",
+											"op": "eq",
+											"value": "rule"
+										},
+										"text": "via a rule on all cases"
+									},
+									{
+										"when": {
+											"all": [
+												{
+													"field": "origin",
+													"op": "eq",
+													"value": "shared"
+												},
+												{
+													"field": "sharedBy.displayName",
+													"op": "empty"
+												}
+											]
+										},
+										"text": "shared by a former user"
+									},
+									{
+										"when": {
+											"field": "origin",
+											"op": "eq",
+											"value": "shared"
+										},
+										"text": "shared by {sharedBy.displayName}"
+									},
+									{
+										"when": {
+											"all": [
+												{
+													"field": "origin",
+													"op": "eq",
+													"value": "inherited"
+												},
+												{
+													"field": "sharedBy.displayName",
+													"op": "empty"
+												}
+											]
+										},
+										"text": "via the main case, shared by a former user"
+									},
+									{
+										"when": {
+											"field": "origin",
+											"op": "eq",
+											"value": "inherited"
+										},
+										"text": "via the main case, shared by {sharedBy.displayName}"
+									},
+									{
+										"when": {
+											"field": "origin",
+											"op": "eq",
+											"value": "owner"
+										},
+										"text": "owner of the case"
+									}
+								]
+							},
+							"pill": {
+								"cases": [],
+								"label": "Expires {expiresAt|date}",
+								"variant": "warning"
+							},
+							"hideWhen": {
+								"field": "principal.id",
+								"op": "in",
+								"value": [
+									"dossiq-background-service"
+								]
+							},
+							"emptyText": "Nobody else has access to this case",
+							"refusalText": "You may not see who has access to this case",
+							"errorText": "Could not read who has access",
+							"footnote": "Who may not see the access reads here only: you may not see who has access to this case."
+						}
+					},
+					{
 						"id": "side-objection-appeal",
 						"type": "record-list",
 						"title": "Appeal",
@@ -1983,6 +2125,9 @@
 					"remedy-lodge": {
 						"group": "Case"
 					},
+					"advice-request": {
+						"group": "Case"
+					},
 					"woo-publish": {
 						"group": "Publication"
 					},
@@ -2116,6 +2261,7 @@
 							"badgeSource": "readState",
 							"tabs": [
 								{
+									"id": "overview",
 									"widgetIds": [
 										"case-objection-grounds",
 										"case-objection-advice-card",
@@ -2330,6 +2476,7 @@
 								{
 									"widgetIds": [
 										"case-files",
+										"case-completeness-card",
 										"case-refusal-grounds-card"
 									],
 									"label": "Files",
@@ -2448,6 +2595,7 @@
 										"case-related-cases-card",
 										"case-related-card",
 										"case-sub-cases-card",
+										"case-projects-card",
 										"case-objects-card",
 										"case-programme-card"
 									],
@@ -2472,7 +2620,9 @@
 								{
 									"widgetIds": [
 										"case-archival-panel",
-										"case-custody-panel"
+										"case-custody-panel",
+										"case-archive-marking-card",
+										"case-archive-mismatch"
 									],
 									"label": "Archiving",
 									"icon": "ArchiveOutline",
@@ -2792,6 +2942,56 @@
 							},
 							"linkedMail": true
 						}
+					},
+					"goal-plan": {
+						"_note": "DqSociaalDomein Gezinsplan: the card names what a goal is for under its title and carries Doel toevoegen in its title row. The goal goes onto the plan of this case (POST /api/family-plans/{planId}/goals); the dialog reads the plan through /api/cases/{id}/family-plan, whose answer names `planId` (FOR-SIG DQB-B S1); until it does, the dialog answers with the refusal of a plan it cannot find.",
+						"subtitle": "A goal says how you will see it was reached",
+						"headerActions": [
+							{
+								"label": "Add goal",
+								"icon": "Plus",
+								"variant": "secondary",
+								"action": {
+									"type": "open-modal",
+									"target": "CnActionDialog",
+									"props": {
+										"objectId": "@objectId",
+										"config": {
+											"title": "Add goal",
+											"subtitle": "What this household wants to change, and what would show it has.",
+											"summary": {
+												"source": {
+													"url": "/apps/dossiq/api/cases/@objectId/family-plan"
+												}
+											},
+											"fields": [
+												{
+													"field": "title",
+													"type": "text",
+													"label": "Goal",
+													"required": true
+												},
+												{
+													"field": "metWhen",
+													"type": "text",
+													"label": "Met when",
+													"required": true
+												}
+											],
+											"confirm": {
+												"label": "Add goal",
+												"icon": "Plus",
+												"request": {
+													"method": "POST",
+													"url": "/apps/dossiq/api/family-plans/@object.planId/goals"
+												}
+											},
+											"doneText": "The goal is added."
+										}
+									}
+								}
+							}
+						]
 					}
 				},
 				"layout": {
@@ -2907,7 +3107,8 @@
 								"parentCase",
 								"impact",
 								"urgency",
-								"externalApplication"
+								"externalApplication",
+								"tags"
 							],
 							"hideEmpty": false,
 							"overrides": {
@@ -3005,6 +3206,12 @@
 								},
 								"urgency": {
 									"order": 17
+								},
+								"tags": {
+									"label": "Labels",
+									"widget": "tags",
+									"order": 19,
+									"emptyValue": "No labels"
 								}
 							}
 						}
@@ -3645,6 +3852,8 @@
 							},
 							"trailing": "{plannedFor|date}",
 							"headerNote": "{total} planned",
+							"footnote": "A milestone that depends on another part counts in working days from that part. When the hearing moves, the milestones after it move with it. A milestone without a predecessor counts from the start of the case.",
+							"footnoteVariant": "info",
 							"emptyText": "No next action is planned on this case"
 						},
 						"_rowsNote": "DqZaakTaken Wat hierna komt: the planned actions as the board's rows under a rule (calendar tile, the action, its owner (a person, else the team by its name: {ownerGroup|group}, nextcloud-vue feat/r32-template-group-format) and who planned it (the person who added it, else what planned it: plannedByRule, the steps of the case type, which a successor carries over), the planned date at the end) and '{total} gepland' in the title row, instead of a table. Same filter and order: the first row is still the answer to what comes next."
@@ -4565,6 +4774,59 @@
 						}
 					},
 					{
+						"id": "case-completeness-card",
+						"type": "record-list",
+						"_note": "DqZaakDocumenten Volledigheid van de aanvraag: the document list the case type asks for, ticked off against what the case holds, with Ontvankelijkheid bevestigen under it. The list is the server's (GET /api/cases/{id}/completeness, FOR-SIG DQB-B S2); until that route answers the card stays hidden, because the visibleWhen asks the same endpoint. The verdict posts to the existing intakeTriage#judgeAdmissibility route. Still open: the verdict pill in the title row and the per-row source text (Aanvulverzoek versturen is the second button the board draws), both need a record-list header pill and a checklist row meta in nextcloud-vue.",
+						"title": "Completeness of the application",
+						"subtitle": "The document list from the case type",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/cases/@objectId/completeness",
+							"field": "items",
+							"op": "notEmpty"
+						},
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/completeness",
+								"responsePath": "items"
+							},
+							"presentation": "checklist",
+							"columns": 1,
+							"title": "{label}",
+							"done": {
+								"field": "present",
+								"op": "eq",
+								"value": true
+							},
+							"emptyText": "",
+							"footnote": "When everything is present, Confirm admissibility moves the case to its next status. While the requester supplements, the term stands still.",
+							"footerAction": {
+								"label": "Confirm admissibility",
+								"icon": "CheckCircleOutline",
+								"type": "open-modal",
+								"target": "CnActionDialog",
+								"props": {
+									"objectId": "@objectId",
+									"config": {
+										"title": "Confirm admissibility",
+										"subtitle": "The application is complete. The case moves on through the transition its phase offers.",
+										"confirm": {
+											"label": "Confirm admissibility",
+											"icon": "CheckCircleOutline",
+											"request": {
+												"method": "POST",
+												"url": "/apps/dossiq/api/cases/@objectId/admissibility",
+												"body": {
+													"verdict": "admissible"
+												}
+											}
+										},
+										"doneText": "The application is admissible."
+									}
+								}
+							}
+						}
+					},
+					{
 						"id": "case-refusal-grounds-card",
 						"type": "record-list",
 						"title": "Refusal grounds so far",
@@ -5256,7 +5518,19 @@
 							"rowRoute": "CaseDetail",
 							"rowIdField": "caseId",
 							"emptyText": "No related cases yet",
+							"_textNote": "DqZaakGerelateerd: the third line of a linked case names the RGBZ relation and the note given when it was linked; a planned row has neither and draws two lines.",
+							"text": [
+								"Relation: {aardRelatie} (RGBZ). Note: {notes}",
+								"Relation: {aardRelatie} (RGBZ)."
+							],
 							"valueLabels": {
+								"aardRelatie": {
+									"subject": "subject",
+									"vervolg": "follow-up",
+									"bijdrage": "contribution",
+									"samenhang": "related",
+									"waitsOn": "waits on"
+								},
 								"group": {
 									"subject": "Subject of this case",
 									"gaat over": "Subject of this case",
@@ -5408,6 +5682,14 @@
 								}
 							}
 						}
+					},
+					{
+						"id": "case-projects-card",
+						"type": "integration",
+						"integrationId": "planninq-projects",
+						"title": "Projects",
+						"subtitle": "Projects in planninq linked to this case",
+						"_note": "DqZaakGerelateerd Projecten: planninq's own projects leaf for this case (planninq-projects, which draws its rows and New project itself), between the sub-cases and the objects as the board orders them. Without planninq the leaf is not registered and the card is not there, which is what the board says under it."
 					},
 					{
 						"id": "case-objects-card",
@@ -5625,6 +5907,89 @@
 						}
 					},
 					{
+						"id": "case-archive-marking-card",
+						"type": "facts",
+						"title": "Archive marking",
+						"subtitle": "Whether this case is archived, dossiq reads from OpenRegister's marking: who, when and why. The archive status above describes the archive and does not replace that marking.",
+						"_note": "DqZaakArchivering Archiefmarkering, column Deze zaak: OpenRegister's own marking on this object (@self.archived: at, by, reason), read off the record, never off the case's archiveStatus field. The board's other two columns explain the archived state and the disagreement; the disagreement itself is the case-archive-mismatch banner under this card, which shows only when the two really differ.",
+						"content": {
+							"fields": [
+								{
+									"key": "archived-at",
+									"label": "This case",
+									"path": "@self.archived.at",
+									"format": "date",
+									"emptyValue": "Not archived"
+								},
+								{
+									"key": "archived-by",
+									"label": "By",
+									"path": "@self.archived.by",
+									"format": "user",
+									"emptyValue": "No marking in OpenRegister"
+								},
+								{
+									"key": "archived-reason",
+									"label": "Reason",
+									"path": "@self.archived.reason",
+									"emptyValue": "The case is still running"
+								}
+							]
+						}
+					},
+					{
+						"id": "case-archive-mismatch",
+						"type": "banner",
+						"_note": "DqZaakArchivering: the case's archive status and OpenRegister's marking disagree, in either direction. Dossiq picks neither side; Herstellen to align either way is a later board item (SIG). Decided on the record alone, so it needs no endpoint.",
+						"visibleWhen": {
+							"any": [
+								{
+									"all": [
+										{
+											"field": "archiveStatus",
+											"op": "in",
+											"value": [
+												"archived",
+												"archived_retention_period_unknown",
+												"overgedragen"
+											]
+										},
+										{
+											"field": "@self.archived",
+											"op": "empty"
+										}
+									]
+								},
+								{
+									"all": [
+										{
+											"any": [
+												{
+													"field": "archiveStatus",
+													"op": "eq",
+													"value": "nog_te_archiveren"
+												},
+												{
+													"field": "archiveStatus",
+													"op": "empty"
+												}
+											]
+										},
+										{
+											"field": "@self.archived",
+											"op": "notEmpty"
+										}
+									]
+								}
+							]
+						},
+						"content": {
+							"variant": "warning",
+							"lead": "The case and OpenRegister disagree.",
+							"text": "The archive status of the case and the marking in OpenRegister say different things. Dossiq picks neither. Check what happened and correct one of the two."
+						}
+					},
+					{
 						"id": "case-decision-letter",
 						"type": "facts",
 						"title": "Decision letter",
@@ -5704,6 +6069,20 @@
 									"key": "decidedBy",
 									"label": "User",
 									"formatter": "userName"
+								},
+								{
+									"key": "advisoryContext.suggestionType",
+									"label": "Kind and action",
+									"enumLabels": {
+										"answer": "Question",
+										"question": "Question",
+										"draft": "Draft text",
+										"summarisation": "Summary",
+										"summary": "Summary",
+										"classification": "Classification",
+										"extraction": "Extraction",
+										"routing": "Routing"
+									}
 								},
 								{
 									"key": "prompt",
@@ -5972,6 +6351,7 @@
 					"cross-domain-lookup",
 					"message-applicant",
 					"remedy-lodge",
+					"advice-request",
 					"woo-publish",
 					"woo-withdraw",
 					"woo-publication-open",
@@ -6080,10 +6460,60 @@
 						}
 					},
 					{
+						"id": "17",
+						"widgetId": "my-open-work",
+						"gridX": 0,
+						"gridY": 9,
+						"gridWidth": 6,
+						"gridHeight": 6,
+						"showTitle": true,
+						"clear": true
+					},
+					{
+						"id": "18",
+						"widgetId": "teams-queue-signal",
+						"gridX": 6,
+						"gridY": 9,
+						"gridWidth": 6,
+						"gridHeight": 6,
+						"showTitle": true,
+						"clear": true
+					},
+					{
+						"id": "19",
+						"widgetId": "deadline-signals",
+						"gridX": 0,
+						"gridY": 15,
+						"gridWidth": 6,
+						"gridHeight": 7,
+						"showTitle": true,
+						"clear": true
+					},
+					{
+						"id": "20",
+						"widgetId": "task-reminders",
+						"gridX": 6,
+						"gridY": 15,
+						"gridWidth": 6,
+						"gridHeight": 7,
+						"showTitle": true,
+						"clear": true
+					},
+					{
+						"id": "21",
+						"widgetId": "woo-deadlines",
+						"gridX": 0,
+						"gridY": 22,
+						"gridWidth": 12,
+						"gridHeight": 6,
+						"showTitle": true,
+						"clear": true
+					},
+					{
 						"id": "16",
 						"widgetId": "layout-note",
 						"gridX": 0,
-						"gridY": 10,
+						"gridY": 28,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false,
@@ -6302,6 +6732,407 @@
 							"variant": "info",
 							"icon": "ViewDashboardOutline",
 							"text": "Within deadline is only shown to those who monitor or manage."
+						}
+					},
+					{
+						"id": "my-open-work",
+						"type": "record-list",
+						"title": "My open work",
+						"subtitle": "Cases and tasks, what is due first comes first",
+						"_note": "Board DqDashboard \"Mijn open werk\" (signalering-widgets). The reader's open cases and open engine tasks, each soonest first: the cases on their name, then their tasks from OpenRegister's task inbox. Two sections because they are two sources; Open my work leads to the landing page.",
+						"headerLink": {
+							"label": "Open my work",
+							"route": "MyWorkHome"
+						},
+						"content": {
+							"presentation": "rows",
+							"ruleAbove": true,
+							"chevron": false,
+							"sections": [
+								{
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"assignee": "@me",
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false
+									},
+									"extend": [
+										"caseType"
+									],
+									"sort": {
+										"field": "deadline",
+										"dir": "asc"
+									},
+									"limit": 3,
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"case {identifier}",
+											"{caseType.title}"
+										]
+									},
+									"trailing": [
+										"{deadline|relative}"
+									],
+									"rowRoute": "CaseDetail",
+									"emptyText": "No open cases on your name"
+								},
+								{
+									"endpointSource": {
+										"url": "/apps/openregister/api/flow-tasks",
+										"params": {
+											"scope": "assigned",
+											"isTerminal": "false",
+											"sort": "dueAt",
+											"limit": 3
+										},
+										"responsePath": "results"
+									},
+									"title": "{title}",
+									"meta": "task on {subject.title}",
+									"trailing": [
+										"{dueAt|relative}"
+									],
+									"rowRoute": "TaskDetail",
+									"rowIdField": "uuid",
+									"emptyText": "You have no open tasks"
+								}
+							]
+						}
+					},
+					{
+						"id": "teams-queue-signal",
+						"type": "record-list",
+						"title": "Your teams' queue",
+						"subtitle": "Picked up by nobody, in the teams you are in",
+						"_note": "Board DqDashboard \"Wachtrij van uw teams\" (signalering-widgets). The query of My team's queue (`your-teams-queue` on MyWorkHome): unclaimed open cases of the reader's own teams, through `@myGroups`, which sends nothing for a reader in no team. Pick up is the registered claimCase handler, as on the queue.",
+						"headerLink": {
+							"label": "Whole queue",
+							"route": "Cases",
+							"query": {
+								"savedView": "default:team-queue"
+							}
+						},
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"assignedGroup": "@myGroups",
+								"assignee": "IS NULL",
+								"isFinalStatus": false,
+								"statusHiddenInLists": false,
+								"isDraft": false,
+								"isTemplate": false
+							},
+							"sort": {
+								"field": "startDate",
+								"dir": "asc"
+							},
+							"limit": 3,
+							"presentation": "rows",
+							"ruleAbove": true,
+							"title": "{title}",
+							"meta": {
+								"parts": [
+									"{identifier}",
+									"team {assignedGroupPublicName}",
+									"received {startDate|date}"
+								]
+							},
+							"rowAction": {
+								"id": "claim",
+								"label": "Pick up",
+								"type": "handler",
+								"handler": "claimCase",
+								"variant": "outlined"
+							},
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "Nothing is waiting for your teams"
+						}
+					},
+					{
+						"id": "deadline-signals",
+						"type": "record-list",
+						"title": "Deadline signals",
+						"subtitle": "Late, or less than a quarter of the term left",
+						"_note": "Board DqDashboard \"Termijnsignalen\" (signalering-widgets REQ-SIG-004). Open cases past their deadline, then open cases in the last quarter of their term, fewest days first. `termSignalFrom` is the day the last quarter starts, a materialised case calculation (dossiq#5191).",
+						"headerLink": {
+							"label": "All deadlines",
+							"route": "TermijnDashboard"
+						},
+						"content": {
+							"presentation": "rows",
+							"ruleAbove": true,
+							"chevron": false,
+							"sections": [
+								{
+									"intro": "Late",
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false,
+										"deadline": {
+											"lt": "@today"
+										}
+									},
+									"extend": [
+										"caseType"
+									],
+									"sort": {
+										"field": "deadline",
+										"dir": "asc"
+									},
+									"limit": 2,
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{caseType.title}"
+										]
+									},
+									"due": {
+										"field": "deadline",
+										"overdueLabel": {
+											"one": "{count} day late",
+											"other": "{count} days late"
+										}
+									},
+									"rowRoute": "CaseDetail",
+									"emptyText": "No case is late"
+								},
+								{
+									"intro": "At risk",
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false,
+										"deadline": {
+											"gte": "@today"
+										},
+										"termSignalFrom": {
+											"lte": "@today"
+										}
+									},
+									"extend": [
+										"caseType"
+									],
+									"sort": {
+										"field": "deadline",
+										"dir": "asc"
+									},
+									"limit": 2,
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{caseType.title}"
+										]
+									},
+									"due": {
+										"field": "deadline",
+										"todayLabel": "Ends today",
+										"upcomingLabel": {
+											"one": "{count} day left",
+											"other": "{count} days left"
+										}
+									},
+									"rowRoute": "CaseDetail",
+									"emptyText": "No case is at risk"
+								}
+							]
+						}
+					},
+					{
+						"id": "task-reminders",
+						"type": "record-list",
+						"title": "Task reminders",
+						"subtitle": "Tasks due today or within three days",
+						"_note": "Board DqDashboard \"Taakherinneringen\" (signalering-widgets). The reader's open engine tasks: the late ones, then those due today up to three days ahead (`dueAfter` is inclusive, `dueBefore` exclusive, so @today+4d keeps the third day).",
+						"headerLink": {
+							"label": "All tasks",
+							"route": "Tasks"
+						},
+						"content": {
+							"presentation": "rows",
+							"ruleAbove": true,
+							"chevron": false,
+							"sections": [
+								{
+									"intro": "Late",
+									"endpointSource": {
+										"url": "/apps/openregister/api/flow-tasks",
+										"params": {
+											"scope": "assigned",
+											"isTerminal": "false",
+											"dueBefore": "@today",
+											"sort": "dueAt",
+											"limit": 2
+										},
+										"responsePath": "results"
+									},
+									"title": "{title}",
+									"meta": "{subject.title}",
+									"due": {
+										"field": "dueAt",
+										"overdueLabel": {
+											"one": "{count} day late",
+											"other": "{count} days late"
+										}
+									},
+									"badges": [
+										{
+											"field": "priority",
+											"look": "text",
+											"labels": {
+												"urgent": "Urgent",
+												"high": "High",
+												"normal": "Normal"
+											},
+											"hideValues": [
+												"low"
+											]
+										}
+									],
+									"rowRoute": "TaskDetail",
+									"rowIdField": "uuid",
+									"emptyText": "No task is late"
+								},
+								{
+									"intro": "Coming up",
+									"endpointSource": {
+										"url": "/apps/openregister/api/flow-tasks",
+										"params": {
+											"scope": "assigned",
+											"isTerminal": "false",
+											"dueAfter": "@today",
+											"dueBefore": "@today+4d",
+											"sort": "dueAt",
+											"limit": 3
+										},
+										"responsePath": "results"
+									},
+									"title": "{title}",
+									"meta": "{subject.title}",
+									"due": {
+										"field": "dueAt",
+										"todayLabel": "Today",
+										"upcomingLabel": {
+											"one": "{count} day left",
+											"other": "{count} days left"
+										}
+									},
+									"badges": [
+										{
+											"field": "priority",
+											"look": "text",
+											"labels": {
+												"urgent": "Urgent",
+												"high": "High",
+												"normal": "Normal"
+											},
+											"hideValues": [
+												"low"
+											]
+										}
+									],
+									"rowRoute": "TaskDetail",
+									"rowIdField": "uuid",
+									"emptyText": "No task reminders"
+								}
+							]
+						}
+					},
+					{
+						"id": "woo-deadlines",
+						"type": "record-list",
+						"title": "Woo deadlines",
+						"subtitle": "Every running Woo request by days to the decision date, fewest first",
+						"_note": "Board DqDashboard \"Woo-termijnen\" (signalering-widgets). The Woo case type is configuration: the same `caseTypeIdentifier` the Woo requests view narrows on. The pill reads the board's four tones: late, two days or less, a week or less, on schedule.",
+						"headerLink": {
+							"label": "Woo requests",
+							"route": "Cases",
+							"query": {
+								"savedView": "default:woo-requests"
+							}
+						},
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"caseTypeIdentifier": "woo-verzoek",
+								"isFinalStatus": false,
+								"statusHiddenInLists": false,
+								"isDraft": false
+							},
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 4,
+							"presentation": "rows",
+							"ruleAbove": true,
+							"title": "{title}",
+							"meta": {
+								"parts": [
+									"{identifier}",
+									"{initiatorDisplayName}"
+								]
+							},
+							"due": {
+								"field": "deadline",
+								"todayLabel": "Ends today",
+								"overdueLabel": {
+									"one": "{count} day late",
+									"other": "{count} days late"
+								},
+								"upcomingLabel": {
+									"one": "{count} day left",
+									"other": "{count} days left"
+								}
+							},
+							"pill": {
+								"cases": [
+									{
+										"when": {
+											"field": "deadline",
+											"op": "lt",
+											"value": "@today"
+										},
+										"label": "late",
+										"variant": "error"
+									},
+									{
+										"when": {
+											"field": "deadline",
+											"op": "lte",
+											"value": "@today+2d"
+										},
+										"label": "critical",
+										"variant": "warning"
+									},
+									{
+										"when": {
+											"field": "deadline",
+											"op": "lte",
+											"value": "@today+7d"
+										},
+										"label": "attention",
+										"variant": "warning"
+									}
+								],
+								"label": "on schedule",
+								"variant": "success"
+							},
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "No open Woo requests"
 						}
 					}
 				],
@@ -6606,7 +7437,7 @@
 							},
 							"requester": {
 								"description": "",
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "sources": [{ "id": "person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "Resident", "title": "{displayName}", "secondary": "{residence.street} {residence.houseNumber}" }, { "id": "company", "register": "dossiq", "schema": "kvkCompany", "label": "Organisation", "title": "{tradeName}", "secondary": "CoC {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
 								"label": "Requester",
 								"order": 3
 							},

@@ -271,7 +271,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 37 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 38 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -290,10 +290,10 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(37)
+		expect(placed).toHaveLength(38)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(22)
+		expect(count('Case')).toBe(23)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)
@@ -414,7 +414,9 @@ describe('the tabs', () => {
 		const relatedTab = strip.tabs.find((tab) => tab.label === 'Related')
 		// The typed related cases lead (DqZaakGerelateerd), then the related panel's sections.
 		expect(relatedTab.widgetIds[0]).toBe('case-related-cases-card')
-		const sectionCards = relatedTab.widgetIds.slice(1)
+		// planninq's Projecten card is the board's own, not one of the related panel's sections.
+		expect(relatedTab.widgetIds).toContain('case-projects-card')
+		const sectionCards = relatedTab.widgetIds.slice(1).filter((id) => id !== 'case-projects-card')
 		expect(sectionCards.map((id) => id.replace(/-card$/, ''))).toEqual(['case-related', 'case-sub-cases', 'case-objects', 'case-programme'])
 		// The object-type link is a link under the objects, as the board draws it.
 		expect(sectionCards.map((id) => id.replace(/-card$/, '')).concat('case-object-types-link').sort()).toEqual([...relatedSections].sort())
@@ -558,8 +560,8 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		// The banner stack is titled Status, as the side card DqZaak draws.
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-status-declaration', 'case-banner-stack', 'case-attention', 'case-archival-panel', 'case-files', 'case-timeline-panel', 'case-notes-panel']
-		const added = ['case-note-card', 'case-investigation-steps', 'case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-goals', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-access-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card']
+		const patched = ['goal-plan', 'case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-status-declaration', 'case-banner-stack', 'case-attention', 'case-archival-panel', 'case-files', 'case-timeline-panel', 'case-notes-panel']
+		const added = ['case-note-card', 'case-investigation-steps', 'case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-goals', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-access-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card', 'case-completeness-card', 'case-projects-card', 'case-archive-marking-card', 'case-archive-mismatch']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
@@ -725,7 +727,9 @@ describe('the header and the side column', () => {
 		expect(onTheCase(simple.typePill.field)).toBe(true)
 		// The cards every case shows; the case-type cards are gated and checked below.
 		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen && card.type !== 'banner')
-		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Linked', 'Work instruction'])
+		// Toegang (DqZaak) follows the work instruction beside the Overview tab only; it reads the grants, not the case.
+		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Linked', 'Work instruction', 'Access'])
+		expect(cards.find((card) => card.id === 'side-access')).toMatchObject({ type: 'record-list', tabs: ['overview'] })
 		const shown = []
 		for (const card of cards) {
 			// The requester is a facts card (a lead, as DqZaak draws it), the
@@ -918,8 +922,9 @@ describe('the assistant in the case page (DqZaakAssistent)', () => {
 			params: { originApp: 'dossiq', subjectId: '@objectId', limit: 25 },
 		})
 		expect(activity.content.register).toBeUndefined()
-		expect(activity.content.columns.map((column) => column.key)).toEqual(['decidedAt', 'decidedBy', 'prompt', 'status', 'advisoryContext.model'])
-		expect(activity.content.columns[3].enumLabels).toEqual({ approved: 'Used', overridden: 'Adapted', unused: 'Not used', denied: 'Rejected' })
+		// DqZaakAssistent: Soort en actie after the user.
+		expect(activity.content.columns.map((column) => column.key)).toEqual(['decidedAt', 'decidedBy', 'advisoryContext.suggestionType', 'prompt', 'status', 'advisoryContext.model'])
+		expect(activity.content.columns[4].enumLabels).toEqual({ approved: 'Used', overridden: 'Adapted', unused: 'Not used', denied: 'Rejected' })
 	})
 
 	it('places the case schema\'s macros through the library macros widget', () => {
