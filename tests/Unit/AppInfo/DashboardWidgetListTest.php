@@ -29,8 +29,8 @@ class DashboardWidgetListTest extends TestCase {
 
 		self::assertContains(MyOpenWorkWidget::class, $classes);
 		// One Mijn werk widget replaces My tasks and Overdue cases (board DqNextcloudDashboard).
-		self::assertNotContains('OCA\\Dossiq\\Dashboard\\MyTasksWidget', $classes);
-		self::assertNotContains('OCA\\Dossiq\\Dashboard\\OverdueCasesWidget', $classes);
+		self::assertNotContains(needle: 'OCA\\Dossiq\\Dashboard\\MyTasksWidget', haystack: $classes);
+		self::assertNotContains(needle: 'OCA\\Dossiq\\Dashboard\\OverdueCasesWidget', haystack: $classes);
 		self::assertSame($classes, array_values(array_unique($classes)));
 		foreach ($classes as $class) {
 			self::assertTrue(class_exists($class), $class);

@@ -49,7 +49,7 @@ class QueueWidgetItemsTest extends TestCase {
 
 		$links = new QueueWidgetItems(url: $url);
 
-		$this->assertSame('https://cloud.example/apps/dossiq/my-work', $links->myWorkUrl());
-		$this->assertSame('https://cloud.example/apps/dossiq/img/app-dark.svg', $links->iconUrl());
+		$this->assertSame(expected: 'https://cloud.example/apps/dossiq/my-work', actual: $links->myWorkUrl());
+		$this->assertSame(expected: 'https://cloud.example/apps/dossiq/img/app-dark.svg', actual: $links->iconUrl());
 	}//end testLinksToMyWorkAndTheAppIcon()
 }//end class

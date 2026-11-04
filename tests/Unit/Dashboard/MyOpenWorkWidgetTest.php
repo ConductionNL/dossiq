@@ -116,7 +116,7 @@ class MyOpenWorkWidgetTest extends TestCase {
 			[['2 open cases on your name', ''], ['3 open tasks', '1 late, 1 today']],
 			array_map(static fn (WidgetItem $item): array => [$item->getTitle(), $item->getSubtitle()], $items)
 		);
-		$this->assertSame('https://cloud.example/apps/dossiq/my-work', $items[0]->getLink());
+		$this->assertSame(expected: 'https://cloud.example/apps/dossiq/my-work', actual: $items[0]->getLink());
 
 	}//end testSummarisesCasesAndTasks()
 
@@ -132,9 +132,9 @@ class MyOpenWorkWidgetTest extends TestCase {
 
 		$items = $this->widget(queue: $queue)->getItemsV2('handler')->getItems();
 
-		$this->assertCount(1, $items);
-		$this->assertSame('1 open case on your name', $items[0]->getTitle());
-		$this->assertSame('1 as substitute', $items[0]->getSubtitle());
+		$this->assertCount(expectedCount: 1, haystack: $items);
+		$this->assertSame(expected: '1 open case on your name', actual: $items[0]->getTitle());
+		$this->assertSame(expected: '1 as substitute', actual: $items[0]->getSubtitle());
 
 	}//end testCountsCasesHeldAsSubstitute()
 
@@ -170,11 +170,11 @@ class MyOpenWorkWidgetTest extends TestCase {
 		$buttons = $widget->getWidgetButtons('handler');
 		$this->assertCount(1, $buttons);
 		$this->assertSame(WidgetButton::TYPE_MORE, $buttons[0]->getType());
-		$this->assertSame('Go to My work', $buttons[0]->getText());
+		$this->assertSame(expected: 'Go to My work', actual: $buttons[0]->getText());
 		$this->assertSame('https://cloud.example/apps/dossiq/my-work', $buttons[0]->getLink());
 
 		$this->assertSame('dossiq_my_open_work_widget', $widget->getId());
-		$this->assertSame('My work', $widget->getTitle());
+		$this->assertSame(expected: 'My work', actual: $widget->getTitle());
 		$this->assertSame('https://cloud.example/apps/dossiq/my-work', $widget->getUrl());
 		$this->assertSame('https://cloud.example/apps/dossiq/img/app-dark.svg', $widget->getIconUrl());
 		$this->assertSame('icon-dossiq-widget', $widget->getIconClass());
