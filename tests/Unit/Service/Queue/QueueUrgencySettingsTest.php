@@ -68,7 +68,7 @@ class QueueUrgencySettingsTest extends TestCase {
 				'inSightDays' => 10,
 				'residentWaitWeight' => 5.0,
 			],
-			$this->read(config: [])->toArray()
+			actual: $this->read(config: [])->toArray()
 		);
 	}//end testNothingStoredReadsAsTheDefaults()
 
