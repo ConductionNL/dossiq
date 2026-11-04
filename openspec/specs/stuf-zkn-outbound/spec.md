@@ -1,7 +1,7 @@
 # stuf-zkn-outbound Specification
 
 ## Purpose
-TBD - created by archiving change dossiq-stuf-zkn-outbound-gateway. Update Purpose after archive.
+Send case data to another zaaksysteem over StUF-ZKN: build the envelopes, keep payloads within their limit and handle credentials securely.
 
 @e2e exclude The StUF-ZKN/BG outbound gateway is a SOAP integration engine: envelope construction (Lk01/Lk02/Lv01/Du01), Bv01/La01/Fo02 response parsing, WSSE-from-vault, HTTPS-only + mTLS transport, circuit-breaker thresholds, retry scheduling and contact-betrokkene mapping are all backend behaviours proven by the Vitest-free PHPUnit unit suite (`StufMessageBuilderOutboundTest`, `StufMessageParserTest`, `CircuitBreakerServiceTest`, `ContactBetrokkeneMapperTest`) and, where a live peer is required, by the env-gated live-e2e + Newman jobs that talk to a seeded zaaksysteem. There is no dossiq-only browser surface that drives a real StUF round-trip without an external zaaksysteem endpoint installed; the two admin read-only views (StufEndpoints, StufAuditLog) only render what the backend persists. Mirrors the `zgw-autorisaties-api` (Newman/PHPUnit, no Playwright UI) precedent.
 
