@@ -126,7 +126,7 @@ export default {
 		// person/company picker's search and Skip's `saveObject('case')` fail
 		// the same way, so the widget could never start a case.
 		//
-		// The sibling widgets (CasesOverviewWidget, MyTasksWidget) already
+		// The sibling widget CasesOverviewWidget already
 		// await this, with the same reason in their comments; this one was the
 		// one that did not.
 		await initializeStores()

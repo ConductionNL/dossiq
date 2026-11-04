@@ -52,7 +52,7 @@
 								{
 									"key": "sync",
 									"title": "Synchronise",
-									"widgetIds": ["inspection-outbox-offline-note", "inspection-sync-queue"]
+									"widgetIds": ["inspection-outbox-offline-note", "inspection-sync-queue", "inspection-conflict"]
 								}
 							]
 						}
@@ -139,7 +139,7 @@
 						"id": "checklist-run",
 						"type": "checklist-run",
 						"title": "Checklist",
-						"_note": "DqInspectie middle frame: the reader's checklist run in execution, question by question with photos, answers written into the run's responses (nextcloud-vue #1764/#1766).",
+						"_note": "DqInspectie middle frame: the reader's checklist run in execution, question by question with photos and the place each answer was given (`gpsAtAnswer`, nextcloud-vue #2070), answers written into the run's responses (nextcloud-vue #1764/#1766).",
 						"content": {
 							"record": {
 								"register": "dossiq",
@@ -203,6 +203,10 @@
 							"recordPhotosField": "photos",
 							"pageSize": 2,
 							"startAt": "lastAnswered",
+							"captureLocation": {
+								"field": "gpsAtAnswer",
+								"goodAccuracy": 50
+							},
 							"caption": "{templateSnapshot.name} version {templateVersion}"
 						}
 					},
@@ -244,6 +248,32 @@
 								}
 							},
 							"emptyText": "Nothing waits to be synchronised"
+						}
+					},
+					{
+						"id": "inspection-conflict",
+						"type": "conflict-resolve",
+						"title": "Sync conflict",
+						"_note": "DqInspectie sync frame, under the outbox: an open conflict record with the text on this device and the text at the office for each field both sides changed, and one button per text (nextcloud-vue CnConflictResolveCard). Choosing posts to SIG's resolve endpoint (openspec change inspection-conflict-card); the buttons stay off until dossiq announces the capability conflictResolution.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "conflictRecord",
+								"filter": {
+									"resolution": { "isnull": true }
+								},
+								"limit": 3
+							},
+							"title": "Conflict: which text do you keep?",
+							"localText": "On this device: \"{value}\"",
+							"officeText": "At the office: \"{value}\"",
+							"keepLocalLabel": "Keep this one",
+							"keepOfficeLabel": "The office one",
+							"unavailableText": "Choosing a text is not possible yet. Your change stays in the outbox.",
+							"resolve": {
+								"url": "/apps/dossiq/api/conflict-records/{id}/resolve",
+								"capability": "dossiq.conflictResolution"
+							}
 						}
 					}
 				],

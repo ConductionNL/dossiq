@@ -442,4 +442,24 @@ class IntakeFanOutTest extends TestCase {
 			array_column($this->store->all('case'), 'status')
 		);
 	}//end testEachCaseOpensInItsOwnTypesInitialStatus()
+
+	/**
+	 * An id the submission sends opens new cases and leaves the case it names as it was.
+	 *
+	 * @return void
+	 */
+	public function testAForgedIdInTheSubmissionDoesNotTouchTheNamedCase(): void {
+		$this->store = new LifecycleRegister();
+		$this->store->seed(schema: 'case', uuid: 'victim-1', row: ['title' => 'Andermans zaak', 'caseType' => 'ct-other']);
+
+		$result = $this->fanOut()->submit(
+			formCaseTypeId: 'ct-melding',
+			submission: ['id' => 'victim-1', 'uuid' => 'victim-1', '@self' => ['id' => 'victim-1'], 'title' => 'Kapotte lantaarnpaal'],
+			submissionId: 'sub-1'
+		);
+
+		$this->assertSame([], $result['failed']);
+		$this->assertCount(3, $this->store->all('case'));
+		$this->assertSame(['title' => 'Andermans zaak', 'caseType' => 'ct-other', 'id' => 'victim-1'], $this->store->row('case', 'victim-1'));
+	}//end testAForgedIdInTheSubmissionDoesNotTouchTheNamedCase()
 }//end class

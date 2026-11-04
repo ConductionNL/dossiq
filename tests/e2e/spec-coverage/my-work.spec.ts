@@ -89,61 +89,27 @@ test.describe('My Work spec coverage', () => {
 		await expectSort(page, 'Urgency')
 	}
 
-	// @e2e openspec/specs/my-work/spec.md#card-and-table-view
-	test('opens in card view, and offers a card/table toggle', async ({ page }) => {
+	// @e2e openspec/specs/my-work/spec.md#one-list-most-urgent-first
+	test('opens as one list of rows, with Cards one click away and no table', async ({ page }) => {
 		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/archive/2026-10-30-lists-are-views/restore.md section 2')
 		await openMyWork(page)
 
-		// The DEFAULT is the claim, so nothing is clicked before it is read.
-		// The seeded case must arrive as a card, and no table may be on the
-		// page: a list that opened in table view renders the same case as a
-		// row instead.
-		await expect(
-			page.locator('.cn-object-card', { hasText: TITLE }),
-			'Assigned to me must open in card view, so the seeded case renders as a card',
-		).toBeVisible({ timeout: 60_000 })
+		// The DEFAULT is the claim, so nothing is clicked before it is read:
+		// the seeded case arrives as a row, not as a card, and no table.
+		const row = page.locator('.cn-object-row', { hasText: TITLE })
+		await expect(row, 'Assigned to me must open as a list of rows').toBeVisible({ timeout: 60_000 })
+		await expect(page.locator('.cn-object-card', { hasText: TITLE })).toHaveCount(0)
 		await expect(page.locator('table')).toHaveCount(0)
-
-		// And the toggle is offered, with Cards the pressed half.
-		const cards = page.getByRole('button', { name: /Cards/ }).first()
-		const table = page.getByRole('button', { name: /Table/ }).first()
-		await expect(cards).toHaveAttribute('aria-pressed', 'true')
-		await expect(table).toBeVisible()
-		await expect(table).toHaveAttribute('aria-pressed', 'false')
+		await expect(page.getByRole('button', { name: /^Table$/ })).toHaveCount(0)
+		await expect(page.getByRole('button', { name: /Cards/ }).first()).toBeVisible()
 	})
 
-	// @e2e openspec/specs/my-work/spec.md#card-and-table-view
-	test('the table view shows identifier, title, case type, status and deadline', async ({
-		page,
-	}) => {
+	// @e2e openspec/specs/my-work/spec.md#row-fields
+	test('a row shows the identifier and title of the case', async ({ page }) => {
 		test.fixme(!VIEW_OVERRIDES_APPLIED, 'needs view overrides: openspec/changes/archive/2026-10-30-lists-are-views/restore.md section 2')
 		await openMyWork(page)
-		// Wait for the list to answer before switching: the toggle paints with
-		// the shell, and switching before the rows exist leaves a table view
-		// with no `<table>` to read.
-		await expect(page.locator('.cn-object-card', { hasText: TITLE })).toBeVisible({
-			timeout: 60_000,
-		})
-
-		await page.getByRole('button', { name: /Table/ }).first().click()
-		const tableEl = page.locator('table').first()
-		await expect(tableEl).toBeVisible({ timeout: 30_000 })
-
-		// The five columns the scenario names, in order. The selection and
-		// actions columns carry no text and are dropped; a sort arrow on the
-		// active column is stripped.
-		const headers = (await tableEl.getByRole('columnheader').allInnerTexts())
-			.map((text) => text.replace(/[▲▼]/g, '').trim())
-			.filter((text) => text !== '')
-		expect(
-			headers,
-			'the table view must show identifier, title, case type, status and deadline, in that order',
-		).toEqual(['Identifier', 'Title', 'Case type', 'Status', 'Deadline'])
-
-		// And the seeded case is a ROW of that table, carrying its own
-		// identifier and title rather than a placeholder.
-		const row = tableEl.locator('tbody tr', { hasText: TITLE })
-		await expect(row).toHaveCount(1, { timeout: 30_000 })
+		const row = page.locator('.cn-object-row', { hasText: TITLE })
+		await expect(row).toHaveCount(1, { timeout: 60_000 })
 		await expect(row).toContainText(identifier)
 	})
 })

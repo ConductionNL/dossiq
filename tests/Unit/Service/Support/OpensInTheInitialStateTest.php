@@ -82,6 +82,50 @@ class OpensInTheInitialStateTest extends TestCase {
 		$this->assertSame('cancelled', $saved['status']);
 		$this->assertSame('cancelled', $register->row('hearingSession', (string)$saved['id'])['status']);
 		$this->assertSame(['hearingSession: planned -> cancelled'], $register->moves);
+		$this->assertSame(1, $register->patches, 'the move goes through OpenRegister\'s patch');
+	}
+
+	/**
+	 * A forged id in the record opens a new record and leaves the named one as it was.
+	 *
+	 * @return void
+	 */
+	public function testAForgedIdOnCreateDoesNotTouchTheNamedRecord(): void {
+		$register = new LifecycleRegister();
+		$register->seed(schema: 'hearingSession', uuid: 'victim-1', row: ['case' => 'other-case', 'status' => 'planned']);
+
+		$saved = (new InitialStateHost())->write(
+			objectService: $register,
+			session: ['id' => 'victim-1', 'uuid' => 'victim-1', '@self' => ['id' => 'victim-1'], 'case' => 'case-1', 'status' => 'cancelled']
+		);
+
+		$this->assertNotSame('victim-1', $saved['id']);
+		$this->assertSame(['case' => 'other-case', 'status' => 'planned', 'id' => 'victim-1'], $register->row('hearingSession', 'victim-1'));
+		$this->assertSame('cancelled', $register->row('hearingSession', (string)$saved['id'])['status']);
+		$this->assertArrayNotHasKey('uuid', $register->row('hearingSession', (string)$saved['id']));
+	}
+
+	/**
+	 * The move and the delete run as the caller: a caller who may only create
+	 * is refused both, so the record stays in its initial state and is named.
+	 *
+	 * @return void
+	 */
+	public function testTheMoveAndTheDeleteRunAsTheCaller(): void {
+		$register = new LifecycleRegister();
+		$register->callerMayOnlyCreate = ['hearingSession'];
+
+		try {
+			(new InitialStateHost())->write(objectService: $register, session: ['case' => 'case-1', 'status' => 'cancelled']);
+			$this->fail('a caller who may not update the record must be refused the move');
+		} catch (RuntimeException $refused) {
+			$this->assertStringContainsString('may not update', $refused->getMessage());
+			$this->assertStringContainsString('could not be deleted again: The caller may not delete', $refused->getMessage());
+		}
+
+		$this->assertSame([], $register->moves);
+		$this->assertSame([], $register->deletes);
+		$this->assertSame('planned', $register->all('hearingSession')[0]['status']);
 	}
 
 	/**
@@ -113,13 +157,15 @@ class OpensInTheInitialStateTest extends TestCase {
 			/**
 			 * Refuse every delete.
 			 *
-			 * @param int|string $register The register.
-			 * @param int|string $schema   The schema slug.
-			 * @param string     $uuid     The uuid.
+			 * @param int|string $register      The register.
+			 * @param int|string $schema        The schema slug.
+			 * @param string     $uuid          The uuid.
+			 * @param bool       $_rbac         Ignored.
+			 * @param bool       $_multitenancy Ignored.
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = '', bool $_rbac = true, bool $_multitenancy = true): bool {
 				throw new RuntimeException('delete refused');
 			}
 		};

@@ -1,7 +1,7 @@
 # woo-delivered-set Specification
 
 ## Purpose
-TBD - created by archiving change woo-delivered-set-is-a-record. Update Purpose after archive.
+Keep every Woo delivery as a set with its own identity and manifest. A frozen set refuses change and can be verified again later.
 
 ## Requirements
 

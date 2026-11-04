@@ -1,3 +1,5 @@
 # Screens
 
-- No screen: backend: a payout is raised with the finance app
+- dossiq/DqTermijnen uitbetaling via financiën https://identity.conduction.nl/screens/board?id=dossiq/DqTermijnen
+
+Components: CnAppNav, CnBuildiqEditButton, CnDataTable, CnKpiGrid, CnPageHeader, CnQuickFilterBar, CnSegmentedControl, CnStatsBlock, CnStatusBadge

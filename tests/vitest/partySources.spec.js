@@ -59,13 +59,30 @@ describe('party sources', () => {
 	})
 
 	it('searches the person and company register sets, persons first', () => {
-		for (const { override } of overrides) {
+		for (const { override } of overrides.filter((o) => !o.override.kindSwitch)) {
 			const [person, company] = override.sources
 			expect(person).toMatchObject({ id: 'person', register: 'dossiq', schema: 'brpPerson', label: 'Resident', title: '{displayName}' })
 			expect(company).toMatchObject({ id: 'company', register: 'dossiq', schema: 'kvkCompany', label: 'Organisation', title: '{tradeName}', secondary: 'CoC {kvkNumber}' })
 			expect(override.testid).toBe('initiator-picker-search')
 			expect(override.placeholder).toBe('Name, BSN, trade name or KvK number')
 		}
+	})
+
+	it('lets the new-case dialogs pick the kind of requester first, with the board\'s result lines (DqNieuweZaak)', () => {
+		const switched = overrides.filter((o) => o.override.kindSwitch)
+		expect(switched).toHaveLength(6)
+		for (const { field, override } of switched) {
+			expect(field).toBe('requester')
+			expect(override.kindSwitch).toEqual({ label: 'Kind of requester' })
+			const [person, company] = override.sources
+			expect(person).toMatchObject({ id: 'person', kind: 'Person', schema: 'brpPerson', label: 'BRP', title: '{displayName}', secondary: 'born {birth.date|date} · BSN {citizenServiceNumber|masked}' })
+			expect(company).toMatchObject({ id: 'company', kind: 'Organisation', schema: 'kvkCompany', label: 'CoC', title: '{tradeName}', secondary: 'trade name {tradeName} · CoC number {kvkNumber}' })
+			expect(override.testid).toBe('initiator-picker-search')
+		}
+		const nl = read('l10n', 'nl.json').translations
+		expect(nl['Kind of requester']).toBe('Soort aanvrager')
+		expect(nl['born {birth.date|date} · BSN {citizenServiceNumber|masked}']).toBe('geboren {birth.date|date} · BSN {citizenServiceNumber|masked}')
+		expect(nl['trade name {tradeName} · CoC number {kvkNumber}']).toBe('handelsnaam {tradeName} · KvK-nummer {kvkNumber}')
 	})
 
 	it('fills the company line with the translated KvK prefix', () => {

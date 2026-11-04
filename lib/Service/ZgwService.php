@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\OpenRegister\Db\Mapping;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -1156,10 +1157,11 @@ class ZgwService {
 			// that Twig cannot handle) bypass the inbound mapping.
 			$englishData = $this->mapInbound(enrichedBody: $ruleResult['enrichedBody'], mappingConfig: $write->mapping)['data'];
 
+			// `_directFields` reach the payload unmapped, so a create drops the keys that name a stored object.
 			$object = $this->objectService->saveObject(
 				register: $write->mapping['sourceRegister'],
 				schema: $write->mapping['sourceSchema'],
-				object: $englishData
+				object: array_diff_key($englishData, CallerIdentity::KEYS)
 			);
 
 			$outbound = $this->outboundFor(write: $write, object: $object);

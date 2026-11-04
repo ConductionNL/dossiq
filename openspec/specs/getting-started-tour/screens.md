@@ -1,3 +1,5 @@
 # Screens
 
-- dossiq/DqRondleiding the first-use tour over the app menu, step by step (board lane dq-ui-b1 draws it) https://identity.conduction.nl/screens/board?id=dossiq/DqRondleiding
+- dossiq/DqRondleiding rondleiding bij het eerste bezoek: welkomstkaart, zes stappen en de aanwijzer bij het menu https://identity.conduction.nl/screens/board?id=dossiq/DqRondleiding
+
+Components: CnAppNav, CnBuildiqEditButton, CnCardGrid, CnDashboardPage, CnKpiGrid, CnObjectCard, CnPageHeader, CnStatsBlock, CnStatusBadge, CnWalkthrough, CnWizardDialog

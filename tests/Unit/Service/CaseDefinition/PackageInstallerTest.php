@@ -331,10 +331,13 @@ final class PackageTestSchemaEntity {
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
+ * @uses \OCA\Dossiq\Service\CaseDefinition\ComponentRows
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowTarget
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageSeedRules
  * @uses \OCA\Dossiq\Service\CaseDefinition\WritesPackageRows
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageIds
  * @uses \OCA\Dossiq\Service\Starter\ShippedConfigurationService
+ * @uses \OCA\Dossiq\Service\Starter\ShippedRowAdopter
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
  * @uses \OCA\Dossiq\Service\Starter\ShippedSets
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
@@ -344,6 +347,7 @@ final class PackageTestSchemaEntity {
  * @uses \OCA\Dossiq\Service\Starter\ShippedRowShape
  * @uses \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageInstallRun
  */
 class PackageInstallerTest extends TestCase {
 

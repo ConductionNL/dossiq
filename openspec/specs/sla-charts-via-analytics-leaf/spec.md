@@ -1,7 +1,7 @@
 # sla-charts-via-analytics-leaf Specification
 
 ## Purpose
-TBD - created by archiving change migrate-sla-dashboard-to-analytics-leaf. Update Purpose after archive.
+Draw the doorlooptijd charts through OpenRegister's analytics leaf, while the SLA compliance calculation stays in dossiq as case logic.
 ## Requirements
 ### Requirement: Doorlooptijd Charts Render Through The OR Analytics Leaf
 

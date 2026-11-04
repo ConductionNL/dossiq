@@ -121,21 +121,21 @@ const TAB_CEILING = 15
 
 /** The fifteen labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
-	['case-data-panel', 'Data'],
+	['case-data-panel', 'Overview'],
 	['case-files', 'Files'],
-	['case-document-review', 'Review'],
+	['case-communication-panel', 'Contact'],
+	['case-work-panel', 'Tasks'],
+	['case-timeline-panel', 'Case history'],
 	['case-notes-panel', 'Notes'],
-	['case-timeline-panel', 'Timeline'],
 	['case-people-panel', 'People'],
-	['case-communication-panel', 'Communication'],
 	['case-email-panel', 'Email'],
-	['case-work-panel', 'Work'],
-	['case-change-proposals', 'Proposals'],
 	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
 	['case-custody-panel', 'Custody'],
 	['case-archival-panel', 'Archiving'],
 	['case-knowledge-panel', 'Knowledge'],
+	['case-document-review', 'Review'],
+	['case-change-proposals', 'Proposals'],
 ]
 
 /**
@@ -195,6 +195,12 @@ describe('the case page tab strip', () => {
 
 	it('names the fifteen tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
+	})
+
+	it('shows five tabs and puts the rest under More (REQ-CDV-16)', () => {
+		const content = widget('case-panels').content
+		expect(content.maxVisibleTabs).toBe(5)
+		expect(content.moreLabel).toBe('More')
 	})
 
 	it('labels every tab in sentence case, with no em-dash', () => {

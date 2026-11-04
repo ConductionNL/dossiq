@@ -6,3 +6,8 @@
 - dossiq/DqBeheerinstellingen the Systeem cards, such as linking mail on case number to cases https://identity.conduction.nl/screens/board?id=dossiq/DqBeheerinstellingen
 - dossiq/DqVthInstellingen the DSO activity table and the fee table https://identity.conduction.nl/screens/board?id=dossiq/DqVthInstellingen
 - dossiq/DqZaaktypeStatussen the status, result and document types of a case type https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypeStatussen
+- dossiq/DqZaaktypen zaaktypen https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypen
+- dossiq/DqBeheerGeavanceerd beheerinstellingen in Nextcloud, tab geavanceerd, met de zoekindex https://identity.conduction.nl/screens/board?id=dossiq/DqBeheerGeavanceerd
+- dossiq/DqZaaktypeOverzicht zaaktype, overzicht met niet-opgeslagen wijzigingen https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypeOverzicht
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAdminSettingsShell, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnCardGrid, CnDashboardGrid, CnDashboardPage, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnNoteCard, CnObjectCard, CnPagination, CnQuickFilterBar, CnRelatedCollections, CnRowActions, CnSettingsSection, CnStatusBadge, CnTabs, CnVersionHistory

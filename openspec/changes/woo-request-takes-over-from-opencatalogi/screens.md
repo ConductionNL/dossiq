@@ -2,3 +2,6 @@
 
 - opencatalogi/OcWooBatch the Woo batch with its linked Woo request (decision 256: dossiq links out) https://identity.conduction.nl/screens/board?id=opencatalogi/OcWooBatch
 - dossiq has no board of its own for the Woo request intake; it is an API, the import is an occ command, and a former reference is found through the case search.
+- dossiq/DqZaakBesluiten besluit op het Woo-verzoek https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
+
+Components: CnActionButtons, CnActionDialog, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnChoiceCards, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFormDialog, CnNextStepCard, CnNoteCard, CnProgressBar, CnRecordListWidget, CnRelatedCollections, CnStatusBadge, CnTabs, CnTimelineStages

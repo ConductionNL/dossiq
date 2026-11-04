@@ -1,7 +1,7 @@
 # zgw-openapi-publication Specification
 
 ## Purpose
-TBD - created by archiving change zgw-openapi-publication. Update Purpose after archive.
+Publish an OpenAPI document for every routed ZGW API, with a public, read-only discovery endpoint that lists them.
 ## Requirements
 ### Requirement: OpenAPI documents for every routed ZGW API
 

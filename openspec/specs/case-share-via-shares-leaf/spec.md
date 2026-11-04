@@ -1,7 +1,7 @@
 # case-share-via-shares-leaf Specification
 
 ## Purpose
-TBD - created by archiving change migrate-public-share-to-shares-leaf. Update Purpose after archive.
+Create public case shares through OpenRegister's shares leaf, which replaces dossiq's own share controller. Handover to a partner organisation stays outside it.
 
 ## Requirements
 

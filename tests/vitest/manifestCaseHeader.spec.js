@@ -261,26 +261,15 @@ describe('CaseDetail — the identity row is three configured tiles and the hour
 	})
 })
 
-describe('CaseDetail — the breadcrumb is gone, deliberately (regression guard)', () => {
-	it('declares no breadcrumb trail on the page or the widget', () => {
-		// The trail's LAST crumb was the case title, rendered one line below the
-		// page header that already printed that title. It read as a repeat
-		// rather than as a location, and it cost the top of the page a row.
-		//
-		// This asserts the ABSENCE because the removal is a decision, not an
-		// oversight: without it, the next reader finds a `_breadcrumbsNote`
-		// explaining a key that is not there and re-adds the key.
+describe('CaseDetail — the trail ends on the case number (REQ-CDV-15)', () => {
+	it('reads All cases / <identifier>, so no crumb repeats the title', () => {
+		expect(caseDetail().config.breadcrumb).toEqual({
+			label: 'All cases',
+			route: 'Cases',
+			currentField: 'identifier',
+			separator: '/',
+		})
 		expect(caseDetail().config.breadcrumbs).toBeUndefined()
-		// The widget half of this guard went with CaseHeaderRow. Nothing on the
-		// page declares a trail now, so assert that across every widget rather
-		// than against one that no longer exists.
-		expect(JSON.stringify(caseDetail().config.widgets)).not.toContain(
-			'breadcrumb',
-		)
-	})
-
-	it('keeps the note that says why, so the removal is not re-litigated', () => {
-		expect(caseDetail().config._breadcrumbsNote).toMatch(/REMOVED/)
 	})
 })
 
@@ -291,56 +280,24 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 	}
 
 	it('is the work a handler does, in order, and nothing else', () => {
-		// Task 4.1 asked for the work tabs to LEAD the strip, because there were
-		// nine more behind them. There are none behind them now: this is the
-		// whole strip, so what was a prefix assertion is an exact one. Timeline
-		// is deliberately absent: the timeline is the sidebar History tab
-		// (change case-timeline), and a body panel over the same log would be
-		// the duplication that change exists to retire.
-		//
-		// Communication, Email and Besluiten joined on 2026-09-13. The sidebar
-		// lost the three tabs that carried the last two, so the page gained no
-		// surface; `case-core` became a section of `case-data-panel`, which also
-		// holds the locations map.
-		//
-		// Timeline joined on 2026-09-16 (one-timeline-on-the-case, #2846) and
-		// does NOT contradict the paragraph above: that one is about the AUDIT
-		// log, which stays in the sidebar. This is OpenRegister's timeline of
-		// every note, logged call and message, the one place they are read in
-		// one order. Archiving joined with it (#2850): what happens to the
-		// case when its business use ends, as openregister decided it. It
-		// comes last because it is the only tab about a case that is over.
-		//
-		// Custody joined on 2026-09-14 (#2940): the dated chain of who held the
-		// case, beside Related because both answer "what else is attached to
-		// this one" rather than "what do I do next".
-		//
-		// Knowledge joined on 2026-09-17 (#2995): the work instruction for this
-		// kind of case. 🔴 IT SITS AFTER ARCHIVING, WHICH CONTRADICTS THE
-		// PARAGRAPH ABOVE. Archiving was placed last on the grounds that it is
-		// the only tab about a case that is over, and a work instruction is the
-		// opposite: reference material for a case still being worked. The order
-		// here matches the manifest, so the strip and this assertion agree, but
-		// the placement is a product question somebody should answer rather
-		// than a rule this test is enforcing. Recorded here rather than quietly
-		// accepted, because the next person to add a tab will read this list
-		// as the intent.
+		// REQ-CDV-16: the five everyday tabs lead (boards DqZaak), the rest
+		// follow under More (DqZaakMeer). The whole strip, as an exact list.
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-data-panel',
 			'case-files',
-			'case-document-review',
-			'case-notes-panel',
-			'case-timeline-panel',
-			'case-people-panel',
 			'case-communication-panel',
-			'case-email-panel',
 			'case-work-panel',
-			'case-change-proposals',
+			'case-timeline-panel',
+			'case-notes-panel',
+			'case-people-panel',
+			'case-email-panel',
 			'case-decisions-panel',
 			'case-related-panel',
 			'case-custody-panel',
 			'case-archival-panel',
 			'case-knowledge-panel',
+			'case-document-review',
+			'case-change-proposals',
 		])
 	})
 
@@ -353,7 +310,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// would leave a shorter strip and a passing count.
 		const stillOnThePage = {
 			'case-sub-cases': 'Related',
-			'case-calendar': 'Work',
+			'case-calendar': 'Tasks',
 			'case-objects': 'Related',
 		}
 		for (const [id, tab] of Object.entries(stillOnThePage)) {
@@ -368,7 +325,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// tab is what makes that a replacement instead of a deletion, so the
 		// map is what gets asserted.
 		expect(panels.caseWidget('case-locaties')).toBeUndefined()
-		expect(panels.caseTabOf('case-location-map')?.tab).toBe('Data')
+		expect(panels.caseTabOf('case-location-map')?.tab).toBe('Overview')
 
 		// `case-decidesk-decisions` is the fourth. It left the body when it
 		// duplicated the Besluitvorming sidebar tab; on 2026-09-13 that

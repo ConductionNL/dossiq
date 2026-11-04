@@ -42,6 +42,9 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\CaseTypeCopyService
  *
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeChildCopy
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeCopyTarget
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeDerivation
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences

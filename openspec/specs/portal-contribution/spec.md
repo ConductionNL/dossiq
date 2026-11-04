@@ -224,13 +224,13 @@ and from a notice link.
 #### Scenario: The resident menu
 - **GIVEN** a resident signed in on the site
 - **WHEN** the site builds the menu from dossiq's contribution
-- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Voortgang van uw zaken", "Een bericht beantwoorden" and "Mijn verzoeken"
+- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Mijn verzoeken" and "Mijn afspraken", beside the site's "Mijn taken", as the menu board `MijnMenu` draws it
 - **AND** "Mijn zaken" and "Berichten" MUST appear once, as the site's own sections
 
 #### Scenario: A case opens from the site's case list
 - **GIVEN** a resident with a dossiq case in the site's "Mijn zaken"
 - **WHEN** they open it
-- **THEN** the page "Voortgang van uw zaken" MUST open with that case selected
+- **THEN** the case MUST open on its own case page, as the board `Zaak` draws it
 
 ### Requirement: The decision notice says what happened
 When the decision on a Woo request case is published for the first time and a resident follows the case
@@ -545,13 +545,13 @@ The case schema MUST carry `portalTurn`, a calculation that is `applicant` when
 `thirdParty`, `us` otherwise, and empty when the case has an `endDate`. The citizen case
 projection MUST include `portalTurn`, `waitingOnApplicant` and `waitingOn`. The `mijnZaken`
 collection MUST declare `turnField: 'portalTurn'`, `dueField: 'deadline'` and value labels on
-`portalTurn`, so a case card reads "U bent aan zet", "Wij wachten op informatie van een ander"
-or "De gemeente is aan zet". A closed case MUST show no such line. This is a new requirement.
+`portalTurn`, so a case card reads "Wacht op u" when it is `applicant` and "In behandeling" when it is
+`thirdParty` or `us`. A closed case MUST show no such line. This is a new requirement.
 
 #### Scenario: The case waits on the resident
 - **GIVEN** a running case with an open aanvullingsverzoek
 - **WHEN** the resident's overview lists the case
-- **THEN** the case card MUST read "U bent aan zet"
+- **THEN** the case card MUST read "Wacht op u"
 
 #### Scenario: The card reads one declared field
 - **GIVEN** the `mijnZaken` collection
@@ -561,7 +561,7 @@ or "De gemeente is aan zet". A closed case MUST show no such line. This is a new
 #### Scenario: The case waits on the organisation
 - **GIVEN** a running case in a status whose `waitingOn` is `us` and no open request
 - **WHEN** the overview lists it
-- **THEN** the card MUST read "De gemeente is aan zet"
+- **THEN** the card MUST read "In behandeling"
 
 ### Requirement: A case hands the portal its steps (REQ-SRPD-003)
 The provider MUST answer `caseSteps(caseId)` with the case type's statuses in `order`, folded

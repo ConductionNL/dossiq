@@ -181,6 +181,14 @@
 						'A connection stays off until you choose a source. Off means: not one request goes outside.',
 					)
 				">
+				<div v-if="ownerApps.integriq" class="dq-settings-action-row">
+					<NcButton :href="integriqConnectionsUrl" variant="secondary" data-testid="dossiq-add-connection">
+						{{ t('dossiq', 'Add connection in integriq') }}
+					</NcButton>
+					<span class="dq-settings-action-row__note">
+						{{ t('dossiq', 'Opens integriq, Connections, filtered on app dossiq.') }}
+					</span>
+				</div>
 				<NcNoteCard v-if="!ownerApps.integriq" type="info">
 					{{
 						t(
@@ -223,6 +231,92 @@
 				:columns="3"
 				valuesPath="config"
 				:fields="kadasterFields" />
+
+			<CnSettingsSection
+				id="section-dependency-apps"
+				:name="t('dossiq', 'Apps dossiq needs and apps dossiq works with')"
+				:description="
+					t(
+						'dossiq',
+						'Named by their product name, looked up by their app id. Needed: Openregister and Integriq. Works alongside: Filinq, Pipelinq, Portaliq, Humaniq.',
+					)
+				">
+				<DependencyAppsList />
+			</CnSettingsSection>
+
+			<CnSettingsSection
+				id="section-term-definitions"
+				:actionsInTitle="true"
+				:name="t('dossiq', 'Term definitions (Awb)')"
+				:description="
+					t(
+						'dossiq',
+						'One table for every statutory term. A new version gets a new row; the old one keeps applying to cases that started under it.',
+					)
+				"
+				:loading="!storesReady">
+				<template v-if="storesReady" #actions>
+					<NcButton variant="secondary" data-testid="dossiq-add-term-definition" @click="$refs.termSummary.openNew()">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('dossiq', 'Add definition') }}
+					</NcButton>
+				</template>
+				<DeadlineDefinitionsTab v-if="storesReady" ref="termSummary" :summary="true" />
+			</CnSettingsSection>
+
+			<div class="dq-settings-pair">
+				<CnSettingsFieldsSection
+					id="section-queue-order"
+					appId="dossiq"
+					:name="t('dossiq', 'Urgency in the queue')"
+					:description="
+						t(
+							'dossiq',
+							'Decides the order of the team queue and Assigned to me. Save sends only what changed; an unchanged form sends nothing.',
+						)
+					"
+					valuesPath="config"
+					:fields="queueOrderFields" />
+
+				<CnSettingsSection
+					id="section-search-index-run"
+					:name="t('dossiq', 'Search index')"
+					:description="
+						t(
+							'dossiq',
+							'Search index maintenance runs as a background job. This shows when it last ran.',
+						)
+					">
+					<SearchIndexFacts variant="run" />
+				</CnSettingsSection>
+			</div>
+
+			<CnSettingsSection
+				id="section-woo-refusal-grounds"
+				:actionsInTitle="true"
+				:name="t('dossiq', 'Woo refusal grounds')"
+				:description="
+					t(
+						'dossiq',
+						'The grounds on which a Woo request is refused in whole or in part. Every change to this list is recorded.',
+					)
+				">
+				<template #actions>
+					<NcButton :href="wooRefusalGroundsUrl" variant="secondary" data-testid="dossiq-add-refusal-ground">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('dossiq', 'Add ground') }}
+					</NcButton>
+				</template>
+				<CnWidgetObjectTable
+					:hideWrapper="true"
+					:source="wooRefusalGroundSource"
+					:columns="wooRefusalGroundColumns"
+					:emptyText="t('dossiq', 'No refusal grounds yet.')" />
+			</CnSettingsSection>
 		</template>
 
 		<template #tab-mail>
@@ -327,42 +421,68 @@
 					:emptyText="t('dossiq', 'No fee rules for dossiq yet.')" />
 			</CnSettingsSection>
 
-			<CnSettingsSection
-				:actionsInTitle="true"
-				:name="t('dossiq', 'Inspection checklists')"
-				:loading="!storesReady">
-				<template v-if="storesReady" #actions>
-					<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('dossiq', 'Add checklist') }}
-					</NcButton>
-				</template>
-				<ChecklistTemplatesTab v-if="storesReady" ref="checklists" :hideAddButton="true" />
-			</CnSettingsSection>
+			<div class="dq-settings-trio">
+				<CnSettingsSection
+					:actionsInTitle="true"
+					:name="t('dossiq', 'Inspection checklists')"
+					:loading="!storesReady">
+					<template v-if="storesReady" #actions>
+						<NcButton variant="secondary" @click="$refs.checklists.openEditor(null)">
+							<template #icon>
+								<Plus :size="20" />
+							</template>
+							{{ t('dossiq', 'Add checklist') }}
+						</NcButton>
+					</template>
+					<ChecklistTemplatesTab v-if="storesReady" ref="checklists" :hideAddButton="true" />
+				</CnSettingsSection>
 
-			<CnSettingsSection
-				id="section-enforcement-strategy"
-				:name="t('dossiq', 'Enforcement strategy')">
-				<CnFactsWidget :content="enforcementMatrixFacts" />
-				<p>
-					<a
-						href="#section-enforcement-strategy"
-						role="button"
-						data-testid="enforcement-earlier-versions"
-						:aria-expanded="String(showEarlierMatrices)"
-						@click.prevent="showEarlierMatrices = !showEarlierMatrices">
-						{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
-					</a>
-				</p>
-				<CnWidgetObjectTable
-					v-if="showEarlierMatrices"
-					:hideWrapper="true"
-					:source="enforcementMatrixSource"
-					:columns="enforcementMatrixColumns"
-					:emptyText="t('dossiq', 'No enforcement matrix yet.')" />
-			</CnSettingsSection>
+				<CnSettingsSection
+					id="section-advice"
+					:name="t('dossiq', 'Advice and advisers')"
+					:description="
+						t(
+							'dossiq',
+							'An advice request makes a task for the adviser and puts the request on the case timeline.',
+						)
+					">
+					<AdviceSettingsFacts />
+				</CnSettingsSection>
+
+				<CnSettingsSection
+					id="section-publications"
+					:name="t('dossiq', 'Public notices')"
+					:description="
+						t(
+							'dossiq',
+							'After the decision dossiq writes the publication text and watches the objection period.',
+						)
+					">
+					<SettingsFactsList :rows="publicationRows" />
+				</CnSettingsSection>
+
+				<CnSettingsSection
+					id="section-enforcement-strategy"
+					:name="t('dossiq', 'Enforcement strategy')">
+					<CnFactsWidget :content="enforcementMatrixFacts" />
+					<p>
+						<a
+							href="#section-enforcement-strategy"
+							role="button"
+							data-testid="enforcement-earlier-versions"
+							:aria-expanded="String(showEarlierMatrices)"
+							@click.prevent="showEarlierMatrices = !showEarlierMatrices">
+							{{ showEarlierMatrices ? t('dossiq', 'Hide earlier versions') : t('dossiq', 'Earlier versions') }}
+						</a>
+					</p>
+					<CnWidgetObjectTable
+						v-if="showEarlierMatrices"
+						:hideWrapper="true"
+						:source="enforcementMatrixSource"
+						:columns="enforcementMatrixColumns"
+						:emptyText="t('dossiq', 'No enforcement matrix yet.')" />
+				</CnSettingsSection>
+			</div>
 		</template>
 
 		<template #tab-substitution>
@@ -407,6 +527,18 @@
 				valuesPath="config"
 				:saveLabel="t('dossiq', 'Save KCC settings')"
 				:fields="contactCentreFields" />
+
+			<CnSettingsSection
+				id="section-search-index-rows"
+				:name="t('dossiq', 'Search index')"
+				:description="
+					t(
+						'dossiq',
+						'The state of OpenRegister\'s search index, read on opening. Dossiq keeps none of it itself.',
+					)
+				">
+				<SearchIndexFacts variant="rows" />
+			</CnSettingsSection>
 
 			<CnSettingsSection
 				id="section-dmn"
@@ -633,6 +765,10 @@ import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
+import AdviceSettingsFacts from './components/AdviceSettingsFacts.vue'
+import DependencyAppsList from './components/DependencyAppsList.vue'
+import SearchIndexFacts from './components/SearchIndexFacts.vue'
+import SettingsFactsList from './components/SettingsFactsList.vue'
 import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
@@ -648,6 +784,7 @@ import manifest from '../../manifest.json'
 import { fetchAdminTabCounts } from '../../services/adminTabCounts.js'
 import { initializeStores } from '../../store/store.js'
 import { feeRuleBasis, feeRuleCalculation, feeRuleName } from '../../utils/feeRules.js'
+import { INTEGRIQ_CONNECTIONS_PATH } from '../../utils/integriqConnections.js'
 import { activityOverviewFormatters } from './activityOverviewFormatters.js'
 import {
 	aiFields,
@@ -660,6 +797,7 @@ import {
 	kadasterFields,
 	menuStructureFields,
 	paymentCallbackFields,
+	queueOrderFields,
 	queueUrgencyFields,
 	registerMappingGroups,
 	reviewReportFields,
@@ -667,6 +805,12 @@ import {
 	storeRegistryFields,
 	textsAndAccessFields,
 } from './adminFields.js'
+import {
+	publicationRows,
+	WOO_REFUSAL_GROUNDS_PATH,
+	wooRefusalGroundColumns,
+	wooRefusalGroundSource,
+} from './adminSettingsBlocks.js'
 
 export default {
 	name: 'AdminRoot',
@@ -694,6 +838,10 @@ export default {
 		NcButton,
 		NcNoteCard,
 		SubstitutionAdmin,
+		AdviceSettingsFacts,
+		DependencyAppsList,
+		SearchIndexFacts,
+		SettingsFactsList,
 	},
 
 	/**
@@ -739,6 +887,8 @@ export default {
 				integriq: true,
 				shillinq: true,
 			}),
+
+			publicationSettings: loadState('dossiq', 'publicationSettings', {}),
 		}
 	},
 
@@ -1282,6 +1432,62 @@ export default {
 		},
 
 		/**
+		 * Integriq's Connections, filtered on dossiq, with the link dialog open.
+		 *
+		 * @return {string} The URL.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		integriqConnectionsUrl() {
+			return generateUrl(INTEGRIQ_CONNECTIONS_PATH)
+		},
+
+		/**
+		 * The full list of Woo refusal grounds, where a ground is added.
+		 *
+		 * @return {string} The URL.
+		 * @spec openspec/specs/woo-refusal-grounds/spec.md
+		 */
+		wooRefusalGroundsUrl() {
+			return generateUrl(WOO_REFUSAL_GROUNDS_PATH)
+		},
+
+		/**
+		 * @return {object} The Woo refusal grounds table source.
+		 *
+		 * @spec openspec/specs/woo-refusal-grounds/spec.md
+		 */
+		wooRefusalGroundSource() {
+			return wooRefusalGroundSource()
+		},
+
+		/**
+		 * @return {Array<object>} The Woo refusal grounds columns.
+		 *
+		 * @spec openspec/specs/woo-refusal-grounds/spec.md
+		 */
+		wooRefusalGroundColumns() {
+			return wooRefusalGroundColumns(this.t.bind(this))
+		},
+
+		/**
+		 * @return {Array<object>} The queue order fields on Integrations.
+		 *
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		queueOrderFields() {
+			return queueOrderFields(this.t.bind(this))
+		},
+
+		/**
+		 * @return {Array<object>} The publication card's rows.
+		 *
+		 * @spec openspec/specs/vth-admin-settings/spec.md
+		 */
+		publicationRows() {
+			return publicationRows(this.t.bind(this), this.publicationSettings)
+		},
+
+		/**
 		 * shillinq's fee schedules, where a fee rule is added.
 		 *
 		 * @return {string} The address.
@@ -1301,13 +1507,18 @@ export default {
 			return generateUrl('/apps/dossiq/settings/wms-layers')
 		},
 
-		/** @return {string} The Case types page, where case types are managed. */
+		/**
+		 * @return {string} The Case types page, where case types are managed.
+		 */
 		caseTypesUrl() {
 			return generateUrl('/apps/dossiq/settings/case-types')
 		},
 	},
 
-	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+	/**
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+	 */
 	async created() {
 		fetchAdminTabCounts().then((counts) => {
 			this.tabCounts = counts
@@ -1399,6 +1610,34 @@ export default {
 	font-size: 15px;
 	line-height: 1.5;
 	color: var(--color-main-text);
+}
+
+/* Two cards side by side on Integrations (urgency and search index), and the
+   VTH cards three abreast, as the boards lay them out. */
+.dq-settings-pair,
+.dq-settings-trio {
+	display: grid;
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+	gap: 20px;
+	align-items: start;
+}
+
+.dq-settings-trio {
+	grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+}
+
+/* A button with its note under a card's description (Koppelingen). */
+.dq-settings-action-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.dq-settings-action-row__note {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
 }
 
 /* An activity no mapping links yet: its case type cell reads as a warning. */

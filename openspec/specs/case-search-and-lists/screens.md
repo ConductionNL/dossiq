@@ -7,3 +7,6 @@
 - dossiq/DqFilterBeheren opgeslagen weergaven beheren in het zijpaneel https://identity.conduction.nl/screens/board?id=dossiq/DqFilterBeheren
 - dossiq/IndexZijpaneel zijpaneel van een overzicht (zoeken, kolommen, weergaven) https://identity.conduction.nl/screens/board?id=dossiq/IndexZijpaneel
 - dossiq/DqZaaktypeVelden zaaktype, velden https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypeVelden
+- dossiq/DqAanMijToegewezen aan mij toegewezen https://identity.conduction.nl/screens/board?id=dossiq/DqAanMijToegewezen
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnCardGrid, CnChoiceCards, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnFormDialog, CnIndexPage, CnMassActionBar, CnNoteCard, CnObjectCard, CnPagination, CnProgressBar, CnQuickFilterBar, CnRowActions, CnSearchPage, CnSegmentedControl, CnStatusBadge, CnTabs

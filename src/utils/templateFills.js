@@ -60,16 +60,47 @@ function endOf(from, iso) {
 }
 
 /**
+ * The value one fill reads off the case, or null when the case lacks it.
+ *
+ * @param {object} fill One fill.
+ * @param {object} kase The case.
+ * @param {string} locale The locale for dates.
+ * @return {string|null} The value.
+ * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
+ */
+function fillValue(fill, kase, locale) {
+	const raw = fill && fill.field ? kase[fill.field] : undefined
+	if (raw === undefined || raw === null || raw === '') {
+		return null
+	}
+	if (fill.as === 'date') {
+		const day = dayOf(raw)
+		return day ? longDate(day, locale) : null
+	}
+	if (fill.as === 'extension') {
+		const from = dayOf(kase[fill.from])
+		const end = from ? endOf(from, raw) : null
+		return end
+			? t('dossiq', '{period}, until {date}', { period: periodWords(raw), date: longDate(end, locale) })
+			: periodWords(raw)
+	}
+	return String(raw)
+}
+
+/**
  * The rows "What the template fills in" shows for a template, read off the
  * case: `{ label, field, as }` where `as` is `date` (written out in full),
  * `extension` (the period, and the day it ends counted from the `from` date)
- * or plain text. A fill whose field the case lacks is left out. Labels stay
+ * or plain text. A fill whose field the case lacks is left out, unless it is
+ * `required`: then it stays, marked missing, so the handler sees what to add
+ * (board DqDocumentGenereren). A fill with a `value` of its own states a fact
+ * of the template ("Status after generating"). Labels and fixed values stay
  * untranslated for the caller to translate.
  *
  * @param {Array<object>|undefined} fills The template's fills.
  * @param {object} kase The case.
  * @param {string} [locale] The locale for dates.
- * @return {Array<{label: string, value: string}>} The rows.
+ * @return {Array<{label: string, value: string, required?: boolean, missing?: boolean, fixed?: boolean}>} The rows.
  * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
  */
 export function templateFillRows(fills, kase, locale = getCanonicalLocale()) {
@@ -77,24 +108,15 @@ export function templateFillRows(fills, kase, locale = getCanonicalLocale()) {
 		return []
 	}
 	return fills.map((fill) => {
-		const raw = fill && fill.field ? kase[fill.field] : undefined
-		if (raw === undefined || raw === null || raw === '') {
-			return null
+		if (fill && typeof fill.value === 'string' && fill.value !== '') {
+			return { label: fill.label, value: fill.value, fixed: true }
 		}
-		if (fill.as === 'date') {
-			const day = dayOf(raw)
-			return day ? { label: fill.label, value: longDate(day, locale) } : null
+		const value = fillValue(fill, kase, locale)
+		if (fill?.required === true) {
+			return value === null
+				? { label: fill.label, value: t('dossiq', 'Still to fill in, not in the case'), required: true, missing: true }
+				: { label: fill.label, value, required: true, missing: false }
 		}
-		if (fill.as === 'extension') {
-			const from = dayOf(kase[fill.from])
-			const end = from ? endOf(from, raw) : null
-			return {
-				label: fill.label,
-				value: end
-					? t('dossiq', '{period}, until {date}', { period: periodWords(raw), date: longDate(end, locale) })
-					: periodWords(raw),
-			}
-		}
-		return { label: fill.label, value: String(raw) }
+		return value === null ? null : { label: fill.label, value }
 	}).filter(Boolean)
 }

@@ -8,3 +8,5 @@
 - dossiq/DqHandhaving handhavingsadvies (LHS) https://identity.conduction.nl/screens/board?id=dossiq/DqHandhaving
 - dossiq/DqVthInstellingen beheerinstellingen in Nextcloud, tab VTH https://identity.conduction.nl/screens/board?id=dossiq/DqVthInstellingen
 - dossiq/DqInspectie inspectie in het veld, mobiel https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAdminSettingsShell, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnCameraCapture, CnCardGrid, CnChartWidget, CnChecklistRunWidget, CnChecklistWidget, CnChoiceCards, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnFlowCanvasMessages, CnFlowDetail, CnFlowEditorPage, CnFlowNode, CnFlowSidebar, CnGraphCanvas, CnIndexPage, CnKpiGrid, CnNextStepCard, CnNoteCard, CnObjectCard, CnOfflineQueue, CnPageHeader, CnPagination, CnProgressBar, CnQuickFilterBar, CnRowActions, CnSegmentedControl, CnSettingsSection, CnStatsBlock, CnStatusBadge, CnTabs, CnTimelineStages, CnVersionHistory

@@ -168,7 +168,7 @@ Before a Mandaatbesluit case can advance to "Besluit genomen", the system SHALL 
 - **AND** the case handler MUST see an error message: "De ondertekenende ambtenaar heeft onvoldoende mandaat voor dit besluit. Raadpleeg het mandaatregister."
 - **AND** a link to the relevant mandaatregister entry MUST be shown
 
-#### Scenario REQ-BVW-007-C: Mandaatregister unreachable falls back to manual confirmation
+#### Scenario REQ-BVW-007-C: An unreachable register refuses
 
 - **GIVEN** the mandaatregister endpoint is configured but currently unreachable
 - **WHEN** the workflow guard attempts validation

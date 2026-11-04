@@ -13,6 +13,9 @@
  * - step 2 said the list holds every case, open and closed, while the list
  *   itself says "open cases in your teams".
  *
+ * The step list itself is board DqRondleiding's: six steps, the last five
+ * tasks that each open a menu item.
+ *
  * @spec openspec/specs/getting-started-tour/spec.md
  * @spec openspec/specs/woo-refusal-grounds/spec.md
  */
@@ -73,12 +76,30 @@ describe('the getting-started tour', () => {
 		for (const text of [
 			steps['go-cases'].body,
 			steps['see-case-types'].body,
-			steps.done.title,
 			steps.done.body,
 		]) {
 			expect(en[text], text).toBe(text)
 			expect(nl[text], text).toBeTruthy()
 			expect(nl[text], text).not.toBe(text)
+		}
+	})
+})
+
+describe('the tour follows board DqRondleiding', () => {
+	const tour = manifest.walkthrough.tours.find((t) => t.id === 'dossiq:getting-started')
+
+	it('has six steps: welcome, then the five menu items in the board\'s order', () => {
+		expect(tour.steps.map((step) => step.target.ref ?? step.target.kind)).toEqual([
+			'Dashboard', 'Dashboard', 'Cases', 'Tasks', 'CaseTypes', 'Dashboard',
+		])
+	})
+
+	it('makes steps 2 to 6 tasks that move on only when the person opens the page', () => {
+		for (const step of tour.steps.slice(1)) {
+			expect(step.target.kind, step.id).toBe('nav-item')
+			expect(step.task, step.id).toBeTruthy()
+			expect(['route-match', 'click-target'], step.id).toContain(step.advanceOn.type)
+			expect(step.allowManualNext, step.id).toBeFalsy()
 		}
 	})
 })

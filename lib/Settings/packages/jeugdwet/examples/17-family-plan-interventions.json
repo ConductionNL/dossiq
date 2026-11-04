@@ -1,0 +1,43 @@
+{
+  "schema": {
+    "app": "dossiq",
+    "register": "dossiq",
+    "slug": "intervention"
+  },
+  "rows": [
+    {
+      "id": "8ad32bc9-c1c4-5c3c-9ebe-fb5134842560",
+      "plan": "fc4316d9-a068-5466-9ebc-04fa4ee81693",
+      "goal": "c07d93b9-fd6c-5637-ae5c-75428f416232",
+      "title": "Opvoedondersteuning thuis, 8 gesprekken",
+      "provider": "zuiddrecht-jeugdhulp-oosthaven",
+      "providerName": "Jeugdhulp Oosthaven, Noor Hendriks",
+      "startDate": "{{date:5}}",
+      "targetDate": "{{date:61}}",
+      "state": "planned"
+    },
+    {
+      "id": "228eb87e-27ef-5a73-b5e1-126e48819a08",
+      "plan": "fc4316d9-a068-5466-9ebc-04fa4ee81693",
+      "goal": "c07d93b9-fd6c-5637-ae5c-75428f416232",
+      "title": "Afstemming met school over het verzuim",
+      "provider": "zuiddrecht-basisschool-de-linde",
+      "providerName": "Basisschool De Linde, intern begeleider",
+      "startDate": "{{date:-2}}",
+      "targetDate": "{{date:-7}}",
+      "state": "running"
+    },
+    {
+      "id": "e712330c-21ce-58ab-8d1b-f2196db300d3",
+      "plan": "fc4316d9-a068-5466-9ebc-04fa4ee81693",
+      "goal": "e80a8619-45e9-553e-8826-2d8bf7183f29",
+      "title": "Kennismaking met het jeugdteam",
+      "provider": "user:fatma.kaya",
+      "providerName": "Fatma Kaya, jeugdteam",
+      "startDate": "{{date:-2}}",
+      "targetDate": "{{date:-2}}",
+      "state": "complete",
+      "outcome": "Gehaald"
+    }
+  ]
+}

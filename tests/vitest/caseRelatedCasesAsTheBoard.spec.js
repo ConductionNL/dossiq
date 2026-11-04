@@ -43,7 +43,7 @@ describe('the related cases card', () => {
 	const content = byId(layout, 'case-related-cases-card').content
 
 	it('leads each row with the type initials on the primary tint, ruled', () => {
-		expect(content.avatar).toEqual({ text: '{caseTypeTitle}', size: 32, tone: 'primary' })
+		expect(content.avatar).toEqual({ text: ['{caseTypeTitle}', '{plannedKind}'], size: 32, tone: 'primary', letters: 2 })
 		expect(content.ruleAbove).toBe(true)
 	})
 

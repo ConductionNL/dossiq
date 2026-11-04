@@ -15,6 +15,7 @@
         "AVG",
         "App",
         "BAG",
+        "BRP",
         "BSN",
         "IBAN",
         "Chat",
@@ -46,6 +47,7 @@
         "Intake",
         "KvK",
         "Label",
+        "Labels",
         "Links",
         "Mail",
         "Manager",
@@ -138,6 +140,8 @@
         "Dossiq",
         "Filinq",
         "Integriq",
-        "OpenRegister"
+        "OpenRegister",
+        "{minutes} min {seconds} s",
+        "{seconds} s"
     ]
 }

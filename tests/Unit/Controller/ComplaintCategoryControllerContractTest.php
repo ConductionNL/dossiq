@@ -276,6 +276,39 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 	}//end testCreateCategoryReturns201AndWritesWithoutAUuid()
 
 	/**
+	 * An id, uuid or @self the caller sends is dropped, so the create cannot
+	 * be pointed at a category that exists.
+	 *
+	 * @return void
+	 */
+	public function testCreateCategoryDropsTheCallersIdentityFields(): void {
+		$this->signIn();
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->withConfiguredSchemas();
+		$this->request->method('getParams')->willReturn(
+			['id' => 'cat-victim', 'uuid' => 'cat-victim', '@self' => ['id' => 'cat-victim'], 'name' => 'Bejegening']
+		);
+
+		$captured = [];
+		$objectService = $this->createMock(ComplaintCategoryControllerObjectServiceStub::class);
+		$objectService->expects($this->once())
+			->method('saveObject')
+			->willReturnCallback(
+				static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+					$captured = $object;
+
+					return ['id' => 'cat-new', 'name' => $object['name']];
+				}
+			);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$response = $this->controller->createCategory();
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame(['name' => 'Bejegening'], $captured);
+	}//end testCreateCategoryDropsTheCallersIdentityFields()
+
+	/**
 	 * A validation failure raised by the store surfaces as 400 with the store's
 	 * own message, not as a 500.
 	 *

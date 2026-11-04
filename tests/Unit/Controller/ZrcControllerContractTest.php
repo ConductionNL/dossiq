@@ -120,7 +120,6 @@ class ZrcControllerContractTest extends TestCase {
 		$this->l10n->method('t')->willReturnArgument(0);
 
 		$this->controller = new ZrcController(
-			appName: 'dossiq',
 			request: $this->request,
 			zgwService: $this->zgwService,
 			l10n: $this->l10n,
