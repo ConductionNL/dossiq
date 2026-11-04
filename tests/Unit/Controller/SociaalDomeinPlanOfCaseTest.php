@@ -118,6 +118,7 @@ class SociaalDomeinPlanOfCaseTest extends TestCase {
 		self::assertSame(['schema' => 'gezinsplan', 'caseId' => self::CASE_ID], $this->asked);
 		$data = $response->getData();
 		self::assertSame('plan-new', $data['plan']['id']);
+		self::assertSame('plan-new', $data['planId']);
 		self::assertSame('draft', $data['plan']['status']);
 		self::assertSame('plan-new', $data['goals'][0]['plan']);
 		self::assertFalse($data['dueForReview']);
@@ -133,7 +134,7 @@ class SociaalDomeinPlanOfCaseTest extends TestCase {
 		$response = $this->controller(plans: [])->planOfCase(caseId: self::CASE_ID);
 
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame(['plan' => null, 'goals' => [], 'interventions' => [], 'dueForReview' => false], $response->getData());
+		self::assertSame(['planId' => null, 'plan' => null, 'goals' => [], 'interventions' => [], 'dueForReview' => false], $response->getData());
 	}//end testACaseWithoutAPlanAnswersAnEmptyPlan()
 
 	/**
