@@ -27,8 +27,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use DateTimeImmutable;
-use InvalidArgumentException;
 use OCA\Dossiq\Controller\Support\ReportingAudienceGuard;
 use OCA\Dossiq\Service\Complaint\ComplaintPatterns;
 use OCA\Dossiq\Service\Complaint\ComplaintPatternsPdf;
@@ -95,10 +93,9 @@ class ComplaintPatternsController extends Controller {
 			return $denied;
 		}
 
-		try {
-			$period = QuarterPeriod::fromParam(param: $quarter, now: new DateTimeImmutable());
-		} catch (InvalidArgumentException $e) {
-			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		$period = QuarterPeriod::fromParam(param: $quarter);
+		if ($period === null) {
+			return new JSONResponse(['message' => 'quarter must read YYYY-Qn'], Http::STATUS_BAD_REQUEST);
 		}
 
 		try {

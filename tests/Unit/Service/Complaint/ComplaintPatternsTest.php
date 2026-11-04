@@ -19,7 +19,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Complaint;
 
 use DateTimeImmutable;
-use InvalidArgumentException;
 use OCA\Dossiq\Service\Complaint\ComplaintPatternFigures;
 use OCA\Dossiq\Service\Complaint\ComplaintPatterns;
 use OCA\Dossiq\Service\Complaint\ComplaintPatternsPdf;
@@ -50,8 +49,7 @@ class ComplaintPatternsTest extends TestCase {
 		$this->assertSame(expected: '2026-04-01', actual: $named->previous()->firstDay());
 		$this->assertSame(expected: ['2025-10', '2026-09'], actual: [$named->trailingMonths()[0], $named->trailingMonths()[11]]);
 
-		$this->expectException(exception: InvalidArgumentException::class);
-		QuarterPeriod::fromParam(param: '2026-Q5', now: new DateTimeImmutable());
+		$this->assertNull(actual: QuarterPeriod::fromParam(param: '2026-Q5'));
 	}//end testQuarterFromParam()
 
 	/**

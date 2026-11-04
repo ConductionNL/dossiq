@@ -28,7 +28,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Complaint;
 
 use DateTimeImmutable;
-use InvalidArgumentException;
 
 /**
  * A calendar quarter.
@@ -52,17 +51,16 @@ final class QuarterPeriod {
 	 * The quarter a `YYYY-Qn` parameter names, or the last full quarter before
 	 * `$now` when the parameter is empty.
 	 *
-	 * @param string            $param The parameter, e.g. `2026-Q3`, or ''.
-	 * @param DateTimeImmutable $now   The moment the last full quarter is counted from.
+	 * @param string                 $param The parameter, e.g. `2026-Q3`, or ''.
+	 * @param DateTimeImmutable|null $now   The moment the last full quarter is counted from; now when null.
 	 *
-	 * @return self
-	 *
-	 * @throws InvalidArgumentException When the parameter is not `YYYY-Qn`.
+	 * @return self|null Null when the parameter is not `YYYY-Qn`.
 	 *
 	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
 	 */
-	public static function fromParam(string $param, DateTimeImmutable $now): self {
+	public static function fromParam(string $param, ?DateTimeImmutable $now = null): ?self {
 		$param = trim($param);
+		$now = ($now ?? new DateTimeImmutable());
 		if ($param === '') {
 			$current = new self(year: (int)$now->format('Y'), quarter: intdiv(((int)$now->format('n') - 1), 3) + 1);
 
@@ -70,7 +68,7 @@ final class QuarterPeriod {
 		}
 
 		if (preg_match('/^(\d{4})-Q([1-4])$/', $param, $match) !== 1) {
-			throw new InvalidArgumentException('quarter must read YYYY-Qn');
+			return null;
 		}
 
 		return new self(year: (int)$match[1], quarter: (int)$match[2]);
