@@ -54,25 +54,6 @@ class PackageWriter {
 	private const STRATEGY_SKIP = 'skip';
 
 	/**
-	 * The settings key naming the schema each exported collection is written to.
-	 *
-	 * The keys are the collection names the export writes, so the two services
-	 * agree by construction: a collection the export invents and the import does
-	 * not know is REFUSED by name rather than dropped, which is the whole
-	 * difference between an import and a count.
-	 *
-	 * @var array<string, string>
-	 */
-	private const COLLECTION_SCHEMAS = [
-		'caseType' => 'case_type_schema',
-		'propertyDefinitions' => 'property_definition_schema',
-		'statusTypes' => 'status_type_schema',
-		'roleTypes' => 'role_type_schema',
-		'documentTypes' => 'document_type_schema',
-		'resultTypes' => 'result_type_schema',
-	];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param LoggerInterface    $logger   What an import writes about itself.
@@ -99,30 +80,26 @@ class PackageWriter {
 	 * @spec openspec/specs/case-types/spec.md#requirement-an-import-writes-the-objects-or-says-it-did-not-req-ct-42
 	 */
 	public function writeCollections(string $component, array $data, array $collections, string $strategy): array {
-		$objectService = $this->settings->getObjectService();
-		$register = $this->settings->getConfigValue(key: 'register');
-		if ($objectService === null || $register === '') {
+		$target = $this->target(strategy: $strategy);
+		if ($target === null) {
 			return [
 				'status' => 'error',
 				'message' => "Component '{$component}' was not written: this instance has no OpenRegister register configured.",
 			];
 		}
 
-		$created = [];
+		$run = ['component' => $component, 'strategy' => $strategy, 'created' => [], 'replaced' => [], 'skipped' => []];
 
 		try {
-			$written = $this->writeRows(
-				objectService: $objectService,
-				register: $register,
-				data: $data,
-				collections: $collections,
-				strategy: $strategy,
-				created: $created,
-			);
+			$rows = new ComponentRows(settings: $this->settings);
+			foreach ($rows->schemaRows(data: $data, collections: $collections) as [$schema, $row]) {
+				$outcome = $this->writeRow(target: $target->inSchema(schema: $schema), row: $row);
+				$run[$outcome['kind']][] = $outcome['id'];
+			}
 		} catch (\Throwable $e) {
 			// The component is all or nothing: what this run wrote for it goes
 			// back out, so a failed import leaves no half case type behind.
-			$this->rollBack(objectService: $objectService, register: $register, ids: $created);
+			$this->rollBack(objectService: $target->objectService, register: $target->register, ids: $run['created']);
 
 			return [
 				'status' => 'error',
@@ -130,13 +107,7 @@ class PackageWriter {
 			];
 		}//end try
 
-		return $this->importOutcome(
-			component: $component,
-			strategy: $strategy,
-			created: $created,
-			replaced: $written['replaced'],
-			skipped: $written['skipped'],
-		);
+		return $this->importOutcome(run: $run);
 	}//end writeCollections()
 
 	/**
@@ -184,36 +155,21 @@ class PackageWriter {
 	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function writePackage(string $package, array $groups): array {
-		$objectService = $this->settings->getObjectService();
-		$register = $this->settings->getConfigValue(key: 'register');
-		if ($objectService === null || $register === '') {
-			return [
-				'status' => 'error',
-				'message' => "Package '{$package}' was not installed: this instance has no OpenRegister register configured.",
-				'written' => [],
-				'skipped' => [],
-				'adopted' => [],
-				'held' => [],
-			];
+		$target = $this->target(strategy: self::STRATEGY_SKIP);
+		if ($target === null) {
+			return $this->packageFailure(message: "Package '{$package}' was not installed: this instance has no OpenRegister register configured.");
 		}
 
-		$run = ['written' => [], 'skipped' => [], 'adopted' => [], 'held' => [], 'ids' => [], 'caseTypes' => []];
+		$run = ['target' => $target, 'written' => [], 'skipped' => [], 'adopted' => [], 'held' => [], 'ids' => [], 'caseTypes' => []];
 
 		try {
 			foreach ($groups as $group) {
-				$this->writeGroup(objectService: $objectService, register: $register, group: $group, run: $run);
+				$this->writeGroup(group: $group, run: $run);
 			}
 		} catch (\Throwable $e) {
 			$this->undo(written: $run['written']);
 
-			return [
-				'status' => 'error',
-				'message' => "Package '{$package}' was not installed, and nothing it wrote was kept: " . $e->getMessage(),
-				'written' => [],
-				'skipped' => [],
-				'adopted' => [],
-				'held' => [],
-			];
+			return $this->packageFailure(message: "Package '{$package}' was not installed, and nothing it wrote was kept: " . $e->getMessage());
 		}
 
 		$run['adopted'] = $this->fills()->withFillsPointedAt(adopted: $run['adopted'], ids: $run['ids']);
@@ -228,6 +184,41 @@ class PackageWriter {
 			'held' => $run['held'],
 		];
 	}//end writePackage()
+
+	/**
+	 * A package install that wrote nothing it kept.
+	 *
+	 * @param string $message What went wrong.
+	 *
+	 * @return array{status: string, message: string, written: array<never>, skipped: array<never>, adopted: array<never>, held: array<never>}
+	 */
+	private function packageFailure(string $message): array {
+		return [
+			'status' => 'error',
+			'message' => $message,
+			'written' => [],
+			'skipped' => [],
+			'adopted' => [],
+			'held' => [],
+		];
+	}//end packageFailure()
+
+	/**
+	 * The configured register to write into, or null when this instance has none.
+	 *
+	 * @param string $strategy What to do about a row already here.
+	 *
+	 * @return RowTarget|null The target, with no schema chosen yet.
+	 */
+	private function target(string $strategy): ?RowTarget {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue(key: 'register');
+		if ($objectService === null || $register === '') {
+			return null;
+		}
+
+		return new RowTarget(objectService: $objectService, register: $register, schema: '', strategy: $strategy);
+	}//end target()
 
 	/**
 	 * Take back rows a package write created.
@@ -258,104 +249,150 @@ class PackageWriter {
 	/**
 	 * Write the rows of one group, collecting what became of each.
 	 *
-	 * @param object                                                        $objectService The OpenRegister object service.
-	 * @param string                                                        $register      The register.
-	 * @param array<string, mixed>                                          $group         The group.
-	 * @param array<string, array<mixed>>                                   $run           Collects written, skipped
-	 *                                                                                     and adopted rows, the ids
-	 *                                                                                     adopted and the case types
-	 *                                                                                     among them.
-	 *
-	 * @return void
-	 *
 	 * A group that names its own `register` and `schema` goes there: that is a
 	 * seed file for another app's schema, resolved by the installer. A group
 	 * that names `match` adopts a row with the same value for every property it names.
 	 *
+	 * @param array<string, mixed>        $group The group.
+	 * @param array<string, mixed>        $run   The run: its target, and the written, skipped,
+	 *                                           held and adopted rows, the ids adopted and the
+	 *                                           case types among them.
+	 *
+	 * @return void
+	 *
 	 * @throws RuntimeException When the group's schema key resolves to nothing.
 	 */
-	private function writeGroup(object $objectService, string $register, array $group, array &$run): void {
-		$register = (string)($group['register'] ?? $register);
+	private function writeGroup(array $group, array &$run): void {
+		$target = $this->groupTarget(base: $run['target'], group: $group);
+		foreach ($group['rows'] as $row) {
+			$this->placeRow(
+				placement: ['group' => $group, 'target' => $target, 'row' => $this->pointedAtAdopted(row: $row, ids: $run['ids'])],
+				run: $run
+			);
+		}
+	}//end writeGroup()
+
+	/**
+	 * Where a group's rows go: its own register and schema, or the configured ones.
+	 *
+	 * @param RowTarget            $base  The configured target.
+	 * @param array<string, mixed> $group The group.
+	 *
+	 * @return RowTarget The group's target.
+	 *
+	 * @throws RuntimeException When the group's schema key resolves to nothing.
+	 */
+	private function groupTarget(RowTarget $base, array $group): RowTarget {
+		$register = (string)($group['register'] ?? $base->register);
 		$schema = (string)($group['schema'] ?? $this->settings->getConfigValue(key: $group['schemaKey']));
 		if ($schema === '') {
 			throw new RuntimeException("No schema is configured for '{$group['schemaKey']}', so its rows cannot be written.");
 		}
 
-		foreach ($group['rows'] as $row) {
-			$row = $this->pointedAtAdopted(row: $row, ids: $run['ids']);
-			$packageId = $this->existingId(row: $row);
-			if ($packageId !== '' && $this->holds(objectService: $objectService, register: $register, schema: $schema, id: $packageId) === true) {
-				$run['skipped'][] = $packageId;
-				$run['held'][] = [
-					'schemaKey' => $group['schemaKey'],
-					'schema' => $schema,
-					'id' => $packageId,
-					'row' => $this->withoutMetadata(row: $row),
-					'ownRegister' => isset($group['register']),
-				];
-				continue;
-			}
+		return $base->inRegister(register: $register, schema: $schema);
+	}//end groupTarget()
 
-			$existing = $this->matcher->find(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				schemaKey: $group['schemaKey'],
-				row: $row,
-				caseTypes: $run['caseTypes'],
-				match: (array)($group['match'] ?? []),
-			);
-			if ($existing !== null && $this->existingId(row: $existing) !== '') {
-				$this->adopt(
-					group: $group,
-					target: ['register' => $register, 'schema' => $schema],
-					row: $row,
-					existing: $existing,
-					run: $run
-				);
-				continue;
-			}
+	/**
+	 * Hold, adopt or write one row of a group.
+	 *
+	 * @param array{group: array<string, mixed>, target: RowTarget, row: array<string, mixed>} $placement The row and where it goes.
+	 * @param array<string, mixed>                                                             $run       The run so far.
+	 *
+	 * @return void
+	 */
+	private function placeRow(array $placement, array &$run): void {
+		if ($this->holdsRow(target: $placement['target'], row: $placement['row']) === true) {
+			$this->hold(placement: $placement, run: $run);
+			return;
+		}
 
-			$outcome = $this->writeRow(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				row: $row,
-				strategy: self::STRATEGY_SKIP,
-			);
+		$existing = $this->matched(placement: $placement, caseTypes: $run['caseTypes']);
+		if ($existing !== null && $this->existingId(row: $existing) !== '') {
+			$this->adopt(placement: $placement + ['existing' => $existing], run: $run);
+			return;
+		}
 
-			$run['written'][] = ['schemaKey' => $group['schemaKey'], 'schema' => $schema, 'register' => $register, 'id' => $outcome['id'], 'row' => $row];
-		}//end foreach
-	}//end writeGroup()
+		$target = $placement['target'];
+		$outcome = $this->writeRow(target: $target, row: $placement['row']);
+
+		$run['written'][] = [
+			'schemaKey' => $placement['group']['schemaKey'],
+			'schema' => $target->schema,
+			'register' => $target->register,
+			'id' => $outcome['id'],
+			'row' => $placement['row'],
+		];
+	}//end placeRow()
+
+	/**
+	 * Report a row this instance already holds as skipped, and hold it for the refresh.
+	 *
+	 * @param array{group: array<string, mixed>, target: RowTarget, row: array<string, mixed>} $placement The row and where it goes.
+	 * @param array<string, mixed>                                                             $run       The run so far.
+	 *
+	 * @return void
+	 */
+	private function hold(array $placement, array &$run): void {
+		$packageId = $this->existingId(row: $placement['row']);
+		$run['skipped'][] = $packageId;
+		$run['held'][] = [
+			'schemaKey' => $placement['group']['schemaKey'],
+			'schema' => $placement['target']->schema,
+			'id' => $packageId,
+			'row' => $this->withoutMetadata(row: $placement['row']),
+			'ownRegister' => isset($placement['group']['register']),
+		];
+	}//end hold()
+
+	/**
+	 * The row this instance holds under another id for a package row, or null.
+	 *
+	 * @param array{group: array<string, mixed>, target: RowTarget, row: array<string, mixed>} $placement The row and where it goes.
+	 * @param array<int, string>                                                               $caseTypes The case types adopted this run.
+	 *
+	 * @return array<string, mixed>|null The existing row.
+	 */
+	private function matched(array $placement, array $caseTypes): ?array {
+		$target = $placement['target'];
+
+		return $this->matcher->find(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schema,
+			schemaKey: $placement['group']['schemaKey'],
+			row: $placement['row'],
+			caseTypes: $caseTypes,
+			match: (array)($placement['group']['match'] ?? []),
+		);
+	}//end matched()
 
 	/**
 	 * Take an existing row as the package's, and point later rows at it.
 	 *
-	 * @param array{schemaKey: string}               $group    The group the row belongs to.
-	 * @param array{register: string, schema: string} $target  Where the row lives.
-	 * @param array<string, mixed>                   $row      The row as the package ships it.
-	 * @param array<string, mixed>                   $existing The row this instance holds.
-	 * @param array<string, array<mixed>>            $run      The run so far.
+	 * @param array<string, mixed> $placement The row as the package ships it (`row`), its `group` and
+	 *                                        `target`, and the row this instance holds (`existing`).
+	 * @param array<string, mixed> $run       The run so far.
 	 *
 	 * @return void
 	 */
-	private function adopt(array $group, array $target, array $row, array $existing, array &$run): void {
+	private function adopt(array $placement, array &$run): void {
+		$existing = $placement['existing'];
 		$existingId = $this->existingId(row: $existing);
-		$packageId = $this->existingId(row: $row);
+		$packageId = $this->existingId(row: $placement['row']);
 		if ($packageId !== '') {
 			$run['ids'][$packageId] = $existingId;
 		}
 
 		$fill = [];
-		if ($group['schemaKey'] === ExistingRowMatcher::CASE_TYPE_KEY) {
+		if ($placement['group']['schemaKey'] === ExistingRowMatcher::CASE_TYPE_KEY) {
 			$run['caseTypes'][] = $existingId;
-			$fill = $this->fills()->lackedBy(shipped: $this->withoutMetadata(row: $row), stored: $existing);
+			$fill = $this->fills()->lackedBy(shipped: $this->withoutMetadata(row: $placement['row']), stored: $existing);
 		}
 
 		$run['adopted'][] = [
-			'schemaKey' => $group['schemaKey'],
-			'schema' => $target['schema'],
-			'register' => $target['register'],
+			'schemaKey' => $placement['group']['schemaKey'],
+			'schema' => $placement['target']->schema,
+			'register' => $placement['target']->register,
 			'id' => $existingId,
 			'row' => $existing,
 			'fill' => $fill,
@@ -405,69 +442,6 @@ class PackageWriter {
 	}//end pointedAtAdopted()
 
 	/**
-	 * Write every row of every collection, and say what became of each.
-	 *
-	 * `$created` is taken BY REFERENCE because the caller needs it after a
-	 * throw: a component is all or nothing, and the rollback can only undo the
-	 * rows this run had already written when it failed.
-	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $register      The register being written into.
-	 * @param array<string, mixed> $data          The package.
-	 * @param array<int, string>   $collections   The collections to write.
-	 * @param string               $strategy      What to do about a row already here.
-	 * @param array<int, string>   $created       Collects the ids this run created.
-	 *
-	 * @return array{replaced: array<int, string>, skipped: array<int, string>} What was replaced and left alone.
-	 *
-	 * @throws RuntimeException When a collection has no schema configured for it.
-	 */
-	private function writeRows(
-		object $objectService,
-		string $register,
-		array $data,
-		array $collections,
-		string $strategy,
-		array &$created,
-	): array {
-		$replaced = [];
-		$skipped = [];
-
-		foreach ($collections as $collection) {
-			$schema = $this->settings->getConfigValue(key: self::COLLECTION_SCHEMAS[$collection]);
-			if ($schema === '') {
-				throw new RuntimeException(
-					"No schema is configured for '{$collection}', so its rows cannot be written."
-				);
-			}
-
-			foreach ($this->rowsOf(data: $data, collection: $collection) as $row) {
-				$outcome = $this->writeRow(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					row: $row,
-					strategy: $strategy,
-				);
-
-				if ($outcome['kind'] === 'skipped') {
-					$skipped[] = $outcome['id'];
-					continue;
-				}
-
-				if ($outcome['kind'] === 'replaced') {
-					$replaced[] = $outcome['id'];
-					continue;
-				}
-
-				$created[] = $outcome['id'];
-			}
-		}//end foreach
-
-		return ['replaced' => $replaced, 'skipped' => $skipped];
-	}//end writeRows()
-
-	/**
 	 * Write one row, and say whether it was created, replaced or left alone.
 	 *
 	 * 🔑 THE PACKAGE'S ID IS KEPT. Every child row carries a `caseType`
@@ -476,30 +450,15 @@ class PackageWriter {
 	 * this instance already holding that id, which is a different question from
 	 * the package carrying one.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $register      The register being written into.
-	 * @param string               $schema        The schema this row belongs to.
-	 * @param array<string, mixed> $row           The row as the package carries it.
-	 * @param string               $strategy      What to do about a row already here.
+	 * @param RowTarget            $target Where the row goes, and what to do about one already here.
+	 * @param array<string, mixed> $row    The row as the package carries it.
 	 *
 	 * @return array{kind: string, id: string} What became of it, and the id.
 	 */
-	private function writeRow(
-		object $objectService,
-		string $register,
-		string $schema,
-		array $row,
-		string $strategy,
-	): array {
+	private function writeRow(RowTarget $target, array $row): array {
 		$packageId = $this->existingId(row: $row);
-		$conflict = ($packageId !== '' && $this->holds(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $packageId
-		) === true);
-
-		if ($conflict === true && $strategy === self::STRATEGY_SKIP) {
+		$conflict = $this->holdsRow(target: $target, row: $row);
+		if ($conflict === true && $target->strategy === self::STRATEGY_SKIP) {
 			return ['kind' => 'skipped', 'id' => $packageId];
 		}
 
@@ -509,10 +468,10 @@ class PackageWriter {
 		}
 
 		// An administrator's install; see holds() for why it passes the access check.
-		$stored = $objectService->saveObject(
+		$stored = $target->objectService->saveObject(
 			$this->withoutMetadata(row: $row),
-			register: $register,
-			schema: $schema,
+			register: $target->register,
+			schema: $target->schema,
 			uuid: $rowUuid,
 			_rbac: false
 		);
@@ -526,91 +485,77 @@ class PackageWriter {
 	}//end writeRow()
 
 	/**
+	 * Whether the target already holds the row under the id the package gives it.
+	 *
+	 * @param RowTarget            $target Where the row goes.
+	 * @param array<string, mixed> $row    The row as the package carries it.
+	 *
+	 * @return boolean False for a row without an id.
+	 */
+	private function holdsRow(RowTarget $target, array $row): bool {
+		$packageId = $this->existingId(row: $row);
+		if ($packageId === '') {
+			return false;
+		}
+
+		return $this->holds(objectService: $target->objectService, register: $target->register, schema: $target->schema, id: $packageId);
+	}//end holdsRow()
+
+	/**
 	 * What one component's import amounts to, said in the caller's vocabulary.
 	 *
-	 * @param string             $component The component.
-	 * @param string             $strategy  What was to be done about rows already here.
-	 * @param array<int, string> $created   The ids created.
-	 * @param array<int, string> $replaced  The ids replaced.
-	 * @param array<int, string> $skipped   The ids left alone.
+	 * @param array<string, mixed> $run The component and strategy, and the ids `created`,
+	 *                                  `replaced` and `skipped`.
 	 *
 	 * @return array<string, mixed> The outcome.
 	 */
-	private function importOutcome(
-		string $component,
-		string $strategy,
-		array $created,
-		array $replaced,
-		array $skipped,
-	): array {
-		if ($created === [] && $replaced === [] && $skipped === []) {
-			// 🔴 NOTHING WRITTEN IS NOT A SUCCESS. This is the exact line the old
-			// code got wrong, and the one REQ-CT-42 is about.
-			return [
-				'status' => 'error',
-				'message' => "Component '{$component}' held no rows this import could write.",
-			];
-		}
-
-		if ($created === [] && $replaced === []) {
-			// Everything was already here and the caller asked to leave it alone.
-			// That is not a write and must not read as one.
-			return [
-				'status' => 'skipped',
-				'message' => "Component '{$component}': " . count($skipped) . ' row(s) already present, left alone.',
-				'created' => [],
-				'replaced' => [],
-			];
+	private function importOutcome(array $run): array {
+		if ($run['created'] === [] && $run['replaced'] === []) {
+			return $this->unwrittenOutcome(run: $run);
 		}
 
 		$this->logger->info(
 			'Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced',
 			[
-				'component' => $component,
-				'strategy' => $strategy,
-				'created' => count($created),
-				'replaced' => count($replaced),
+				'component' => $run['component'],
+				'strategy' => $run['strategy'],
+				'created' => count($run['created']),
+				'replaced' => count($run['replaced']),
 			]
 		);
 
 		return [
 			'status' => 'success',
-			'message' => "Component '{$component}': " . count($created) . ' created, ' . count($replaced) . ' replaced',
-			'created' => $created,
-			'replaced' => $replaced,
+			'message' => "Component '{$run['component']}': " . count($run['created']) . ' created, ' . count($run['replaced']) . ' replaced',
+			'created' => $run['created'],
+			'replaced' => $run['replaced'],
 		];
 	}//end importOutcome()
 
-
-
-
-
 	/**
-	 * The rows of one collection, whichever shape the package carries.
+	 * The outcome of a component import that created and replaced nothing.
 	 *
-	 * `caseType` is one object rather than a list, so it is wrapped; every
-	 * other collection is a list.
+	 * @param array{component: string, skipped: array<int, string>} $run The component and the ids left alone.
 	 *
-	 * @param array<string, mixed> $data The decoded component file.
-	 * @param string $collection The collection name.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
+	 * @return array<string, mixed> The outcome.
 	 */
-	private function rowsOf(array $data, string $collection): array {
-		$value = ($data[$collection] ?? null);
-		if (is_array($value) === false || $value === []) {
-			return [];
+	private function unwrittenOutcome(array $run): array {
+		if ($run['skipped'] === []) {
+			// 🔴 NOTHING WRITTEN IS NOT A SUCCESS. This is the exact line the old
+			// code got wrong, and the one REQ-CT-42 is about.
+			return [
+				'status' => 'error',
+				'message' => "Component '{$run['component']}' held no rows this import could write.",
+			];
 		}
 
-		if (array_is_list($value) === false) {
-			return [$value];
-		}
-
-		return array_values(array_filter($value, 'is_array'));
-	}//end rowsOf()
-
-
-
-
-
+		// Everything was already here and the caller asked to leave it alone.
+		// That is not a write and must not read as one.
+		return [
+			'status' => 'skipped',
+			'message' => "Component '{$run['component']}': " . count($run['skipped']) . ' row(s) already present, left alone.',
+			'created' => [],
+			'replaced' => [],
+		];
+	}//end unwrittenOutcome()
 }//end class

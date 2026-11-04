@@ -331,6 +331,8 @@ final class PackageTestSchemaEntity {
  * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
+ * @uses \OCA\Dossiq\Service\CaseDefinition\ComponentRows
+ * @uses \OCA\Dossiq\Service\CaseDefinition\RowTarget
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageSeedRules
  * @uses \OCA\Dossiq\Service\CaseDefinition\WritesPackageRows
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageIds
