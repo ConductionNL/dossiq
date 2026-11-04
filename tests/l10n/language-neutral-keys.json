@@ -73,7 +73,6 @@
         "Status schema",
         "Status: {name}",
         "Status: {status}",
-        "Store",
         "Subsidies",
         "Team",
         "Tenant",
