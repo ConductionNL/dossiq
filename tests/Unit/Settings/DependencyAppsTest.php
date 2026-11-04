@@ -51,9 +51,9 @@ class DependencyAppsTest extends TestCase {
 	public function testAnAppFoundUnderItsFormerIdNamesThatId(): void {
 		$rows = $this->rows(installed: ['openregister', 'openconnector']);
 
-		$this->assertTrue($rows['Integriq']['present']);
-		$this->assertSame('openconnector', $rows['Integriq']['appId']);
-		$this->assertTrue($rows['Openregister']['present']);
+		$this->assertTrue(condition: $rows['Integriq']['present']);
+		$this->assertSame(expected: 'openconnector', actual: $rows['Integriq']['appId']);
+		$this->assertTrue(condition: $rows['Openregister']['present']);
 	}//end testAnAppFoundUnderItsFormerIdNamesThatId()
 
 	/**
@@ -64,8 +64,8 @@ class DependencyAppsTest extends TestCase {
 	public function testAMissingAppIsNotPresent(): void {
 		$rows = $this->rows(installed: []);
 
-		$this->assertFalse($rows['Humaniq']['present']);
-		$this->assertSame('humaniq', $rows['Humaniq']['appId']);
+		$this->assertFalse(condition: $rows['Humaniq']['present']);
+		$this->assertSame(expected: 'humaniq', actual: $rows['Humaniq']['appId']);
 	}//end testAMissingAppIsNotPresent()
 
 	/**
@@ -76,6 +76,6 @@ class DependencyAppsTest extends TestCase {
 	public function testOnlyOpenregisterAndIntegriqAreRequired(): void {
 		$required = array_keys(array_filter(array_column($this->rows(installed: []), 'required', 'name')));
 
-		$this->assertSame(['Openregister', 'Integriq'], $required);
+		$this->assertSame(expected: ['Openregister', 'Integriq'], actual: $required);
 	}//end testOnlyOpenregisterAndIntegriqAreRequired()
 }//end class
