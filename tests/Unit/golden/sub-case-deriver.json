@@ -1,0 +1,1984 @@
+{
+    "derived": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": "sub-case",
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "no parent named": {
+        "answer": {
+            "ok": false,
+            "reason": "parent_not_found"
+        },
+        "calls": [],
+        "logs": []
+    },
+    "no object service": {
+        "answer": {
+            "ok": false,
+            "reason": "not_configured"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "no register": {
+        "answer": {
+            "ok": false,
+            "reason": "not_configured"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "no case schema": {
+        "answer": {
+            "ok": false,
+            "reason": "not_configured"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "parent does not exist": {
+        "answer": {
+            "ok": false,
+            "reason": "parent_not_found"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-gone",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "Dossiq: the parent case could not be read for a derive",
+                {
+                    "parent": "parent-gone",
+                    "error": "Object not found"
+                }
+            ]
+        ]
+    },
+    "parent read as an array": {
+        "answer": {
+            "ok": false,
+            "reason": "parent_not_found"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "relation service unavailable": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": [],
+            "inheritanceApplied": false
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: OpenRegister's relation service is unavailable, so the sub-case inherits nothing from its parent and no provenance is recorded",
+                []
+            ]
+        ]
+    },
+    "schema id as numeric text": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 12,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": "sub-case",
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "schema id not numeric": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": null,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": "sub-case",
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "schema unreadable": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": []
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": null,
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the parentCase relation declaration could not be read",
+                {
+                    "error": "no schema"
+                }
+            ]
+        ]
+    },
+    "declaration unreadable": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": []
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": null,
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the parentCase relation declaration could not be read",
+                {
+                    "error": "no declaration"
+                }
+            ]
+        ]
+    },
+    "no declaration": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": []
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": null,
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "declaration without type or inherits": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": []
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": null,
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "declared type not text": {
+        "answer": {
+            "thrown": "TypeError"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": []
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "inheritance answers nothing": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": [],
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": "sub-case",
+                    "inherited": []
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "inheritance answers data only": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": [],
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Other",
+                        "parentCase": "elsewhere"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": "sub-case",
+                    "inherited": []
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "inherited not a list": {
+        "answer": {
+            "thrown": "TypeError"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "inherited not a list, no relation service": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "title": "Child",
+                "parentCase": "parent-1"
+            },
+            "inherited": [],
+            "inheritanceApplied": false
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: OpenRegister's relation service is unavailable, so the sub-case inherits nothing from its parent and no provenance is recorded",
+                []
+            ]
+        ]
+    },
+    "child names another parent": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": "sub-case",
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "save fails": {
+        "answer": {
+            "ok": false,
+            "reason": "create_failed"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the sub-case could not be created",
+                {
+                    "parent": "parent-1",
+                    "error": "the store refused it"
+                }
+            ]
+        ]
+    },
+    "saved as an array": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "title": "Child",
+                "parentCase": "parent-1",
+                "confidentiality": "secret"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "saved without jsonSerialize": {
+        "answer": {
+            "ok": true,
+            "object": [],
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "bare-entity",
+                    "relationType": "sub-case",
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "saved entity serialises to text": {
+        "answer": {
+            "ok": true,
+            "object": [],
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "text-entity",
+                    "relationType": "sub-case",
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "provenance fails": {
+        "answer": {
+            "ok": true,
+            "object": {
+                "id": "child-1",
+                "title": "Child"
+            },
+            "inherited": {
+                "confidentiality": {
+                    "property": "confidentiality",
+                    "value": "secret"
+                }
+            },
+            "inheritanceApplied": true
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "recordDerivation",
+                {
+                    "parent": "parent-entity",
+                    "child": "child-entity",
+                    "relationType": "sub-case",
+                    "inherited": {
+                        "confidentiality": {
+                            "property": "confidentiality",
+                            "value": "secret"
+                        }
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: the sub-case was created but its derivation was not recorded",
+                {
+                    "error": "no provenance"
+                }
+            ]
+        ]
+    },
+    "declared type not text, saved as an array": {
+        "answer": {
+            "thrown": "TypeError"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": []
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child",
+                        "parentCase": "parent-1",
+                        "confidentiality": "secret"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "inherited not a list, saved as an array": {
+        "answer": {
+            "thrown": "TypeError"
+        },
+        "calls": [
+            [
+                "getObjectService",
+                []
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "getConfigValue",
+                {
+                    "key": "case_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "find",
+                {
+                    "id": "parent-1",
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ],
+            [
+                "getOpenRegisterClass",
+                {
+                    "class": "OCA\\OpenRegister\\Service\\Relation\\ObjectRelationService"
+                }
+            ],
+            [
+                "declarationFor",
+                {
+                    "schemaId": 7,
+                    "property": "parentCase"
+                }
+            ],
+            [
+                "applyInheritance",
+                {
+                    "parent": "parent-entity",
+                    "childData": {
+                        "title": "Child",
+                        "parentCase": "parent-1"
+                    },
+                    "inherits": {
+                        "confidentiality": "confidentiality"
+                    }
+                }
+            ],
+            [
+                "saveObject",
+                {
+                    "object": {
+                        "title": "Child"
+                    },
+                    "register": "reg-1",
+                    "schema": "case"
+                }
+            ]
+        ],
+        "logs": []
+    }
+}
