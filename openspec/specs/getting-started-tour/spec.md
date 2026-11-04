@@ -52,6 +52,25 @@ SHALL describe the list it points at as that list describes itself.
 - **WHEN** the tour reaches the cases step
 - **THEN** its text says open cases in your teams, and not every case, open and closed
 
+### Requirement: The tour has the six steps of board DqRondleiding
+
+The `dossiq:getting-started` tour SHALL have six steps in this order: Welkom bij
+Dossiq, Dashboard, Alle zaken, Taken, Zaaktypen and Dashboard. Steps 2 to 6 SHALL
+be tasks that name a menu item and move on only when the person opens it; they
+SHALL offer no Next button.
+
+#### Scenario: Step 3 of the tour
+<!-- @e2e exclude Copy contract; proven by tests/vitest/tourTellsTheTruth.spec.js. -->
+- **GIVEN** the tour at step 3
+- **WHEN** the popover opens
+- **THEN** it reads "Stap 3 van 6", title "Alle zaken", text "Open Alle zaken: de open zaken in uw teams, op termijn gesorteerd." and task "Klik op Alle zaken in het menu"
+
+#### Scenario: The person is on the dashboard at step 2
+<!-- @e2e exclude Covered by tests/vitest/tourTellsTheTruth.spec.js; the click advance is nextcloud-vue's click-target. -->
+- **GIVEN** the tour starts on the dashboard
+- **WHEN** the person clicks Dashboard in the menu at step 2
+- **THEN** the tour moves to step 3, although the page does not change
+
 ### Requirement: The getting-started tour MUST start only from the dashboard
 
 The getting-started tour SHALL auto-start only on the Dashboard route. A user whose first visit is a deep link SHALL see the page they opened, and SHALL get the tour when they first open the dashboard.

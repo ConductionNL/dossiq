@@ -618,10 +618,10 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(routeQuery(tile)).toEqual(asQuery(chip('Cases', 'Overdue').filter))
 	})
 
-	it('the Deadlines table carries its own, wider window', () => {
-		// Not the chip's filter: this table also lists what is due within
-		// three days, so landing on overdue-only would show fewer cases than
-		// the table just listed. What must hold is that the filter survives
+	it('the deadline signals table carries its own, wider window', () => {
+		// Not the chip's filter: this table also lists cases in the last
+		// quarter of their term, so landing on overdue-only would show fewer
+		// cases than the table just listed. What must hold is that the filter survives
 		// the trip at all (triage item 4) and reaches the page as a flat
 		// bracket key rather than a JSON-stringified object.
 		const table = dashboardWidgets().deadlines
@@ -630,7 +630,7 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(table.content.viewAllRoute.name).toBe('Cases')
 		expect(query).toEqual(asQuery(flattenFilter(table.content.source.filter)))
 		expect(query.isFinalStatus).toBe('false')
-		expect(Object.keys(query)).toContain('deadline[lte]')
+		expect(Object.keys(query)).toContain('termSignalFrom[lte]')
 	})
 })
 
