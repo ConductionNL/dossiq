@@ -809,12 +809,7 @@
         ]
     },
     "change, product without status": {
-        "answer": {
-            "id": "p1",
-            "portalSubject": "subj-sanne",
-            "kenteken": "HX901B",
-            "adres": "Eikenlaan 2"
-        },
+        "answer": null,
         "calls": [
             {
                 "call": "find",
@@ -836,28 +831,25 @@
                 "id": "p1",
                 "register": "dossiq",
                 "schema": "licence"
-            },
-            {
-                "call": "patch",
-                "system": 1,
-                "id": "p1",
-                "data": {
-                    "kenteken": "HX901B",
-                    "adres": "Eikenlaan 2"
-                },
-                "register": "dossiq",
-                "schema": "licence"
             }
         ],
-        "logs": [],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: a change case names a product that is not its requester's or not in force",
+                {
+                    "case": "c2",
+                    "product": "p1"
+                }
+            ]
+        ],
         "products": [
             [],
             {
                 "p1": {
                     "id": "p1",
                     "portalSubject": "subj-sanne",
-                    "kenteken": "HX901B",
-                    "adres": "Eikenlaan 2"
+                    "kenteken": "GZ482K"
                 }
             }
         ]
@@ -1003,12 +995,7 @@
         ]
     },
     "change, both without holder": {
-        "answer": {
-            "id": "p1",
-            "status": "active",
-            "kenteken": "HX901B",
-            "adres": "Eikenlaan 2"
-        },
+        "answer": null,
         "calls": [
             {
                 "call": "find",
@@ -1030,28 +1017,25 @@
                 "id": "p1",
                 "register": "dossiq",
                 "schema": "licence"
-            },
-            {
-                "call": "patch",
-                "system": 1,
-                "id": "p1",
-                "data": {
-                    "kenteken": "HX901B",
-                    "adres": "Eikenlaan 2"
-                },
-                "register": "dossiq",
-                "schema": "licence"
             }
         ],
-        "logs": [],
+        "logs": [
+            [
+                "warning",
+                "Dossiq: a change case names a product that is not its requester's or not in force",
+                {
+                    "case": "c2",
+                    "product": "p1"
+                }
+            ]
+        ],
         "products": [
             [],
             {
                 "p1": {
                     "id": "p1",
                     "status": "active",
-                    "kenteken": "HX901B",
-                    "adres": "Eikenlaan 2"
+                    "kenteken": "GZ482K"
                 }
             }
         ]
