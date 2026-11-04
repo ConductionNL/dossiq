@@ -91,9 +91,13 @@ class CaseTypeRightsMatrixRows {
 	/**
 	 * Rights verbs that change a case, as OpenRegister names them.
 	 *
+	 * `delete` is not one of them: deleting a case stays with administrators
+	 * (REQ-ACC-10), so a rights row that names it grants the rest of its row
+	 * and not that.
+	 *
 	 * @var array<int, string>
 	 */
-	private const EDIT_VERBS = ['create', 'update', 'delete', 'handle'];
+	private const EDIT_VERBS = ['create', 'update', 'handle'];
 
 	/**
 	 * Document rights and the file verb each one grants.

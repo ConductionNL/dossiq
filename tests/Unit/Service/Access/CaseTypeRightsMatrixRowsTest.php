@@ -98,7 +98,11 @@ class CaseTypeRightsMatrixRowsTest extends TestCase {
 			['department' => '*', 'role' => 'Vergunningverlener', 'confidentiality' => 'geheim', 'actions' => ['read', 'update', 'delete'], 'until' => '2027-01-01']
 		);
 
-		$this->assertSame([['read'], ['update', 'delete'], ['readFiles'], ['addFiles', 'deleteFiles']], array_column($rows, 'actions'));
+		$this->assertSame(
+			expected: [['read'], ['update'], ['readFiles'], ['addFiles', 'deleteFiles']],
+			actual: array_column($rows, 'actions'),
+			message: 'delete stays with administrators',
+		);
 		$this->assertSame(['2027-01-01'], array_values(array_unique(array_column($rows, 'until'))));
 		$this->assertArrayNotHasKey('status', $rows[1]['where'], 'no statuses: every status');
 		$this->assertCount(7, $rows[0]['where']['confidentiality']['$in']);
