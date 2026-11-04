@@ -129,6 +129,52 @@ class HearingServiceTest extends TestCase {
 	}
 
 	/**
+	 * A stored recording consent denial is not changed by the minutes.
+	 *
+	 * @return void
+	 */
+	public function testMinutesKeepAStoredConsentDenial(): void {
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
+
+		foreach ([
+			'grant with audio' => ['minutesSummary' => 'Verslag', 'audioRecording' => 'file-9', 'recordingConsent' => 'granted'],
+			'grant without audio' => ['minutesSummary' => 'Verslag', 'recordingConsent' => 'granted'],
+			'not requested' => ['minutesSummary' => 'Verslag', 'recordingConsent' => 'not_requested'],
+		] as $case => $minutes) {
+			$this->store->seed('hearingSession', $case, ['case' => 'case-1', 'recordingConsent' => 'denied']);
+			try {
+				$service->addMinutes(sessionId: $case, payload: $minutes);
+				$this->fail("a stored denial was changed: $case");
+			} catch (RuntimeException $refused) {
+				$this->assertStringContainsString('toestemming', $refused->getMessage(), $case);
+			}
+
+			$stored = $this->store->row('hearingSession', $case);
+			$this->assertSame('denied', $stored['recordingConsent'], $case);
+			$this->assertArrayNotHasKey('audioRecording', $stored, $case);
+			$this->assertArrayNotHasKey('status', $stored, $case);
+			$this->assertSame('avg-art-6', $this->rowContext(uuid: $case, action: 'dossiq.bezwaar.recording-consent-change-refused')['tag'], $case);
+		}
+	}
+
+	/**
+	 * Minutes may repeat a stored denial, and consent not yet asked may be given with them.
+	 *
+	 * @return void
+	 */
+	public function testMinutesMayRepeatADenialOrGiveConsentNotYetAsked(): void {
+		$service = $this->realHearingService(trail: $this->bezwaarAuditTrail());
+
+		$this->store->seed('hearingSession', 'session-1', ['case' => 'case-1', 'recordingConsent' => 'denied']);
+		$service->addMinutes(sessionId: 'session-1', payload: ['minutesSummary' => 'Verslag', 'recordingConsent' => 'denied']);
+		$this->assertSame('denied', $this->store->row('hearingSession', 'session-1')['recordingConsent']);
+
+		$this->store->seed('hearingSession', 'session-2', ['case' => 'case-1', 'recordingConsent' => 'not_requested']);
+		$service->addMinutes(sessionId: 'session-2', payload: ['minutesSummary' => 'Verslag', 'audioRecording' => 'file-9', 'recordingConsent' => 'granted']);
+		$this->assertSame('file-9', $this->store->row('hearingSession', 'session-2')['audioRecording']);
+	}
+
+	/**
 	 * The verslag is recorded before the patch, and a failed patch leaves a not-applied row.
 	 *
 	 * @return void
