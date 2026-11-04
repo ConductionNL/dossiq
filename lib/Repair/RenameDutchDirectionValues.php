@@ -69,6 +69,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Repair\Support\ReadsRegisterShards;
 use OCP\DB\Exception;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
@@ -81,6 +82,13 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/stuf-zkn-outbound/spec.md
  */
 class RenameDutchDirectionValues implements IRepairStep {
+	use ReadsRegisterShards;
+
+	/**
+	 * The name every warning starts with.
+	 */
+	private const LOG_NAME = 'RenameDutchDirectionValues';
+
 
 	/**
 	 * Slug prefix of the registers in scope.
@@ -237,52 +245,14 @@ class RenameDutchDirectionValues implements IRepairStep {
 	 * @return array<int, string>
 	 */
 	private function shardTables(): array {
-		try {
-			$ids = $this->db->executeQuery(
-				'SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?',
-				[self::REGISTER_SLUG_PREFIX . '%']
-			)->fetchAll(\PDO::FETCH_COLUMN);
-		} catch (Exception $e) {
-			$this->logger->warning(
-				'RenameDutchDirectionValues: could not resolve the dossiq registers; skipping.',
-				['exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
+		$ids = $this->registerIdsOrNone(warning: 'could not resolve the dossiq registers; skipping.');
 		if ($ids === []) {
 			return [];
 		}
 
-		// Table discovery goes through information_schema, NOT IDBConnection —
-		// the reasoning is documented at length in RenameDutchDeadlineColumns:
-		// OCP\IDBConnection exposes neither getSchema() nor getPrefix(), and
-		// getQueryBuilder()->getTableName('') yields the literal `*PREFIX*`
-		// placeholder, which a raw information_schema string never resolves. A
-		// LIKE built from it matches zero tables and reports every register
-		// empty — a silent no-op that reads as success.
-		try {
-			$stmt = $this->db->prepare(
-				'SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern'
-			);
-			$stmt->bindValue('pattern', '%openregister\_table\_%');
-			$stmt->execute();
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'RenameDutchDirectionValues: could not list tables; skipping.',
-				['exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		$markers = [];
-		foreach ($ids as $id) {
-			$markers[] = 'openregister_table_' . ((int)$id) . '_';
-		}
-
+		$markers = $this->shardMarkers(ids: $ids);
 		$tables = [];
-		while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
-			$name = (string)($row['table_name'] ?? '');
+		foreach ($this->openRegisterTableNames() as $name) {
 			if ($this->isShardOf(table: $name, markers: $markers) === true) {
 				$tables[] = $name;
 			}
@@ -311,20 +281,5 @@ class RenameDutchDirectionValues implements IRepairStep {
 
 		return false;
 	}//end isShardOf()
-
-	/**
-	 * Quote an identifier for the active platform.
-	 *
-	 * The table names come from information_schema on this same connection and
-	 * the column is a class constant, so neither is caller-supplied; quoting is
-	 * for identifiers that need it, not for untrusted input.
-	 *
-	 * @param string $identifier The identifier.
-	 *
-	 * @return string
-	 */
-	private function quote(string $identifier): string {
-		return $this->db->getDatabasePlatform()->quoteSingleIdentifier($identifier);
-	}//end quote()
 
 }//end class

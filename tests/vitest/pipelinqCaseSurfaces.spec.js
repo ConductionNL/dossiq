@@ -121,9 +121,26 @@ describe('the sentences', () => {
 	it('says an unset preference as unset, and an absent resolver as unreadable', () => {
 		const lines = widget('case-party-roles').content.extraLines[0].lines
 		expect(sentence(lines, { available: true, language: 'English', stated: true, rule: 'party' })).toBe('Writing language: English. Asked for by the party.')
-		expect(sentence(lines, { available: true, language: 'Dutch', stated: false, rule: 'instanceDefault' })).toBe('Writing language: Dutch. No preference recorded, so the default language of this instance.')
+		// DqZaakBetrokkenen draws an instance default as any unset preference: "Schrijftaal: Nederlands. Geen voorkeur vastgelegd."
+		expect(sentence(lines, { available: true, language: 'Dutch', stated: false, rule: 'instanceDefault' })).toBe('Writing language: Dutch. No preference recorded.')
 		expect(sentence(lines, { available: false, language: 'Dutch', stated: false, rule: 'unavailable' })).toBe('Writing language: Dutch. No preference can be read on this instance.')
 		expect(sentence(lines, {})).toBe('')
+	})
+
+	it('says an instance default on the simple Rollen card as the board does', () => {
+		const layout = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.simple.json'), 'utf8'))
+		const find = (node) => {
+			if (Array.isArray(node)) {
+				return node.map(find).find(Boolean)
+			}
+			if (node && typeof node === 'object') {
+				return node.id === 'case-party-roles-card' ? node : Object.values(node).map(find).find(Boolean)
+			}
+			return undefined
+		}
+		const lines = find(layout).content.extraLines[0].lines
+		expect(sentence(lines, { available: true, language: 'Dutch', stated: false, rule: 'instanceDefault' })).toBe('Writing language: Dutch. No preference recorded.')
+		expect(sentence(lines, { available: true, language: 'Dutch', stated: true, rule: 'party' })).toBe('Writing language: Dutch. Asked for by the party.')
 	})
 
 	it('names the mode beside a figure, and never draws an uncomputable one as zero', () => {

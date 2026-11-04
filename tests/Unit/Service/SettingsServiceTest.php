@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
  * @uses \OCA\Dossiq\Service\Settings\RegisterStorageDeclaration
  * @uses \OCA\Dossiq\Woo\WooReportSwitches
+ * @uses \OCA\Dossiq\Service\Settings\RenamedSettingKeys
  */
 class SettingsServiceTest extends TestCase {
 

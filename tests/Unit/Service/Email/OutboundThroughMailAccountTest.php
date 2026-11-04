@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Email;
 
+use OCA\Dossiq\Service\Email\OutboundMailPolicy;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Repair\RetireImapCredentials;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
@@ -59,6 +60,7 @@ require_once __DIR__ . '/../../../Support/Mail/LocalMessage.php';
  * @covers \OCA\Dossiq\Service\Email\OutboundCaseMail
  * @covers \OCA\Dossiq\Service\Email\OutboundState
  * @covers \OCA\Dossiq\Repair\RetireImapCredentials
+ * @covers \OCA\Dossiq\Service\Email\OutboundMailPolicy
  *
  * @uses \OCA\Dossiq\Service\Email\NextcloudMailGateway
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
@@ -288,13 +290,20 @@ class OutboundThroughMailAccountTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new OutboundCaseMail(
-			$gateway,
-			new SenderIdentity($gateway, new IntakeAccount($appConfig), $this->createMock(CaseTypeResolver::class), $store),
-			new MailTransportPolicy($appConfig),
-			new CaseMailOptOut($this->createMock(OptOutGate::class), $l10n),
-			($mailer ?? $this->createMock(IMailer::class)),
-			$appConfig,
-			new NullLogger()
+			gateway: $gateway,
+			transport: new OutboundMailPolicy(
+				identity: new SenderIdentity(
+					gateway: $gateway,
+					intakeAccount: new IntakeAccount(appConfig: $appConfig),
+					caseTypes: $this->createMock(originalClassName: CaseTypeResolver::class),
+					store: $store
+				),
+				policy: new MailTransportPolicy(appConfig: $appConfig),
+				optOut: new CaseMailOptOut(gate: $this->createMock(originalClassName: OptOutGate::class), l10n: $l10n),
+			),
+			mailer: ($mailer ?? $this->createMock(originalClassName: IMailer::class)),
+			appConfig: $appConfig,
+			logger: new NullLogger()
 		);
 	}//end outbound()
 

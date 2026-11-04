@@ -1,5 +1,4 @@
 # Screens
-- DqZaakDocumenten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumenten
-- DqWooReview https://identity.conduction.nl/screens/board?id=dossiq/DqWooReview
 
-- Design backlog: DqWooReview (decision 157)
+- dossiq/DqZaakDocumenten zaak, tabblad documenten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumenten
+- opencatalogi/OcWooBatch the review progress of a Woo batch, where recall and the stopping rule show (decision 256) https://identity.conduction.nl/screens/board?id=opencatalogi/OcWooBatch

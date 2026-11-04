@@ -98,13 +98,15 @@ class BerichtenboxService {
 		try {
 			return $this->serviceAccount->runAsWhenNobodyIsSignedIn(
 				operation: fn (): array => $this->send(
-					caseId: $caseId,
-					bsn: $bsn,
-					subject: $subject,
-					body: $body,
-					typeCode: $typeCode,
-					attachmentFileId: $attachmentFileId,
-					category: $category,
+					letter: [
+						'caseId' => $caseId,
+						'bsn' => $bsn,
+						'subject' => $subject,
+						'body' => $body,
+						'typeCode' => $typeCode,
+						'attachmentFileId' => $attachmentFileId,
+						'category' => $category,
+					]
 				)
 			);
 		} catch (ServiceAccountUnavailableException $e) {
@@ -115,27 +117,14 @@ class BerichtenboxService {
 	/**
 	 * Send one letter and record it, as whoever is acting.
 	 *
-	 * @param string      $caseId           The case UUID.
-	 * @param string      $bsn              Citizen BSN.
-	 * @param string      $subject          Message subject.
-	 * @param string      $body             Plain text message body.
-	 * @param string      $typeCode         Bericht type code.
-	 * @param string|null $attachmentFileId Optional Nextcloud file ID of the attachment.
-	 * @param string      $category         What the letter is.
+	 * @param array<string, mixed> $letter The letter: `caseId`, `bsn`, `subject`, `body`, `typeCode`,
+	 *                                     `attachmentFileId` (or null) and `category`.
 	 *
 	 * @return array<string, mixed> The stored message record or an error payload.
 	 */
-	private function send(
-		string $caseId,
-		string $bsn,
-		string $subject,
-		string $body,
-		string $typeCode,
-		?string $attachmentFileId,
-		string $category,
-	): array {
+	private function send(array $letter): array {
 		// Validate inputs.
-		$errors = $this->validateMessage(bsn: $bsn, subject: $subject, body: $body);
+		$errors = $this->validateMessage(bsn: $letter['bsn'], subject: $letter['subject'], body: $letter['body']);
 		if (empty($errors) === false) {
 			return ['error' => implode('; ', $errors), 'errors' => $errors];
 		}
@@ -147,7 +136,7 @@ class BerichtenboxService {
 
 		// Get attachment content if provided.
 		$attachmentContent = null;
-		if ($attachmentFileId !== null) {
+		if ($letter['attachmentFileId'] !== null) {
 			// Attachment validation would check file size here.
 			$attachmentContent = '';
 			// Placeholder -- actual file reading via IRootFolder.
@@ -161,8 +150,28 @@ class BerichtenboxService {
 		// The category travels to integriq, which decides on it (the category
 		// decides, not the channel; hydra decision 4). dossiq does not ask a
 		// second time here: integriq's digital post listener is the one check.
-		$result = $this->adapter->sendMessage($bsn, $subject, $body, $typeCode, $attachmentContent, $category, $caseId);
+		$result = $this->adapter->sendMessage(
+			$letter['bsn'],
+			$letter['subject'],
+			$letter['body'],
+			$letter['typeCode'],
+			$attachmentContent,
+			$letter['category'],
+			$letter['caseId']
+		);
 
+		return $this->storedSend(letter: $letter, sent: ['objectService' => $objectService, 'result' => $result]);
+	}//end send()
+
+	/**
+	 * Store the message record of a send, journal it and log it, and answer what was stored.
+	 *
+	 * @param array<string, mixed> $letter The letter, as {@see self::send()} takes it.
+	 * @param array<string, mixed> $sent   `objectService` (OpenRegister's) and `result` (what the adapter answered).
+	 *
+	 * @return array<string, mixed> The stored message record, flagged when the send was refused.
+	 */
+	private function storedSend(array $letter, array $sent): array {
 		// 🔴 A REFUSAL IS NOT A DELIVERY, AND THE DIFFERENCE IS THE WHOLE
 		// CHANGE. A refused send gets a message record too, because a handler
 		// who pressed Send must be able to see what happened to the letter
@@ -170,31 +179,23 @@ class BerichtenboxService {
 		// and a reason, and its timeline entry is INTERNAL rather than public:
 		// telling a citizen on the portal that we tried to write to them and
 		// failed is not what the portal is for.
-		$refused = (($result['refused'] ?? false) === true);
+		$refused = (($sent['result']['refused'] ?? false) === true);
 
 		// Store message record.
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
 
-		$messageData = $this->journal->messageRecord(
-			caseId: $caseId,
-			bsn: $bsn,
-			subject: $subject,
-			body: $body,
-			typeCode: $typeCode,
-			attachmentFileId: $attachmentFileId,
-			result: $result,
-		);
+		$messageData = $this->journal->messageRecord(letter: $letter, result: $sent['result']);
 
-		$saved = $objectService->saveObject(
+		$saved = $sent['objectService']->saveObject(
 			object: $messageData,
 			register: (int)$register,
 			schema: (int)$schema,
 		);
 
-		$this->journal->recordSend(caseId: $caseId, subject: $subject, result: $result, messageData: $messageData);
+		$this->journal->recordSend(caseId: $letter['caseId'], subject: $letter['subject'], result: $sent['result'], messageData: $messageData);
 
-		$this->logSendOutcome(caseId: $caseId, result: $result);
+		$this->logSendOutcome(caseId: $letter['caseId'], result: $sent['result']);
 
 		$stored = $saved->jsonSerialize();
 		if ($refused === true) {
@@ -202,12 +203,12 @@ class BerichtenboxService {
 			// Send. It has to be able to tell a refusal from a send WITHOUT
 			// reading a status string it would have to know the vocabulary of.
 			$stored['refused'] = true;
-			$stored['error'] = (string)($result['error'] ?? '');
-			$stored['code'] = (string)($result['code'] ?? 'refused');
+			$stored['error'] = (string)($sent['result']['error'] ?? '');
+			$stored['code'] = (string)($sent['result']['code'] ?? 'refused');
 		}
 
 		return $stored;
-	}//end send()
+	}//end storedSend()
 
 
 

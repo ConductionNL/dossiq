@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
  * @uses \OCA\Dossiq\Woo\WooReportSwitches
+ * @uses \OCA\Dossiq\Service\Settings\RenamedSettingKeys
  */
 class VthSettingsServiceTest extends TestCase {
 

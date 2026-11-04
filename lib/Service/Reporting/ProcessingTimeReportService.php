@@ -62,9 +62,7 @@ class ProcessingTimeReportService {
 	 * Constructor.
 	 *
 	 * @param ProcessMiningDataLoader     $loader     Reads records, types and statuses.
-	 * @param ProcessingTimeCalculator    $calculator The chart arithmetic.
-	 * @param ProcessingTimeRows          $rows       The table rows.
-	 * @param ProcessingTimeSeriesPublisher $publisher Hands the chart series to the analytics leaf.
+	 * @param ProcessingTimeSteps $steps Computes the processing times, builds the rows and publishes the series.
 	 * @param CaseDateNormaliser          $dates      Reads stored dates in the tenant's zone.
 	 * @param ReportPeriod                $periods    Resolves the period preset.
 	 * @param IL10N                       $l10n       Words the labels in the reader's language.
@@ -72,9 +70,7 @@ class ProcessingTimeReportService {
 	 */
 	public function __construct(
 		private readonly ProcessMiningDataLoader $loader,
-		private readonly ProcessingTimeCalculator $calculator,
-		private readonly ProcessingTimeRows $rows,
-		private readonly ProcessingTimeSeriesPublisher $publisher,
+		private readonly ProcessingTimeSteps $steps,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ReportPeriod $periods,
 		private readonly IL10N $l10n,
@@ -147,7 +143,7 @@ class ProcessingTimeReportService {
 		}
 
 		if ($caseType === null) {
-			$this->publisher->publish(report: $report);
+			$this->steps->publisher->publish(report: $report);
 		}
 
 		return $report;
@@ -166,21 +162,21 @@ class ProcessingTimeReportService {
 			'sla' => $this->slaBlock(context: $context),
 			'distribution' => $this->distributionBlock(context: $context),
 			'trend' => [
-				'trend' => $this->calculator->monthlyTrend(
+				'trend' => $this->steps->calculator->monthlyTrend(
 					completed: $context['completed'],
 					types: $context['types'],
 					months: $context['months'],
 					today: $context['today'],
 				),
 			],
-			'throughput' => ['throughput' => $this->calculator->weeklyThroughput(completed: $context['inPeriod'])],
-			'atRisk' => ['atRisk' => $this->labelAtRisk(rows: $this->rows->atRisk(
+			'throughput' => ['throughput' => $this->steps->calculator->weeklyThroughput(completed: $context['inPeriod'])],
+			'atRisk' => ['atRisk' => $this->labelAtRisk(rows: $this->steps->rows->atRisk(
 				open: $context['open'],
 				types: $context['types'],
 				threshold: $context['threshold'],
 				today: $context['today'],
 			))],
-			default => ['breakdown' => $this->labelBreakdown(rows: $this->rows->performance(
+			default => ['breakdown' => $this->labelBreakdown(rows: $this->steps->rows->performance(
 				completed: $context['inPeriod'],
 				types: $context['types'],
 			))],
@@ -195,7 +191,7 @@ class ProcessingTimeReportService {
 	 * @return array{sla: array<int, array<string, mixed>>, slaSummary: array<string, mixed>}
 	 */
 	private function slaBlock(array $context): array {
-		$compliance = $this->calculator->slaCompliance(completed: $context['inPeriod'], types: $context['types']);
+		$compliance = $this->steps->calculator->slaCompliance(completed: $context['inPeriod'], types: $context['types']);
 
 		return ['sla' => $compliance['byType'], 'slaSummary' => $compliance['summary']];
 	}//end slaBlock()
@@ -208,7 +204,7 @@ class ProcessingTimeReportService {
 	 * @return array{distribution: array<int, array{label: string, count: int}>, distributionTarget: array<string, mixed>|null}
 	 */
 	private function distributionBlock(array $context): array {
-		$histogram = $this->calculator->distribution(completed: $context['inPeriod'], types: $context['types']);
+		$histogram = $this->steps->calculator->distribution(completed: $context['inPeriod'], types: $context['types']);
 		$bins      = $histogram['bins'];
 		if (array_sum(array_column($bins, 'count')) === 0) {
 			$bins = [];
@@ -309,7 +305,7 @@ class ProcessingTimeReportService {
 				'keys'       => $this->typeKeys(row: $row),
 				'family'     => $this->typeFamily(row: $row, typeId: $typeId),
 				'name'       => $name,
-				'targetDays' => $this->calculator->durationToDays(duration: ($row['processingDeadline'] ?? null)),
+				'targetDays' => $this->steps->calculator->durationToDays(duration: ($row['processingDeadline'] ?? null)),
 			];
 		}//end foreach
 

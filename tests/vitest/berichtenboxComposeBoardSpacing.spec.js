@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest'
 
 const sfc = readFileSync(new URL('../../src/dialogs/BerichtenboxComposeDialog.vue', import.meta.url), 'utf8')
 const style = sfc.slice(sfc.indexOf('<style'))
-const rule = (selector) => {
+function rule (selector) {
 	const m = style.match(new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{([^}]*)\\}'))
 	return m ? m[1] : ''
 }

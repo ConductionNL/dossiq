@@ -111,10 +111,10 @@ describe('the dossiq copies are gone', () => {
 describe('the banner row', () => {
 	const stack = find(fullCase, 'case-banner-stack')
 
-	it('is one size-to-content row of three strips, above the panels', () => {
+	it('is one size-to-content row of four strips, above the panels', () => {
 		expect(stack.type).toBe('sections')
 		expect(stack.content.dividers).toBe(false)
-		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-status-declaration', 'case-attention'])
+		expect(stack.content.sections.map((s) => s.widgetId)).toEqual(['case-archived', 'case-claim-banner', 'case-status-declaration', 'case-attention'])
 		const row = fullCase.config.layout.find((cell) => cell.widgetId === 'case-banner-stack')
 		const panels = fullCase.config.layout.find((cell) => cell.widgetId === 'case-panels')
 		expect(row.sizeToContent).toBe(true)

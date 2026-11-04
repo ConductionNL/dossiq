@@ -31,7 +31,7 @@ entry with a default confidentiality; nothing lets you label a document
 
 A letter cannot be generated from the case. `DossiqMergeTemplateNode`,
 `MergeTemplateHandler`, `TemplateController` and
-`BeschikkingComposerDialog.vue` exist; the Store shows templates without an
+`BeschikkingComposerDialog.vue` exist; the Marketplace shows templates without an
 action and no page offers the node (findings A16, M3 Document generation).
 
 Every competitor lists the documents on the case with type, status, direction
