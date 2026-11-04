@@ -756,7 +756,7 @@
         "digest": "778cc3d3f89efa57a13de006ce464b3546f1deec4464395fe700b54b4c35aa3f"
     },
     "lib/Settings/dossiq_register.json::inspectionChecklistRun": {
-        "version": "1.2.0",
+        "version": "1.3.0",
         "digest": "e59229d368c3f0b7f26ea2b8231ceffdca394b7ee0a9fd14012ad35db72628a2"
     },
     "lib/Settings/dossiq_register.json::inspectionChecklistTemplate": {
@@ -1735,6 +1735,10 @@
         "version": "1.1.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-advice-request-kind-and-outcome.json::adviesAanvraag": {
+        "version": "1.3.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-deadline-is-a-fallback.json::case": {
         "version": "1.56.0",
         "digest": "bccdde205e895600b8476004174994acce1a763354399f45ccd957709e43bd4c"
@@ -1833,6 +1837,10 @@
     },
     "lib/Settings/register.d/99-case-type-record-import-references.json::caseType": {
         "version": "1.37.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-case-type-remedy-menu-entry.json::caseType": {
+        "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-type-request-fields.json::caseType": {
