@@ -114,14 +114,18 @@ class CaseCompleteness {
 			$rows[] = $row;
 		}
 
-		$total = count($rows);
+		$total   = count($rows);
+		$verdict = 'incomplete';
+		if ($present === $total) {
+			$verdict = 'complete';
+		}
 
 		return [
 			'items' => $rows,
 			'present' => $present,
 			'total' => $total,
 			'missing' => ($total - $present),
-			'verdict' => ($present === $total) ? 'complete' : 'incomplete',
+			'verdict' => $verdict,
 		];
 	}//end check()
 
@@ -157,7 +161,10 @@ class CaseCompleteness {
 		$value = $this->fieldValue(case: $case, path: $item['field']);
 		if ($this->isAnswered(value: $value) === true) {
 			$row['present']  = true;
-			$row['evidence'] = ($item['evidence'] ?? (is_scalar($value) === true ? (string)$value : null));
+			$row['evidence'] = ($item['evidence'] ?? null);
+			if ($row['evidence'] === null && is_scalar($value) === true) {
+				$row['evidence'] = (string)$value;
+			}
 		}
 
 		return $row;
