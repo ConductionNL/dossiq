@@ -279,11 +279,35 @@ Administrators keep their bypass.
 row and write them onto the live case schema after every register import, when
 a case type is published and when a case type row is saved.
 
-`assignedGroup` on a case SHALL still grant nothing: being a case's team is
-assignment, and only the case type's handling teams grant. An organisation role
-(`organisatieRol`) stays the unit of the mandate matrix and the rights matrix,
-and reaches a team only through its `ncGroupId`. The rights matrix
-(REQ-ACC-05) stays declared for a later refinement and is not evaluated yet.
+Amended by Ruben on 2026-11-03: the members of a case's `assignedGroup` SHALL
+READ that case, and only read it: no update, no move, no status change, no
+files. The read SHALL hold up to and including the confidentiality level
+`vertrouwelijk`; a case marked `confidentieel`, `geheim` or `zeer_geheim`, or
+with a missing or unknown level, SHALL NOT be read through its group, and
+needs its handler or explicit rights. The read SHALL hold only within the
+case's own active organisation. dossiq SHALL express it as matrix rows on the
+case schema's `assignedGroup` matrix, one per group of the signed-in user
+(`AssignedGroupReadRows`). A member taken out of the group SHALL lose the read.
+
+An organisation role (`organisatieRol`) stays the unit of the mandate matrix
+and the rights matrix, and reaches a team only through its `ncGroupId`. The
+rights matrix (REQ-ACC-05) SHALL be honoured: dossiq hands its rows to
+OpenRegister through `MatrixRowsRequestedEvent`, naming itself as the app that
+answers. A rights row SHALL NOT grant `delete` on a case, whatever it names:
+deleting a case stays with administrators.
+
+#### Scenario: A member of the case's group reads it, and only reads it
+@e2e exclude Enforced by OpenRegister; pinned on its real PermissionHandler and SQL list in tests/Unit/Service/Access/CaseTypeRightsEnforcedAccessTest.php.
+- **GIVEN** a case at `vertrouwelijk` whose `assignedGroup` is a group the user is in
+- **WHEN** the user reads it
+- **THEN** the read SHALL be allowed
+- **AND** update, delete and every file verb SHALL be refused
+
+#### Scenario: The group read stops above vertrouwelijk and at the organisation
+@e2e exclude Enforced by OpenRegister; pinned in tests/Unit/Service/Access/CaseTypeRightsEnforcedAccessTest.php.
+- **GIVEN** a user in a case's `assignedGroup`
+- **WHEN** the case is `confidentieel`, has no level, or belongs to another organisation
+- **THEN** the user SHALL NOT read it through the group
 
 #### Scenario: The case's team is stored as a group id
 @e2e tests/e2e/case-parties.spec.ts
