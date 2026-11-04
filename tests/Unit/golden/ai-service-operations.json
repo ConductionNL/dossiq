@@ -1,0 +1,1664 @@
+{
+    "classifyDocument, full answer": {
+        "answer": {
+            "success": true,
+            "suggestion": {
+                "confidence": 0.7,
+                "averageConfidence": 0.4,
+                "fields": {
+                    "a": 1
+                },
+                "answer": "yes",
+                "sources": [
+                    "s1"
+                ],
+                "summary": "short",
+                "suggestions": [
+                    "x"
+                ],
+                "other": true
+            }
+        },
+        "sent": [
+            "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject)."
+        ],
+        "trail": [
+            {
+                "type": "classification",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject).",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.7,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "classifyDocument, empty answer": {
+        "answer": {
+            "success": true,
+            "suggestion": []
+        },
+        "sent": [
+            "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject)."
+        ],
+        "trail": [
+            {
+                "type": "classification",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject).",
+                "suggestion": [],
+                "confidence": 0.0,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "classifyDocument, model fails": {
+        "answer": {
+            "success": false,
+            "message": "AI classification failed: model down"
+        },
+        "sent": [
+            "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject)."
+        ],
+        "trail": [
+            {
+                "type": "classification",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject).",
+                "error": "model down",
+                "userId": "ann",
+                "responseTimeMs": "int",
+                "action": "failed",
+                "timestamp": "string"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "AI classification failed",
+                {
+                    "caseId": "case-1",
+                    "documentId": "doc-1",
+                    "error": "model down"
+                }
+            ]
+        ]
+    },
+    "classifyDocument, pii stripping on": {
+        "answer": {
+            "success": true,
+            "suggestion": {
+                "confidence": 0.7,
+                "averageConfidence": 0.4,
+                "fields": {
+                    "a": 1
+                },
+                "answer": "yes",
+                "sources": [
+                    "s1"
+                ],
+                "summary": "short",
+                "suggestions": [
+                    "x"
+                ],
+                "other": true
+            }
+        },
+        "sent": [
+            "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject)."
+        ],
+        "trail": [
+            {
+                "type": "classification",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject).",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.7,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "classifyDocument, pii stripping default": {
+        "answer": {
+            "success": true,
+            "suggestion": {
+                "confidence": 1
+            }
+        },
+        "sent": [
+            "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject)."
+        ],
+        "trail": [
+            {
+                "type": "classification",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Classify the following document for case case-1. Document ID: doc-1. Return JSON with fields: documentType (string), confidence (number 0-1), metadata (object with date, sender, subject).",
+                "suggestion": {
+                    "confidence": 1
+                },
+                "confidence": 1,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "classifyDocument, ai off": {
+        "answer": {
+            "success": false,
+            "message": "AI document classification is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "classifyDocument, dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI features are unavailable until the DPIA is acknowledged in the Dossiq AI settings"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "classifyDocument, ai off and dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI document classification is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "classifyDocument, feature off": {
+        "answer": {
+            "success": false,
+            "message": "AI document classification is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "classifyDocument, feature stored as true": {
+        "answer": {
+            "success": false,
+            "message": "AI document classification is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData, full answer": {
+        "answer": {
+            "success": true,
+            "fields": {
+                "a": 1
+            }
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.4,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "extractData, empty answer": {
+        "answer": {
+            "success": true,
+            "fields": []
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "suggestion": [],
+                "confidence": 0.0,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "extractData, model fails": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction failed: model down"
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "error": "model down",
+                "userId": "ann",
+                "responseTimeMs": "int",
+                "action": "failed",
+                "timestamp": "string"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "AI extraction failed",
+                {
+                    "caseId": "case-1",
+                    "error": "model down"
+                }
+            ]
+        ]
+    },
+    "extractData, pii stripping on": {
+        "answer": {
+            "success": true,
+            "fields": {
+                "a": 1
+            }
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.4,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "extractData, pii stripping default": {
+        "answer": {
+            "success": true,
+            "fields": []
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Focus on document doc-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "suggestion": {
+                    "confidence": 1
+                },
+                "confidence": 0.0,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "extractData, ai off": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData, dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI features are unavailable until the DPIA is acknowledged in the Dossiq AI settings"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData, ai off and dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData, feature off": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData, feature stored as true": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData no document, full answer": {
+        "answer": {
+            "success": true,
+            "fields": {
+                "a": 1
+            }
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.4,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "extractData no document, empty answer": {
+        "answer": {
+            "success": true,
+            "fields": []
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "suggestion": [],
+                "confidence": 0.0,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "extractData no document, model fails": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction failed: model down"
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "error": "model down",
+                "userId": "ann",
+                "responseTimeMs": "int",
+                "action": "failed",
+                "timestamp": "string"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "AI extraction failed",
+                {
+                    "caseId": "case-1",
+                    "error": "model down"
+                }
+            ]
+        ]
+    },
+    "extractData no document, pii stripping on": {
+        "answer": {
+            "success": true,
+            "fields": {
+                "a": 1
+            }
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.4,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "extractData no document, pii stripping default": {
+        "answer": {
+            "success": true,
+            "fields": []
+        },
+        "sent": [
+            "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}."
+        ],
+        "trail": [
+            {
+                "type": "extraction",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Extract structured data from documents in case case-1. Return JSON with fields: array of {name, value, confidence (0-1), source}.",
+                "suggestion": {
+                    "confidence": 1
+                },
+                "confidence": 0.0,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "extractData no document, ai off": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData no document, dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI features are unavailable until the DPIA is acknowledged in the Dossiq AI settings"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData no document, ai off and dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData no document, feature off": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "extractData no document, feature stored as true": {
+        "answer": {
+            "success": false,
+            "message": "AI data extraction is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "askQuestion, full answer": {
+        "answer": {
+            "success": true,
+            "answer": "yes",
+            "sources": [
+                "s1"
+            ]
+        },
+        "sent": [
+            "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN 123456782?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}."
+        ],
+        "trail": [
+            {
+                "type": "qa",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN 123456782?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}.",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.7,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "askQuestion, empty answer": {
+        "answer": {
+            "success": true,
+            "answer": "",
+            "sources": []
+        },
+        "sent": [
+            "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN 123456782?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}."
+        ],
+        "trail": [
+            {
+                "type": "qa",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN 123456782?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}.",
+                "suggestion": [],
+                "confidence": 0.0,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "askQuestion, model fails": {
+        "answer": {
+            "success": false,
+            "message": "AI Q&A failed: model down"
+        },
+        "sent": [
+            "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN 123456782?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}."
+        ],
+        "trail": [
+            {
+                "type": "qa",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN 123456782?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}.",
+                "error": "model down",
+                "userId": "ann",
+                "responseTimeMs": "int",
+                "action": "failed",
+                "timestamp": "string"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "AI Q&A failed",
+                {
+                    "caseId": "case-1",
+                    "error": "model down"
+                }
+            ]
+        ]
+    },
+    "askQuestion, pii stripping on": {
+        "answer": {
+            "success": true,
+            "answer": "yes",
+            "sources": [
+                "s1"
+            ]
+        },
+        "sent": [
+            "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN [BSN_REMOVED]?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}."
+        ],
+        "trail": [
+            {
+                "type": "qa",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN [BSN_REMOVED]?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}.",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.7,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "askQuestion, pii stripping default": {
+        "answer": {
+            "success": true,
+            "answer": "",
+            "sources": []
+        },
+        "sent": [
+            "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN [BSN_REMOVED]?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}."
+        ],
+        "trail": [
+            {
+                "type": "qa",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Answer the following question in the context of case case-1. Question: Mail jan@example.nl, BSN [BSN_REMOVED]?. Return JSON with fields: answer (string), sources (array of {document, page, quote}), confidence (number 0-1). If no relevant information is found, return: {\"answer\": \"Geen relevante informatie gevonden in de kennisbank\", \"sources\": [], \"confidence\": 0}.",
+                "suggestion": {
+                    "confidence": 1
+                },
+                "confidence": 1,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "askQuestion, ai off": {
+        "answer": {
+            "success": false,
+            "message": "AI knowledge base Q&A is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "askQuestion, dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI features are unavailable until the DPIA is acknowledged in the Dossiq AI settings"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "askQuestion, ai off and dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI knowledge base Q&A is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "askQuestion, feature off": {
+        "answer": {
+            "success": false,
+            "message": "AI knowledge base Q&A is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "askQuestion, feature stored as true": {
+        "answer": {
+            "success": false,
+            "message": "AI knowledge base Q&A is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize, full answer": {
+        "answer": {
+            "success": true,
+            "summary": "short"
+        },
+        "sent": [
+            "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "suggestion": {
+                    "summary": "short"
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "summarize, empty answer": {
+        "answer": {
+            "success": true,
+            "summary": ""
+        },
+        "sent": [
+            "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "suggestion": {
+                    "summary": ""
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "summarize, model fails": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization failed: model down"
+        },
+        "sent": [
+            "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "error": "model down",
+                "userId": "ann",
+                "responseTimeMs": "int",
+                "action": "failed",
+                "timestamp": "string"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "AI summarization failed",
+                {
+                    "caseId": "case-1",
+                    "error": "model down"
+                }
+            ]
+        ]
+    },
+    "summarize, pii stripping on": {
+        "answer": {
+            "success": true,
+            "summary": "short"
+        },
+        "sent": [
+            "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "suggestion": {
+                    "summary": "short"
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "summarize, pii stripping default": {
+        "answer": {
+            "success": true,
+            "summary": ""
+        },
+        "sent": [
+            "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "doc-1",
+                "model": "local/llama-test",
+                "prompt": "Generate a document summary for case case-1. Summarize document doc-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "suggestion": {
+                    "summary": ""
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "summarize, ai off": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize, dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI features are unavailable until the DPIA is acknowledged in the Dossiq AI settings"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize, ai off and dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize, feature off": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize, feature stored as true": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize no document, full answer": {
+        "answer": {
+            "success": true,
+            "summary": "short"
+        },
+        "sent": [
+            "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "suggestion": {
+                    "summary": "short"
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "summarize no document, empty answer": {
+        "answer": {
+            "success": true,
+            "summary": ""
+        },
+        "sent": [
+            "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "suggestion": {
+                    "summary": ""
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "summarize no document, model fails": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization failed: model down"
+        },
+        "sent": [
+            "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "error": "model down",
+                "userId": "ann",
+                "responseTimeMs": "int",
+                "action": "failed",
+                "timestamp": "string"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "AI summarization failed",
+                {
+                    "caseId": "case-1",
+                    "error": "model down"
+                }
+            ]
+        ]
+    },
+    "summarize no document, pii stripping on": {
+        "answer": {
+            "success": true,
+            "summary": "short"
+        },
+        "sent": [
+            "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "suggestion": {
+                    "summary": "short"
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "summarize no document, pii stripping default": {
+        "answer": {
+            "success": true,
+            "summary": ""
+        },
+        "sent": [
+            "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch)."
+        ],
+        "trail": [
+            {
+                "type": "summary",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "documentId": "",
+                "model": "local/llama-test",
+                "prompt": "Generate a timeline summary for case case-1. Return JSON with field: summary (string, 3-5 sentences in Dutch).",
+                "suggestion": {
+                    "summary": ""
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "summarize no document, ai off": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize no document, dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI features are unavailable until the DPIA is acknowledged in the Dossiq AI settings"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize no document, ai off and dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize no document, feature off": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "summarize no document, feature stored as true": {
+        "answer": {
+            "success": false,
+            "message": "AI summarization is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestRouting, full answer": {
+        "answer": {
+            "success": true,
+            "suggestions": [
+                "x"
+            ]
+        },
+        "sent": [
+            "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence})."
+        ],
+        "trail": [
+            {
+                "type": "routing",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence}).",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.7,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "suggestRouting, empty answer": {
+        "answer": {
+            "success": true,
+            "suggestions": []
+        },
+        "sent": [
+            "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence})."
+        ],
+        "trail": [
+            {
+                "type": "routing",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence}).",
+                "suggestion": [],
+                "confidence": 0.0,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "suggestRouting, model fails": {
+        "answer": {
+            "success": false,
+            "message": "AI routing suggestion failed: model down"
+        },
+        "sent": [
+            "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence})."
+        ],
+        "trail": [
+            {
+                "type": "routing",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence}).",
+                "error": "model down",
+                "userId": "ann",
+                "responseTimeMs": "int",
+                "action": "failed",
+                "timestamp": "string"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "AI routing suggestion failed",
+                {
+                    "caseId": "case-1",
+                    "error": "model down"
+                }
+            ]
+        ]
+    },
+    "suggestRouting, pii stripping on": {
+        "answer": {
+            "success": true,
+            "suggestions": [
+                "x"
+            ]
+        },
+        "sent": [
+            "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence})."
+        ],
+        "trail": [
+            {
+                "type": "routing",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence}).",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "confidence": 0.7,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "suggestRouting, pii stripping default": {
+        "answer": {
+            "success": true,
+            "suggestions": []
+        },
+        "sent": [
+            "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence})."
+        ],
+        "trail": [
+            {
+                "type": "routing",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Suggest the best case worker for case case-1 based on expertise and current workload. Return JSON with fields: suggestions (array of {userId, name, reason, confidence}).",
+                "suggestion": {
+                    "confidence": 1
+                },
+                "confidence": 1,
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "suggestRouting, ai off": {
+        "answer": {
+            "success": false,
+            "message": "AI case routing is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestRouting, dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI features are unavailable until the DPIA is acknowledged in the Dossiq AI settings"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestRouting, ai off and dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI case routing is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestRouting, feature off": {
+        "answer": {
+            "success": false,
+            "message": "AI case routing is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestRouting, feature stored as true": {
+        "answer": {
+            "success": false,
+            "message": "AI case routing is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestNextStep, full answer": {
+        "answer": {
+            "success": true,
+            "suggestions": [
+                "x"
+            ]
+        },
+        "sent": [
+            "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority})."
+        ],
+        "trail": [
+            {
+                "type": "decision_support",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority}).",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "suggestNextStep, empty answer": {
+        "answer": {
+            "success": true,
+            "suggestions": []
+        },
+        "sent": [
+            "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority})."
+        ],
+        "trail": [
+            {
+                "type": "decision_support",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority}).",
+                "suggestion": [],
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "suggestNextStep, model fails": {
+        "answer": {
+            "success": false,
+            "message": "AI next-step suggestion failed: model down"
+        },
+        "sent": [
+            "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority})."
+        ],
+        "trail": [
+            {
+                "type": "decision_support",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority}).",
+                "error": "model down",
+                "userId": "ann",
+                "responseTimeMs": "int",
+                "action": "failed",
+                "timestamp": "string"
+            }
+        ],
+        "logs": [
+            [
+                "error",
+                "AI next-step suggestion failed",
+                {
+                    "caseId": "case-1",
+                    "error": "model down"
+                }
+            ]
+        ]
+    },
+    "suggestNextStep, pii stripping on": {
+        "answer": {
+            "success": true,
+            "suggestions": [
+                "x"
+            ]
+        },
+        "sent": [
+            "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority})."
+        ],
+        "trail": [
+            {
+                "type": "decision_support",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority}).",
+                "suggestion": {
+                    "confidence": 0.7,
+                    "averageConfidence": 0.4,
+                    "fields": {
+                        "a": 1
+                    },
+                    "answer": "yes",
+                    "sources": [
+                        "s1"
+                    ],
+                    "summary": "short",
+                    "suggestions": [
+                        "x"
+                    ],
+                    "other": true
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "suggestNextStep, pii stripping default": {
+        "answer": {
+            "success": true,
+            "suggestions": []
+        },
+        "sent": [
+            "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority})."
+        ],
+        "trail": [
+            {
+                "type": "decision_support",
+                "action": "suggestion",
+                "caseId": "case-1",
+                "model": "local/llama-test",
+                "prompt": "Analyze the current state of case case-1 and suggest what the case worker should do next. Return JSON with fields: suggestions (array of {action, reason, priority}).",
+                "suggestion": {
+                    "confidence": 1
+                },
+                "userId": "ann",
+                "timestamp": "string",
+                "responseTimeMs": "int"
+            }
+        ],
+        "logs": []
+    },
+    "suggestNextStep, ai off": {
+        "answer": {
+            "success": false,
+            "message": "AI decision support is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestNextStep, dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI features are unavailable until the DPIA is acknowledged in the Dossiq AI settings"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestNextStep, ai off and dpia missing": {
+        "answer": {
+            "success": false,
+            "message": "AI decision support is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestNextStep, feature off": {
+        "answer": {
+            "success": false,
+            "message": "AI decision support is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    },
+    "suggestNextStep, feature stored as true": {
+        "answer": {
+            "success": false,
+            "message": "AI decision support is not enabled"
+        },
+        "sent": [],
+        "trail": [],
+        "logs": []
+    }
+}
