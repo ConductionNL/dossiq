@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
+use OCA\Dossiq\Service\Custody\ConsentRefusal;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
@@ -45,6 +46,7 @@ use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -119,6 +121,7 @@ final class PssShareStore {
  *
  * @covers \OCA\Dossiq\Service\CaseSharingService
  * @uses \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
+ * @uses \OCA\Dossiq\Service\Custody\ConsentRefusal
  * @uses \OCA\Dossiq\Service\Custody\ConsentStanding
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessLinkService
@@ -456,7 +459,11 @@ class PartnerShareScopeTest extends TestCase {
 			accessLinks: $this->createStub(CaseAccessLinkService::class),
 			linkShares: $this->createStub(CaseLinkShares::class),
 			federatedShares: $this->createStub(FederatedCaseShareService::class),
-			consent: new CaseTransferConsentGate(settingsService: $settings, logger: $logger),
+			consent: new CaseTransferConsentGate(
+				settingsService: $settings,
+				logger: $logger,
+				refusals: new ConsentRefusal(l10n: new SourceL10n()),
+			),
 			logger: $logger,
 		);
 	}//end sharing()
