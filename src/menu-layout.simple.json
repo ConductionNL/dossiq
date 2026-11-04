@@ -1522,6 +1522,148 @@
 					},
 					"case-assistant-chat",
 					{
+						"id": "side-access",
+						"_note": "DqZaak Toegang: who may open this case and why, as a short side card beside the Overview tab only (the People tab draws the full card with links and Delen). The same grants read as case-access-card's first section; a reader the grants refuse sees the refusal sentence instead of names.",
+						"tabs": [
+							"overview"
+						],
+						"type": "record-list",
+						"title": "Access",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/openregister/api/objects/dossiq/case/@objectId/grants",
+								"params": {
+									"principalTypes": "user,group"
+								},
+								"responsePath": "results"
+							},
+							"presentation": "rows",
+							"density": "compact",
+							"headerSubtitle": "{total} with access",
+							"title": [
+								"{principal.displayName}",
+								"{principal.id}"
+							],
+							"meta": {
+								"cases": [
+									{
+										"when": {
+											"all": [
+												{
+													"field": "origin",
+													"op": "eq",
+													"value": "rule"
+												},
+												{
+													"field": "matchedOn",
+													"op": "contains",
+													"value": "caseType"
+												}
+											]
+										},
+										"text": "via the case type"
+									},
+									{
+										"when": {
+											"all": [
+												{
+													"field": "origin",
+													"op": "eq",
+													"value": "rule"
+												},
+												{
+													"field": "role",
+													"op": "notEmpty"
+												}
+											]
+										},
+										"text": "via the role {role}"
+									},
+									{
+										"when": {
+											"field": "origin",
+											"op": "eq",
+											"value": "rule"
+										},
+										"text": "via a rule on all cases"
+									},
+									{
+										"when": {
+											"all": [
+												{
+													"field": "origin",
+													"op": "eq",
+													"value": "shared"
+												},
+												{
+													"field": "sharedBy.displayName",
+													"op": "empty"
+												}
+											]
+										},
+										"text": "shared by a former user"
+									},
+									{
+										"when": {
+											"field": "origin",
+											"op": "eq",
+											"value": "shared"
+										},
+										"text": "shared by {sharedBy.displayName}"
+									},
+									{
+										"when": {
+											"all": [
+												{
+													"field": "origin",
+													"op": "eq",
+													"value": "inherited"
+												},
+												{
+													"field": "sharedBy.displayName",
+													"op": "empty"
+												}
+											]
+										},
+										"text": "via the main case, shared by a former user"
+									},
+									{
+										"when": {
+											"field": "origin",
+											"op": "eq",
+											"value": "inherited"
+										},
+										"text": "via the main case, shared by {sharedBy.displayName}"
+									},
+									{
+										"when": {
+											"field": "origin",
+											"op": "eq",
+											"value": "owner"
+										},
+										"text": "owner of the case"
+									}
+								]
+							},
+							"pill": {
+								"cases": [],
+								"label": "Expires {expiresAt|date}",
+								"variant": "warning"
+							},
+							"hideWhen": {
+								"field": "principal.id",
+								"op": "in",
+								"value": [
+									"dossiq-background-service"
+								]
+							},
+							"emptyText": "Nobody else has access to this case",
+							"refusalText": "You may not see who has access to this case",
+							"errorText": "Could not read who has access",
+							"footnote": "Who may not see the access reads here only: you may not see who has access to this case."
+						}
+					},
+					{
 						"id": "side-objection-appeal",
 						"type": "record-list",
 						"title": "Appeal",
@@ -2116,6 +2258,7 @@
 							"badgeSource": "readState",
 							"tabs": [
 								{
+									"id": "overview",
 									"widgetIds": [
 										"case-objection-grounds",
 										"case-objection-advice-card",
@@ -2330,6 +2473,7 @@
 								{
 									"widgetIds": [
 										"case-files",
+										"case-completeness-card",
 										"case-refusal-grounds-card"
 									],
 									"label": "Files",
@@ -2448,6 +2592,7 @@
 										"case-related-cases-card",
 										"case-related-card",
 										"case-sub-cases-card",
+										"case-projects-card",
 										"case-objects-card",
 										"case-programme-card"
 									],
@@ -2472,7 +2617,9 @@
 								{
 									"widgetIds": [
 										"case-archival-panel",
-										"case-custody-panel"
+										"case-custody-panel",
+										"case-archive-marking-card",
+										"case-archive-mismatch"
 									],
 									"label": "Archiving",
 									"icon": "ArchiveOutline",
@@ -2792,6 +2939,56 @@
 							},
 							"linkedMail": true
 						}
+					},
+					"goal-plan": {
+						"_note": "DqSociaalDomein Gezinsplan: the card names what a goal is for under its title and carries Doel toevoegen in its title row. The goal goes onto the plan of this case (POST /api/family-plans/{planId}/goals); the dialog reads the plan through /api/cases/{id}/family-plan, whose answer names `planId` (FOR-SIG DQB-B S1); until it does, the dialog answers with the refusal of a plan it cannot find.",
+						"subtitle": "A goal says how you will see it was reached",
+						"headerActions": [
+							{
+								"label": "Add goal",
+								"icon": "Plus",
+								"variant": "secondary",
+								"action": {
+									"type": "open-modal",
+									"target": "CnActionDialog",
+									"props": {
+										"objectId": "@objectId",
+										"config": {
+											"title": "Add goal",
+											"subtitle": "What this household wants to change, and what would show it has.",
+											"summary": {
+												"source": {
+													"url": "/apps/dossiq/api/cases/@objectId/family-plan"
+												}
+											},
+											"fields": [
+												{
+													"field": "title",
+													"type": "text",
+													"label": "Goal",
+													"required": true
+												},
+												{
+													"field": "metWhen",
+													"type": "text",
+													"label": "Met when",
+													"required": true
+												}
+											],
+											"confirm": {
+												"label": "Add goal",
+												"icon": "Plus",
+												"request": {
+													"method": "POST",
+													"url": "/apps/dossiq/api/family-plans/@object.planId/goals"
+												}
+											},
+											"doneText": "The goal is added."
+										}
+									}
+								}
+							}
+						]
 					}
 				},
 				"layout": {
@@ -2907,7 +3104,8 @@
 								"parentCase",
 								"impact",
 								"urgency",
-								"externalApplication"
+								"externalApplication",
+								"tags"
 							],
 							"hideEmpty": false,
 							"overrides": {
@@ -3005,6 +3203,12 @@
 								},
 								"urgency": {
 									"order": 17
+								},
+								"tags": {
+									"label": "Labels",
+									"widget": "tags",
+									"order": 19,
+									"emptyValue": "No labels"
 								}
 							}
 						}
@@ -3645,6 +3849,8 @@
 							},
 							"trailing": "{plannedFor|date}",
 							"headerNote": "{total} planned",
+							"footnote": "A milestone that depends on another part counts in working days from that part. When the hearing moves, the milestones after it move with it. A milestone without a predecessor counts from the start of the case.",
+							"footnoteVariant": "info",
 							"emptyText": "No next action is planned on this case"
 						},
 						"_rowsNote": "DqZaakTaken Wat hierna komt: the planned actions as the board's rows under a rule (calendar tile, the action, its owner (a person, else the team by its name: {ownerGroup|group}, nextcloud-vue feat/r32-template-group-format) and who planned it (the person who added it, else what planned it: plannedByRule, the steps of the case type, which a successor carries over), the planned date at the end) and '{total} gepland' in the title row, instead of a table. Same filter and order: the first row is still the answer to what comes next."
@@ -4565,6 +4771,59 @@
 						}
 					},
 					{
+						"id": "case-completeness-card",
+						"type": "record-list",
+						"_note": "DqZaakDocumenten Volledigheid van de aanvraag: the document list the case type asks for, ticked off against what the case holds, with Ontvankelijkheid bevestigen under it. The list is the server's (GET /api/cases/{id}/completeness, FOR-SIG DQB-B S2); until that route answers the card stays hidden, because the visibleWhen asks the same endpoint. The verdict posts to the existing intakeTriage#judgeAdmissibility route. Still open: the verdict pill in the title row and the per-row source text (Aanvulverzoek versturen is the second button the board draws), both need a record-list header pill and a checklist row meta in nextcloud-vue.",
+						"title": "Completeness of the application",
+						"subtitle": "The document list from the case type",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/cases/@objectId/completeness",
+							"field": "items",
+							"op": "notEmpty"
+						},
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/cases/@objectId/completeness",
+								"responsePath": "items"
+							},
+							"presentation": "checklist",
+							"columns": 1,
+							"title": "{label}",
+							"done": {
+								"field": "present",
+								"op": "eq",
+								"value": true
+							},
+							"emptyText": "",
+							"footnote": "When everything is present, Confirm admissibility moves the case to its next status. While the requester supplements, the term stands still.",
+							"footerAction": {
+								"label": "Confirm admissibility",
+								"icon": "CheckCircleOutline",
+								"type": "open-modal",
+								"target": "CnActionDialog",
+								"props": {
+									"objectId": "@objectId",
+									"config": {
+										"title": "Confirm admissibility",
+										"subtitle": "The application is complete. The case moves on through the transition its phase offers.",
+										"confirm": {
+											"label": "Confirm admissibility",
+											"icon": "CheckCircleOutline",
+											"request": {
+												"method": "POST",
+												"url": "/apps/dossiq/api/cases/@objectId/admissibility",
+												"body": {
+													"verdict": "admissible"
+												}
+											}
+										},
+										"doneText": "The application is admissible."
+									}
+								}
+							}
+						}
+					},
+					{
 						"id": "case-refusal-grounds-card",
 						"type": "record-list",
 						"title": "Refusal grounds so far",
@@ -5256,7 +5515,19 @@
 							"rowRoute": "CaseDetail",
 							"rowIdField": "caseId",
 							"emptyText": "No related cases yet",
+							"_textNote": "DqZaakGerelateerd: the third line of a linked case names the RGBZ relation and the note given when it was linked; a planned row has neither and draws two lines.",
+							"text": [
+								"Relation: {aardRelatie} (RGBZ). Note: {notes}",
+								"Relation: {aardRelatie} (RGBZ)."
+							],
 							"valueLabels": {
+								"aardRelatie": {
+									"subject": "subject",
+									"vervolg": "follow-up",
+									"bijdrage": "contribution",
+									"samenhang": "related",
+									"waitsOn": "waits on"
+								},
 								"group": {
 									"subject": "Subject of this case",
 									"gaat over": "Subject of this case",
@@ -5408,6 +5679,14 @@
 								}
 							}
 						}
+					},
+					{
+						"id": "case-projects-card",
+						"type": "integration",
+						"integrationId": "planninq-projects",
+						"title": "Projects",
+						"subtitle": "Projects in planninq linked to this case",
+						"_note": "DqZaakGerelateerd Projecten: planninq's own projects leaf for this case (planninq-projects, which draws its rows and New project itself), between the sub-cases and the objects as the board orders them. Without planninq the leaf is not registered and the card is not there, which is what the board says under it."
 					},
 					{
 						"id": "case-objects-card",
@@ -5625,6 +5904,89 @@
 						}
 					},
 					{
+						"id": "case-archive-marking-card",
+						"type": "facts",
+						"title": "Archive marking",
+						"subtitle": "Whether this case is archived, dossiq reads from OpenRegister's marking: who, when and why. The archive status above describes the archive and does not replace that marking.",
+						"_note": "DqZaakArchivering Archiefmarkering, column Deze zaak: OpenRegister's own marking on this object (@self.archived: at, by, reason), read off the record, never off the case's archiveStatus field. The board's other two columns explain the archived state and the disagreement; the disagreement itself is the case-archive-mismatch banner under this card, which shows only when the two really differ.",
+						"content": {
+							"fields": [
+								{
+									"key": "archived-at",
+									"label": "This case",
+									"path": "@self.archived.at",
+									"format": "date",
+									"emptyValue": "Not archived"
+								},
+								{
+									"key": "archived-by",
+									"label": "By",
+									"path": "@self.archived.by",
+									"format": "user",
+									"emptyValue": "No marking in OpenRegister"
+								},
+								{
+									"key": "archived-reason",
+									"label": "Reason",
+									"path": "@self.archived.reason",
+									"emptyValue": "The case is still running"
+								}
+							]
+						}
+					},
+					{
+						"id": "case-archive-mismatch",
+						"type": "banner",
+						"_note": "DqZaakArchivering: the case's archive status and OpenRegister's marking disagree, in either direction. Dossiq picks neither side; Herstellen to align either way is a later board item (SIG). Decided on the record alone, so it needs no endpoint.",
+						"visibleWhen": {
+							"any": [
+								{
+									"all": [
+										{
+											"field": "archiveStatus",
+											"op": "in",
+											"value": [
+												"archived",
+												"archived_retention_period_unknown",
+												"overgedragen"
+											]
+										},
+										{
+											"field": "@self.archived",
+											"op": "empty"
+										}
+									]
+								},
+								{
+									"all": [
+										{
+											"any": [
+												{
+													"field": "archiveStatus",
+													"op": "eq",
+													"value": "nog_te_archiveren"
+												},
+												{
+													"field": "archiveStatus",
+													"op": "empty"
+												}
+											]
+										},
+										{
+											"field": "@self.archived",
+											"op": "notEmpty"
+										}
+									]
+								}
+							]
+						},
+						"content": {
+							"variant": "warning",
+							"lead": "The case and OpenRegister disagree.",
+							"text": "The archive status of the case and the marking in OpenRegister say different things. Dossiq picks neither. Check what happened and correct one of the two."
+						}
+					},
+					{
 						"id": "case-decision-letter",
 						"type": "facts",
 						"title": "Decision letter",
@@ -5704,6 +6066,20 @@
 									"key": "decidedBy",
 									"label": "User",
 									"formatter": "userName"
+								},
+								{
+									"key": "advisoryContext.suggestionType",
+									"label": "Kind and action",
+									"enumLabels": {
+										"answer": "Question",
+										"question": "Question",
+										"draft": "Draft text",
+										"summarisation": "Summary",
+										"summary": "Summary",
+										"classification": "Classification",
+										"extraction": "Extraction",
+										"routing": "Routing"
+									}
 								},
 								{
 									"key": "prompt",
