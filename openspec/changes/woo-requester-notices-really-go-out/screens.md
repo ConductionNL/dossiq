@@ -1,4 +1,3 @@
 # Screens
 
-- No screen: this change sends notices through existing transports (portal inbox, digital post, e-mail) and records the result on the case; it adds or changes no dossiq screen.
-- No screen: backend: requester notice delivery
+- No screen: sends notices through existing transports and records the result on the case; no dossiq screen changes.

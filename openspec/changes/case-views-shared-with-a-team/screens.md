@@ -1,3 +1,4 @@
 # Screens
 
-- DqZaken https://identity.conduction.nl/screens/board?id=dossiq/DqZaken
+- dossiq/DqZaken alle zaken https://identity.conduction.nl/screens/board?id=dossiq/DqZaken
+- dossiq/DqFilterDelen sharing a saved case view with a team (REQ-CSL-SHARE-01) https://identity.conduction.nl/screens/board?id=dossiq/DqFilterDelen

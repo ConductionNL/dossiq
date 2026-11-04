@@ -1056,7 +1056,7 @@
         "digest": "ff3be2dd7a8840aba06cbf57225d0bca40eb4a2f16bddefa7ee745f1d96aa667"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::conflictRecord": {
-        "version": "1.0.1",
+        "version": "1.1.0",
         "digest": "bf0f2bc9dec97a02f23dd130a21cd8a28b4e90d295aa46193e0491b8671e280a"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::fieldEvidence": {
@@ -1156,8 +1156,8 @@
         "digest": "263e846261b0ad0aa8666a43d43b74c32c95eb7b55521eb26800e13c76f29b74"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::reIntegratieTraject": {
-        "version": "1.2.0",
-        "digest": "de8cb58bdbd44cd9a6aeb6a3ce4947b1cbae9c5e6bfe8479c66e4c1da927de62"
+        "version": "1.2.1",
+        "digest": "93a9357b4fd41a755be980b7b6f23a6fd508be20cb196f6bd3a4591300ee2080"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::sociaalDomeinAuditLog": {
         "version": "1.2.1",

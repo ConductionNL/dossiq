@@ -11211,10 +11211,12 @@
                         "description": "What the mandate lets the role decide: the ceiling in euros (none is unlimited), the decision types it covers and its enforcement level.",
                         "properties": {
                             "plafond": {
+                                "title": "Ceiling",
                                 "type": "number",
                                 "description": "The amount in euros up to which the role decides; empty is unlimited"
                             },
                             "decisionTypes": {
+                                "title": "Decision types",
                                 "type": "array",
                                 "items": {
                                     "type": "string"
@@ -11222,6 +11224,7 @@
                                 "description": "The decision types the role may take, such as bezwaar"
                             },
                             "enforcement": {
+                                "title": "Enforcement",
                                 "type": "string",
                                 "enum": [
                                     "none",

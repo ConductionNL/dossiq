@@ -101,20 +101,20 @@ The case detail view SHALL display a "Sub-cases" section
 
 ### Requirement: Parent case breadcrumb navigation
 
-When viewing a sub-case (a case with a non-null `parentCase`), the system SHALL display a breadcrumb
+When viewing a sub-case (a case with a non-null `parentCase`), the system SHALL add the parent case's number to
 
-**Feature tier**: V1 above the case title linking back to the parent case. The breadcrumb MUST show the parent case's title.
+**Feature tier**: V1 the case page's trail under the title (case-dashboard-view REQ-CDV-15), between "Alle zaken" and the sub-case's own number, as a link back to the parent case. The trail follows board DqZaak's pattern; it never repeats a case title.
 
-#### Scenario: Sub-case shows parent breadcrumb
+#### Scenario: Sub-case shows its parent in the trail
 
-- **WHEN** user views sub-case "Bouwvergunning Keizersgracht 100" which has `parentCase` pointing to case "Omgevingsvergunning Keizersgracht 100"
-- **THEN** the case detail MUST display a breadcrumb: "Omgevingsvergunning Keizersgracht 100 > Bouwvergunning Keizersgracht 100"
-- **AND** the parent case name in the breadcrumb MUST be a clickable link navigating to the parent case detail
+- **WHEN** user views sub-case 2026-0091 "Bouwvergunning Keizersgracht 100" which has `parentCase` pointing to case 2026-0090 "Omgevingsvergunning Keizersgracht 100"
+- **THEN** the trail under the title MUST read "Alle zaken / 2026-0090 / 2026-0091"
+- **AND** the parent's number in the trail MUST be a clickable link navigating to the parent case detail
 
-#### Scenario: Top-level case has no breadcrumb
+#### Scenario: Top-level case has no parent in the trail
 
 - **WHEN** user views a case with `parentCase` equal to null
-- **THEN** no parent breadcrumb MUST be displayed
+- **THEN** the trail MUST read "Alle zaken / <case number>" with no parent between them
 
 ### Requirement: Sub-case progress roll-up on parent case
 

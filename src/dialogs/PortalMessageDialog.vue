@@ -61,6 +61,7 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import { logContactMoment } from '../services/pipelinqCaseApi.js'
+import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
  * The handler writes to the applicant of a case, in the portal.
@@ -128,11 +129,7 @@ export default {
 		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
-				return fromProp
-			}
-			return this.$route?.params?.id || ''
+			return resolveCaseId(this.caseId, this.$route)
 		},
 
 		/**
@@ -193,7 +190,7 @@ export default {
 		 *
 		 * @param {object} message The message as it was sent.
 		 * @return {Promise<boolean>} Whether it was logged.
-		 * @spec openspec/changes/reply-logs-a-contact-moment/specs/portal-contribution/spec.md#requirement-an-answer-to-the-resident-can-be-logged-as-a-contact-moment
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		async logAsContactMoment(message) {
 			try {
