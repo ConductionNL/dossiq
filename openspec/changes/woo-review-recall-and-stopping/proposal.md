@@ -16,6 +16,11 @@ Implements Ruben's decision D1: the review of a Woo request is dossiq's. Before 
 planned on opencatalogi. There is no fleet precedent for a statistical review estimate; this change
 names the method so a building agent does not choose one.
 
+Decision 256 (30 October 2026) narrows D1 for the screens: Woo review screens are owned by
+opencatalogi. The estimate and the stopping rule are drawn on board OcWooBatch, and dossiq's case
+links out to it. dossiq keeps the method, the samples and the record of the rule; it draws no
+review board of its own.
+
 ## Summary
 
 dossiq estimates the recall of a Woo review with a named statistical method and records a stopping rule declared in advance and whether it was met.
@@ -23,7 +28,7 @@ dossiq estimates the recall of a Woo review with a named statistical method and 
 - Rows: 19.12 and 19.13.
 - Wave 4.
 - Dependencies: `dossiq/woo-review-triage` (https://github.com/ConductionNL/dossiq/issues/3294).
-- Decisions: D1 (the review of a Woo request is dossiq's).
+- Decisions: D1 (the review of a Woo request is dossiq's), 256 (its screens are opencatalogi's, board OcWooBatch).
 - Build rules: openspec/woo-build-rules.md
 
 ## Why

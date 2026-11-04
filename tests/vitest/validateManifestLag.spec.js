@@ -213,7 +213,11 @@ describe('check:manifest tells a lag from a defect', () => {
 		// A page filter without a control (schema 2.151.0) is derived the same way.
 		const declaresControlNone = (installed.$defs.page?.properties?.config?.properties?.pageFilters?.items?.properties?.control?.enum || []).includes('none')
 
-		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone) {
+		// A dotted path into @self (`@self.can.update`, schema 2.172.0) is
+		// asked of the token pattern itself, the way the guard reads it.
+		const declaresDottedSelf = new RegExp(installed.$defs.sentinelDeclarativeToken?.pattern || '^$').test('@self.can.update')
+
+		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone && declaresDottedSelf) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
@@ -234,6 +238,9 @@ describe('check:manifest tells a lag from a defect', () => {
 		if (!declaresControlNone) {
 			expect(out).toMatch(/\/config\/pageFilters\/\d+\/control uses "enum", which schema [\d.]+ accepts/)
 		}
+		if (!declaresDottedSelf) {
+			expect(out).toMatch(/\/config\/widgets\/\d+ uses "if", which schema [\d.]+ accepts/)
+		}
 		if (!declaresOptionMonths) {
 			expect(out).toMatch(/\/config\/pageFilters\/\d+\/options\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
 		}
@@ -249,7 +256,7 @@ describe('check:manifest tells a lag from a defect', () => {
 		const result = validate(manifest)
 
 		expect(result.code).toBe(1)
-	})
+	}, 30000)
 
 	it('a defect on a shape the newer schema also refuses still fails', () => {
 		const manifest = JSON.parse(

@@ -1,0 +1,21 @@
+[
+    {
+        "getConfigValue": "bezwaar_schema"
+    },
+    {
+        "getConfigValue": "register"
+    },
+    {
+        "getConfigValue": "bezwaar_decision_schema"
+    },
+    {
+        "findAll": {
+            "filters": {
+                "register": "reg",
+                "schema": "decision",
+                "objectionProceeding": "b-1"
+            },
+            "limit": 100
+        }
+    }
+]

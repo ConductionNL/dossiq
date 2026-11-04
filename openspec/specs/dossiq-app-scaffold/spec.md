@@ -224,7 +224,7 @@ The backend MUST provide a RESTful settings endpoint for reading and writing app
 #### Scenario 7.3: Settings key completeness
 - GIVEN the `SettingsService::CONFIG_KEYS` array
 - WHEN all keys are listed
-- THEN it MUST include at minimum: `register`, `case_schema`, `task_schema`, `status_schema`, `role_schema`, `result_schema`, `decision_schema`, `case_type_schema`, `status_type_schema`, `result_type_schema`, `role_type_schema`, `property_definition_schema`, `document_type_schema`, `decision_type_schema`, `case_property_schema`, `case_document_schema`, `document_schema`, `customer_contact_schema`, `default_case_type`
+- THEN it MUST include at minimum: `register`, `case_schema`, `task_schema`, `status_schema`, `role_schema`, `result_schema`, `decision_schema`, `case_type_schema`, `status_type_schema`, `result_type_schema`, `role_type_schema`, `property_definition_schema`, `document_type_schema`, `decision_type_schema`, `case_property_schema`, `case_document_schema`, `document_schema`, `customer_contact_schema`
 
 #### Scenario 7.4: SLUG_TO_CONFIG_KEY mapping
 - GIVEN the `SettingsService::SLUG_TO_CONFIG_KEY` constant

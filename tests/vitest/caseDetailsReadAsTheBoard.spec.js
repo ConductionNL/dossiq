@@ -6,7 +6,7 @@
  * an empty result, parent case and elsewhere-handled in words, and the
  * archive status as words, not the stored code. Read from the layout.
  *
- * @spec openspec/changes/data-widget-board-dates/specs/data-widget/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 import fs from 'fs'
 import path from 'path'

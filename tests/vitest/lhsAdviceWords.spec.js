@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+import nl from '../../l10n/nl.json'
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
@@ -6,8 +8,6 @@
  * handler as a person, and the notice names the matrix the advice applied.
  */
 import manifest from '../../src/manifest.json'
-import nl from '../../l10n/nl.json'
-import { describe, expect, it } from 'vitest'
 
 const page = manifest.pages.find((entry) => entry.id === 'LhsRecommendationDetail')
 const card = (id) => page.config.sideColumn.find((entry) => entry.id === id)

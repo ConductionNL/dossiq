@@ -47,6 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\ProcessMining\ProcessMiningAnalysers;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
@@ -66,9 +67,7 @@ class ProcessMiningService {
 	 * Constructor.
 	 *
 	 * @param ProcessMiningDataLoader $dataLoader The OpenRegister read path + lookup indexes.
-	 * @param DwellTimeAnalyzer $dwellTimeAnalyzer Dwell-interval reconstruction + bottleneck ranking.
-	 * @param TransitionMatrixBuilder $transitionBuilder Transition matrix + rework detection.
-	 * @param ThroughputTrendCalculator $throughputCalculator Weekly closed-case throughput trend.
+	 * @param ProcessMiningAnalysers $analysers The dwell, transition and throughput analysers.
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 * @param PhaseSummary $phases The phase matrix and the stuck list the page leads with.
@@ -77,9 +76,7 @@ class ProcessMiningService {
 	 */
 	public function __construct(
 		private readonly ProcessMiningDataLoader $dataLoader,
-		private readonly DwellTimeAnalyzer $dwellTimeAnalyzer,
-		private readonly TransitionMatrixBuilder $transitionBuilder,
-		private readonly ThroughputTrendCalculator $throughputCalculator,
+		private readonly ProcessMiningAnalysers $analysers,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LanguageMapText $text = new LanguageMapText(),
 		private readonly PhaseSummary $phases = new PhaseSummary(),
@@ -125,12 +122,12 @@ class ProcessMiningService {
 			// like one counted on the calendar, is the failure this whole
 			// change is about, so the answer travels with the payload rather
 			// than being assumed by the reader.
-			'clock' => $this->dwellTimeAnalyzer->clock(),
+			'clock' => $this->analysers->dwellTimeAnalyzer->clock(),
 			'caseTypeFilter' => $caseTypeFilter,
 			// The load stops at its limit, so a report that reached it is short.
 			'truncated' => (count($cases) >= ProcessMiningDataLoader::CASE_LIMIT),
 			'caseTypes' => $this->caseTypeReports(casesById: $casesById, window: $window),
-			'throughputTrend' => $this->throughputCalculator->computeThroughputTrend(
+			'throughputTrend' => $this->analysers->throughputCalculator->computeThroughputTrend(
 				cases: $casesById,
 				from: $window['from'],
 				to: $window['to']
@@ -221,14 +218,14 @@ class ProcessMiningService {
 	private function caseTypeReport(array $group, array $run): array {
 		$recordsForThisGroup = array_intersect_key($run['recordsByCase'], array_flip(array_keys($group['cases'])));
 
-		$intervals = $this->dwellTimeAnalyzer->computeDwellIntervals(
+		$intervals = $this->analysers->dwellTimeAnalyzer->computeDwellIntervals(
 			recordsByCase: $recordsForThisGroup,
 			casesById: $group['cases'],
 			now: $run['now'],
 			periodFrom: $run['from'],
 			periodTo: $run['to'],
 		);
-		$transitions = $this->transitionBuilder->computeTransitionMatrix(
+		$transitions = $this->analysers->transitionBuilder->computeTransitionMatrix(
 			recordsByCase: $recordsForThisGroup,
 			statusTypeIndex: $run['statusTypeIndex']
 		);
@@ -253,12 +250,12 @@ class ProcessMiningService {
 	 * @return array<string, mixed> dwellTime, dwellTimeCompleted, dwellDaysHeld, dwellByAssignee and bottlenecks.
 	 */
 	private function dwellOf(array $intervals, array $scope): array {
-		$dwellStats = $this->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $scope['statusTypeIndex']);
+		$dwellStats = $this->analysers->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $scope['statusTypeIndex']);
 
 		return [
 			'dwellTime' => $dwellStats,
 			// Days per phase reads visits that ended only, so it holds still under the same data.
-			'dwellTimeCompleted' => $this->dwellTimeAnalyzer->aggregateDwellStats(
+			'dwellTimeCompleted' => $this->analysers->dwellTimeAnalyzer->aggregateDwellStats(
 				intervals: array_values(array_filter($intervals, static fn (array $interval): bool => ($interval['open'] ?? false) === false)),
 				statusTypeIndex: $scope['statusTypeIndex']
 			),
@@ -266,15 +263,15 @@ class ProcessMiningService {
 			// reconstructed from the record chain. Published rather than
 			// recomputed, so the page and a handler's work list answer the
 			// same question with the same number.
-			'dwellDaysHeld' => $this->dwellTimeAnalyzer->heldTotalsByStatus(
+			'dwellDaysHeld' => $this->analysers->dwellTimeAnalyzer->heldTotalsByStatus(
 				casesById: $scope['cases'],
 				now: $scope['now'],
 			),
 			// The same intervals keyed by who held them. No second walk
 			// of the records: a by-assignee table computed on its own
 			// would drift from the by-phase one beside it.
-			'dwellByAssignee' => $this->dwellTimeAnalyzer->aggregateDwellStatsByActor(intervals: $intervals),
-			'bottlenecks' => $this->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats),
+			'dwellByAssignee' => $this->analysers->dwellTimeAnalyzer->aggregateDwellStatsByActor(intervals: $intervals),
+			'bottlenecks' => $this->analysers->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats),
 		];
 	}//end dwellOf()
 
@@ -300,7 +297,7 @@ class ProcessMiningService {
 		DateTimeImmutable $periodFrom,
 		DateTimeImmutable $periodTo,
 	): array {
-		return $this->dwellTimeAnalyzer->computeDwellIntervals(
+		return $this->analysers->dwellTimeAnalyzer->computeDwellIntervals(
 			recordsByCase: $recordsByCase,
 			casesById: $casesById,
 			now: $now,
@@ -322,7 +319,7 @@ class ProcessMiningService {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function aggregateDwellStats(array $intervals, array $statusTypeIndex): array {
-		return $this->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
+		return $this->analysers->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
 	}//end aggregateDwellStats()
 
 	/**
@@ -337,7 +334,7 @@ class ProcessMiningService {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function rankBottlenecks(array $dwellStats): array {
-		return $this->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats);
+		return $this->analysers->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats);
 	}//end rankBottlenecks()
 
 	/**
@@ -354,7 +351,7 @@ class ProcessMiningService {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeTransitionMatrix(array $recordsByCase, array $statusTypeIndex): array {
-		return $this->transitionBuilder->computeTransitionMatrix(
+		return $this->analysers->transitionBuilder->computeTransitionMatrix(
 			recordsByCase: $recordsByCase,
 			statusTypeIndex: $statusTypeIndex
 		);
@@ -372,7 +369,7 @@ class ProcessMiningService {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeCaseTransitions(array $sortedRecords): array {
-		return $this->transitionBuilder->computeCaseTransitions(sortedRecords: $sortedRecords);
+		return $this->analysers->transitionBuilder->computeCaseTransitions(sortedRecords: $sortedRecords);
 	}//end computeCaseTransitions()
 
 	/**
@@ -389,7 +386,7 @@ class ProcessMiningService {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeThroughputTrend(array $cases, DateTimeImmutable $from, DateTimeImmutable $to): array {
-		return $this->throughputCalculator->computeThroughputTrend(cases: $cases, from: $from, to: $to);
+		return $this->analysers->throughputCalculator->computeThroughputTrend(cases: $cases, from: $from, to: $to);
 	}//end computeThroughputTrend()
 
 	/**

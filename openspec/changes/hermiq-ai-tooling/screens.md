@@ -1,4 +1,3 @@
 # Screens
 
-- No screen: curated MCP tools an AI agent calls through OpenRegister's tool registry; the change adds no page, panel or widget.
-- No screen: MCP tooling for agents, no page of its own
+- No screen: curated MCP tools an AI agent calls through OpenRegister's tool registry; no page, panel or widget.

@@ -105,6 +105,7 @@ import DatabaseCogOutline from 'vue-material-design-icons/DatabaseCogOutline.vue
 import Delete from 'vue-material-design-icons/Delete.vue'
 import DeleteClockOutline from 'vue-material-design-icons/DeleteClockOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
+import DomainSwitch from 'vue-material-design-icons/DomainSwitch.vue'
 import Download from 'vue-material-design-icons/Download.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
 import EmailAlert from 'vue-material-design-icons/EmailAlert.vue'
@@ -341,6 +342,7 @@ export default {
 	CurrencyEur,
 	DatabaseCogOutline,
 	Domain,
+	DomainSwitch,
 	Earth,
 	EmailAlert,
 	EmailMarkAsUnread,

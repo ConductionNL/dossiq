@@ -24,11 +24,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use DateTimeImmutable;
 use Exception;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
-use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
@@ -63,23 +62,19 @@ class DsoCaseService {
 	 *
 	 * @param IAppConfig $appConfig The application config service
 	 * @param ContainerInterface $container The DI container (ObjectService resolved lazily)
-	 * @param DsoStatusChangeNotifier $notifier Emits the VergunningStatusChanged domain event
+	 * @param DsoCaseSteps $steps The status change notifier, the intake case payload and the case journal.
 	 * @param LoggerInterface $logger The logger
 	 * @param ObjectServiceInterface $objectService The OpenRegister object service (ADR-084)
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
 	 *                                          arithmetic for the statutory deadlines
-	 * @param DsoIntakeCasePayload $intakeCases The case an intake record becomes
-	 * @param CaseJournal $journal The case's activity record
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
 		private readonly ContainerInterface $container,
-		private readonly DsoStatusChangeNotifier $notifier,
+		private readonly DsoCaseSteps $steps,
 		private readonly LoggerInterface $logger,
 		private readonly ObjectServiceInterface $objectService,
 		private readonly WorkingDayCalculator $workingDays,
-		private readonly DsoIntakeCasePayload $intakeCases,
-		private readonly CaseJournal $journal,
 	) {
 	}//end __construct()
 
@@ -128,7 +123,7 @@ class DsoCaseService {
 			return $existing[0];
 		}
 
-		$case = $this->intakeCases->payloadFor(permitApplicationId: $permitApplicationId, permitApplication: $permitApplication);
+		$case = $this->steps->intakeCases->payloadFor(permitApplicationId: $permitApplicationId, permitApplication: $permitApplication);
 		$case['deadlineDate'] = $this->computeDeadline(submissionDate: $case['startDate'], procedureType: $case['procedureType']);
 
 		// The saveObject() call returns an ObjectEntityInterface (ADR-084); this
@@ -261,7 +256,7 @@ class DsoCaseService {
 			$this->syncPermitApplicationStatus(objectService: $objectService, change: $change);
 		}
 
-		$this->notifier->dispatchStatusChanged(
+		$this->steps->notifier->dispatchStatusChanged(
 			requestRef: $change['requestRef'],
 			oldStatus: $change['oldStatus'],
 			newStatus: $change['newStatus'],
@@ -322,7 +317,7 @@ class DsoCaseService {
 			$entry['note'] = $change['notes'];
 		}
 
-		$changes[CaseJournal::FIELD] = $this->journal->append(case: $case, entry: $entry)[CaseJournal::FIELD];
+		$changes[CaseJournal::FIELD] = $this->steps->journal->append(case: $case, entry: $entry)[CaseJournal::FIELD];
 
 		return $changes;
 	}//end statusChanges()
