@@ -44,7 +44,8 @@
             "order": "asc"
           }
         ]
-      }
+      },
+      "initialStatus": "0f70296e-265f-54b2-8fb4-7be31558fa31"
     },
     {
       "id": "4f6f897c-20c9-5f3e-9242-025df86ca038",
@@ -56,7 +57,8 @@
       "suspensionAllowed": false,
       "confidentiality": "openbaar",
       "origin": "melden",
-      "identifier": "sloopmelding"
+      "identifier": "sloopmelding",
+      "initialStatus": "9073ad9c-9a40-5778-9ba8-2c77c2729a34"
     },
     {
       "id": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
@@ -81,7 +83,8 @@
             "order": "asc"
           }
         ]
-      }
+      },
+      "initialStatus": "f20608d3-c6af-5a46-83fa-be67234eb9ea"
     },
     {
       "id": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
@@ -91,7 +94,8 @@
       "description": "Toezichtzaak voor milieuactiviteiten (periodiek of incidenteel).",
       "confidentiality": "intern",
       "origin": "ambtshalve",
-      "identifier": "toezichtzaak-milieu"
+      "identifier": "toezichtzaak-milieu",
+      "initialStatus": "d6529b26-2e23-58bd-9862-3acc3e6d2915"
     },
     {
       "id": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
@@ -117,7 +121,8 @@
             "order": "desc"
           }
         ]
-      }
+      },
+      "initialStatus": "77c260b4-aa92-5dd8-9091-4ef0f9242e20"
     },
     {
       "id": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
@@ -127,7 +132,8 @@
       "description": "Invorderingszaak voor verbeurde dwangsommen.",
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
-      "identifier": "invorderingszaak"
+      "identifier": "invorderingszaak",
+      "initialStatus": "03658fcb-6e3e-5cc3-8625-3ad8691893f2"
     }
   ],
   "statusTypes": [

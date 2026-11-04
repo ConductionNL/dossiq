@@ -1,3 +1,4 @@
 # Screens
 
-- DqInstellingen https://identity.conduction.nl/screens/board?id=dossiq/DqInstellingen (the refusal grounds page sits under the admin settings; no board draws the list itself)
+- dossiq/DqInstellingen the admin settings the refusal grounds page sits under https://identity.conduction.nl/screens/board?id=dossiq/DqInstellingen
+- dossiq has no board of its own for the refusal grounds list.

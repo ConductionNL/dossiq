@@ -1,0 +1,46 @@
+{
+    "zgwResource": "informatieobjecttype",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "omschrijving": "{{ name }}",
+        "notes": "{{ description }}",
+        "catalogus": "{{ _baseUrl | replace({\"catalogi/v1/informatieobjecttypen\": \"catalogi/v1/catalogussen\"}) }}/{{ catalogus }}",
+        "concept": "{{ isDraft }}",
+        "vertrouwelijkheidaanduiding": "{{ confidentiality }}",
+        "informatieobjectcategorie": "{{ category }}",
+        "startValidity": "{{ validFrom }}",
+        "endValidity": "{{ validUntil }}",
+        "verplicht": "{{ isRequired }}"
+    },
+    "reverseMapping": {
+        "name": "{{ omschrijving }}",
+        "description": "{{ toelichting }}",
+        "catalogus": "{{ catalogus | zgw_extract_uuid }}",
+        "isDraft": "{{ concept }}",
+        "confidentiality": "{{ vertrouwelijkheidaanduiding }}",
+        "category": "{{ informatieobjectcategorie }}",
+        "validFrom": "{{ beginGeldigheid }}",
+        "validUntil": "{{ eindeGeldigheid }}",
+        "isRequired": "{{ verplicht }}"
+    },
+    "reverseCast": {
+        "isDraft": "bool",
+        "isRequired": "bool"
+    },
+    "cast": {
+        "concept": "bool",
+        "verplicht": "bool"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "catalogus": {
+            "field": "catalogus",
+            "extractUuid": true
+        }
+    }
+}

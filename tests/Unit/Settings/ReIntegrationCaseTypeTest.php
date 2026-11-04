@@ -193,7 +193,7 @@ class ReIntegrationCaseTypeTest extends TestCase {
 
 		self::assertArrayHasKey(key: 'migratedTo', array: $schema['properties']);
 		self::assertArrayHasKey(key: 'migratedAt', array: $schema['properties']);
-		self::assertSame(expected: '1.2.0', actual: $schema['version']);
+		self::assertSame(expected: '1.2.1', actual: $schema['version']);
 	}//end testTheTrajectoryKeepsTheStamp()
 
 	/**

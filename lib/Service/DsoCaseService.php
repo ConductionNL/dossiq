@@ -24,11 +24,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use DateTimeImmutable;
 use Exception;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
-use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
@@ -63,23 +62,19 @@ class DsoCaseService {
 	 *
 	 * @param IAppConfig $appConfig The application config service
 	 * @param ContainerInterface $container The DI container (ObjectService resolved lazily)
-	 * @param DsoStatusChangeNotifier $notifier Emits the VergunningStatusChanged domain event
+	 * @param DsoCaseSteps $steps The status change notifier, the intake case payload and the case journal.
 	 * @param LoggerInterface $logger The logger
 	 * @param ObjectServiceInterface $objectService The OpenRegister object service (ADR-084)
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
 	 *                                          arithmetic for the statutory deadlines
-	 * @param DsoIntakeCasePayload $intakeCases The case an intake record becomes
-	 * @param CaseJournal $journal The case's activity record
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
 		private readonly ContainerInterface $container,
-		private readonly DsoStatusChangeNotifier $notifier,
+		private readonly DsoCaseSteps $steps,
 		private readonly LoggerInterface $logger,
 		private readonly ObjectServiceInterface $objectService,
 		private readonly WorkingDayCalculator $workingDays,
-		private readonly DsoIntakeCasePayload $intakeCases,
-		private readonly CaseJournal $journal,
 	) {
 	}//end __construct()
 
@@ -113,19 +108,7 @@ class DsoCaseService {
 	 */
 	public function createZaakFromVergunningaanvraag(string $permitApplicationId, ?array $permitApplication = null): array {
 		$objectService = $this->getObjectService();
-
-		if ($permitApplication === null) {
-			$permitApplication = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: 'dso',
-				schema: $this->config(key: 'dso_vergunningaanvraag_schema'),
-				id: $permitApplicationId
-			);
-		}
-
-		if ($permitApplication === null) {
-			throw new RuntimeException('Vergunningaanvraag not found: ' . $permitApplicationId);
-		}
+		$permitApplication = ($permitApplication ?? $this->requirePermitApplication(permitApplicationId: $permitApplicationId));
 
 		$register = $this->config(key: 'register');
 		$caseSchema = $this->config(key: 'case_schema');
@@ -140,7 +123,7 @@ class DsoCaseService {
 			return $existing[0];
 		}
 
-		$case = $this->intakeCases->payloadFor(permitApplicationId: $permitApplicationId, permitApplication: $permitApplication);
+		$case = $this->steps->intakeCases->payloadFor(permitApplicationId: $permitApplicationId, permitApplication: $permitApplication);
 		$case['deadlineDate'] = $this->computeDeadline(submissionDate: $case['startDate'], procedureType: $case['procedureType']);
 
 		// The saveObject() call returns an ObjectEntityInterface (ADR-084); this
@@ -152,7 +135,43 @@ class DsoCaseService {
 			schema: $caseSchema,
 			object: $case
 		) ?? [];
+		$this->logCreated(permitApplicationId: $permitApplicationId, case: $case);
 
+		return $created;
+	}//end createZaakFromVergunningaanvraag()
+
+	/**
+	 * The intake record, read from its register.
+	 *
+	 * @param string $permitApplicationId The UUID of the intake record.
+	 *
+	 * @return array<string, mixed> The record.
+	 *
+	 * @throws \RuntimeException When the record is missing.
+	 */
+	private function requirePermitApplication(string $permitApplicationId): array {
+		$permitApplication = $this->findObjectAsArray(
+			objectService: $this->getObjectService(),
+			register: 'dso',
+			schema: $this->config(key: 'dso_vergunningaanvraag_schema'),
+			id: $permitApplicationId
+		);
+		if ($permitApplication === null) {
+			throw new RuntimeException('Vergunningaanvraag not found: ' . $permitApplicationId);
+		}
+
+		return $permitApplication;
+	}//end requirePermitApplication()
+
+	/**
+	 * Log a case made from an intake record.
+	 *
+	 * @param string               $permitApplicationId The UUID of the intake record.
+	 * @param array<string, mixed> $case                The case as it was written.
+	 *
+	 * @return void
+	 */
+	private function logCreated(string $permitApplicationId, array $case): void {
 		$this->logger->info(
 			'Dossiq DsoCaseService: zaak created',
 			[
@@ -163,9 +182,7 @@ class DsoCaseService {
 				'deadlineDate' => $case['deadlineDate'],
 			]
 		);
-
-		return $created;
-	}//end createZaakFromVergunningaanvraag()
+	}//end logCreated()
 
 	/**
 	 * Transition the DSO status of a DSO zaak.
@@ -201,43 +218,16 @@ class DsoCaseService {
 
 		$register = $this->config(key: 'register');
 		$caseSchema = $this->config(key: 'case_schema');
+		$case = $this->requireCase(caseId: $caseId, where: ['register' => $register, 'schema' => $caseSchema]);
 
-		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			id: $caseId
-		);
-
-		if ($case === null) {
-			throw new RuntimeException('Zaak not found: ' . $caseId);
-		}
-
-		$case = $this->normalizeToArray(value: $case);
-
-		$oldStatus = (string)($case['dsoStatus'] ?? '');
-		$requestRef = (string)($case['permitApplicationRef'] ?? '');
-
-		$changes = ['dsoStatus' => $newStatus];
-		if ($besluitdatum !== null) {
-			$changes['besluitdatum'] = $besluitdatum;
-		}
-
-		if ($notes !== null) {
-			$changes['dsoNotes'] = $notes;
-		}
-
-		$entry = [
-			'type' => 'dsoStatusChanged',
-			'userId' => $userId,
-			'oldStatus' => $oldStatus,
+		$change = [
+			'requestRef' => (string)($case['permitApplicationRef'] ?? ''),
+			'oldStatus' => (string)($case['dsoStatus'] ?? ''),
 			'newStatus' => $newStatus,
+			'besluitdatum' => $besluitdatum,
+			'notes' => $notes,
+			'userId' => $userId,
 		];
-		if ($notes !== null) {
-			$entry['note'] = $notes;
-		}
-
-		$changes[CaseJournal::FIELD] = $this->journal->append(case: $case, entry: $entry)[CaseJournal::FIELD];
 
 		// Same as above: this method returns an array to its caller.
 		$updatedCase = $this->patchObjectAsArray(
@@ -245,30 +235,92 @@ class DsoCaseService {
 			register: $register,
 			schema: $caseSchema,
 			id: $caseId,
-			changes: $changes
+			changes: $this->statusChanges(case: $case, change: $change)
 		) ?? [];
 
-		// Update the linked vergunningaanvraag status when possible.
-		if ($requestRef !== '') {
-			$this->syncPermitApplicationStatus(
-				objectService: $objectService,
-				requestRef: $requestRef,
-				newStatus: $newStatus,
-				besluitdatum: $besluitdatum
-			);
-		}
-
-		$this->notifier->dispatchStatusChanged(
-			requestRef: $requestRef,
-			oldStatus: $oldStatus,
-			newStatus: $newStatus,
-			besluitdatum: $besluitdatum,
-			notes: $notes,
-			userId: $userId,
-		);
+		$this->announce(objectService: $objectService, change: $change);
 
 		return $updatedCase;
 	}//end transitionStatus()
+
+	/**
+	 * Sync the linked vergunningaanvraag when there is one, then dispatch the change.
+	 *
+	 * @param object                     $objectService The ObjectService instance.
+	 * @param array<string, string|null> $change        The change: requestRef, oldStatus, newStatus, besluitdatum, notes, userId.
+	 *
+	 * @return void
+	 */
+	private function announce(object $objectService, array $change): void {
+		if ($change['requestRef'] !== '') {
+			$this->syncPermitApplicationStatus(objectService: $objectService, change: $change);
+		}
+
+		$this->steps->notifier->dispatchStatusChanged(
+			requestRef: $change['requestRef'],
+			oldStatus: $change['oldStatus'],
+			newStatus: $change['newStatus'],
+			besluitdatum: $change['besluitdatum'],
+			notes: $change['notes'],
+			userId: $change['userId'],
+		);
+	}//end announce()
+
+	/**
+	 * The case a transition moves, as an array.
+	 *
+	 * @param string                                  $caseId The UUID of the zaak.
+	 * @param array{register: string, schema: string} $where  Where the case lives.
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws \RuntimeException When the zaak cannot be found.
+	 */
+	private function requireCase(string $caseId, array $where): array {
+		$case = $this->findObjectAsArray(
+			objectService: $this->getObjectService(),
+			register: $where['register'],
+			schema: $where['schema'],
+			id: $caseId
+		);
+
+		if ($case === null) {
+			throw new RuntimeException('Zaak not found: ' . $caseId);
+		}
+
+		return $this->normalizeToArray(value: $case);
+	}//end requireCase()
+
+	/**
+	 * The fields a transition writes: the status, the optional decision date
+	 * and notes, and the journal with the change appended.
+	 *
+	 * @param array<string, mixed>                $case   The case.
+	 * @param array<string, string|null>          $change The change: requestRef, oldStatus, newStatus, besluitdatum, notes, userId.
+	 *
+	 * @return array<string, mixed> The fields.
+	 */
+	private function statusChanges(array $case, array $change): array {
+		$changes = ['dsoStatus' => $change['newStatus']];
+		if ($change['besluitdatum'] !== null) {
+			$changes['besluitdatum'] = $change['besluitdatum'];
+		}
+
+		$entry = [
+			'type' => 'dsoStatusChanged',
+			'userId' => $change['userId'],
+			'oldStatus' => $change['oldStatus'],
+			'newStatus' => $change['newStatus'],
+		];
+		if ($change['notes'] !== null) {
+			$changes['dsoNotes'] = $change['notes'];
+			$entry['note'] = $change['notes'];
+		}
+
+		$changes[CaseJournal::FIELD] = $this->steps->journal->append(case: $case, entry: $entry)[CaseJournal::FIELD];
+
+		return $changes;
+	}//end statusChanges()
 
 	/**
 	 * One of this app's config values.
@@ -418,59 +470,39 @@ class DsoCaseService {
 	 *
 	 * Best-effort: errors are logged but do not propagate to the caller.
 	 *
-	 * @param object $objectService The ObjectService instance
-	 * @param string $requestRef The vergunningaanvraag UUID
-	 * @param string $newStatus The new status to set
-	 * @param string|null $besluitdatum Optional decision date
+	 * @param object                     $objectService The ObjectService instance
+	 * @param array<string, string|null> $change        The vergunningaanvraag UUID (requestRef), newStatus and the optional besluitdatum
 	 *
 	 * @return void
 	 */
-	private function syncPermitApplicationStatus(
-		object $objectService,
-		string $requestRef,
-		string $newStatus,
-		?string $besluitdatum,
-	): void {
+	private function syncPermitApplicationStatus(object $objectService, array $change): void {
 		try {
-			$requestSchema = $this->appConfig->getValueString(
-				app: Application::APP_ID,
-				key: 'dso_vergunningaanvraag_schema',
-				default: ''
-			);
-
-			if ($requestSchema === '') {
-				return;
+			$requestSchema = $this->config(key: 'dso_vergunningaanvraag_schema');
+			$request = null;
+			if ($requestSchema !== '') {
+				$request = $this->findObjectAsArray(
+					objectService: $objectService,
+					register: 'dso',
+					schema: $requestSchema,
+					id: $change['requestRef']
+				);
 			}
-
-			$request = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: 'dso',
-				schema: $requestSchema,
-				id: $requestRef
-			);
 
 			if ($request === null) {
 				return;
 			}
 
-			$request['status'] = $newStatus;
-			if ($besluitdatum !== null) {
-				$request['besluitdatum'] = $besluitdatum;
+			$request['status'] = $change['newStatus'];
+			if ($change['besluitdatum'] !== null) {
+				$request['besluitdatum'] = $change['besluitdatum'];
 			}
 
-			$objectService->saveObject(
-				register: 'dso',
-				schema: $requestSchema,
-				object: $request
-			);
+			$objectService->saveObject(register: 'dso', schema: $requestSchema, object: $request);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq DsoCaseService: could not sync vergunningaanvraag status: ' . $e->getMessage(),
-				[
-					'app' => Application::APP_ID,
-					'permitApplicationRef' => $requestRef,
-				]
+				['app' => Application::APP_ID, 'permitApplicationRef' => $change['requestRef']]
 			);
 		}//end try
-	}//end syncVergunningaanvraagStatus()
+	}//end syncPermitApplicationStatus()
 }//end class

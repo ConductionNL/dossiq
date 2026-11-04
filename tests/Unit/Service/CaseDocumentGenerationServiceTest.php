@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\DocumentTemplating;
 use OCA\Dossiq\Service\CaseDocumentGenerationService;
 use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
 use OCA\Dossiq\Service\SettingsService;
@@ -36,6 +37,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\CaseDocumentGenerationService
+ * @covers \OCA\Dossiq\Service\DocumentTemplating
  * @uses \OCA\Dossiq\Service\Actions\ActionResult
  * @uses \OCA\Dossiq\Service\Flow\RetiredTemplateSyntax
  */
@@ -104,7 +106,13 @@ class CaseDocumentGenerationServiceTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new CaseDocumentGenerationService($cases, $templates, $settings, $events, $filer, new RetiredTemplateSyntax(), $l10n);
+		return new CaseDocumentGenerationService(
+			cases: $cases,
+			templating: new DocumentTemplating(templates: $templates, filer: $filer, syntax: new RetiredTemplateSyntax()),
+			settingsService: $settings,
+			events: $events,
+			l10n: $l10n,
+		);
 	}//end service()
 
 	/**

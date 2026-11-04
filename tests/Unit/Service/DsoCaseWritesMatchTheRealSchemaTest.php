@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Dso\DsoCaseSteps;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
@@ -212,6 +213,11 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 			$available['intakeCases'] = new DsoIntakeCasePayload(
 				caseTypes: new CaseTypeReferenceResolver(store: new CaseTypeStore(settingsService: $settings)),
 				journal: $available['journal']
+			);
+			$available['steps'] = new DsoCaseSteps(
+				notifier: $available['notifier'],
+				intakeCases: $available['intakeCases'],
+				journal: $available['journal'],
 			);
 		}
 

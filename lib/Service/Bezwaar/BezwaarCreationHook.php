@@ -284,8 +284,10 @@ class BezwaarCreationHook {
 	): array {
 		// Caller fields first, then enforce the canonical references and the
 		// server-derived registrar so a caller can never point the objection
-		// at a different case/decision nor forge who registered it.
+		// at a different case/decision nor forge who registered it. The status
+		// is the schema's initial one, which OpenRegister fills in.
 		$objection = $payload;
+		unset($objection['status']);
 		$objection['case'] = $objectionCaseId;
 		$objection['contestedDecision'] = $contestedDecisionId;
 		$objection['registeredBy'] = $this->resolveUserId();
