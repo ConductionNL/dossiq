@@ -1,4 +1,4 @@
 # Screens
 
-- DqZaakGerelateerd https://identity.conduction.nl/screens/board?id=dossiq/DqZaakGerelateerd
-- DqZaakDialogen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDialogen
+- dossiq/DqZaakGerelateerd zaak, gerelateerd https://identity.conduction.nl/screens/board?id=dossiq/DqZaakGerelateerd
+- dossiq/DqZaakDialogen twaalf kleine zaakdialogen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDialogen

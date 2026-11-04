@@ -1,0 +1,11 @@
+[
+    {
+        "getConfigValue": "bezwaar_schema"
+    },
+    {
+        "act": "b-self"
+    },
+    {
+        "debug": "Dossiq hearing: scheduled listener swallowed exception: service down"
+    }
+]

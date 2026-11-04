@@ -1,4 +1,4 @@
 # Screens
 
-- DqWerkbord https://identity.conduction.nl/screens/board?id=dossiq/DqWerkbord
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqWerkbord alle zaken, bordweergave https://identity.conduction.nl/screens/board?id=dossiq/DqWerkbord
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak

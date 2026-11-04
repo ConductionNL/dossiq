@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\Dossiq\Service\InternalWriteMarker;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
@@ -75,6 +76,13 @@ trait MakesBezwaarAuditTrail {
 	private ?array $independenceVerdict = null;
 
 	/**
+	 * The one in-process write marker the service and the guard share, as the app's shared instance does.
+	 *
+	 * @var InternalWriteMarker
+	 */
+	private InternalWriteMarker $internalWrites;
+
+	/**
 	 * Start an empty store and trail.
 	 *
 	 * @return void
@@ -83,6 +91,7 @@ trait MakesBezwaarAuditTrail {
 		$this->store = new RefusableRegister();
 		$this->trail = new RecordingAuditTrailMapper();
 		$this->auditErrors = [];
+		$this->internalWrites = new InternalWriteMarker();
 	}//end startBezwaarStore()
 
 	/**
@@ -211,6 +220,7 @@ trait MakesBezwaarAuditTrail {
 			auditTrail: $trail,
 			independence: $independence,
 			governanceBodies: $governanceBodies,
+			internalWrites: $this->internalWrites,
 		);
 	}//end realAdvisoryService()
 

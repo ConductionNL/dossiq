@@ -34,13 +34,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 
 use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
-use OCA\Dossiq\Service\Termijn\TermLetters;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
@@ -70,24 +70,18 @@ class TermijnNotificationService {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termService Termijn service.
-	 * @param TermNoticeSender $sender Mails a notice once, after integriq allows it.
+	 * @param TermNoticeSources $notices The term instances, the notice sender and the term letters.
 	 * @param LoggerInterface $logger Logger.
 	 * @param IJobList|null $jobList Optional job list for async dispatch.
-	 * @param TermLetters $letters The wording of every term notification. Defaulted rather than
-	 *        required, because it has no collaborators of its own and every caller that wired
-	 *        this service before the letters were split out passes four arguments.
 	 * @param RequesterNoticeSender|null $requester The one sender for requester notices. Absent,
 	 *        a sender over the e-mail transport alone, which is what this service did before.
 	 * @param CaseNumberReader|null $caseNumbers Turns a case UUID into the number a letter names.
 	 *        Absent, a letter names whatever reference its caller handed over.
 	 */
 	public function __construct(
-		private readonly TermijnService $termService,
-		private readonly TermNoticeSender $sender,
+		private readonly TermNoticeSources $notices,
 		private readonly LoggerInterface $logger,
 		private readonly ?IJobList $jobList = null,
-		private readonly TermLetters $letters = new TermLetters(),
 		private readonly ?RequesterNoticeSender $requester = null,
 		private readonly ?CaseNumberReader $caseNumbers = null,
 	) {
@@ -187,7 +181,7 @@ class TermijnNotificationService {
 			throw new InvalidArgumentException('Unknown template: ' . $type);
 		}
 
-		$instance = $this->termService->getTermijnInstance($termInstanceId);
+		$instance = $this->notices->termService->getTermijnInstance($termInstanceId);
 		$payload = $this->renderTemplate(
 			type: $type,
 			instance: $instance ?? [],
@@ -203,7 +197,7 @@ class TermijnNotificationService {
 			$case['id'] = $this->caseRefOf(instance: ($instance ?? []), context: $context);
 		}
 
-		$sender = ($this->requester ?? new RequesterNoticeSender(email: $this->sender, logger: $this->logger));
+		$sender = ($this->requester ?? new RequesterNoticeSender(email: $this->notices->sender, logger: $this->logger));
 		$moment = (string)($context['moment'] ?? $sender->momentFor(template: $type));
 
 		$dispatch = $sender->send(
@@ -312,7 +306,7 @@ class TermijnNotificationService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	public function renderTemplate(string $type, array $instance, array $context): array {
-		return $this->letters->render(type: $type, instance: $instance, context: $context);
+		return $this->notices->letters->render(type: $type, instance: $instance, context: $context);
 	}//end renderTemplate()
 
 }//end class

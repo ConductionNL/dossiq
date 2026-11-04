@@ -50,34 +50,40 @@
     },
     "empty objection id": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [],
         "logs": []
     },
     "empty panel": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [],
         "logs": []
     },
     "no store": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
                 "getObjectService"
             ]
         ],
-        "logs": []
+        "logs": [
+            [
+                "warning",
+                "Dossiq BAC: no object store; panel independence cannot be verified",
+                []
+            ]
+        ]
     },
     "no objection schema": {
         "verdict": {
@@ -431,9 +437,9 @@
     },
     "no objection": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -523,9 +529,9 @@
     },
     "first objection is used": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -566,9 +572,9 @@
     },
     "objection without a contested decision": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -609,9 +615,9 @@
     },
     "contested decision missing": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -811,9 +817,9 @@
     },
     "no author": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [
@@ -860,9 +866,9 @@
     },
     "no author, a blank member on the panel": {
         "verdict": {
-            "ok": true,
+            "ok": false,
             "member": null,
-            "reason": null
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
         },
         "calls": [
             [

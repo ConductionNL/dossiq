@@ -1,4 +1,4 @@
 # Screens
 
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
-- DqZaakBesluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqZaakBesluiten zaak, besluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten

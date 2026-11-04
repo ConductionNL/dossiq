@@ -1,3 +1,3 @@
 # Screens
 
-- DqOrganisaties https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisaties
+- dossiq/DqOrganisaties organisaties https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisaties
