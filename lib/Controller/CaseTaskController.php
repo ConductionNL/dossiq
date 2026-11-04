@@ -42,13 +42,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Exception\NoticeRefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Notice\ActionNotice;
 use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -82,6 +85,7 @@ class CaseTaskController extends Controller {
 	 * @param CaseAccessGuard       $caseAccess  Per-case authorization, fails closed.
 	 * @param IUserSession          $userSession The current session.
 	 * @param LoggerInterface       $logger      The logger.
+	 * @param IL10N                 $l10n        Translates the card notices.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -90,6 +94,7 @@ class CaseTaskController extends Controller {
 		private readonly CaseAccessGuard $caseAccess,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -136,14 +141,77 @@ class CaseTaskController extends Controller {
 
 		return $this->onTask(
 			taskId: $taskId,
-			run: fn (array $task): array => $this->tasks->complete(
-				taskId: (string)$task['id'],
-				data: $data,
-				outcome: $outcome,
-				actor: $this->currentUid()
+			run: fn (array $task): array => array_merge(
+				$this->tasks->complete(
+					taskId: (string)$task['id'],
+					data: $data,
+					outcome: $outcome,
+					actor: $this->currentUid()
+				),
+				[
+					'notice' => ActionNotice::success(
+						title: $this->l10n->t('Task %s completed.', [$this->taskTitle(task: $task)]),
+						text: $this->l10n->t('You stay on the case; the list is updated.')
+					),
+				]
 			),
 		);
 	}//end complete()
+
+	/**
+	 * Cancel one task through the engine.
+	 *
+	 * A refusal answers 409 with the engine's reason in a card notice, so the
+	 * Tasks card shows it in place of a toast.
+	 *
+	 * @param string $taskId The task UUID.
+	 *
+	 * @return JSONResponse `{ cancelled, task }`, or the refusal with its notice.
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 */
+	#[NoAdminRequired]
+	public function cancel(string $taskId): JSONResponse {
+		$reason = (string)$this->request->getParam('reason', '');
+
+		return $this->onTask(
+			taskId: $taskId,
+			run: function (array $task) use ($reason): array {
+				try {
+					return $this->tasks->cancel(taskId: (string)$task['id'], reason: $reason, actor: $this->currentUid());
+				} catch (RuntimeException $e) {
+					[$code, $why] = array_pad(explode(':', $e->getMessage(), 2), 2, '');
+					if ($code !== 'cancel_refused') {
+						throw $e;
+					}
+
+					throw new NoticeRefusedException(
+						error: 'cancel_refused',
+						notice: ActionNotice::error(
+							title: $this->l10n->t('Cancelling refused for %s:', [$this->taskTitle(task: $task)]),
+							text: trim($why)
+						),
+					);
+				}
+			},
+		);
+	}//end cancel()
+
+	/**
+	 * The title a handler knows a task by.
+	 *
+	 * @param array<string, mixed> $task The task.
+	 *
+	 * @return string
+	 */
+	private function taskTitle(array $task): string {
+		$title = trim((string)($task['title'] ?? ''));
+		if ($title === '') {
+			return (string)($task['id'] ?? '');
+		}
+
+		return $title;
+	}//end taskTitle()
 
 	/**
 	 * Take an unclaimed task that was offered to a team.
@@ -310,6 +378,8 @@ class CaseTaskController extends Controller {
 
 		try {
 			return new JSONResponse($run());
+		} catch (NoticeRefusedException $e) {
+			return new JSONResponse($e->body(), $e->status());
 		} catch (RuntimeException $e) {
 			return $this->refusal(code: $e->getMessage(), caseId: $caseId);
 		} catch (\Throwable $e) {

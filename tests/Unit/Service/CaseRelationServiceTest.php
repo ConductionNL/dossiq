@@ -697,4 +697,50 @@ class CaseRelationServiceTest extends TestCase {
 		$this->assertSame('Bezwaar Dakkapel', $rows['b']['title']);
 		$this->assertSame('', $rows['gone']['title']);
 	}//end testALegacyRelationCarriesTheFarCaseTitle()
+
+	/**
+	 * A case already hanging as the subject of another case cannot hang under a second one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 */
+	public function testASubjectHangsUnderOneCaseOnly(): void {
+		$store = [
+			'a' => ['id' => 'a', 'identifier' => 'ZAAK-A'],
+			'b' => ['id' => 'b', 'identifier' => 'ZAAK-B'],
+			'c' => ['id' => 'c', 'identifier' => 'ZAAK-C'],
+		];
+		$service = $this->makeService($store);
+		$this->assertTrue($service->addRelation(caseId: 'c', targetId: 'b', natureRelationship: 'subject')['ok']);
+
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'subject');
+
+		$this->assertSame(['ok' => false, 'reason' => 'subject_taken', 'target' => 'ZAAK-B', 'other' => 'ZAAK-C'], $result);
+		$this->assertCount(0, $this->relationsOf($store, 'a'));
+		$this->assertTrue($service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'samenhang')['ok']);
+	}//end testASubjectHangsUnderOneCaseOnly()
+
+	/**
+	 * A subject chain may not loop back to the case that would hold it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 */
+	public function testASubjectChainMayNotLoop(): void {
+		$store = [
+			'a' => ['id' => 'a', 'identifier' => 'ZAAK-A'],
+			'b' => ['id' => 'b', 'identifier' => 'ZAAK-B'],
+			'c' => ['id' => 'c', 'identifier' => 'ZAAK-C'],
+		];
+		$service = $this->makeService($store);
+		$this->assertTrue($service->addRelation(caseId: 'c', targetId: 'a', natureRelationship: 'subject')['ok']);
+		$this->assertTrue($service->addRelation(caseId: 'b', targetId: 'c', natureRelationship: 'subject')['ok']);
+
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'subject');
+
+		$this->assertSame('subject_cycle', $result['reason']);
+		$this->assertCount(0, $this->relationsOf($store, 'a'));
+	}//end testASubjectChainMayNotLoop()
 }//end class

@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\Flow\CaseFlowActions;
 use OCA\Dossiq\Service\Relation\CaseRelationDetails;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 use OCP\AppFramework\Http;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -115,6 +116,7 @@ class CaseRelationControllerTest extends TestCase {
 			caseAccessGuard: $this->caseAccessGuard,
 			caseRelationDetails: $this->details(),
 			flowActions: $this->flowActions,
+			l10n: $this->l10n(),
 		);
 	}//end setUp()
 
@@ -140,6 +142,7 @@ class CaseRelationControllerTest extends TestCase {
 			caseAccessGuard: $guard,
 			caseRelationDetails: $this->details(),
 			flowActions: $this->flowActions,
+			l10n: $this->l10n(),
 		);
 	}//end controllerWithReadableCases()
 
@@ -439,4 +442,50 @@ class CaseRelationControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testDestroyIsRefusedForUnrelatedUser()
+
+	/**
+	 * An IL10N that fills the placeholders and translates nothing.
+	 *
+	 * @return IL10N The translator.
+	 */
+	private function l10n(): IL10N {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters)
+		);
+
+		return $l10n;
+	}//end l10n()
+
+	/**
+	 * A target that already hangs as the subject of another case is a 409 with a card notice naming both.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 */
+	public function testATakenSubjectAnswersWithANotice(): void {
+		$this->authenticate();
+		$this->request->method('getParam')->willReturnCallback(
+			static function (string $k, $d = null) {
+				return match ($k) {
+					'targetId' => 'b',
+					'aardRelatie' => 'subject',
+					default => $d,
+				};
+			}
+		);
+		$this->service->method('addRelation')->willReturn(
+			['ok' => false, 'reason' => 'subject_taken', 'target' => 'ZAAK-2026-0042', 'other' => 'ZAAK-2026-0007']
+		);
+
+		$response = $this->controller->create(caseId: 'a');
+		$body     = $response->getData();
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('error', $body['notice']['variant']);
+		$this->assertSame('alert', $body['notice']['role']);
+		$this->assertSame('Not linked:', $body['notice']['title']);
+		$this->assertStringContainsString('ZAAK-2026-0042 already hangs as the subject under ZAAK-2026-0007', $body['notice']['text']);
+	}//end testATakenSubjectAnswersWithANotice()
 }//end class

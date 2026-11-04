@@ -563,4 +563,43 @@ class EngineTaskGatewayTest extends TestCase {
 		$this->assertSame(expected: [], actual: $task['candidateUsers']);
 		$this->assertSame(expected: '', actual: $task['flowRun']);
 	}//end testFindReadsTheEntitysMagicColumns()
+
+	/**
+	 * A cancel goes to the engine's cancel verb with the reason and actor,
+	 * and an engine refusal keeps the engine's own reason.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 */
+	public function testCancelAsksTheEngineAndKeepsItsRefusal(): void {
+		$engine = new class {
+			/**
+			 * @var array<int, mixed>
+			 */
+			public array $calls = [];
+
+			/**
+			 * @param string      $uuid   The task.
+			 * @param string|null $reason Why.
+			 * @param string|null $actor  Who.
+			 *
+			 * @return void
+			 */
+			public function cancel(string $uuid, ?string $reason, ?string $actor): void {
+				$this->calls[] = [$uuid, $reason, $actor];
+				if ($uuid === 'locked') {
+					throw new \RuntimeException('Only the requester may cancel this task.');
+				}
+			}
+		};
+
+		$gateway = $this->gatewayWith(service: $engine);
+
+		$this->assertTrue($gateway->cancel(taskId: 'task-1', reason: 'Dubbel', actor: 'anouk'));
+		$this->assertSame(expected: [['task-1', 'Dubbel', 'anouk']], actual: $engine->calls);
+		$this->assertFalse($gateway->cancel(taskId: 'locked', reason: null, actor: 'anouk'));
+		$this->assertSame(expected: 'Only the requester may cancel this task.', actual: $gateway->lastError());
+		$this->assertFalse($this->gatewayWith(service: null)->cancel(taskId: 'task-1', reason: null, actor: 'anouk'));
+	}//end testCancelAsksTheEngineAndKeepsItsRefusal()
 }//end class

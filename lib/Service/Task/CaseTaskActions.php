@@ -186,6 +186,35 @@ class CaseTaskActions {
 	}//end complete()
 
 	/**
+	 * Cancel one task through the engine.
+	 *
+	 * The engine decides whether the task may be cancelled now; its reason is
+	 * kept, because it is the only part a handler can act on.
+	 *
+	 * @param string $taskId The task.
+	 * @param string $reason Why, recorded on the task.
+	 * @param string $actor  Who is cancelling it.
+	 *
+	 * @return array{cancelled: bool, task: string} What happened.
+	 *
+	 * @throws RuntimeException `cancel_refused:<the engine's reason>`.
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 */
+	public function cancel(string $taskId, string $reason, string $actor): array {
+		$reasonOrNull = null;
+		if (trim($reason) !== '') {
+			$reasonOrNull = trim($reason);
+		}
+
+		if ($this->engineTasks->cancel(taskId: $taskId, reason: $reasonOrNull, actor: $actor) === false) {
+			throw new RuntimeException('cancel_refused:' . $this->engineTasks->lastError());
+		}
+
+		return ['cancelled' => true, 'task' => $taskId];
+	}//end cancel()
+
+	/**
 	 * The first required field of the task's form that the answers leave empty.
 	 *
 	 * The declaration is the task's own, under `metadata.form`, which is what

@@ -38,10 +38,12 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\Flow\CaseFlowActions;
+use OCA\Dossiq\Service\Notice\ActionNotice;
 use OCA\Dossiq\Service\Relation\CaseRelationDetails;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -64,6 +66,8 @@ class CaseRelationController extends Controller {
 		'self_relation' => Http::STATUS_BAD_REQUEST,
 		'duplicate' => Http::STATUS_CONFLICT,
 		'hierarchy_overlap' => Http::STATUS_CONFLICT,
+		'subject_taken' => Http::STATUS_CONFLICT,
+		'subject_cycle' => Http::STATUS_CONFLICT,
 		'access_denied' => Http::STATUS_FORBIDDEN,
 	];
 
@@ -84,6 +88,7 @@ class CaseRelationController extends Controller {
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly CaseRelationDetails $caseRelationDetails,
 		private readonly CaseFlowActions $flowActions,
+		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -207,11 +212,41 @@ class CaseRelationController extends Controller {
 
 		if ($result['ok'] === false) {
 			$status = self::REASON_STATUS[$result['reason'] ?? ''] ?? Http::STATUS_BAD_REQUEST;
-			return new JSONResponse($result, $status);
+			return new JSONResponse($this->withLinkNotice(result: $result), $status);
 		}
 
 		return new JSONResponse($result, Http::STATUS_CREATED);
 	}//end create()
+
+	/**
+	 * A link the RGBZ forbids answers with a card notice saying why.
+	 *
+	 * @param array<string, mixed> $result The service refusal.
+	 *
+	 * @return array<string, mixed> The refusal, with `notice` and `message` for the subject rules.
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 */
+	private function withLinkNotice(array $result): array {
+		$target = (string)($result['target'] ?? '');
+		$other  = (string)($result['other'] ?? '');
+		$text   = null;
+		if (($result['reason'] ?? '') === 'subject_taken') {
+			$text = $this->l10n->t('%1$s already hangs as the subject under %2$s. A case can hang as the subject under one case only.', [$target, $other]);
+		}
+
+		if (($result['reason'] ?? '') === 'subject_cycle') {
+			$text = $this->l10n->t('%1$s already hangs, directly or further up, under %2$s. A subject cannot hang under its own subject.', [$other, $target]);
+		}
+
+		if ($text === null) {
+			return $result;
+		}
+
+		$notice = ActionNotice::error(title: $this->l10n->t('Not linked:'), text: $text);
+
+		return $result + ['message' => $notice['title'] . ' ' . $notice['text'], 'notice' => $notice];
+	}//end withLinkNotice()
 
 	/**
 	 * Remove a typed peer relation between two cases (two-sided).
