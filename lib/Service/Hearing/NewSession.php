@@ -35,11 +35,10 @@ class NewSession {
 	/**
 	 * Constructor.
 	 *
-	 * @param array<string, mixed> $record         The record to save.
-	 * @param string               $event          Audit event slug.
-	 * @param array<string, mixed> $auditPayload   Audit entry payload.
-	 * @param string               $tag            Audit tag.
-	 * @param string               $lifecycleField Field of a state the record is born past, moved into after the create; '' for none.
+	 * @param array<string, mixed> $record       The record to save.
+	 * @param string               $event        Audit event slug.
+	 * @param array<string, mixed> $auditPayload Audit entry payload.
+	 * @param string               $tag          Audit tag.
 	 *
 	 * @return void
 	 */
@@ -48,7 +47,6 @@ class NewSession {
 		public readonly string $event,
 		public readonly array $auditPayload,
 		public readonly string $tag,
-		public readonly string $lifecycleField = '',
 	) {
 	}//end __construct()
 }//end class
