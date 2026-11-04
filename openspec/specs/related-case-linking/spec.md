@@ -188,11 +188,11 @@ far side SHALL be read back rather than written, and each side SHALL read the
 relation under the half of the pair that belongs to that side. The same type
 declared from both cases SHALL be refused.
 
-#### Scenario: the followed case reads "heeft vervolg"
+#### Scenario: the followed case reads its RGBZ type
 
 - **GIVEN** case A related to case B as a vervolg
 - **WHEN** B's Related cases tab is opened
-- **THEN** A SHALL appear under "heeft vervolg" and not under "vervolg op"
+- **THEN** A SHALL appear with "Relatie: vervolg (RGBZ)", under the group of the half of the pair that belongs to B
 - @e2e exclude {needs two related cases in the e2e register and the label pair resolved from the shipped schema; asserted in tests/Unit/Service/CaseRelationServiceTest.php::testEachSideReadsItsOwnHalfOfTheLabelPair}
 
 #### Scenario: the same type from both sides is refused

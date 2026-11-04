@@ -890,16 +890,16 @@ The case Files tab SHALL offer adding files as a primary button labelled "Add fi
 
 The case page's tab strip and its sidebar SHALL NOT carry two tabs with the same
 id or the same label in the reader's language. The history of the case is the
-tab in the strip; the sidebar tab over the audit trail SHALL be called
-"Audit trail" ("Audittrail"), as DqZaakHistorie points to it.
+tab "Historie" in the strip; the sidebar tab over the audit trail SHALL be called
+"Audit trail", as DqZaakHistorie points to it ("Volledige audit trail in de zijbalk").
 
-#### Scenario: One Geschiedenis tab
+#### Scenario: One Historie tab
 @e2e exclude {asserted for both structure profiles in tests/vitest/casePageLabelsHistoryAndTourFirst.spec.js and checked live on the tab list}
 
 - **GIVEN** a reader whose language is Dutch
 - **WHEN** they open a case
-- **THEN** exactly one tab SHALL read "Geschiedenis"
-- **AND** the sidebar SHALL offer the audit trail as "Audittrail"
+- **THEN** exactly one tab SHALL read "Historie"
+- **AND** the sidebar SHALL offer the audit trail as "Audit trail"
 
 ### Requirement: The Add location dialog draws the board
 

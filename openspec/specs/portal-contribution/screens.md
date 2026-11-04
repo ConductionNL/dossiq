@@ -9,3 +9,4 @@
 - portaliq/MijnOverzicht Mijn Zuiddrecht: overzicht https://identity.conduction.nl/screens/board?id=portaliq/MijnOverzicht
 - portaliq/MijnZaken Mijn Zuiddrecht: mijn zaken https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
 - dossiq has no board of its own for the portal pages; they are portaliq's.
+- portaliq/BerichtDetail bericht https://identity.conduction.nl/screens/board?id=portaliq/BerichtDetail
