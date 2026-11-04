@@ -1,0 +1,10 @@
+{
+    "invalid channel": {
+        "exception": [
+            "InvalidArgumentException",
+            "Invalid publication channel: fax"
+        ],
+        "calls": [],
+        "logs": []
+    }
+}
