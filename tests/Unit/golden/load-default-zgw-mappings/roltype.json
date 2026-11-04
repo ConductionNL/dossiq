@@ -1,0 +1,26 @@
+{
+    "zgwResource": "roltype",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "omschrijving": "{{ name }}",
+        "omschrijvingGeneriek": "{{ description }}",
+        "caseType": "{{ _baseUrl | replace({\"catalogi/v1/roltypen\": \"catalogi/v1/zaaktypen\"}) }}/{{ caseType }}"
+    },
+    "reverseMapping": {
+        "name": "{{ omschrijving }}",
+        "description": "{{ omschrijvingGeneriek }}",
+        "caseType": "{{ zaaktype | zgw_extract_uuid }}"
+    },
+    "valueMapping": [],
+    "queryParameterMapping": {
+        "caseType": {
+            "field": "caseType",
+            "extractUuid": true
+        }
+    }
+}

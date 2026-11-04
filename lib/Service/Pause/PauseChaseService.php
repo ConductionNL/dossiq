@@ -62,7 +62,6 @@ use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
@@ -114,9 +113,7 @@ class PauseChaseService {
 	 * Constructor.
 	 *
 	 * @param TermijnService                 $termService    The instances, their patches and their events.
-	 * @param PauseReasonReader              $reasons        What the case type declared.
-	 * @param ChaseSchedule                  $schedule       When the next reminder is due.
-	 * @param TermijnNotificationService     $notifications  The one route a citizen letter leaves by.
+	 * @param PauseChaseSources $chase The pause reasons, the chase schedule and the notification service.
 	 * @param CaseTimeline                   $timeline       The one log a handler reads.
 	 * @param SettingsService                $settings       The OpenRegister seam.
 	 * @param LoggerInterface                $logger         Logger.
@@ -126,9 +123,7 @@ class PauseChaseService {
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
-		private readonly PauseReasonReader $reasons,
-		private readonly ChaseSchedule $schedule,
-		private readonly TermijnNotificationService $notifications,
+		private readonly PauseChaseSources $chase,
 		private readonly CaseTimeline $timeline,
 		private readonly SettingsService $settings,
 		private readonly LoggerInterface $logger,
@@ -180,7 +175,7 @@ class PauseChaseService {
 		}
 
 		[$fresh, $reason] = $context;
-		if ($this->schedule->chaseDue(instance: $fresh, reason: $reason, now: $moment) === false) {
+		if ($this->chase->schedule->chaseDue(instance: $fresh, reason: $reason, now: $moment) === false) {
 			return false;
 		}
 
@@ -206,7 +201,7 @@ class PauseChaseService {
 		}
 
 		[$fresh, $reason] = $context;
-		if ($this->schedule->escalationDue(instance: $fresh, reason: $reason, now: $moment) === false) {
+		if ($this->chase->schedule->escalationDue(instance: $fresh, reason: $reason, now: $moment) === false) {
 			return false;
 		}
 
@@ -246,7 +241,7 @@ class PauseChaseService {
 		// ONE READ of the case type answers both questions: which reasons it
 		// declares, and whether it sends this message at all. Reading it twice
 		// would let the two answers come from different rows.
-		$caseType = $this->reasons->caseTypeForCase(caseId: $caseId);
+		$caseType = $this->chase->reasons->caseTypeForCase(caseId: $caseId);
 		if ((new CaseTypeHandling())->sends(caseType: $caseType, message: self::TEMPLATE) === false) {
 			// The case type turned the reminder off. That is a switch an
 			// administrator set, so it is honoured here rather than overridden
@@ -254,7 +249,7 @@ class PauseChaseService {
 			return null;
 		}
 
-		foreach ($this->reasons->reasonsIn(caseTypeRow: $caseType) as $reason) {
+		foreach ($this->chase->reasons->reasonsIn(caseTypeRow: $caseType) as $reason) {
 			if ($reason['key'] === $key) {
 				return [$fresh, $reason];
 			}
@@ -284,10 +279,10 @@ class PauseChaseService {
 			return false;
 		}
 
-		$number = ($this->schedule->sent(instance: $instance) + 1);
+		$number = ($this->chase->schedule->sent(instance: $instance) + 1);
 
 		try {
-			$this->notifications->sendTermijnNotification(
+			$this->chase->notifications->sendTermijnNotification(
 				self::TEMPLATE,
 				$instanceId,
 				$recipient,
@@ -369,7 +364,7 @@ class PauseChaseService {
 	private function escalate(array $instance, array $reason, DateTimeImmutable $moment): bool {
 		$instanceId = (string)($instance['id'] ?? '');
 		$caseId = trim((string)($instance['case'] ?? ''));
-		$sentence = $this->escalatedSentence(reason: $reason, sent: $this->schedule->sent(instance: $instance));
+		$sentence = $this->escalatedSentence(reason: $reason, sent: $this->chase->schedule->sent(instance: $instance));
 
 		$this->termService->updateTermijnInstance(
 			$instanceId,
@@ -520,7 +515,7 @@ class PauseChaseService {
 			'pauseWaitingOn' => (string)$reason['waitingOn'],
 			'chasesSent' => $chases,
 		];
-		$since = $this->schedule->pauseStartMoment(date: (string)($instance['pauzeStartDatum'] ?? ''));
+		$since = $this->chase->schedule->pauseStartMoment(date: (string)($instance['pauzeStartDatum'] ?? ''));
 		if ($since !== null) {
 			$changes['waitingSince'] = $since;
 		}

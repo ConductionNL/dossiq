@@ -1,0 +1,14 @@
+{
+    "writes": [
+        {
+            "collectionPartiesReport": "true"
+        },
+        {
+            "wooCollectionPartiesReport": "true"
+        }
+    ],
+    "answer": {
+        "collectionPartiesReport": "true",
+        "wooCollectionPartiesReport": "true"
+    }
+}

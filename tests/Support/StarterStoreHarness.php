@@ -55,13 +55,14 @@ final class StarterStoreHarness {
 	/**
 	 * Build the harness.
 	 *
-	 * @param TestCase          $test        The test, for building the mock.
-	 * @param array<int,string> $unconfigured Config keys that answer '' , so a
-	 *                                        test can say what an unconfigured
-	 *                                        schema does.
+	 * @param TestCase              $test         The test, for building the mock.
+	 * @param array<int,string>     $unconfigured Config keys that answer '' , so a
+	 *                                            test can say what an unconfigured
+	 *                                            schema does.
+	 * @param InMemoryRegister|null $register     The register to store in; a plain one when null.
 	 */
-	public function __construct(TestCase $test, array $unconfigured = []) {
-		$this->register = new InMemoryRegister();
+	public function __construct(TestCase $test, array $unconfigured = [], ?InMemoryRegister $register = null) {
+		$this->register = ($register ?? new InMemoryRegister());
 
 		$settings = $test->getMockBuilder(SettingsService::class)
 			->disableOriginalConstructor()

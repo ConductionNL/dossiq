@@ -23,7 +23,8 @@ the dashboard page type, not re-implemented inside a slot component.
 #### Scenario: A dashboard page renders exactly one page heading
 
 - **GIVEN** a user opens any of the three analytics dashboards
-- **THEN** the page renders exactly one `<h2>` page heading, supplied by the page type
+- **THEN** the page renders exactly one page heading (`<h1>`), supplied by the page type, as on board DqProcesanalyse
+- **AND** each widget carries its own `<h2>` widget title
 - **AND** no widget slot component renders its own page-level heading or subtitle
 
 ### Requirement: No dashboard page nests a dashboard inside its own widget slot

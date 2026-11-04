@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Starter\ShippedRoleSources;
 use OCA\Dossiq\Service\Starter\MunicipalRoleSetService;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCA\Dossiq\Service\Starter\ShippedFingerprint;
@@ -36,7 +37,7 @@ use Psr\Log\NullLogger;
  * Unit tests for MunicipalRoleSetService.
  *
  * @covers \OCA\Dossiq\Service\Starter\MunicipalRoleSetService
- *
+ * @covers \OCA\Dossiq\Service\Starter\ShippedRoleSources
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
  * @uses \OCA\Dossiq\Service\Starter\ShippedConfigurationService
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
@@ -78,14 +79,16 @@ class MunicipalRoleSetTest extends TestCase {
 		$session->method('getUser')->willReturn($user);
 
 		$this->roleSet = new MunicipalRoleSetService(
-			$this->harness->store,
-			new ShippedConfigurationService(
-				$this->harness->store,
-				new ShippedSets(),
-				new ShippedFingerprint(),
-				new NullLogger(),
+			new ShippedRoleSources(
+				store: $this->harness->store,
+				shipped: new ShippedConfigurationService(
+					store: $this->harness->store,
+					sets: new ShippedSets(),
+					fingerprint: new ShippedFingerprint(),
+					logger: new NullLogger(),
+				),
+				sets: new ShippedSets(),
 			),
-			new ShippedSets(),
 			$session,
 			new NullLogger(),
 		);
@@ -262,14 +265,16 @@ class MunicipalRoleSetTest extends TestCase {
 		$session->method('getUser')->willReturn($user);
 
 		$service = new MunicipalRoleSetService(
-			$blind->store,
-			new ShippedConfigurationService(
-				$blind->store,
-				new ShippedSets(),
-				new ShippedFingerprint(),
-				new NullLogger(),
+			new ShippedRoleSources(
+				store: $blind->store,
+				shipped: new ShippedConfigurationService(
+					store: $blind->store,
+					sets: new ShippedSets(),
+					fingerprint: new ShippedFingerprint(),
+					logger: new NullLogger(),
+				),
+				sets: new ShippedSets(),
 			),
-			new ShippedSets(),
 			$session,
 			new NullLogger(),
 		);

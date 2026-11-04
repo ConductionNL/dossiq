@@ -380,4 +380,23 @@ class CaseAccessPurposeServiceTest extends TestCase {
 
 		$this->assertSame([['fatma', 'advisor']], $this->bound);
 	}//end testTheRulesAreConfiguration()
+
+	/**
+	 * A configured skip purpose is what the skipping reader's entry records, under that reader.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-access-purpose/spec.md#requirement-the-cases-own-handler-opens-it-without-the-dialog
+	 */
+	public function testTheConfiguredSkipPurposeIsRecordedForTheSkippingReader(): void {
+		$this->holders = ['pieter'];
+		$service = $this->service(objects: $this->jeugdwet(), rules: '{"skipFor": ["coordinator"], "skipPurpose": "quality-check"}');
+
+		$this->assertSame(['required' => false, 'recorded' => true], $service->check(caseId: 'case-1', readerId: 'pieter'));
+		$this->assertSame(['required' => true, 'recorded' => false], $service->check(caseId: 'case-1', readerId: 'fatma'));
+		$this->assertCount(1, $this->written);
+		$this->assertSame('quality-check', $this->written[0][2]['purpose']);
+		$this->assertSame('pieter', $this->written[0][3]);
+		$this->assertSame('pieter', $this->written[0][2]['reader']);
+	}//end testTheConfiguredSkipPurposeIsRecordedForTheSkippingReader()
 }//end class

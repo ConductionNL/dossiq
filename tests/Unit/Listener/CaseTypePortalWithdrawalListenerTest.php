@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\CaseTypeLookup;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
 use OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -35,6 +36,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener
  * @covers \OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget
+ * @covers \OCA\Dossiq\Listener\CaseTypeLookup
  * @uses   \OCA\Dossiq\Service\CaseTypeResolver
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\LanguageMapText
@@ -147,9 +149,11 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 
 		return new CaseTypePortalWithdrawalListener(
 			$settings,
-			new CaseTypeResolver($store),
-			$store,
-			new PortalWithdrawalTarget(),
+			new CaseTypeLookup(
+				resolver: new CaseTypeResolver(store: $store),
+				store: $store,
+				target: new PortalWithdrawalTarget(),
+			),
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 		);

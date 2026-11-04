@@ -1,4 +1,3 @@
 # Screens
 
-- Design backlog: DqZaakBesluiten (decision 157)
-- DqZaakBesluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
+- dossiq/DqZaakBesluiten zaak, besluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
