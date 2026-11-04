@@ -48,9 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Service\Email\Filters\FilterOutcome;
-use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
-use OCA\Dossiq\Service\EmailArchivalService;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -85,26 +83,18 @@ class InboundMailIntake {
 	 * Constructor.
 	 *
 	 * @param MailGatewayInterface  $gateway     The mail gateway.
-	 * @param FilterPipeline        $pipeline    The declared filter order.
-	 * @param AuthenticationVerdict $verdicts    The four authentication results.
-	 * @param ThreadingCheck        $threading   The threading claim checker.
+	 * @param InboundMailChecks $checks The filter pipeline, the authentication verdicts and the threading check.
 	 * @param IntakePolicy          $policy      What a failing verdict means per case type.
 	 * @param IntakeLog             $log         The intake log.
-	 * @param CaseEmailRepository   $cases       Resolves a case identifier to its id.
-	 * @param UnmatchedMailIntake   $unmatched   What a message nobody claims becomes.
-	 * @param EmailArchivalService  $archival    Files the message on its case.
+	 * @param InboundMailFiling $filing The case mail repository, the unmatched mail intake and the archival service.
 	 * @param LoggerInterface       $logger      Logger.
 	 */
 	public function __construct(
 		private readonly MailGatewayInterface $gateway,
-		private readonly FilterPipeline $pipeline,
-		private readonly AuthenticationVerdict $verdicts,
-		private readonly ThreadingCheck $threading,
+		private readonly InboundMailChecks $checks,
 		private readonly IntakePolicy $policy,
 		private readonly IntakeLog $log,
-		private readonly CaseEmailRepository $cases,
-		private readonly UnmatchedMailIntake $unmatched,
-		private readonly EmailArchivalService $archival,
+		private readonly InboundMailFiling $filing,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -162,7 +152,7 @@ class InboundMailIntake {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function process(InboundMessage $message): string {
-		$verdict = $this->pipeline->run(message: $message);
+		$verdict = $this->checks->pipeline->run(message: $message);
 		if ($verdict->outcome === FilterOutcome::REJECT) {
 			$this->log->record(
 				message: $message,
@@ -174,7 +164,7 @@ class InboundMailIntake {
 			return IntakeLog::OUTCOME_REFUSED;
 		}
 
-		$results = $this->verdicts->forMessage(message: $message);
+		$results = $this->checks->verdicts->forMessage(message: $message);
 
 		if ($verdict->outcome === FilterOutcome::QUARANTINE) {
 			$this->log->record(
@@ -219,7 +209,7 @@ class InboundMailIntake {
 	 */
 	private function place(InboundMessage $message, FilterVerdict $verdict, array $results): string {
 		$caseId = $this->matchedCaseId(message: $message, results: $results);
-		$caseTypeId = $this->unmatched->fallbackCaseTypeId();
+		$caseTypeId = $this->filing->unmatched->fallbackCaseTypeId();
 		if ($caseId !== '') {
 			$caseTypeId = $this->caseTypeOf(caseId: $caseId);
 		}
@@ -283,7 +273,7 @@ class InboundMailIntake {
 		$onCase = $caseId;
 		$reason = 'Linked to the case its subject names.';
 		if ($onCase === '') {
-			$filed = $this->unmatched->caseFor(message: $message->toArray());
+			$filed = $this->filing->unmatched->caseFor(message: $message->toArray());
 			if ($filed !== null && $filed !== '') {
 				$onCase = $filed;
 				$reason = 'Filed as a new case of the fallback case type.';
@@ -306,7 +296,7 @@ class InboundMailIntake {
 		}
 
 		try {
-			$this->archival->archiveLinkedEmail(caseId: $onCase, metadata: $message->toArray());
+			$this->filing->archival->archiveLinkedEmail(caseId: $onCase, metadata: $message->toArray());
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: filing an accepted message on its case failed',
@@ -348,7 +338,7 @@ class InboundMailIntake {
 		}
 
 		$threadingResult = ($results['threading'] ?? AuthenticationResult::UNAVAILABLE);
-		if ($this->threading->allowsSubjectTagLink(threadingResult: $threadingResult) === false) {
+		if ($this->checks->threading->allowsSubjectTagLink(threadingResult: $threadingResult) === false) {
 			$this->logger->warning(
 				'Dossiq: a message naming case {identifier} claims a reply this account never sent, '
 					. 'so the subject tag was not honoured',
@@ -357,7 +347,7 @@ class InboundMailIntake {
 			return '';
 		}
 
-		$caseId = $this->cases->findCaseIdByIdentifier($identifier);
+		$caseId = $this->filing->cases->findCaseIdByIdentifier($identifier);
 		if ($caseId === null) {
 			return '';
 		}
@@ -421,7 +411,7 @@ class InboundMailIntake {
 	 */
 	private function caseTypeOf(string $caseId): string {
 		try {
-			$record = $this->cases->loadCaseRecord($caseId);
+			$record = $this->filing->cases->loadCaseRecord($caseId);
 		} catch (Throwable $e) {
 			// A case that cannot be read gets the default policy, which is
 			// quarantine. Intake runs on a cron, and a case deleted between the

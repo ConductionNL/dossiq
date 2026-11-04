@@ -51,6 +51,14 @@ class TermCaseTypeResolver {
 	public const UNRESOLVED = 'unresolved';
 
 	/**
+	 * The most case types one title search reads: a slug can name several
+	 * versions of a case type, so the slug count is no bound.
+	 *
+	 * @var int
+	 */
+	private const TITLE_SEARCH_LIMIT = 500;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings.
@@ -87,13 +95,9 @@ class TermCaseTypeResolver {
 			ids: array_map(fn (array $row): string => $this->ref(value: ($row['deadlineDefinition'] ?? null)), $rows)
 		);
 
-		$titlesBySlug = [];
-		foreach ($caseTypes as $caseType) {
-			$titlesBySlug[$this->caseTypeKey(caseType: $caseType)] = $this->text->textOf(value: ($caseType['title'] ?? null));
-		}
-
 		$byRow = [];
 		$unresolved = [];
+		$slugs = [];
 		foreach ($rows as $index => $row) {
 			$case = ($cases[$this->ref(value: ($row['case'] ?? null))] ?? null);
 			$caseTypeId = $this->ref(value: ($case['caseType'] ?? null));
@@ -105,13 +109,19 @@ class TermCaseTypeResolver {
 
 			$slug = trim((string)($definitions[$this->ref(value: ($row['deadlineDefinition'] ?? null))]['caseType'] ?? ''));
 			if ($slug !== '') {
-				$byRow[$index] = ['key' => $slug, 'title' => ($titlesBySlug[$slug] ?? '')];
+				$byRow[$index] = ['key' => $slug, 'title' => ''];
+				$slugs[$index] = $slug;
 				continue;
 			}
 
 			$byRow[$index] = ['key' => self::UNRESOLVED, 'title' => ''];
 			$unresolved[] = (string)($row['id'] ?? '');
 		}//end foreach
+
+		$titles = $this->titlesBySlug(caseTypes: $caseTypes, slugs: $slugs);
+		foreach ($slugs as $index => $slug) {
+			$byRow[$index]['title'] = ($titles[$slug] ?? '');
+		}
 
 		return ['byRow' => $byRow, 'unresolved' => $unresolved];
 	}//end resolve()
@@ -144,6 +154,65 @@ class TermCaseTypeResolver {
 	}//end caseTypeKey()
 
 	/**
+	 * The title of each case type a slug names: from the case types already
+	 * read, and otherwise searched for the leftover slugs only.
+	 *
+	 * @param array<string, array<string, mixed>> $caseTypes The case types already read.
+	 * @param array<int, string>                  $slugs     The slugs that need a title.
+	 *
+	 * @return array<string, string> The title per slug.
+	 */
+	private function titlesBySlug(array $caseTypes, array $slugs): array {
+		$titles = [];
+		foreach ($caseTypes as $caseType) {
+			$titles[$this->caseTypeKey(caseType: $caseType)] = $this->text->textOf(value: ($caseType['title'] ?? null));
+		}
+
+		$leftover = array_values(array_diff(array_unique($slugs), array_map('strval', array_keys($titles))));
+		$byIdentifier = $this->titlesWhere(field: 'identifier', slugs: $leftover);
+		$bySlug = $this->titlesWhere(field: 'slug', slugs: array_values(array_diff($leftover, array_keys($byIdentifier))));
+
+		return ($titles + $byIdentifier + $bySlug);
+	}//end titlesBySlug()
+
+	/**
+	 * The titles of the case types whose identifier, or metadata slug, is one of these slugs, in one search.
+	 *
+	 * A definition names its case type by the key {@see self::caseTypeKey()}
+	 * reports it under, which is either field; OpenRegister matches a list
+	 * as any of its values, but cannot match either of two fields at once.
+	 *
+	 * @param string             $field `identifier`, or `slug` for the metadata slug.
+	 * @param array<int, string> $slugs The slugs; none searches nothing.
+	 *
+	 * @return array<string, string> The title per slug found.
+	 *
+	 * @throws \Throwable When the search itself fails.
+	 */
+	private function titlesWhere(string $field, array $slugs): array {
+		if ($slugs === []) {
+			return [];
+		}
+
+		$filter = [$field => $slugs];
+		if ($field === 'slug') {
+			$filter = ['@self' => ['slug' => $slugs]];
+		}
+
+		$titles = [];
+		foreach ($this->search(configKey: 'case_type_schema', filters: ($filter + ['_limit' => self::TITLE_SEARCH_LIMIT])) as $caseType) {
+			$slug = trim((string)($caseType[$field] ?? ''));
+			if ($field === 'slug') {
+				$slug = trim((string)($caseType['@self']['slug'] ?? ''));
+			}
+
+			$titles[$slug] = $this->text->textOf(value: ($caseType['title'] ?? null));
+		}
+
+		return $titles;
+	}//end titlesWhere()
+
+	/**
 	 * Read the rows with these ids from one schema, in one search.
 	 *
 	 * @param string             $configKey The schema's config key.
@@ -155,24 +224,12 @@ class TermCaseTypeResolver {
 	 */
 	private function batch(string $configKey, array $ids): array {
 		$ids = array_values(array_unique(array_filter($ids, static fn (string $id): bool => $id !== '')));
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($configKey);
-		if ($ids === [] || $objectService === null || $register === '' || $schema === '') {
+		if ($ids === []) {
 			return [];
 		}
 
-		// A failed read throws: answering [] would report every term as
-		// unresolved and pass a wrong quarterly count off as a true one.
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_ids' => $ids, '_limit' => count($ids)]
-		);
-
 		$keyed = [];
-		foreach ($rows as $row) {
+		foreach ($this->search(configKey: $configKey, filters: ['_ids' => $ids, '_limit' => count($ids)]) as $row) {
 			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 			if ($id !== '') {
 				$keyed[$id] = $row;
@@ -181,6 +238,29 @@ class TermCaseTypeResolver {
 
 		return $keyed;
 	}//end batch()
+
+	/**
+	 * One search of one schema with the caller's own access, nothing when it is not configured.
+	 *
+	 * @param string               $configKey The schema's config key.
+	 * @param array<string, mixed> $filters   The filters.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 *
+	 * @throws \Throwable When the search itself fails.
+	 */
+	private function search(string $configKey, array $filters): array {
+		$schema = (string)$this->settingsService->getConfigValue($configKey);
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$objectService = $this->settingsService->getObjectService();
+		if ($schema === '' || $register === '' || $objectService === null) {
+			return [];
+		}
+
+		// A failed read throws: answering [] would report every term as
+		// unresolved and pass a wrong quarterly count off as a true one.
+		return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
+	}//end search()
 
 	/**
 	 * The id a reference carries, whether it arrived as a uuid or as a row.

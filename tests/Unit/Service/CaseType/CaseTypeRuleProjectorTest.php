@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeRuleSources;
 use OCA\Dossiq\Service\CaseType\CaseTypeRuleFlowDocument;
 use OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector;
 use OCA\Dossiq\Service\CaseType\RuleConditionLogic;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\SiblingOpenRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -143,10 +145,12 @@ class CaseTypeRuleProjectorTest extends TestCase {
 		return new CaseTypeRuleProjector(
 			store: $store,
 			settings: $settings,
-			documents: new CaseTypeRuleFlowDocument(logic: new RuleConditionLogic()),
+			sources: new CaseTypeRuleSources(
+				documents: new CaseTypeRuleFlowDocument(logic: new RuleConditionLogic()),
+				resolver: $resolver,
+			),
 			container: $container,
 			logger: new NullLogger(),
-			resolver: $resolver
 		);
 	}//end projector()
 
@@ -204,12 +208,7 @@ class CaseTypeRuleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheFilterKeepsOnlyTheCasesTheRuleIsAbout(): void {
-		$library = dirname(__DIR__, 5) . '/openregister/vendor/jwadhams/json-logic-php/src/JWadhams/JsonLogic.php';
-		if (is_file($library) === false) {
-			$this->markTestSkipped('needs a sibling openregister checkout with its vendor, for JSONLogic');
-		}
-
-		require_once $library;
+		require_once SiblingOpenRegister::path(relative: 'vendor/jwadhams/json-logic-php/src/JWadhams/JsonLogic.php');
 		$condition = $this->projector(rules: [self::WELSTAND])->plan(caseTypeId: 'type-1')['flows'][0]['nodes'][1]['config']['condition'];
 		$holds = static fn (array $case): bool => (bool)\JWadhams\JsonLogic::apply($condition, ['json' => $case]);
 
@@ -303,12 +302,7 @@ class CaseTypeRuleProjectorTest extends TestCase {
 		);
 		$this->assertSame(['variant' => 'Met welstand'], $plan['flows'][1]['nodes'][2]['config']['fields']);
 
-		$library = dirname(__DIR__, 5) . '/openregister/vendor/jwadhams/json-logic-php/src/JWadhams/JsonLogic.php';
-		if (is_file($library) === false) {
-			$this->markTestSkipped('needs a sibling openregister checkout with its vendor, for JSONLogic');
-		}
-
-		require_once $library;
+		require_once SiblingOpenRegister::path(relative: 'vendor/jwadhams/json-logic-php/src/JWadhams/JsonLogic.php');
 		$condition = $plan['flows'][1]['nodes'][1]['config']['condition'];
 		$case = ['caseType' => 'type-1', 'bouwkosten' => 150000];
 		$this->assertTrue((bool)\JWadhams\JsonLogic::apply($condition, ['json' => $case]));
@@ -334,12 +328,7 @@ class CaseTypeRuleProjectorTest extends TestCase {
 		$this->assertCount(1, $plan['flows']);
 		$this->assertSame(['type' => 'dossiq.setCaseAnswer', 'config' => ['name' => 'welstandsgebied', 'value' => true]], array_intersect_key($plan['flows'][0]['nodes'][2], ['type' => 1, 'config' => 1]));
 
-		$library = dirname(__DIR__, 5) . '/openregister/vendor/jwadhams/json-logic-php/src/JWadhams/JsonLogic.php';
-		if (is_file($library) === false) {
-			$this->markTestSkipped('needs a sibling openregister checkout with its vendor, for JSONLogic');
-		}
-
-		require_once $library;
+		require_once SiblingOpenRegister::path(relative: 'vendor/jwadhams/json-logic-php/src/JWadhams/JsonLogic.php');
 		$condition = $plan['flows'][0]['nodes'][1]['config']['condition'];
 		$case = ['caseType' => 'type-1', 'properties' => [['name' => 'bouwkosten', 'value' => 150000], ['name' => 'welstandsgebied', 'value' => false]]];
 		$this->assertTrue((bool)\JWadhams\JsonLogic::apply($condition, ['json' => $case]));

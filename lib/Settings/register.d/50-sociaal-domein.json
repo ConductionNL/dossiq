@@ -1111,8 +1111,9 @@
             "reIntegratieTraject": {
                 "slug": "reIntegratieTraject",
                 "icon": "StairsUp",
-                "version": "1.2.0",
+                "version": "1.2.1",
                 "searchable": false,
+                "x-openregister-demo-data": "A trajectory is a case of the re-integratietraject case type, and that case type package ships the example. ReIntegrationCaseTypeTest refuses placeholder trajectories in the mock register.",
                 "title": "Return to work trajectory",
                 "description": "Participatiewet re-integratietraject met instrumenten (loonkostensubsidie, scholing, jobcoaching), tegenprestatie en vrijstellingen. OpenRegister-backed.",
                 "type": "object",

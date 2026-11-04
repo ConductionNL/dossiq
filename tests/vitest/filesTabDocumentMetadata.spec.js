@@ -66,7 +66,7 @@ describe('the Files tab keeps the documents list\'s metadata', () => {
 		expect((files.newActions ?? []).some((action) => action.id === 'generate-document')).toBe(false)
 		const header = manifest.pages.find((page) => page.id === 'CaseDetail').config.headerActions
 		const entry = header.find((action) => action.id === 'generate-document')
-		expect(entry).toMatchObject({ type: 'open-modal', target: 'BeschikkingComposerDialog', props: { caseId: '@objectId' } })
+		expect(entry).toMatchObject({ type: 'open-modal', target: 'GenerateDocumentDialog', props: { caseId: '@objectId' } })
 	})
 
 	it('labels a direction', async () => {

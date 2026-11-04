@@ -9,7 +9,7 @@
  * card, every card names a category the register allows, and Melding
  * Jeugdwet lists health.
  *
- * @spec openspec/specs/case-detail/spec.md
+ * @spec openspec/specs/case-page/spec.md
  */
 
 import fs from 'fs'

@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Email;
 
+use OCA\Dossiq\Service\Email\InboundMailFiling;
+use OCA\Dossiq\Service\Email\InboundMailChecks;
 use OCA\Dossiq\Service\Email\AuthenticationResult;
 use OCA\Dossiq\Service\Email\AuthenticationVerdict;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
@@ -58,6 +60,8 @@ use Psr\Log\LoggerInterface;
  * Covers the six outcomes, the policy branches and the threading guard.
  *
  * @covers \OCA\Dossiq\Service\Email\InboundMailIntake
+ * @covers \OCA\Dossiq\Service\Email\InboundMailChecks
+ * @covers \OCA\Dossiq\Service\Email\InboundMailFiling
  * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
  * @uses \OCA\Dossiq\Service\Email\InboundMessage
  * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
@@ -202,14 +206,18 @@ final class InboundMailIntakeTest extends TestCase {
 	private function intake(): InboundMailIntake {
 		return new InboundMailIntake(
 			gateway: $this->gateway,
-			pipeline: $this->pipeline,
-			verdicts: $this->verdicts,
-			threading: $this->threading,
+			checks: new InboundMailChecks(
+				pipeline: $this->pipeline,
+				verdicts: $this->verdicts,
+				threading: $this->threading,
+			),
 			policy: $this->policy,
 			log: $this->log,
-			cases: $this->cases,
-			unmatched: $this->unmatched,
-			archival: $this->archival,
+			filing: new InboundMailFiling(
+				cases: $this->cases,
+				unmatched: $this->unmatched,
+				archival: $this->archival,
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end intake()

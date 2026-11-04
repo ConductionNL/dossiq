@@ -371,14 +371,15 @@ not reachable from each of its open statuses.
 - **WHEN** they save a withdrawal onto Ingetrokken while Ontvangen
 - **THEN** the save MUST be refused with a sentence naming Ingetrokken
 
-### Requirement: The Woo request action declares its four steps (REQ-SWS-001)
-The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`: "Uw vraag"
-(`onderwerp`, `omschrijving`), "Periode en documenten" (`periodeVan`, `periodeTot`,
-`documentSoorten`, `toelichting`), "Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`,
-`verzoekerType`) and "Controleren en versturen" as a review of every answer. Every whitelisted
-field MUST belong to exactly one step. Each step MUST use the keys `id`, `title`,
-`description` and `fields`; the review step MUST carry `review: true` and no fields. The
-labels MUST be the ones of `DossiqWoo.dc.html`. No field MUST be declared `required`: portaliq
+### Requirement: The Woo request action declares its three steps (REQ-SWS-001)
+The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`: "Uw verzoek"
+(`onderwerp`, `omschrijving`, `periodeVan`, `periodeTot`, `documentSoorten`, `toelichting`),
+"Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`, `verzoekerType`) and "Controleren en
+versturen" as a review of every answer. Every whitelisted field MUST belong to exactly one
+step. Each step MUST use the keys `id`, `title`, `description` and `fields`; the review step
+MUST carry `review: true` and no fields. The step titles MUST be the ones of the portal boards
+`WooVerzoek`, `WooVerzoekGegevens` and `WooVerzoekControleren`. The period and the kinds of
+document MUST keep their input, their options and the checks the route makes on them. No field MUST be declared `required`: portaliq
 drops `required` on an action without a schema (portaliq REQ-SMF-023). The steps, draft and
 confirmation follow portaliq REQ-SMF-020 to REQ-SMF-022, which cover endpoint actions with
 `fields`. This builds on REQ-PORTAL-020 and keeps its endpoint, method
@@ -387,8 +388,13 @@ and assertion.
 #### Scenario: A resident moves through the steps
 - **GIVEN** a resident signed in with DigiD on a site that renders declared steps
 - **WHEN** they start "Informatie opvragen (Woo-verzoek)"
-- **THEN** the form MUST show step 1 of 4, "Uw vraag", and only its two fields
-- **AND** step 4 MUST list every answer with a link to change the step it came from
+- **THEN** the form MUST show step 1 of 3, "Uw verzoek", with the question, the period and the kinds of document
+- **AND** step 3 MUST list every answer with a link to change the step it came from
+
+#### Scenario: The period and the kinds of document keep their checks
+- **GIVEN** the declared action
+- **WHEN** a resident sends an end date before the start date, a date that does not exist, or a kind of document that is not on the list
+- **THEN** the route MUST refuse the request and name that field
 
 #### Scenario: No form-only required field
 - **GIVEN** the declared action
@@ -539,13 +545,13 @@ The case schema MUST carry `portalTurn`, a calculation that is `applicant` when
 `thirdParty`, `us` otherwise, and empty when the case has an `endDate`. The citizen case
 projection MUST include `portalTurn`, `waitingOnApplicant` and `waitingOn`. The `mijnZaken`
 collection MUST declare `turnField: 'portalTurn'`, `dueField: 'deadline'` and value labels on
-`portalTurn`, so a case card reads "U bent aan zet", "Wij wachten op informatie van een ander"
-or "De gemeente is aan zet". A closed case MUST show no such line. This is a new requirement.
+`portalTurn`, so a case card reads "Wacht op u" when it is `applicant` and "In behandeling" when it is
+`thirdParty` or `us`. A closed case MUST show no such line. This is a new requirement.
 
 #### Scenario: The case waits on the resident
 - **GIVEN** a running case with an open aanvullingsverzoek
 - **WHEN** the resident's overview lists the case
-- **THEN** the case card MUST read "U bent aan zet"
+- **THEN** the case card MUST read "Wacht op u"
 
 #### Scenario: The card reads one declared field
 - **GIVEN** the `mijnZaken` collection
@@ -555,7 +561,7 @@ or "De gemeente is aan zet". A closed case MUST show no such line. This is a new
 #### Scenario: The case waits on the organisation
 - **GIVEN** a running case in a status whose `waitingOn` is `us` and no open request
 - **WHEN** the overview lists it
-- **THEN** the card MUST read "De gemeente is aan zet"
+- **THEN** the card MUST read "In behandeling"
 
 ### Requirement: A case hands the portal its steps (REQ-SRPD-003)
 The provider MUST answer `caseSteps(caseId)` with the case type's statuses in `order`, folded

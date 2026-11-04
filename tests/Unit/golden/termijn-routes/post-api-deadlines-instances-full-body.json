@@ -1,0 +1,18 @@
+{
+    "status": 201,
+    "data": {
+        "id": "inst-1",
+        "answeredBy": "createTermijnInstance"
+    },
+    "calls": [
+        {
+            "call": "term::createTermijnInstance",
+            "args": [
+                "case-1",
+                "slug-bezwaar",
+                null,
+                null
+            ]
+        }
+    ]
+}

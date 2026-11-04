@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
 use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IUserSession;
@@ -308,4 +309,37 @@ class BezwaarCreationHookTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->service->onBezwaarCreated('bezwaar-1', 'decision-missing');
 	}//end testThrowsWhenDecisionNotFound()
+	/**
+	 * The objection opens in its schema's initial status, whatever status the
+	 * caller sends. The register refuses a create in any other status
+	 * (openregister#5400).
+	 *
+	 * @return void
+	 */
+	public function testTheObjectionOpensInItsInitialStatus(): void {
+		$register = new LifecycleRegister();
+		$register->seed(schema: 'decision', uuid: 'decision-1', row: ['case' => 'primair-1']);
+		$register->seed(schema: 'case', uuid: 'bezwaar-1', row: ['title' => 'Bezwaar']);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				'decision_schema' => 'decision',
+				'objection_schema' => 'objectionProceeding',
+				default => '',
+			}
+		);
+		$hook = new BezwaarCreationHook($settings, $this->userSession, $this->logger);
+
+		$hook->onBezwaarCreated('bezwaar-1', 'decision-1', ['grounds' => 'Te laat', 'status' => 'Decision on objection']);
+
+		$objections = $register->all('objectionProceeding');
+		$this->assertCount(1, $objections);
+		$this->assertSame('Received', $objections[0]['status']);
+		$this->assertSame('Te laat', $objections[0]['grounds']);
+		$this->assertSame('bezwaar-1', $objections[0]['case']);
+	}//end testTheObjectionOpensInItsInitialStatus()
 }//end class

@@ -56,18 +56,14 @@ class OutboundCaseMail {
 	 * Constructor.
 	 *
 	 * @param MailGatewayInterface $gateway   The mail app.
-	 * @param SenderIdentity       $identity  Which account a case's mail leaves from.
-	 * @param MailTransportPolicy  $policy    Which transport each kind leaves through.
-	 * @param CaseMailOptOut       $optOut    Places the unsubscribe link and headers.
+	 * @param OutboundMailPolicy $transport The sender identity, the transport policy and the opt-out.
 	 * @param IMailer              $mailer    Nextcloud's mailer, for kinds configured to it.
 	 * @param IAppConfig           $appConfig The sender address IMailer sends from.
 	 * @param LoggerInterface      $logger    Logger.
 	 */
 	public function __construct(
 		private readonly MailGatewayInterface $gateway,
-		private readonly SenderIdentity $identity,
-		private readonly MailTransportPolicy $policy,
-		private readonly CaseMailOptOut $optOut,
+		private readonly OutboundMailPolicy $transport,
 		private readonly IMailer $mailer,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
@@ -90,9 +86,9 @@ class OutboundCaseMail {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
 	 */
 	public function senderFor(array $caseData, string $kind = MailTransportPolicy::KIND_CASE_MAIL): array {
-		$transport = $this->policy->transportFor(kind: $kind);
+		$transport = $this->transport->policy->transportFor(kind: $kind);
 		if ($transport === MailTransportPolicy::TRANSPORT_MAIL_ACCOUNT) {
-			$account = $this->identity->accountForCase(caseData: $caseData);
+			$account = $this->transport->identity->accountForCase(caseData: $caseData);
 
 			return ['transport' => $transport, 'from' => (string)$account['email'], 'account' => $account];
 		}
@@ -140,7 +136,7 @@ class OutboundCaseMail {
 				account: (array)$sender['account'],
 				to: $to,
 				subject: $subject,
-				bodies: $this->optOut->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain),
+				bodies: $this->transport->optOut->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain),
 				attachments: $attachments
 			);
 		}
@@ -159,7 +155,7 @@ class OutboundCaseMail {
 		);
 		$message->setTo([$to]);
 		$message->setSubject($subject);
-		$this->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe, plain: $plain);
+		$this->transport->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe, plain: $plain);
 
 		try {
 			$this->mailer->send($message);

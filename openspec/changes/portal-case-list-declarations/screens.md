@@ -1,5 +1,5 @@
-- DqZaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktype
-- PtZaaktypeWeergave https://identity.conduction.nl/screens/board?id=portaliq/PtZaaktypeWeergave
 # Screens
 
-- No screen: dossiq half is a manifest declaration, the screen is in portaliq
+- dossiq/DqZaaktype zaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktype
+- portaliq/PtZaaktypeWeergave weergave van een zaaktype https://identity.conduction.nl/screens/board?id=portaliq/PtZaaktypeWeergave
+- dossiq has no board of its own for the portal case list; its half is a manifest declaration.
