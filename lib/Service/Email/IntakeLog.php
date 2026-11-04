@@ -452,7 +452,7 @@ class IntakeLog {
 	 *
 	 * @return array{objectService: object, register: string, schema: string}|null The store, register and schema.
 	 *
-	 * @spec openspec/specs/email-integration/spec.md
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function target(): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -473,7 +473,7 @@ class IntakeLog {
 	 *
 	 * @return string|null The stored entry's id ('' when it has none), or null when nothing was stored.
 	 *
-	 * @spec openspec/specs/email-integration/spec.md
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function saveEntry(array $write, array $failure): ?string {
 		$stored = null;
@@ -502,7 +502,7 @@ class IntakeLog {
 	 *
 	 * @return array<string, mixed> Identity, correspondents, subject and dates.
 	 *
-	 * @spec openspec/specs/email-integration/spec.md
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function messageFields(InboundMessage $message): array {
 		return [
@@ -526,7 +526,7 @@ class IntakeLog {
 	 *
 	 * @return array<string, string> The verdict, then spf, dkim, dmarc and threading.
 	 *
-	 * @spec openspec/specs/email-integration/spec.md
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function verdictFields(FilterVerdict $verdict, array $results): array {
 		return [
@@ -547,7 +547,7 @@ class IntakeLog {
 	 *
 	 * @return array{original: string, originalTruncated: bool} The original fields.
 	 *
-	 * @spec openspec/specs/email-integration/spec.md
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function originalFields(InboundMessage $message): array {
 		if (strlen($message->source) > self::ORIGINAL_LIMIT_BYTES) {
