@@ -254,7 +254,8 @@ class PackageInstaller {
 			return $refusal + ['errors' => $validation['errors']];
 		}
 
-		$missing = $this->capabilities->missing(requires: $this->requirements(manifest: $manifest));
+		$run = new PackageInstallRun(id: $id, manifest: $manifest, package: $package, overLocalChanges: $overLocalChanges);
+		$missing = $this->capabilities->missing(requires: $run->requirements());
 		if ($missing !== []) {
 			return $this->outcome(
 				status: self::REFUSED,
@@ -268,133 +269,129 @@ class PackageInstaller {
 			return $this->outcome(status: self::CURRENT, id: $id, version: $version, message: "Package '{$id}' {$version} is already installed.");
 		}
 
-		return $this->write(
-			id: $id,
-			version: $version,
-			manifest: $manifest,
-			package: $package,
-			overLocalChanges: $overLocalChanges,
-		);
+		return $this->write(run: $run);
 	}//end installPackage()
 
 	/**
 	 * Write a valid package whose requirements are met and that is not current, and record it.
 	 *
-	 * @param string               $id               The package id.
-	 * @param string               $version          The package version.
-	 * @param array<string, mixed> $manifest         The manifest.
-	 * @param array<string, mixed> $package          The package as PackageDirectory::read() gives it.
-	 * @param boolean              $overLocalChanges Whether a row changed here takes the package's keys.
+	 * @param PackageInstallRun $run The install.
 	 *
 	 * @return array<string, mixed> The outcome.
 	 */
-	private function write(string $id, string $version, array $manifest, array $package, bool $overLocalChanges): array {
-		$files = (array)$package['files'];
-		$digest = (string)$package['digest'];
+	private function write(PackageInstallRun $run): array {
 		if ($this->ledger->ledgerAvailable() === false) {
-			return $this->outcome(
-				status: self::FAILED,
-				id: $id,
-				version: $version,
-				message: "Package '{$id}' was not installed: the shipped-set ledger is not configured, so its rows could not be recorded.",
+			return $this->failed(
+				run: $run,
+				message: "Package '{$run->id}' was not installed: the shipped-set ledger is not configured, so its rows could not be recorded.",
 			);
 		}
 
-		$parts = (array)($manifest['parts'] ?? []);
-		$settings = [];
-		if (in_array('settings', $parts, true) === true) {
-			$settings = (array)json_decode($files['settings.json'], true);
-		}
-
-		// Every address the package names, in a setting or a seed file, is
-		// found on this instance before a row is written.
-		$resolved = $this->references->resolve(settings: $settings);
-		$groups = $this->groups(id: $id, parts: $parts, files: $files);
-		$missing = array_merge($resolved['missing'], array_column($groups, 'missing'));
-		if ($missing !== []) {
+		$plan = $this->plan(run: $run);
+		if ($plan['missing'] !== []) {
 			return $this->outcome(
 				status: self::REFUSED,
-				id: $id,
-				version: $version,
-				message: "Package '{$id}' needs " . implode('; ', array_merge($resolved['reasons'], array_column($groups, 'reason'))) . '.',
-			) + ['missing' => array_values(array_unique($missing))];
+				id: $run->id,
+				version: $run->version,
+				message: "Package '{$run->id}' needs " . implode('; ', $plan['reasons']) . '.',
+			) + ['missing' => array_values(array_unique($plan['missing']))];
 		}
 
-		$settings = $resolved['settings'];
-
-		$result = $this->writer->writePackage(package: $id, groups: $groups);
+		$result = $this->writer->writePackage(package: $run->id, groups: $plan['groups']);
 		if ($result['status'] !== 'success') {
-			return $this->outcome(status: self::FAILED, id: $id, version: $version, message: $result['message']);
+			return $this->failed(run: $run, message: $result['message']);
 		}
 
-		$recorded = $this->record(id: $id, version: $version, written: $result['written'])
-			&& $this->record(id: $id, version: $version, written: $this->notYetInThisPackage(id: $id, adopted: $result['adopted']))
-			&& $this->ledger->recordPackage(set: $id, version: $version, digest: $digest);
-		if ($recorded === false) {
+		if ($this->recordAll(run: $run, result: $result) === false) {
 			$this->writer->undo(written: $result['written']);
 
-			return $this->outcome(
-				status: self::FAILED,
-				id: $id,
-				version: $version,
-				message: "Package '{$id}' was not installed: a row could not be recorded in the shipped-set ledger, so every row was taken back.",
+			return $this->failed(
+				run: $run,
+				message: "Package '{$run->id}' was not installed: a row could not be recorded in the shipped-set ledger, so every row was taken back.",
 			);
 		}
 
-		// After the write and the ledger record: a filled or refreshed row
-		// changes what was there and cannot be taken back with the rest of a
-		// failed install. An adopted case type only gains fields it lacked.
-		$filled = $this->writer->fillAdopted(adopted: $result['adopted']);
-		$refresh = $this->ledger->refreshRows(
-			set: $id,
-			version: $version,
-			rows: $result['held'],
-			overLocalChanges: $overLocalChanges,
-		);
-
-		$this->applySettings(settings: $settings);
-
-		$this->logger->info(
-			'Installed package {id} {version}: {written} row(s) written, {adopted} adopted ({filled} given fields they lacked),'
-			. ' {skipped} already present ({refreshed} refreshed, {kept} kept as this instance holds them)',
-			[
-				'id' => $id,
-				'version' => $version,
-				'written' => count($result['written']),
-				'adopted' => count($result['adopted']),
-				'filled' => count($filled),
-				'skipped' => count($result['skipped']),
-				'refreshed' => count($refresh['refreshed']),
-				'kept' => count($refresh['kept']),
-			]
-		);
-
-		return $this->outcome(status: self::INSTALLED, id: $id, version: $version, message: $result['message'])
-			+ [
-				'written' => count($result['written']),
-				'adopted' => count($result['adopted']),
-				'filled' => count($filled),
-				'skipped' => count($result['skipped']),
-				'refreshed' => count($refresh['refreshed']),
-				'kept' => $refresh['kept'],
-			];
+		return $this->complete(run: $run, done: ['result' => $result, 'settings' => $plan['settings']]);
 	}//end write()
 
 	/**
-	 * Everything the package requires: what it names, and what its parts imply.
+	 * What a write needs before a row is written: every address the package
+	 * names, in a setting or a seed file, looked up on this instance.
 	 *
-	 * @param array<string, mixed> $manifest The manifest.
+	 * @param PackageInstallRun $run The install.
 	 *
-	 * @return array<int, string> The requirements.
+	 * @return array{settings: array<string, mixed>, groups: array<int, array<string, mixed>>, missing: array<int, mixed>, reasons: array<int, mixed>}
+	 *         The resolved settings, the row groups, and what is missing with why.
 	 */
-	private function requirements(array $manifest): array {
-		$requires = array_map('strval', (array)($manifest['requires'] ?? []));
-		foreach ((array)($manifest['parts'] ?? []) as $part) {
-			$requires[] = (ShippedPackageRules::PART_CAPABILITY[(string)$part] ?? (string)$part);
-		}
+	private function plan(PackageInstallRun $run): array {
+		$resolved = $this->references->resolve(settings: $run->settings());
+		$groups = $this->groups(run: $run);
 
-		return array_values(array_unique($requires));
-	}//end requirements()
+		return [
+			'settings' => $resolved['settings'],
+			'groups' => $groups,
+			'missing' => array_merge($resolved['missing'], array_column($groups, 'missing')),
+			'reasons' => array_merge($resolved['reasons'], array_column($groups, 'reason')),
+		];
+	}//end plan()
+
+	/**
+	 * Record the written rows, the adopted rows this package has not recorded
+	 * before, and the package itself in the shipped-set ledger, stopping at
+	 * the first that fails.
+	 *
+	 * @param PackageInstallRun    $run    The install.
+	 * @param array<string, mixed> $result The writer's answer.
+	 *
+	 * @return boolean True when everything was recorded.
+	 */
+	private function recordAll(PackageInstallRun $run, array $result): bool {
+		return $this->record(run: $run, written: $result['written'])
+			&& $this->record(run: $run, written: $this->notYetInThisPackage(id: $run->id, adopted: $result['adopted']))
+			&& $this->ledger->recordPackage(set: $run->id, version: $run->version, digest: $run->digest);
+	}//end recordAll()
+
+	/**
+	 * Fill the adopted rows, refresh the held ones, apply the settings, and
+	 * answer what the install did.
+	 *
+	 * Runs after the write and the ledger record: a filled or refreshed row
+	 * changes what was there and cannot be taken back with the rest of a
+	 * failed install. An adopted case type only gains fields it lacked.
+	 *
+	 * @param PackageInstallRun    $run  The install.
+	 * @param array<string, mixed> $done The writer's answer (`result`) and the resolved `settings`.
+	 *
+	 * @return array<string, mixed> The outcome.
+	 */
+	private function complete(PackageInstallRun $run, array $done): array {
+		$result = $done['result'];
+		$filled = $this->writer->fillAdopted(adopted: $result['adopted']);
+		$refresh = $this->ledger->refreshRows(
+			set: $run->id,
+			version: $run->version,
+			rows: $result['held'],
+			overLocalChanges: $run->overLocalChanges,
+		);
+
+		$this->applySettings(settings: $done['settings']);
+
+		$counts = [
+			'written' => count($result['written']),
+			'adopted' => count($result['adopted']),
+			'filled' => count($filled),
+			'skipped' => count($result['skipped']),
+			'refreshed' => count($refresh['refreshed']),
+		];
+		$this->logger->info(
+			'Installed package {id} {version}: {written} row(s) written, {adopted} adopted ({filled} given fields they lacked),'
+			. ' {skipped} already present ({refreshed} refreshed, {kept} kept as this instance holds them)',
+			['id' => $run->id, 'version' => $run->version] + $counts + ['kept' => count($refresh['kept'])]
+		);
+
+		return $this->outcome(status: self::INSTALLED, id: $run->id, version: $run->version, message: $result['message'])
+			+ $counts + ['kept' => $refresh['kept']];
+	}//end complete()
 
 	/**
 	 * The package's rows, grouped by the settings key of the schema they go to.
@@ -404,17 +401,15 @@ class PackageInstaller {
 	 * example rows (a case in flight, its dates relative to today) the same way,
 	 * on an instance that opted into example data.
 	 *
-	 * @param string                $id    The package id.
-	 * @param array<int, mixed>     $parts The declared parts.
-	 * @param array<string, string> $files The package files.
+	 * @param PackageInstallRun $run The install.
 	 *
 	 * @return array<int, array<string, mixed>> The groups: `schemaKey` and `rows`, and for a seed file
 	 *                                          `match`, `register` and `schema`, or `missing` and `reason`.
 	 */
-	private function groups(string $id, array $parts, array $files): array {
+	private function groups(PackageInstallRun $run): array {
 		$groups = [];
-		if (in_array('case-type', $parts, true) === true) {
-			$caseType = (array)json_decode($files['case-type.json'], true);
+		if (in_array('case-type', $run->parts, true) === true) {
+			$caseType = (array)json_decode($run->files['case-type.json'], true);
 			foreach (self::CASE_TYPE_SCHEMAS as $collection => $schemaKey) {
 				$rows = ($caseType[$collection] ?? []);
 				if (is_array($rows) === true && $rows !== [] && array_is_list($rows) === false) {
@@ -425,17 +420,17 @@ class PackageInstaller {
 			}
 		}
 
-		if (in_array('flows', $parts, true) === true) {
-			$groups[] = ['schemaKey' => 'workflow_template_schema', 'rows' => $this->packages->rowsUnder(files: $files, dir: 'flows/')];
+		if (in_array('flows', $run->parts, true) === true) {
+			$groups[] = ['schemaKey' => 'workflow_template_schema', 'rows' => $this->packages->rowsUnder(files: $run->files, dir: 'flows/')];
 		}
 
-		if (in_array('seed', $parts, true) === true) {
-			foreach ($this->packages->rowsUnder(files: $files, dir: 'seed/') as $seed) {
+		if (in_array('seed', $run->parts, true) === true) {
+			foreach ($this->packages->rowsUnder(files: $run->files, dir: 'seed/') as $seed) {
 				$groups[] = $this->references->seedGroup(seed: $seed);
 			}
 		}
 
-		array_push($groups, ...$this->exampleGroups(id: $id, parts: $parts, files: $files));
+		array_push($groups, ...$this->exampleGroups(run: $run));
 
 		return array_values(array_filter($groups, static fn (array $group): bool => $group['rows'] !== []));
 	}//end groups()
@@ -445,20 +440,18 @@ class PackageInstaller {
 	 * today; none without an `examples` part, and none on an instance that
 	 * has not opted into example data.
 	 *
-	 * @param string                $id    The package id.
-	 * @param array<int, mixed>     $parts The declared parts.
-	 * @param array<string, string> $files The package files.
+	 * @param PackageInstallRun $run The install.
 	 *
 	 * @return array<int, array<string, mixed>> The groups, as {@see self::groups()} returns them.
 	 */
-	private function exampleGroups(string $id, array $parts, array $files): array {
-		if (in_array('examples', $parts, true) === false) {
+	private function exampleGroups(PackageInstallRun $run): array {
+		if (in_array('examples', $run->parts, true) === false) {
 			return [];
 		}
 
 		$examples = new PackageExamples(appConfig: $this->appConfig, logger: $this->logger);
 		$groups = [];
-		foreach ($examples->toWrite(package: $id, examples: $this->packages->rowsUnder(files: $files, dir: 'examples/')) as $example) {
+		foreach ($examples->toWrite(package: $run->id, examples: $this->packages->rowsUnder(files: $run->files, dir: 'examples/')) as $example) {
 			$groups[] = $this->references->seedGroup(seed: $example);
 		}
 
@@ -468,20 +461,19 @@ class PackageInstaller {
 	/**
 	 * Record every written row in the shipped-set ledger, under the package id.
 	 *
-	 * @param string                           $id      The package id, which is the set name.
-	 * @param string                           $version The package version.
+	 * @param PackageInstallRun                $run     The install; its package id is the set name.
 	 * @param array<int, array<string, mixed>> $written The rows written.
 	 *
 	 * @return boolean True when every row was recorded.
 	 */
-	private function record(string $id, string $version, array $written): bool {
+	private function record(PackageInstallRun $run, array $written): bool {
 		foreach ($written as $row) {
 			$stamped = $this->ledger->stamp(
-				set: $id,
+				set: $run->id,
 				targetSchema: (string)$row['schema'],
 				targetObject: (string)$row['id'],
 				object: (array)$row['row'],
-				version: $version,
+				version: $run->version,
 				objectsKey: (string)($row['schemaKey'] ?? ''),
 			);
 			if ($stamped === false) {
@@ -566,4 +558,16 @@ class PackageInstaller {
 	private function outcome(string $status, string $id, string $version, string $message): array {
 		return ['status' => $status, 'package' => $id, 'version' => $version, 'message' => $message];
 	}//end outcome()
+
+	/**
+	 * The outcome of an install that failed.
+	 *
+	 * @param PackageInstallRun $run     The install.
+	 * @param string            $message What happened, for a person.
+	 *
+	 * @return array{status: string, package: string, version: string, message: string}
+	 */
+	private function failed(PackageInstallRun $run, string $message): array {
+		return $this->outcome(status: self::FAILED, id: $run->id, version: $run->version, message: $message);
+	}//end failed()
 }//end class
