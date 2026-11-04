@@ -131,9 +131,9 @@
                         "items": {
                             "type": "object",
                             "properties": {
-                                "kind": { "type": "string" },
-                                "type": { "type": "string" },
-                                "value": { "type": "string" }
+                                "kind": { "title": "Kind", "description": "What the address is for: correspondence, case or location.", "type": "string" },
+                                "type": { "title": "Type", "description": "How the address reaches the person: email, phone or postal.", "type": "string" },
+                                "value": { "title": "Address", "description": "The email address, phone number or postal address itself.", "type": "string" }
                             }
                         },
                         "default": []
@@ -145,10 +145,10 @@
                         "items": {
                             "type": "object",
                             "properties": {
-                                "key": { "type": "string" },
-                                "label": { "type": "string" },
-                                "effect": { "type": "string" },
-                                "note": { "type": "string" }
+                                "key": { "title": "Key", "description": "The stable key of the indicator, so a rule can name it without depending on its wording.", "type": "string" },
+                                "label": { "title": "Label", "description": "What the indicator is called on screen and in the refusal that names it.", "type": "string" },
+                                "effect": { "title": "Effect", "description": "What it does: warn shows the reader a notice and blocks nothing, refuse-publication refuses publishing a file on a case this party is on, refuse-send refuses an outbound message to this party.", "type": "string" },
+                                "note": { "title": "Note", "description": "Why the indicator was set, for the handler who meets the refusal.", "type": "string" }
                             }
                         },
                         "default": []
@@ -249,10 +249,10 @@
                         "items": {
                             "type": "object",
                             "properties": {
-                                "key": { "type": "string" },
-                                "label": { "type": "string" },
-                                "effect": { "type": "string" },
-                                "note": { "type": "string" }
+                                "key": { "title": "Key", "description": "The stable key of the indicator, so a rule can name it without depending on its wording.", "type": "string" },
+                                "label": { "title": "Label", "description": "What the indicator is called on screen and in the refusal that names it.", "type": "string" },
+                                "effect": { "title": "Effect", "description": "What it does: warn shows the reader a notice and blocks nothing, refuse-publication refuses publishing a file on a case this party is on, refuse-send refuses an outbound message to this party.", "type": "string" },
+                                "note": { "title": "Note", "description": "Why the indicator was set, for the handler who meets the refusal.", "type": "string" }
                             }
                         },
                         "default": []

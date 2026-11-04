@@ -31,7 +31,11 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\Listener\BezwaarAdviceRequestedListener;
 use OCA\Dossiq\Listener\BezwaarDecisionListener;
 use OCA\Dossiq\Listener\BezwaarHearingScheduledListener;
+use OCA\Dossiq\Listener\DeliberationStartGuard;
+use OCA\Dossiq\Service\InternalWriteMarker;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -53,6 +57,20 @@ class BezwaarListenerRegistrar {
 	 */
 	public function register(IRegistrationContext $context): void {
 		$this->registerObjectionStatusListeners(context: $context);
+
+		// One instance for AdvisoryCommitteeService and DeliberationStartGuard:
+		// the service marks its save on it and the guard reads it.
+		$context->registerService(
+			name: InternalWriteMarker::class,
+			factory: static fn (): InternalWriteMarker => new InternalWriteMarker(),
+			shared: true
+		);
+
+		// Unnarrowed on purpose: a refusing guard must not depend on the
+		// subscription filter resolving at boot.
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $preSave) {
+			$context->registerEventListener(event: $preSave, listener: DeliberationStartGuard::class);
+		}
 	}//end register()
 
 	/**

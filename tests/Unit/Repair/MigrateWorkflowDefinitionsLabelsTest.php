@@ -42,6 +42,9 @@ use Psr\Log\LoggerInterface;
  * What the backfill writes, and what it heals.
  *
  * @covers \OCA\Dossiq\Repair\MigrateWorkflowDefinitions
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillSchemas
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillTarget
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillCaseType
  * @covers \OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels
  *
  * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md

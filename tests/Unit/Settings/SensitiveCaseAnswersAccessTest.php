@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Tests\Support\SiblingOpenRegister;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -39,34 +40,13 @@ use Psr\Log\NullLogger;
  * @preserveGlobalState disabled
  */
 class SensitiveCaseAnswersAccessTest extends TestCase {
-	private const OPENREGISTER_LIB = __DIR__ . '/../../../../openregister/lib';
-
 	/**
 	 * Put OpenRegister's real source in front of the stubs, for this process only.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$lib = realpath(self::OPENREGISTER_LIB);
-		if ($lib === false || is_dir($lib) === false) {
-			self::markTestSkipped(message: 'No sibling openregister checkout at ' . self::OPENREGISTER_LIB . '. CI clones it, so this runs there.');
-		}
-
-		spl_autoload_register(
-			static function (string $class) use ($lib): void {
-				$prefix = 'OCA\\OpenRegister\\';
-				if (str_starts_with($class, $prefix) === false) {
-					return;
-				}
-
-				$file = $lib . '/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
-				if (is_file($file) === true) {
-					require_once $file;
-				}
-			},
-			true,
-			true
-		);
+		SiblingOpenRegister::loadNamespace(namespace: '');
 	}//end setUp()
 
 	/**

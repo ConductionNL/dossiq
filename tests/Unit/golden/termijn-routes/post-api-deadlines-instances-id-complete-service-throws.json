@@ -1,0 +1,23 @@
+{
+    "status": 400,
+    "data": {
+        "message": "Refused by markTermijnCompleted"
+    },
+    "calls": [
+        {
+            "call": "term::markTermijnCompleted",
+            "args": [
+                "inst-1",
+                null,
+                "",
+                ""
+            ]
+        },
+        {
+            "call": "logger::info",
+            "args": [
+                "Voltooi failed: Refused by markTermijnCompleted"
+            ]
+        }
+    ]
+}

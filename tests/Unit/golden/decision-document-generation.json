@@ -1,0 +1,1612 @@
+{
+    "granted": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "fileId": 41,
+                        "fileName": "besluit.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "refused": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_geweigerd",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-no",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_refused",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "refused",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "refused",
+                        "fileId": 41,
+                        "fileName": "besluit.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Refused"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "another outcome uses the granted template": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_withdrawn",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "withdrawn",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "withdrawn",
+                        "fileId": 41,
+                        "fileName": "besluit.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Withdrawn"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "no template configured": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1",
+                    "outcome": "granted",
+                    "templateId": "",
+                    "hasDocumentService": true,
+                    "hasUser": true
+                }
+            ]
+        ]
+    },
+    "no document app": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\DocuDesk\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "debug",
+                "Dossiq BeschikkingGenerationService: no DocumentService under any name filinq has shipped under.",
+                {
+                    "app": "dossiq"
+                }
+            ],
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1",
+                    "outcome": "granted",
+                    "templateId": "tpl-ok",
+                    "hasDocumentService": false,
+                    "hasUser": true
+                }
+            ]
+        ]
+    },
+    "document app without generateDocument": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: the resolved DocumentService has no generateDocument(); filinq has changed its contract.",
+                {
+                    "app": "dossiq",
+                    "class": "stdClass"
+                }
+            ],
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1",
+                    "outcome": "granted",
+                    "templateId": "tpl-ok",
+                    "hasDocumentService": false,
+                    "hasUser": true
+                }
+            ]
+        ]
+    },
+    "no session": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1",
+                    "outcome": "granted",
+                    "templateId": "tpl-ok",
+                    "hasDocumentService": true,
+                    "hasUser": false
+                }
+            ]
+        ]
+    },
+    "empty uid": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1",
+                    "outcome": "granted",
+                    "templateId": "tpl-ok",
+                    "hasDocumentService": true,
+                    "hasUser": false
+                }
+            ]
+        ]
+    },
+    "generated with top-level file": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "fileId": 7,
+                        "fileName": "top.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "generated output not a list": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "fileId": 8,
+                        "fileName": "beschikking_granted.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "generated nothing": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "fileId": "",
+                        "fileName": "beschikking_granted.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "generation fails": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Stub beschikking bijlage created (document generation failed)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BeschikkingGenerationService: document generation failed: render failed",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1"
+                }
+            ]
+        ]
+    },
+    "generation fails, refused": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Stub beschikking bijlage created (document generation failed)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_geweigerd",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-no",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_refused",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "refused",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "refused",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Refused (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BeschikkingGenerationService: document generation failed: render failed",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1"
+                }
+            ]
+        ]
+    },
+    "attachment saved by uuid": {
+        "answer": {
+            "success": true,
+            "bijlageId": "u-1",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "fileId": 41,
+                        "fileName": "besluit.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "attachment saved without id": {
+        "answer": {
+            "success": true,
+            "bijlageId": "",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "fileId": 41,
+                        "fileName": "besluit.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "attachment save fails": {
+        "answer": {
+            "success": true,
+            "bijlageId": "",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "fileId": 41,
+                        "fileName": "besluit.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BeschikkingGenerationService: could not attach bijlage: save refused",
+                {
+                    "app": "dossiq"
+                }
+            ]
+        ]
+    },
+    "stub saved by uuid": {
+        "answer": {
+            "success": true,
+            "bijlageId": "u-2",
+            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1",
+                    "outcome": "granted",
+                    "templateId": "tpl-ok",
+                    "hasDocumentService": true,
+                    "hasUser": false
+                }
+            ]
+        ]
+    },
+    "stub saved without id": {
+        "answer": {
+            "success": true,
+            "bijlageId": "stub-case-1",
+            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1",
+                    "outcome": "granted",
+                    "templateId": "tpl-ok",
+                    "hasDocumentService": true,
+                    "hasUser": false
+                }
+            ]
+        ]
+    },
+    "stub save fails": {
+        "answer": {
+            "success": true,
+            "bijlageId": "stub-case-1",
+            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1",
+                    "outcome": "granted",
+                    "templateId": "tpl-ok",
+                    "hasDocumentService": true,
+                    "hasUser": false
+                }
+            ],
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: could not create stub bijlage: save refused",
+                {
+                    "app": "dossiq"
+                }
+            ]
+        ]
+    },
+    "generation fails, stub save fails": {
+        "answer": {
+            "success": true,
+            "bijlageId": "stub-case-1",
+            "message": "Stub beschikking bijlage created (document generation failed)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "reg",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "motivation": "Past in het plan",
+                        "stub": true,
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted (stub)"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BeschikkingGenerationService: document generation failed: render failed",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1"
+                }
+            ],
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: could not create stub bijlage: save refused",
+                {
+                    "app": "dossiq"
+                }
+            ]
+        ]
+    },
+    "no object service": {
+        "answer": {
+            "success": true,
+            "bijlageId": "",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BeschikkingGenerationService: could not attach bijlage: not registered: OCA\\OpenRegister\\Service\\ObjectService",
+                {
+                    "app": "dossiq"
+                }
+            ]
+        ]
+    },
+    "no object service, no session": {
+        "answer": {
+            "success": true,
+            "bijlageId": "stub-case-1",
+            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-1",
+                    "outcome": "granted",
+                    "templateId": "tpl-ok",
+                    "hasDocumentService": true,
+                    "hasUser": false
+                }
+            ],
+            [
+                "warning",
+                "Dossiq BeschikkingGenerationService: could not create stub bijlage: not registered: OCA\\OpenRegister\\Service\\ObjectService",
+                {
+                    "app": "dossiq"
+                }
+            ]
+        ]
+    },
+    "register not configured": {
+        "answer": {
+            "success": true,
+            "bijlageId": "bijlage-1",
+            "message": "Beschikking generated and attached."
+        },
+        "calls": [
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "dso_beschikking_template_verleend",
+                    ""
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\Filinq\\Service\\DocumentService"
+            ],
+            [
+                "DocumentService::generateDocument",
+                [
+                    "tpl-ok",
+                    [],
+                    {
+                        "format": "pdf",
+                        "caseId": "case-1",
+                        "userId": "anna",
+                        "filename": "beschikking_granted",
+                        "adHocData": {
+                            "caseId": "case-1",
+                            "outcome": "granted",
+                            "motivation": "Past in het plan",
+                            "date": "<today>"
+                        },
+                        "output": {
+                            "mode": "files"
+                        }
+                    }
+                ]
+            ],
+            [
+                "Container::get",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "IAppConfig::getValueString",
+                [
+                    "dossiq",
+                    "register",
+                    ""
+                ]
+            ],
+            [
+                "ObjectService::saveObject",
+                {
+                    "register": "",
+                    "schema": "beschikking_bijlage",
+                    "object": {
+                        "caseId": "case-1",
+                        "type": "beschikking",
+                        "outcome": "granted",
+                        "fileId": 41,
+                        "fileName": "besluit.pdf",
+                        "createdAt": "<now>",
+                        "title": "Beschikking Granted"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    }
+}

@@ -1,5 +1,5 @@
 # Screens
 
-- DqInspectie https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie
-- DqTaak https://identity.conduction.nl/screens/board?id=dossiq/DqTaak
-- DqZaakContact https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact
+- dossiq/DqInspectie inspectie in het veld, mobiel https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie
+- dossiq/DqTaak taak https://identity.conduction.nl/screens/board?id=dossiq/DqTaak
+- dossiq/DqZaakContact zaak, tabblad contact https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact

@@ -10,9 +10,9 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import manifest from '../../src/manifest.json'
-import register from '../../lib/Settings/dossiq_register.json'
 import nl from '../../l10n/nl.json'
+import register from '../../lib/Settings/dossiq_register.json'
+import manifest from '../../src/manifest.json'
 
 const dutch = (key) => nl.translations[key] || key
 const config = manifest.pages.find((page) => page.id === 'CaseDetail').config
