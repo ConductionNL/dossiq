@@ -111,7 +111,6 @@ class PipelinqCaseControllerTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new PipelinqContactMomentController(
-			'dossiq',
 			$this->request,
 			new ContactMomentBridge($this->gateway(), $this->createMock(LoggerInterface::class)),
 			$this->log,
