@@ -5,7 +5,7 @@
  * Board DqInspectie: the day's inspections read "09:30 · <checklist>" with the
  * state as a toned word (Klaar green, Bezig blue, Gepland neutral), the outbox
  * says Wacht (amber) or Conflict (red), and the running checklist opens at its
- * first open question.
+ * first open question, keeping where each answer was given.
  *
  * @spec openspec/changes/archive/2026-10-30-screens-round12-field-inspection/tasks.md
  */
@@ -99,5 +99,14 @@ describe('the field inspection board', () => {
 	it('asks for a note only under an answer of no, as the board draws it', () => {
 		const run = widget('checklist-run').content
 		expect(run.noteWhen).toEqual({ answers: [run.choiceValues.no] })
+	})
+
+	it('keeps where each answer was given in a field the run schema declares, rough beyond 50 metres', () => {
+		const run = widget('checklist-run').content
+		const schema = read('lib/Settings/dossiq_register.json').components.schemas.inspectionChecklistRun
+		const answer = schema.properties[run.answersPath].items.properties[run.captureLocation.field]
+
+		expect(run.captureLocation).toEqual({ field: 'gpsAtAnswer', goodAccuracy: 50 })
+		expect(Object.keys(answer.properties)).toEqual(['lat', 'lng', 'accuracy', 'at', 'low', 'address'])
 	})
 })

@@ -77,7 +77,6 @@ import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 // The case as OpenRegister stored it, behind the admin-only Inspect action.
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
 import CaseLocationDialog from './dialogs/CaseLocationDialog.vue'
-import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 import CasePublishDialog from './dialogs/CasePublishDialog.vue'
 import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
@@ -447,14 +446,6 @@ const registry = {
 		_note: 'One menu holding every lifecycle act on the case (REQ-LIFE-10). The acts used to sit in three places, each gated differently, so a handler found out what they could do by trying. It merges /available-transitions, /lifecycle and /acts into one list and DERIVES NOTHING: every disabled and every reason is copied from a server answer. An act the handler may not perform is SHOWN disabled with the reason, never hidden, because the reason is what tells them who to ask. THAT IS NOW THE ONLY LIFECYCLE SURFACE. This note used to end "CaseLifecycleActionDialog stays: the stages widget opens it directly for Resume", and it did not: the stages widget is the library `stages` widget, which cannot resolve a dossiq registry name, and no manifest action named that dialog either. It is retired in retire-the-dead-dialogs. Every gesture it offered, Suspend, Resume, Extend term and Reopen, is here, with the same reason prompt, an empty reason refused, and the same /lifecycle read before the post.',
 	},
 
-	// @spec openspec/changes/case-merge/specs/case-management/spec.md
-	CaseMergeDialog: {
-		kind: 'modal',
-		component: CaseMergeDialog,
-		propsSchema: {},
-		_note: "Merging two cases into one (REQ-CM-37). The survivor is searched for and picked, never defaulted, because the reversal window is seven days and a preselected survivor is one that gets confirmed. The refusals are the server's and are shown verbatim beside their code: a signed beschikking and an already merged case are two different answers with two different ways out. WHY THE ACTION IS HIDDEN ON A CLOSED CASE, moved here from the manifest entry: a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server's and arrive as a sentence in the dialog; hiding them in the header too would leave a handler wondering why an act they were told about is not there. The manifest entry carries no `_note` because `$defs/action` sets `additionalProperties: false`, which is the same reason CasePlanFollowUpDialog above records.",
-	},
-
 	// @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
 	GatherDocumentsDialog: {
 		kind: 'modal',
@@ -500,7 +491,7 @@ const registry = {
 		kind: 'modal',
 		component: CaseSplitDialog,
 		propsSchema: {},
-		_note: "Dividing one case in two (REQ-CM-50). The inverse of CaseMergeDialog and a different act from CaseCopyDialog: a copy opens a second case holding everything, so both claim the same document, and a split MOVES what is ticked and leaves a reference behind. Nothing is ticked for the handler, because which document belongs to which half is a judgement about content and a default selection is a judgement that gets confirmed. A party ticked as moving AND as on both halves is two contradictory instructions, so the button refuses rather than the server picking one. The refusals are the server's and shown verbatim, and the one the case type produces is CaseSplitPolicy's own sentence, which names what may still be divided as well as what may not. The header action that opens it is hidden on a CLOSED case, for the same reason the merge is: a closed case is a record of what was decided. That reasoning lives here and not in the manifest because the v2 manifest schema rejects `_note` on a header action.",
+		_note: "Dividing one case in two (REQ-CM-50). The inverse of Merge into and a different act from CaseCopyDialog: a copy opens a second case holding everything, so both claim the same document, and a split MOVES what is ticked and leaves a reference behind. Nothing is ticked for the handler, because which document belongs to which half is a judgement about content and a default selection is a judgement that gets confirmed. A party ticked as moving AND as on both halves is two contradictory instructions, so the button refuses rather than the server picking one. The refusals are the server's and shown verbatim, and the one the case type produces is CaseSplitPolicy's own sentence, which names what may still be divided as well as what may not. The header action that opens it is hidden on a CLOSED case, for the same reason the merge is: a closed case is a record of what was decided. That reasoning lives here and not in the manifest because the v2 manifest schema rejects `_note` on a header action.",
 	},
 
 	// --- Copy a case, from its own page (case-actions-menu, row A24). ---

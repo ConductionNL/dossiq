@@ -117,7 +117,7 @@ class DuplicatePolicy {
 	 * OpenRegister's scorer. Resolved by name so dossiq keeps no compile-time
 	 * dependency on it.
 	 */
-	private const DETECTION_SERVICE = 'OCA\OpenRegister\Service\Quality\DuplicateDetectionService';
+	private const DETECTION_SERVICE = 'OCA\OpenRegister\Search\Service\Quality\DuplicateDetectionService';
 
 	/**
 	 * Constructor.
@@ -392,7 +392,7 @@ class DuplicatePolicy {
 	 *
 	 * @return array<array-key, mixed> The answer, empty when it could not be had.
 	 *
-	 * @psalm-param callable(\OCA\OpenRegister\Service\Quality\DuplicateDetectionService): mixed $call
+	 * @psalm-param callable(\OCA\OpenRegister\Search\Service\Quality\DuplicateDetectionService): mixed $call
 	 */
 	private function askDetection(string $what, callable $call): array {
 		try {
