@@ -326,30 +326,6 @@ class MenuCaseTypesService {
 	}//end chosen()
 
 	/**
-	 * Store a new list for the user, cleaned against what they may see.
-	 *
-	 * @param string $userId The user.
-	 * @param array<int, mixed> $ids The uuids in menu order, as sent.
-	 * @param array<int, array{id: string, title: string}> $visible The result of offeredCaseTypes().
-	 *
-	 * @return array<int, array{id: string, title: string}> The list as stored.
-	 *
-	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
-	 */
-	public function save(string $userId, array $ids, array $visible): array {
-		$kept = $this->keepVisible(ids: $ids, visible: $visible);
-
-		$this->config->setUserValue(
-			userId: $userId,
-			appName: Application::APP_ID,
-			key: self::USER_KEY,
-			value: (string)json_encode(array_column($kept, 'id'))
-		);
-
-		return $kept;
-	}//end save()
-
-	/**
 	 * Keep the ids that name a visible case type, first occurrence only, up to the cap.
 	 * An id of a superseded version counts as the version in use.
 	 *
