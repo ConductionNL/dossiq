@@ -69,69 +69,89 @@ class LegalHoldApplier {
 		bool $includeDeleted,
 		OutputInterface $output,
 	): int {
-		$held = 0;
-		$already = 0;
-		$unresolved = 0;
+		$run = new HoldRun(objectMapper: $objectMapper, legalHoldService: $legalHoldService, apply: $apply, includeDeleted: $includeDeleted);
+		$tally = ['held' => 0, 'already' => 0, 'unresolved' => 0];
 
 		$output->writeln('');
 		$output->writeln('<info>Cases with at least one OPEN Awb proceeding:</info>');
 
 		foreach ($candidates as $caseId => $meta) {
-			$caseObject = $this->findCase(
-				objectMapper: $objectMapper,
-				caseId: (string)$caseId,
-				includeDeleted: $includeDeleted
-			);
-
-			if ($caseObject === null) {
-				// A dangling reference: the proceeding names a case that does not
-				// exist (or is soft-deleted and not in scope). Reported, never
-				// silently dropped — a hold that cannot be placed is a finding.
-				$output->writeln('  <comment>[unresolved]</comment> ' . $caseId . ' — ' . $this->describe(meta: $meta));
-				$unresolved++;
-				continue;
-			}
-
-			if ($legalHoldService->hasActiveHold($caseObject) === true) {
-				$output->writeln('  <comment>[already held]</comment> ' . $caseId . ' — ' . $this->describe(meta: $meta));
-				$already++;
-				continue;
-			}
-
-			if ($apply === false) {
-				$output->writeln('  <info>[would hold]</info> ' . $caseId . ' — ' . $this->describe(meta: $meta));
-				$held++;
-				continue;
-			}
-
-			try {
-				$legalHoldService->placeHold($caseObject, $this->reasonFor(meta: $meta));
-				$output->writeln('  <info>[HELD]</info> ' . $caseId . ' — ' . $this->describe(meta: $meta));
-				$held++;
-			} catch (\Throwable $e) {
-				$output->writeln('  <error>[FAILED]</error> ' . $caseId . ' — ' . $e->getMessage());
-				$unresolved++;
-			}
-		}//end foreach
-
-		$output->writeln('');
-		$heldLabel = '  would hold  = ';
-		if ($apply === true) {
-			$heldLabel = '  held        = ';
+			[$outcome, $line] = $this->holdOne(run: $run, candidate: ['id' => (string)$caseId, 'meta' => $meta]);
+			$output->writeln($line);
+			$tally[$outcome]++;
 		}
 
-		$output->writeln('  candidates  = ' . count($candidates));
-		$output->writeln($heldLabel . $held);
-		$output->writeln('  already held= ' . $already);
-		$output->writeln('  unresolved  = ' . $unresolved);
-
-		if ($apply === false) {
-			$output->writeln('');
-			$output->writeln('<comment>Dry run — nothing was written. Re-run with --apply to place these holds.</comment>');
+		foreach ($this->summary(run: $run, tally: $tally + ['candidates' => count($candidates)]) as $line) {
+			$output->writeln($line);
 		}
 
 		return Command::SUCCESS;
 	}//end reportAndApply()
+
+	/**
+	 * Report one candidate, and hold it when applying.
+	 *
+	 * @param HoldRun                                       $run       The run.
+	 * @param array{id: string, meta: array<string, mixed>} $candidate The case UUID and its metadata.
+	 *
+	 * @return array{0: string, 1: string} The tally it counts toward (held, already, unresolved) and its report line.
+	 */
+	private function holdOne(HoldRun $run, array $candidate): array {
+		$caseId = $candidate['id'];
+		$described = $caseId . ' — ' . $this->describe(meta: $candidate['meta']);
+
+		$caseObject = $this->findCase(run: $run, caseId: $caseId);
+		if ($caseObject === null) {
+			// A dangling reference: the proceeding names a case that does not
+			// exist (or is soft-deleted and not in scope). Reported, never
+			// silently dropped — a hold that cannot be placed is a finding.
+			return ['unresolved', '  <comment>[unresolved]</comment> ' . $described];
+		}
+
+		if ($run->legalHoldService->hasActiveHold($caseObject) === true) {
+			return ['already', '  <comment>[already held]</comment> ' . $described];
+		}
+
+		if ($run->apply === false) {
+			return ['held', '  <info>[would hold]</info> ' . $described];
+		}
+
+		try {
+			$run->legalHoldService->placeHold($caseObject, $this->reasonFor(meta: $candidate['meta']));
+			return ['held', '  <info>[HELD]</info> ' . $described];
+		} catch (\Throwable $e) {
+			return ['unresolved', '  <error>[FAILED]</error> ' . $caseId . ' — ' . $e->getMessage()];
+		}
+	}//end holdOne()
+
+	/**
+	 * The closing lines of a run: the counts, and the dry-run notice.
+	 *
+	 * @param HoldRun            $run   The run.
+	 * @param array<string, int> $tally The counts: candidates, held, already, unresolved.
+	 *
+	 * @return array<int, string> The lines.
+	 */
+	private function summary(HoldRun $run, array $tally): array {
+		$heldLabel = '  would hold  = ';
+		if ($run->apply === true) {
+			$heldLabel = '  held        = ';
+		}
+
+		$lines = [
+			'',
+			'  candidates  = ' . $tally['candidates'],
+			$heldLabel . $tally['held'],
+			'  already held= ' . $tally['already'],
+			'  unresolved  = ' . $tally['unresolved'],
+		];
+		if ($run->apply === false) {
+			$lines[] = '';
+			$lines[] = '<comment>Dry run — nothing was written. Re-run with --apply to place these holds.</comment>';
+		}
+
+		return $lines;
+	}//end summary()
 
 	/**
 	 * Resolve a case ObjectEntity by UUID.
@@ -141,19 +161,18 @@ class LegalHoldApplier {
 	 * organisation, and an organisation-scoped read would find nothing and
 	 * silently reopen the same hole this command exists to close.
 	 *
-	 * @param object $objectMapper OpenRegister object mapper.
-	 * @param string $caseId The case UUID.
-	 * @param bool $includeDeleted Whether soft-deleted cases are in scope.
+	 * @param HoldRun $run    The run (object mapper, and whether soft-deleted cases are in scope).
+	 * @param string  $caseId The case UUID.
 	 *
 	 * @return object|null The case ObjectEntity, or null when unresolvable.
 	 *
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
-	private function findCase(object $objectMapper, string $caseId, bool $includeDeleted): ?object {
+	private function findCase(HoldRun $run, string $caseId): ?object {
 		try {
-			$caseObject = $objectMapper->find(
+			$caseObject = $run->objectMapper->find(
 				identifier: $caseId,
-				includeDeleted: $includeDeleted,
+				includeDeleted: $run->includeDeleted,
 				_rbac: false,
 				_multitenancy: false
 			);
