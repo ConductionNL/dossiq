@@ -28,11 +28,11 @@ Every sociaal-domein zaak MUST declare its special-category data scope via an em
 ### Requirement: Wijkteam-only access control with data-driven guards
 Access to zaak content MUST be enforced at query time by comparing `zaak.wijkteam` to the requesting user, not by role alone, with a `tweedeBehandelaarId` override and an FG-audit metadata-only mode.
 
-#### Scenario: Out-of-team query returns metadata only and is logged
+#### Scenario: Out-of-team query returns only that the case exists and is logged
 - **GIVEN** a zaak has `wijkteam = wijkteam-zuid` and `toegangsBeperking = alleen-behandelaar-en-wijkteam`
 - **WHEN** a staff member from `wijkteam-noord` queries the zaak
 - **THEN** the query layer checks `user.wijkteam` against `zaak.wijkteam`
-- **AND** on no match it returns only `zaakNumber`, `status`, `behandelaarId`, `aanvraagDatum`, and `deadlineDate`
+- **AND** on no match it returns only that a case exists, its domain and the contact person to ask, as board DqSociaalDomein shows it ("Alleen dat hij bestaat"); `zaakNumber`, `status`, `behandelaarId`, `aanvraagDatum` and `deadlineDate` are blocked
 - **AND** content fields (`ondersteuningsvraag`, `indicatiestelling`, `gezinsplan`, `vermogenstoets`, etc.) are blocked
 - **AND** the attempt is logged with `resultaat = geweigerd-geen-toegang`
 

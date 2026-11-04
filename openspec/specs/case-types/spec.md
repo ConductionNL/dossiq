@@ -1824,8 +1824,8 @@ Termijnen card SHALL show it.
 
 ### Requirement: The Fields tab draws the board's cards
 
-The case type page's Fields tab SHALL hold the fields editor and the field rights only. The case type form, the raw
-terms and the case list columns SHALL stay on the page on a Properties tab listed under the tab strip's Actions menu.
+The case type page's Fields tab SHALL hold the fields editor and the field rights only. The raw terms SHALL be
+edited from the Termijnen card on Fasen en taken, as board DqZaaktype draws it; there is no Properties tab.
 
 #### Scenario: Opening the Fields tab
 
@@ -1837,7 +1837,7 @@ terms and the case list columns SHALL stay on the page on a Properties tab liste
 
 - **GIVEN** the Terms card on Phases and tasks
 - **WHEN** the administrator presses Edit
-- **THEN** the Properties tab opens with the terms form on it
+- **THEN** the terms open for editing on that card, and no Properties tab opens
 
 ### Requirement: The Overview draws a case type's statuses as coloured tiles
 
