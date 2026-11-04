@@ -11,6 +11,7 @@ The 3 November design round redrew dossiq's settings boards. The admin page lack
 - General: Time zone, Date format and, under Beta features, "New case page visible to everyone at once, without waiting for the cache".
 - VTH: Inspection checklists, Advice and advisers, Public notices and Enforcement strategy three abreast.
 - The setup wizard's first step is titled Welcome.
+- The case types list filters on All, Published and Draft, each counted, with All versions kept last.
 
 ## Out of scope
 
@@ -18,4 +19,4 @@ The side-state panels the boards draw at their foot (Zonder Integriq, Inkomende 
 
 ## Boards
 
-DqInstellingen, DqBeheerGeavanceerd, DqInstellingenAlgemeen, DqVthInstellingen, DqInstellen.
+DqInstellingen, DqBeheerGeavanceerd, DqInstellingenAlgemeen, DqVthInstellingen, DqInstellen, DqZaaktypen.

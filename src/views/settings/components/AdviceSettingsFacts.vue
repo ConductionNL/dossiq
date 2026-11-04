@@ -45,12 +45,19 @@ export default {
 		 * The card's rows.
 		 *
 		 * @return {Array<object>} Label and value rows.
+		 * @spec openspec/specs/vth-admin-settings/spec.md
 		 */
 		rows() {
 			return adviceRows(this.t.bind(this), this.settings, this.bodies)
 		},
 	},
 
+	/**
+	 * Read the active advisory bodies.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/specs/vth-admin-settings/spec.md
+	 */
 	async mounted() {
 		try {
 			const { data } = await axios.get(generateUrl(ADVISORY_BODIES_URL), { params: { active: true, _limit: 50 } })

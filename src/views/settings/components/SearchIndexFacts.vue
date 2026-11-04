@@ -69,6 +69,7 @@ export default {
 		 * The rows this variant draws.
 		 *
 		 * @return {Array<object>} Label and value rows.
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		rows() {
 			if (this.status === null) {
@@ -78,6 +79,12 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the status once the section is on the page.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
 	async mounted() {
 		await this.load()
 	},
@@ -87,6 +94,7 @@ export default {
 		 * Read what OpenRegister says about its index.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		async load() {
 			this.loading = true
@@ -104,6 +112,7 @@ export default {
 		 * Queue a maintenance run; the next load shows its result.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		async queueRun() {
 			this.queueing = true

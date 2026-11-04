@@ -27,6 +27,7 @@ function formatCount(value) {
  *
  * @param {string|null} lastRun An ISO 8601 time, or null.
  * @return {string} The moment in words.
+ * @spec openspec/specs/admin-settings/spec.md
  */
 export function lastRunText(lastRun) {
 	if (!lastRun) {
@@ -44,6 +45,7 @@ export function lastRunText(lastRun) {
  *
  * @param {number} seconds Whole seconds.
  * @return {string} The duration.
+ * @spec openspec/specs/admin-settings/spec.md
  */
 export function durationText(seconds) {
 	const minutes = Math.floor(seconds / 60)

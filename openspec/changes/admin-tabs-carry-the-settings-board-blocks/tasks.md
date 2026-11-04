@@ -15,5 +15,8 @@
 - [x] 1.5 Setup wizard: first step titled Welcome
   - Files: src/manifest.json, l10n/*
   - Test: tests/vitest/settingsBoardBlocks.spec.js
+- [x] 1.6 Case types list: All / Published / Draft with counts, All versions last (DqZaaktypen)
+  - Files: src/manifest.json
+  - Test: tests/vitest/caseTypeAuthoringManifest.spec.js
 - [ ] 2.1 Backend: the new config keys saved and read (queue_in_sight_days, queue_resident_wait_weight, timezone, date_format, feature_new_case_page, publication_template, publication_date_rule)
 - [ ] 2.2 OpenRegister: rows in the tables and in the index, what a run indexed, and a POST that queues a maintenance run
