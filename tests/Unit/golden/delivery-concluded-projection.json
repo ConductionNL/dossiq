@@ -1,0 +1,348 @@
+{
+    "delivered": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ],
+        [
+            "save",
+            "reg-1",
+            "case-s",
+            {
+                "id": "c1",
+                "title": "Zaak",
+                "publications": [
+                    "not a publication",
+                    {
+                        "channel": "krant",
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-0"
+                        }
+                    },
+                    {
+                        "channel": "gemeenteblad",
+                        "notes": null,
+                        "delivery": {
+                            "status": "delivered",
+                            "correlationId": "corr-1",
+                            "eventId": "evt-1",
+                            "attempts": 3,
+                            "error": null,
+                            "concludedAt": "2026-09-02T12:00:00+00:00"
+                        }
+                    },
+                    {
+                        "channel": "site",
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-1"
+                        }
+                    },
+                    {
+                        "channel": "leeg"
+                    }
+                ]
+            }
+        ]
+    ],
+    "abandoned with an error": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ],
+        [
+            "save",
+            "reg-1",
+            "case-s",
+            {
+                "id": "c1",
+                "title": "Zaak",
+                "publications": [
+                    "not a publication",
+                    {
+                        "channel": "krant",
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-0"
+                        }
+                    },
+                    {
+                        "channel": "gemeenteblad",
+                        "notes": null,
+                        "delivery": {
+                            "status": "abandoned",
+                            "correlationId": "corr-1",
+                            "eventId": "evt-1",
+                            "attempts": 7,
+                            "error": "receiver gone",
+                            "concludedAt": "2026-09-02T12:00:00+00:00"
+                        }
+                    },
+                    {
+                        "channel": "site",
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-1"
+                        }
+                    },
+                    {
+                        "channel": "leeg"
+                    }
+                ]
+            }
+        ]
+    ],
+    "not terminal": [],
+    "another app": [],
+    "no case id": [],
+    "no correlation id": [],
+    "no object service": [],
+    "case not found": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ],
+        [
+            "log",
+            "warning",
+            "Dossiq DeliveryConcludedListener: case not found for concluded delivery",
+            {
+                "caseId": "c1",
+                "correlationId": "corr-1"
+            }
+        ]
+    ],
+    "case read throws": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq DeliveryConcludedListener failed to project delivery outcome",
+            {
+                "app": "dossiq",
+                "error": "store down"
+            }
+        ]
+    ],
+    "case as an object": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ],
+        [
+            "save",
+            "reg-1",
+            "case-s",
+            {
+                "id": "c1",
+                "title": "Zaak",
+                "publications": [
+                    "not a publication",
+                    {
+                        "channel": "krant",
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-0"
+                        }
+                    },
+                    {
+                        "channel": "gemeenteblad",
+                        "notes": null,
+                        "delivery": {
+                            "status": "delivered",
+                            "correlationId": "corr-1",
+                            "eventId": "evt-1",
+                            "attempts": 3,
+                            "error": null,
+                            "concludedAt": "2026-09-02T12:00:00+00:00"
+                        }
+                    },
+                    {
+                        "channel": "site",
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-1"
+                        }
+                    },
+                    {
+                        "channel": "leeg"
+                    }
+                ]
+            }
+        ]
+    ],
+    "publications not a list": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ]
+    ],
+    "no publications": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ],
+        [
+            "log",
+            "warning",
+            "Dossiq DeliveryConcludedListener: no publication matches the concluded delivery",
+            {
+                "caseId": "c1",
+                "correlationId": "corr-1",
+                "channel": "gemeenteblad"
+            }
+        ]
+    ],
+    "no publication matches": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ],
+        [
+            "log",
+            "warning",
+            "Dossiq DeliveryConcludedListener: no publication matches the concluded delivery",
+            {
+                "caseId": "c1",
+                "correlationId": "corr-9",
+                "channel": "gemeenteblad"
+            }
+        ]
+    ],
+    "already projected": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ]
+    ],
+    "first match only": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ],
+        [
+            "save",
+            "reg-1",
+            "case-s",
+            {
+                "id": "c1",
+                "title": "Zaak",
+                "publications": [
+                    "not a publication",
+                    {
+                        "channel": "krant",
+                        "delivery": {
+                            "status": "delivered",
+                            "correlationId": "corr-0",
+                            "attempts": 3,
+                            "error": null,
+                            "concludedAt": "2026-09-02T12:00:00+00:00"
+                        }
+                    },
+                    {
+                        "channel": "gemeenteblad",
+                        "notes": null,
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-1",
+                            "eventId": "evt-1",
+                            "attempts": 1
+                        }
+                    },
+                    {
+                        "channel": "site",
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-1"
+                        }
+                    },
+                    {
+                        "channel": "leeg"
+                    }
+                ]
+            }
+        ]
+    ],
+    "save throws": [
+        [
+            "find",
+            "c1",
+            "reg-1",
+            "case-s"
+        ],
+        [
+            "save",
+            "reg-1",
+            "case-s",
+            {
+                "id": "c1",
+                "title": "Zaak",
+                "publications": [
+                    "not a publication",
+                    {
+                        "channel": "krant",
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-0"
+                        }
+                    },
+                    {
+                        "channel": "gemeenteblad",
+                        "notes": null,
+                        "delivery": {
+                            "status": "delivered",
+                            "correlationId": "corr-1",
+                            "eventId": "evt-1",
+                            "attempts": 3,
+                            "error": null,
+                            "concludedAt": "2026-09-02T12:00:00+00:00"
+                        }
+                    },
+                    {
+                        "channel": "site",
+                        "delivery": {
+                            "status": "requested",
+                            "correlationId": "corr-1"
+                        }
+                    },
+                    {
+                        "channel": "leeg"
+                    }
+                ]
+            }
+        ],
+        [
+            "log",
+            "error",
+            "Dossiq DeliveryConcludedListener failed to project delivery outcome",
+            {
+                "app": "dossiq",
+                "error": "save refused"
+            }
+        ]
+    ]
+}

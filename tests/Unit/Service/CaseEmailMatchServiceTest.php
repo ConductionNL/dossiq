@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Email\MailMatchSources;
 use Generator;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -59,6 +60,7 @@ use Stringable;
  * @covers \OCA\Dossiq\Service\CaseEmailMatchService
  * @covers \OCA\Dossiq\Service\Email\CaseNumberRecognizer
  * @covers \OCA\Dossiq\Service\Email\CaseEmailMatchPreferences
+ * @covers \OCA\Dossiq\Service\Email\MailMatchSources
  * @uses \OCA\Dossiq\Service\CaseMergeService
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRelink
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRule
@@ -600,10 +602,12 @@ class CaseEmailMatchServiceTest extends TestCase {
 
 		return new CaseEmailMatchService(
 			settingsService: $settings,
-			preferences: $this->preferences,
-			recognizer: $this->recognizer,
+			matching: new MailMatchSources(
+				preferences: $this->preferences,
+				recognizer: $this->recognizer,
+				messages: $messages,
+			),
 			userManager: $userManager,
-			messages: $messages,
 			container: $container,
 			logger: $logger,
 			mergeService: new CaseMergeService(

@@ -52,6 +52,7 @@ use Psr\Log\AbstractLogger;
  * @uses \OCA\Dossiq\Service\Hearing\NewSession
  * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
  * @uses \OCA\Dossiq\Service\Hearing\SessionStore
+ * @uses \OCA\Dossiq\Service\Support\OpensInTheInitialState
  */
 class HearingServiceGoldenTest extends TestCase {
 
@@ -97,6 +98,8 @@ class HearingServiceGoldenTest extends TestCase {
 			'waive / save throws' => ['waive', ['caseId' => 'case-1', 'reason' => 'r'], ['save' => 'throw']],
 			'waive / save answers null' => ['waive', ['caseId' => 'case-1', 'reason' => 'r'], ['save' => 'null']],
 			'waive / entry fails' => ['waive', ['caseId' => 'case-1', 'reason' => 'r'], ['trailFails' => true]],
+			'waive / move refused' => ['waive', ['caseId' => 'case-1', 'reason' => 'r'], ['patch' => 'throw']],
+			'waive / move answers nothing' => ['waive', ['caseId' => 'case-1', 'reason' => 'r'], ['patch' => 'null']],
 			'case for session' => ['getCaseIdForSession', ['sessionId' => 'session-1'], []],
 			'attendance / no entries' => ['recordAttendance', ['sessionId' => 'session-1', 'entries' => []], $found],
 			'attendance / no object service' => ['recordAttendance', ['sessionId' => 'session-1', 'entries' => $late], ['noObjectService' => true]],

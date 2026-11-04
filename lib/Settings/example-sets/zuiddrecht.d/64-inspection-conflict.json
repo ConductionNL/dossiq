@@ -1,0 +1,34 @@
+{
+	"$comment": "DqInspectie, the sync frame: the conflict under Pieter's outbox. Molenweg 4's finding was changed on his phone and, while he was offline, at the office; the replay of outbox-molenweg-bevinding met the office text. The record holds both texts at the one field both sides changed, so the card reads \"Op dit toestel\" and \"Op kantoor\" with the board's sentences. No Molenweg checklist run is seeded, so the record names the target schema but no target id: keeping the office text needs no write, keeping the phone text is refused by the endpoint until a run exists.",
+	"objects": [
+		{
+			"key": "conflict-molenweg-bevinding",
+			"register": "dossiq",
+			"schema": "conflictRecord",
+			"data": {
+				"syncQueueRef": "{{object:outbox-molenweg-bevinding.id}}",
+				"conflictType": "concurrent_edit",
+				"targetRegister": "dossiq",
+				"targetSchema": "inspectionChecklistRun",
+				"conflictFields": ["responses.0.comment"],
+				"clientVersion": {
+					"responses": [
+						{
+							"itemId": "bijgebouwen",
+							"comment": "Bijgebouw 4 bij 6 meter, in de groenstrook."
+						}
+					]
+				},
+				"serverVersion": {
+					"responses": [
+						{
+							"itemId": "bijgebouwen",
+							"comment": "Bijgebouw circa 24 m², zonder vergunning."
+						}
+					]
+				},
+				"detectedAt": "{{datetime:0 10:15}}"
+			}
+		}
+	]
+}

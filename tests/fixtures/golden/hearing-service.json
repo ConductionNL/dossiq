@@ -19,6 +19,7 @@
             "status": "planned",
             "hearingWaived": false,
             "recordingConsent": "not_requested",
+            "id": "saved-1",
             "@self": {
                 "id": "saved-1"
             }
@@ -97,6 +98,7 @@
             "inspectionDeadline": "<d+13>",
             "status": "planned",
             "hearingWaived": false,
+            "id": "saved-1",
             "@self": {
                 "id": "saved-1"
             }
@@ -384,18 +386,9 @@
     },
     "waive / happy": {
         "result": {
-            "case": "case-1",
-            "scheduledDate": "<now+0h>",
-            "chairperson": "system",
-            "invitees": [],
-            "inspectionAvailableFrom": "<d+0>",
-            "inspectionDeadline": "<d+0>",
-            "status": "afgezien",
-            "hearingWaived": true,
-            "waiverReason": "no need",
-            "@self": {
-                "id": "saved-1"
-            }
+            "patched": "saved-1",
+            "id": "saved-1",
+            "status": "afgezien"
         },
         "log": [
             "settings getObjectService",
@@ -411,13 +404,24 @@
                             "invitees": [],
                             "inspectionAvailableFrom": "<d+0>",
                             "inspectionDeadline": "<d+0>",
-                            "status": "afgezien",
                             "hearingWaived": true,
                             "waiverReason": "no need"
                         },
                         "register": "dossiq",
                         "schema": "hearingSession",
                         "uuid": null
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "saved-1",
+                        "data": {
+                            "status": "afgezien"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
                     }
                 }
             },
@@ -441,25 +445,9 @@
     },
     "waive / chairperson": {
         "result": {
-            "chairperson": "c-1",
-            "chairpersonId": "c-2",
-            "invitees": [
-                {
-                    "role": "bezwaarmaker",
-                    "channel": "email"
-                }
-            ],
-            "note": "n",
-            "case": "case-1",
-            "scheduledDate": "<now+0h>",
-            "inspectionAvailableFrom": "<d+0>",
-            "inspectionDeadline": "<d+0>",
-            "status": "afgezien",
-            "hearingWaived": true,
-            "waiverReason": "r",
-            "@self": {
-                "id": "saved-1"
-            }
+            "patched": "saved-1",
+            "id": "saved-1",
+            "status": "afgezien"
         },
         "log": [
             "settings getObjectService",
@@ -482,13 +470,24 @@
                             "scheduledDate": "<now+0h>",
                             "inspectionAvailableFrom": "<d+0>",
                             "inspectionDeadline": "<d+0>",
-                            "status": "afgezien",
                             "hearingWaived": true,
                             "waiverReason": "r"
                         },
                         "register": "dossiq",
                         "schema": "hearingSession",
                         "uuid": null
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "saved-1",
+                        "data": {
+                            "status": "afgezien"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
                     }
                 }
             },
@@ -512,19 +511,9 @@
     },
     "waive / chairperson id": {
         "result": {
-            "chairpersonId": "c-2",
-            "status": "afgezien",
-            "case": "case-1",
-            "scheduledDate": "<now+0h>",
-            "chairperson": "c-2",
-            "invitees": [],
-            "inspectionAvailableFrom": "<d+0>",
-            "inspectionDeadline": "<d+0>",
-            "hearingWaived": true,
-            "waiverReason": "r",
-            "@self": {
-                "id": "saved-1"
-            }
+            "patched": "saved-1",
+            "id": "saved-1",
+            "status": "afgezien"
         },
         "log": [
             "settings getObjectService",
@@ -535,7 +524,6 @@
                     "saveObject": {
                         "object": {
                             "chairpersonId": "c-2",
-                            "status": "afgezien",
                             "case": "case-1",
                             "scheduledDate": "<now+0h>",
                             "chairperson": "c-2",
@@ -548,6 +536,18 @@
                         "register": "dossiq",
                         "schema": "hearingSession",
                         "uuid": null
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "saved-1",
+                        "data": {
+                            "status": "afgezien"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
                     }
                 }
             },
@@ -611,7 +611,6 @@
                             "invitees": [],
                             "inspectionAvailableFrom": "<d+0>",
                             "inspectionDeadline": "<d+0>",
-                            "status": "afgezien",
                             "hearingWaived": true,
                             "waiverReason": "r"
                         },
@@ -625,17 +624,7 @@
         ]
     },
     "waive / save answers null": {
-        "result": {
-            "case": "case-1",
-            "scheduledDate": "<now+0h>",
-            "chairperson": "system",
-            "invitees": [],
-            "inspectionAvailableFrom": "<d+0>",
-            "inspectionDeadline": "<d+0>",
-            "status": "afgezien",
-            "hearingWaived": true,
-            "waiverReason": "r"
-        },
+        "exception": "RuntimeException: Could not record waiver",
         "log": [
             "settings getObjectService",
             "settings getConfigValue register",
@@ -650,7 +639,6 @@
                             "invitees": [],
                             "inspectionAvailableFrom": "<d+0>",
                             "inspectionDeadline": "<d+0>",
-                            "status": "afgezien",
                             "hearingWaived": true,
                             "waiverReason": "r"
                         },
@@ -660,22 +648,7 @@
                     }
                 }
             },
-            {
-                "trail": {
-                    "recordForNewRecord": {
-                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
-                        "register": "dossiq",
-                        "schema": "hearingSession",
-                        "objectUuid": "",
-                        "event": "hearing-waived",
-                        "payload": {
-                            "case": "case-1",
-                            "reason": "r"
-                        },
-                        "tag": "awb-art-7:3"
-                    }
-                }
-            }
+            "log error Dossiq hearing: failed to record waiver: The record was created but answered no id, so it could not be moved into \"afgezien\"."
         ]
     },
     "waive / entry fails": {
@@ -694,13 +667,133 @@
                             "invitees": [],
                             "inspectionAvailableFrom": "<d+0>",
                             "inspectionDeadline": "<d+0>",
-                            "status": "afgezien",
                             "hearingWaived": true,
                             "waiverReason": "r"
                         },
                         "register": "dossiq",
                         "schema": "hearingSession",
                         "uuid": null
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "saved-1",
+                        "data": {
+                            "status": "afgezien"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            {
+                "trail": {
+                    "recordForNewRecord": {
+                        "objectService": "OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService",
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "objectUuid": "saved-1",
+                        "event": "hearing-waived",
+                        "payload": {
+                            "case": "case-1",
+                            "reason": "r"
+                        },
+                        "tag": "awb-art-7:3"
+                    }
+                }
+            }
+        ]
+    },
+    "waive / move refused": {
+        "exception": "RuntimeException: Could not record waiver",
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "case": "case-1",
+                            "scheduledDate": "<now+0h>",
+                            "chairperson": "system",
+                            "invitees": [],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+0>",
+                            "hearingWaived": true,
+                            "waiverReason": "r"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "saved-1",
+                        "data": {
+                            "status": "afgezien"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
+                    }
+                }
+            },
+            "log error Dossiq hearing: failed to record waiver: The record could not be moved into \"afgezien\": patch failed The created record saved-1 could not be deleted again: Call to undefined method OCA\\Dossiq\\Tests\\Unit\\Service\\Bezwaar\\GoldenHearingObjectService::deleteObject()"
+        ]
+    },
+    "waive / move answers nothing": {
+        "result": {
+            "case": "case-1",
+            "scheduledDate": "<now+0h>",
+            "chairperson": "system",
+            "invitees": [],
+            "inspectionAvailableFrom": "<d+0>",
+            "inspectionDeadline": "<d+0>",
+            "hearingWaived": true,
+            "waiverReason": "r",
+            "id": "saved-1",
+            "@self": {
+                "id": "saved-1"
+            },
+            "status": "afgezien"
+        },
+        "log": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue hearing_session_schema",
+            {
+                "objects": {
+                    "saveObject": {
+                        "object": {
+                            "case": "case-1",
+                            "scheduledDate": "<now+0h>",
+                            "chairperson": "system",
+                            "invitees": [],
+                            "inspectionAvailableFrom": "<d+0>",
+                            "inspectionDeadline": "<d+0>",
+                            "hearingWaived": true,
+                            "waiverReason": "r"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession",
+                        "uuid": null
+                    }
+                }
+            },
+            {
+                "objects": {
+                    "patchObject": {
+                        "objectId": "saved-1",
+                        "data": {
+                            "status": "afgezien"
+                        },
+                        "register": "dossiq",
+                        "schema": "hearingSession"
                     }
                 }
             },
@@ -758,6 +851,7 @@
     "attendance / within the window": {
         "result": {
             "patched": "session-1",
+            "id": "session-1",
             "attendance": [
                 {
                     "invitee": "inv-1",
@@ -808,6 +902,7 @@
     "attendance / no scheduled date": {
         "result": {
             "patched": "session-1",
+            "id": "session-1",
             "attendance": [
                 "x",
                 {
@@ -852,6 +947,7 @@
     "attendance / late with reason": {
         "result": {
             "patched": "session-1",
+            "id": "session-1",
             "attendance": [
                 {
                     "invitee": "old",
@@ -1153,6 +1249,7 @@
     "minutes / summary": {
         "result": {
             "patched": "session-1",
+            "id": "session-1",
             "minutesSummary": "said things",
             "minutesDocument": null,
             "status": "executed"
@@ -1204,6 +1301,7 @@
     "minutes / stored document": {
         "result": {
             "patched": "session-1",
+            "id": "session-1",
             "minutesSummary": null,
             "minutesDocument": "doc-1",
             "status": "executed"
@@ -1272,6 +1370,7 @@
     "minutes / audio with consent": {
         "result": {
             "patched": "session-1",
+            "id": "session-1",
             "minutesSummary": "s",
             "minutesDocument": null,
             "status": "executed",
@@ -1536,6 +1635,7 @@
             "status": "planned",
             "hearingWaived": false,
             "recordingConsent": "not_requested",
+            "id": "saved-1",
             "@self": {
                 "id": "saved-1"
             }
@@ -1641,6 +1741,7 @@
             "status": "planned",
             "hearingWaived": false,
             "recordingConsent": "not_requested",
+            "id": "saved-1",
             "@self": {
                 "id": "saved-1"
             }
@@ -1746,6 +1847,7 @@
             "status": "planned",
             "hearingWaived": false,
             "recordingConsent": "not_requested",
+            "id": "saved-1",
             "@self": {
                 "id": "saved-1"
             }
@@ -1851,6 +1953,7 @@
             "status": "planned",
             "hearingWaived": false,
             "recordingConsent": "not_requested",
+            "id": "saved-1",
             "@self": {
                 "id": "saved-1"
             }
@@ -1957,6 +2060,7 @@
             "status": "planned",
             "hearingWaived": false,
             "recordingConsent": "not_requested",
+            "id": "saved-1",
             "@self": {
                 "id": "saved-1"
             }

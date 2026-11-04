@@ -1,0 +1,2172 @@
+{
+    "create": {
+        "status": 201,
+        "data": {
+            "id": "new-id",
+            "naam": "Nieuw",
+            "einde": null,
+            "tags": [
+                "a"
+            ],
+            "_uuid": "new-id",
+            "_created": "",
+            "_updated": "",
+            "endDate": ""
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "create",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": null,
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ]
+                },
+                null
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "new-id",
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "new-id",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/new-id",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/new-id",
+                    "create"
+                ]
+            ]
+        ]
+    },
+    "create with flags": {
+        "status": 201,
+        "data": {
+            "id": "new-id",
+            "naam": "Nieuw",
+            "einde": null,
+            "tags": [
+                "a"
+            ],
+            "_uuid": "new-id",
+            "_created": "",
+            "_updated": "",
+            "endDate": ""
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "create",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": null,
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": true,
+                    "caseClosed": true,
+                    "hasGeforceerd": false
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ]
+                },
+                null
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "new-id",
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "new-id",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/new-id",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/new-id",
+                    "create"
+                ]
+            ]
+        ]
+    },
+    "create without a store": {
+        "status": 503,
+        "data": {
+            "detail": "OpenRegister is not available"
+        },
+        "calls": []
+    },
+    "create of an unknown resource": {
+        "status": 404,
+        "data": {
+            "detail": "No ZGW mapping configured for zaken/onbekend"
+        },
+        "calls": []
+    },
+    "create without a mapping": {
+        "status": 404,
+        "data": {
+            "detail": "No ZGW mapping configured for zaken/zaken"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ]
+        ]
+    },
+    "create refused by a rule": {
+        "status": 409,
+        "data": {
+            "detail": "Nee",
+            "code": "c-1",
+            "invalidParams": [
+                {
+                    "name": "naam"
+                }
+            ]
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "create",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": null,
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ]
+        ]
+    },
+    "create refused without params": {
+        "status": 400,
+        "data": {
+            "detail": "Nee"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "create",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": null,
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ]
+        ]
+    },
+    "create without direct fields": {
+        "status": 201,
+        "data": {
+            "id": "new-id",
+            "naam": "Kaal",
+            "einde": null,
+            "_uuid": "new-id",
+            "_created": "",
+            "_updated": "",
+            "endDate": ""
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "create",
+                    "body": {
+                        "naam": "Kaal"
+                    },
+                    "existingObject": null,
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Kaal",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Kaal",
+                    "einde": ""
+                },
+                null
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "new-id",
+                    "naam": "Kaal",
+                    "einde": "",
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "new-id",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/new-id",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/new-id",
+                    "create"
+                ]
+            ]
+        ]
+    },
+    "create whose save answers an object": {
+        "status": 201,
+        "data": {
+            "naam": "Nieuw",
+            "einde": null,
+            "tags": [
+                "a"
+            ],
+            "@self": {
+                "id": "self-id",
+                "created": "c",
+                "updated": "u"
+            },
+            "_uuid": "self-id",
+            "_created": "c",
+            "_updated": "u",
+            "endDate": ""
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "create",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": null,
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ]
+                },
+                null
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "@self": {
+                        "id": "self-id",
+                        "created": "c",
+                        "updated": "u"
+                    },
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "self-id",
+                    "_created": "c",
+                    "_updated": "u"
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/self-id",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/self-id",
+                    "create"
+                ]
+            ]
+        ]
+    },
+    "create whose rules enrich the body": {
+        "status": 201,
+        "data": {
+            "id": "new-id",
+            "naam": "Verrijkt",
+            "einde": null,
+            "tags": [
+                "a"
+            ],
+            "_uuid": "new-id",
+            "_created": "",
+            "_updated": "",
+            "endDate": ""
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "create",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": null,
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Verrijkt",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Verrijkt",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ]
+                },
+                null
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "new-id",
+                    "naam": "Verrijkt",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "new-id",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/new-id",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/new-id",
+                    "create"
+                ]
+            ]
+        ]
+    },
+    "create whose save fails": {
+        "status": 400,
+        "data": {
+            "detail": "save refused"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "create",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": null,
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ]
+                },
+                null
+            ],
+            [
+                "log",
+                "error",
+                "ZGW create error: save refused",
+                {
+                    "exception": "RuntimeException"
+                }
+            ]
+        ]
+    },
+    "update": {
+        "status": 200,
+        "data": {
+            "id": "0a1b2c3d-0000-4000-a000-000000000001",
+            "naam": "Nieuw",
+            "einde": null,
+            "tags": [
+                "a"
+            ],
+            "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+            "_created": "",
+            "_updated": "",
+            "endDate": ""
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "update",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": {
+                        "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "id": "0a1b2c3d-0000-4000-a000-000000000001"
+                },
+                "0a1b2c3d-0000-4000-a000-000000000001"
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "update"
+                ]
+            ]
+        ]
+    },
+    "update with the uuid from the arguments": {
+        "status": 200,
+        "data": {
+            "id": "arg-uuid",
+            "naam": "Nieuw",
+            "einde": null,
+            "tags": [
+                "a"
+            ],
+            "_uuid": "arg-uuid",
+            "_created": "",
+            "_updated": "",
+            "endDate": ""
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "arg-uuid",
+                "5",
+                "50"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "update",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": {
+                        "id": "arg-uuid",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "id": "arg-uuid"
+                },
+                "arg-uuid"
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "arg-uuid",
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "arg-uuid",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/arg-uuid",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/arg-uuid",
+                    "update"
+                ]
+            ]
+        ]
+    },
+    "update with flags": {
+        "status": 200,
+        "data": {
+            "id": "0a1b2c3d-0000-4000-a000-000000000001",
+            "naam": "Nieuw",
+            "einde": null,
+            "tags": [
+                "a"
+            ],
+            "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+            "_created": "",
+            "_updated": "",
+            "endDate": ""
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "update",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": {
+                        "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": false,
+                    "caseClosed": true,
+                    "hasGeforceerd": false
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "id": "0a1b2c3d-0000-4000-a000-000000000001"
+                },
+                "0a1b2c3d-0000-4000-a000-000000000001"
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "update"
+                ]
+            ]
+        ]
+    },
+    "patch": {
+        "status": 200,
+        "data": {
+            "id": "0a1b2c3d-0000-4000-a000-000000000001",
+            "name": "Oud",
+            "kept": "ja",
+            "tags": [
+                "a"
+            ],
+            "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+            "_created": "",
+            "_updated": "",
+            "endDate": "",
+            "einde": null
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "patch",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": {
+                        "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "name": "Oud",
+                    "kept": "ja",
+                    "tags": [
+                        "a"
+                    ]
+                },
+                "0a1b2c3d-0000-4000-a000-000000000001"
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "name": "Oud",
+                    "kept": "ja",
+                    "tags": [
+                        "a"
+                    ],
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "update"
+                ]
+            ]
+        ]
+    },
+    "patch whose rules add a direct field": {
+        "status": 200,
+        "data": {
+            "id": "0a1b2c3d-0000-4000-a000-000000000001",
+            "name": "Direct",
+            "kept": "ja",
+            "tags": [
+                "b"
+            ],
+            "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+            "_created": "",
+            "_updated": "",
+            "endDate": "",
+            "einde": null
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "patch",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": {
+                        "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "name": "Direct",
+                    "kept": "ja",
+                    "tags": [
+                        "b"
+                    ]
+                },
+                "0a1b2c3d-0000-4000-a000-000000000001"
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "name": "Direct",
+                    "kept": "ja",
+                    "tags": [
+                        "b"
+                    ],
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "update"
+                ]
+            ]
+        ]
+    },
+    "patch of an object": {
+        "status": 200,
+        "data": {
+            "id": "0a1b2c3d-0000-4000-a000-000000000001",
+            "name": "Als object",
+            "tags": [
+                "a"
+            ],
+            "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+            "_created": "",
+            "_updated": "",
+            "endDate": "",
+            "einde": null
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "patch",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": {
+                        "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                        "name": "Als object"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "name": "Als object",
+                    "tags": [
+                        "a"
+                    ]
+                },
+                "0a1b2c3d-0000-4000-a000-000000000001"
+            ],
+            [
+                "executeMapping",
+                "out",
+                {
+                    "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "name": "Als object",
+                    "tags": [
+                        "a"
+                    ],
+                    "_baseUrl": "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken",
+                    "_valueMappings": [],
+                    "_uuid": "0a1b2c3d-0000-4000-a000-000000000001",
+                    "_created": "",
+                    "_updated": ""
+                }
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/0a1b2c3d-0000-4000-a000-000000000001",
+                    "update"
+                ]
+            ]
+        ]
+    },
+    "update without a store": {
+        "status": 503,
+        "data": {
+            "detail": "OpenRegister is not available"
+        },
+        "calls": []
+    },
+    "update without a mapping": {
+        "status": 404,
+        "data": {
+            "detail": "No ZGW mapping configured for zaken/zaken"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ]
+        ]
+    },
+    "update of a missing object": {
+        "status": 404,
+        "data": {
+            "detail": "Not found"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ],
+            [
+                "log",
+                "info",
+                "{operation}: {object} not found",
+                {
+                    "operation": "ZGW update",
+                    "object": "zaken 0a1b2c3d-0000-4000-a000-000000000001",
+                    "exception": "OCP\\AppFramework\\Db\\DoesNotExistException"
+                }
+            ]
+        ]
+    },
+    "update of a null object": {
+        "status": 404,
+        "data": {
+            "detail": "Not found"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ]
+        ]
+    },
+    "update on a store that is down": {
+        "status": 503,
+        "data": {
+            "code": "store-not-reached",
+            "detail": "De registratie kon de opdracht niet voltooien. Probeer het later opnieuw."
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ],
+            [
+                "log",
+                "error",
+                "{operation}: the store did not complete the call for {object}: store down",
+                {
+                    "operation": "ZGW update",
+                    "object": "zaken 0a1b2c3d-0000-4000-a000-000000000001",
+                    "exception": "RuntimeException"
+                }
+            ]
+        ]
+    },
+    "update refused by a rule": {
+        "status": 400,
+        "data": {
+            "detail": "Nee"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "update",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": {
+                        "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ]
+        ]
+    },
+    "update whose save fails": {
+        "status": 400,
+        "data": {
+            "detail": "save refused"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "0a1b2c3d-0000-4000-a000-000000000001",
+                "5",
+                "50"
+            ],
+            [
+                "getParams"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "update",
+                    "body": {
+                        "naam": "Nieuw",
+                        "zgwApi": "zaken",
+                        "resource": "zaken",
+                        "_directFields": {
+                            "tags": [
+                                "a"
+                            ]
+                        }
+                    },
+                    "existingObject": {
+                        "id": "0a1b2c3d-0000-4000-a000-000000000001",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "executeMapping",
+                "in",
+                {
+                    "naam": "Nieuw",
+                    "_valueMappings": []
+                }
+            ],
+            [
+                "save",
+                "5",
+                "50",
+                {
+                    "naam": "Nieuw",
+                    "einde": "",
+                    "tags": [
+                        "a"
+                    ],
+                    "id": "0a1b2c3d-0000-4000-a000-000000000001"
+                },
+                "0a1b2c3d-0000-4000-a000-000000000001"
+            ],
+            [
+                "log",
+                "error",
+                "ZGW update error (zaken 0a1b2c3d-0000-4000-a000-000000000001): save refused",
+                {
+                    "exception": "RuntimeException",
+                    "trace": "<trace>"
+                }
+            ]
+        ]
+    },
+    "destroy": {
+        "status": 204,
+        "data": [],
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "arg-uuid",
+                "5",
+                "50"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "destroy",
+                    "body": [],
+                    "existingObject": {
+                        "id": "arg-uuid",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "delete",
+                "arg-uuid"
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/arg-uuid",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/arg-uuid",
+                    "destroy"
+                ]
+            ]
+        ]
+    },
+    "destroy with flags": {
+        "status": 204,
+        "data": [],
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "arg-uuid",
+                "5",
+                "50"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "destroy",
+                    "body": [],
+                    "existingObject": {
+                        "id": "arg-uuid",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": true,
+                    "caseClosed": true,
+                    "hasGeforceerd": false
+                }
+            ],
+            [
+                "delete",
+                "arg-uuid"
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/arg-uuid",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/arg-uuid",
+                    "destroy"
+                ]
+            ]
+        ]
+    },
+    "destroy without a store": {
+        "status": 503,
+        "data": {
+            "detail": "OpenRegister is not available"
+        },
+        "calls": []
+    },
+    "destroy without a mapping": {
+        "status": 404,
+        "data": {
+            "detail": "No ZGW mapping configured for zaken/zaken"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ]
+        ]
+    },
+    "destroy of a missing object": {
+        "status": 404,
+        "data": {
+            "detail": "Not found"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "arg-uuid",
+                "5",
+                "50"
+            ],
+            [
+                "log",
+                "info",
+                "{operation}: {object} not found",
+                {
+                    "operation": "ZGW delete",
+                    "object": "zaken arg-uuid",
+                    "exception": "OCP\\AppFramework\\Db\\DoesNotExistException"
+                }
+            ]
+        ]
+    },
+    "destroy on a store that is down": {
+        "status": 503,
+        "data": {
+            "code": "store-not-reached",
+            "detail": "De registratie kon de opdracht niet voltooien. Probeer het later opnieuw."
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "arg-uuid",
+                "5",
+                "50"
+            ],
+            [
+                "log",
+                "error",
+                "{operation}: the store did not complete the call for {object}: store down",
+                {
+                    "operation": "ZGW delete",
+                    "object": "zaken arg-uuid",
+                    "exception": "RuntimeException"
+                }
+            ]
+        ]
+    },
+    "destroy refused by a rule": {
+        "status": 403,
+        "data": {
+            "detail": "Nee",
+            "code": "nee"
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "arg-uuid",
+                "5",
+                "50"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "destroy",
+                    "body": [],
+                    "existingObject": {
+                        "id": "arg-uuid",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ]
+        ]
+    },
+    "destroy whose delete fails": {
+        "status": 503,
+        "data": {
+            "code": "store-not-reached",
+            "detail": "De registratie kon de opdracht niet voltooien. Probeer het later opnieuw."
+        },
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "arg-uuid",
+                "5",
+                "50"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "destroy",
+                    "body": [],
+                    "existingObject": {
+                        "id": "arg-uuid",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "delete",
+                "arg-uuid"
+            ],
+            [
+                "log",
+                "error",
+                "{operation}: the store did not complete the call for {object}: delete refused",
+                {
+                    "operation": "ZGW delete",
+                    "object": "zaken arg-uuid",
+                    "exception": "RuntimeException"
+                }
+            ]
+        ]
+    },
+    "destroy whose notification fails": {
+        "status": 204,
+        "data": [],
+        "calls": [
+            [
+                "getMapping",
+                "zaak"
+            ],
+            [
+                "find",
+                "arg-uuid",
+                "5",
+                "50"
+            ],
+            [
+                "validate",
+                {
+                    "zgwApi": "zaken",
+                    "resource": "zaken",
+                    "action": "destroy",
+                    "body": [],
+                    "existingObject": {
+                        "id": "arg-uuid",
+                        "name": "Oud",
+                        "kept": "ja"
+                    },
+                    "objectService": "store",
+                    "mappingConfig": {
+                        "sourceRegister": "5",
+                        "sourceSchema": "50",
+                        "zgwResource": "thing",
+                        "propertyMapping": {
+                            "naam": "{{ name }}"
+                        },
+                        "reverseMapping": {
+                            "name": "{{ naam }}"
+                        },
+                        "inboundNullable": [
+                            "endDate"
+                        ],
+                        "nullableFields": [
+                            "einde"
+                        ]
+                    },
+                    "parentCaseTypeDraft": null,
+                    "caseClosed": null,
+                    "hasGeforceerd": true
+                }
+            ],
+            [
+                "delete",
+                "arg-uuid"
+            ],
+            [
+                "publish",
+                [
+                    "zaken",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/arg-uuid",
+                    "zaak",
+                    "https://host.example/index.php/apps/dossiq/api/zgw/zaken/v1/zaken/arg-uuid",
+                    "destroy"
+                ]
+            ],
+            [
+                "log",
+                "error",
+                "ZGW delete of {resource} {uuid} happened, but its notification failed: notification channel down",
+                {
+                    "resource": "zaken",
+                    "uuid": "arg-uuid",
+                    "exception": "RuntimeException"
+                }
+            ]
+        ]
+    }
+}

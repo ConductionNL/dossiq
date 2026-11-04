@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Lifecycle;
 
+use OCA\Dossiq\Service\Lifecycle\CaseActSources;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\CaseActsMenu;
 use OCA\Dossiq\Service\Lifecycle\CaseActsOverview;
@@ -38,7 +39,7 @@ use PHPUnit\Framework\TestCase;
  * The state half of the act read.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseActsOverview
- *
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseActSources
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseActsOverviewTest extends TestCase {
@@ -97,10 +98,12 @@ class CaseActsOverviewTest extends TestCase {
 
 		return new CaseActsOverview(
 			store: $this->store,
-			menu: $this->menu,
-			endings: $endings,
-			holds: $holds,
-			drafts: $drafts,
+			acts: new CaseActSources(
+				menu: $this->menu,
+				endings: $endings,
+				holds: $holds,
+				drafts: $drafts,
+			),
 			incompleteness: $incompleteness,
 			processStatus: $processStatus,
 			archiveState: $archiveState,

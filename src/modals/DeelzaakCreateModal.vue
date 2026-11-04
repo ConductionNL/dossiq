@@ -169,6 +169,7 @@ import {
 	DEFAULT_CASE_CONFIDENTIALITY,
 	generateIdentifier,
 } from '../utils/caseHelpers.js'
+import { subCaseInitialStatus } from '../utils/deelzaakHelpers.js'
 
 /** The library's page refresh channel: the lists on the page refetch. */
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -212,7 +213,6 @@ export default {
 			parent: null,
 			loadedParentCaseType: null,
 			caseTypes: [],
-			statusTypes: [],
 			errors: {},
 			saving: false,
 			loadingTypes: false,
@@ -330,42 +330,17 @@ export default {
 		},
 
 		/**
-		 * Load the status types of the SELECTED sub-case type.
-		 *
-		 * Filters on a bare `caseType` field name: the `_filters[caseType]`
-		 * form this used is inert, so the picker offered every case type's
-		 * statuses rather than the chosen one's.
+		 * Record the selected sub-case type on the form.
 		 *
 		 * @param {object|null} caseType The selected sub-case type.
 		 *
-		 * @return {Promise<void>}
+		 * @return {void}
 		 *
 		 * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
 		 */
-		async onCaseTypeSelected(caseType) {
+		onCaseTypeSelected(caseType) {
 			this.form.caseType = caseType?.id || null
 			this.errors.caseType = ''
-			this.statusTypes = []
-			if (!caseType) {
-				return
-			}
-			try {
-				const results = await this.objectStore.fetchCollection(
-					'statusType',
-					{
-						caseType: caseType.id,
-						_order: JSON.stringify({ order: 'asc' }),
-						_limit: 100,
-					},
-				)
-				this.statusTypes = Array.isArray(results) ? results : []
-			} catch (err) {
-				console.error(
-					'[DeelzaakCreateModal] Failed to load statusTypes',
-					err,
-				)
-				this.statusTypes = []
-			}
 		},
 
 		/**
@@ -417,9 +392,7 @@ export default {
 					now,
 					this.selectedCaseType.processingDeadline,
 				)
-				const initialStatus = [...this.statusTypes].sort(
-					(a, b) => (a.order || 0) - (b.order || 0),
-				)[0]
+				const initialStatus = subCaseInitialStatus(this.selectedCaseType)
 				const currentUser =
 					(getCurrentUser() && getCurrentUser().uid) || 'unknown'
 
@@ -428,7 +401,7 @@ export default {
 					description: this.form.description.trim(),
 					identifier: generateIdentifier(),
 					caseType: this.selectedCaseType.id,
-					status: initialStatus?.id || null,
+					...(initialStatus ? { status: initialStatus } : {}),
 					startDate,
 					deadline: deadline
 						? deadline.toISOString().split('T')[0] + 'T17:00:00Z'
@@ -449,7 +422,7 @@ export default {
 					// case schema (dossiq_register.json).
 					statusHistory: JSON.stringify([
 						{
-							status: initialStatus?.id || null,
+							status: initialStatus,
 							date: now.toISOString(),
 							changedBy: currentUser,
 						},

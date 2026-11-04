@@ -27,6 +27,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
+use OCA\Dossiq\Service\AcknowledgementDelivery;
+use OCA\Dossiq\Service\AcknowledgementTerms;
+use OCA\Dossiq\Service\AcknowledgementDeclaration;
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\AcknowledgementService;
@@ -54,6 +58,10 @@ use Psr\Log\NullLogger;
  * The acknowledgement is recorded as the configured account, or the job waits.
  *
  * @covers \OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob
+ * @covers \OCA\Dossiq\Service\AcknowledgementDeclaration
+ * @covers \OCA\Dossiq\Service\AcknowledgementTerms
+ * @covers \OCA\Dossiq\Service\AcknowledgementDelivery
+ * @covers \OCA\Dossiq\Service\Term\TermNoticeSources
  * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\AcknowledgementService
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
@@ -68,9 +76,11 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Service\Term\TermLetter
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
@@ -239,19 +249,24 @@ class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 
 		$acknowledgement = new AcknowledgementService(
 			settingsService: $settings,
-			caseTypeResolver: $resolver,
-			store: $store,
-			declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
-			termService: $terms,
-			notifications: new TermijnNotificationService(
-				termService: $terms,
-				sender: $sender,
-				logger: new NullLogger(),
-				requester: new RequesterNoticeSender(email: $sender, settings: $settings, writer: new CaseFieldWriter()),
+			caseTypes: new AcknowledgementDeclaration(
+				caseTypeResolver: $resolver,
+				store: $store,
+				declaration: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
 			),
-			contacts: new CaseContactDirectory(),
-			portal: new PortalContributionProvider(),
-			writer: new CaseFieldWriter(),
+			terms: new AcknowledgementTerms(
+				termService: $terms,
+				notifications: new TermijnNotificationService(
+					notices: new TermNoticeSources(termService: $terms, sender: $sender),
+					logger: new NullLogger(),
+					requester: new RequesterNoticeSender(email: $sender, settings: $settings, writer: new CaseFieldWriter()),
+				),
+			),
+			delivery: new AcknowledgementDelivery(
+				contacts: new CaseContactDirectory(),
+				portal: new PortalContributionProvider(),
+				writer: new CaseFieldWriter(),
+			),
 			logger: new NullLogger(),
 			timeline: $this->createMock(CaseTimeline::class),
 		);

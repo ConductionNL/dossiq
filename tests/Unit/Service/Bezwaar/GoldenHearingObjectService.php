@@ -88,7 +88,7 @@ class GoldenHearingObjectService {
 			return null;
 		}
 
-		return array_merge($object, ['@self' => ['id' => 'saved-1']]);
+		return array_merge($object, ['id' => 'saved-1', '@self' => ['id' => 'saved-1']]);
 	}//end saveObject()
 
 	/**
@@ -112,7 +112,7 @@ class GoldenHearingObjectService {
 			return null;
 		}
 
-		return ['patched' => $objectId] + $data;
+		return ['patched' => $objectId, 'id' => $objectId] + $data;
 	}//end patchObject()
 
 	/**

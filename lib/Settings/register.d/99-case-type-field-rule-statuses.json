@@ -5,6 +5,8 @@
         "version": "1.41.0",
         "properties": {
           "fieldRoleRules": {
+            "title": "Field rights",
+            "description": "Which fields a role may see and which it may change, in every status. The matrix beside this one says who may open a case of this type; this says what they read once it is open. A rule is declared here and enforced in OpenRegister, on every read path it has. dossiq filters nothing itself, so a field withheld here is absent from the search, the export and the API answer too, not just from the form.",
             "items": {
               "properties": {
                 "statuses": {
