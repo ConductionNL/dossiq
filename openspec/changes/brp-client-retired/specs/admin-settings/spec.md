@@ -25,7 +25,7 @@ making.
 
 **Feature tier**: MVP
 
-#### Scenario: KvK reads Not available because dossiq has no KvK client
+#### Scenario: KvK reads Not available because nothing calls it
 @e2e tests/e2e/integrations-page.spec.ts
 
 - **GIVEN** the seeded Integrations page
@@ -35,7 +35,7 @@ making.
 - **AND** its message SHALL NOT say the connection is not built
 - **AND** it SHALL NOT offer Open settings
 
-#### Scenario: BRP reads Not configured and names the setting that wakes it
+#### Scenario: BRP reads Not configured and names the key that wakes it
 @e2e tests/e2e/integrations-page.spec.ts
 
 - **GIVEN** the seeded Integrations page
@@ -117,7 +117,7 @@ promise holds on the registry.
 - **WHEN** integriq resolves the Berichtenbox row
 - **THEN** the row SHALL read Simulated, not Configured
 
-#### Scenario: BRP reads Not configured and names the setting that wakes it
+#### Scenario: BRP reads Not configured and names the key that wakes it
 @e2e tests/e2e/integrations-page.spec.ts
 
 - **GIVEN** the declaration integriq synced

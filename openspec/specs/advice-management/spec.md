@@ -26,7 +26,13 @@ owns the `adviesAanvraag` model and the CROSS-CASE advice queue by design. dossi
 keeps the per-case view and the detail route. A dossiq-side list over a model
 dossiq no longer owns is the duplication that change set out to remove.
 
+#### Scenario: An advice link still opens, and there is no advice index
 @e2e exclude The per-case surface is covered by the besluitvorming leaf specs; the cross-case queue is decidesk's and is not a dossiq surface to test.
+
+- **GIVEN** a link to `/advice/:id` for an existing advice request
+- **WHEN** a user opens it
+- **THEN** the advice detail SHALL open
+- **AND** dossiq SHALL offer no `/advice` index page of its own
 
 **ADDED Requirements**
 

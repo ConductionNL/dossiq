@@ -26,3 +26,11 @@ SHALL NOT carry a `folderSidebar`.
 - **GIVEN** a seeded `brpPerson` row with display name Jansen
 - **WHEN** you open Contacts and type Jansen in the search box
 - **THEN** the list SHALL show that row with its citizen service number
+
+#### Scenario: No folder pane, and the way to organisations beside it
+@e2e tests/e2e/contacts-domain.spec.ts
+
+- **GIVEN** the Contacts index
+- **WHEN** you read the page
+- **THEN** it SHALL render no folder pane
+- **AND** the navigation SHALL offer the Organisations index without expanding anything
