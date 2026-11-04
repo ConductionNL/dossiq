@@ -504,7 +504,10 @@ class HearingService {
 	 */
 	private function createSession(SessionStore $store, NewSession $session): array {
 		try {
-			$saved = $this->storeNewSession(store: $store, session: $session);
+			$saved = $this->createThenMove(
+				objectService: $store->objectService,
+				write: ['register' => $store->register, 'schema' => $store->schema, 'object' => $session->record, 'field' => $session->lifecycleField]
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq hearing: failed to ' . self::CREATE_ACTIONS[$session->event] . ': ' . $e->getMessage()
@@ -525,29 +528,6 @@ class HearingService {
 		return $saved;
 	}//end createSession()
 
-	/**
-	 * Save a new session, moving one born past the initial state into its state.
-	 *
-	 * @param SessionStore $store   The session store.
-	 * @param NewSession   $session The record to save.
-	 *
-	 * @return array<string, mixed> The saved record, or the record itself when the store answers nothing.
-	 */
-	private function storeNewSession(SessionStore $store, NewSession $session): array {
-		if ($session->lifecycleField !== null) {
-			return $this->createThenMove(
-				objectService: $store->objectService,
-				write: ['register' => $store->register, 'schema' => $store->schema, 'object' => $session->record, 'field' => $session->lifecycleField]
-			);
-		}
-
-		return ($this->saveObjectAsArray(
-			objectService: $store->objectService,
-			register: $store->register,
-			schema: $store->schema,
-			object: $session->record
-		) ?? $session->record);
-	}//end storeNewSession()
 
 	/**
 	 * Record each late correction, then write the attendance.
