@@ -25,7 +25,7 @@ to name no longer exist here and this scenario has no coverage.
   - `targetRegister`, `targetSchema` and `targetId`: the object the update was written to
   - `conflictFields`: the dot paths of the fields both sides changed
 
-#### Scenario: Show the conflict in the sync frame
+#### Scenario: Show conflict merge UI to inspector
 
 @e2e exclude a conflict record with both versions is example-set data on the measured instance; the card is covered by nextcloud-vue's CnConflictResolveCard suite and tests/vitest/inspectionConflictCard.spec.js reads its configuration.
 

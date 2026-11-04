@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-11-04: item 1 (one authoring surface) was done by `case-type-legacy-editor-retire` (archived 2026-10-30, the manifest pages are the editor). Items 2 to 4 (a `caseModel` editor, the stage binding, the CMMN guard) fall with `retire-cmmn-caseplanstate`, which moves the CMMN runtime into OpenRegister. The proposal carried no delta.
+
 # One authoring surface for a case type
 
 ## Why

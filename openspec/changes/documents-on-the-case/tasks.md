@@ -100,6 +100,8 @@ criteria under a task are plain bullets.
   that is not archived like the header action.
   - vitest on the manifest: the New menu entry, its dialog and its case
   - `@spec openspec/specs/beschikking-generatie/spec.md`
+## 4. Demo data
+
 - [x] 4.1 `lib/Settings/register.d/46-demo-cases-english.json` (or the
   dossier seed beside it): two `informatieobject` rows on one demo case
   with different types, one tagged `bezwaar`, directions incoming and
