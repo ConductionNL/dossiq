@@ -23,33 +23,22 @@ namespace OCA\Dossiq\Tests\Unit\Dashboard;
 
 use OCA\Dossiq\Dashboard\CasesOverviewWidget;
 use OCA\Dossiq\Dashboard\DeadlineAlertsWidget;
-use OCA\Dossiq\Dashboard\MyTasksWidget;
-use OCA\Dossiq\Dashboard\OverdueCasesWidget;
-use OCA\Dossiq\Dashboard\QueueWidgetItems;
-use OCA\Dossiq\Service\Queue\Source\EngineTaskSource;
 use OCA\Dossiq\Dashboard\StalledCasesWidget;
 use OCA\Dossiq\Dashboard\TaskRemindersWidget;
 use OCP\IL10N;
 use OCP\IURLGenerator;
-use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for the signalering dashboard widgets.
  *
  * @covers \OCA\Dossiq\Dashboard\CasesOverviewWidget
  * @covers \OCA\Dossiq\Dashboard\DeadlineAlertsWidget
- * @covers \OCA\Dossiq\Dashboard\OverdueCasesWidget
  * @covers \OCA\Dossiq\Dashboard\StalledCasesWidget
- * @covers \OCA\Dossiq\Dashboard\MyTasksWidget
  * @covers \OCA\Dossiq\Dashboard\TaskRemindersWidget
- * @uses   \OCA\Dossiq\Dashboard\QueueWidgetItems
  * @uses   \OCA\Dossiq\Dashboard\DashboardPageWidget
- * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class SignaleringWidgetsTest extends TestCase {
-	use MakesCaseDateNormaliser;
 
 
 	/**
@@ -151,17 +140,6 @@ class SignaleringWidgetsTest extends TestCase {
 	}//end testDeadlineAlertsWidgetIconClass()
 
 	/**
-	 * Test OverdueCasesWidget returns the correct widget ID.
-	 *
-	 * @return void
-	 */
-	public function testOverdueCasesWidgetId(): void {
-		$widget = new OverdueCasesWidget($this->l10n, $this->url);
-		$this->assertSame('procest_overdue_cases_widget', $widget->getId());
-
-	}//end testOverdueCasesWidgetId()
-
-	/**
 	 * Test StalledCasesWidget returns the correct widget ID.
 	 *
 	 * @return void
@@ -192,10 +170,8 @@ class SignaleringWidgetsTest extends TestCase {
 		$widgets = [
 			new CasesOverviewWidget($this->l10n, $this->url),
 			new DeadlineAlertsWidget($this->l10n, $this->url),
-			new OverdueCasesWidget($this->l10n, $this->url),
 			new StalledCasesWidget($this->l10n, $this->url),
 			new TaskRemindersWidget($this->l10n, $this->url),
-			$this->myTasksWidget(),
 		];
 
 		foreach ($widgets as $widget) {
@@ -214,10 +190,8 @@ class SignaleringWidgetsTest extends TestCase {
 		$widgets = [
 			new CasesOverviewWidget($this->l10n, $this->url),
 			new DeadlineAlertsWidget($this->l10n, $this->url),
-			new OverdueCasesWidget($this->l10n, $this->url),
 			new StalledCasesWidget($this->l10n, $this->url),
 			new TaskRemindersWidget($this->l10n, $this->url),
-			$this->myTasksWidget(),
 		];
 
 		$ids = array_map(
@@ -240,10 +214,8 @@ class SignaleringWidgetsTest extends TestCase {
 		$widgets = [
 			new CasesOverviewWidget($this->l10n, $this->url),
 			new DeadlineAlertsWidget($this->l10n, $this->url),
-			new OverdueCasesWidget($this->l10n, $this->url),
 			new StalledCasesWidget($this->l10n, $this->url),
 			new TaskRemindersWidget($this->l10n, $this->url),
-			$this->myTasksWidget(),
 		];
 
 		foreach ($widgets as $widget) {
@@ -251,20 +223,4 @@ class SignaleringWidgetsTest extends TestCase {
 		}
 
 	}//end testAllWidgetsHaveNonEmptyTitles()
-
-	/**
-	 * The My tasks widget with its item-API collaborators doubled.
-	 *
-	 * @return MyTasksWidget The widget.
-	 */
-	private function myTasksWidget(): MyTasksWidget {
-		return new MyTasksWidget(
-			$this->l10n,
-			$this->url,
-			$this->createMock(EngineTaskSource::class),
-			new QueueWidgetItems(url: $this->url, l10n: $this->l10n, dates: $this->caseDates()),
-			$this->createMock(LoggerInterface::class)
-		);
-
-	}//end myTasksWidget()
 }//end class

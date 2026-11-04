@@ -8,6 +8,7 @@
         "%1$s cases, %2$s tasks": "%1$s zaken, %2$s taken",
         "%1$s checklist item not ticked: '%2$s'": "%1$s checklistitem niet afgevinkt: '%2$s'",
         "%1$s is still open. %2$s": "%1$s staat nog open. %2$s",
+        "%1$s late, %2$s today": "%1$s te laat, %2$s vandaag",
         "%1$s needs a value for \"%2$s\".": "%1$s heeft een waarde nodig voor \"%2$s\".",
         "%1$s of %2$s documents are still waiting for an assessment": "%1$s van %2$s documenten wachten nog op een beoordeling",
         "%1$s of %2$s partly public documents are still waiting for a redacted version": "%1$s van %2$s deels openbare documenten wachten nog op een gelakte versie",
@@ -121,6 +122,10 @@
         "8 weeks": "8 weken",
         "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source": "<slug>/<uuid> van de oudere checklist waaruit dit sjabloon is overgenomen, zodat de overname één keer per bron loopt",
         "> 90 dagen": "> 90 dagen",
+        "_%n as substitute_::_%n as substitute_": [
+            "%n als waarnemer",
+            "%n als waarnemer"
+        ],
         "_%n at %s_::_%n at %s_": [
             "%n bij %s",
             "%n bij %s"
@@ -176,6 +181,14 @@
         "_%n object_::_%n objects_": [
             "%n object",
             "%n objecten"
+        ],
+        "_%n open case on your name_::_%n open cases on your name_": [
+            "%n open zaak op uw naam",
+            "%n open zaken op uw naam"
+        ],
+        "_%n open task_::_%n open tasks_": [
+            "%n open taak",
+            "%n open taken"
         ],
         "_%n option_::_%n options_": [
             "%n optie",
@@ -3851,6 +3864,7 @@
         "Go back to the {count} on this page": "Terug naar de {count} op deze pagina",
         "Go into the decision": "Gaan mee in het besluit",
         "Go to appeal case": "Ga naar beroepszaak",
+        "Go to My work": "Naar Mijn werk",
         "Go to the board": "Naar het werkbord",
         "Go-live check failed": "Go-live-controle mislukt",
         "Go-live readiness": "Go-live-gereedheid",
@@ -8232,6 +8246,7 @@
         "Stages": "Fasen",
         "Stakeholder": "Belanghebbende",
         "Stalled Cases": "Vastgelopen zaken",
+        "Stalled cases": "Stilstaande zaken",
         "Stamp fields": "Stempelvelden",
         "Standaard": "Standaard",
         "Standaard adviesinstantie": "Standaard adviesinstantie",
@@ -8688,6 +8703,7 @@
         "Task ready to start": "Taak klaar om te beginnen",
         "Task reassigned by {actor}": "Taak anders toegewezen door {actor}",
         "Task relation tab is being migrated. The full task list will appear here once dossiq-case-relation-tabs lands.": "Het taakrelatietabblad wordt gemigreerd. De volledige takenlijst verschijnt hier zodra dossiq-case-relation-tabs beschikbaar is.",
+        "Task reminders": "Taakherinneringen",
         "Task schema": "Taak schema",
         "Task stopped": "Taak gestopt",
         "Task title": "Taaktitel",
