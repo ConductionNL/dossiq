@@ -1,0 +1,1375 @@
+{
+    "register / late": {
+        "answer": {
+            "responsibleChamber": "enkelvoudig",
+            "provisionRequested": false,
+            "case": "case-1",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "2026-03-01",
+            "filingDeadline": "2026-02-21",
+            "latefilingNotice": true,
+            "id": "appeal-new"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "2026-03-01",
+                        "filingDeadline": "2026-02-21",
+                        "latefilingNotice": true
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "register / on time": {
+        "answer": {
+            "responsibleChamber": "enkelvoudig",
+            "provisionRequested": false,
+            "case": "case-1",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "2026-02-01",
+            "filingDeadline": "2026-02-21",
+            "latefilingNotice": false,
+            "id": "appeal-new"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "2026-02-01",
+                        "filingDeadline": "2026-02-21",
+                        "latefilingNotice": false
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "register / on the deadline": {
+        "answer": {
+            "responsibleChamber": "enkelvoudig",
+            "provisionRequested": false,
+            "case": "case-1",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "2026-02-21",
+            "filingDeadline": "2026-02-21",
+            "latefilingNotice": false,
+            "id": "appeal-new"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "2026-02-21",
+                        "filingDeadline": "2026-02-21",
+                        "latefilingNotice": false
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "register / payload": {
+        "answer": {
+            "responsibleChamber": "meervoudig",
+            "provisionRequested": false,
+            "courtReference": "AWB 26/1",
+            "case": "case-1",
+            "filingDeadline": "2026-02-21",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "2026-03-01",
+            "latefilingNotice": true,
+            "id": "appeal-new"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "meervoudig",
+                        "provisionRequested": false,
+                        "courtReference": "AWB 26/1",
+                        "case": "case-1",
+                        "filingDeadline": "2026-02-21",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "2026-03-01",
+                        "latefilingNotice": true
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "register / no effective date": {
+        "answer": {
+            "responsibleChamber": "enkelvoudig",
+            "provisionRequested": false,
+            "case": "case-1",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "2026-03-01",
+            "filingDeadline": "",
+            "latefilingNotice": false,
+            "id": "appeal-new"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "2026-03-01",
+                        "filingDeadline": "",
+                        "latefilingNotice": false
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "register / bad effective date": {
+        "answer": {
+            "responsibleChamber": "enkelvoudig",
+            "provisionRequested": false,
+            "case": "case-1",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "2026-03-01",
+            "filingDeadline": "",
+            "latefilingNotice": false,
+            "id": "appeal-new"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "2026-03-01",
+                        "filingDeadline": "",
+                        "latefilingNotice": false
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "register / bad filing date": {
+        "answer": {
+            "responsibleChamber": "enkelvoudig",
+            "provisionRequested": false,
+            "case": "case-1",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "nonsense",
+            "filingDeadline": "2026-02-21",
+            "latefilingNotice": false,
+            "id": "appeal-new"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "nonsense",
+                        "filingDeadline": "2026-02-21",
+                        "latefilingNotice": false
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "register / no filing date": {
+        "answer": {
+            "responsibleChamber": "enkelvoudig",
+            "provisionRequested": false,
+            "case": "case-1",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "",
+            "filingDeadline": "2026-02-21",
+            "latefilingNotice": false,
+            "id": "appeal-new"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "",
+                        "filingDeadline": "2026-02-21",
+                        "latefilingNotice": false
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "register / no deadline, future filing": {
+        "answer": {
+            "responsibleChamber": "enkelvoudig",
+            "provisionRequested": false,
+            "case": "case-1",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "2099-01-01",
+            "filingDeadline": "",
+            "latefilingNotice": false,
+            "id": "appeal-new"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "2099-01-01",
+                        "filingDeadline": "",
+                        "latefilingNotice": false
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "register / no object service": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "OpenRegister is not available"
+        },
+        "calls": [
+            "settings getObjectService"
+        ]
+    },
+    "register / no register": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Beroep schemas are not configured"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema"
+        ]
+    },
+    "register / no appeal schema": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Beroep schemas are not configured"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema"
+        ]
+    },
+    "register / no decision schema": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Beroep schemas are not configured"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema"
+        ]
+    },
+    "register / decision missing": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Contested beslissing not found"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            }
+        ]
+    },
+    "register / save throws": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Could not register beroep"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "2026-03-01",
+                        "filingDeadline": "2026-02-21",
+                        "latefilingNotice": true
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            },
+            {
+                "log.error": {
+                    "message": "Dossiq beroep: failed to register: save failed",
+                    "context": []
+                }
+            }
+        ]
+    },
+    "register / save answers null": {
+        "answer": {
+            "responsibleChamber": "enkelvoudig",
+            "provisionRequested": false,
+            "case": "case-1",
+            "sourceObjection": "obj-1",
+            "contestedDecision": "dec-1",
+            "appellantFilingDate": "2026-03-01",
+            "filingDeadline": "2026-02-21",
+            "latefilingNotice": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue appeal_decision_schema",
+            {
+                "find": {
+                    "id": "dec-1",
+                    "register": "dossiq",
+                    "schema": "appealDecision"
+                }
+            },
+            {
+                "saveObject": {
+                    "object": {
+                        "responsibleChamber": "enkelvoudig",
+                        "provisionRequested": false,
+                        "case": "case-1",
+                        "sourceObjection": "obj-1",
+                        "contestedDecision": "dec-1",
+                        "appellantFilingDate": "2026-03-01",
+                        "filingDeadline": "2026-02-21",
+                        "latefilingNotice": true
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep",
+                    "uuid": null
+                }
+            }
+        ]
+    },
+    "inspect / plain": {
+        "answer": {
+            "fileInspectionRequests": [
+                {
+                    "requestedAt": "2026-01-01",
+                    "deadline": "2026-01-29"
+                },
+                {
+                    "requestedAt": "2026-04-01",
+                    "deadline": "2026-04-29"
+                }
+            ],
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "fileInspectionRequests": [
+                            {
+                                "requestedAt": "2026-01-01",
+                                "deadline": "2026-01-29"
+                            },
+                            {
+                                "requestedAt": "2026-04-01",
+                                "deadline": "2026-04-29"
+                            }
+                        ]
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "inspect / with bundle": {
+        "answer": {
+            "fileInspectionRequests": [
+                {
+                    "requestedAt": "2026-01-01",
+                    "deadline": "2026-01-29"
+                },
+                {
+                    "requestedAt": "2026-04-01",
+                    "deadline": "2026-04-29",
+                    "fileBundle": "file-9"
+                }
+            ],
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "fileInspectionRequests": [
+                            {
+                                "requestedAt": "2026-01-01",
+                                "deadline": "2026-01-29"
+                            },
+                            {
+                                "requestedAt": "2026-04-01",
+                                "deadline": "2026-04-29",
+                                "fileBundle": "file-9"
+                            }
+                        ]
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "inspect / empty bundle": {
+        "answer": {
+            "fileInspectionRequests": [
+                {
+                    "requestedAt": "2026-01-01",
+                    "deadline": "2026-01-29"
+                },
+                {
+                    "requestedAt": "2026-04-01",
+                    "deadline": "2026-04-29"
+                }
+            ],
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "fileInspectionRequests": [
+                            {
+                                "requestedAt": "2026-01-01",
+                                "deadline": "2026-01-29"
+                            },
+                            {
+                                "requestedAt": "2026-04-01",
+                                "deadline": "2026-04-29"
+                            }
+                        ]
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "inspect / first request": {
+        "answer": {
+            "fileInspectionRequests": [
+                {
+                    "requestedAt": "2026-04-01",
+                    "deadline": "2026-04-29"
+                }
+            ],
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "fileInspectionRequests": [
+                            {
+                                "requestedAt": "2026-04-01",
+                                "deadline": "2026-04-29"
+                            }
+                        ]
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "inspect / bad date": {
+        "answer": {
+            "fileInspectionRequests": [
+                {
+                    "requestedAt": "2026-01-01",
+                    "deadline": "2026-01-29"
+                },
+                {
+                    "requestedAt": "soon",
+                    "deadline": ""
+                }
+            ],
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "fileInspectionRequests": [
+                            {
+                                "requestedAt": "2026-01-01",
+                                "deadline": "2026-01-29"
+                            },
+                            {
+                                "requestedAt": "soon",
+                                "deadline": ""
+                            }
+                        ]
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "inspect / no date": {
+        "answer": {
+            "fileInspectionRequests": [
+                {
+                    "requestedAt": "2026-01-01",
+                    "deadline": "2026-01-29"
+                },
+                {
+                    "requestedAt": "",
+                    "deadline": ""
+                }
+            ],
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "fileInspectionRequests": [
+                            {
+                                "requestedAt": "2026-01-01",
+                                "deadline": "2026-01-29"
+                            },
+                            {
+                                "requestedAt": "",
+                                "deadline": ""
+                            }
+                        ]
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "inspect / no object service": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "OpenRegister is not available"
+        },
+        "calls": [
+            "settings getObjectService"
+        ]
+    },
+    "inspect / not found": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Beroep not found"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "inspect / patch throws": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Could not add file-inspection request"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "fileInspectionRequests": [
+                            {
+                                "requestedAt": "2026-01-01",
+                                "deadline": "2026-01-29"
+                            },
+                            {
+                                "requestedAt": "2026-04-01",
+                                "deadline": "2026-04-29"
+                            }
+                        ]
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "log.error": {
+                    "message": "Dossiq beroep: failed to add file-inspection request: patch failed",
+                    "context": []
+                }
+            }
+        ]
+    },
+    "inspect / patch answers null": {
+        "answer": {
+            "id": "ap-1",
+            "sourceObjection": "obj-1",
+            "fileInspectionRequests": [
+                {
+                    "requestedAt": "2026-01-01",
+                    "deadline": "2026-01-29"
+                },
+                {
+                    "requestedAt": "2026-04-01",
+                    "deadline": "2026-04-29"
+                }
+            ]
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "fileInspectionRequests": [
+                            {
+                                "requestedAt": "2026-01-01",
+                                "deadline": "2026-01-29"
+                            },
+                            {
+                                "requestedAt": "2026-04-01",
+                                "deadline": "2026-04-29"
+                            }
+                        ]
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / invalid": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Invalid cascade action"
+        },
+        "calls": []
+    },
+    "cascade / reopen": {
+        "answer": {
+            "cascadeAction": "reopen_objection",
+            "cascadeObjectionCase": "case-0",
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "find": {
+                    "id": "obj-1",
+                    "register": "dossiq",
+                    "schema": "objection"
+                }
+            },
+            {
+                "transition": {
+                    "caseId": "case-0",
+                    "transitionId": "beroep-reopen",
+                    "comment": "Reopened via beroep ap-1",
+                    "userId": null,
+                    "resultTypeId": null
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "reopen_objection",
+                        "cascadeObjectionCase": "case-0"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / reopen, no source": {
+        "answer": {
+            "cascadeAction": "reopen_objection",
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "reopen_objection"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / reopen, no objection schema": {
+        "answer": {
+            "cascadeAction": "reopen_objection",
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "reopen_objection"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / reopen, source missing": {
+        "answer": {
+            "cascadeAction": "reopen_objection",
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "find": {
+                    "id": "obj-1",
+                    "register": "dossiq",
+                    "schema": "objection"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "reopen_objection"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / reopen, source without case": {
+        "answer": {
+            "cascadeAction": "reopen_objection",
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "find": {
+                    "id": "obj-1",
+                    "register": "dossiq",
+                    "schema": "objection"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "reopen_objection"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / reopen, transition throws": {
+        "answer": {
+            "cascadeAction": "reopen_objection",
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "find": {
+                    "id": "obj-1",
+                    "register": "dossiq",
+                    "schema": "objection"
+                }
+            },
+            {
+                "transition": {
+                    "caseId": "case-0",
+                    "transitionId": "beroep-reopen",
+                    "comment": "Reopened via beroep ap-1",
+                    "userId": null,
+                    "resultTypeId": null
+                }
+            },
+            {
+                "log.warning": {
+                    "message": "Dossiq beroep: reopen transition failed: transition refused",
+                    "context": []
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "reopen_objection"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / reopen, patch null": {
+        "answer": {
+            "id": "ap-1",
+            "sourceObjection": "obj-1",
+            "fileInspectionRequests": [
+                {
+                    "requestedAt": "2026-01-01",
+                    "deadline": "2026-01-29"
+                }
+            ],
+            "cascadeAction": "reopen_objection",
+            "cascadeObjectionCase": "case-0"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "find": {
+                    "id": "obj-1",
+                    "register": "dossiq",
+                    "schema": "objection"
+                }
+            },
+            {
+                "transition": {
+                    "caseId": "case-0",
+                    "transitionId": "beroep-reopen",
+                    "comment": "Reopened via beroep ap-1",
+                    "userId": null,
+                    "resultTypeId": null
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "reopen_objection",
+                        "cascadeObjectionCase": "case-0"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / new primary decision": {
+        "answer": {
+            "cascadeAction": "new_primary_decision",
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq beroep: new_primary_decision cascade requested",
+                    "context": {
+                        "beroepId": "ap-1"
+                    }
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "new_primary_decision"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / none": {
+        "answer": {
+            "cascadeAction": "none",
+            "id": "ap-1",
+            "patched": true
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "none"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / not found": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Beroep not found"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            }
+        ]
+    },
+    "cascade / no object service": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "OpenRegister is not available"
+        },
+        "calls": [
+            "settings getObjectService"
+        ]
+    },
+    "cascade / patch throws": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "Could not persist cascade"
+        },
+        "calls": [
+            "settings getObjectService",
+            "settings getConfigValue register",
+            "settings getConfigValue beroep_schema",
+            "settings getConfigValue bezwaar_schema",
+            {
+                "find": {
+                    "id": "ap-1",
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "find": {
+                    "id": "obj-1",
+                    "register": "dossiq",
+                    "schema": "objection"
+                }
+            },
+            {
+                "transition": {
+                    "caseId": "case-0",
+                    "transitionId": "beroep-reopen",
+                    "comment": "Reopened via beroep ap-1",
+                    "userId": null,
+                    "resultTypeId": null
+                }
+            },
+            {
+                "patchObject": {
+                    "objectId": "ap-1",
+                    "data": {
+                        "cascadeAction": "reopen_objection",
+                        "cascadeObjectionCase": "case-0"
+                    },
+                    "register": "dossiq",
+                    "schema": "beroep"
+                }
+            },
+            {
+                "log.error": {
+                    "message": "Dossiq beroep: failed to persist cascade: patch failed",
+                    "context": []
+                }
+            }
+        ]
+    }
+}

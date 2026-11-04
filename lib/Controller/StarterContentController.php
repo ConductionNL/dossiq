@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Starter\CaseTypeRetirementService;
 use OCA\Dossiq\Service\Starter\DomainCopyService;
 use OCA\Dossiq\Service\Starter\ReusableProcessStepService;
@@ -78,7 +79,6 @@ class StarterContentController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                      $appName    The app name.
 	 * @param IRequest                    $request    The HTTP request.
 	 * @param ShippedConfigurationService $shipped    What shipped and what changed.
 	 * @param CaseTypeRetirementService   $retirement Retire and restore.
@@ -87,7 +87,6 @@ class StarterContentController extends Controller {
 	 * @param LoggerInterface             $logger     Logger.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly ShippedConfigurationService $shipped,
 		private readonly CaseTypeRetirementService $retirement,
@@ -95,7 +94,7 @@ class StarterContentController extends Controller {
 		private readonly ReusableProcessStepService $steps,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

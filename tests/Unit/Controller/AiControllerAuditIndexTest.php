@@ -83,7 +83,6 @@ class AiControllerAuditIndexTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($user);
 
 		$this->controller = new AiController(
-			appName: 'dossiq',
 			request: $this->request,
 			aiService: $this->aiService,
 			auditService: $this->auditService,
@@ -171,7 +170,6 @@ class AiControllerAuditIndexTest extends TestCase {
 		$userSession->method('getUser')->willReturn(null);
 
 		$controller = new AiController(
-			appName: 'dossiq',
 			request: $this->request,
 			aiService: $this->aiService,
 			auditService: $this->auditService,
@@ -213,7 +211,6 @@ class AiControllerAuditIndexTest extends TestCase {
 			->willReturn(false);
 
 		$controller = new AiController(
-			appName: 'dossiq',
 			request: $this->request,
 			aiService: $this->aiService,
 			auditService: $this->auditService,

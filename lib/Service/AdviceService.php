@@ -394,16 +394,14 @@ class AdviceService {
 			$savedRecord = $saved;
 		}
 
-		$adviceId = (string)($savedRecord['id'] ?? ($savedRecord['uuid'] ?? ''));
-
 		$this->delegateAdviceDecision(
-			objectService: $objectService,
-			register: $register,
-			caseId: $caseId,
-			adviceId: $adviceId,
-			data: $data,
-			payload: $payload,
-			saved: $savedRecord,
+			advice: [
+				'objectService' => $objectService,
+				'register' => $register,
+				'data' => $data,
+				'payload' => $payload,
+				'saved' => $savedRecord,
+			]
 		);
 
 		$this->notifier->notifyAdviseur(
@@ -424,31 +422,24 @@ class AdviceService {
 	 * Raise the decidesk `advice` Decision for a new advice request and
 	 * persist its reference on the saved adviceRequest.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param string $register The register id
-	 * @param string $caseId UUID of the case
-	 * @param string $adviceId UUID of the saved adviceRequest
-	 * @param array<string, mixed> $data Advice request data
-	 * @param array<string, mixed> $payload The persisted adviceRequest payload
-	 * @param array<string, mixed> $saved The normalized saveObject() result
+	 * The advice request travels as requestAdvice() wrote it: `objectService` (the
+	 * OpenRegister ObjectService), `register` (the register id), `data` (the advice
+	 * request data), `payload` (the persisted adviceRequest payload) and `saved`
+	 * (the normalized saveObject() result).
+	 *
+	 * @param array<string, mixed> $advice The advice request.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException If decidesk fails closed
 	 */
-	private function delegateAdviceDecision(
-		object $objectService,
-		string $register,
-		string $caseId,
-		string $adviceId,
-		array $data,
-		array $payload,
-		array $saved,
-	): void {
+	private function delegateAdviceDecision(array $advice): void {
 		// REQ-PDRD-001 / REQ-PDRD-002: the advice is *made* in decidesk. Raise a
 		// decidesk `advice` Decision for this request and persist its ref. Fail
 		// CLOSED — never author an advice outcome locally as a fallback.
-		$subjectId = $caseId;
+		$saved = $advice['saved'];
+		$adviceId = (string)($saved['id'] ?? ($saved['uuid'] ?? ''));
+		$subjectId = (string)$advice['payload']['caseRef'];
 		if ($adviceId !== '') {
 			$subjectId = $adviceId;
 		}
@@ -457,22 +448,11 @@ class AdviceService {
 			$decisionRef = $this->adviceDelegation->raiseAdviceDecision(
 				subjectSchema: 'adviesAanvraag',
 				subjectId: $subjectId,
-				payload: [
-					'subjectRegister' => $register,
-					'externalReference' => $caseId,
-					'subjectLabel' => (string)($data['question'] ?? 'Adviesaanvraag'),
-					'question' => (string)($data['question'] ?? ''),
-					'advisor' => (string)$payload['advisor'],
-				],
+				payload: $this->decisionPayload(advice: $advice),
 			);
 
 			if ($adviceId !== '') {
-				$objectService->saveObject(
-					object: array_merge($saved, ['decisionRef' => $decisionRef]),
-					register: $register,
-					schema: 'adviceRequest',
-					uuid: $adviceId,
-				);
+				$this->storeDecisionRef(advice: $advice + ['adviceId' => $adviceId], decisionRef: $decisionRef);
 			}
 		} catch (RuntimeException $e) {
 			$this->logger->error(
@@ -483,4 +463,40 @@ class AdviceService {
 			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
 		}//end try
 	}//end delegateAdviceDecision()
+
+	/**
+	 * Persist the decidesk Decision reference on the saved adviceRequest.
+	 *
+	 * @param array<string, mixed> $advice      The advice request, with its `adviceId`.
+	 * @param string               $decisionRef The decidesk Decision reference.
+	 *
+	 * @return void
+	 */
+	private function storeDecisionRef(array $advice, string $decisionRef): void {
+		$advice['objectService']->saveObject(
+			object: array_merge($advice['saved'], ['decisionRef' => $decisionRef]),
+			register: $advice['register'],
+			schema: 'adviceRequest',
+			uuid: $advice['adviceId'],
+		);
+	}//end storeDecisionRef()
+
+	/**
+	 * What decidesk is told about the advice request.
+	 *
+	 * @param array<string, mixed> $advice See {@see self::delegateAdviceDecision()}.
+	 *
+	 * @return array<string, string>
+	 */
+	private function decisionPayload(array $advice): array {
+		$data = $advice['data'];
+
+		return [
+			'subjectRegister' => $advice['register'],
+			'externalReference' => (string)$advice['payload']['caseRef'],
+			'subjectLabel' => (string)($data['question'] ?? 'Adviesaanvraag'),
+			'question' => (string)($data['question'] ?? ''),
+			'advisor' => (string)$advice['payload']['advisor'],
+		];
+	}//end decisionPayload()
 }//end class

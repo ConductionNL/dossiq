@@ -92,7 +92,6 @@ final class ZrcCaseReadAccessTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new ZrcController(
-			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			zgwService: $zgw,
 			l10n: $l10n,

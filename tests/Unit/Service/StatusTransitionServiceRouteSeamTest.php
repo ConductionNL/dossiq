@@ -70,6 +70,8 @@ interface RouteSeamObjectServiceStub {
  * The engine resolves the workflow through the case.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionStep
  * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
  * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver

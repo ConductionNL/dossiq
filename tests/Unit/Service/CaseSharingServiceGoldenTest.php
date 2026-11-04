@@ -80,6 +80,7 @@ class CaseSharingServiceGoldenTest extends TestCase {
 			'partner / consent by uuid' => ['createPartnerShare', $partner, ['consent' => ['allowed' => true, 'rule' => 'r', 'sentence' => '', 'consent' => ['uuid' => 'u-1'], 'scope' => [], 'until' => null]]],
 			'partner / no consent record' => ['createPartnerShare', $partner, ['consent' => ['allowed' => true, 'rule' => 'r', 'sentence' => '', 'consent' => null, 'scope' => null, 'until' => null]]],
 			'partner / unconfigured' => ['createPartnerShare', $partner, ['config' => ['register' => '', 'case_share_schema' => 'x']]],
+			'partner / no schema' => ['createPartnerShare', $partner, ['config' => ['case_share_schema' => '']]],
 			'case id / found' => ['getCaseIdForShare', $id, $found],
 			'case id / as array' => ['getCaseIdForShare', $id, $found + ['findAs' => 'array']],
 			'case id / numeric' => ['getCaseIdForShare', $id, ['find' => ['share-7' => ['caseId' => 42]]]],

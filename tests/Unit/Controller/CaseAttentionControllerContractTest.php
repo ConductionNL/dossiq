@@ -104,7 +104,6 @@ class CaseAttentionControllerContractTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new CaseAttentionController(
-			appName: 'dossiq',
 			request: $this->createMock(originalClassName: IRequest::class),
 			flags: $this->flags,
 			caseAccessGuard: $this->guard,

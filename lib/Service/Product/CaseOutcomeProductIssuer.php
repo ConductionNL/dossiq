@@ -295,7 +295,9 @@ class CaseOutcomeProductIssuer {
 	/**
 	 * Whether a product is the change case requester's own and still in force.
 	 *
-	 * A change case can name any id, and the decision is about this case.
+	 * A change case can name any id, and the decision is about this case. A
+	 * case without a holder owns no product, and only a product whose status
+	 * says `active` is in force.
 	 *
 	 * @param ProductOutcome       $outcome The change case.
 	 * @param array<string, mixed> $product The product it names.
@@ -303,11 +305,12 @@ class CaseOutcomeProductIssuer {
 	 * @return bool True when the change may be made.
 	 */
 	private function inForceFor(ProductOutcome $outcome, array $product): bool {
-		if ((string)($product['portalSubject'] ?? '') !== (string)($outcome->caseObject['portalSubject'] ?? '')) {
+		$holder = (string)($outcome->caseObject['portalSubject'] ?? '');
+		if (trim($holder) === '' || (string)($product['portalSubject'] ?? '') !== $holder) {
 			return false;
 		}
 
-		return (string)($product['status'] ?? 'active') === 'active';
+		return (string)($product['status'] ?? '') === 'active';
 	}//end inForceFor()
 
 	/**

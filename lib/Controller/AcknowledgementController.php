@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\AcknowledgementService;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -64,7 +65,6 @@ class AcknowledgementController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                 $appName         The app name.
 	 * @param IRequest               $request         The HTTP request.
 	 * @param AcknowledgementService $acknowledgement The acknowledgement of receipt.
 	 * @param CaseAccessGuard        $caseAccessGuard Per-case authorization (fails closed).
@@ -73,7 +73,6 @@ class AcknowledgementController extends Controller {
 	 * @param LoggerInterface        $logger          The logger.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly AcknowledgementService $acknowledgement,
 		private readonly CaseAccessGuard $caseAccessGuard,
@@ -81,7 +80,7 @@ class AcknowledgementController extends Controller {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
