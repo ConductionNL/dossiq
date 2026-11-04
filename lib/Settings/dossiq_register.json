@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.91"
+        "version": "0.20.92"
     },
     "x-openregister": {
         "type": "application",
@@ -9118,7 +9118,7 @@
             "inspectionChecklistRun": {
                 "slug": "inspectionChecklistRun",
                 "icon": "ClipboardCheckMultipleOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:Action",
                 "title": "Inspection Checklist Run",
                 "description": "Per-inspection runtime instance of an inspectionChecklistTemplate. Once it is submitted (status=ingediend) the run is append-only, and further edits are rejected.",
@@ -9274,6 +9274,19 @@
                                     ],
                                     "description": "Offline-sync state for this response",
                                     "title": "Sync State"
+                                },
+                                "gpsAtAnswer": {
+                                    "type": "object",
+                                    "title": "GPS at answer",
+                                    "description": "Where the answer was given, captured by the device when the answer first changed, or an address typed by hand when there was no good fix",
+                                    "properties": {
+                                        "lat": { "type": "number", "title": "Latitude", "description": "Geographic latitude" },
+                                        "lng": { "type": "number", "title": "Longitude", "description": "Geographic longitude" },
+                                        "accuracy": { "type": "number", "title": "Accuracy", "description": "Accuracy of the fix in metres" },
+                                        "at": { "type": "string", "format": "date-time", "title": "Captured at", "description": "When the device gave the fix" },
+                                        "low": { "type": "boolean", "title": "Inaccurate", "description": "True when there was no fix or it was less accurate than 50 metres" },
+                                        "address": { "type": "string", "title": "Address", "description": "An address the inspector typed by hand" }
+                                    }
                                 }
                             }
                         },

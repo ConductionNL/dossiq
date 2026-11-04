@@ -260,9 +260,11 @@ export default {
 				days: '14',
 				pauseReason: '',
 				notifyRequester: true,
+				remindRequester: false,
 			},
 
 			pauseReasons: [],
+			reminder: null,
 			caseType: '',
 			error: '',
 			busy: false,
@@ -294,6 +296,7 @@ export default {
 				caseType: this.caseType,
 				caseId: this.targetCaseId,
 				requester: String(this.kase?.initiatorDisplayName ?? ''),
+				reminder: this.reminder,
 			})
 		},
 
@@ -489,6 +492,9 @@ export default {
 					'The next status of the case type. Statuses that cannot follow from here are greyed out.',
 				)
 			}
+			if (entry?.kind === 'remedy') {
+				return String(entry.explainer ?? '')
+			}
 			switch (String(entry?.id ?? '')) {
 				case 'finish':
 					return t(
@@ -584,7 +590,7 @@ export default {
 			const actsBody =
 				acts.status === 'fulfilled' ? (acts.value?.data ?? null) : null
 
-			this.entries = buildActsMenu({
+			this.entries = this.withOwnDialogs(buildActsMenu({
 				transitions:
 					moves.status === 'fulfilled'
 						? (moves.value?.data?.transitions ?? [])
@@ -594,7 +600,7 @@ export default {
 						? (state.value?.data ?? null)
 						: null,
 				acts: actsBody,
-			})
+			}))
 			fetchCaseSummary(this.targetCaseId).then((kase) => {
 				this.kase = kase
 			})
@@ -613,6 +619,7 @@ export default {
 				state.status === 'fulfilled' && Array.isArray(state.value?.data?.pauseReasons)
 					? state.value.data.pauseReasons
 					: []
+			this.reminder = state.status === 'fulfilled' ? (state.value?.data?.requesterReminder ?? null) : null
 			this.loading = false
 		},
 
@@ -653,6 +660,18 @@ export default {
 		 * @return {string} The heading.
 		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
 		 */
+		/**
+		 * The menu without the remedies this page has no dialog for: a remedy
+		 * is lodged in its own dialog (`actDialogs`), never posted from here.
+		 *
+		 * @param {Array<object>} entries The built menu.
+		 * @return {Array<object>} The entries this page can act on.
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-from-the-case-page-req-rml-003
+		 */
+		withOwnDialogs(entries) {
+			return entries.filter((entry) => entry.kind !== 'remedy' || String(this.actDialogs?.[entry.id] ?? '') !== '')
+		},
+
 		heading(entry) {
 			return approvalHeading(entry)
 		},
@@ -806,6 +825,7 @@ export default {
 							days: Number(sent.days) || 0,
 							pauseReason: sent.pauseReason,
 							...(this.chosen.id === 'archive' ? { notifyRequester: this.values.notifyRequester === true } : {}),
+							...(this.chosen.id === 'suspend' && this.reminder ? { remindRequester: this.values.remindRequester === true } : {}),
 						},
 					)
 					this.sayWhetherTheRequesterWasTold(data, this.chosen.id)

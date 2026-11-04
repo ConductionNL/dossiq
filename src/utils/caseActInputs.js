@@ -88,10 +88,11 @@ function actLayouts() {
  * @param {string} [scope.caseType] The case type.
  * @param {string} [scope.caseId] The case id.
  * @param {string} [scope.requester] The requester's name, for the notify checkbox.
+ * @param {object|null} [scope.reminder] The case type's reminder policy from `/lifecycle`.
  * @return {{inputs: Array<object>, columns: number, summary: object|null, notice: object|null, title: string, confirmIcon: object|null}} The form.
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
-export function actForm(entry, { caseType = '', caseId = '', requester = '' } = {}) {
+export function actForm(entry, { caseType = '', caseId = '', requester = '', reminder = null } = {}) {
 	if (!entry) {
 		return { inputs: [], columns: 1, summary: null, notice: null, title: '', confirmIcon: null }
 	}
@@ -184,18 +185,7 @@ export function actForm(entry, { caseType = '', caseId = '', requester = '' } = 
 		})
 	}
 
-	if (layout.notifyRequester) {
-		inputs.push({
-			field: 'notifyRequester',
-			widget: 'checkbox',
-			default: true,
-			required: false,
-			label: requester === ''
-				? t('dossiq', 'Let the requester know the case is completed')
-				: t('dossiq', 'Let {initiatorDisplayName} know the case is completed', { initiatorDisplayName: requester }),
-			testid: 'case-act-notify-requester',
-		})
-	}
+	inputs.push(...requesterInputs(entry, layout, { requester, reminder }))
 
 	return {
 		inputs,
@@ -205,4 +195,48 @@ export function actForm(entry, { caseType = '', caseId = '', requester = '' } = 
 		title: layout.title ?? '',
 		confirmIcon: layout.confirmIcon ?? null,
 	}
+}
+
+/**
+ * The checkboxes that tell or remind the requester, last in the form: the
+ * notice on archiving, and on Suspend the reminder when the case type sets
+ * one (board DqVolgendeStap). Without the server's reminder policy the
+ * reminder is not offered, so a handler never ticks a reminder nobody sends.
+ *
+ * @param {object} entry The chosen act.
+ * @param {object} layout The act's layout from actLayouts.
+ * @param {object} scope The requester's name and the reminder policy.
+ * @param {string} scope.requester The requester's name.
+ * @param {object|null} scope.reminder `{ afterDays, maxCount }` from `/lifecycle`.
+ * @return {Array<object>} The inputs.
+ * @spec openspec/specs/termijn-pause-extension/spec.md
+ */
+function requesterInputs(entry, layout, { requester, reminder }) {
+	if (layout.notifyRequester) {
+		return [{
+			field: 'notifyRequester',
+			widget: 'checkbox',
+			default: true,
+			required: false,
+			label: requester === ''
+				? t('dossiq', 'Let the requester know the case is completed')
+				: t('dossiq', 'Let {initiatorDisplayName} know the case is completed', { initiatorDisplayName: requester }),
+			testid: 'case-act-notify-requester',
+		}]
+	}
+	const days = Number(reminder?.afterDays)
+	const count = Number(reminder?.maxCount)
+	if (String(entry?.id ?? '') !== 'suspend' || !(days > 0) || !(count > 0)) {
+		return []
+	}
+
+	return [{
+		field: 'remindRequester',
+		widget: 'checkbox',
+		default: false,
+		required: false,
+		label: t('dossiq', 'Remind the requester if the answer does not come'),
+		note: t('dossiq', 'After {days} days, at most {count} times, to the address the request went to. Each reminder goes on the timeline with a count. If it stays quiet after the last one, the case tells the team lead once.', { days, count }),
+		testid: 'case-act-remind-requester',
+	}]
 }
