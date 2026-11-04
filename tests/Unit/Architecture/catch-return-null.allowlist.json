@@ -671,10 +671,10 @@
     },
     {
       "file": "lib/Service/Email/UnmatchedMailIntake.php",
-      "method": "caseFor",
+      "method": "file",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`caseFor()` answers `return null` when the read fails; the catch logs at error (\"UnmatchedMailIntake: could not file the mail as a case\"), so a failed read and an absent record are the same answer."
+      "reason": "`file()` answers `return null` when the read fails; the catch logs at error (\"UnmatchedMailIntake: could not file the mail as a case\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/FilinqRedactionClient.php",
