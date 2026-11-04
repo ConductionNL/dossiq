@@ -1,7 +1,7 @@
 # Screens
 
-- DqZaakDocumenten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumenten
-- DqZaakBesluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
-- DqTermijnen https://identity.conduction.nl/screens/board?id=dossiq/DqTermijnen
-- DqArchiveren https://identity.conduction.nl/screens/board?id=dossiq/DqArchiveren
-- DqZaakTaken https://identity.conduction.nl/screens/board?id=dossiq/DqZaakTaken
+- dossiq/DqZaakDocumenten zaak, tabblad documenten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakDocumenten
+- dossiq/DqZaakBesluiten zaak, besluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
+- dossiq/DqTermijnen termijnbewaking en dwangsom https://identity.conduction.nl/screens/board?id=dossiq/DqTermijnen
+- dossiq/DqArchiveren archiveren, dialoog https://identity.conduction.nl/screens/board?id=dossiq/DqArchiveren
+- dossiq/DqZaakTaken zaak, tabblad taken https://identity.conduction.nl/screens/board?id=dossiq/DqZaakTaken

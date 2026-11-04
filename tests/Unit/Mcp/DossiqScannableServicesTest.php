@@ -78,6 +78,7 @@ class DossiqScannableServicesTest extends TestCase {
 		'transitionCase' => 'instance',
 		'reassignCase' => 'instance',
 		'completeTask' => 'instance',
+		'createTask' => 'instance',
 		'extendDeadline' => 'instance',
 		'pauseDeadline' => 'instance',
 		'resumeDeadline' => 'instance',
@@ -180,7 +181,7 @@ class DossiqScannableServicesTest extends TestCase {
 			$checked++;
 		}
 
-		$this->assertSame(6, $checked, 'Expected the six tool classes under Service\\Mcp.');
+		$this->assertSame(7, $checked, 'Expected the seven tool classes under Service\\Mcp.');
 	}//end testNoToolClassReachesPastItsOwningService()
 
 	/**

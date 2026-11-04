@@ -2372,6 +2372,15 @@ declaration, and SHALL NOT be readable in the portal by default.
 - **WHEN** it ends
 - **THEN** the case SHALL record the moment, both participants and the duration
 
+#### Scenario: a held conversation reads as the board draws it
+@e2e exclude {display only: tests/vitest/conversationRecordLine.spec.js and caseConversationsPanelHostProps.spec.js assert the line, the pill and the footnote}
+
+- **GIVEN** a conversation held on 4 October from 10:30 to 10:42 by Pieter Jansen and Sanne de Vries
+- **WHEN** a Dutch handler opens the case's Live conversation card
+- **THEN** its row SHALL read "4 okt, 10:30 tot 10:42 · Pieter Jansen en Sanne de Vries · 12 minuten" under the subject
+- **AND** the row SHALL carry the status pill "Afgelopen"
+- **AND** the card SHALL say under the list what it holds: when each conversation was held, who joined and how long it lasted
+
 #### Scenario: a recording becomes a case document
 @e2e tests/e2e/live-conversation-on-the-case.spec.ts
 

@@ -85,11 +85,12 @@ class ZuiddrechtFieldInspectionDayTest extends TestCase {
 
 	/**
 	 * Pieter's run on the Kerkplein case is in execution, on a snapshot of that
-	 * checklist, with questions 1 to 7 answered and question 8 open.
+	 * checklist, with questions 1 to 8 answered (7 "nee" with a note, 8 "ja"), so the
+	 * frame opens at the page of questions 7 and 8, as DqInspectie draws it.
 	 *
 	 * @return void
 	 */
-	public function testPietersRunStopsAfterQuestionSeven(): void {
+	public function testPietersRunStopsAfterQuestionEight(): void {
 		$objects  = $this->objects();
 		$run      = $objects[self::RUN_KEY]['data'];
 		$template = $objects[self::TEMPLATE_KEY]['data'];
@@ -101,9 +102,10 @@ class ZuiddrechtFieldInspectionDayTest extends TestCase {
 		$this->assertSame(expected: $template['sections'], actual: $run['templateSnapshot']['sections']);
 
 		$ids = $this->itemIds(sections: $run['templateSnapshot']['sections']);
-		$this->assertSame(expected: array_slice($ids, 0, 7), actual: array_column($run['responses'], 'itemId'));
+		$this->assertSame(expected: array_slice($ids, 0, 8), actual: array_column($run['responses'], 'itemId'));
 		$this->assertSame(expected: 'nee', actual: $run['responses'][6]['value']);
-	}//end testPietersRunStopsAfterQuestionSeven()
+		$this->assertSame(expected: 'ja', actual: $run['responses'][7]['value']);
+	}//end testPietersRunStopsAfterQuestionEight()
 
 	/**
 	 * Today's inspections name the checklist they run.

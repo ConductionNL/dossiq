@@ -1,0 +1,2234 @@
+{
+    "draft": {
+        "answer": {
+            "dispositionType": "dismissed",
+            "reasoning": "r",
+            "bezwaar": "obj-1",
+            "status": "draft",
+            "id": "dec-new"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "DecisionValidator::assertDraftable",
+                {
+                    "payload": {
+                        "dispositionType": "dismissed",
+                        "reasoning": "r"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "dispositionType": "dismissed",
+                        "reasoning": "r",
+                        "bezwaar": "obj-1",
+                        "status": "draft"
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "draft, owned fields dropped and link forced": {
+        "answer": {
+            "dispositionType": "dismissed",
+            "bezwaar": "obj-1",
+            "status": "draft",
+            "note": "n",
+            "id": "dec-new"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "DecisionValidator::assertDraftable",
+                {
+                    "payload": {
+                        "dispositionType": "dismissed",
+                        "bezwaar": "evil",
+                        "status": "final",
+                        "publishedAt": "x",
+                        "notifiedRecipients": [
+                            "y"
+                        ],
+                        "note": "n"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "dispositionType": "dismissed",
+                        "bezwaar": "obj-1",
+                        "status": "draft",
+                        "note": "n"
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "draft, save answers a scalar": {
+        "answer": {
+            "dispositionType": "dismissed",
+            "reasoning": "r",
+            "bezwaar": "obj-1",
+            "status": "draft"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "DecisionValidator::assertDraftable",
+                {
+                    "payload": {
+                        "dispositionType": "dismissed",
+                        "reasoning": "r"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "dispositionType": "dismissed",
+                        "reasoning": "r",
+                        "bezwaar": "obj-1",
+                        "status": "draft"
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "draft, save fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Could not draft bezwaarDecision",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "DecisionValidator::assertDraftable",
+                {
+                    "payload": {
+                        "dispositionType": "dismissed",
+                        "reasoning": "r"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::saveObject",
+                {
+                    "object": {
+                        "dispositionType": "dismissed",
+                        "reasoning": "r",
+                        "bezwaar": "obj-1",
+                        "status": "draft"
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq bezwaar-decision: failed to draft: saveObject failed",
+                []
+            ]
+        ]
+    },
+    "draft, refused by the validator": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "assertDraftable failed",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "DecisionValidator::assertDraftable",
+                {
+                    "payload": {
+                        "dispositionType": "dismissed",
+                        "reasoning": "r"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "draft, no object service": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "OpenRegister is not available",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "draft, no register": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "BezwaarDecision schema is not configured",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "draft, no decision schema": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "BezwaarDecision schema is not configured",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish": {
+        "answer": {
+            "id": "dec-1",
+            "patched": true,
+            "decisionRef": "decision-ref-1",
+            "status": "awaiting-decidesk",
+            "notifiedRecipients": [
+                "actor:jurist-1",
+                "bezwaarmaker:piet",
+                "gemachtigde:advocaat",
+                "primair-beslisser:team-a",
+                "bac-secretaris:bac-1"
+            ]
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "obj-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2"
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": [
+                            "actor:jurist-1",
+                            "bezwaarmaker:piet",
+                            "gemachtigde:advocaat",
+                            "primair-beslisser:team-a",
+                            "bac-secretaris:bac-1"
+                        ]
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, with proceskosten": {
+        "answer": {
+            "id": "dec-1",
+            "patched": true,
+            "decisionRef": "decision-ref-1",
+            "status": "awaiting-decidesk",
+            "notifiedRecipients": [
+                "actor:jurist-1",
+                "bezwaarmaker:piet",
+                "gemachtigde:advocaat",
+                "primair-beslisser:team-a",
+                "bac-secretaris:bac-1"
+            ],
+            "legalCostsCompensation": {
+                "awarded": true,
+                "awardedPoints": 2,
+                "totalAmount": 1250.0
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1",
+                        "legalCostsCompensation": {
+                            "awarded": true,
+                            "awardedPoints": 2
+                        }
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "obj-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2"
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1",
+                        "legalCostsCompensation": {
+                            "awarded": true,
+                            "awardedPoints": 2
+                        }
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": [
+                            "actor:jurist-1",
+                            "bezwaarmaker:piet",
+                            "gemachtigde:advocaat",
+                            "primair-beslisser:team-a",
+                            "bac-secretaris:bac-1"
+                        ],
+                        "legalCostsCompensation": {
+                            "awarded": true,
+                            "awardedPoints": 2,
+                            "totalAmount": 1250.0
+                        }
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, a total without an earlier block": {
+        "answer": {
+            "id": "dec-1",
+            "patched": true,
+            "decisionRef": "decision-ref-1",
+            "status": "awaiting-decidesk",
+            "notifiedRecipients": [
+                "actor:jurist-1",
+                "bezwaarmaker:piet",
+                "gemachtigde:advocaat",
+                "primair-beslisser:team-a",
+                "bac-secretaris:bac-1"
+            ],
+            "legalCostsCompensation": {
+                "totalAmount": 0.0
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "obj-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2"
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": [
+                            "actor:jurist-1",
+                            "bezwaarmaker:piet",
+                            "gemachtigde:advocaat",
+                            "primair-beslisser:team-a",
+                            "bac-secretaris:bac-1"
+                        ],
+                        "legalCostsCompensation": {
+                            "totalAmount": 0.0
+                        }
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, a scalar cost block": {
+        "answer": {
+            "id": "dec-1",
+            "patched": true,
+            "decisionRef": "decision-ref-1",
+            "status": "awaiting-decidesk",
+            "notifiedRecipients": [
+                "actor:jurist-1",
+                "bezwaarmaker:piet",
+                "gemachtigde:advocaat",
+                "primair-beslisser:team-a",
+                "bac-secretaris:bac-1"
+            ],
+            "legalCostsCompensation": {
+                "0": "x",
+                "totalAmount": 5.5
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1",
+                        "legalCostsCompensation": "x"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "obj-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2"
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1",
+                        "legalCostsCompensation": "x"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": [
+                            "actor:jurist-1",
+                            "bezwaarmaker:piet",
+                            "gemachtigde:advocaat",
+                            "primair-beslisser:team-a",
+                            "bac-secretaris:bac-1"
+                        ],
+                        "legalCostsCompensation": {
+                            "0": "x",
+                            "totalAmount": 5.5
+                        }
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, no objection on the decision": {
+        "answer": {
+            "id": "dec-1",
+            "patched": true,
+            "decisionRef": "decision-ref-1",
+            "status": "awaiting-decidesk",
+            "notifiedRecipients": [
+                "actor:jurist-1",
+                "bezwaarmaker:piet",
+                "gemachtigde:advocaat",
+                "primair-beslisser:team-a",
+                "bac-secretaris:bac-1"
+            ]
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "dec-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2"
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": [
+                            "actor:jurist-1",
+                            "bezwaarmaker:piet",
+                            "gemachtigde:advocaat",
+                            "primair-beslisser:team-a",
+                            "bac-secretaris:bac-1"
+                        ]
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, the subject label from onderwerp": {
+        "answer": {
+            "id": "dec-1",
+            "patched": true,
+            "decisionRef": "decision-ref-1",
+            "status": "awaiting-decidesk",
+            "notifiedRecipients": [
+                "actor:jurist-1"
+            ]
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "onderwerp": "Onderwerp",
+                        "bezwaar": "obj-1"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "obj-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Onderwerp",
+                        "dispositionType": "",
+                        "reasoning": "",
+                        "legalBasis": "",
+                        "replacementDecision": ""
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "onderwerp": "Onderwerp",
+                        "bezwaar": "obj-1"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": [
+                            "actor:jurist-1"
+                        ]
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, a bare decision, no session user": {
+        "answer": {
+            "id": "dec-1",
+            "patched": true,
+            "decisionRef": "decision-ref-1",
+            "status": "awaiting-decidesk",
+            "notifiedRecipients": []
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "dec-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "",
+                        "dispositionType": "",
+                        "reasoning": "",
+                        "legalBasis": "",
+                        "replacementDecision": ""
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "id": "dec-1"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": []
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, the same recipient twice": {
+        "answer": {
+            "id": "dec-1",
+            "patched": true,
+            "decisionRef": "decision-ref-1",
+            "status": "awaiting-decidesk",
+            "notifiedRecipients": [
+                "actor:x",
+                "bezwaarmaker:x",
+                "gemachtigde:x"
+            ]
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "bezwaarmaker": "x",
+                        "authorisedRepresentative": "x",
+                        "primairBeslisser": "",
+                        "advisoryOpinion": ""
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "dec-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "",
+                        "dispositionType": "",
+                        "reasoning": "",
+                        "legalBasis": "",
+                        "replacementDecision": ""
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "bezwaarmaker": "x",
+                        "authorisedRepresentative": "x",
+                        "primairBeslisser": "",
+                        "advisoryOpinion": ""
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": [
+                            "actor:x",
+                            "bezwaarmaker:x",
+                            "gemachtigde:x"
+                        ]
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, not found": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "BezwaarDecision not found",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, read fails": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "find failed",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, read answers a scalar": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "BezwaarDecision not found",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, refused by the validator": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "assertPublishable failed",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, the deciding app is unavailable": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Decision service unavailable: raiseBezwaarDecision failed",
+            "code": 0,
+            "previous": "raiseBezwaarDecision failed"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "obj-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2"
+                    }
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq bezwaar-decision: decidesk Decision raise failed — failing closed: raiseBezwaarDecision failed",
+                []
+            ]
+        ]
+    },
+    "publish, the deciding app fails otherwise": {
+        "answer": {
+            "thrown": "LogicException",
+            "message": "not a runtime failure",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "obj-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2"
+                    }
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, the reference cannot be recorded": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Could not record bezwaarDecision delegation",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "obj-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2"
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": [
+                            "actor:jurist-1",
+                            "bezwaarmaker:piet",
+                            "gemachtigde:advocaat",
+                            "primair-beslisser:team-a",
+                            "bac-secretaris:bac-1"
+                        ]
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq bezwaar-decision: failed to persist decisionRef: patchObject failed",
+                []
+            ]
+        ]
+    },
+    "publish, the patch answers a scalar": {
+        "answer": {
+            "id": "dec-1",
+            "bezwaar": "obj-1",
+            "title": "Beslissing op bezwaar",
+            "dispositionType": "upheld_revoke",
+            "reasoning": "Gegrond",
+            "legalBasis": "Awb 7:11",
+            "replacementDecision": "besluit-2",
+            "bezwaarmaker": "piet",
+            "authorisedRepresentative": "advocaat",
+            "primairBeslisser": "team-a",
+            "advisoryOpinion": "bac-1",
+            "decisionRef": "decision-ref-1",
+            "status": "awaiting-decidesk",
+            "notifiedRecipients": [
+                "actor:jurist-1",
+                "bezwaarmaker:piet",
+                "gemachtigde:advocaat",
+                "primair-beslisser:team-a",
+                "bac-secretaris:bac-1"
+            ],
+            "legalCostsCompensation": {
+                "totalAmount": 3.0
+            }
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "DecisionValidator::assertPublishable",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "BezwaarDecisionDelegationService::raiseBezwaarDecision",
+                {
+                    "objectionId": "obj-1",
+                    "payload": {
+                        "subjectRegister": "reg",
+                        "subjectSchema": "dec",
+                        "subjectId": "dec-1",
+                        "subjectLabel": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2"
+                    }
+                }
+            ],
+            [
+                "DecisionValidator::computeProceskostenTotal",
+                {
+                    "decision": {
+                        "id": "dec-1",
+                        "bezwaar": "obj-1",
+                        "title": "Beslissing op bezwaar",
+                        "dispositionType": "upheld_revoke",
+                        "reasoning": "Gegrond",
+                        "legalBasis": "Awb 7:11",
+                        "replacementDecision": "besluit-2",
+                        "bezwaarmaker": "piet",
+                        "authorisedRepresentative": "advocaat",
+                        "primairBeslisser": "team-a",
+                        "advisoryOpinion": "bac-1"
+                    }
+                }
+            ],
+            [
+                "ObjectServiceInterface::patchObject",
+                {
+                    "objectId": "dec-1",
+                    "data": {
+                        "decisionRef": "decision-ref-1",
+                        "status": "awaiting-decidesk",
+                        "notifiedRecipients": [
+                            "actor:jurist-1",
+                            "bezwaarmaker:piet",
+                            "gemachtigde:advocaat",
+                            "primair-beslisser:team-a",
+                            "bac-secretaris:bac-1"
+                        ],
+                        "legalCostsCompensation": {
+                            "totalAmount": 3.0
+                        }
+                    },
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, no object service": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "OpenRegister is not available",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "publish, no decision schema": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "BezwaarDecision schema is not configured",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "publish, no register": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "BezwaarDecision schema is not configured",
+            "code": 0,
+            "previous": null
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "apply": {
+        "answer": "done",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "obj-1",
+                    "register": "reg",
+                    "schema": "obj"
+                }
+            ],
+            [
+                "StatusTransitionService::execute",
+                {
+                    "caseId": " case-1 ",
+                    "transitionId": "beslissing-op-bezwaar",
+                    "comment": "Applied beslissing op bezwaar dec-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "apply, objection without a case": {
+        "answer": "done",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "obj-1",
+                    "register": "reg",
+                    "schema": "obj"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "apply, objection missing": {
+        "answer": "done",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "obj-1",
+                    "register": "reg",
+                    "schema": "obj"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "apply, transition fails": {
+        "answer": "done",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "obj-1",
+                    "register": "reg",
+                    "schema": "obj"
+                }
+            ],
+            [
+                "StatusTransitionService::execute",
+                {
+                    "caseId": " case-1 ",
+                    "transitionId": "beslissing-op-bezwaar",
+                    "comment": "Applied beslissing op bezwaar dec-1"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq bezwaar-decision: transition to Decision on objection failed: execute failed",
+                []
+            ]
+        ]
+    },
+    "apply, no object service": {
+        "answer": "done",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "apply, no objection schema": {
+        "answer": "done",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "apply, no register": {
+        "answer": "done",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "case of an objection": {
+        "answer": "case-1",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "obj-1",
+                    "register": "reg",
+                    "schema": "obj"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "case of an objection, blank id": {
+        "answer": null,
+        "calls": [],
+        "logs": []
+    },
+    "case of an objection, none": {
+        "answer": null,
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "obj-1",
+                    "register": "reg",
+                    "schema": "obj"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "case of an objection, missing": {
+        "answer": null,
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "obj-1",
+                    "register": "reg",
+                    "schema": "obj"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "case of an objection, no schema": {
+        "answer": null,
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "case of an objection, no object service": {
+        "answer": null,
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "case of a decision": {
+        "answer": "case-1",
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ],
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "obj-1",
+                    "register": "reg",
+                    "schema": "obj"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "case of a decision, blank id": {
+        "answer": null,
+        "calls": [],
+        "logs": []
+    },
+    "case of a decision, missing": {
+        "answer": null,
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ],
+            [
+                "ObjectServiceInterface::find",
+                {
+                    "id": "dec-1",
+                    "register": "reg",
+                    "schema": "dec"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "case of a decision, no schema": {
+        "answer": null,
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaar_decision_schema"
+                }
+            ]
+        ],
+        "logs": []
+    }
+}

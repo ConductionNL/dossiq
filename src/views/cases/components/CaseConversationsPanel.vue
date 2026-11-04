@@ -35,7 +35,7 @@
 		</NcEmptyContent>
 
 		<template v-else>
-			<div class="case-conversations__actions">
+			<div v-if="!actionsInHeader || isMajor" class="case-conversations__actions">
 				<NcButton
 					v-if="!actionsInHeader"
 					variant="primary"
@@ -101,19 +101,31 @@
 					v-for="record in conversations"
 					:key="record.roomId"
 					class="case-conversations__record">
-					<span class="case-conversations__subject">{{
-						record.subject
-					}}</span>
+					<span class="case-conversations__head">
+						<span class="case-conversations__subject">{{
+							record.subject
+						}}</span>
+						<CnStatusBadge
+							v-if="isEnded(record)"
+							:label="t('dossiq', 'Conversation over')"
+							size="small" />
+					</span>
 					<span class="case-conversations__meta">{{
 						recordSummary(record)
 					}}</span>
 				</li>
 			</ul>
+			<p
+				v-if="conversations.length"
+				class="case-conversations__footnote">
+				{{ t('dossiq', 'Every conversation you start from this case lands here: when it was held, who joined and how long it lasted.') }}
+			</p>
 		</template>
 	</div>
 </template>
 
 <script>
+import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -122,12 +134,14 @@ import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
 import PhoneOff from 'vue-material-design-icons/PhoneOff.vue'
 import { conversationError, declareMajor as postDeclareMajor, startConversation as postStartConversation } from '../../../utils/caseConversation.js'
+import { conversationEnded, conversationSummary } from '../../../utils/conversationRecordLine.js'
 
 export default {
 	name: 'CaseConversationsPanel',
 
 	components: {
 		AlertOutline,
+		CnStatusBadge,
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,
@@ -319,24 +333,19 @@ export default {
 		 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
 		 */
 		recordSummary(record) {
-			const parts = []
-			if (record?.startedAt) {
-				parts.push(new Date(record.startedAt).toLocaleString())
-			}
-			const participants = Array.isArray(record?.participants)
-				? record.participants
-				: []
-			if (participants.length) {
-				parts.push(participants.join(', '))
-			}
-			if (record?.durationSeconds) {
-				parts.push(
-					t('dossiq', '{minutes} min', {
-						minutes: Math.round(record.durationSeconds / 60),
-					}),
-				)
-			}
-			return parts.join(' · ')
+			return conversationSummary(record)
+		},
+
+		/**
+		 * Whether a recorded conversation is over, so its row says so.
+		 *
+		 * @param {object} record The conversation record on the case.
+		 * @return {boolean} True once it ended.
+		 *
+		 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+		 */
+		isEnded(record) {
+			return conversationEnded(record)
 		},
 	},
 }
@@ -360,15 +369,64 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
-	padding-block: calc(var(--default-grid-baseline, 4px) * 2);
-	border-block-end: 1px solid var(--color-border);
+	padding-block: calc(var(--default-grid-baseline, 4px) * 3);
+	border-block-start: 1px solid var(--color-border);
+}
+
+.case-conversations__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: calc(var(--default-grid-baseline, 4px) * 2);
 }
 
 .case-conversations__subject {
 	font-weight: bold;
 }
 
+.case-conversations__footnote {
+	margin: calc(var(--default-grid-baseline, 4px) * 2) 0 0;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
 .case-conversations__meta {
 	color: var(--color-text-maxcontrast);
+}
+
+/* The board look (DqZaakContact "Live gesprek"): each conversation as one
+   56px row, its subject and meta line on the normal line beside the badge,
+   which centres on both, and the footnote 12px under the list. */
+.cn-look-board .case-conversations__record {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 2px 8px;
+	padding-block: 10px;
+}
+
+.cn-look-board .case-conversations__head {
+	display: contents;
+}
+
+.cn-look-board .case-conversations__subject {
+	grid-area: 1 / 1;
+	font-weight: 600;
+	line-height: normal;
+}
+
+.cn-look-board .case-conversations__head > .cn-status-badge {
+	grid-area: 1 / 2 / 3 / 3;
+}
+
+.cn-look-board .case-conversations__meta {
+	grid-area: 2 / 1;
+	font-size: 13px;
+	line-height: normal;
+}
+
+.cn-look-board .case-conversations__footnote {
+	margin-top: 12px;
+	line-height: normal;
 }
 </style>

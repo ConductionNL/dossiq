@@ -60,10 +60,10 @@
               "const body = pm.response.json();",
               "const rows = Array.isArray(body) ? body : (body.results || []);",
               "const row = rows.find(r => r.targetSchema === 'package' && r.targetObject === 'dso-intake');",
-              "pm.test('one version record names the package at 1.0.0', () => {",
+              "pm.test('one version record names the package at the version it declares', () => {",
               "    pm.expect(row, 'version record for dso-intake').to.be.an('object');",
               "    pm.expect(row.set).to.eql('dso-intake');",
-              "    pm.expect(row.setVersion).to.eql('1.0.0');",
+              "    pm.expect(row.setVersion).to.eql(pm.variables.get('packageVersion'));",
               "});"
             ]
           }

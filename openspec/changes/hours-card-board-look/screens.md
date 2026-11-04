@@ -1,4 +1,4 @@
 # Screens
 
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
-- DqZaakMeer https://identity.conduction.nl/screens/board?id=dossiq/DqZaakMeer
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqZaakMeer zaak, menu Meer en tabbladoverloop https://identity.conduction.nl/screens/board?id=dossiq/DqZaakMeer

@@ -1,0 +1,33 @@
+{
+    "zgwResource": "objectinformatieobject",
+    "zgwApiVersion": "1",
+    "sourceRegister": "reg-1",
+    "sourceSchema": "",
+    "enabled": true,
+    "propertyMapping": {
+        "url": "{{ _baseUrl }}/{{ _uuid }}",
+        "uuid": "{{ _uuid }}",
+        "informatieobject": "{{ document }}",
+        "object": "{{ object }}",
+        "objectType": "{{ objectType | default(\"\") | zgw_enum(\"objectType\", _valueMappings) }}"
+    },
+    "reverseMapping": {
+        "document": "{{ informatieobject }}",
+        "object": "{{ object }}",
+        "objectType": "{{ objectType | default(\"\") | zgw_enum_reverse(\"objectType\", _valueMappings) }}"
+    },
+    "valueMapping": {
+        "objectType": {
+            "case": "zaak",
+            "decision": "besluit"
+        }
+    },
+    "queryParameterMapping": {
+        "informatieobject": {
+            "field": "document"
+        },
+        "object": {
+            "field": "object"
+        }
+    }
+}

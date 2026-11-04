@@ -63,8 +63,8 @@ vi.mock('@nextcloud/vue', () => ({
 }))
 
 // Imported AFTER the mock so the dialog sees the stubbed package.
-const { default: BeschikkingComposerDialog } =
-	await import('../../src/dialogs/BeschikkingComposerDialog.vue')
+const { default: GenerateDocumentDialog } =
+	await import('../../src/dialogs/GenerateDocumentDialog.vue')
 
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 const REGISTRY_PATH = path.resolve(__dirname, '../../src/registry.js')
@@ -92,7 +92,7 @@ async function mountDialog({ caseId = '@objectId', routeId = 'case-1', results =
 	axios.get.mockResolvedValue({ data: { results } })
 	axios.post.mockResolvedValue({ data: { informatieobject: 'inf-1' } })
 
-	const wrapper = mount(BeschikkingComposerDialog, {
+	const wrapper = mount(GenerateDocumentDialog, {
 		props: { open: true, caseId },
 		global: { mocks: { $route: { params: { id: routeId } } } },
 	})
@@ -130,7 +130,7 @@ describe('the Generate document header action', () => {
 	})
 })
 
-describe('BeschikkingComposerDialog', () => {
+describe('GenerateDocumentDialog', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 	})

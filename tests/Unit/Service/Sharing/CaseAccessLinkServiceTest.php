@@ -229,6 +229,7 @@ final class CalFakeObjectService {
  * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
  * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
+ * @uses \OCA\Dossiq\Service\CaseShare\ShareStore
  */
 class CaseAccessLinkServiceTest extends TestCase {
 	private CalFakeAccessLinkService $links;

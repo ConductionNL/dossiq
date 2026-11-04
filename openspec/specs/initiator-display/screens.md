@@ -1,8 +1,8 @@
 # Screens
 
-- DqContacten https://identity.conduction.nl/screens/board?id=dossiq/DqContacten
-- DqContact https://identity.conduction.nl/screens/board?id=dossiq/DqContact
-- DqZaakBetrokkenen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBetrokkenen
-- DqZaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
-- DqZaken https://identity.conduction.nl/screens/board?id=dossiq/DqZaken
-- DqOrganisaties https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisaties
+- dossiq/DqContacten contacten https://identity.conduction.nl/screens/board?id=dossiq/DqContacten
+- dossiq/DqContact contact https://identity.conduction.nl/screens/board?id=dossiq/DqContact
+- dossiq/DqZaakBetrokkenen zaak, betrokkenen https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBetrokkenen
+- dossiq/DqZaak zaak https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- dossiq/DqZaken alle zaken https://identity.conduction.nl/screens/board?id=dossiq/DqZaken
+- dossiq/DqOrganisaties organisaties https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisaties
