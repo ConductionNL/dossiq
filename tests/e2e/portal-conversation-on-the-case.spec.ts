@@ -21,6 +21,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -103,7 +104,7 @@ test.describe('The handler answers a resident from the case', () => {
 		expect(questions[0].followUp).toBe('open')
 
 		await page.goto(`/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
-		await page.getByRole('tab', { name: 'Timeline' }).click()
+		await openCaseTab(page, /^(Case history|Historie)\b/)
 
 		const entry = page
 			.getByTestId('case-timeline-entry')

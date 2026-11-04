@@ -298,6 +298,24 @@ export default {
 	coveredFor: (value) => coveredForLabel(value),
 
 	/**
+	 * The urgency tier of a work queue row as its pill reads ("Late",
+	 * "Critical", "Soon", "Normal"); '' for an unknown tier.
+	 *
+	 * @param {string} value The row's `deadlineTier`.
+	 * @return {string}
+	 * @spec openspec/specs/my-work/spec.md
+	 */
+	deadlineTierLabel: (value) => {
+		const labels = {
+			overdue: t('dossiq', 'Late'),
+			critical: t('dossiq', 'Critical'),
+			warning: t('dossiq', 'Soon'),
+			normal: t('dossiq', 'Normal'),
+		}
+		return labels[value] ?? ''
+	},
+
+	/**
 	 * Human label for a case's `caseType` UUID reference.
 	 *
 	 * @param {string} value The caseType UUID.

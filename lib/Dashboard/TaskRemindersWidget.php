@@ -58,7 +58,7 @@ class TaskRemindersWidget extends DashboardPageWidget {
 	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getTitle(): string {
-		return $this->l10n->t('Task Reminders');
+		return $this->l10n->t('Task reminders');
 	}//end getTitle()
 
 	/**

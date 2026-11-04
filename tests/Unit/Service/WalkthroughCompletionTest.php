@@ -197,8 +197,16 @@ class WalkthroughCompletionTest extends TestCase {
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
 	public function testADomTargetIsUnverifiableRatherThanBroken(): void {
+		// The shipped tour names only pages and menu entries, so one step gets
+		// a test id target here.
+		$manifest = $this->manifest();
+		$manifest['walkthrough']['tours'][0]['steps'][1]['target'] = [
+			'kind' => 'element',
+			'ref' => 'index-add',
+		];
+
 		$unverifiable = array_values(array_filter(
-			$this->readiness()->brokenTourSteps(),
+			$this->readiness()->brokenTourSteps(manifest: $manifest),
 			static fn (array $step): bool => $step['state'] === 'unverifiable'
 		));
 

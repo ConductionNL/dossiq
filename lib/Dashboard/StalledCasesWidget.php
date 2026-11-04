@@ -58,7 +58,7 @@ class StalledCasesWidget extends DashboardPageWidget {
 	 * @spec openspec/specs/signalering-widgets/spec.md
 	 */
 	public function getTitle(): string {
-		return $this->l10n->t('Stalled Cases');
+		return $this->l10n->t('Stalled cases');
 	}//end getTitle()
 
 	/**
