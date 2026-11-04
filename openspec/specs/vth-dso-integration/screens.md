@@ -1,3 +1,3 @@
 # Screens
 
-- DqVthInstellingen https://identity.conduction.nl/screens/board?id=dossiq/DqVthInstellingen
+- dossiq/DqVthInstellingen beheerinstellingen in Nextcloud, tab VTH https://identity.conduction.nl/screens/board?id=dossiq/DqVthInstellingen

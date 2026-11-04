@@ -63,13 +63,17 @@ This change SHALL NOT relocate that page under Settings (that is the sibling
 The system SHALL add a route-less `WorkGroup` container (label "Work") to `src/manifest.json#menu`
 and SHALL relocate the work-queue leaves `MyWork`, `Werkvoorraad`, `WorkflowBoard`, and `Transfers`
 under it via `src/menu-layout.json#relocations`, so these four surfaces render as children of one
-"Work" group rather than as flat top-level entries. The relocations SHALL be applied by the
+"Work" group rather than as flat top-level entries. This grouping is the full structure
+(`menu_structure` = `full`). The default simple structure (REQ-PNDG-007) is the one board
+DqZijbalk draws: My work and Team queue stay top-level entries and Board stands under Cases.
+The relocations SHALL be applied by the
 existing `applyMenuRelocations` engine; no engine code SHALL be added. Each relocated leaf's route
 and page SHALL be unchanged.
 
 #### Scenario: Work-queue surfaces render under the Work group
 
-- **GIVEN** the merged navigation after `applyMenuRelocations` runs
+- **GIVEN** the full structure (`menu_structure` = `full`)
+- **AND** the merged navigation after `applyMenuRelocations` runs
 - **WHEN** the left nav is rendered
 - **THEN** a top-level "Work" group SHALL contain `MyWork`, `Werkvoorraad`, `WorkflowBoard`, and `Transfers` as children
 - **AND** none of those four SHALL appear as a flat top-level entry

@@ -1,5 +1,5 @@
 {
-  "ceiling": 251,
+  "ceiling": 250,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
@@ -500,13 +500,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`consentsFor()` answers `return []` when OpenRegister cannot be searched for the consents recorded on a case; the catch logs at warning naming the case. The empty list does NOT open the gate: `assess()` reads no consent as no consent, so a hand-off across an organisation boundary is refused rather than allowed on a read that failed."
-    },
-    {
-      "file": "lib/Service/Custody/CaseTransferConsentGate.php",
-      "method": "instant",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`instant()` answers `return null` for a stored consent moment that cannot be read. A consent whose `until` cannot be read is treated as carrying no expiry the gate can verify, which narrows rather than widens what it allows."
     },
     {
       "file": "lib/Service/DeadlineMonitoringSeedDataService.php",

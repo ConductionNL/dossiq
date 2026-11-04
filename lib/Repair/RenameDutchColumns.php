@@ -53,7 +53,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCP\DB\Exception;
+use OCA\Dossiq\Repair\Support\ReadsRegisterShards;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -67,6 +67,13 @@ use Psr\Log\LoggerInterface;
  *  requirement that says nothing about it.
  */
 class RenameDutchColumns implements IRepairStep {
+	use ReadsRegisterShards;
+
+	/**
+	 * The name every warning starts with.
+	 */
+	private const LOG_NAME = 'RenameDutchColumns';
+
 	/**
 	 * Slug prefix of the registers in scope.
 	 *
@@ -682,7 +689,7 @@ class RenameDutchColumns implements IRepairStep {
 	 * @return array<int, string>
 	 */
 	private function shardTables(): array {
-		$ids = $this->registerIds();
+		$ids = $this->registerIdsOrNone(warning: 'could not resolve the registers; skipping.');
 		if ($ids === []) {
 			return [];
 		}
@@ -692,10 +699,7 @@ class RenameDutchColumns implements IRepairStep {
 			return [];
 		}
 
-		$markers = [];
-		foreach ($ids as $id) {
-			$markers[] = 'openregister_table_' . ((int)$id) . '_';
-		}
+		$markers = $this->shardMarkers(ids: $ids);
 
 		$tables = [];
 		foreach ($names as $name) {
@@ -708,124 +712,5 @@ class RenameDutchColumns implements IRepairStep {
 		}
 
 		return array_values(array_unique($tables));
-	}
-
-	/**
-	 * Ids of every register whose slug starts with the prefix.
-	 *
-	 * Split out of shardTables() only to keep that method under phpmd's
-	 * cyclomatic-complexity limit; the behaviour is unchanged.
-	 *
-	 * @return array<int, mixed>
-	 */
-	private function registerIds(): array {
-		try {
-			return $this->db->executeQuery(
-				'SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?',
-				[self::REGISTER_SLUG_PREFIX . '%']
-			)->fetchAll(\PDO::FETCH_COLUMN);
-		} catch (Exception $e) {
-			$this->logger->warning(
-				'RenameDutchColumns: could not resolve the registers; skipping.',
-				['exception' => $e->getMessage()]
-			);
-			return [];
-		}
-	}
-
-	/**
-	 * Every table name containing the openregister shard marker.
-	 *
-	 * @return array<int, string>
-	 */
-	private function openRegisterTableNames(): array {
-		try {
-			$stmt = $this->db->prepare(
-				'SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern'
-			);
-			$stmt->bindValue('pattern', '%openregister\_table\_%');
-			$stmt->execute();
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'RenameDutchColumns: could not list tables; skipping.',
-				['exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		$names = [];
-		while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
-			$name = (string)($row['table_name'] ?? '');
-			if ($name !== '') {
-				$names[] = $name;
-			}
-		}
-
-		return $names;
 	}//end shardTables()
-
-	/**
-	 * List the column names of a table.
-	 *
-	 * @param string $table Table name.
-	 *
-	 * @return array<int, string>
-	 */
-	private function columnsOf(string $table): array {
-		try {
-			$stmt = $this->db->prepare(
-				'SELECT column_name FROM information_schema.columns WHERE table_name = :table'
-			);
-			$stmt->bindValue('table', $table);
-			$stmt->execute();
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'RenameDutchColumns: could not read columns; skipping table.',
-				['table' => $table, 'exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		$columns = [];
-		while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
-			$name = (string)($row['column_name'] ?? '');
-			if ($name !== '') {
-				$columns[] = $name;
-			}
-		}
-
-		return $columns;
-	}//end columnsOf()
-
-	/**
-	 * Execute one statement, logging and swallowing failure.
-	 *
-	 * @param string $sql The statement.
-	 *
-	 * @return bool Whether it succeeded.
-	 */
-	private function exec(string $sql): bool {
-		try {
-			$this->db->executeStatement($sql);
-			return true;
-		} catch (Exception $e) {
-			$this->logger->warning(
-				'RenameDutchColumns: statement failed; leaving the column as it was.',
-				['sql' => $sql, 'exception' => $e->getMessage()]
-			);
-			return false;
-		}
-
-	}//end exec()
-
-	/**
-	 * Quote an identifier for the active platform.
-	 *
-	 * @param string $identifier Table or column name.
-	 *
-	 * @return string
-	 */
-	private function quote(string $identifier): string {
-		return $this->db->getDatabasePlatform()->quoteSingleIdentifier($identifier);
-	}//end quote()
 }//end class

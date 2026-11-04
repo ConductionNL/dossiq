@@ -1,4 +1,4 @@
 # Screens
 
-- DqSociaalDomein https://identity.conduction.nl/screens/board?id=dossiq/DqSociaalDomein
-- DqSubsidie https://identity.conduction.nl/screens/board?id=dossiq/DqSubsidie
+- dossiq/DqSociaalDomein sociaal domein, Jeugdwet https://identity.conduction.nl/screens/board?id=dossiq/DqSociaalDomein
+- dossiq/DqSubsidie subsidie https://identity.conduction.nl/screens/board?id=dossiq/DqSubsidie

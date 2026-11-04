@@ -1,0 +1,24 @@
+{
+    "status": 400,
+    "data": {
+        "message": "Refused by registerPauze"
+    },
+    "calls": [
+        {
+            "call": "pause::registerPauze",
+            "args": [
+                "inst-1",
+                0,
+                "",
+                "",
+                ""
+            ]
+        },
+        {
+            "call": "logger::info",
+            "args": [
+                "Pauze failed: Refused by registerPauze"
+            ]
+        }
+    ]
+}

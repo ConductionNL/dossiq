@@ -1,0 +1,16 @@
+{
+    "status": 200,
+    "data": {
+        "id": "inst-1",
+        "answeredBy": "resumeAfterPauze"
+    },
+    "calls": [
+        {
+            "call": "pause::resumeAfterPauze",
+            "args": [
+                "inst-1",
+                null
+            ]
+        }
+    ]
+}

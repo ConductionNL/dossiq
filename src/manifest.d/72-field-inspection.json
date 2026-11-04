@@ -27,6 +27,11 @@
 							"status": {
 								"followConnection": true,
 								"offlineText": "Offline · synchronised earlier",
+								"offlineSyncedText": "Offline · synchronised at {time}",
+								"syncedFrom": {
+									"source": { "register": "dossiq", "schema": "syncQueue", "filter": { "status": "synced" } },
+									"field": "lastAttemptAt"
+								},
 								"onlineText": "Online"
 							},
 							"frames": [
@@ -38,12 +43,16 @@
 								{
 									"key": "checklist",
 									"title": "Checklist",
+									"titleFrom": {
+										"source": { "register": "dossiq", "schema": "fieldInspection", "filter": { "inspectorRef": "@me", "status": "in_progress" }, "sort": { "field": "startedAt", "dir": "desc" } },
+										"field": "location"
+									},
 									"widgetIds": ["checklist-run"]
 								},
 								{
 									"key": "sync",
 									"title": "Synchronise",
-									"widgetIds": ["inspection-outbox-offline-note", "inspection-sync-queue"]
+									"widgetIds": ["inspection-outbox-offline-note", "inspection-sync-queue", "inspection-conflict"]
 								}
 							]
 						}
@@ -193,7 +202,7 @@
 							},
 							"recordPhotosField": "photos",
 							"pageSize": 2,
-							"startAt": "firstOpen",
+							"startAt": "lastAnswered",
 							"caption": "{templateSnapshot.name} version {templateVersion}"
 						}
 					},
@@ -235,6 +244,32 @@
 								}
 							},
 							"emptyText": "Nothing waits to be synchronised"
+						}
+					},
+					{
+						"id": "inspection-conflict",
+						"type": "conflict-resolve",
+						"title": "Sync conflict",
+						"_note": "DqInspectie sync frame, under the outbox: an open conflict record with the text on this device and the text at the office for each field both sides changed, and one button per text (nextcloud-vue CnConflictResolveCard). Choosing posts to SIG's resolve endpoint (openspec change inspection-conflict-card); the buttons stay off until dossiq announces the capability conflictResolution.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "conflictRecord",
+								"filter": {
+									"resolution": { "isnull": true }
+								},
+								"limit": 3
+							},
+							"title": "Conflict: which text do you keep?",
+							"localText": "On this device: \"{value}\"",
+							"officeText": "At the office: \"{value}\"",
+							"keepLocalLabel": "Keep this one",
+							"keepOfficeLabel": "The office one",
+							"unavailableText": "Choosing a text is not possible yet. Your change stays in the outbox.",
+							"resolve": {
+								"url": "/apps/dossiq/api/conflict-records/{id}/resolve",
+								"capability": "dossiq.conflictResolution"
+							}
 						}
 					}
 				],

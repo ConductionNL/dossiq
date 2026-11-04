@@ -83,8 +83,17 @@ describe('the field inspection board', () => {
 		expect(widget('inspection-sync-queue').content.cardPillAside).toBe(true)
 	})
 
-	it('opens the running checklist at its first open question', () => {
-		expect(widget('checklist-run').content.startAt).toBe('firstOpen')
+	it('opens the running checklist where the inspector last answered', () => {
+		expect(widget('checklist-run').content.startAt).toBe('lastAnswered')
+	})
+
+	it('titles the checklist frame by the inspection underway and dates the last synchronisation', () => {
+		const frames = widget('inspection-frames').content
+		const checklist = frames.frames.find((f) => f.key === 'checklist')
+		expect(checklist.titleFrom).toEqual({ source: { register: 'dossiq', schema: 'fieldInspection', filter: { inspectorRef: '@me', status: 'in_progress' }, sort: { field: 'startedAt', dir: 'desc' } }, field: 'location' })
+		expect(frames.status.syncedFrom).toEqual({ source: { register: 'dossiq', schema: 'syncQueue', filter: { status: 'synced' } }, field: 'lastAttemptAt' })
+		const nl = JSON.parse(fs.readFileSync(path.join(__dirname, '../../l10n/nl.json'), 'utf8')).translations
+		expect(nl[frames.status.offlineSyncedText]).toBe('Offline · gesynchroniseerd om {time}')
 	})
 
 	it('asks for a note only under an answer of no, as the board draws it', () => {
