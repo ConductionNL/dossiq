@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\LinkMarkerListener
+ * @covers \OCA\Dossiq\Listener\Support\ReadsEventObjects
  * @uses \OCA\Dossiq\Service\Relation\LinkMarkerRule
  * @uses \OCA\Dossiq\Service\Relation\LinkMarkerRuleReader
  */

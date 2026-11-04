@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.89"
+        "version": "0.20.91"
     },
     "x-openregister": {
         "type": "application",
@@ -5031,7 +5031,7 @@
             "document": {
                 "slug": "document",
                 "icon": "FileDocumentOutline",
-                "version": "1.1.2",
+                "version": "1.2.0",
                 "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "EnkelvoudigInformatieObject",
@@ -5187,6 +5187,11 @@
                     "x-openregister-lifecycle": {
                         "field": "status",
                         "initial": "in_bewerking",
+                        "createStates": [
+                            "for_determination",
+                            "final",
+                            "archived"
+                        ],
                         "final": [
                             "archived"
                         ],
@@ -10276,11 +10281,14 @@
             "bacAdviceRequest": {
                 "slug": "bacAdviceRequest",
                 "icon": "CommentTextOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
                 "x-schema-org": "schema:AskAction",
                 "x-zgw-equivalent": "Adviesdocument",
                 "title": "BAC Advice Request",
                 "description": "Per-bezwaar referral of an objection case to a bezwaaradviescommissie. Tracks the advice deliverable through the assigned -> in-deliberation -> advice-issued lifecycle (Awb Art. 7:13). One-way transitions; withdrawn bezwaaren leave the request in its last state for audit.",
+                "configuration": {
+                    "fireEventsOnBulkWrites": true
+                },
                 "type": "object",
                 "required": [
                     "bezwaar",
@@ -11203,10 +11211,12 @@
                         "description": "What the mandate lets the role decide: the ceiling in euros (none is unlimited), the decision types it covers and its enforcement level.",
                         "properties": {
                             "plafond": {
+                                "title": "Ceiling",
                                 "type": "number",
                                 "description": "The amount in euros up to which the role decides; empty is unlimited"
                             },
                             "decisionTypes": {
+                                "title": "Decision types",
                                 "type": "array",
                                 "items": {
                                     "type": "string"
@@ -11214,6 +11224,7 @@
                                 "description": "The decision types the role may take, such as bezwaar"
                             },
                             "enforcement": {
+                                "title": "Enforcement",
                                 "type": "string",
                                 "enum": [
                                     "none",

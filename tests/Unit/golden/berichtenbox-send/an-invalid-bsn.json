@@ -1,0 +1,9 @@
+{
+    "calls": [],
+    "answer": {
+        "error": "Ongeldig BSN-nummer",
+        "errors": [
+            "Ongeldig BSN-nummer"
+        ]
+    }
+}

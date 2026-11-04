@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\IntakeFanOut;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -125,9 +126,9 @@ class IntakeFanOutTest extends TestCase {
 	/**
 	 * The in-memory case store.
 	 *
-	 * @var FanOutCaseStore
+	 * @var FanOutCaseStore|LifecycleRegister
 	 */
-	private FanOutCaseStore $store;
+	private FanOutCaseStore|LifecycleRegister $store;
 
 	/**
 	 * What the intake case type declares.
@@ -415,4 +416,30 @@ class IntakeFanOutTest extends TestCase {
 		$this->assertCount(3, $this->relations);
 		$this->assertContains('case-1|case-3|' . IntakeFanOut::RELATION, $this->relations);
 	}//end testThreeDestinationsRelateEveryPair()
+
+	/**
+	 * Each destination's case opens in its own case type's initial status,
+	 * whatever status the submission names. The register refuses a create in
+	 * any other status (openregister#5400).
+	 *
+	 * @return void
+	 */
+	public function testEachCaseOpensInItsOwnTypesInitialStatus(): void {
+		$this->store = new LifecycleRegister();
+		$this->store->seed(schema: 'caseType', uuid: 'ct-handhaving', row: ['initialStatus' => 'st-handhaving-intake']);
+		$this->store->seed(schema: 'caseType', uuid: 'ct-onderhoud', row: ['initialStatus' => 'st-onderhoud-intake']);
+
+		$result = $this->fanOut()->submit(
+			formCaseTypeId: 'ct-melding',
+			submission: ['title' => 'Kapotte lantaarnpaal', 'status' => 'st-handhaving-intake'],
+			submissionId: 'sub-1'
+		);
+
+		$this->assertSame([], $result['failed']);
+		$this->assertCount(2, $result['created']);
+		$this->assertSame(
+			['st-handhaving-intake', 'st-onderhoud-intake'],
+			array_column($this->store->all('case'), 'status')
+		);
+	}//end testEachCaseOpensInItsOwnTypesInitialStatus()
 }//end class

@@ -1,4 +1,4 @@
 # Screens
 
-- DqSociaalDomein https://identity.conduction.nl/screens/board?id=dossiq/DqSociaalDomein
-- DqZaaktypen https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypen
+- dossiq/DqSociaalDomein sociaal domein, Jeugdwet https://identity.conduction.nl/screens/board?id=dossiq/DqSociaalDomein
+- dossiq/DqZaaktypen zaaktypen https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktypen

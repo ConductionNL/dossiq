@@ -135,6 +135,10 @@
         "Variant",
         "via",
         "{summary}",
-        "{knowledgeBasePage:last-segment}"
+        "{knowledgeBasePage:last-segment}",
+        "Dossiq",
+        "Filinq",
+        "Integriq",
+        "OpenRegister"
     ]
 }

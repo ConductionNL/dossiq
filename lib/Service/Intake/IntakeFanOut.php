@@ -264,6 +264,9 @@ class IntakeFanOut {
 			);
 		}
 
+		// Each destination's case opens in its own case type's initial status,
+		// which OpenRegister fills in; a status the submission names is not it.
+		unset($submission['status']);
 		$payload = array_merge(
 			$submission,
 			[

@@ -33,6 +33,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Listener\LinkMarkerListener
+ * @uses \OCA\Dossiq\Listener\Support\ReadsEventObjects
  * @uses \OCA\Dossiq\Review\PagesSeen
  * @uses \OCA\Dossiq\Review\ReviewDepth
  */
