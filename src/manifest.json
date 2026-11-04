@@ -1227,8 +1227,9 @@
 							{
 								"id": "deadlines",
 								"type": "object-table",
-								"title": "Deadlines",
-								"_note": "openspec/changes/dashboard-tiles design D1. Replaces `overdue-cases` and `deadline-alerts`, which read `case` with the same `isFinalStatus: false` filter and differed only in the deadline window, so seven of nine rows appeared twice. One window now covers both: everything already past its deadline and everything due within three days, ordered by deadline. The red row is `rowClass`, not the `cn-cell--danger` the design sketched: a column's `cellClass` is one static string, so it cannot carry a per-branch colour, and the spec asks for the ROW to read in the error colour anyway.",
+								"title": "Deadline signals",
+								"subtitle": "Late, or less than a quarter of the term left",
+								"_note": "REQ-SIG-004, board DqDashboard Termijnsignalen: open cases that are late or have less than a quarter of their term left, fewest days first, a late row in the error colour. termSignalFrom is the day the last quarter starts (a materialised case calculation), so one server-side filter holds both. It replaced overdue-cases and deadline-alerts, so each case is listed once.",
 								"content": {
 									"source": {
 										"register": "dossiq",
@@ -1237,8 +1238,8 @@
 											"isFinalStatus": false,
 											"statusHiddenInLists": false,
 											"isDraft": false,
-											"deadline": {
-												"lte": "@today+3d"
+											"termSignalFrom": {
+												"lte": "@today"
 											}
 										},
 										"extend": ["calculations"],
@@ -1283,13 +1284,13 @@
 											"isFinalStatus": "false",
 											"statusHiddenInLists": "false",
 											"isDraft": "false",
-											"deadline[lte]": "@today+3d"
+											"termSignalFrom[lte]": "@today"
 										}
 									},
-									"viewAllLabel": "View all",
+									"viewAllLabel": "All deadlines",
 									"hideHeader": false,
 									"borderless": true,
-									"emptyText": "No deadlines in the next three days"
+									"emptyText": "No deadline signals"
 								}
 							},
 							{
