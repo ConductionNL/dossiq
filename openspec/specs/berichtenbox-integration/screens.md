@@ -1,4 +1,4 @@
 # Screens
 
-- DqBerichtVersturen https://identity.conduction.nl/screens/board?id=dossiq/DqBerichtVersturen
-- DqZaakContact https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact
+- dossiq/DqBerichtVersturen bericht via Berichtenbox https://identity.conduction.nl/screens/board?id=dossiq/DqBerichtVersturen
+- dossiq/DqZaakContact zaak, tabblad contact https://identity.conduction.nl/screens/board?id=dossiq/DqZaakContact

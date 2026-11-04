@@ -1,0 +1,1206 @@
+{
+    "owner on the panel": {
+        "verdict": {
+            "ok": false,
+            "member": "bob",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "empty objection id": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [],
+        "logs": []
+    },
+    "empty panel": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [],
+        "logs": []
+    },
+    "no store": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BAC: no object store; panel independence cannot be verified",
+                []
+            ]
+        ]
+    },
+    "no objection schema": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BAC: objection/decision schemas not configured; panel independence cannot be verified",
+                []
+            ]
+        ]
+    },
+    "no decision schema": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ]
+        ],
+        "logs": [
+            [
+                "warning",
+                "Dossiq BAC: objection/decision schemas not configured; panel independence cannot be verified",
+                []
+            ]
+        ]
+    },
+    "no register": {
+        "verdict": {
+            "ok": false,
+            "member": "bob",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "no legacy schema, the id is the case": {
+        "verdict": {
+            "ok": false,
+            "member": "bob",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "legacy object missing": {
+        "verdict": {
+            "ok": false,
+            "member": "bob",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-404",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "bz-404"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "legacy object without a case": {
+        "verdict": {
+            "ok": false,
+            "member": "bob",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "bz-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "legacy lookup throws": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BAC: independence check error: store down",
+                []
+            ]
+        ]
+    },
+    "legacy object not an array": {
+        "verdict": {
+            "ok": false,
+            "member": "bob",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "bz-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "no objection": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "objection search throws": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BAC: independence check error: search down",
+                []
+            ]
+        ]
+    },
+    "first objection is used": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "objection without a contested decision": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "contested decision missing": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-404",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "decision lookup throws": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "Dossiq BAC: independence check error: store down",
+                []
+            ]
+        ]
+    },
+    "createdBy when no owner": {
+        "verdict": {
+            "ok": false,
+            "member": "alice",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "steller when no owner or createdBy": {
+        "verdict": {
+            "ok": false,
+            "member": "alice",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "no author": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "no author, a blank member on the panel": {
+        "verdict": {
+            "ok": false,
+            "member": null,
+            "reason": "Onafhankelijkheid van het panel kon niet worden vastgesteld (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "author not on the panel": {
+        "verdict": {
+            "ok": true,
+            "member": null,
+            "reason": null
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "json decision": {
+        "verdict": {
+            "ok": false,
+            "member": "alice",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "first conflicting member named": {
+        "verdict": {
+            "ok": false,
+            "member": "bob",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "numeric member": {
+        "verdict": {
+            "ok": false,
+            "member": "7",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    },
+    "numeric register and schemas": {
+        "verdict": {
+            "ok": false,
+            "member": "bob",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "searchObjects",
+                {
+                    "case": "case-1",
+                    "@self": {
+                        "register": 3,
+                        "schema": 4
+                    }
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "3",
+                "5"
+            ]
+        ],
+        "logs": []
+    },
+    "objection row as an object": {
+        "verdict": {
+            "ok": false,
+            "member": "bob",
+            "reason": "Lid was betrokken bij het bestreden besluit (Awb Art. 7:13 lid 3)"
+        },
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "bezwaar_schema"
+            ],
+            [
+                "getConfigValue",
+                "objection_schema"
+            ],
+            [
+                "getConfigValue",
+                "decision_schema"
+            ],
+            [
+                "find",
+                "bz-1",
+                "dossiq",
+                "bezwaar"
+            ],
+            [
+                "searchObjectsBySlug",
+                "dossiq",
+                "objection",
+                {
+                    "case": "case-1"
+                }
+            ],
+            [
+                "find",
+                "dec-1",
+                "dossiq",
+                "decision"
+            ]
+        ],
+        "logs": []
+    }
+}

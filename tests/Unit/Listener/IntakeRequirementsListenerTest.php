@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
+use OCA\Dossiq\Listener\IntakeDeclarations;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
@@ -57,7 +58,7 @@ use Psr\Log\NullLogger;
  * Unit tests for the pre-persist enforcement of the intake declarations.
  *
  * @covers \OCA\Dossiq\Listener\IntakeRequirementsListener
- *
+ * @covers \OCA\Dossiq\Listener\IntakeDeclarations
  * @uses \OCA\Dossiq\Service\Intake\AssigneeNarrowing
  * @uses \OCA\Dossiq\Service\Intake\CaseClassification
  * @uses \OCA\Dossiq\Service\Intake\ClassificationSchemes
@@ -123,15 +124,17 @@ class IntakeRequirementsListenerTest extends TestCase {
 		$this->listener = new IntakeRequirementsListener(
 			settingsService: $settings,
 			caseTypeResolver: $resolver,
-			requirements: new IntakeRequirements(),
-			classification: new CaseClassification(
-				schemes: new ClassificationSchemes(appConfig: $appConfig)
-			),
-			narrowing: new AssigneeNarrowing(),
-			duplicates: new DuplicatePolicy(
-				container: $this->createMock(originalClassName: ContainerInterface::class),
-				groupManager: $this->createMock(originalClassName: IGroupManager::class),
-				logger: new NullLogger()
+			declarations: new IntakeDeclarations(
+				requirements: new IntakeRequirements(),
+				classification: new CaseClassification(
+					schemes: new ClassificationSchemes(appConfig: $appConfig)
+				),
+				narrowing: new AssigneeNarrowing(),
+				duplicates: new DuplicatePolicy(
+					container: $this->createMock(originalClassName: ContainerInterface::class),
+					groupManager: $this->createMock(originalClassName: IGroupManager::class),
+					logger: new NullLogger()
+				),
 			),
 			userSession: $this->createMock(originalClassName: IUserSession::class),
 			logger: new NullLogger(),

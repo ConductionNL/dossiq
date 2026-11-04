@@ -29,6 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ProcessMiningController;
+use OCA\Dossiq\Service\ProcessMining\ReportAnswer;
+use OCA\Dossiq\Service\ProcessMining\ReportRequest;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ProcessMining\ReportViews;
 use OCA\Dossiq\Service\ProcessMiningService;
@@ -45,6 +47,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Controller\ProcessMiningController
+ * @uses \OCA\Dossiq\Service\ProcessMining\ReportAnswer
+ * @uses \OCA\Dossiq\Service\ProcessMining\ReportRequest
  * @uses \OCA\Dossiq\Service\Csv\CsvWriter
  * @uses \OCA\Dossiq\Service\ProcessMining\ReportViews
  */
@@ -110,10 +114,8 @@ class ProcessMiningCsvTest extends TestCase {
 			groupManager: $groupManager,
 			processMiningService: $service,
 			logger: $this->createMock(LoggerInterface::class),
-			views: new ReportViews(l10n: $l10n),
-			periods: new ReportPeriod(),
-			dates: $this->createMock(CaseDateNormaliser::class),
-			l10n: $l10n,
+			requests: new ReportRequest(periods: new ReportPeriod(), dates: $this->createMock(CaseDateNormaliser::class)),
+			answers: new ReportAnswer(views: new ReportViews(l10n: $l10n), l10n: $l10n),
 		);
 	}//end controller()
 

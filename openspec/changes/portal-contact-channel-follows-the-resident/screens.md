@@ -1,4 +1,4 @@
-- No screen: a listener on portaliq's contact-details event and a reporting repair step; the resident picks the channel on portaliq's own profile page
 # Screens
 
-- No screen: dossiq half is a contact lookup, the screen is in portaliq
+- dossiq/DqZaak zaak, de zin voor de behandelaar als de inwoner een ander kanaal koos https://identity.conduction.nl/screens/board?id=dossiq/DqZaak
+- portaliq/MijnAccount Mijn account: de inwoner kiest het kanaal https://identity.conduction.nl/screens/board?id=portaliq/MijnAccount

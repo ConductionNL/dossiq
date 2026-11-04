@@ -10,9 +10,12 @@
         "version": "1.39.0",
         "properties": {
           "rightsMatrix": {
+            "title": "Rights",
+            "description": "Who may do what with cases of this type, as a matrix of department by role, separately per confidentiality level. Confidentiality is an AXIS of this declaration and is never folded into a role name: a role per level per department is the combinatorial explosion every mandate matrix eventually becomes. Declared here and evaluated in OpenRegister, which owns the grant, its provenance and the deny. dossiq computes no effective permission from these rows.",
             "items": {
               "properties": {
                 "department": {
+                  "title": "Department",
                   "description": "The department the right is granted to: a department name (matches organisatieRol.department), * for every team, or $ownTeam for the teams the person is in, resolved when access is checked."
                 },
                 "statuses": {

@@ -1,3 +1,3 @@
 # Screens
 
-- DqInspectie https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie
+- dossiq/DqInspectie inspectie in het veld, mobiel https://identity.conduction.nl/screens/board?id=dossiq/DqInspectie

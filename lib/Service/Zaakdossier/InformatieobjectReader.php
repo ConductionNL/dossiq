@@ -183,9 +183,10 @@ class InformatieobjectReader {
 	}//end withScanVerdicts()
 
 	/**
-	 * Put each document's review verdict on its row, so the Files tab draws the
-	 * verdict pill and the Assess button from the listing. A document the
-	 * verdicts do not name (a case that reviews nothing) carries none.
+	 * Put each document's review verdict and the codes of the grounds it cites
+	 * on its row, so the Files tab draws the verdict pill, its grounds and the
+	 * Assess button from the listing. A document the verdicts do not name (a
+	 * case that reviews nothing) carries neither.
 	 *
 	 * @param string                           $caseId    The case UUID.
 	 * @param array<int, array<string, mixed>> $documents The rows the caller may see.
@@ -200,14 +201,16 @@ class InformatieobjectReader {
 		}
 
 		$byDocument = $this->reviewVerdicts->byDocument(caseId: $caseId);
+		$grounds = $this->reviewVerdicts->groundsByDocument(caseId: $caseId);
 		return array_map(
-			static function (array $document) use ($byDocument): array {
-				$verdict = $byDocument[(string)($document['id'] ?? '')] ?? null;
+			static function (array $document) use ($byDocument, $grounds): array {
+				$documentId = (string)($document['id'] ?? '');
+				$verdict = $byDocument[$documentId] ?? null;
 				if ($verdict === null) {
 					return $document;
 				}
 
-				return [...$document, 'reviewVerdict' => $verdict];
+				return [...$document, 'reviewVerdict' => $verdict, 'reviewGrounds' => ($grounds[$documentId] ?? [])];
 			},
 			$documents
 		);

@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261030121000</version>
+    <version>0.4.47-unstable.20261103080356</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -387,6 +387,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedStaffGroup</step>
             <!-- Nextcloud never removes a job info.xml stops naming: parked EmailPdfRetryJob, removed AppointmentReminderJob and BerichtenboxReadStatusJob. -->
             <step>OCA\Dossiq\Repair\RetireUnscheduledBackgroundJobs</step>
+            <!-- Nextcloud lists the declared jobs only on a version change, and cron drops one whose class it cannot load at that moment; this puts it back (also through `occ maintenance:repair`). -->
+            <step>OCA\Dossiq\Repair\RestoreDeclaredBackgroundJobs</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <!--
                 REPLACES RegisterOriRegister. dossiq no longer declares an ORI
@@ -978,6 +980,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
               MigratePayoutRowsToFinance        hands payout rows dossiq kept to the finance app; a fresh install has none
+              RestoreDeclaredBackgroundJobs     puts back declared jobs cron dropped; a fresh install lists every declared job itself
 
             THE LIST ABOVE IS NOT PROSE. RepairStepRegistrationTest parses this file,
             sweeps every post-migration step, and fails on any step that is neither

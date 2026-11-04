@@ -1,0 +1,17 @@
+[
+    {
+        "executeQuery": "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+        "params": [
+            "dossiq%"
+        ]
+    },
+    {
+        "warning": "RenameDutchDeadlineColumns: could not resolve the dossiq registers; skipping.",
+        "context": {
+            "exception": "registers unreadable"
+        }
+    },
+    {
+        "output": "RenameDutchDeadlineColumns: no dossiq shard tables on this install; nothing to do."
+    }
+]
