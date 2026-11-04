@@ -6080,10 +6080,60 @@
 						}
 					},
 					{
+						"id": "17",
+						"widgetId": "my-open-work",
+						"gridX": 0,
+						"gridY": 9,
+						"gridWidth": 6,
+						"gridHeight": 6,
+						"showTitle": true,
+						"clear": true
+					},
+					{
+						"id": "18",
+						"widgetId": "teams-queue-signal",
+						"gridX": 6,
+						"gridY": 9,
+						"gridWidth": 6,
+						"gridHeight": 6,
+						"showTitle": true,
+						"clear": true
+					},
+					{
+						"id": "19",
+						"widgetId": "deadline-signals",
+						"gridX": 0,
+						"gridY": 15,
+						"gridWidth": 6,
+						"gridHeight": 7,
+						"showTitle": true,
+						"clear": true
+					},
+					{
+						"id": "20",
+						"widgetId": "task-reminders",
+						"gridX": 6,
+						"gridY": 15,
+						"gridWidth": 6,
+						"gridHeight": 7,
+						"showTitle": true,
+						"clear": true
+					},
+					{
+						"id": "21",
+						"widgetId": "woo-deadlines",
+						"gridX": 0,
+						"gridY": 22,
+						"gridWidth": 12,
+						"gridHeight": 6,
+						"showTitle": true,
+						"clear": true
+					},
+					{
 						"id": "16",
 						"widgetId": "layout-note",
 						"gridX": 0,
-						"gridY": 10,
+						"gridY": 28,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false,
@@ -6302,6 +6352,407 @@
 							"variant": "info",
 							"icon": "ViewDashboardOutline",
 							"text": "Within deadline is only shown to those who monitor or manage."
+						}
+					},
+					{
+						"id": "my-open-work",
+						"type": "record-list",
+						"title": "My open work",
+						"subtitle": "Cases and tasks, what is due first comes first",
+						"_note": "Board DqDashboard \"Mijn open werk\" (signalering-widgets). The reader's open cases and open engine tasks, each soonest first: the cases on their name, then their tasks from OpenRegister's task inbox. Two sections because they are two sources; Open my work leads to the landing page.",
+						"headerLink": {
+							"label": "Open my work",
+							"route": "MyWorkHome"
+						},
+						"content": {
+							"presentation": "rows",
+							"ruleAbove": true,
+							"chevron": false,
+							"sections": [
+								{
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"assignee": "@me",
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false
+									},
+									"extend": [
+										"caseType"
+									],
+									"sort": {
+										"field": "deadline",
+										"dir": "asc"
+									},
+									"limit": 3,
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"case {identifier}",
+											"{caseType.title}"
+										]
+									},
+									"trailing": [
+										"{deadline|relative}"
+									],
+									"rowRoute": "CaseDetail",
+									"emptyText": "No open cases on your name"
+								},
+								{
+									"endpointSource": {
+										"url": "/apps/openregister/api/flow-tasks",
+										"params": {
+											"scope": "assigned",
+											"isTerminal": "false",
+											"sort": "dueAt",
+											"limit": 3
+										},
+										"responsePath": "results"
+									},
+									"title": "{title}",
+									"meta": "task on {subject.title}",
+									"trailing": [
+										"{dueAt|relative}"
+									],
+									"rowRoute": "TaskDetail",
+									"rowIdField": "uuid",
+									"emptyText": "You have no open tasks"
+								}
+							]
+						}
+					},
+					{
+						"id": "teams-queue-signal",
+						"type": "record-list",
+						"title": "Your teams' queue",
+						"subtitle": "Picked up by nobody, in the teams you are in",
+						"_note": "Board DqDashboard \"Wachtrij van uw teams\" (signalering-widgets). The query of My team's queue (`your-teams-queue` on MyWorkHome): unclaimed open cases of the reader's own teams, through `@myGroups`, which sends nothing for a reader in no team. Pick up is the registered claimCase handler, as on the queue.",
+						"headerLink": {
+							"label": "Whole queue",
+							"route": "Cases",
+							"query": {
+								"savedView": "default:team-queue"
+							}
+						},
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"assignedGroup": "@myGroups",
+								"assignee": "IS NULL",
+								"isFinalStatus": false,
+								"statusHiddenInLists": false,
+								"isDraft": false,
+								"isTemplate": false
+							},
+							"sort": {
+								"field": "startDate",
+								"dir": "asc"
+							},
+							"limit": 3,
+							"presentation": "rows",
+							"ruleAbove": true,
+							"title": "{title}",
+							"meta": {
+								"parts": [
+									"{identifier}",
+									"team {assignedGroupPublicName}",
+									"received {startDate|date}"
+								]
+							},
+							"rowAction": {
+								"id": "claim",
+								"label": "Pick up",
+								"type": "handler",
+								"handler": "claimCase",
+								"variant": "outlined"
+							},
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "Nothing is waiting for your teams"
+						}
+					},
+					{
+						"id": "deadline-signals",
+						"type": "record-list",
+						"title": "Deadline signals",
+						"subtitle": "Late, or less than a quarter of the term left",
+						"_note": "Board DqDashboard \"Termijnsignalen\" (signalering-widgets REQ-SIG-004). Open cases past their deadline, then open cases in the last quarter of their term, fewest days first. `termSignalFrom` is the day the last quarter starts, a materialised case calculation (dossiq#5191).",
+						"headerLink": {
+							"label": "All deadlines",
+							"route": "TermijnDashboard"
+						},
+						"content": {
+							"presentation": "rows",
+							"ruleAbove": true,
+							"chevron": false,
+							"sections": [
+								{
+									"intro": "Late",
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false,
+										"deadline": {
+											"lt": "@today"
+										}
+									},
+									"extend": [
+										"caseType"
+									],
+									"sort": {
+										"field": "deadline",
+										"dir": "asc"
+									},
+									"limit": 2,
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{caseType.title}"
+										]
+									},
+									"due": {
+										"field": "deadline",
+										"overdueLabel": {
+											"one": "{count} day late",
+											"other": "{count} days late"
+										}
+									},
+									"rowRoute": "CaseDetail",
+									"emptyText": "No case is late"
+								},
+								{
+									"intro": "At risk",
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false,
+										"deadline": {
+											"gte": "@today"
+										},
+										"termSignalFrom": {
+											"lte": "@today"
+										}
+									},
+									"extend": [
+										"caseType"
+									],
+									"sort": {
+										"field": "deadline",
+										"dir": "asc"
+									},
+									"limit": 2,
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{caseType.title}"
+										]
+									},
+									"due": {
+										"field": "deadline",
+										"todayLabel": "Ends today",
+										"upcomingLabel": {
+											"one": "{count} day left",
+											"other": "{count} days left"
+										}
+									},
+									"rowRoute": "CaseDetail",
+									"emptyText": "No case is at risk"
+								}
+							]
+						}
+					},
+					{
+						"id": "task-reminders",
+						"type": "record-list",
+						"title": "Task reminders",
+						"subtitle": "Tasks due today or within three days",
+						"_note": "Board DqDashboard \"Taakherinneringen\" (signalering-widgets). The reader's open engine tasks: the late ones, then those due today up to three days ahead (`dueAfter` is inclusive, `dueBefore` exclusive, so @today+4d keeps the third day).",
+						"headerLink": {
+							"label": "All tasks",
+							"route": "Tasks"
+						},
+						"content": {
+							"presentation": "rows",
+							"ruleAbove": true,
+							"chevron": false,
+							"sections": [
+								{
+									"intro": "Late",
+									"endpointSource": {
+										"url": "/apps/openregister/api/flow-tasks",
+										"params": {
+											"scope": "assigned",
+											"isTerminal": "false",
+											"dueBefore": "@today",
+											"sort": "dueAt",
+											"limit": 2
+										},
+										"responsePath": "results"
+									},
+									"title": "{title}",
+									"meta": "{subject.title}",
+									"due": {
+										"field": "dueAt",
+										"overdueLabel": {
+											"one": "{count} day late",
+											"other": "{count} days late"
+										}
+									},
+									"badges": [
+										{
+											"field": "priority",
+											"look": "text",
+											"labels": {
+												"urgent": "Urgent",
+												"high": "High",
+												"normal": "Normal"
+											},
+											"hideValues": [
+												"low"
+											]
+										}
+									],
+									"rowRoute": "TaskDetail",
+									"rowIdField": "uuid",
+									"emptyText": "No task is late"
+								},
+								{
+									"intro": "Coming up",
+									"endpointSource": {
+										"url": "/apps/openregister/api/flow-tasks",
+										"params": {
+											"scope": "assigned",
+											"isTerminal": "false",
+											"dueAfter": "@today",
+											"dueBefore": "@today+4d",
+											"sort": "dueAt",
+											"limit": 3
+										},
+										"responsePath": "results"
+									},
+									"title": "{title}",
+									"meta": "{subject.title}",
+									"due": {
+										"field": "dueAt",
+										"todayLabel": "Today",
+										"upcomingLabel": {
+											"one": "{count} day left",
+											"other": "{count} days left"
+										}
+									},
+									"badges": [
+										{
+											"field": "priority",
+											"look": "text",
+											"labels": {
+												"urgent": "Urgent",
+												"high": "High",
+												"normal": "Normal"
+											},
+											"hideValues": [
+												"low"
+											]
+										}
+									],
+									"rowRoute": "TaskDetail",
+									"rowIdField": "uuid",
+									"emptyText": "No task reminders"
+								}
+							]
+						}
+					},
+					{
+						"id": "woo-deadlines",
+						"type": "record-list",
+						"title": "Woo deadlines",
+						"subtitle": "Every running Woo request by days to the decision date, fewest first",
+						"_note": "Board DqDashboard \"Woo-termijnen\" (signalering-widgets). The Woo case type is configuration: the same `caseTypeIdentifier` the Woo requests view narrows on. The pill reads the board's four tones: late, two days or less, a week or less, on schedule.",
+						"headerLink": {
+							"label": "Woo requests",
+							"route": "Cases",
+							"query": {
+								"savedView": "default:woo-requests"
+							}
+						},
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"caseTypeIdentifier": "woo-verzoek",
+								"isFinalStatus": false,
+								"statusHiddenInLists": false,
+								"isDraft": false
+							},
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 4,
+							"presentation": "rows",
+							"ruleAbove": true,
+							"title": "{title}",
+							"meta": {
+								"parts": [
+									"{identifier}",
+									"{initiatorDisplayName}"
+								]
+							},
+							"due": {
+								"field": "deadline",
+								"todayLabel": "Ends today",
+								"overdueLabel": {
+									"one": "{count} day late",
+									"other": "{count} days late"
+								},
+								"upcomingLabel": {
+									"one": "{count} day left",
+									"other": "{count} days left"
+								}
+							},
+							"pill": {
+								"cases": [
+									{
+										"when": {
+											"field": "deadline",
+											"op": "lt",
+											"value": "@today"
+										},
+										"label": "late",
+										"variant": "error"
+									},
+									{
+										"when": {
+											"field": "deadline",
+											"op": "lte",
+											"value": "@today+2d"
+										},
+										"label": "critical",
+										"variant": "warning"
+									},
+									{
+										"when": {
+											"field": "deadline",
+											"op": "lte",
+											"value": "@today+7d"
+										},
+										"label": "attention",
+										"variant": "warning"
+									}
+								],
+								"label": "on schedule",
+								"variant": "success"
+							},
+							"chevron": false,
+							"rowRoute": "CaseDetail",
+							"emptyText": "No open Woo requests"
 						}
 					}
 				],
