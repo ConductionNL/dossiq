@@ -2523,13 +2523,13 @@
 							"clearPath": "/clear",
 							"markersPath": "attentionMarkers",
 							"panelLabels": {
-								"case-data-panel": "Data",
+								"case-data-panel": "Overview",
 								"case-files": "Files",
 								"case-notes-panel": "Notes",
 								"case-people-panel": "People",
-								"case-communication-panel": "Communication",
+								"case-communication-panel": "Contact",
 								"case-email-panel": "Email",
-								"case-work-panel": "Work",
+								"case-work-panel": "Tasks",
 								"case-decisions-panel": "Decisions",
 								"case-related-panel": "Related"
 							},

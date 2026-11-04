@@ -144,8 +144,8 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertSame(
 			[
 				'applicant' => 'Wacht op u',
-				'thirdParty' => 'Wij wachten op informatie van een ander',
-				'us' => 'De gemeente is aan zet',
+				'thirdParty' => 'In behandeling',
+				'us' => 'In behandeling',
 			],
 			$cases['valueLabels']['portalTurn'],
 			'the words are dossiq\'s, so a portal administrator can reword them'
