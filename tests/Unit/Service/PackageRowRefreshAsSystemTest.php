@@ -38,6 +38,7 @@ use Psr\Log\NullLogger;
  * Unit tests for ShippedConfigurationService::refreshRows() on a protected schema.
  *
  * @covers \OCA\Dossiq\Service\Starter\ShippedConfigurationService
+ * @covers \OCA\Dossiq\Service\Starter\ShippedRowAdopter
  * @covers \OCA\Dossiq\Service\Starter\StarterStore
  *
  * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
