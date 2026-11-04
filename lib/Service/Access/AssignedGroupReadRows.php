@@ -23,9 +23,6 @@
  *
  * 🔴 THE ORGANISATION BOUNDARY IS OPENREGISTER'S. A matrix row may only name
  * schema properties in `where`, so it cannot carry `_organisation` itself.
- * OpenRegister drops its organisation filter for a caller who qualifies for a
- * conditional rule on another field, which the handling team rules are; until
- * that is fixed there, these rows read across organisations for such a caller.
  *
  * Rows are built from the session user's groups. A decision for another user
  * in the same request reads rows for the session user's groups; each row still
