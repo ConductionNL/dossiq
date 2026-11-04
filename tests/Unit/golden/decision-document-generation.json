@@ -1073,9 +1073,9 @@
     },
     "attachment save fails": {
         "answer": {
-            "success": true,
+            "success": false,
             "bijlageId": "",
-            "message": "Beschikking generated and attached."
+            "message": "Beschikking generated, but the bijlage could not be saved."
         },
         "calls": [
             [
@@ -1279,9 +1279,9 @@
     },
     "stub save fails": {
         "answer": {
-            "success": true,
-            "bijlageId": "stub-case-1",
-            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+            "success": false,
+            "bijlageId": "",
+            "message": "Document generation is not available, and the stub bijlage could not be saved."
         },
         "calls": [
             [
@@ -1349,9 +1349,9 @@
     },
     "generation fails, stub save fails": {
         "answer": {
-            "success": true,
-            "bijlageId": "stub-case-1",
-            "message": "Stub beschikking bijlage created (document generation failed)."
+            "success": false,
+            "bijlageId": "",
+            "message": "Beschikking generation failed, and the stub bijlage could not be saved."
         },
         "calls": [
             [
@@ -1437,9 +1437,9 @@
     },
     "no object service": {
         "answer": {
-            "success": true,
+            "success": false,
             "bijlageId": "",
-            "message": "Beschikking generated and attached."
+            "message": "Beschikking generated, but the bijlage could not be saved."
         },
         "calls": [
             [
@@ -1493,9 +1493,9 @@
     },
     "no object service, no session": {
         "answer": {
-            "success": true,
-            "bijlageId": "stub-case-1",
-            "message": "Stub beschikking bijlage created (document generation not available or template not configured)."
+            "success": false,
+            "bijlageId": "",
+            "message": "Document generation is not available, and the stub bijlage could not be saved."
         },
         "calls": [
             [
