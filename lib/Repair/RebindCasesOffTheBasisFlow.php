@@ -108,11 +108,11 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 		$moved = $this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): int => $this->rebindAll(
-				objectService: $objectService,
-				register: $register,
-				caseTypeSchema: $caseTypeSchema,
-				templateSchema: $templateSchema,
-				caseSchema: $caseSchema,
+				run: new FlowRebindRun(
+					objectService: $objectService,
+					register: $register,
+					schemas: ['caseType' => $caseTypeSchema, 'template' => $templateSchema, 'case' => $caseSchema],
+				),
 			),
 		);
 
@@ -122,28 +122,37 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 	/**
 	 * Rebind across every case type that names a real flow.
 	 *
-	 * @param object $objectService  OpenRegister's ObjectService.
-	 * @param string $register       The register.
-	 * @param string $caseTypeSchema The case type schema.
-	 * @param string $templateSchema The workflow template schema.
-	 * @param string $caseSchema     The case schema.
+	 * @param FlowRebindRun $run The store, the schemas and the flows read so far.
 	 *
 	 * @return int The cases moved.
 	 *
 	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
 	 */
-	public function rebindAll(
-		object $objectService,
-		string $register,
-		string $caseTypeSchema,
-		string $templateSchema,
-		string $caseSchema,
-	): int {
+	public function rebindAll(FlowRebindRun $run): int {
+		$moved = 0;
+		foreach ($this->caseTypesOf(run: $run) as $caseType) {
+			$binding = $this->bindingOf(run: $run, caseType: $caseType);
+			if ($binding !== null) {
+				$moved += $this->rebindCaseType(run: $run, binding: $binding);
+			}
+		}
+
+		return $moved;
+	}//end rebindAll()
+
+	/**
+	 * Every case type, or none when they cannot be listed.
+	 *
+	 * @param FlowRebindRun $run The run.
+	 *
+	 * @return array<int, array<string, mixed>> The case types.
+	 */
+	private function caseTypesOf(FlowRebindRun $run): array {
 		try {
-			$caseTypes = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseTypeSchema,
+			return $this->searchObjectsAsArrays(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->schemas['caseType'],
 				filters: ['_limit' => self::PAGE],
 			);
 		} catch (Throwable $e) {
@@ -151,103 +160,77 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 				'Dossiq: the basis flow rebind could not list case types',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
-			return 0;
+			return [];
 		}
-
-		$templates = [];
-		$moved = 0;
-		foreach ($caseTypes as $caseType) {
-			$caseTypeId = (string)($caseType['id'] ?? ($caseType['@self']['id'] ?? ''));
-			$named = $this->referenceId(value: ($caseType['workflowDefinition'] ?? ''));
-			if ($caseTypeId === '' || $named === '') {
-				continue;
-			}
-
-			$target = $this->template(
-				objectService: $objectService,
-				register: $register,
-				schema: $templateSchema,
-				id: $named,
-				cache: $templates,
-			);
-			if ($target === null || $this->isBasis(template: $target) === true) {
-				continue;
-			}
-
-			$moved += $this->rebindCaseType(
-				objectService: $objectService,
-				register: $register,
-				templateSchema: $templateSchema,
-				caseSchema: $caseSchema,
-				caseTypeId: $caseTypeId,
-				target: $target,
-				templates: $templates,
-			);
-		}//end foreach
-
-		return $moved;
-	}//end rebindAll()
+	}//end caseTypesOf()
 
 	/**
-	 * Rebind the open cases of one case type that are still on one of its basis flows.
+	 * The cases of one case type, or none when they cannot be listed.
 	 *
-	 * @param object                              $objectService  OpenRegister's ObjectService.
-	 * @param string                              $register       The register.
-	 * @param string                              $templateSchema The workflow template schema.
-	 * @param string                              $caseSchema     The case schema.
-	 * @param string                              $caseTypeId     The case type.
-	 * @param array<string, mixed>                $target         The flow the case type names.
-	 * @param array<string, array<string, mixed>|null> $templates The templates read so far, by id.
+	 * @param FlowRebindRun                                              $run     The run.
+	 * @param array{caseTypeId: string, target: array<string, mixed>} $binding The case type and the flow it names.
 	 *
-	 * @return int The cases moved.
+	 * @return array<int, array<string, mixed>> The cases.
 	 */
-	private function rebindCaseType(
-		object $objectService,
-		string $register,
-		string $templateSchema,
-		string $caseSchema,
-		string $caseTypeId,
-		array $target,
-		array &$templates,
-	): int {
+	private function casesOf(FlowRebindRun $run, array $binding): array {
 		try {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['caseType' => $caseTypeId, '_limit' => self::PAGE],
+			return $this->searchObjectsAsArrays(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->schemas['case'],
+				filters: ['caseType' => $binding['caseTypeId'], '_limit' => self::PAGE],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the basis flow rebind could not list cases',
-				['app' => Application::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
+				['app' => Application::APP_ID, 'caseType' => $binding['caseTypeId'], 'exception' => $e->getMessage()]
 			);
-			return 0;
+			return [];
+		}
+	}//end casesOf()
+
+	/**
+	 * The case type and the real flow it names, or null when it names none.
+	 *
+	 * @param FlowRebindRun        $run      The run.
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return array{caseTypeId: string, target: array<string, mixed>}|null
+	 */
+	private function bindingOf(FlowRebindRun $run, array $caseType): ?array {
+		$caseTypeId = (string)($caseType['id'] ?? ($caseType['@self']['id'] ?? ''));
+		$named = $this->referenceId(value: ($caseType['workflowDefinition'] ?? ''));
+		if ($caseTypeId === '' || $named === '') {
+			return null;
 		}
 
-		$targetId = (string)($target['id'] ?? ($target['@self']['id'] ?? ''));
+		$target = $this->template(run: $run, id: $named);
+		if ($target === null || $this->isBasis(template: $target) === true) {
+			return null;
+		}
+
+		return ['caseTypeId' => $caseTypeId, 'target' => $target];
+	}//end bindingOf()
+
+	/**
+	 * Rebind the open cases of one case type that are still on one of its basis flows.
+	 *
+	 * @param FlowRebindRun                                              $run     The run.
+	 * @param array{caseTypeId: string, target: array<string, mixed>} $binding The case type and the flow it names.
+	 *
+	 * @return int The cases moved.
+	 */
+	private function rebindCaseType(FlowRebindRun $run, array $binding): int {
 		$moved = 0;
-		foreach ($cases as $case) {
-			$from = $this->basisFlowOf(
-				case: $case,
-				targetId: $targetId,
-				caseTypeId: $caseTypeId,
-				lookup: fn (string $id): ?array => $this->template(
-					objectService: $objectService,
-					register: $register,
-					schema: $templateSchema,
-					id: $id,
-					cache: $templates,
-				),
-			);
-			if ($from === null) {
+		foreach ($this->casesOf(run: $run, binding: $binding) as $case) {
+			if ($this->basisFlowOf(run: $run, case: $case, binding: $binding) === null) {
 				continue;
 			}
 
-			if ($this->moveCase(objectService: $objectService, register: $register, caseSchema: $caseSchema, case: $case, target: $target) === true) {
+			if ($this->moveCase(run: $run, case: $case, target: $binding['target']) === true) {
 				$moved++;
 			}
-		}//end foreach
+		}
 
 		return $moved;
 	}//end rebindCaseType()
@@ -255,15 +238,13 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 	/**
 	 * Bind one case to the target flow, keeping everything else on it.
 	 *
-	 * @param object               $objectService OpenRegister's ObjectService.
-	 * @param string               $register      The register.
-	 * @param string               $caseSchema    The case schema.
-	 * @param array<string, mixed> $case          The case.
-	 * @param array<string, mixed> $target        The flow the case type names.
+	 * @param FlowRebindRun        $run    The run.
+	 * @param array<string, mixed> $case   The case.
+	 * @param array<string, mixed> $target The flow the case type names.
 	 *
 	 * @return bool Whether the case was saved.
 	 */
-	private function moveCase(object $objectService, string $register, string $caseSchema, array $case, array $target): bool {
+	private function moveCase(FlowRebindRun $run, array $case, array $target): bool {
 		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
 		$row = $case;
 		unset($row['@self'], $row['id']);
@@ -271,7 +252,7 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 		$row['workflowVersion'] = (int)($target['version'] ?? 1);
 
 		try {
-			$objectService->saveObject(object: $row, register: $register, schema: $caseSchema, uuid: $caseId);
+			$run->objectService->saveObject(object: $row, register: $run->register, schema: $run->schemas['case'], uuid: $caseId);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: the basis flow rebind could not move a case',
@@ -289,31 +270,49 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 	 * Null for a case without an id or a binding, one already on the target,
 	 * a closed one, or one bound to any flow that is not this case type's basis.
 	 *
-	 * @param array<string, mixed>                $case       The case.
-	 * @param string                              $targetId   The flow the case type names.
-	 * @param string                              $caseTypeId The case type.
-	 * @param callable(string): ?array<string, mixed> $lookup  Reads a flow by id.
+	 * @param FlowRebindRun                                              $run     The run.
+	 * @param array<string, mixed>                                       $case    The case.
+	 * @param array{caseTypeId: string, target: array<string, mixed>} $binding The case type and the flow it names.
 	 *
 	 * @return array<string, mixed>|null The basis flow.
 	 */
-	private function basisFlowOf(array $case, string $targetId, string $caseTypeId, callable $lookup): ?array {
-		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-		$bound = $this->referenceId(value: ($case['workflowTemplate'] ?? ''));
-		if ($caseId === '' || $bound === '' || $bound === $targetId || ($case['isFinalStatus'] ?? false) === true) {
+	private function basisFlowOf(FlowRebindRun $run, array $case, array $binding): ?array {
+		$bound = $this->movableFrom(case: $case, binding: $binding);
+		if ($bound === '') {
 			return null;
 		}
 
-		$from = $lookup($bound);
+		$from = $this->readTemplate(run: $run, id: $bound);
 		if ($from === null || $this->isBasis(template: $from) === false) {
 			return null;
 		}
 
-		if ($this->referenceId(value: ($from['caseType'] ?? '')) !== $caseTypeId) {
+		if ($this->referenceId(value: ($from['caseType'] ?? '')) !== $binding['caseTypeId']) {
 			return null;
 		}
 
 		return $from;
 	}//end basisFlowOf()
+
+	/**
+	 * The flow an open case is bound to, or '' for a case without an id or a
+	 * binding, one already on the target, or a closed one.
+	 *
+	 * @param array<string, mixed>                                       $case    The case.
+	 * @param array{caseTypeId: string, target: array<string, mixed>} $binding The case type and the flow it names.
+	 *
+	 * @return string The flow uuid, or ''.
+	 */
+	private function movableFrom(array $case, array $binding): string {
+		$targetId = (string)($binding['target']['id'] ?? ($binding['target']['@self']['id'] ?? ''));
+		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
+		$bound = $this->referenceId(value: ($case['workflowTemplate'] ?? ''));
+		if ($caseId === '' || $bound === '' || $bound === $targetId || ($case['isFinalStatus'] ?? false) === true) {
+			return '';
+		}
+
+		return $bound;
+	}//end movableFrom()
 
 	/**
 	 * Whether a stored flow is one the backfill made up.
@@ -329,25 +328,43 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 	/**
 	 * Read a flow once.
 	 *
-	 * @param object                                   $objectService OpenRegister's ObjectService.
-	 * @param string                                   $register      The register.
-	 * @param string                                   $schema        The workflow template schema.
-	 * @param string                                   $id            The flow uuid.
-	 * @param array<string, array<string, mixed>|null> $cache         The flows read so far.
+	 * @param FlowRebindRun $run The run, holding the flows read so far.
+	 * @param string        $id  The flow uuid.
 	 *
 	 * @return array<string, mixed>|null The flow, or null when it cannot be read.
 	 */
-	private function template(object $objectService, string $register, string $schema, string $id, array &$cache): ?array {
-		if (array_key_exists($id, $cache) === false) {
-			try {
-				$cache[$id] = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
-			} catch (Throwable) {
-				$cache[$id] = null;
-			}
+	private function template(FlowRebindRun $run, string $id): ?array {
+		if (array_key_exists($id, $run->templates) === false) {
+			$run->templates[$id] = $this->readTemplate(run: $run, id: $id);
 		}
 
-		return $cache[$id];
+		return $run->templates[$id];
 	}//end template()
+
+	/**
+	 * A flow from the flows read so far, or read from the store without keeping it.
+	 *
+	 * @param FlowRebindRun $run The run, holding the flows read so far.
+	 * @param string        $id  The flow uuid.
+	 *
+	 * @return array<string, mixed>|null The flow, or null when it cannot be read.
+	 */
+	private function readTemplate(FlowRebindRun $run, string $id): ?array {
+		if (array_key_exists($id, $run->templates) === true) {
+			return $run->templates[$id];
+		}
+
+		try {
+			return $this->findObjectAsArray(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->schemas['template'],
+				id: $id
+			);
+		} catch (Throwable) {
+			return null;
+		}
+	}//end readTemplate()
 
 	/**
 	 * The uuid a reference names, whether stored as a string or an expanded object.
