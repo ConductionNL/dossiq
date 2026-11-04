@@ -5772,7 +5772,7 @@ OC.L10N.register(
         "Notification Reference": "Verwijzing naar de melding",
         "Notification Subscription": "Abonnement op meldingen",
         "Notification text": "Notificatietekst",
-        "Notifications": "Notificaties",
+        "Notifications": "Meldingen",
         "Notifications Sent": "Verstuurde meldingen",
         "Notified Recipients": "Geïnformeerde ontvangers",
         "Notify": "Notificeren",
