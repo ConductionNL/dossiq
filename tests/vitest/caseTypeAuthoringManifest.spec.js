@@ -661,7 +661,7 @@ describe('the header actions', () => {
 		expect(
 			page('CaseTypeDetail').config.headerActions.map((a) => a.label),
 		).toEqual([
-			'Export',
+			'Download',
 			'Import',
 			'Duplicate',
 			'New version',

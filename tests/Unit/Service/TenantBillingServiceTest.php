@@ -42,16 +42,16 @@ class TenantBillingServiceTest extends TestCase {
 	}
 
 	public function testTierMonthlyPriceResolvesKnownTiersAndDefaultsToZero(): void {
-		$this->assertSame(49.0, $this->svc->tierMonthlyPrice('basic'));
-		$this->assertSame(149.0, $this->svc->tierMonthlyPrice('standard'));
-		$this->assertSame(499.0, $this->svc->tierMonthlyPrice('enterprise'));
+		$this->assertSame(450.0, $this->svc->tierMonthlyPrice('basic'));
+		$this->assertSame(900.0, $this->svc->tierMonthlyPrice('standard'));
+		$this->assertSame(1800.0, $this->svc->tierMonthlyPrice('enterprise'));
 		$this->assertSame(0.0, $this->svc->tierMonthlyPrice('unknown'));
 	}
 
 	public function testRunInvoicingComputesNonZeroAmountAndExports(): void {
 		// A tenant with one activation event at the standard tier price.
 		$events = [
-			['uuid' => 'e-1', 'tenantRef' => 't-1', 'eventType' => 'user_activated', 'quantity' => 1.0, 'unitPrice' => 149.0, 'currency' => 'EUR', 'occurredAt' => '2026-07-05T10:00:00+00:00', 'invoiceRef' => null],
+			['uuid' => 'e-1', 'tenantRef' => 't-1', 'eventType' => 'user_activated', 'quantity' => 1.0, 'unitPrice' => 900.0, 'currency' => 'EUR', 'occurredAt' => '2026-07-05T10:00:00+00:00', 'invoiceRef' => null],
 		];
 
 		$shillinq = $this->createMock(\OCA\Dossiq\Service\ShillinqIntegrationService::class);
@@ -75,7 +75,7 @@ class TenantBillingServiceTest extends TestCase {
 		$result = $svc->runInvoicing('t-1', '2026-07');
 
 		$this->assertGreaterThan(0.0, $result['amount'], 'invoice amount must be non-zero for real usage');
-		$this->assertSame(149.0, $result['amount']);
+		$this->assertSame(900.0, $result['amount']);
 		$this->assertTrue($result['exported']);
 		$this->assertSame('INV-2026-07-t1', $result['invoiceRef']);
 		$this->assertSame(1, $result['eventCount']);
@@ -216,7 +216,7 @@ class TenantBillingServiceTest extends TestCase {
 		$events = [
 			['eventType' => 'case_created', 'quantity' => 2.0, 'unitPrice' => 5.0],
 			['eventType' => 'case_created', 'quantity' => 2.0, 'unitPrice' => 'op aanvraag'],
-			['eventType' => 'user_activated', 'quantity' => null, 'unitPrice' => 149.0],
+			['eventType' => 'user_activated', 'quantity' => null, 'unitPrice' => 900.0],
 		];
 
 		$summary = $this->svc->aggregate($events);
@@ -234,7 +234,7 @@ class TenantBillingServiceTest extends TestCase {
 
 	public function testNoInvoiceIsExportedWhileAnyEventCannotBePriced(): void {
 		$events = [
-			['uuid' => 'e-1', 'tenantRef' => 't-1', 'eventType' => 'user_activated', 'quantity' => 1.0, 'unitPrice' => 149.0, 'currency' => 'EUR', 'occurredAt' => '2026-07-05T10:00:00+00:00', 'invoiceRef' => null],
+			['uuid' => 'e-1', 'tenantRef' => 't-1', 'eventType' => 'user_activated', 'quantity' => 1.0, 'unitPrice' => 900.0, 'currency' => 'EUR', 'occurredAt' => '2026-07-05T10:00:00+00:00', 'invoiceRef' => null],
 			['uuid' => 'e-2', 'tenantRef' => 't-1', 'eventType' => 'case_created', 'quantity' => 3.0, 'unitPrice' => null, 'currency' => 'EUR', 'occurredAt' => '2026-07-06T10:00:00+00:00', 'invoiceRef' => null],
 		];
 
