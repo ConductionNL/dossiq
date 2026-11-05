@@ -275,6 +275,8 @@ class LocationBagValidationListenerTest extends TestCase {
 
 		$this->assertTrue($event->isPropagationStopped());
 		$this->assertSame(['nummeraanduidingId.unknown'], $event->getErrors()['codes']);
+		$this->assertSame('bag-address-unknown', $event->getErrors()['code']);
+		$this->assertMatchesRegularExpression('/^\d{16}$/', $event->getErrors()['addressId']);
 	}//end testCheckOnAndNotFoundIsRefused()
 
 	/**
@@ -299,6 +301,8 @@ class LocationBagValidationListenerTest extends TestCase {
 
 			$this->assertTrue($event->isPropagationStopped(), $reason);
 			$this->assertSame([$code], $event->getErrors()['codes'], $reason);
+			$this->assertSame('bag-check-unavailable', $event->getErrors()['code'], $reason);
+			$this->assertArrayNotHasKey('addressId', $event->getErrors(), $reason);
 			$this->assertStringContainsString($says, $event->getErrors()['message'], $reason);
 		}
 	}//end testCheckOnWithoutAnAnswerIsRefusedNotPassed()

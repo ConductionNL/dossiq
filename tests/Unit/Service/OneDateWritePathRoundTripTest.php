@@ -357,7 +357,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		$store->method('find')->willReturn(['id' => 'case-1']);
 		$store->method('saveObject')->willReturnCallback(
 			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
-				if ($schema === 'adviceRequest') {
+				if ($schema === 'adviesAanvraag') {
 					$captured = $object;
 				}
 

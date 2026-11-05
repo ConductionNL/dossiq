@@ -150,7 +150,7 @@ class SociaalDomeinPlanController extends Controller {
 			}
 
 			if ($plans === []) {
-				return new JSONResponse(['plan' => null, 'goals' => [], 'interventions' => [], 'dueForReview' => false]);
+				return new JSONResponse(['planId' => null, 'plan' => null, 'goals' => [], 'interventions' => [], 'dueForReview' => false]);
 			}
 
 			usort(
@@ -175,9 +175,12 @@ class SociaalDomeinPlanController extends Controller {
 	 * @param string               $planId Its uuid.
 	 *
 	 * @return array<string, mixed> The payload `plan()` and `planOfCase()` answer.
+	 *
+	 * @spec openspec/changes/case-completeness-checklist/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-the-family-plan-answer-names-its-plan
 	 */
 	private function planPayload(array $plan, string $planId): array {
 		return [
+			'planId' => $planId,
 			'plan' => $plan,
 			'goals' => $this->goals->ofPlan(planId: $planId),
 			'interventions' => $this->interventions->ofPlan(planId: $planId),

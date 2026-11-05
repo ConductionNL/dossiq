@@ -35,8 +35,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
+use OCA\Dossiq\Service\Custody\ConsentRefusal;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -48,6 +50,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Tests\Support\InMemoryRegister
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Custody\ConsentStanding
+ * @uses \OCA\Dossiq\Service\Custody\ConsentRefusal
  *
  * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
@@ -295,6 +298,7 @@ class CaseTransferConsentGateTest extends TestCase {
 		return new CaseTransferConsentGate(
 			settingsService: $this->settings(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			refusals: new ConsentRefusal(l10n: new SourceL10n()),
 		);
 	}//end gate()
 

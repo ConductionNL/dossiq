@@ -107,6 +107,7 @@ class TemplateLibraryService {
 				'version' => $data['version'] ?? '1.0.0',
 				'file' => basename($file),
 				'fills' => $this->fillsOf(data: $data),
+				'notes' => $this->notesOf(data: $data),
 			];
 		}//end foreach
 
@@ -149,6 +150,30 @@ class TemplateLibraryService {
 
 		return array_values($data['fills']);
 	}//end fillsOf()
+
+	/**
+	 * The notes a template carries for whoever generates it, e.g. about the objection period.
+	 *
+	 * @param array<string, mixed> $data The template file's content.
+	 *
+	 * @return array<int, string> The notes, blanks and non-strings left out.
+	 *
+	 * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/generate-fills-per-template/spec.md#requirement-a-template-carries-notes-for-the-generate-dialog
+	 */
+	private function notesOf(array $data): array {
+		if (isset($data['notes']) === false || is_array($data['notes']) === false) {
+			return [];
+		}
+
+		$notes = [];
+		foreach ($data['notes'] as $note) {
+			if (is_string($note) === true && trim($note) !== '') {
+				$notes[] = trim($note);
+			}
+		}
+
+		return $notes;
+	}//end notesOf()
 
 	/**
 	 * Load a template by its ID.

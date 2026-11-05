@@ -52,6 +52,7 @@ class CaseActsOverview {
 	 *                                            Optional, so an instance that predates the
 	 *                                            half still answers.
 	 * @param CaseArchiveReadiness|null $readiness The archive checklist, for the archive dialog.
+	 * @param CaseRemedyChoices|null    $remedies  The remedies the case type declares, for the lifecycle menu.
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
@@ -60,6 +61,7 @@ class CaseActsOverview {
 		private readonly ProcessOwnedStatusRule $processStatus,
 		private readonly ?CaseArchiveState $archiveState = null,
 		private readonly ?CaseArchiveReadiness $readiness = null,
+		private readonly ?CaseRemedyChoices $remedies = null,
 	) {
 	}//end __construct()
 
@@ -112,6 +114,7 @@ class CaseActsOverview {
 				'statusIsHandSettable' => $this->processStatus->allowsHandSet(
 					caseTypeId: (string)($case['caseType'] ?? '')
 				),
+				'remedies' => ($this->remedies?->forCase(caseId: $caseId, case: $case) ?? []),
 			],
 			$this->acts->menu->forCase(caseId: $caseId, case: $case)
 		);

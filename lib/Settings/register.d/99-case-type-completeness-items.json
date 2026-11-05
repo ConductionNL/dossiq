@@ -1,0 +1,32 @@
+{
+  "_note": "The document list a case type declares for the completeness of an application (DqZaakDocumenten, Volledigheid van de aanvraag). Each item is answered by a document of the case (its informatieobjecttype, or a word in its title or file name) or by a case field. GET /api/cases/{caseId}/completeness ticks them. A fragment per ADR-037.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "intakeRequirements": {
+            "properties": {
+              "completenessItems": {
+                "type": "array",
+                "title": "Completeness of the application",
+                "description": "What an application of this type must hold before it is admissible. Each item is ticked by a document of the case or by a case field.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": { "type": "string", "title": "Key" },
+                    "label": { "type": "string", "title": "Label" },
+                    "documentType": { "type": "string", "title": "Document type", "description": "The informatieobjecttype of a case document that answers this item." },
+                    "documentTitleContains": { "type": "string", "title": "Word in the document title", "description": "A case document whose title or file name holds this word answers this item." },
+                    "field": { "type": "string", "title": "Case field", "description": "A case field (dot path) whose value answers this item." },
+                    "evidence": { "type": "string", "title": "Evidence text", "description": "What the card shows when the field answers the item, e.g. where the data came from. Defaults to the field's value." }
+                  },
+                  "required": ["key", "label"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

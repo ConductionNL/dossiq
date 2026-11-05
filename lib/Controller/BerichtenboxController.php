@@ -41,6 +41,19 @@ use OCP\IUserSession;
 class BerichtenboxController extends Controller {
 
 	/**
+	 * Refusal codes that mean no digital post provider is set up on this
+	 * instance; the send answers them as `provider-not-configured`.
+	 *
+	 * @var array<int, string>
+	 */
+	private const PROVIDER_MISSING_CODES = [
+		'integriq-missing',
+		'integriq-seam-missing',
+		'digital-post-source-unset',
+		'provider-not-configured',
+	];
+
+	/**
 	 * The categories a handler may send by digital post (opt-out-before-send).
 	 */
 	private const CATEGORIES = ['case-update', 'besluit', 'statutory'];
@@ -118,9 +131,15 @@ class BerichtenboxController extends Controller {
 		);
 
 		if (isset($result['error']) === true) {
+			// The message is still recorded as not sent, with this reason (BerichtenboxService::storedSend()).
 			$answer = ['success' => false, 'error' => $result['error']];
 			if (isset($result['code']) === true) {
 				$answer['code'] = $result['code'];
+			}
+
+			if (in_array(($result['code'] ?? ''), self::PROVIDER_MISSING_CODES, true) === true) {
+				$answer['code']  = 'provider-not-configured';
+				$answer['cause'] = $result['code'];
 			}
 
 			return new JSONResponse($answer, 400);
