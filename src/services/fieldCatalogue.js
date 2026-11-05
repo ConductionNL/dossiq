@@ -43,6 +43,7 @@ function caseTypeOf(row) {
  *
  * @param {Array<object>} rows Every attribute row.
  * @return {Map<string, Array<object>>} The rows per name, in first-seen order.
+ * @spec openspec/specs/property-definition-management/spec.md
  */
 export function attributesByName(rows) {
 	const byName = new Map()
@@ -62,6 +63,7 @@ export function attributesByName(rows) {
  *
  * @param {Array<object>} rows The rows of one name.
  * @return {{id: string, name: string, label: string, type: string, folderId: (string|undefined), usageCount: number, row: object}} The entry.
+ * @spec openspec/specs/property-definition-management/spec.md
  */
 export function catalogueEntry(rows) {
 	const row = rows.find((entry) => caseTypeOf(entry) === '') || rows[0]
@@ -84,6 +86,7 @@ export function catalogueEntry(rows) {
  * @param {Array<object>} rows Every attribute row.
  * @param {string} caseTypeId The case type that picks.
  * @return {{fields: Array<object>, folders: Array<{id: string, name: string}>, excludeIds: Array<string>}} The catalogue.
+ * @spec openspec/specs/property-definition-management/spec.md
  */
 export function buildCatalogue(rows, caseTypeId) {
 	const fields = []
@@ -105,6 +108,7 @@ export function buildCatalogue(rows, caseTypeId) {
  * @param {object} row The attribute row the entry stands for.
  * @param {string} caseTypeId The case type the copy belongs to.
  * @return {object} The new attribute.
+ * @spec openspec/specs/property-definition-management/spec.md
  */
 export function copyForCaseType(row, caseTypeId) {
 	const copy = { caseType: caseTypeId, isRequired: false }
@@ -120,6 +124,7 @@ export function copyForCaseType(row, caseTypeId) {
  * Read every attribute in the register.
  *
  * @return {Promise<Array<object>>} The rows.
+ * @spec openspec/specs/property-definition-management/spec.md
  */
 export async function fetchAttributes() {
 	const { data } = await axios.get(generateUrl(ATTRIBUTES_URL), { params: { _limit: 500 } })
@@ -133,6 +138,7 @@ export async function fetchAttributes() {
  * @param {Array<object>} entries The picked catalogue entries.
  * @param {string} caseTypeId The case type.
  * @return {Promise<number>} How many were added.
+ * @spec openspec/specs/property-definition-management/spec.md
  */
 export async function addToCaseType(entries, caseTypeId) {
 	let added = 0

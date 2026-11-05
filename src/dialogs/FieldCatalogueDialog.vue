@@ -66,12 +66,20 @@ export default {
 	},
 
 	computed: {
-		/** @return {string} The case type id, from the prop or the route. */
+		/**
+		 * @return {string} The case type id, from the prop or the route.
+		 * @spec openspec/specs/property-definition-management/spec.md
+		 */
 		targetCaseTypeId() {
 			return resolveCaseId(this.caseTypeId, this.$route)
 		},
 	},
 
+	/**
+	 * Read the catalogue for this case type.
+	 *
+	 * @spec openspec/specs/property-definition-management/spec.md
+	 */
 	async mounted() {
 		try {
 			Object.assign(this, buildCatalogue(await fetchAttributes(), this.targetCaseTypeId))
@@ -113,6 +121,7 @@ export default {
 		 * @param {unknown} failure The failed request.
 		 * @param {string} fallback The sentence when the server gave none.
 		 * @return {string} The sentence.
+		 * @spec openspec/specs/property-definition-management/spec.md
 		 */
 		refusalOf(failure, fallback) {
 			const data = failure?.response?.data
