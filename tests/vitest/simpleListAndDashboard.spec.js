@@ -333,6 +333,8 @@ describe('the cases list', () => {
 			headerActions,
 			mapConfig,
 			_mapConfigNote,
+			realtime,
+			_realtimeNote,
 			showAdd,
 			showViewToggle,
 			showMassCopy,
