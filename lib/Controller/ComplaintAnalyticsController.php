@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
+use OCA\Dossiq\Service\Complaint\EmployeeAlertAudience;
 use OCA\Dossiq\Service\ComplaintAnalyticsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
@@ -53,6 +54,7 @@ class ComplaintAnalyticsController extends Controller {
 	 * @param IRequest $request Request
 	 * @param ComplaintAnalyticsService $analyticsService Analytics service
 	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
+	 * @param EmployeeAlertAudience $alertAudience Who may read the employee threshold alerts
 	 *
 	 * @return void
 	 */
@@ -61,6 +63,7 @@ class ComplaintAnalyticsController extends Controller {
 		IRequest $request,
 		private readonly ComplaintAnalyticsService $analyticsService,
 		private readonly ComplaintAccessGuard $accessGuard,
+		private readonly EmployeeAlertAudience $alertAudience,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -68,16 +71,24 @@ class ComplaintAnalyticsController extends Controller {
 	/**
 	 * Get complaint frequency analytics.
 	 *
+	 * The employee threshold alerts are only built and returned for the alert
+	 * audience (EmployeeAlertAudience); every other caller gets the frequency
+	 * figures without the `employeeAlerts` key.
+	 *
 	 * @return JSONResponse Analytics data
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
 	 */
 	public function analytics(): JSONResponse {
-		if ($this->accessGuard->currentUid() === '') {
+		$uid = $this->accessGuard->currentUid();
+		if ($uid === '') {
 			return $this->accessGuard->notAuthenticated();
 		}
+
+		$mayReadAlerts = $this->alertAudience->mayReadEmployeeAlerts($uid);
 
 		$dateFrom = $this->request->getParam('dateFrom') ?? date('Y-01-01');
 		$dateTo = $this->request->getParam('dateTo') ?? date('Y-m-d');
@@ -99,18 +110,19 @@ class ComplaintAnalyticsController extends Controller {
 		);
 		$monthlyTrend = $this->analyticsService->getMonthlyTrend(dateFrom: $dateFrom, dateTo: $dateTo);
 		$avgResolution = $this->analyticsService->getAverageResolutionTime(dateFrom: $dateFrom, dateTo: $dateTo);
-		$employeeAlerts = $this->analyticsService->checkEmployeeThresholdAlerts();
 
-		return new JSONResponse(
-			[
-				'byCategorie' => $byCategory,
-				'byAfdeling' => $byDepartment,
-				'byKanaal' => $byChannel,
-				'monthlyTrend' => $monthlyTrend,
-				'avgResolution' => $avgResolution,
-				'employeeAlerts' => $employeeAlerts,
-			]
-		);
+		$body = [
+			'byCategorie' => $byCategory,
+			'byAfdeling' => $byDepartment,
+			'byKanaal' => $byChannel,
+			'monthlyTrend' => $monthlyTrend,
+			'avgResolution' => $avgResolution,
+		];
+		if ($mayReadAlerts === true) {
+			$body['employeeAlerts'] = $this->analyticsService->checkEmployeeThresholdAlerts();
+		}
+
+		return new JSONResponse($body);
 	}//end analytics()
 
 	/**
