@@ -250,7 +250,11 @@ class PlannedSeriesLedger {
 	}//end asArray()
 
 	/**
-	 * Every planned-follow-up flow this app owns.
+	 * Every planned-follow-up flow, whichever app stored it.
+	 *
+	 * Found by the slug alone: an example set stores its flows for the app
+	 * that ships the fragment, so a series seeded beside a portal case is
+	 * that app's row and carries the same slug.
 	 *
 	 * @return array<int, object> The flow rows.
 	 *
@@ -264,7 +268,6 @@ class PlannedSeriesLedger {
 
 		try {
 			return (array)$mapper->findAllFlows(
-				app: Application::APP_ID,
 				applicationSlug: PlannedFollowUpDocument::PLANNED_SLUG,
 				limit: self::PAGE
 			);
