@@ -6181,7 +6181,7 @@
 					{
 						"id": "export-dossier",
 						"type": "api-call",
-						"label": "Export dossier",
+						"label": "Download dossier",
 						"icon": "FolderZipOutline",
 						"url": "/apps/dossiq/api/cases/@objectId/dossier/zip",
 						"method": "POST",
@@ -9599,7 +9599,7 @@
 								}
 							},
 							"footerAction": {
-								"label": "Export as pdf",
+								"label": "Download as pdf",
 								"icon": "FilePdfBox",
 								"type": "api-call",
 								"method": "GET",
@@ -14055,7 +14055,7 @@
 					{
 						"id": "case-type-export",
 						"type": "api-call",
-						"label": "Export",
+						"label": "Download",
 						"icon": "TrayArrowDown",
 						"url": "/apps/dossiq/api/case-definitions/export",
 						"method": "POST",

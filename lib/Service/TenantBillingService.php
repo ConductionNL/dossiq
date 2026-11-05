@@ -68,9 +68,9 @@ class TenantBillingService {
 	 * @var array<string, float>
 	 */
 	public const TIER_MONTHLY_PRICE = [
-		'basic' => 49.0,
-		'standard' => 149.0,
-		'enterprise' => 499.0,
+		'basic' => 450.0,
+		'standard' => 900.0,
+		'enterprise' => 1800.0,
 	];
 
 	/**
