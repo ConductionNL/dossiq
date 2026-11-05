@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Dossiq\Service\Board\CaseChangesFeed;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -72,7 +73,8 @@ class CaseChangesController extends Controller {
 	 * GET /api/cases/changes?since=<iso>&caseType=<uuid>&assignedGroup=<group>
 	 *
 	 * The feed reads each changed case again as the caller, so a case the
-	 * caller may not read is never named.
+	 * caller may not read is never named. A first poll without `since` reads
+	 * nothing and answers only `now`, the moment the next poll asks from.
 	 *
 	 * @param string $since         The moment the board last asked, ISO 8601.
 	 * @param string $caseType      Only cases of this type, when given.
@@ -89,8 +91,12 @@ class CaseChangesController extends Controller {
 			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		if (trim($since) === '') {
+			return new JSONResponse(['changes' => [], 'now' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM)]);
+		}
+
 		$moment = date_create_immutable(trim($since));
-		if (trim($since) === '' || $moment === false) {
+		if ($moment === false) {
 			return new JSONResponse(['message' => 'since must be an ISO 8601 moment'], Http::STATUS_BAD_REQUEST);
 		}
 

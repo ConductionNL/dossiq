@@ -4593,6 +4593,7 @@ OC.L10N.register(
         "Junk rules": "Junk rules",
         "Jurisdiction": "Jurisdiction",
         "just now": "just now",
+        "Just updated by {actor}": "Just updated by {actor}",
         "Justification provided for the deadline extension request": "Justification provided for the deadline extension request",
         "Justification text provided by the user who reversed the milestone.": "Justification text provided by the user who reversed the milestone.",
         "k divided by the sample size.": "k divided by the sample size.",

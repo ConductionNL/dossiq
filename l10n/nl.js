@@ -4593,6 +4593,7 @@ OC.L10N.register(
         "Junk rules": "Ongewenstregels",
         "Jurisdiction": "Rechtsgebied",
         "just now": "zojuist",
+        "Just updated by {actor}": "Zojuist bijgewerkt door {actor}",
         "Justification provided for the deadline extension request": "Onderbouwing bij het verzoek om verlenging van de termijn",
         "Justification text provided by the user who reversed the milestone.": "Onderbouwing van de gebruiker die de mijlpaal heeft teruggedraaid.",
         "k divided by the sample size.": "k gedeeld door de grootte van de steekproef.",
