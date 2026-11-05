@@ -117,6 +117,8 @@ consults for the day a date lands on, after this change.
 | `lib/Service/CaseLifecycleService.php` | 516, 521 | statutory | engine calendar | extends a case end date by the case type's period, which is the term a handler is judged on |
 | `lib/Service/CaseTermsService.php` | 249 | statutory | engine calendar | binds the planned end, the internal target, the phase term and a case type's fixed closing date; every one of them is a date somebody is held to, and `endAfter()` is the single line that turns a day count into one |
 | `lib/Service/ComplaintAnalyticsService.php` | 247 | neither | | a six month reporting window |
+| `lib/Service/Complaint/ComplaintPatternFigures.php` | 278 | neither | | the Awb handling term a complaint without its own deadline is measured against, for a quarter report; it sets no deadline |
+| `lib/Service/Complaint/QuarterPeriod.php` | 111 | neither | | the first and last day of a report quarter and its trailing twelve months |
 | `lib/Service/Termijn/TermDashboardFigures.php` | 83 | neither | | a seven day window on the deadline dashboard: which running terms end this week. It compares against each term's own `endDateCurrent`, which the engine already rolled; the quarter it reports on is a reporting window |
 | `lib/Service/ComplaintService.php` | 408 | statutory | `WorkingDayCalculator` | Awb 9:11 klachttermijn in weeks; the service already consults the calculator for working days |
 | `lib/Service/DeadlineExtensionService.php` | 150 | statutory | `rollTermEndFor` | an extension named in days (Woo art. 4.4 lid 2) asks for the current end plus those days; the asked-for date then goes through the same Algemene termijnenwet roll as every extension (`one-term-engine`) |
