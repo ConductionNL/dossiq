@@ -484,6 +484,30 @@
                 "case"
             ],
             [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
                 "save",
                 {
                     "id": "a",
@@ -622,6 +646,30 @@
                 "case"
             ],
             [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
                 "save",
                 {
                     "id": "a",
@@ -719,6 +767,30 @@
                 "b",
                 "dossiq",
                 "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
             ],
             [
                 "save",
@@ -2671,6 +2743,30 @@
                 "case"
             ],
             [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
+            ],
+            [
                 "save",
                 {
                     "id": "a",
@@ -2729,6 +2825,30 @@
                 "c",
                 "dossiq",
                 "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "c"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
             ],
             [
                 "save",
@@ -2999,6 +3119,30 @@
                 "b",
                 "dossiq",
                 "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
             ],
             [
                 "save",
@@ -3678,6 +3822,30 @@
                 "b",
                 "dossiq",
                 "case"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "b"
+            ],
+            [
+                "setRegister",
+                "dossiq"
+            ],
+            [
+                "setSchema",
+                "case"
+            ],
+            [
+                "usedBy",
+                "a"
             ],
             [
                 "save",

@@ -31,6 +31,9 @@ use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
 use OCA\Dossiq\Service\Relation\CaseRelationLabels;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
+use OCA\Dossiq\Service\Relation\SubjectLinkRule;
+use OCA\Dossiq\Service\Notice\CaseActNotices;
+use OCP\IL10N;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use PHPUnit\Framework\TestCase;
@@ -248,6 +251,7 @@ class CaseRelationServiceGoldenTest extends TestCase {
 			codec: $codec,
 			hierarchyGuard: new CaseHierarchyOverlapGuard(),
 			labels: new CaseRelationLabels(store: $store, codec: $codec),
+			subjectRule: new SubjectLinkRule(store: $store, codec: $codec, notices: new CaseActNotices(l10n: self::untranslated())),
 		);
 
 		$answers = [];
@@ -375,4 +379,60 @@ class CaseRelationServiceGoldenTest extends TestCase {
 
 		$this->assertMatchesGolden(name: 'case-relation-service', value: $observed);
 	}//end testGoldenCaseRelationService()
+
+	/**
+	 * An IL10N that fills the placeholders and translates nothing.
+	 *
+	 * @return IL10N
+	 */
+	private static function untranslated(): IL10N {
+		return new class implements IL10N {
+			/**
+			 * @param string                $text       The text.
+			 * @param array<int, mixed>|mixed $parameters The values.
+			 *
+			 * @return string
+			 */
+			public function t(string $text, $parameters = []): string {
+				return vsprintf($text, (array)$parameters);
+			}
+
+			/**
+			 * @param string            $textSingular The singular.
+			 * @param string            $textPlural   The plural.
+			 * @param int               $count        The count.
+			 * @param array<int, mixed> $parameters   The values.
+			 *
+			 * @return string
+			 */
+			public function n(string $textSingular, string $textPlural, int $count, array $parameters = []): string {
+				return $textPlural;
+			}
+
+			/**
+			 * @param string       $type    The type.
+			 * @param mixed        $data    The data.
+			 * @param array<mixed> $options The options.
+			 *
+			 * @return string|int|array<mixed>
+			 */
+			public function l(string $type, $data, array $options = []) {
+				return '';
+			}
+
+			/**
+			 * @return string
+			 */
+			public function getLanguageCode(): string {
+				return 'en';
+			}
+
+			/**
+			 * @return string
+			 */
+			public function getLocaleCode(): string {
+				return 'en';
+			}
+		};
+	}//end untranslated()
 }//end class
