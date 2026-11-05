@@ -37,6 +37,17 @@ vi.mock('@nextcloud/vue', () => ({
 	NcDialog: stub('NcDialog'),
 	NcNoteCard: stub('NcNoteCard'),
 }))
+vi.mock('@conduction/nextcloud-vue', () => ({
+	CnChoiceCards: stub('CnChoiceCards'),
+	CnDialog: stub('CnDialog'),
+	CnStatusBadge: defineComponent({
+		name: 'CnStatusBadge',
+		props: ['label', 'variant', 'size'],
+		render() {
+			return h('span', this.label)
+		},
+	}),
+}))
 
 const { default: GenerateDocumentDialog } = await import('../../src/dialogs/GenerateDocumentDialog.vue')
 
@@ -79,7 +90,9 @@ describe('GenerateDocumentDialog required fills', () => {
 	it('marks the required fill and says the draft waits for it', async () => {
 		const wrapper = await mountWith(ADJOURNMENT)
 
-		expect(wrapper.find('[data-testid="generate-document-required"]').text()).toBe('Required')
+		const required = wrapper.findComponent({ name: 'CnStatusBadge' })
+		expect(required.text()).toBe('Required')
+		expect(required.props('variant')).toBe('error')
 		expect(wrapper.find('.generate-document__missing').text()).toBe('Still to fill in, not in the case')
 		expect(wrapper.find('[data-testid="generate-document-missing"]').text()).toBe('A required field is missing: statement of reasons. The draft stays in Draft until you have filled it in; approval can only come after that.')
 		expect(wrapper.text()).toContain('Draft (concept)')
