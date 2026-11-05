@@ -217,7 +217,10 @@ describe('check:manifest tells a lag from a defect', () => {
 		// asked of the token pattern itself, the way the guard reads it.
 		const declaresDottedSelf = new RegExp(installed.$defs.sentinelDeclarativeToken?.pattern || '^$').test('@self.can.update')
 
-		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone && declaresDottedSelf) {
+		// A crumb naming the record's parent (schema 2.174.0) is derived the same way.
+		const declaresParentCrumb = Object.hasOwn(installed.$defs.breadcrumbCrumb?.properties || {}, 'parent')
+
+		if (declaresAll && declaresStartOn && declaresCardResolve && declaresRedaction && declaresGeneratedFilters && declaresOptionMonths && declaresControlNone && declaresDottedSelf && declaresParentCrumb) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
@@ -240,6 +243,9 @@ describe('check:manifest tells a lag from a defect', () => {
 		}
 		if (!declaresDottedSelf) {
 			expect(out).toMatch(/\/config\/widgets\/\d+ uses "if", which schema [\d.]+ accepts/)
+		}
+		if (!declaresParentCrumb) {
+			expect(out).toMatch(/\/config\/breadcrumb\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
 		}
 		if (!declaresOptionMonths) {
 			expect(out).toMatch(/\/config\/pageFilters\/\d+\/options\/\d+ uses "additionalProperties", which schema [\d.]+ accepts/)
