@@ -102,12 +102,14 @@ class CaseTransferConsentGate {
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger          Records a gate that could not be evaluated.
+	 * @param ConsentRefusal  $refusals        Words a refusal in the user's language.
 	 *
 	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ConsentRefusal $refusals,
 	) {
 		$this->standings = new ConsentStanding();
 	}//end __construct()
@@ -165,7 +167,7 @@ class CaseTransferConsentGate {
 			return $this->verdict(outcome: $this->granted(consent: $scan['covering']), crosses: $crosses);
 		}
 
-		$refusal = $this->refusal(scan: $scan + ['none' => ($candidates === [])], receiver: $receiver);
+		$refusal = $this->refusals->uncovered(scan: $scan + ['none' => ($candidates === [])], receiver: $receiver);
 
 		return $this->verdict(outcome: $refusal, crosses: $crosses);
 	}//end assess()
@@ -192,12 +194,7 @@ class CaseTransferConsentGate {
 				['caseId' => $caseId, 'exception' => $e->getMessage()],
 			);
 
-			return [
-				'allowed' => false,
-				'rule' => self::CONSENT_UNCHECKED,
-				'sentence' => 'Consent could not be checked, so the case was not handed on.',
-				'consent' => null,
-			];
+			return $this->refusals->unchecked();
 		}
 
 		if ($required === true) {
@@ -217,32 +214,6 @@ class CaseTransferConsentGate {
 	private function granted(?array $consent): array {
 		return ['allowed' => true, 'rule' => '', 'sentence' => '', 'consent' => $consent];
 	}//end granted()
-
-	/**
-	 * The outcome of a hand-off no recorded consent covers, with the sentence that says why.
-	 *
-	 * @param array{covering: array<string, mixed>|null, lapsedOn: string, withdrawn: bool, none: bool} $scan     What the consents amount to.
-	 * @param string                                                                                     $receiver The receiving organisation.
-	 *
-	 * @return Outcome The outcome.
-	 *
-	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
-	 */
-	private function refusal(array $scan, string $receiver): array {
-		$rule = self::NO_CONSENT;
-		$sentence = 'There is no recorded consent for ' . $receiver . ' covering today, so the case was not handed on.';
-		if ($scan['none'] === true) {
-			$sentence = 'There is no recorded consent for ' . $receiver . ', so the case was not handed on.';
-		} else if ($scan['lapsedOn'] !== '') {
-			$rule = self::CONSENT_LAPSED;
-			$sentence = 'The consent for ' . $receiver . ' ran to ' . $scan['lapsedOn'] . ' and has ended, so the case was not handed on.';
-		} else if ($scan['withdrawn'] === true) {
-			$rule = self::CONSENT_WITHDRAWN;
-			$sentence = 'The consent for ' . $receiver . ' was withdrawn, so the case was not handed on.';
-		}
-
-		return ['allowed' => false, 'rule' => $rule, 'sentence' => $sentence, 'consent' => null];
-	}//end refusal()
 
 	/**
 	 * Read the recorded consents once, and say what they amount to.

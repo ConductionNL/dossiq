@@ -12,7 +12,7 @@
 			{
 				"id": "welcome",
 				"type": "info",
-				"title": "Set up Dossiq",
+				"title": "Welcome",
 				"body": "Dossiq handles cases from intake to archive. The next steps offer example data to look around with, then your organisation's name and logo, its house style and the case types you work with. Each one is optional and can be changed later in the admin settings."
 			},
 			{
@@ -1991,7 +1991,7 @@
 				"filter": {
 					"isTemplate": false
 				},
-				"_filterLabelsNote": "How the Active line names a filter, also one that came from a link (`/cases?isFinalStatus=false`). Without it the chip read the schema's own words, \"Is Final Status: false\"; the board DqZaken draws \"Status: lopend\". `deadline` with `relative` names a range from today in words: the view Termijn deze week (deadline from @today, before @today+7d) reads \"Termijn: binnen 7 dagen\" (board DqFilterInMenu). `hidden` marks a working-list rule every view carries (not a draft, not a template, status not hidden in lists): the line under a saved view in Weergaven in mijn menu and the side panel leaves it out (DqPersoonlijkeInstellingen), the Active line still names it. `waitingOnApplicant` reads \"Status: wacht op inwoner\" and `assignee` \"Behandelaar\" as the column does (DqFilterBewerken, DqFilterInMenu).",
+				"_filterLabelsNote": "How the Active line names a filter, also one that came from a link (`/cases?isFinalStatus=false`). Without it the chip read the schema's own words, \"Is Final Status: false\"; the board DqZaken draws \"Status: lopend\". `deadline` with `relative` names a range from today in words: the view Termijn deze week (deadline from @today, before @today+7d) reads \"Termijn: binnen 7 dagen\" (board DqFilterInMenu). `hidden` marks a working-list rule every view carries (not a draft, not a template, status not hidden in lists): the line under a saved view in Weergaven in mijn menu and the side panel leaves it out (DqPersoonlijkeInstellingen), the Active line still names it. `waitingOnApplicant` reads \"Status: wacht op inwoner\" and `assignee` \"Behandelaar\" as the column does (DqFilterBewerken, DqFilterInMenu). `tags` reads \"Label: wijk-noord\" (DqZaken).",
 				"filterLabels": {
 					"isFinalStatus": {
 						"label": "Status",
@@ -2020,6 +2020,9 @@
 						"values": {
 							"true": "waiting on the applicant"
 						}
+					},
+					"tags": {
+						"label": "Label"
 					},
 					"caseTypeIdentifier": {
 						"label": "Case type",
@@ -9485,6 +9488,357 @@
 							],
 							"emptyText": "No dwell time by handler for the selected period."
 						}
+					},
+					{
+						"id": "pm-complaint-kpis",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"all": [
+								{
+									"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+									"field": "visible.pm-complaint-kpis",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/complaints/patterns",
+									"field": "available",
+									"op": "eq",
+									"value": true
+								}
+							]
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page: complaint figures per category, department and channel judge how the gemeente serves people.",
+						"_complaintPatternsNote": "Board DqProcesanalyse \"Klachten: terugkerende patronen\" (complaint-management, frequency analysis): the last full quarter against the one before. GET /api/complaints/patterns is SIG's (R20/DQB-C/FOR-SIG.md) and answers `available: true`; until it does none of these cards is drawn. It never carries the per-employee threshold alert, which goes only to the hr coordinator and the department head.",
+						"type": "stat-grid",
+						"title": "Complaints: recurring patterns",
+						"content": {
+							"columns": 4,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/complaints/patterns"
+							},
+							"cells": [
+								{
+									"label": "Complaints per month",
+									"valueField": "kpis.perMonth",
+									"caption": "{kpis.perMonthNote}"
+								},
+								{
+									"label": "Handled within the Awb term",
+									"valueField": "kpis.withinAwbPercent",
+									"caption": "{kpis.withinAwbNote}"
+								},
+								{
+									"label": "Declared well-founded",
+									"valueField": "kpis.upheldPercent",
+									"caption": "{kpis.upheldNote}"
+								},
+								{
+									"label": "Average handling time",
+									"valueField": "kpis.averageDays",
+									"caption": "{kpis.averageDaysNote}"
+								}
+							]
+						}
+					},
+					{
+						"id": "pm-complaint-finding",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"all": [
+								{
+									"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+									"field": "visible.pm-complaint-finding",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/complaints/patterns",
+									"field": "available",
+									"op": "eq",
+									"value": true
+								}
+							]
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page: complaint figures per category, department and channel judge how the gemeente serves people.",
+						"type": "record-list",
+						"title": "System report",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/complaints/patterns",
+								"responsePath": "findings"
+							},
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{text}",
+							"chevron": false,
+							"headerLink": {
+								"label": "To the complaints",
+								"route": "Cases",
+								"query": {
+									"savedView": "default:complaints"
+								}
+							},
+							"footerAction": {
+								"label": "Export as pdf",
+								"icon": "FilePdfBox",
+								"type": "api-call",
+								"method": "GET",
+								"url": "/apps/dossiq/api/complaints/patterns",
+								"params": {
+									"format": "pdf"
+								},
+								"download": true,
+								"filename": "complaint-patterns.pdf"
+							},
+							"emptyText": "No category rose by more than half this quarter"
+						}
+					},
+					{
+						"id": "pm-complaints-by-category",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"all": [
+								{
+									"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+									"field": "visible.pm-complaints-by-category",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/complaints/patterns",
+									"field": "available",
+									"op": "eq",
+									"value": true
+								}
+							]
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page: complaint figures per category, department and channel judge how the gemeente serves people.",
+						"type": "chart",
+						"title": "Complaints per category",
+						"subtitle": "Red: more than 50 % up on the quarter before",
+						"content": {
+							"chartKind": "bar-list",
+							"barValueAtEnd": true,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/complaints/patterns",
+								"labelsPath": "byCategory.labels",
+								"series": [
+									{
+										"name": "Complaints",
+										"path": "byCategory.counts"
+									}
+								]
+							},
+							"emptyLabel": "No complaints in this quarter"
+						}
+					},
+					{
+						"id": "pm-complaints-by-department",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"all": [
+								{
+									"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+									"field": "visible.pm-complaints-by-department",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/complaints/patterns",
+									"field": "available",
+									"op": "eq",
+									"value": true
+								}
+							]
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page: complaint figures per category, department and channel judge how the gemeente serves people.",
+						"type": "chart",
+						"title": "Complaints per department",
+						"content": {
+							"chartKind": "bar-list",
+							"barValueAtEnd": true,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/complaints/patterns",
+								"labelsPath": "byDepartment.labels",
+								"series": [
+									{
+										"name": "Complaints",
+										"path": "byDepartment.counts"
+									}
+								]
+							},
+							"emptyLabel": "No complaints in this quarter"
+						}
+					},
+					{
+						"id": "pm-complaints-by-channel",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"all": [
+								{
+									"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+									"field": "visible.pm-complaints-by-channel",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/complaints/patterns",
+									"field": "available",
+									"op": "eq",
+									"value": true
+								}
+							]
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page: complaint figures per category, department and channel judge how the gemeente serves people.",
+						"type": "chart",
+						"title": "Complaints per channel",
+						"content": {
+							"chartKind": "bar-list",
+							"barValueAtEnd": true,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/complaints/patterns",
+								"labelsPath": "byChannel.labels",
+								"series": [
+									{
+										"name": "Complaints",
+										"path": "byChannel.counts"
+									}
+								]
+							},
+							"emptyLabel": "No complaints in this quarter"
+						}
+					},
+					{
+						"id": "pm-complaints-by-month",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"all": [
+								{
+									"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+									"field": "visible.pm-complaints-by-month",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/complaints/patterns",
+									"field": "available",
+									"op": "eq",
+									"value": true
+								}
+							]
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page: complaint figures per category, department and channel judge how the gemeente serves people.",
+						"type": "chart",
+						"title": "Complaints per month",
+						"subtitle": "The last twelve months",
+						"content": {
+							"chartKind": "line",
+							"options": {
+								"stroke": {
+									"curve": "straight",
+									"width": 2.5
+								},
+								"legend": {
+									"show": false
+								},
+								"dataLabels": {
+									"enabled": false
+								}
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/complaints/patterns",
+								"labelsPath": "byMonth.labels",
+								"series": [
+									{
+										"name": "Complaints",
+										"path": "byMonth.counts"
+									},
+									{
+										"name": "Target",
+										"path": "byMonth.target"
+									}
+								]
+							},
+							"emptyLabel": "No complaints in the last twelve months"
+						}
+					},
+					{
+						"id": "pm-complaint-resolution",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"all": [
+								{
+									"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+									"field": "visible.pm-complaint-resolution",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/complaints/patterns",
+									"field": "available",
+									"op": "eq",
+									"value": true
+								}
+							]
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page: complaint figures per category, department and channel judge how the gemeente serves people.",
+						"type": "object-table",
+						"title": "Average handling time per category",
+						"subtitle": "From receipt to disposal, in days",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/complaints/patterns",
+								"responsePath": "resolutionByCategory"
+							},
+							"columns": [
+								{
+									"key": "category",
+									"label": "Category"
+								},
+								{
+									"key": "count",
+									"label": "Complaints"
+								},
+								{
+									"key": "averageDays",
+									"label": "Average"
+								},
+								{
+									"key": "upheldPercent",
+									"label": "Well-founded"
+								}
+							],
+							"emptyText": "No complaint was handled this quarter"
+						}
 					}
 				],
 				"layout": [
@@ -9581,6 +9935,69 @@
 						"gridY": 23,
 						"gridWidth": 12,
 						"gridHeight": 6,
+						"sizeToContent": true
+					},
+					{
+						"id": 20,
+						"widgetId": "pm-complaint-kpis",
+						"gridX": 0,
+						"gridY": 29,
+						"gridWidth": 12,
+						"gridHeight": 3,
+						"sizeToContent": true
+					},
+					{
+						"id": 21,
+						"widgetId": "pm-complaint-finding",
+						"gridX": 0,
+						"gridY": 32,
+						"gridWidth": 12,
+						"gridHeight": 3,
+						"sizeToContent": true
+					},
+					{
+						"id": 22,
+						"widgetId": "pm-complaints-by-category",
+						"gridX": 0,
+						"gridY": 35,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 23,
+						"widgetId": "pm-complaints-by-department",
+						"gridX": 6,
+						"gridY": 35,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 24,
+						"widgetId": "pm-complaints-by-channel",
+						"gridX": 0,
+						"gridY": 39,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 25,
+						"widgetId": "pm-complaints-by-month",
+						"gridX": 6,
+						"gridY": 39,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
+						"id": 26,
+						"widgetId": "pm-complaint-resolution",
+						"gridX": 0,
+						"gridY": 43,
+						"gridWidth": 12,
+						"gridHeight": 4,
 						"sizeToContent": true
 					}
 				],
@@ -11904,6 +12321,81 @@
 						"_noticesNote": "DqTermijnen draws one row per notice of default: the case (opens it), when it came in, the assessment, the penalty it started and where that money stands. GET /api/deadlines/notices joins notice, term, case and penalty calculation (NoticeOfDefaultRows); a fixed penalty is ready for payout until one is prepared, then reads the payout's status (prepared, signal sent, paid, rejected, on hold), a running one is not fixed yet, a notice without a penalty is not applicable (nextcloud-vue column emptyLabel)."
 					},
 					{
+						"id": "deadline-report-ending-first",
+						"roles": [
+							"controllers",
+							"beheerders",
+							"admin"
+						],
+						"visibleWhen": {
+							"all": [
+								{
+									"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+									"field": "visible.deadline-report-ending-first",
+									"op": "eq",
+									"value": true
+								},
+								{
+									"endpoint": "/apps/dossiq/api/deadlines/ending-first",
+									"field": "available",
+									"op": "eq",
+									"value": true
+								}
+							]
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page: the running terms of every case are the gemeente's figures about its own timeliness.",
+						"type": "object-table",
+						"title": "Ending first",
+						"subtitle": "Progress and days left are worked out when you open this, not stored",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/deadlines/ending-first",
+								"responsePath": "terms"
+							},
+							"rowRoute": "CaseDetail",
+							"rowIdField": "caseId",
+							"limit": 5,
+							"columns": [
+								{
+									"key": "caseLabel",
+									"label": "Case",
+									"widget": "link",
+									"cellClass": "cn-cell--wrap"
+								},
+								{
+									"key": "endDate",
+									"label": "Term",
+									"widget": "date"
+								},
+								{
+									"key": "progressPercent",
+									"label": "Progress",
+									"widget": "progress"
+								},
+								{
+									"key": "endDate",
+									"label": "Left",
+									"widget": "date",
+									"widgetProps": {
+										"due": {
+											"todayLabel": "Ends today",
+											"overdueLabel": {
+												"one": "{count} day late",
+												"other": "{count} days late"
+											},
+											"upcomingLabel": {
+												"one": "{count} day left",
+												"other": "{count} days left"
+											}
+										}
+									}
+								}
+							],
+							"emptyText": "No term is running"
+						},
+						"_endingFirstNote": "Board DqTermijnen \"Verloopt het eerst\" (termijn-reporting): the running terms that end first, with the share of the term that has passed and the days left. GET /api/deadlines/ending-first is SIG's (R20/DQB-C/FOR-SIG.md) and answers `available: true`; until it does the card is not drawn, so the page never shows a card whose source is missing."
+					},
+					{
 						"id": "deadline-report-quarterly",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
@@ -12226,10 +12718,19 @@
 						"sizeToContent": true
 					},
 					{
+						"id": 5,
+						"widgetId": "deadline-report-ending-first",
+						"gridX": 0,
+						"gridY": 7,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"sizeToContent": true
+					},
+					{
 						"id": 3,
 						"widgetId": "deadline-report-quarterly-card",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 11,
 						"gridWidth": 12,
 						"gridHeight": 7,
 						"sizeToContent": true
@@ -12238,7 +12739,7 @@
 						"id": 4,
 						"widgetId": "deadline-report-annual-card",
 						"gridX": 0,
-						"gridY": 14,
+						"gridY": 18,
 						"gridWidth": 12,
 						"gridHeight": 8,
 						"sizeToContent": true
@@ -12398,14 +12899,31 @@
 					"filterField": "category",
 					"allLabel": "All case types"
 				},
-				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. Current versions is the DEFAULT chip and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under both chips, which is right: a draft is the version you are about to publish.",
+				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. All is the DEFAULT chip (board DqZaaktypen \"Alles\", beside Published and Draft, each counted) and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under All and Draft, which is right: a draft is the version you are about to publish.",
 				"quickFilters": [
 					{
-						"label": "Current versions",
+						"label": "All",
 						"filter": {
 							"supersededBy": "IS NULL"
 						},
-						"default": true
+						"default": true,
+						"showCount": true
+					},
+					{
+						"label": "Published",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": false
+						},
+						"showCount": true
+					},
+					{
+						"label": "Draft",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": true
+						},
+						"showCount": true
 					},
 					{
 						"label": "All versions",

@@ -100,6 +100,60 @@ export function textsAndAccessFields(t) {
 				'Set in the portal app (portaliq) and in Nextcloud, not here.',
 			),
 		},
+		{
+			key: 'timezone',
+			label: t('dossiq', 'Time zone'),
+			placeholder: 'Europe/Amsterdam',
+			default: 'Europe/Amsterdam',
+		},
+		{
+			key: 'date_format',
+			label: t('dossiq', 'Date format'),
+			type: 'select',
+			options: ['DD-MM-YYYY', 'YYYY-MM-DD', 'D MMMM YYYY'].map((value) => ({ value, label: value })),
+			default: 'DD-MM-YYYY',
+			required: true,
+		},
+		{
+			key: 'betaFeatures',
+			label: t('dossiq', 'Beta features'),
+			type: 'heading',
+		},
+		{
+			key: 'feature_new_case_page',
+			label: t('dossiq', 'New case page visible to everyone at once, without waiting for the cache'),
+			type: 'switch',
+			trueValue: 'true',
+			falseValue: 'false',
+		},
+	]
+}
+
+/**
+ * The queue order on the Integrations tab: three thresholds that colour a
+ * case red, orange and grey, and two weights. Saving sends only what changed.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ */
+export function queueOrderFields(t) {
+	const field = (key, label, hint, value, max, integer) => ({
+		key,
+		label,
+		hint,
+		type: 'number',
+		integer,
+		min: 0,
+		max,
+		default: value,
+	})
+	return [
+		field('queue_critical_days', t('dossiq', 'Late within (days)'), t('dossiq', 'red'), 3, 60, true),
+		field('queue_warning_days', t('dossiq', 'Soon within (days)'), t('dossiq', 'orange'), 7, 120, true),
+		field('queue_in_sight_days', t('dossiq', 'In sight within (days)'), t('dossiq', 'grey'), 10, 180, true),
+		field('queue_idle_weight', t('dossiq', 'Weight per day waiting'), t('dossiq', 'per day without action'), 0.5, 1.5, false),
+		field('queue_resident_wait_weight', t('dossiq', 'Weight of waiting on the resident'), t('dossiq', 'from 0 to 50'), 5, 50, false),
 	]
 }
 
@@ -375,7 +429,7 @@ export function storeRegistryFields(t) {
 			type: 'status',
 			text: t(
 				'dossiq',
-				'A store registry is another OpenRegister instance that publishes case configuration. Leave the address empty to keep dossiq offline: nothing is requested from the network until one is set.',
+				'A marketplace registry is another OpenRegister instance that publishes case configuration. Leave the address empty to keep dossiq offline: nothing is requested from the network until one is set.',
 			),
 		},
 		{
