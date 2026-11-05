@@ -2053,12 +2053,19 @@
 					"count": false
 				},
 				"showTypeEyebrow": false,
-				"breadcrumb": {
-					"label": "All cases",
-					"route": "Cases",
-					"currentField": "identifier",
-					"separator": "/"
-				},
+				"breadcrumb": [
+					{
+						"label": "All cases",
+						"route": "Cases",
+						"currentField": "identifier",
+						"separator": "/"
+					},
+					{
+						"parent": "parentCase",
+						"labelField": "identifier",
+						"route": "CaseDetail"
+					}
+				],
 				"headerMeta": "via {intakeSourceName}",
 				"headerCard": true,
 				"headerWidget": "case-stages",
