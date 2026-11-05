@@ -1,0 +1,18 @@
+{
+  "_note": "How the remedy a case type declares reads in the case's lifecycle menu (DqVolgendeStap, Bezwaar registreren): its id (the manifest maps it to a header action), its label and its description. Read by GET /api/case/{id}/acts as `remedies`. A fragment per ADR-037.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "remedy": {
+            "properties": {
+              "id": { "type": "string", "title": "Menu id", "description": "The id the lifecycle menu knows this remedy by, e.g. objection; the manifest maps it to the dialog that lodges it." },
+              "label": { "type": "string", "title": "Menu label", "description": "The menu entry, e.g. Bezwaar registreren." },
+              "description": { "type": "string", "title": "Menu description", "description": "The line under the menu entry." }
+            }
+          }
+        }
+      }
+    }
+  }
+}

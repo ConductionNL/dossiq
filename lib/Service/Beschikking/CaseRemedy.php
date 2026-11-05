@@ -106,7 +106,8 @@ class CaseRemedy {
 	 *
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array{kind: string, termDays: int, body: string, enabled: bool, caseType: string} The declaration.
+	 * @return array{kind: string, termDays: int, body: string, enabled: bool, caseType: string, id: string, label: string, description: string}
+	 *         The declaration.
 	 *
 	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
 	 */

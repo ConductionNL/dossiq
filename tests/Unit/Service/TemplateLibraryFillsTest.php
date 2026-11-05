@@ -57,4 +57,24 @@ class TemplateLibraryFillsTest extends TestCase {
 		);
 		$this->assertSame(expected: [], actual: $byId['ontvangstbevestiging']['fills']);
 	}//end testTheAdjournmentLetterListsWhatItFillsIn()
+
+	/**
+	 * The Woo decision templates forward their note about the objection period; a template without notes answers [].
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/generate-fills-per-template/spec.md#requirement-a-template-carries-notes-for-the-generate-dialog
+	 */
+	public function testTheWooDecisionTemplatesCarryTheirNotes(): void {
+		$service = new TemplateLibraryService(settingsService: $this->createMock(originalClassName: SettingsService::class), logger: new NullLogger());
+		$byId = [];
+		foreach ($service->listTemplates() as $template) {
+			$byId[$template['id']] = $template;
+		}
+
+		$this->assertCount(expectedCount: 1, haystack: $byId['woo-besluit-openbaar']['notes']);
+		$this->assertStringContainsString(needle: 'bezwaartermijn', haystack: $byId['woo-besluit-openbaar']['notes'][0]);
+		$this->assertCount(expectedCount: 1, haystack: $byId['woo-besluit-deels-openbaar']['notes']);
+		$this->assertSame(expected: [], actual: $byId['ontvangstbevestiging']['notes']);
+	}//end testTheWooDecisionTemplatesCarryTheirNotes()
 }//end class

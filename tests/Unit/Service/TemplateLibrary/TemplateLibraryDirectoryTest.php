@@ -145,6 +145,7 @@ class TemplateLibraryDirectoryTest extends TestCase {
 					'version' => '2.0.0',
 					'file' => 'a.json',
 					'fills' => [1],
+					'notes' => [],
 				],
 				[
 					'id' => 'b',
@@ -154,6 +155,7 @@ class TemplateLibraryDirectoryTest extends TestCase {
 					'version' => '1.0.0',
 					'file' => 'b.json',
 					'fills' => [],
+					'notes' => [],
 				],
 			],
 			@$service->listTemplates()

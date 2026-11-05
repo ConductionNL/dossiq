@@ -602,6 +602,7 @@ $extra = [
     ['name' => 'inspect#availability', 'url' => '/api/inspect/availability', 'verb' => 'GET'],
     ['name' => 'caseTask#complete',     'url' => '/api/case-tasks/{taskId}/complete',    'verb' => 'POST'],
     ['name' => 'caseTask#claim',        'url' => '/api/case-tasks/{taskId}/claim',       'verb' => 'POST'],
+    ['name' => 'caseTaskCancel#cancel', 'url' => '/api/case-tasks/{taskId}/cancel',      'verb' => 'POST'],
     ['name' => 'caseTask#attach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments', 'verb' => 'POST'],
     ['name' => 'caseTask#detach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments/{fileId}', 'verb' => 'DELETE'],
 
@@ -669,6 +670,9 @@ $extra = [
     ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
     ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
     ['name' => 'caseAccessLink#index',         'url' => '/api/access-links/case/{caseId}',   'verb' => 'GET'],
+        // Every share of a case outside the organisation, and revoking one (case read access, the share must be the case's).
+    ['name' => 'caseShare#index',              'url' => '/api/cases/{caseId}/shares',        'verb' => 'GET'],
+    ['name' => 'caseShare#destroy',            'url' => '/api/cases/{caseId}/shares/{shareId}', 'verb' => 'DELETE'],
     ['name' => 'caseAccessLink#preview',       'url' => '/api/access-links/{linkId}/preview', 'verb' => 'GET'],
     ['name' => 'caseAccessLink#pause',         'url' => '/api/access-links/{linkId}',    'verb' => 'PUT'],
     ['name' => 'caseAccessLink#revoke',        'url' => '/api/access-links/{linkId}',    'verb' => 'DELETE'],
@@ -830,6 +834,8 @@ $extra = [
     // per-case guard `refuse` does, because it mutates a case and, on an
     // inadmissible verdict, closes it.
     ['name' => 'intakeTriage#judgeAdmissibility', 'url' => '/api/cases/{caseId}/admissibility',          'verb' => 'POST'],
+    // The completeness items the case type declares, ticked against the case (case read access).
+    ['name' => 'caseCompleteness#show',     'url' => '/api/cases/{caseId}/completeness',                 'verb' => 'GET'],
     ['name' => 'intakeTriage#queue',        'url' => '/api/intake/triage',                               'verb' => 'GET'],
     ['name' => 'intakeTriage#sleepItem',    'url' => '/api/intake/triage/{entryId}/sleep',                'verb' => 'POST'],
     ['name' => 'intakeTriage#fanOut',       'url' => '/api/intake/fan-out',                              'verb' => 'POST'],

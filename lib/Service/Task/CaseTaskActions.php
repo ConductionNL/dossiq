@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Service\Notice\CaseActNotices;
 use RuntimeException;
 
 /**
@@ -64,10 +65,12 @@ class CaseTaskActions {
 	 *
 	 * @param EngineTaskGateway $engineTasks The one seam onto the task engine.
 	 * @param TaskEffects       $effects     Reads and checks what completing the task does.
+	 * @param CaseActNotices    $notices     The card notice a completion answers with.
 	 */
 	public function __construct(
 		private readonly EngineTaskGateway $engineTasks,
 		private readonly TaskEffects $effects,
+		private readonly CaseActNotices $notices,
 	) {
 	}//end __construct()
 
@@ -132,7 +135,7 @@ class CaseTaskActions {
 	 * @param string               $outcome The outcome word recorded on the task.
 	 * @param string               $actor   Who is completing it.
 	 *
-	 * @return array{completed: bool, task: string, case: string, state: string, isTerminal: bool} What happened.
+	 * @return array{completed: bool, task: string, case: string, state: string, isTerminal: bool, notice: array<string, string>} What happened.
 	 *
 	 * @throws RuntimeException Named refusals: `task_not_found`,
 	 *                          `required_field:<field>`,
@@ -182,8 +185,56 @@ class CaseTaskActions {
 			// nothing.
 			'state' => 'completed',
 			'isTerminal' => true,
+			'notice' => $this->notices->taskCompleted(task: $this->titleOf(task: $task)),
 		];
 	}//end complete()
+
+	/**
+	 * The title a handler knows a task by, else its id.
+	 *
+	 * @param array<string, mixed> $task The task.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 */
+	public function titleOf(array $task): string {
+		$title = trim((string)($task['title'] ?? ''));
+		if ($title === '') {
+			return (string)($task['id'] ?? '');
+		}
+
+		return $title;
+	}//end titleOf()
+
+	/**
+	 * Cancel one task through the engine.
+	 *
+	 * The engine decides whether the task may be cancelled now; its reason is
+	 * kept, because it is the only part a handler can act on.
+	 *
+	 * @param string $taskId The task.
+	 * @param string $reason Why, recorded on the task.
+	 * @param string $actor  Who is cancelling it.
+	 *
+	 * @return array{cancelled: bool, task: string} What happened.
+	 *
+	 * @throws RuntimeException `cancel_refused:<the engine's reason>`.
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 */
+	public function cancel(string $taskId, string $reason, string $actor): array {
+		$reasonOrNull = null;
+		if (trim($reason) !== '') {
+			$reasonOrNull = trim($reason);
+		}
+
+		if ($this->engineTasks->cancel(taskId: $taskId, reason: $reasonOrNull, actor: $actor) === false) {
+			throw new RuntimeException('cancel_refused:' . $this->engineTasks->lastError());
+		}
+
+		return ['cancelled' => true, 'task' => $taskId];
+	}//end cancel()
 
 	/**
 	 * The first required field of the task's form that the answers leave empty.

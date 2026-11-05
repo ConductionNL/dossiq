@@ -124,6 +124,9 @@ class ProvisionAssignedGroups implements IRepairStep {
 		'controllers',
 		'kcc',
 		'klantcontact',
+		// The employee complaint alert audience (EmployeeAlertAudience).
+		'hr-coordinators',
+		'department-heads',
 		// Assigned a notification role by the case schema's
 		// `authorization.roles` (register.d/66-notification-routing.json).
 		// `behandelaars` above already carries the behandelaar role. A role
