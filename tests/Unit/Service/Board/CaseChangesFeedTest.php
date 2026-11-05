@@ -133,7 +133,7 @@ class CaseChangesFeedTest extends TestCase {
 
 		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		$this->assertSame(expected: [], actual: $body['changes']);
-		$this->assertNotFalse(date_create_immutable($body['now']));
+		$this->assertNotFalse(condition: date_create_immutable(datetime: $body['now']));
 	}//end testAFirstPollLearnsOnlyNow()
 
 	/**
