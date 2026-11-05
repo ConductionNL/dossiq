@@ -23,8 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Custody;
 
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
+use OCA\Dossiq\Service\Custody\ConsentRefusal;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -35,6 +37,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
  * @uses   \OCA\Dossiq\Service\Custody\ConsentStanding
+ * @uses   \OCA\Dossiq\Service\Custody\ConsentRefusal
  */
 class CaseTransferConsentGateGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
@@ -144,7 +147,7 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			}
 		);
 
-		$gate = new CaseTransferConsentGate(settingsService: $settings, logger: $logger);
+		$gate = new CaseTransferConsentGate(settingsService: $settings, logger: $logger, refusals: new ConsentRefusal(l10n: new SourceL10n()));
 		$verdict = $gate->assess(
 			caseId: ($world['caseId'] ?? 'case-1'),
 			sourceOrganisation: ($world['source'] ?? 'gemeente-delft'),

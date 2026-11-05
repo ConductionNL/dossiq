@@ -253,7 +253,7 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 					return $permissions;
 				}
 
-				if ($id === 'OCA\\OpenRegister\\Db\\RegisterMapper') {
+				if ($id === 'OCA\\OpenRegister\\Db\\RegisterMapper' || $id === 'OCA\\OpenRegister\\Db\\RegisterMapperInterface') {
 					return $registers;
 				}
 
@@ -261,7 +261,7 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 					return $objects;
 				}
 
-				if ($id === 'OCA\\OpenRegister\\Service\\OrganisationService') {
+				if ($id === 'OCA\\OpenRegister\\Service\\OrganisationService' || $id === 'OCA\\OpenRegister\\Service\\OrganisationServiceInterface') {
 					return new class {
 						/**
 						 * @return object The caller's active organisation.
