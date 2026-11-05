@@ -131,6 +131,7 @@ export const CnTemplateSelect = recordingStub('CnTemplateSelect', 'cn-template-s
 export const CnOrderedListField = recordingStub('CnOrderedListField', 'cn-ordered-list-field', ['modelValue', 'options', 'label', 'addLabel', 'emptyText', 'disabled'], ['update:modelValue'])
 export const CnSettingsField = recordingStub('CnSettingsField', 'cn-settings-field', ['field', 'modelValue', 'error', 'hint'], ['update:modelValue'])
 export const CnTransitionInputFields = recordingStub('CnTransitionInputFields', 'cn-transition-input-fields', ['inputs', 'modelValue', 'context', 'columns', 'summary', 'notice', 'disabled', 'markRequired'], ['update:modelValue'])
+export const CnMarkdownEditor = recordingStub('CnMarkdownEditor', 'cn-markdown-editor', ['modelValue', 'mode', 'variableSyntax', 'plainText', 'rows', 'ariaLabel', 'placeholder', 'variables', 'unknownVariableText'], ['update:modelValue'])
 
 // The library's own reading of declared inputs, not a stand-in: whether an
 // act may be confirmed is decided there, and a copy here could only agree
