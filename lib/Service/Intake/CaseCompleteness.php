@@ -31,12 +31,72 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Service\ZaakdossierService;
+use OCP\IUser;
+
 /**
  * Builds the completeness answer of one case.
  *
  * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 class CaseCompleteness {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseStatusStore        $cases     Reads the case.
+	 * @param CaseTypeResolver       $caseTypes Reads the effective case type.
+	 * @param ZaakdossierService     $dossier   Reads the case's documents.
+	 * @param InformatieobjectReader $reader    Which documents the reader may read.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly CaseStatusStore $cases,
+		private readonly CaseTypeResolver $caseTypes,
+		private readonly ZaakdossierService $dossier,
+		private readonly InformatieobjectReader $reader,
+	) {
+	}//end __construct()
+
+	/**
+	 * The completeness answer of one case for one reader, who must already be allowed to read it.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param IUser  $user   The reader.
+	 *
+	 * @return array<string, mixed>|null The answer (see check()), or null when the case is not found.
+	 *
+	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 */
+	public function forCase(string $caseId, IUser $user): ?array {
+		$case = $this->cases->loadCase(caseId: $caseId);
+		if ($case === null) {
+			return null;
+		}
+
+		$caseTypeId = ($case['caseType'] ?? '');
+		if (is_array($caseTypeId) === true) {
+			$caseTypeId = ($caseTypeId['id'] ?? '');
+		}
+
+		$items = $this->itemsOf(caseType: $this->caseTypes->effectiveCaseType(caseTypeId: (string)$caseTypeId));
+		if ($items === []) {
+			return ['items' => []];
+		}
+
+		$documents = ($this->dossier->getDossierForCase(caseId: $caseId)['informatieobjecten'] ?? []);
+
+		return $this->check(
+			items: $items,
+			case: $case,
+			documents: $documents,
+			readable: $this->reader->filterForUser(user: $user, informatieobjecten: $documents)
+		);
+	}//end forCase()
 
 	/**
 	 * The declared items of a case type, each with a key and a label.

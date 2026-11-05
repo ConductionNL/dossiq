@@ -96,11 +96,7 @@ class CaseCompletenessControllerTest extends TestCase {
 		return new CaseCompletenessController(
 			request: $this->createMock(IRequest::class),
 			caseAccess: $this->access,
-			cases: $this->cases,
-			caseTypes: $this->caseTypes,
-			dossier: $this->dossier,
-			reader: $this->reader,
-			completeness: new CaseCompleteness(),
+			completeness: new CaseCompleteness(cases: $this->cases, caseTypes: $this->caseTypes, dossier: $this->dossier, reader: $this->reader),
 			userSession: $session,
 			logger: $this->createMock(LoggerInterface::class),
 		);

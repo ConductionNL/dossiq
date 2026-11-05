@@ -30,11 +30,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\CaseCompleteness;
-use OCA\Dossiq\Service\Transitions\CaseStatusStore;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
-use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -56,11 +52,7 @@ class CaseCompletenessController extends Controller {
 	 *
 	 * @param IRequest               $request       The request.
 	 * @param CaseAccessGuard        $caseAccess    Whether the caller may read the case.
-	 * @param CaseStatusStore        $cases         Reads the case.
-	 * @param CaseTypeResolver       $caseTypes     Reads the effective case type.
-	 * @param ZaakdossierService     $dossier       Reads the case's documents.
-	 * @param InformatieobjectReader $reader        Which documents the caller may read.
-	 * @param CaseCompleteness       $completeness  Ticks the items.
+	 * @param CaseCompleteness       $completeness  Reads the case and ticks its items.
 	 * @param IUserSession           $userSession   The caller.
 	 * @param LoggerInterface        $logger        Logs a failed read.
 	 *
@@ -69,10 +61,6 @@ class CaseCompletenessController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly CaseAccessGuard $caseAccess,
-		private readonly CaseStatusStore $cases,
-		private readonly CaseTypeResolver $caseTypes,
-		private readonly ZaakdossierService $dossier,
-		private readonly InformatieobjectReader $reader,
 		private readonly CaseCompleteness $completeness,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -101,27 +89,12 @@ class CaseCompletenessController extends Controller {
 		}
 
 		try {
-			$case = $this->cases->loadCase(caseId: $caseId);
-			if ($case === null) {
+			$answer = $this->completeness->forCase(caseId: $caseId, user: $user);
+			if ($answer === null) {
 				return new JSONResponse(['message' => 'Case not found.'], Http::STATUS_NOT_FOUND);
 			}
 
-			$caseTypeId = $case['caseType'] ?? '';
-			if (is_array($caseTypeId) === true) {
-				$caseTypeId = ($caseTypeId['id'] ?? '');
-			}
-
-			$items = $this->completeness->itemsOf(caseType: $this->caseTypes->effectiveCaseType(caseTypeId: (string)$caseTypeId));
-			if ($items === []) {
-				return new JSONResponse(['items' => []]);
-			}
-
-			$documents = ($this->dossier->getDossierForCase(caseId: $caseId)['informatieobjecten'] ?? []);
-			$readable  = $this->reader->filterForUser(user: $user, informatieobjecten: $documents);
-
-			return new JSONResponse(
-				$this->completeness->check(items: $items, case: $case, documents: $documents, readable: $readable)
-			);
+			return new JSONResponse($answer);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: completeness of case ' . $caseId . ' could not be read: ' . $e->getMessage(),

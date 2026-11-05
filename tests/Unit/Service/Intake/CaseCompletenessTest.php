@@ -21,6 +21,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Intake;
 
 use OCA\Dossiq\Service\Intake\CaseCompleteness;
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
+use OCA\Dossiq\Service\ZaakdossierService;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -29,6 +33,20 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Intake\CaseCompleteness
  */
 class CaseCompletenessTest extends TestCase {
+
+	/**
+	 * The service over mocked readers; these tests drive itemsOf() and check() only.
+	 *
+	 * @return CaseCompleteness
+	 */
+	private function service(): CaseCompleteness {
+		return new CaseCompleteness(
+			cases: $this->createMock(CaseStatusStore::class),
+			caseTypes: $this->createMock(CaseTypeResolver::class),
+			dossier: $this->createMock(ZaakdossierService::class),
+			reader: $this->createMock(InformatieobjectReader::class),
+		);
+	}//end service()
 
 	/**
 	 * The Woo request's five items as the board draws them.
@@ -58,7 +76,7 @@ class CaseCompletenessTest extends TestCase {
 	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function testTwoOfFivePresentReadsIncomplete(): void {
-		$service = new CaseCompleteness();
+		$service = $this->service();
 		$items   = $service->itemsOf(caseType: $this->wooCaseType());
 		$doc     = ['id' => 'd1', 'titel' => 'Woo-verzoek', 'bestandsnaam' => 'verzoek-2026-0110.pdf', 'informatieobjecttype' => 'aanvraag'];
 
@@ -88,7 +106,7 @@ class CaseCompletenessTest extends TestCase {
 	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function testAnUnreadableDocumentCountsWithoutItsName(): void {
-		$service = new CaseCompleteness();
+		$service = $this->service();
 		$items   = [['key' => 'machtiging', 'label' => 'Machtiging', 'documentType' => 'machtiging']];
 		$doc     = ['id' => 'secret', 'bestandsnaam' => 'machtiging-jansen.pdf', 'informatieobjecttype' => 'machtiging'];
 
@@ -107,7 +125,7 @@ class CaseCompletenessTest extends TestCase {
 	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function testNoDeclaredListAnswersAnEmptyList(): void {
-		$service = new CaseCompleteness();
+		$service = $this->service();
 
 		self::assertSame([], $service->itemsOf(caseType: ['intakeRequirements' => ['requiredBeforeComplete' => ['x']]]));
 		self::assertSame(['items' => []], $service->check(items: [], case: [], documents: [], readable: []));
