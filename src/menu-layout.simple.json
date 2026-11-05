@@ -2570,7 +2570,8 @@
 										"case-parties-card",
 										"case-party-roles-card",
 										"case-seats-card",
-										"case-access-card"
+										"case-access-card",
+										"case-shares-card"
 									],
 									"_note": "DqZaakBetrokkenen: the people panel's sections as the board's cards: the people on the case by role first (Partijen, the contacts tab in a card), the party model (Rollen), the seats, then who may open the case by link (Toegang). Who follows the case is the header's Follow popover only (Ruben, 20 Oct 2026), so the Followers card left this tab."
 								},
@@ -3771,7 +3772,7 @@
 						"id": "case-tasks-card",
 						"type": "tasks",
 						"title": "Tasks on this case",
-						"_note": "DqZaakTaken: the case's tasks as the library task table (CnTasksWidget `variant: table`): every task on the case from OpenRegister's task engine, open first and finished struck through, with the summary under the title and New task in the card header. Claim, complete (also a colleague's task, the engine decides), cancel and adding a task stay on the case page; a task's form, candidates and notes are on its own page, which the task title opens (rowRoute TaskDetail). Complete goes through dossiq's completion route (`completeUrl`), which applies the case type's form and effect refusals first, and a task that asks for a form opens it in a dialog; Claim shows only where dossiq's capability probe says the engine can claim (`claimCapabilityUrl`).",
+						"_note": "DqZaakTaken: the case's tasks as the library task table (CnTasksWidget `variant: table`): every task on the case from OpenRegister's task engine, open first and finished struck through, with the summary under the title and New task in the card header. Claim, complete (also a colleague's task, the engine decides), cancel (through dossiq's cancel route, `cancelUrl`, which asks the task engine and answers its refusal in its own words) and adding a task stay on the case page; a task's form, candidates and notes are on its own page, which the task title opens (rowRoute TaskDetail). Complete goes through dossiq's completion route (`completeUrl`), which applies the case type's form and effect refusals first, and a task that asks for a form opens it in a dialog; Claim shows only where dossiq's capability probe says the engine can claim (`claimCapabilityUrl`).",
 						"content": {
 							"variant": "table",
 							"sortable": true,
@@ -3786,6 +3787,7 @@
 							"cancel": true,
 							"rowRoute": "TaskDetail",
 							"completeUrl": "/apps/dossiq/api/case-tasks/{id}/complete",
+							"cancelUrl": "/apps/dossiq/api/case-tasks/{id}/cancel",
 							"claimCapabilityUrl": "/apps/dossiq/api/case-tasks/capabilities",
 							"viewAllRoute": {
 								"name": "Tasks",
@@ -5386,6 +5388,41 @@
 								}
 							],
 							"footnote": "Whoever reads the BSN or another sensitive field is recorded in the processing log."
+						}
+					},
+					{
+						"id": "case-shares-card",
+						"type": "share-list",
+						"title": "Sharing outside the organisation",
+						"subtitle": "Every link comes from OpenRegister; dossiq makes no tokens of its own. What the link allows is on it: read, or read and respond.",
+						"_note": "DqZaakBetrokkenen Delen buiten de organisatie: every share of the case and of its files and mails as rows (nextcloud-vue share-list), each with its kind icon, title, who made it and until when, its status and Copy link / Revoke. The rows come from dossiq's GET /api/cases/{id}/shares (case read access first); Revoke posts DELETE /api/cases/{id}/shares/{shareId}, which revokes through OpenRegister's shares leaf and answers OpenRegister's refusal in the card in its own words. New share opens the sidebar Sharing tab, which holds the whole share flow.",
+						"headerActions": [
+							{
+								"label": "New share",
+								"icon": "ShareVariant",
+								"action": {
+									"type": "open-sidebar-tab",
+									"tab": "sharing"
+								}
+							}
+						],
+						"content": {
+							"url": "/apps/dossiq/api/cases/{objectId}/shares",
+							"revoke": {
+								"url": "/apps/dossiq/api/cases/@objectId/shares/{id}",
+								"method": "DELETE",
+								"successMessage": "The share is revoked."
+							},
+							"statusLabels": {
+								"active": "Active",
+								"paused": "Paused",
+								"expired": "Expired",
+								"revoked": "Revoked"
+							},
+							"copyLabel": "Copy link",
+							"revokeLabel": "Revoke",
+							"listLabel": "Shares of this case",
+							"emptyText": "Nothing of this case is shared outside the organisation."
 						}
 					},
 					{
@@ -7164,6 +7201,15 @@
 			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). SIX VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests, Suspended (DqZaken). The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
 			"config": {
 				"searchPlaceholder": "Search by case, number or requester",
+				"realtime": {
+					"url": "/apps/dossiq/api/cases/changes",
+					"interval": 15000,
+					"views": [
+						"board"
+					],
+					"titleTemplate": "Just updated by {actor}"
+				},
+				"_realtimeNote": "DqWerkbord: while the board view is open, a change someone else made to a case shows \"Zojuist bijgewerkt door Anouk Bakker\" with what changed, and the board reads again (nextcloud-vue CnRealtimeToast). It polls dossiq's GET /api/cases/changes every 15 seconds, which names only cases the reader may open and never the reader's own changes.",
 				"quickFilterMaxVisible": 3,
 				"_quickFilterMaxVisibleNote": "Ruben, 23 Oct: the board's first three views stand on the row (Alles, Mijn zaken, Termijn deze week); the others, with their counts, sit behind the More chip (DqZaken, DqWerkbord, DqZakenKaart, DqZakenSorteren).",
 				"folderSidebar": null,

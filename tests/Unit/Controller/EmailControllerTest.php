@@ -50,7 +50,7 @@ use OCA\Dossiq\Tests\Support\FakeIntegriqOptOuts;
 use OCA\Dossiq\Tests\Support\FakeMailGateway;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCA\Dossiq\Tests\Support\PhpInputStream;
-use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
+use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
 use OCP\IL10N;
