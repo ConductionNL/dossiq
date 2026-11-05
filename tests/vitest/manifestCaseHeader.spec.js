@@ -11,6 +11,7 @@
  * the shapes refer to each other.
  *
  * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+ * @spec openspec/specs/deelzaak-support/spec.md#requirement-parent-case-breadcrumb-navigation
  */
 
 import fs from 'fs'
@@ -263,13 +264,25 @@ describe('CaseDetail — the identity row is three configured tiles and the hour
 
 describe('CaseDetail — the trail ends on the case number (REQ-CDV-15)', () => {
 	it('reads All cases / <identifier>, so no crumb repeats the title', () => {
-		expect(caseDetail().config.breadcrumb).toEqual({
+		expect(caseDetail().config.breadcrumb[0]).toEqual({
 			label: 'All cases',
 			route: 'Cases',
 			currentField: 'identifier',
 			separator: '/',
 		})
 		expect(caseDetail().config.breadcrumbs).toBeUndefined()
+	})
+
+	it('puts a sub-case\'s parent number between the two, as a link to the parent (deelzaak-support)', () => {
+		const parent = caseDetail().config.breadcrumb[1]
+		expect(parent).toEqual({ parent: 'parentCase', labelField: 'identifier', route: 'CaseDetail' })
+		// The crumb reads the context record it names; without the entry it renders nothing.
+		expect(caseDetail().config.visibilityContext[parent.parent]).toEqual({
+			field: 'parentCase',
+			register: 'dossiq',
+			schema: 'case',
+		})
+		expect(caseDetail().config.breadcrumb).toHaveLength(2)
 	})
 })
 
