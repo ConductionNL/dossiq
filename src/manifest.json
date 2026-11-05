@@ -13607,6 +13607,14 @@
 						"title": "Fields",
 						"icon": "FormatListBulletedType",
 						"_note": "The type's own fields, as manifest config over the library's object list (case-type-status-field-lists-as-config). The type select reads OpenRegister's property vocabulary, grouped by category; the format select reads the formats of the chosen type and is left out when it has none. A constraint shows only for the types it applies to and is written empty when the type changes away from them. 'Choice list' is not stored: it starts on for an enum or when choices exist, shows the choices one per line, and turning it off clears them; the choices are required unless a concept scheme is set, and a note says the scheme wins when both are. Edit saves a PATCH of the keys it changed.",
+						"headerActions": [
+							{
+								"label": "From the catalogue",
+								"icon": "BookOpenVariantOutline",
+								"action": { "type": "open-modal", "target": "FieldCatalogueDialog", "props": { "caseTypeId": "@objectId" } }
+							}
+						],
+						"_headerActionsNote": "DqZaaktypeVelden \"Attribuut kiezen uit de catalogus\": every attribute in the register in its folder (its category), with how many case types carry it; what this case type already carries is not offered again. Adding gives the case type its own copy of each picked attribute (FieldCatalogueDialog over nextcloud-vue CnFieldCatalogueDialog).",
 						"content": {
 							"register": "dossiq",
 							"schema": "propertyDefinition",

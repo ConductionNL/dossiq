@@ -100,6 +100,7 @@ import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DocumentAccessExceptionDialog from './dialogs/DocumentAccessExceptionDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
 import DocumentCompareDialog from './dialogs/DocumentCompareDialog.vue'
+import FieldCatalogueDialog from './dialogs/FieldCatalogueDialog.vue'
 import FileContactMomentDialog from './dialogs/FileContactMomentDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
@@ -516,6 +517,14 @@ const registry = {
 	AdviceRequestDialog: {
 		kind: 'modal',
 		component: AdviceRequestDialog,
+		propsSchema: {},
+	},
+
+	// --- The attribute catalogue a case type picks its fields from (board DqZaaktypeVelden). ---
+	// @spec openspec/specs/property-definition-management/spec.md
+	FieldCatalogueDialog: {
+		kind: 'modal',
+		component: FieldCatalogueDialog,
 		propsSchema: {},
 	},
 
