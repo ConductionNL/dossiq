@@ -833,6 +833,8 @@ $extra = [
     // per-case guard `refuse` does, because it mutates a case and, on an
     // inadmissible verdict, closes it.
     ['name' => 'intakeTriage#judgeAdmissibility', 'url' => '/api/cases/{caseId}/admissibility',          'verb' => 'POST'],
+    // The completeness items the case type declares, ticked against the case (case read access).
+    ['name' => 'caseCompleteness#show',     'url' => '/api/cases/{caseId}/completeness',                 'verb' => 'GET'],
     ['name' => 'intakeTriage#queue',        'url' => '/api/intake/triage',                               'verb' => 'GET'],
     ['name' => 'intakeTriage#sleepItem',    'url' => '/api/intake/triage/{entryId}/sleep',                'verb' => 'POST'],
     ['name' => 'intakeTriage#fanOut',       'url' => '/api/intake/fan-out',                              'verb' => 'POST'],
