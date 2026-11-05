@@ -31,9 +31,22 @@
           "kind": "bezwaar",
           "termDays": 42,
           "body": "het college van burgemeester en wethouders",
-          "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+          "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+          "id": "objection",
+          "label": "Bezwaar registreren",
+          "description": "Pas na een bekendgemaakt besluit. Maakt een Bezwaar-zaak die aan deze zaak en aan het besluit hangt; beide zaken verwijzen naar elkaar."
         },
         "confidentiality": "intern",
+        "intakeRequirements": {
+          "requiredBeforeCreation": [],
+          "completenessItems": [
+            { "key": "verzoek", "label": "Verzoek met omschrijving van de gevraagde informatie", "documentTitleContains": "verzoek" },
+            { "key": "contact", "label": "Contactgegevens van de verzoeker", "field": "wooRequest.verzoekerEmail", "evidence": "uit het verzoek" },
+            { "key": "periode", "label": "Periode waarover de informatie gaat", "field": "wooRequest.periodeVan" },
+            { "key": "machtiging", "label": "Machtiging, bij een verzoek namens een ander", "documentTitleContains": "machtiging" },
+            { "key": "precisering", "label": "Precisering van het onderwerp na het gesprek", "documentTitleContains": "precisering" }
+          ]
+        },
         "isDraft": false,
         "extensionAllowed": true,
         "extensionPeriod": "P14D",

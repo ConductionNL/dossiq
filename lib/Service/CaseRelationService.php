@@ -52,6 +52,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
 use OCA\Dossiq\Service\Relation\CaseRelationLabels;
+use OCA\Dossiq\Service\Relation\SubjectLinkRule;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 
 /**
@@ -100,12 +101,14 @@ class CaseRelationService {
 	 * @param CaseRelationCodec $codec Relation-list encoding and pair operations.
 	 * @param CaseHierarchyOverlapGuard $hierarchyGuard Hoofdzaak/deelzaak overlap detection.
 	 * @param CaseRelationLabels $labels What each link is called from each side.
+	 * @param SubjectLinkRule $subjectRule A case hangs as the subject under one case only, without a loop.
 	 */
 	public function __construct(
 		private readonly CaseRelationStore $store,
 		private readonly CaseRelationCodec $codec,
 		private readonly CaseHierarchyOverlapGuard $hierarchyGuard,
 		private readonly CaseRelationLabels $labels,
+		private readonly SubjectLinkRule $subjectRule,
 	) {
 	}//end __construct()
 
@@ -297,6 +300,10 @@ class CaseRelationService {
 			|| $this->holdsLink(holder: $pair['origin'], edge: ['caseId' => $link['to'], 'type' => $link['type']]) === true
 		) {
 			return ['ok' => false, 'reason' => 'duplicate'];
+		}
+
+		if ($link['type'] === 'subject') {
+			return $this->subjectRule->refusal(pair: $pair, link: $link);
 		}
 
 		return null;

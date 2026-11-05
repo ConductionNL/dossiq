@@ -107,6 +107,7 @@ class AdviceNotifier {
 	 * @param array<string, mixed> $current Current advice record (pre-update).
 	 * @param string $adviceId The advice UUID.
 	 * @param string $callerId The acting caller's UID, or '' in a session-less context.
+	 * @param string $summary  The received advice's conclusion and text, for the notification.
 	 *
 	 * @return void
 	 *
@@ -117,6 +118,7 @@ class AdviceNotifier {
 		array $current,
 		string $adviceId,
 		string $callerId,
+		string $summary='',
 	): void {
 		if ($to === 'requested') {
 			$advisor = (string)($current['advisor'] ?? '');
@@ -136,7 +138,8 @@ class AdviceNotifier {
 			$this->sendUserNotification(
 				userId: $callerId,
 				subject: 'advies_ontvangen',
-				objectId: $adviceId
+				objectId: $adviceId,
+				message: $summary
 			);
 		}
 	}//end fireTransitionNotification()

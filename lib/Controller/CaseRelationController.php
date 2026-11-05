@@ -64,6 +64,8 @@ class CaseRelationController extends Controller {
 		'self_relation' => Http::STATUS_BAD_REQUEST,
 		'duplicate' => Http::STATUS_CONFLICT,
 		'hierarchy_overlap' => Http::STATUS_CONFLICT,
+		'subject_taken' => Http::STATUS_CONFLICT,
+		'subject_cycle' => Http::STATUS_CONFLICT,
 		'access_denied' => Http::STATUS_FORBIDDEN,
 	];
 

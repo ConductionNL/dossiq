@@ -41,7 +41,7 @@
         },
         {
             "key": "store",
-            "title": "Store",
+            "title": "Marketplace",
             "description": "The registry Dossiq installs case types and templates from.",
             "order": 60,
             "settingsUrl": "/settings/admin/dossiq?tab=advanced#section-store"

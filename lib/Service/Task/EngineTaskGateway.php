@@ -791,6 +791,48 @@ class EngineTaskGateway {
     }//end complete()
 
     /**
+     * Cancel one open task through the engine, which rules on whether this
+     * caller may and whether the task is in a state that can be cancelled.
+     *
+     * @param string      $taskId The task to cancel.
+     * @param string|null $reason Why, recorded on the task and its audit.
+     * @param string|null $actor  The identity cancelling it.
+     *
+     * @return boolean Whether the engine accepted it; on false `lastError()` holds the engine's reason.
+     *
+     * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+     */
+    public function cancel(string $taskId, ?string $reason, ?string $actor): bool {
+        $id = trim($taskId);
+        $service = null;
+        if ($id !== '') {
+            $service = $this->resolveService();
+        }
+
+        if ($service === null) {
+            $this->lastError = 'The task engine cannot cancel a task on this instance.';
+
+            return false;
+        }
+
+        try {
+            // Positional, as for complete(): the service is resolved by name.
+            $service->cancel($id, $reason, $actor);
+
+            return true;
+        } catch (Throwable $e) {
+            $this->lastError = $e->getMessage();
+
+            $this->logger->warning(
+                'Dossiq: the engine refused a task cancellation',
+                ['exception' => $e->getMessage(), 'task' => $id]
+            );
+
+            return false;
+        }
+    }//end cancel()
+
+    /**
      * Whether an engine task has the column a getter reads. OpenRegister's
      * Task is a Nextcloud Entity, whose column getters are magic (`__call`),
      * so a declared method and a declared property both count.
