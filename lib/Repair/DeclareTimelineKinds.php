@@ -67,14 +67,14 @@ class DeclareTimelineKinds implements IRepairStep {
 	 *
 	 * @var string
 	 */
-	public const KIND_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineKindService';
+	public const KIND_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Timeline\\TimelineKindService';
 
 	/**
 	 * OpenRegister's text block service, named the same way.
 	 *
 	 * @var string
 	 */
-	public const BLOCK_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TextBlockService';
+	public const BLOCK_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Timeline\\TextBlockService';
 
 	/**
 	 * Constructor.
