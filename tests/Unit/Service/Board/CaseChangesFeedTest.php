@@ -101,7 +101,7 @@ class CaseChangesFeedTest extends TestCase {
 	}//end testNoAuditTrailMeansNoChanges()
 
 	/**
-	 * The route refuses an anonymous caller and a missing moment before reading anything.
+	 * The route refuses an anonymous caller and a moment it cannot read before reading anything.
 	 *
 	 * @return void
 	 */
@@ -117,8 +117,24 @@ class CaseChangesFeedTest extends TestCase {
 			expected: Http::STATUS_BAD_REQUEST,
 			actual: $this->controller(feed: $feed, uid: 'reader')->index(since: 'yesterday-ish')->getStatus()
 		);
-		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $this->controller(feed: $feed, uid: 'reader')->index()->getStatus());
 	}//end testTheRouteRefusesBeforeItReads()
+
+	/**
+	 * A first poll without a moment reads nothing and learns the moment to ask from next.
+	 *
+	 * @return void
+	 */
+	public function testAFirstPollLearnsOnlyNow(): void {
+		$feed = $this->createMock(originalClassName: CaseChangesFeed::class);
+		$feed->expects($this->never())->method('since');
+
+		$response = $this->controller(feed: $feed, uid: 'reader')->index();
+		$body     = $response->getData();
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: [], actual: $body['changes']);
+		$this->assertNotFalse(date_create_immutable($body['now']));
+	}//end testAFirstPollLearnsOnlyNow()
 
 	/**
 	 * The route asks for the reader's own view, never further back than a day.
