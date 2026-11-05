@@ -15,7 +15,11 @@ import { ZGW_RESOURCE_NAMES, zgwResourceName } from '../../src/views/settings/zg
 
 const ROOT = path.resolve(__dirname, '../..')
 const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n/nl.json'), 'utf8')).translations
-const repair = fs.readFileSync(path.join(ROOT, 'lib/Repair/LoadDefaultZgwMappings.php'), 'utf8')
+const SUPPORT = path.join(ROOT, 'lib/Repair/Support')
+const repair = fs.readdirSync(SUPPORT)
+	.filter((name) => name.endsWith('ResourceMappings.php'))
+	.map((name) => fs.readFileSync(path.join(SUPPORT, name), 'utf8'))
+	.join('\n')
 const table = fs.readFileSync(path.join(ROOT, 'src/views/settings/ZgwMappingSettings.vue'), 'utf8')
 const dutch = (app, text) => nl[text] || text
 

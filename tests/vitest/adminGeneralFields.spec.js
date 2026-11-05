@@ -38,7 +38,7 @@ describe('the general admin sections', () => {
 
 	it.each(
 		fields
-			.filter((field) => !field.url && !field.readOnly && field.type !== 'note')
+			.filter((field) => !field.url && !field.readOnly && !['note', 'heading'].includes(field.type))
 			.map((field) => [field.key]),
 	)(
 		'%s, saved through dossiq settings, is a setting the endpoint saves',
