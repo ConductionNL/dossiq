@@ -54,8 +54,11 @@ describe('the TaskDetail manifest page', () => {
 		expect(nl[config.headerMeta]).toBe('bij zaak {subject.identifier}, deadline {dueAt|relative}')
 	})
 
-	it('completes through dossiq and every other verb through the engine', () => {
-		expect(config.verbEndpoints).toEqual({ complete: '/apps/dossiq/api/case-tasks/{id}/complete' })
+	it('completes and cancels through dossiq and every other verb through the engine', () => {
+		expect(config.verbEndpoints).toEqual({
+			complete: '/apps/dossiq/api/case-tasks/{id}/complete',
+			cancel: '/apps/dossiq/api/case-tasks/{id}/cancel',
+		})
 	})
 
 	it('has an Overview tab with the description, checklist, appointments and notes, and a History tab', () => {

@@ -41,9 +41,13 @@
 						<div v-for="fill in chosenTemplateFills" :key="fill.label">
 							<dt>
 								{{ t('dossiq', fill.label) }}
-								<span v-if="fill.required" class="generate-document__required" data-testid="generate-document-required">
-									{{ t('dossiq', 'Required') }}
-								</span>
+								<CnStatusBadge
+									v-if="fill.required"
+									class="generate-document__required"
+									data-testid="generate-document-required"
+									:label="t('dossiq', 'Required')"
+									variant="error"
+									size="small" />
 							</dt>
 							<dd :class="{ 'generate-document__missing': fill.missing }">
 								{{ fill.fixed ? t('dossiq', fill.value) : fill.value }}
@@ -101,7 +105,7 @@
 </template>
 
 <script>
-import { CnChoiceCards, CnDialog } from '@conduction/nextcloud-vue'
+import { CnChoiceCards, CnDialog, CnStatusBadge } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -139,6 +143,7 @@ export default {
 	components: {
 		CnChoiceCards,
 		CnDialog,
+		CnStatusBadge,
 		FileDocumentCheckOutline,
 		FileDocumentEditOutline,
 		NcButton,
@@ -409,14 +414,7 @@ export default {
 }
 
 .generate-document__required {
-	display: inline-block;
 	margin-inline-start: 4px;
-	padding: 1px 8px;
-	border-radius: var(--border-radius-pill);
-	background: color-mix(in srgb, var(--color-error) 10%, var(--color-main-background));
-	color: var(--color-error-text);
-	font-size: 12px;
-	font-weight: 600;
 }
 
 .generate-document__fills-grid dd.generate-document__missing {
