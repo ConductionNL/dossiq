@@ -44,6 +44,8 @@ use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCA\Dossiq\Service\Email\MailMessageSource;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Service\EmailMessageRef;
+use OCA\OpenRegister\Service\LinkTarget;
 use OCP\Config\IUserConfig;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -422,34 +424,23 @@ class CaseEmailMatchServiceTest extends TestCase {
 			}
 
 			/**
-			 * @param string $objectUuid    The case.
-			 * @param int    $registerId    The register id.
-			 * @param int    $schemaId      The schema id.
-			 * @param int    $mailAccountId The account.
-			 * @param string $messageId     The message id.
-			 * @param string $messageUid    The message uid.
+			 * @param LinkTarget      $target  The case.
+			 * @param EmailMessageRef $message The account, message id and uid.
 			 *
 			 * @return array<string, mixed> The link.
 			 */
-			public function linkEmail(
-				string $objectUuid,
-				int $registerId,
-				int $schemaId,
-				int $mailAccountId,
-				string $messageId,
-				string $messageUid,
-			): array {
-				if (in_array($objectUuid, $this->failFor, true) === true) {
+			public function linkEmail(LinkTarget $target, EmailMessageRef $message): array {
+				if (in_array($target->objectUuid, $this->failFor, true) === true) {
 					throw new RuntimeException('leaf refused');
 				}
 
 				$link = [
-					'objectUuid' => $objectUuid,
-					'registerId' => $registerId,
-					'schemaId' => $schemaId,
-					'mailAccountId' => $mailAccountId,
-					'mailMessageId' => (int)$messageId,
-					'mailMessageUid' => $messageUid,
+					'objectUuid' => $target->objectUuid,
+					'registerId' => $target->registerId,
+					'schemaId' => $target->schemaId(),
+					'mailAccountId' => $message->mailAccountId,
+					'mailMessageId' => (int)$message->messageId,
+					'mailMessageUid' => (string)$message->uidForMatch(),
 					'linkedBy' => ($this->objectService->actingAs ?? null),
 				];
 				$this->links[] = $link;

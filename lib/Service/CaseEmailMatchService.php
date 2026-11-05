@@ -59,6 +59,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Service\Email\MailMatchSources;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
+use OCA\Dossiq\Service\Email\CaseMailLeaf;
 use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -430,14 +431,7 @@ class CaseEmailMatchService {
 			return false;
 		}
 
-		$linkService->linkEmail(
-			objectUuid: $case['uuid'],
-			registerId: $case['registerId'],
-			schemaId: $case['schemaId'],
-			mailAccountId: $accountId,
-			messageId: (string)$message['id'],
-			messageUid: $message['uid']
-		);
+		(new CaseMailLeaf(linkService: $linkService, accountId: $accountId))->link(case: $case, message: $message);
 
 		return true;
 	}//end linkCase()
