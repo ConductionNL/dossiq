@@ -2386,14 +2386,10 @@
                         "id": "ct-old",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding",
-                        "shipped": true,
-                        "package": "jeugdwet"
+                        "description": "Een melding"
                     },
                     "fill": {
-                        "description": "Een melding",
-                        "shipped": true,
-                        "package": "jeugdwet"
+                        "description": "Een melding"
                     }
                 },
                 {
@@ -2531,14 +2527,9 @@
                     "row": {
                         "id": "ct-old",
                         "identifier": "melding",
-                        "title": "Melding",
-                        "shipped": true,
-                        "package": "jeugdwet"
+                        "title": "Melding"
                     },
-                    "fill": {
-                        "shipped": true,
-                        "package": "jeugdwet"
-                    }
+                    "fill": []
                 }
             ],
             "held": []
@@ -2608,14 +2599,10 @@
                         "id": "ct-old",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "D",
-                        "shipped": true,
-                        "package": "jeugdwet"
+                        "description": "D"
                     },
                     "fill": {
-                        "description": "D",
-                        "shipped": true,
-                        "package": "jeugdwet"
+                        "description": "D"
                     }
                 }
             ],
@@ -2700,15 +2687,11 @@
                         "id": "ct-a",
                         "identifier": "melding",
                         "title": "Melding",
-                        "description": "Een melding",
-                        "shipped": true,
-                        "package": "jeugdwet"
+                        "description": "Een melding"
                     },
                     "fill": {
                         "title": "Melding",
-                        "description": "Een melding",
-                        "shipped": true,
-                        "package": "jeugdwet"
+                        "description": "Een melding"
                     }
                 }
             ],

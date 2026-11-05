@@ -275,12 +275,13 @@ class PackageWriter {
 	private function writeGroup(array $group, array &$run): void {
 		$target = $this->groupTarget(base: $run['target'], group: $group);
 		foreach ($group['rows'] as $row) {
-			$row = $this->pointedAtAdopted(row: $row, ids: $run['ids']);
+			$stamp = [];
 			if (($group['schemaKey'] ?? '') === ExistingRowMatcher::CASE_TYPE_KEY && ($group['schema'] ?? null) === null) {
-				$row += ['shipped' => true, 'package' => (string)($run['package'] ?? '')];
+				$stamp = ['shipped' => true, 'package' => (string)($run['package'] ?? '')];
 			}
 
-			$this->placeRow(placement: ['group' => $group, 'target' => $target, 'row' => $row], run: $run);
+			$placement = ['group' => $group, 'target' => $target, 'row' => $this->pointedAtAdopted(row: $row, ids: $run['ids']), 'stamp' => $stamp];
+			$this->placeRow(placement: $placement, run: $run);
 		}
 	}//end writeGroup()
 
@@ -307,14 +308,17 @@ class PackageWriter {
 	/**
 	 * Hold, adopt or write one row of a group.
 	 *
-	 * @param array{group: array<string, mixed>, target: RowTarget, row: array<string, mixed>} $placement The row and where it goes.
-	 * @param array<string, mixed>                                                             $run       The run so far.
+	 * @param array{group: array<string, mixed>, target: RowTarget, row: array<string, mixed>, stamp: array<string, mixed>} $placement The row,
+	 *        where it goes and what a row the package places carries besides.
+	 * @param array<string, mixed> $run The run so far.
 	 *
 	 * @return void
 	 */
 	private function placeRow(array $placement, array &$run): void {
+		// A case type the package itself places is shipped; one it adopts stays the organisation's own.
+		$shipped = ['row' => $placement['row'] + $placement['stamp']] + $placement;
 		if ($this->holdsRow(target: $placement['target'], row: $placement['row']) === true) {
-			$this->hold(placement: $placement, run: $run);
+			$this->hold(placement: $shipped, run: $run);
 			return;
 		}
 
@@ -323,6 +327,8 @@ class PackageWriter {
 			$this->adopt(placement: $placement + ['existing' => $existing], run: $run);
 			return;
 		}
+
+		$placement = $shipped;
 
 		$target = $placement['target'];
 		$outcome = $this->writeRow(target: $target, row: $placement['row']);
