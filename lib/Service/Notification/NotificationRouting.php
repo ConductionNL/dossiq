@@ -48,7 +48,7 @@ class NotificationRouting {
 	 *
 	 * @var string
 	 */
-	public const PREFERENCE_SERVICE = 'OCA\\OpenRegister\\Service\\Notification\\NotificationPreferenceService';
+	public const PREFERENCE_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Notification\\NotificationPreferenceService';
 
 	/**
 	 * The notification domains dossiq's shipped rules declare.

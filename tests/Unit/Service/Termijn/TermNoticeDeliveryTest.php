@@ -57,7 +57,7 @@ use OCA\Dossiq\Tests\Support\InMemoryTermNoticeLedger;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\MakesOutboundCaseMail;
 use OCA\Dossiq\Tests\Support\RecordingMessage;
-use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
+use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\Mail\IMailer;

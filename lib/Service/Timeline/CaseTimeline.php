@@ -69,14 +69,14 @@ class CaseTimeline {
 	 *
 	 * @var string
 	 */
-	public const WRITE_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineWriteService';
+	public const WRITE_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Timeline\\TimelineWriteService';
 
 	/**
 	 * OpenRegister's timeline reader, named the same way and for the same reason.
 	 *
 	 * @var string
 	 */
-	public const READ_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineEntryService';
+	public const READ_SERVICE = 'OCA\\OpenRegister\\Notifications\\Service\\Timeline\\TimelineEntryService';
 
 	/**
 	 * An entry only the handling organisation reads.

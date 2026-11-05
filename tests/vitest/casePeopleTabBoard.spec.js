@@ -42,8 +42,8 @@ function findTab (node) {
 }
 
 describe('the People tab', () => {
-	it('opens with Partijen, then Rollen, then the seats, then Toegang', () => {
-		expect(findTab(simple).widgetIds).toEqual(['case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-access-card'])
+	it('opens with Partijen, then Rollen, then the seats, then Toegang, then the shares outside the organisation', () => {
+		expect(findTab(simple).widgetIds).toEqual(['case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-access-card', 'case-shares-card'])
 	})
 
 	it('lists the people by role in the Partijen card, as the contacts tab', () => {

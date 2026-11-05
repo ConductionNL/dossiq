@@ -46,7 +46,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\OptOutGate;
 use OCA\Dossiq\Tests\Support\FakeIntegriqOptOuts;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
-use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
+use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\Mail\IMailer;

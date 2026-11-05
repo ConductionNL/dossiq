@@ -3749,7 +3749,8 @@
 				},
 				"tags": [
 					"parkeren",
-					"binnenstad"
+					"binnenstad",
+					"wijk-noord"
 				]
 			}
 		},
@@ -3822,7 +3823,8 @@
 				},
 				"tags": [
 					"evenementen",
-					"markt"
+					"markt",
+					"wijk-noord"
 				]
 			}
 		},
@@ -7292,7 +7294,8 @@
 				},
 				"tags": [
 					"woo",
-					"verlichting"
+					"verlichting",
+					"wijk-noord"
 				]
 			}
 		},
@@ -7351,7 +7354,8 @@
 				},
 				"tags": [
 					"woo",
-					"afval"
+					"afval",
+					"wijk-noord"
 				]
 			}
 		},
@@ -7423,7 +7427,8 @@
 				},
 				"tags": [
 					"woo",
-					"beukenlaan"
+					"beukenlaan",
+					"wijk-noord"
 				]
 			}
 		},
@@ -7495,7 +7500,8 @@
 				},
 				"tags": [
 					"woo",
-					"parkeren"
+					"parkeren",
+					"wijk-noord"
 				]
 			}
 		},
