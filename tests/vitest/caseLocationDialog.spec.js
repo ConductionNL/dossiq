@@ -64,7 +64,7 @@ async function mountDialog() {
 			stubs: {
 				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 				CnMapWidget: { template: '<div class="map" />' },
-				CnAddressSearch: { template: '<div class="search" />' },
+				CnAddressSearch: { props: { manualFallback: Boolean, unavailableTitle: String }, template: '<div class="search" :data-fallback="String(manualFallback)" :data-title="unavailableTitle" />' },
 				NcButton: { template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>' },
 				NcCheckboxRadioSwitch: { template: '<label><slot /></label>' },
 				NcNoteCard: { template: '<div><slot /></div>' },
@@ -100,7 +100,21 @@ describe('the case-location record', () => {
 			longitude: 4.67,
 			addressDesignationId: '0642200000012345',
 			parcelId: 'ZDR00-K-1234',
-			source: 'pdok',
+			source: 'bag',
+		})
+	})
+
+	it('saves an address typed in while the search is down as a manual one, without a BAG reference', () => {
+		const typed = { result: null, coordinates: null, address: 'Molenweg 4, 3312KL', manual: { street: 'Molenweg 4', postcode: '3312KL', city: '' } }
+		expect(caseLocationRecord('case-1', typed)).toEqual({
+			case: 'case-1',
+			label: 'Molenweg 4, 3312KL',
+			formattedAddress: 'Molenweg 4, 3312KL',
+			latitude: null,
+			longitude: null,
+			addressDesignationId: null,
+			parcelId: null,
+			source: 'free',
 		})
 	})
 })
@@ -110,6 +124,23 @@ describe('CaseLocationDialog', () => {
 		const wrapper = await mountDialog()
 		await new Promise((resolve) => setTimeout(resolve, 0))
 		expect(wrapper.vm.eyebrow).toBe('Kapvergunning Molenweg 4, location')
+	})
+
+	it('lets the address be typed in when the PDOK search does not answer', async () => {
+		const wrapper = await mountDialog()
+		const search = wrapper.find('.search')
+		expect(search.attributes('data-fallback')).toBe('true')
+		expect(search.attributes('data-title')).toBe('Address search is not available right now')
+	})
+
+	it('saves a typed address without asking the registers', async () => {
+		const wrapper = await mountDialog()
+		await wrapper.vm.onSelect({ result: null, coordinates: null, address: 'Molenweg 4, 3312KL', manual: { street: 'Molenweg 4', postcode: '3312KL', city: '' } })
+		const axios = (await import('@nextcloud/axios')).default
+		await wrapper.vm.save()
+		const [, body] = axios.post.mock.calls.at(-1)
+		expect(body.source).toBe('free')
+		expect(body.label).toBe('Molenweg 4, 3312KL')
 	})
 
 	it('will not save before an address is chosen', async () => {

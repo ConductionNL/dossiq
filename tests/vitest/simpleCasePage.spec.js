@@ -429,9 +429,9 @@ describe('the tabs', () => {
 		// The Betrokkenen tab holds the people panel's sections as cards (DqZaakBetrokkenen).
 		const peopleSections = find(original, 'case-people-panel').content.sections.map((section) => section.widget.id)
 		const peopleTab = strip.tabs.find((tab) => tab.label === 'People')
-		// Toegang, the case's access links, is the simple page's own card after them.
-		expect(peopleTab.widgetIds.at(-1)).toBe('case-access-card')
-		expect(peopleTab.widgetIds.slice(0, -1).map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
+		// Toegang, the case's access links, and the shares outside the organisation are the simple page's own cards after them.
+		expect(peopleTab.widgetIds.slice(-2)).toEqual(['case-access-card', 'case-shares-card'])
+		expect(peopleTab.widgetIds.slice(0, -2).map((id) => id.replace(/-card$/, '')).sort()).toEqual([...peopleSections].sort())
 		// The people by role lead, as Partijen; the party model follows as Rollen (DqZaakBetrokkenen).
 		expect(peopleTab.widgetIds[0]).toBe('case-parties-card')
 		expect(simple.widgets.find((widget) => widget.id === 'case-parties-card').title).toBe('Case parties')
@@ -561,7 +561,7 @@ describe('the tabs', () => {
 		// DqZaak titles them; the cards the simple page adds are its own.
 		// The banner stack is titled Status, as the side card DqZaak draws.
 		const patched = ['goal-plan', 'case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-email-panel', 'case-status-declaration', 'case-banner-stack', 'case-attention', 'case-archival-panel', 'case-files', 'case-timeline-panel', 'case-notes-panel']
-		const added = ['case-note-card', 'case-investigation-steps', 'case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-goals', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-access-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card', 'case-completeness-card', 'case-projects-card', 'case-archive-marking-card', 'case-archive-mismatch']
+		const added = ['case-note-card', 'case-investigation-steps', 'case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-goals', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-resident-thread', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-parties-card', 'case-party-roles-card', 'case-seats-card', 'case-access-card', 'case-shares-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds', 'case-objection-advice-card', 'case-grant-decisions', 'case-grant-advances', 'case-related-card', 'case-sub-cases-card', 'case-objects-card', 'case-programme-card', 'case-object-types-link-card', 'case-decision-letter', 'case-advice-requests', 'case-ai-activity', 'case-macros', 'case-assistant-chat', 'case-related-cases-card', 'case-household-cases-card', 'case-document-verdicts-card', 'case-refusal-grounds-card', 'case-completeness-card', 'case-projects-card', 'case-archive-marking-card', 'case-archive-mismatch']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
