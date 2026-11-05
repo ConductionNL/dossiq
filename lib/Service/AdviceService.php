@@ -57,7 +57,16 @@ use RuntimeException;
 class AdviceService {
 
 	/**
-	 * Valid advice statuses.
+	 * The conclusions a received advice may carry.
+	 *
+	 * @var array<int, string>
+	 */
+	private const CONCLUSIONS = ['positive', 'positive-with-conditions', 'negative', 'clarification'];
+
+	/**
+	 * The statuses an advice request may move to.
+	 *
+	 * @var array<int, string>
 	 */
 	private const VALID_STATUSES = [
 		'requested',
@@ -154,6 +163,8 @@ class AdviceService {
 			if ($fileId !== '') {
 				$update['adviceDocument'] = $fileId;
 			}
+
+			$update = array_merge($update, $this->outcomeOf(payload: $payload));
 		}
 
 		$advice = $this->repository->save(update: $update, adviceId: $adviceId);
@@ -163,10 +174,75 @@ class AdviceService {
 			current: $current,
 			adviceId: $adviceId,
 			callerId: $this->getUserId(),
+			summary: $this->summaryOf(update: $update),
 		);
 
 		return $advice;
 	}//end applyTransition()
+
+	/**
+	 * The outcome a received advice carries: conclusion, text and the conditions ticked.
+	 *
+	 * @param array<string, mixed> $payload The transition payload.
+	 *
+	 * @return array<string, mixed> The fields to store; an unknown conclusion is left out.
+	 *
+	 * @spec openspec/changes/dialogs-answer-what-the-boards-draw/specs/advice-management/spec.md#requirement-an-advice-request-keeps-its-kind-subject-and-outcome
+	 */
+	private function outcomeOf(array $payload): array {
+		$outcome    = [];
+		$conclusion = (string)($payload['conclusion'] ?? '');
+		if (in_array($conclusion, self::CONCLUSIONS, true) === true) {
+			$outcome['conclusion'] = $conclusion;
+		}
+
+		if (is_string($payload['adviceText'] ?? null) === true) {
+			$outcome['adviceText'] = $payload['adviceText'];
+		}
+
+		if (is_array($payload['conditionsChecked'] ?? null) === true) {
+			$outcome['conditionsChecked'] = array_values(
+				array_filter($payload['conditionsChecked'], static fn (mixed $condition): bool => is_string($condition) === true)
+			);
+		}
+
+		return $outcome;
+	}//end outcomeOf()
+
+	/**
+	 * The one-line summary the received notification carries.
+	 *
+	 * @param array<string, mixed> $update The stored update.
+	 *
+	 * @return string The conclusion and the start of the advice text, or ''.
+	 */
+	private function summaryOf(array $update): string {
+		$parts = [];
+		if (isset($update['conclusion']) === true) {
+			$parts[] = $update['conclusion'];
+		}
+
+		$text = trim((string)($update['adviceText'] ?? ''));
+		if ($text !== '') {
+			$parts[] = mb_substr($text, 0, 140);
+		}
+
+		return implode(': ', $parts);
+	}//end summaryOf()
+
+	/**
+	 * The configured advice request schema.
+	 *
+	 * @return string The schema id or slug.
+	 */
+	private function adviceSchema(): string {
+		$schema = (string)$this->settingsService->getConfigValue('advies_aanvraag_schema');
+		if ($schema === '') {
+			return 'adviesAanvraag';
+		}
+
+		return $schema;
+	}//end adviceSchema()
 
 	/**
 	 * Dispatch a reminder on behalf of the authenticated caller.
@@ -372,20 +448,28 @@ class AdviceService {
 			$deadline = $this->dates->toCalendarDate($data['deadline'], 'deadline');
 		}
 
+		$external = (($data['kind'] ?? '') === 'external');
+		$type     = 'intern';
+		if ($external === true) {
+			$type = 'extern';
+		}
+
+		// The adviesAanvraag schema is the one the list, the transitions and
+		// the reminders read (AdviceRepository), so a request is written there.
 		$payload = [
-			'caseRef' => $caseId,
+			'case' => $caseId,
 			'requestedBy' => $requestedBy,
-			'advisor' => $data['advisor'] ?? '',
+			'advisor' => (string)($data['advisor'] ?? ''),
+			'type' => $type,
+			'subject' => (string)($data['subject'] ?? ''),
 			'deadline' => $deadline,
-			'status' => 'open',
-			'question' => $data['question'] ?? '',
-			'adviceText' => '',
-			'addedToFile' => false,
+			'status' => 'requested',
+			'questions' => (string)($data['question'] ?? ''),
 		];
 
 		$saved = $objectService->saveObject(
 			register: $register,
-			schema: 'adviceRequest',
+			schema: $this->adviceSchema(),
 			object: $payload
 		);
 
@@ -404,11 +488,14 @@ class AdviceService {
 			]
 		);
 
-		$this->notifier->notifyAdviseur(
-			caseId: $caseId,
-			payload: $payload,
-			saved: $savedRecord,
-		);
+		// An external advisor is an organisation name, not a user: nobody to notify.
+		if ($external === false) {
+			$this->notifier->notifyAdviseur(
+				caseId: $caseId,
+				payload: $payload,
+				saved: $savedRecord,
+			);
+		}
 
 		$this->logger->info(
 			'Advice request created for case ' . $caseId . ' by ' . $requestedBy,
@@ -439,7 +526,7 @@ class AdviceService {
 		// CLOSED — never author an advice outcome locally as a fallback.
 		$saved = $advice['saved'];
 		$adviceId = (string)($saved['id'] ?? ($saved['uuid'] ?? ''));
-		$subjectId = (string)$advice['payload']['caseRef'];
+		$subjectId = (string)$advice['payload']['case'];
 		if ($adviceId !== '') {
 			$subjectId = $adviceId;
 		}
@@ -476,7 +563,7 @@ class AdviceService {
 		$advice['objectService']->saveObject(
 			object: array_merge($advice['saved'], ['decisionRef' => $decisionRef]),
 			register: $advice['register'],
-			schema: 'adviceRequest',
+			schema: $this->adviceSchema(),
 			uuid: $advice['adviceId'],
 		);
 	}//end storeDecisionRef()
@@ -493,7 +580,7 @@ class AdviceService {
 
 		return [
 			'subjectRegister' => $advice['register'],
-			'externalReference' => (string)$advice['payload']['caseRef'],
+			'externalReference' => (string)$advice['payload']['case'],
 			'subjectLabel' => (string)($data['question'] ?? 'Adviesaanvraag'),
 			'question' => (string)($data['question'] ?? ''),
 			'advisor' => (string)$advice['payload']['advisor'],

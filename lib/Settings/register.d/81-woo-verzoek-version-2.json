@@ -31,7 +31,10 @@
           "kind": "bezwaar",
           "termDays": 42,
           "body": "het college van burgemeester en wethouders",
-          "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+          "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+          "id": "objection",
+          "label": "Bezwaar registreren",
+          "description": "Pas na een bekendgemaakt besluit. Maakt een Bezwaar-zaak die aan deze zaak en aan het besluit hangt; beide zaken verwijzen naar elkaar."
         },
         "confidentiality": "intern",
         "intakeRequirements": {
