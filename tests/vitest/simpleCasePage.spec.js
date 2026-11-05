@@ -630,13 +630,17 @@ describe('the tabs', () => {
 		expect(find(original, 'case-panels').content.variant).toBeUndefined()
 		expect(simple.showTypeEyebrow).toBe(false)
 		// The trail ends in the case number, as DqZaak draws "Alle zaken / 2026-0082".
-		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases', currentField: 'identifier', separator: '/' })
+		// A sub-case carries its parent's number between the two (deelzaak-support).
+		expect(simple.breadcrumb).toEqual([
+			{ label: 'All cases', route: 'Cases', currentField: 'identifier', separator: '/' },
+			{ parent: 'parentCase', labelField: 'identifier', route: 'CaseDetail' },
+		])
 		expect(original.showTypeEyebrow).toBeUndefined()
 		expect(original.breadcrumb).toEqual(simple.breadcrumb)
 		expect(casePage(simpleFile).route).toBeDefined()
 		expect(
 			build(simpleFile).pages.some(
-				(page) => page.id === simple.breadcrumb.route,
+				(page) => page.id === simple.breadcrumb[0].route,
 			),
 		).toBe(true)
 	})
@@ -697,7 +701,7 @@ describe('the tabs', () => {
 		// None of the three is lost: the number ends the breadcrumb,
 		// the deadline is the first card of the side column, and neither
 		// widget is still placed in the grid, so nothing renders twice.
-		expect(simple.breadcrumb.currentField).toBe('identifier')
+		expect(simple.breadcrumb[0].currentField).toBe('identifier')
 		// The pill above the title names the case type, as DqZaak draws "Woo-verzoek",
 		// in the case type's own colour and, as the board draws it, without an icon.
 		expect(simple.typePill).toEqual({
@@ -723,7 +727,8 @@ describe('the tabs', () => {
 describe('the header and the side column', () => {
 	it('reads the pills and the cards from fields the case carries', () => {
 		expect(onTheCase(simple.statusPill.field)).toBe(true)
-		expect(onTheCase(simple.breadcrumb.currentField)).toBe(true)
+		expect(onTheCase(simple.breadcrumb[0].currentField)).toBe(true)
+		expect(onTheCase(simple.breadcrumb[1].labelField)).toBe(true)
 		expect(onTheCase(simple.typePill.field)).toBe(true)
 		// The cards every case shows; the case-type cards are gated and checked below.
 		const cards = simple.sideColumn.filter((card) => typeof card === 'object' && !card.visibleWhen && card.type !== 'banner')
