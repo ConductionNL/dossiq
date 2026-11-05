@@ -96,6 +96,16 @@ function mountPanel() {
 	})
 }
 
+/**
+ * Wait until the panel has loaded and offers the first prompt.
+ *
+ * @param {object} wrapper The mounted panel.
+ * @return {Promise<void>}
+ */
+async function promptShown(wrapper) {
+	await vi.waitFor(() => expect(wrapper.find('[data-testid="case-ai-question-p-1"]').exists()).toBe(true))
+}
+
 describe('CaseAiFeaturesPanel', () => {
 	beforeEach(() => {
 		vi.mocked(fetchCaseFeatures).mockReset()
@@ -292,7 +302,7 @@ describe('CaseAiFeaturesPanel', () => {
 			reply: 'Drie mails, alle van de aanvrager.',
 		})
 		const wrapper = mountPanel()
-		await flushPromises()
+		await promptShown(wrapper)
 
 		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
 		await flushPromises()
@@ -312,7 +322,7 @@ describe('CaseAiFeaturesPanel', () => {
 			response: { data: { error: 'Blocked by guardrail.' } },
 		})
 		const wrapper = mountPanel()
-		await flushPromises()
+		await promptShown(wrapper)
 
 		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
 		await flushPromises()
@@ -376,7 +386,7 @@ describe('CaseAiFeaturesPanel', () => {
 		vi.mocked(converse).mockResolvedValue({ reply: 'Ja.' })
 		axios.post.mockResolvedValue({ data: {} })
 		const wrapper = mountPanel()
-		await flushPromises()
+		await promptShown(wrapper)
 
 		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
 		await flushPromises()
@@ -410,7 +420,7 @@ describe('CaseAiFeaturesPanel', () => {
 			.mockResolvedValueOnce({ reply: 'Tweede.' })
 		axios.post.mockResolvedValue({ data: {} })
 		const wrapper = mountPanel()
-		await flushPromises()
+		await promptShown(wrapper)
 
 		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
 		await flushPromises()
