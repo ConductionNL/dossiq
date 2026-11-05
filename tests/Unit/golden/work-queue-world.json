@@ -29,7 +29,8 @@
             "scoreBreakdown": {
                 "deadline": 1001.0,
                 "priority": 10.0,
-                "idle": 0.0
+                "idle": 0.0,
+                "residentWait": 0.0
             }
         },
         {
@@ -66,7 +67,8 @@
             "scoreBreakdown": {
                 "deadline": 1008.0,
                 "priority": 0.0,
-                "idle": 0.0
+                "idle": 0.0,
+                "residentWait": 0.0
             }
         },
         {
@@ -101,7 +103,8 @@
             "scoreBreakdown": {
                 "deadline": 748.0,
                 "priority": 20.0,
-                "idle": 21.0
+                "idle": 21.0,
+                "residentWait": 0.0
             }
         },
         {
@@ -151,7 +154,8 @@
             "scoreBreakdown": {
                 "deadline": 497.0,
                 "priority": 30.0,
-                "idle": 0.0
+                "idle": 0.0,
+                "residentWait": 0.0
             }
         },
         {
@@ -176,7 +180,8 @@
             "scoreBreakdown": {
                 "deadline": 0.0,
                 "priority": 20.0,
-                "idle": 0.0
+                "idle": 0.0,
+                "residentWait": 0.0
             }
         },
         {
@@ -207,7 +212,8 @@
             "scoreBreakdown": {
                 "deadline": 0.0,
                 "priority": 10.0,
-                "idle": 0.0
+                "idle": 0.0,
+                "residentWait": 0.0
             }
         },
         {
@@ -238,7 +244,8 @@
             "scoreBreakdown": {
                 "deadline": 0.0,
                 "priority": 10.0,
-                "idle": 0.0
+                "idle": 0.0,
+                "residentWait": 0.0
             }
         },
         {

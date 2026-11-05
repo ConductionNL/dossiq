@@ -73,6 +73,16 @@ class SettingsService {
 	private const CONFIG_KEYS = ConfigKeys::ALL;
 
 	/**
+	 * The bounds and choices of the settings the admin tabs save
+	 * ({@see \OCA\Dossiq\Service\Settings\SettingValueRules}). A string and
+	 * not a `::class` reference: this class sits at PHPMD's coupling ceiling.
+	 * SettingValueRulesTest asserts the name resolves.
+	 *
+	 * @var string
+	 */
+	public const VALUE_RULES = 'OCA\\Dossiq\\Service\\Settings\\SettingValueRules';
+
+	/**
 	 * Current key => the procedure-named key it replaces, read while the current key is missing.
 	 *
 	 * @var array<string, string>
@@ -403,6 +413,10 @@ class SettingsService {
 	public function updateSettings(array $data): array {
 		$data = $this->withCurrentReportKeys(data: $data);
 		// Refused before anything is written, so a refused save changes nothing.
+		if ($this->container->has(self::VALUE_RULES) === true) {
+			$this->container->get(self::VALUE_RULES)->assertValid(data: $data);
+		}
+
 		// Only a save that touches the throughput switch or its readers is checked.
 		if (array_key_exists(WooReportSwitches::THROUGHPUT, $data) === true
 			|| array_key_exists(WooReportSwitches::READERS, $data) === true

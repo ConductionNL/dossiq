@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.92"
+        "version": "0.20.93"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.44.0",
+                "version": "1.45.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -267,6 +267,18 @@
                         "default": true,
                         "description": "Whether this case type is a draft (not yet published)",
                         "title": "Is Draft"
+                    },
+                    "shipped": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether a case definition package placed this case type. A copy is the organisation's own and is not shipped.",
+                        "title": "Shipped",
+                        "facetable": true
+                    },
+                    "package": {
+                        "type": "string",
+                        "description": "The id of the case definition package that placed this case type; empty for the organisation's own.",
+                        "title": "Package"
                     },
                     "validFrom": {
                         "type": "string",

@@ -332,6 +332,8 @@ class ConfigKeys {
 		'queue_warning_days',
 		'queue_priority_weight',
 		'queue_idle_weight',
+		'queue_in_sight_days',
+		'queue_resident_wait_weight',
 		// Besluitvorming workflow integration endpoints (besluitvorming-workflow spec).
 		// Official publication (DROP / LVBB) — empty disables dispatch.
 		'drop_lvbb_endpoint',
@@ -410,5 +412,15 @@ class ConfigKeys {
 		'wooReviewerThroughputReport',
 		'wooReviewerThroughputReaders',
 		'wooCollectionPartiesReport',
+		// General: the app's own time zone when no tenant is bound
+		// (CaseDateNormaliser), the date format and the beta switch the page
+		// reads as initial state (DisplaySettingsInitialStateListener).
+		'timezone',
+		'date_format',
+		'feature_new_case_page',
+		// VTH public notices: the template integriq composes the text from and
+		// the rule for the publication date (PublicationService).
+		'publication_template',
+		'publication_date_rule',
 	];
 }//end class

@@ -153,6 +153,7 @@ class PackageWriter {
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
 	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
 	 */
 	public function writePackage(string $package, array $groups): array {
 		$target = $this->target(strategy: self::STRATEGY_SKIP);
@@ -160,7 +161,16 @@ class PackageWriter {
 			return $this->packageFailure(message: "Package '{$package}' was not installed: this instance has no OpenRegister register configured.");
 		}
 
-		$run = ['target' => $target, 'written' => [], 'skipped' => [], 'adopted' => [], 'held' => [], 'ids' => [], 'caseTypes' => []];
+		$run = [
+			'target' => $target,
+			'package' => $package,
+			'written' => [],
+			'skipped' => [],
+			'adopted' => [],
+			'held' => [],
+			'ids' => [],
+			'caseTypes' => [],
+		];
 
 		try {
 			foreach ($groups as $group) {
@@ -265,10 +275,13 @@ class PackageWriter {
 	private function writeGroup(array $group, array &$run): void {
 		$target = $this->groupTarget(base: $run['target'], group: $group);
 		foreach ($group['rows'] as $row) {
-			$this->placeRow(
-				placement: ['group' => $group, 'target' => $target, 'row' => $this->pointedAtAdopted(row: $row, ids: $run['ids'])],
-				run: $run
-			);
+			$stamp = [];
+			if (($group['schemaKey'] ?? '') === ExistingRowMatcher::CASE_TYPE_KEY && ($group['schema'] ?? null) === null) {
+				$stamp = ['shipped' => true, 'package' => (string)($run['package'] ?? '')];
+			}
+
+			$placement = ['group' => $group, 'target' => $target, 'row' => $this->pointedAtAdopted(row: $row, ids: $run['ids']), 'stamp' => $stamp];
+			$this->placeRow(placement: $placement, run: $run);
 		}
 	}//end writeGroup()
 
@@ -295,14 +308,17 @@ class PackageWriter {
 	/**
 	 * Hold, adopt or write one row of a group.
 	 *
-	 * @param array{group: array<string, mixed>, target: RowTarget, row: array<string, mixed>} $placement The row and where it goes.
-	 * @param array<string, mixed>                                                             $run       The run so far.
+	 * @param array{group: array<string, mixed>, target: RowTarget, row: array<string, mixed>, stamp: array<string, mixed>} $placement The row,
+	 *        where it goes and what a row the package places carries besides.
+	 * @param array<string, mixed> $run The run so far.
 	 *
 	 * @return void
 	 */
 	private function placeRow(array $placement, array &$run): void {
+		// A case type the package itself places is shipped; one it adopts stays the organisation's own.
+		$shipped = ['row' => $placement['row'] + $placement['stamp']] + $placement;
 		if ($this->holdsRow(target: $placement['target'], row: $placement['row']) === true) {
-			$this->hold(placement: $placement, run: $run);
+			$this->hold(placement: $shipped, run: $run);
 			return;
 		}
 
@@ -311,6 +327,8 @@ class PackageWriter {
 			$this->adopt(placement: $placement + ['existing' => $existing], run: $run);
 			return;
 		}
+
+		$placement = $shipped;
 
 		$target = $placement['target'];
 		$outcome = $this->writeRow(target: $target, row: $placement['row']);

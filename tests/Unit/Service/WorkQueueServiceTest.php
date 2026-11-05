@@ -281,13 +281,13 @@ class WorkQueueServiceTest extends TestCase {
 	/**
 	 * @return void
 	 */
-	public function testNormalTierAtEightBusinessDaysBoundary(): void {
-		// 2026-07-13 (Mon) + 8 business days = 2026-07-23 (Thu).
+	public function testInSightTierAtEightBusinessDaysBoundary(): void {
+		// 2026-07-13 (Mon) + 8 business days = 2026-07-23 (Thu): past Soon, within the default 10 days in sight.
 		$result = $this->service->scoreItem('2026-07-23', 'normal', null, new DateTimeImmutable('2026-07-13'));
 
 		self::assertSame(8, $result['daysUntilDeadline']);
-		self::assertSame('normal', $result['deadlineTier']);
-	}//end testNormalTierAtEightBusinessDaysBoundary()
+		self::assertSame(expected: 'inSight', actual: $result['deadlineTier']);
+	}//end testInSightTierAtEightBusinessDaysBoundary()
 
 	/**
 	 * @return void
@@ -383,7 +383,7 @@ class WorkQueueServiceTest extends TestCase {
 		$profile = $this->profile(critical: 5, warning: 2);
 
 		self::assertSame('critical', $this->service->scoreItem('2026-07-20', 'normal', null, $now, $profile)['deadlineTier']);
-		self::assertSame('normal', $this->service->scoreItem('2026-07-21', 'normal', null, $now, $profile)['deadlineTier']);
+		self::assertSame(expected: 'inSight', actual: $this->service->scoreItem('2026-07-21', 'normal', null, $now, $profile)['deadlineTier']);
 	}//end testWarningBelowCriticalClosesTheSoonBand()
 
 	/**
@@ -734,7 +734,7 @@ class WorkQueueServiceTest extends TestCase {
 		$byId = array_column($items, 'deadlineTier', 'id');
 
 		self::assertSame('critical', $byId['case-1']);
-		self::assertSame('normal', $byId['case-2']);
+		self::assertSame(expected: 'inSight', actual: $byId['case-2']);
 	}//end testTheCaseTypesOwnThresholdWins()
 
 	/**
@@ -994,9 +994,9 @@ class WorkQueueServiceTest extends TestCase {
 				'by-id-again' => 'critical',
 				'by-object-id' => 'critical',
 				'by-object-uuid' => 'critical',
-				'empty-object' => 'normal',
-				'a-number' => 'normal',
-				'unknown' => 'normal',
+				'empty-object' => 'inSight',
+				'a-number' => 'inSight',
+				'unknown' => 'inSight',
 			],
 			$tiers
 		);
@@ -1007,7 +1007,7 @@ class WorkQueueServiceTest extends TestCase {
 		$store->failOn = ['caseType'];
 		$failed = array_column($this->serviceOver(store: $store, warnings: $warnings)->computeQueue('jan', new DateTimeImmutable('2026-07-13')), 'deadlineTier', 'id');
 
-		self::assertSame('normal', $failed['by-id']);
+		self::assertSame(expected: 'inSight', actual: $failed['by-id']);
 		self::assertSame(
 			['WorkQueue: case type read failed, scoring with the instance thresholds', 'WorkQueue: case type read failed, scoring with the instance thresholds'],
 			array_values(array_filter($warnings, static fn (string $w): bool => str_starts_with($w, 'WorkQueue')))

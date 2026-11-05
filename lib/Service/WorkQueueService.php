@@ -507,7 +507,11 @@ class WorkQueueService {
 		);
 		$priority = (string)($row['priority'] ?? 'normal');
 		$referenceDate = $this->caseFacts->lastActivityOf($row);
-		$scoring = $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: $referenceDate, now: $run->now, profile: $run->profile);
+		$scoring = $this->scorer->withResidentWait(
+			scoring: $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: $referenceDate, now: $run->now, profile: $run->profile),
+			waiting: (($row['waitingOnApplicant'] ?? false) === true),
+			profile: $run->profile,
+		);
 
 		$row['coveredFor'] = ($row['coveredFor'] ?? null);
 

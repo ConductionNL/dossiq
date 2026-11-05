@@ -45,6 +45,10 @@
                 "case"
             ],
             [
+                "getConfigValue",
+                "publication_template"
+            ],
+            [
                 "dispatchTyped",
                 "OCA\\Integriq\\Event\\DeliveryRequestedEvent"
             ],
@@ -88,6 +92,7 @@
                 "channel": "gemeenteblad",
                 "publishedAt": "2026-05-01 10:00",
                 "notes": "42",
+                "template": "",
                 "besluitDocument": "doc-7",
                 "identifier": "Z-2026-0042"
             },

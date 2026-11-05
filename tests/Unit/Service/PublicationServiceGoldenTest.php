@@ -137,7 +137,7 @@ class PublicationServiceGoldenTest extends TestCase {
 			}
 		};
 
-		$config = ($world['config'] ?? []) + ['register' => 'dossiq', 'case_schema' => 'case'];
+		$config = ($world['config'] ?? []) + ['register' => 'dossiq', 'case_schema' => 'case', 'publication_template' => '', 'publication_date_rule' => ''];
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturnCallback(
 			static function () use (&$calls, $world, $store): ?object {

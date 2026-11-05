@@ -2211,12 +2211,14 @@
 										"overdue": "Late",
 										"critical": "Critical",
 										"warning": "Soon",
+										"inSight": "In sight",
 										"normal": "Normal"
 									},
 									"colorMap": {
 										"overdue": "error",
 										"critical": "error",
 										"warning": "warning",
+										"inSight": "default",
 										"normal": "default"
 									}
 								},

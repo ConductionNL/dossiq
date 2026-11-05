@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Publication\PublicationDateRule;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCP\EventDispatcher\Event;
@@ -162,7 +163,8 @@ class PublicationService {
 	 *
 	 * @param array<string, mixed> $payload The publish payload.
 	 *
-	 * @return array{publishedAt: string, notes: string|null} The moment, now when absent, and the notes.
+	 * @return array{publishedAt: string, notes: string|null, template: string} The moment (by the
+	 *         publication date rule when absent), the notes and the notice template.
 	 */
 	private function stampOf(array $payload): array {
 		$notes = null;
@@ -170,7 +172,17 @@ class PublicationService {
 			$notes = (string)$payload['notes'];
 		}
 
-		return ['publishedAt' => (string)($payload['publishedAt'] ?? date(format: 'c')), 'notes' => $notes];
+		$publishedAt = (string)($payload['publishedAt'] ?? '');
+		if ($publishedAt === '') {
+			$rule = $this->settingsService->getConfigValue('publication_date_rule', '');
+			$publishedAt = (new PublicationDateRule())->publishOn(rule: $rule)->format('c');
+		}
+
+		return [
+			'publishedAt' => $publishedAt,
+			'notes' => $notes,
+			'template' => $this->settingsService->getConfigValue('publication_template', ''),
+		];
 	}//end stampOf()
 
 	/**
@@ -255,6 +267,7 @@ class PublicationService {
 				'channel' => $entry['channel'],
 				'publishedAt' => $entry['publishedAt'],
 				'notes' => $entry['notes'],
+				'template' => ($entry['template'] ?? ''),
 				'besluitDocument' => ($case['besluitDocument'] ?? null),
 				'identifier' => ($case['identifier'] ?? null),
 			],

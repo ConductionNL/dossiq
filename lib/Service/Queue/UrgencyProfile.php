@@ -52,6 +52,11 @@ final class UrgencyProfile {
 	public const MAX_PRIORITY_WEIGHT = 50.0;
 	public const MAX_IDLE_WEIGHT = 1.5;
 
+	public const DEFAULT_IN_SIGHT_DAYS = 10;
+	public const DEFAULT_RESIDENT_WAIT_WEIGHT = 5.0;
+	public const MAX_IN_SIGHT_DAYS = 180;
+	public const MAX_RESIDENT_WAIT_WEIGHT = 50.0;
+
 	/**
 	 * The critical threshold, in working days left.
 	 *
@@ -79,6 +84,20 @@ final class UrgencyProfile {
 	 * @var float
 	 */
 	public readonly float $idleWeight;
+
+	/**
+	 * The in-sight threshold, in working days left. Never below the warning one.
+	 *
+	 * @var int
+	 */
+	private int $inSight = self::DEFAULT_IN_SIGHT_DAYS;
+
+	/**
+	 * Points while the case waits on the resident.
+	 *
+	 * @var float
+	 */
+	private float $residentWait = self::DEFAULT_RESIDENT_WAIT_WEIGHT;
 
 	/**
 	 * Build a profile from raw values, each read leniently. With no arguments
@@ -110,7 +129,55 @@ final class UrgencyProfile {
 		$this->warningDays = max($warning, $critical);
 		$this->priorityWeight = self::bounded(raw: $priorityWeight, default: self::DEFAULT_PRIORITY_WEIGHT, max: self::MAX_PRIORITY_WEIGHT, whole: false);
 		$this->idleWeight = self::bounded(raw: $idleWeight, default: self::DEFAULT_IDLE_WEIGHT, max: self::MAX_IDLE_WEIGHT, whole: false);
+		$this->inSight = max(self::DEFAULT_IN_SIGHT_DAYS, $this->warningDays);
 	}//end __construct()
+
+	/**
+	 * This profile with the in-sight threshold and the resident wait weight,
+	 * each read leniently like the others.
+	 *
+	 * @param mixed $inSightDays        Raw in-sight threshold, in working days left.
+	 * @param mixed $residentWaitWeight Raw points while the case waits on the resident.
+	 *
+	 * @return self
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
+	 */
+	public function withQueueExtras(mixed $inSightDays, mixed $residentWaitWeight): self {
+		$copy = clone $this;
+		$inSight = (int)self::bounded(raw: $inSightDays, default: self::DEFAULT_IN_SIGHT_DAYS, max: self::MAX_IN_SIGHT_DAYS, whole: true);
+		$copy->inSight = max($inSight, $this->warningDays);
+		$copy->residentWait = self::bounded(
+			raw: $residentWaitWeight,
+			default: self::DEFAULT_RESIDENT_WAIT_WEIGHT,
+			max: self::MAX_RESIDENT_WAIT_WEIGHT,
+			whole: false
+		);
+
+		return $copy;
+	}//end withQueueExtras()
+
+	/**
+	 * The in-sight threshold, in working days left.
+	 *
+	 * @return int
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
+	 */
+	public function inSightDays(): int {
+		return $this->inSight;
+	}//end inSightDays()
+
+	/**
+	 * Points while the case waits on the resident.
+	 *
+	 * @return float
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
+	 */
+	public function residentWaitWeight(): float {
+		return $this->residentWait;
+	}//end residentWaitWeight()
 
 	/**
 	 * This profile with a case type's own thresholds, where it sets them.
@@ -136,18 +203,21 @@ final class UrgencyProfile {
 			$warning = $warningDays;
 		}
 
-		return new self(
+		$typed = new self(
 			criticalDays: $critical,
 			warningDays: $warning,
 			priorityWeight: $this->priorityWeight,
 			idleWeight: $this->idleWeight,
 		);
+
+		return $typed->withQueueExtras(inSightDays: $this->inSight, residentWaitWeight: $this->residentWait);
 	}//end withCaseTypeThresholds()
 
 	/**
 	 * The profile as the admin settings page reads it.
 	 *
-	 * @return array{criticalDays: int, warningDays: int, priorityWeight: float, idleWeight: float}
+	 * @return array{criticalDays: int, warningDays: int, priorityWeight: float, idleWeight: float,
+	 *               inSightDays: int, residentWaitWeight: float}
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
@@ -157,6 +227,8 @@ final class UrgencyProfile {
 			'warningDays' => $this->warningDays,
 			'priorityWeight' => $this->priorityWeight,
 			'idleWeight' => $this->idleWeight,
+			'inSightDays' => $this->inSight,
+			'residentWaitWeight' => $this->residentWait,
 		];
 	}//end toArray()
 
