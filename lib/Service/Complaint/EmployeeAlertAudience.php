@@ -52,8 +52,10 @@ class EmployeeAlertAudience {
 
 	/**
 	 * Groups used when the key is not set: the HR coordinator and department head roles.
+	 *
+	 * @var array<int, string>
 	 */
-	public const DEFAULT_GROUPS = 'hr-coordinators,department-heads';
+	public const DEFAULT_GROUPS = ['hr-coordinators', 'department-heads'];
 
 	/**
 	 * Constructor.
@@ -77,7 +79,7 @@ class EmployeeAlertAudience {
 	 * @spec openspec/specs/complaint-management/spec.md#scenario-employee-complaint-threshold-alert
 	 */
 	public function groups(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, self::DEFAULT_GROUPS);
+		$raw = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, implode(',', self::DEFAULT_GROUPS));
 
 		return array_values(array_filter(array_map('trim', explode(',', $raw)), static fn (string $group): bool => $group !== ''));
 	}//end groups()
