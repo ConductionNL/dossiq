@@ -29,7 +29,6 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Tests for CaseChangesFeed and CaseChangesController.
@@ -180,7 +179,7 @@ class CaseChangesFeedTest extends TestCase {
 			 */
 			public function find(string $id, int|string $register, int|string $schema): array {
 				if (isset($this->cases[$id]) === false) {
-					throw new RuntimeException('not allowed');
+					throw new \OCP\AppFramework\Db\DoesNotExistException(msg: 'not found for this reader');
 				}
 
 				return $this->cases[$id];

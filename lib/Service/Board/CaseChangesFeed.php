@@ -33,7 +33,6 @@ use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IL10N;
-use Throwable;
 
 /**
  * Reads the case changes from OpenRegister's audit trail.
@@ -143,7 +142,9 @@ class CaseChangesFeed {
 	}//end latestPerCase()
 
 	/**
-	 * The case as the reader may read it, or null.
+	 * The case as the reader may read it, or null. OpenRegister answers a case
+	 * outside the reader's rights as not found, which the read maps to null; any
+	 * other failure is not swallowed.
 	 *
 	 * @param object $objectService The OpenRegister object service.
 	 * @param string $register      The register id.
@@ -153,11 +154,7 @@ class CaseChangesFeed {
 	 * @return array<string, mixed>|null
 	 */
 	private function readableCase(object $objectService, string $register, string $schema, string $caseId): ?array {
-		try {
-			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId);
-		} catch (Throwable $e) {
-			return null;
-		}
+		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId);
 	}//end readableCase()
 
 	/**
