@@ -100,7 +100,8 @@
 				],
 				"tags": [
 					"woo",
-					"zwembad"
+					"zwembad",
+					"wijk-noord"
 				],
 				"wooRequest": {
 					"onderwerp": "Kosten nieuw zwembad",
@@ -170,7 +171,8 @@
 				],
 				"tags": [
 					"openbare-ruimte",
-					"stoep"
+					"stoep",
+					"wijk-noord"
 				]
 			}
 		},

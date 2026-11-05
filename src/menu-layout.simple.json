@@ -7201,6 +7201,15 @@
 			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). SIX VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests, Suspended (DqZaken). The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
 			"config": {
 				"searchPlaceholder": "Search by case, number or requester",
+				"realtime": {
+					"url": "/apps/dossiq/api/cases/changes",
+					"interval": 15000,
+					"views": [
+						"board"
+					],
+					"titleTemplate": "Just updated by {actor}"
+				},
+				"_realtimeNote": "DqWerkbord: while the board view is open, a change someone else made to a case shows \"Zojuist bijgewerkt door Anouk Bakker\" with what changed, and the board reads again (nextcloud-vue CnRealtimeToast). It polls dossiq's GET /api/cases/changes every 15 seconds, which names only cases the reader may open and never the reader's own changes.",
 				"quickFilterMaxVisible": 3,
 				"_quickFilterMaxVisibleNote": "Ruben, 23 Oct: the board's first three views stand on the row (Alles, Mijn zaken, Termijn deze week); the others, with their counts, sit behind the More chip (DqZaken, DqWerkbord, DqZakenKaart, DqZakenSorteren).",
 				"folderSidebar": null,
