@@ -6,8 +6,8 @@
 
 ### Requirement: REQ-DSS-006 The menu entry names the concept
 
-The store menu entry SHALL be labelled `Marketplace` (Dutch `Marktplaats`) and render the `StoreOutline`
-icon, in the footer section between Documentation and Reports. The store page title SHALL read the same.
+The marketplace menu entry SHALL be labelled `Marketplace` (Dutch `Marktplaats`) and render the `StoreOutline`
+icon, in the footer section between Documentation and Reports. The marketplace page title SHALL read the same.
 The route `/store` and the ids `Store` and `StoreMenu` SHALL stay, so existing links keep working.
 
 #### Scenario: The entry carries the Tier A glyph
