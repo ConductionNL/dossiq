@@ -6321,12 +6321,192 @@
 					{
 						"id": "share-with-organisation",
 						"type": "open-modal",
-						"target": "CaseShareOrganisationDialog",
+						"target": "CnActionDialog",
 						"label": "Share with another organisation",
 						"icon": "ShareVariant",
 						"group": "Case",
 						"props": {
-							"caseId": "@objectId"
+							"objectId": "@objectId",
+							"config": {
+								"title": "Share the case with another organisation",
+								"eyebrow": "{title}, {identifier}",
+								"source": {
+									"url": "/apps/openregister/api/objects/dossiq/case/@objectId"
+								},
+								"gap": 14,
+								"closeOnDone": true,
+								"fields": [
+									{
+										"field": "mode",
+										"type": "cards",
+										"label": "What you do",
+										"hideLabel": true,
+										"layout": "rows",
+										"columns": 2,
+										"default": "share",
+										"options": [
+											{
+												"value": "share",
+												"label": "Share",
+												"description": "You stay the owner; they work along"
+											},
+											{
+												"value": "handover",
+												"label": "Hand over",
+												"description": "They become the owner; you can still read along"
+											}
+										]
+									},
+									{
+										"field": "organisation",
+										"type": "select",
+										"label": "Organisation",
+										"placeholder": "Choose an organisation",
+										"optionsSource": {
+											"url": "/apps/openregister/api/organisations/search",
+											"params": {
+												"_limit": 100
+											},
+											"responsePath": "organisations",
+											"match": {
+												"type": "partner"
+											},
+											"errorText": "The organisations could not be read."
+										},
+										"optionLabel": [
+											"{name} ({domain})",
+											"{name}"
+										]
+									},
+									{
+										"field": "permission",
+										"type": "select",
+										"label": "What they may do",
+										"default": "bekijken_bijdragen",
+										"visibleWhen": {
+											"field": "mode",
+											"equals": "share"
+										},
+										"options": [
+											{
+												"value": "bekijken",
+												"label": "Read only"
+											},
+											{
+												"value": "bekijken_reageren",
+												"label": "Read and comment"
+											},
+											{
+												"value": "bekijken_bijdragen",
+												"label": "Read and add documents"
+											}
+										]
+									},
+									{
+										"field": "message",
+										"type": "text",
+										"label": "Message",
+										"required": false
+									},
+									{
+										"field": "limit",
+										"type": "checkbox",
+										"look": "plain",
+										"label": "Share only some case fields",
+										"visibleWhen": {
+											"field": "mode",
+											"equals": "share"
+										}
+									},
+									{
+										"field": "shared",
+										"type": "checks",
+										"label": "Fields they see",
+										"default": "all",
+										"sendUnticked": true,
+										"sendAs": "fieldExclusions",
+										"visibleWhen": {
+											"field": "limit",
+											"equals": true
+										},
+										"options": [
+											{
+												"value": "title",
+												"label": "Title"
+											},
+											{
+												"value": "description",
+												"label": "Description"
+											},
+											{
+												"value": "status",
+												"label": "Status"
+											},
+											{
+												"value": "caseType",
+												"label": "Case type"
+											},
+											{
+												"value": "priority",
+												"label": "Priority"
+											},
+											{
+												"value": "dueDate",
+												"label": "Deadline"
+											},
+											{
+												"value": "requestedDate",
+												"label": "Requested date"
+											}
+										]
+									}
+								],
+								"note": {
+									"variant": "info",
+									"textsBy": {
+										"field": "mode",
+										"cases": {
+											"share": "You then see on the case what the other organisation does: opened, document added, returned.",
+											"handover": "The other organisation becomes the owner once it accepts. Until then the case stays yours."
+										}
+									}
+								},
+								"confirm": {
+									"errorText": "The case could not be shared.",
+									"requestsBy": {
+										"field": "mode",
+										"cases": {
+											"share": {
+												"url": "/apps/dossiq/api/shares",
+												"label": "Share",
+												"icon": "Send",
+												"fieldsInBody": false,
+												"doneText": "The case is shared with {chosen.organisation.name}.",
+												"body": {
+													"caseId": "{objectId}",
+													"shareType": "partner",
+													"partnerId": "{fields.organisation}",
+													"permissionLevel": "{fields.permission}",
+													"message": "{fields.message}",
+													"fieldExclusions": "{fields.fieldExclusions}"
+												}
+											},
+											"handover": {
+												"url": "/apps/dossiq/api/transfers",
+												"label": "Hand over",
+												"icon": "Send",
+												"fieldsInBody": false,
+												"doneText": "The handover to {chosen.organisation.name} is requested.",
+												"body": {
+													"caseId": "{objectId}",
+													"targetOrganization": "{fields.organisation}",
+													"reason": "{fields.message}"
+												}
+											}
+										}
+									}
+								}
+							}
 						},
 						"visibleWhen": {
 							"field": "@self.archived",

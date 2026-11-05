@@ -4,85 +4,174 @@
 
 /**
  * Sharing a case with, or handing it to, another organisation (board
- * DqZaakSamenwerken): one dialog, two acts, and the field selection kept as
- * an option of the share.
+ * DqZaakSamenwerken): the library's CnActionDialog configured on the case
+ * page's action. One dialog, two acts that post to their own endpoint, every
+ * partner organisation read from the server, and the field selection kept as
+ * an option of the share, sent as the fields left out.
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
 
-import { mount } from '@vue/test-utils'
+// The aliased axios stub (vitest.config.js): the library's own dynamic import
+// of '@nextcloud/axios' reaches it, where a vi.mock factory is not always used.
+import axios from '@nextcloud/axios'
+import { flushPromises, mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
-import { describe, expect, it, vi } from 'vitest'
-import CaseShareOrganisationDialog from '../../src/dialogs/CaseShareOrganisationDialog.vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import CnActionDialog from '@conduction/nextcloud-vue/src/components/CnActionDialog/CnActionDialog.vue'
 import { FEDERATION_ALLOWED_FIELDS } from '../../src/utils/federatedShareHelpers.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 
-vi.mock('@nextcloud/axios', () => ({
-	default: { get: vi.fn(), post: vi.fn() },
-}))
-vi.mock('@nextcloud/event-bus', () => ({ emit: vi.fn() }))
-vi.mock('@nextcloud/dialogs', () => ({ showSuccess: vi.fn() }))
-vi.mock('@nextcloud/router', () => ({ generateUrl: (url) => url }))
+const { showSuccess } = vi.hoisted(() => ({ showSuccess: vi.fn() }))
+vi.mock('@nextcloud/dialogs', () => ({ showSuccess, showError: vi.fn() }))
+vi.mock('@nextcloud/router', () => ({ generateUrl: (url) => url, generateOcsUrl: (url) => url, generateRemoteUrl: (url) => url, imagePath: (app, file) => file }))
+
+const simple = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.simple.json'), 'utf8'))
 
 /**
- * Mount the dialog with one partner organisation.
+ * The share action on the simple case page.
+ *
+ * @return {object} The action.
+ */
+function shareAction() {
+	const overlay = simple.pages.find((page) => page.id === 'CaseDetail')
+	return overlay.configAppend.headerActions.find((entry) => entry.id === 'share-with-organisation')
+}
+
+const PARTNERS = { organisations: [
+	{ id: 'org-1', name: 'Omgevingsdienst', domain: 'odzhz.nl', type: 'partner' },
+	{ id: 'own', name: 'Gemeente', type: 'tenant' },
+	{ id: 'org-2', name: 'Waterschap', type: 'partner' },
+] }
+
+const stubs = {
+	CnDialog: { name: 'CnDialog', props: ['eyebrow', 'name'], template: '<div><p class="eyebrow">{{ eyebrow }}</p><slot /><slot name="actions" /></div>' },
+	CnChoiceCards: { name: 'CnChoiceCards', props: ['options', 'modelValue', 'layout', 'columns', 'label', 'hideLabel'], emits: ['update:modelValue'], template: '<div class="choice-cards" />' },
+	NcButton: { name: 'NcButton', props: ['disabled'], emits: ['click'], template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>' },
+	NcCheckboxRadioSwitch: { name: 'NcCheckboxRadioSwitch', props: ['modelValue'], emits: ['update:modelValue'], template: '<label class="check"><slot /></label>' },
+	NcNoteCard: { name: 'NcNoteCard', template: '<div class="note"><slot /></div>' },
+	NcSelect: { name: 'NcSelect', props: ['modelValue', 'options', 'clearable', 'inputLabel', 'placeholder'], emits: ['update:modelValue', 'search'], template: '<div class="select" />' },
+	NcTextField: { name: 'NcTextField', props: ['modelValue', 'label'], emits: ['update:modelValue'], template: '<input class="text">' },
+	NcTextArea: true,
+	CnFormField: { name: 'CnFormField', props: ['text', 'optional'], template: '<label class="form-field">{{ text }}</label>' },
+	CnIcon: true,
+}
+
+/**
+ * Mount the configured dialog on case-1.
  *
  * @return {Promise<object>} The wrapper.
  */
 async function mountDialog() {
-	const axios = (await import('@nextcloud/axios')).default
-	// The organisations index lists only the user's own memberships; every
-	// organisation, partners included, comes from the search endpoint.
-	axios.get.mockImplementation((url) => Promise.resolve({
-		data: String(url).includes('organisations/search')
-			? { organisations: [{ id: 'org-1', name: 'Omgevingsdienst', domain: 'odzhz.nl', type: 'partner' }, { id: 'own', name: 'Gemeente', type: 'tenant' }] }
-			: String(url).includes('organisations')
-				? { results: [{ id: 'own', name: 'Gemeente', type: 'tenant' }] }
-				: { title: 'Verlichting fietspad Lindelaan', identifier: '2026-0082' },
-	}))
-	axios.post.mockResolvedValue({ data: { success: true } })
-	const wrapper = mount(CaseShareOrganisationDialog, {
-		props: { caseId: 'case-1' },
-		global: {
-			stubs: {
-				CnDialog: { props: ['eyebrow'], template: '<div><p class="eyebrow">{{ eyebrow }}</p><slot /><slot name="actions" /></div>' },
-				CnChoiceCards: { name: 'CnChoiceCards', props: ['options', 'modelValue', 'layout', 'columns', 'label', 'hideLabel'], template: '<div class="choice-cards" />' },
-				NcButton: { template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>' },
-				NcCheckboxRadioSwitch: { template: '<label><slot /></label>' },
-				NcNoteCard: { template: '<div><slot /></div>' },
-				NcSelect: { name: 'NcSelect', props: ['clearable', 'inputLabel'], template: '<div />' },
-				NcTextField: { template: '<input>' },
-			},
-			mocks: { $route: { params: {} } },
-		},
-	})
-	await new Promise((resolve) => setTimeout(resolve, 0))
+	const wrapper = mount(CnActionDialog, { props: { ...shareAction().props, objectId: 'case-1' }, global: { stubs } })
+	// The library reads through a dynamic import of axios, which can take
+	// longer than one flush: wait until the case and the partners are read.
+	await vi.waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2))
+	await flushPromises()
 	return wrapper
 }
+
+/**
+ * The control a field draws.
+ *
+ * @param {object} wrapper The wrapper.
+ * @param {string} field The field name.
+ * @param {string} name The stub's name.
+ * @return {object} The control.
+ */
+function control(wrapper, field, name) {
+	return wrapper.find(`[data-testid="cn-action-dialog-field-${field}"]`).findComponent({ name })
+}
+
+/**
+ * Fill the dialog as a handler would.
+ *
+ * @param {object} wrapper The wrapper.
+ * @param {{mode?: string, message?: string, limit?: boolean, untick?: Array<string>}} input What to set.
+ * @return {Promise<void>}
+ */
+async function fill(wrapper, input) {
+	if (input.mode) {
+		wrapper.findComponent({ name: 'CnChoiceCards' }).vm.$emit('update:modelValue', input.mode)
+	}
+	control(wrapper, 'organisation', 'NcSelect').vm.$emit('update:modelValue', { id: 'org-1' })
+	await flushPromises()
+	if (input.message) {
+		control(wrapper, 'message', 'NcTextField').vm.$emit('update:modelValue', input.message)
+	}
+	if (input.limit) {
+		control(wrapper, 'limit', 'NcCheckboxRadioSwitch').vm.$emit('update:modelValue', true)
+		await flushPromises()
+	}
+	await untick(wrapper, input.untick || [])
+}
+
+/**
+ * Untick case fields in the field selection.
+ *
+ * @param {object} wrapper The wrapper.
+ * @param {Array<string>} labels The labels to untick.
+ * @return {Promise<void>}
+ */
+async function untick(wrapper, labels) {
+	for (const label of labels) {
+		const box = wrapper.find('[data-testid="cn-action-dialog-field-shared"]').findAllComponents({ name: 'NcCheckboxRadioSwitch' }).find((c) => c.text() === label)
+		box.vm.$emit('update:modelValue', false)
+		await flushPromises()
+	}
+}
+
+/**
+ * Press the confirm button.
+ *
+ * @param {object} wrapper The wrapper.
+ * @return {Promise<void>}
+ */
+async function confirm(wrapper) {
+	await wrapper.find('[data-testid="cn-action-dialog-confirm"]').trigger('click')
+	await flushPromises()
+}
+
+beforeEach(() => {
+	axios.get.mockReset()
+	axios.post.mockReset()
+	showSuccess.mockReset()
+	axios.get.mockImplementation((url) => Promise.resolve({
+		data: String(url).includes('organisations/search') ? PARTNERS : { id: 'case-1', title: 'Verlichting fietspad Lindelaan', identifier: '2026-0082' },
+	}))
+	axios.post.mockResolvedValue({ data: { success: true } })
+})
+
+describe('the share action on the case page', () => {
+	it('opens the library action dialog from Meer, with no local dialog beside it', () => {
+		expect(shareAction()).toMatchObject({ type: 'open-modal', target: 'CnActionDialog', group: 'Case', props: { objectId: '@objectId' } })
+		expect(fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')).not.toContain('CaseShareOrganisationDialog')
+		expect(fs.existsSync(path.join(ROOT, 'src', 'dialogs', 'CaseShareOrganisationDialog.vue'))).toBe(false)
+	})
+
+	it('offers the case fields a share may limit, as the server allows them', () => {
+		const shared = shareAction().props.config.fields.find((field) => field.field === 'shared')
+		expect(shared.options.map((option) => option.value)).toEqual(FEDERATION_ALLOWED_FIELDS)
+	})
+})
 
 describe('CaseShareOrganisationDialog', () => {
 	// @spec openspec/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 	it('offers partner organisations only, named with their domain, and heads with the case', async () => {
 		const wrapper = await mountDialog()
-		expect(wrapper.vm.partners.map((p) => p.label)).toEqual(['Omgevingsdienst (odzhz.nl)'])
+		expect(control(wrapper, 'organisation', 'NcSelect').props('options').map((o) => o.label)).toEqual(['Omgevingsdienst (odzhz.nl)', 'Waterschap'])
+		expect(axios.get).toHaveBeenCalledWith(expect.stringMatching(/\/apps\/openregister\/api\/organisations\/search$/), { params: { _limit: 100 } })
 		expect(wrapper.find('.eyebrow').text()).toBe('Verlichting fietspad Lindelaan, 2026-0082')
 	})
 
 	it('shares through a partner share with permission, message and the fields left out', async () => {
 		const wrapper = await mountDialog()
-		await wrapper.setData({
-			organisation: wrapper.vm.partners[0],
-			message: ' Graag jullie advies. ',
-			limitFields: true,
-			sharedFields: ['title', 'status'],
-		})
-		await wrapper.vm.submit()
-		const axios = (await import('@nextcloud/axios')).default
-		const [url, body] = axios.post.mock.calls.at(-1)
-		expect(url).toBe('/apps/dossiq/api/shares')
-		expect(body).toEqual({
+		await fill(wrapper, { message: 'Graag jullie advies.', limit: true, untick: ['Description', 'Case type', 'Priority', 'Deadline', 'Requested date'] })
+		await confirm(wrapper)
+		expect(axios.post).toHaveBeenCalledTimes(1)
+		expect(axios.post).toHaveBeenCalledWith('/apps/dossiq/api/shares', {
 			caseId: 'case-1',
 			shareType: 'partner',
 			partnerId: 'org-1',
@@ -92,118 +181,93 @@ describe('CaseShareOrganisationDialog', () => {
 		})
 	})
 
-	it('excludes nothing when fields are not limited', async () => {
+	it('excludes nothing when fields are not limited (the server reads the empty value as no exclusions)', async () => {
 		const wrapper = await mountDialog()
-		await wrapper.setData({ organisation: wrapper.vm.partners[0] })
-		expect(wrapper.vm.request().body.fieldExclusions).toEqual([])
+		await fill(wrapper, {})
+		await confirm(wrapper)
+		const [, body] = axios.post.mock.calls[0]
+		expect(body.fieldExclusions).toBe('')
+		expect(body.message).toBe('')
 	})
 
-	it('hands over through a case transfer with the message as the reason', async () => {
+	it('hands over through a case transfer with the message as the reason, and nothing else', async () => {
 		const wrapper = await mountDialog()
-		await wrapper.setData({ mode: 'handover', organisation: wrapper.vm.partners[0], message: 'Hoort bij jullie' })
-		const { url, body } = wrapper.vm.request()
-		expect(url).toBe('/apps/dossiq/api/transfers')
-		expect(body).toMatchObject({ caseId: 'case-1', targetOrganization: 'org-1', reason: 'Hoort bij jullie' })
+		await fill(wrapper, { mode: 'handover', message: 'Hoort bij jullie' })
+		expect(wrapper.find('[data-testid="cn-action-dialog-field-permission"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="cn-action-dialog-field-limit"]').exists()).toBe(false)
+		await confirm(wrapper)
+		expect(axios.post).toHaveBeenCalledWith('/apps/dossiq/api/transfers', { caseId: 'case-1', targetOrganization: 'org-1', reason: 'Hoort bij jullie' })
 	})
 
 	it('cannot share without an organisation, or with every field taken away', async () => {
 		const wrapper = await mountDialog()
-		expect(wrapper.vm.canSubmit).toBe(false)
-		await wrapper.setData({ organisation: wrapper.vm.partners[0], limitFields: true, sharedFields: [] })
-		expect(wrapper.vm.canSubmit).toBe(false)
+		const button = () => wrapper.find('[data-testid="cn-action-dialog-confirm"]')
+		expect(button().attributes('disabled')).toBeDefined()
+		await fill(wrapper, { limit: true, untick: shareAction().props.config.fields.find((f) => f.field === 'shared').options.map((o) => o.label) })
+		expect(button().attributes('disabled')).toBeDefined()
 	})
 
 	// @spec openspec/specs/share-org-not-clearable/spec.md#requirement-the-organisation-choice-has-no-clear-button
 	it('offers no clear button on the organisation, as on the act and the permission', async () => {
-		const wrapper = await mountDialog()
-		const selects = wrapper.findAllComponents({ name: 'NcSelect' })
-		expect(selects.length).toBeGreaterThan(0)
+		const selects = (await mountDialog()).findAllComponents({ name: 'NcSelect' })
+		expect(selects.length).toBe(2)
 		expect(selects.every((select) => select.props('clearable') === false)).toBe(true)
 	})
 
-	it('opens from Meer on the simple case page', () => {
-		const registry = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
-		expect(registry).toContain('CaseShareOrganisationDialog: {')
-		const simple = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'menu-layout.simple.json'), 'utf8'))
-		const overlay = simple.pages.find((page) => page.id === 'CaseDetail')
-		const action = overlay.configAppend.headerActions.find((entry) => entry.id === 'share-with-organisation')
-		expect(action).toMatchObject({ type: 'open-modal', target: 'CaseShareOrganisationDialog', group: 'Case' })
+	it('says the share in a toast naming the organisation, and closes', async () => {
+		const wrapper = await mountDialog()
+		await fill(wrapper, {})
+		await confirm(wrapper)
+		expect(showSuccess).toHaveBeenCalledWith('The case is shared with Omgevingsdienst.')
+		expect(wrapper.emitted('close')).toHaveLength(1)
+	})
+
+	it('says the handover in a toast naming the organisation', async () => {
+		const wrapper = await mountDialog()
+		await fill(wrapper, { mode: 'handover' })
+		await confirm(wrapper)
+		expect(showSuccess).toHaveBeenCalledWith('The handover to Omgevingsdienst is requested.')
+	})
+
+	it('shows the server\'s refusal, else that the case could not be shared, and stays open', async () => {
+		const wrapper = await mountDialog()
+		await fill(wrapper, {})
+		axios.post.mockRejectedValueOnce({ response: { data: { success: false, error: 'No consent for this partner.' } } })
+		await confirm(wrapper)
+		expect(wrapper.find('[data-testid="cn-action-dialog-refusal"]').text()).toBe('No consent for this partner.')
+		axios.post.mockRejectedValueOnce({ response: { data: {} } })
+		await confirm(wrapper)
+		expect(wrapper.find('[data-testid="cn-action-dialog-refusal"]').text()).toBe('The case could not be shared.')
+		expect(wrapper.emitted('close')).toBeUndefined()
 	})
 })
 
-describe('CaseShareOrganisationDialog mode picker', () => {
-	it('offers Share and Hand over as the library choice cards, each with its own line', async () => {
-		const wrapper = await mountDialog()
-		const cards = wrapper.findComponent({ name: 'CnChoiceCards' })
-		expect(cards.exists()).toBe(true)
+describe('CaseShareOrganisationDialog on the board (DqZaakSamenwerken)', () => {
+	it('offers Share and Hand over as option rows side by side, the legend for assistive tech only', async () => {
+		const cards = (await mountDialog()).findComponent({ name: 'CnChoiceCards' })
 		expect(cards.props('options').map((option) => [option.value, option.label, option.description])).toEqual([
 			['share', 'Share', 'You stay the owner; they work along'],
 			['handover', 'Hand over', 'They become the owner; you can still read along'],
 		])
 		expect(cards.props('modelValue')).toBe('share')
-		expect(wrapper.find('.case-share-org__modes').exists()).toBe(false)
-	})
-
-	it('sets the two acts as option rows side by side under the title, the legend for assistive tech only', async () => {
-		const cards = (await mountDialog()).findComponent({ name: 'CnChoiceCards' })
 		expect(cards.props('layout')).toBe('rows')
 		expect(cards.props('columns')).toBe(2)
 		expect(cards.props('label')).toBe('What you do')
 		expect(cards.props('hideLabel')).toBe(true)
 	})
 
-	it('switches the act from the cards', async () => {
+	it('writes "(optional)" beside the message, draws the field limit as a plain checkbox, and the parts 14px apart', async () => {
 		const wrapper = await mountDialog()
-		wrapper.findComponent({ name: 'CnChoiceCards' }).vm.$emit('update:modelValue', 'handover')
-		await wrapper.vm.$nextTick()
-		expect(wrapper.vm.mode).toBe('handover')
+		const label = wrapper.find('[data-testid="cn-action-dialog-field-message"]').findComponent({ name: 'CnFormField' })
+		expect([label.props('text'), label.props('optional')]).toEqual(['Message', true])
+		expect(wrapper.find('[data-testid="cn-action-dialog-field-limit"] .cn-action-dialog__checkbox--plain').exists()).toBe(true)
+		expect(wrapper.find('.cn-action-dialog').attributes('style')).toContain('gap: 14px')
 	})
-})
 
-describe('the message field label (DqZaakSamenwerken)', () => {
-	it('names the field and writes "(optional)" beside it in the muted ink', async () => {
+	it('names the share button by the act', async () => {
 		const wrapper = await mountDialog()
-		const label = wrapper.find('label[for="case-share-message"]')
-		expect(label.exists()).toBe(true)
-		expect(label.text()).toContain('Message')
-		expect(label.find('.case-share-org__optional').text()).toBe('(optional)')
-	})
-})
-
-describe('CaseShareOrganisationDialog spacing', () => {
-	it('puts the first field 16px under the choice cards, as between the fields', () => {
-		const sfc = fs.readFileSync(path.join(ROOT, 'src/dialogs/CaseShareOrganisationDialog.vue'), 'utf8')
-		const at = sfc.indexOf('\n.case-share-org > .cn-choice-cards {')
-		expect(at).toBeGreaterThan(-1)
-		expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('margin-bottom: 4px')
-	})
-})
-
-describe('the message field on DqZaakSamenwerken (r34: Bericht 9.5px low)', () => {
-	const sfc = fs.readFileSync(path.join(ROOT, 'src/dialogs/CaseShareOrganisationDialog.vue'), 'utf8')
-	const rule = (selector) => {
-		const at = sfc.indexOf('\n' + selector + ' {')
-		expect(at, selector).toBeGreaterThan(-1)
-		return sfc.slice(at, sfc.indexOf('}', at))
-	}
-
-	it('sets the label at 14px on the normal line, as the select labels above it', () => {
-		const label = rule('.case-share-org__label')
-		expect(label).toContain('font-size: 14px;')
-		expect(label).toContain('line-height: normal;')
-	})
-
-	it('stands the control 6px under the label, counting the field\'s 2px focus inset', () => {
-		expect(rule('.case-share-org__field')).toContain('gap: 4px;')
-	})
-})
-
-describe('the selects on DqZaakSamenwerken (r35: fields 18px apart, the card 5.7px low)', () => {
-	const sfc = fs.readFileSync(path.join(ROOT, 'src/dialogs/CaseShareOrganisationDialog.vue'), 'utf8')
-
-	it('ends each select 2px under its wrapper, so its 40px control stands 16px above the next label', () => {
-		const at = sfc.indexOf('\n.case-share-org > .v-select.select {')
-		expect(at).toBeGreaterThan(-1)
-		expect(sfc.slice(at, sfc.indexOf('}', at))).toContain('margin-bottom: 2px;')
+		expect(wrapper.find('[data-testid="cn-action-dialog-confirm"]').text()).toBe('Share')
+		await fill(wrapper, { mode: 'handover' })
+		expect(wrapper.find('[data-testid="cn-action-dialog-confirm"]').text()).toBe('Hand over')
 	})
 })
