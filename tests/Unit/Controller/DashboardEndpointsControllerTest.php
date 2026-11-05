@@ -197,6 +197,34 @@ class DashboardEndpointsControllerTest extends TestCase {
 	}//end testSourcesRefuseAnAnonymousCaller()
 
 	/**
+	 * Every card these endpoints feed is a dashboard widget with roles, so
+	 * GET /api/dashboard/widget-visibility answers `visible.<id>` for it and
+	 * the card's binding can open.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/complaint-management/spec.md#requirement-the-complaint-patterns-sit-on-the-process-analysis-page
+	 */
+	public function testTheCardsAreAnsweredByTheVisibilityEndpoint(): void {
+		$manifest = json_decode((string)file_get_contents(filename: __DIR__.'/../../../src/manifest.json'), true);
+		$roles = new \OCA\Dossiq\Service\Dashboard\WidgetRoles();
+		$byId = array_column($roles->dashboardWidgets(manifest: $manifest), null, 'id');
+		$cards = [
+			'pm-complaint-kpis',
+			'pm-complaint-finding',
+			'pm-complaints-by-category',
+			'pm-complaints-by-department',
+			'pm-complaints-by-channel',
+			'pm-complaints-by-month',
+			'pm-complaint-resolution',
+			'deadline-report-ending-first',
+		];
+		foreach ($cards as $id) {
+			$this->assertSame(expected: ReportingAudience::ALLOWED_GROUPS, actual: $roles->rolesOf(widget: ($byId[$id] ?? [])), message: $id);
+		}
+	}//end testTheCardsAreAnsweredByTheVisibilityEndpoint()
+
+	/**
 	 * The ending-first controller.
 	 *
 	 * @param TermsEndingFirst $terms      The service.
