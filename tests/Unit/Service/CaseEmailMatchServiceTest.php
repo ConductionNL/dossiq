@@ -63,6 +63,7 @@ use Stringable;
  * @covers \OCA\Dossiq\Service\Email\CaseNumberRecognizer
  * @covers \OCA\Dossiq\Service\Email\CaseEmailMatchPreferences
  * @covers \OCA\Dossiq\Service\Email\MailMatchSources
+ * @covers \OCA\Dossiq\Service\Email\CaseMailLeaf
  * @uses \OCA\Dossiq\Service\CaseMergeService
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRelink
  * @uses \OCA\Dossiq\Service\Cases\CaseMergeRule
