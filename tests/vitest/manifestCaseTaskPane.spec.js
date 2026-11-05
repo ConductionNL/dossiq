@@ -334,7 +334,7 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 		// through dossiq's own completion route.
 		const config = page('TaskDetail').config
 		expect(config).not.toHaveProperty('lifecycleActions')
-		expect(config.verbEndpoints).toEqual({ complete: '/apps/dossiq/api/case-tasks/{id}/complete', cancel: '/apps/dossiq/api/case-tasks/{id}/cancel' })
+		expect(config.verbEndpoints).toEqual({ complete: '/apps/dossiq/api/case-tasks/{id}/complete' })
 	})
 
 	it('needs no dossiq widget for the waiting case or the case card', () => {
