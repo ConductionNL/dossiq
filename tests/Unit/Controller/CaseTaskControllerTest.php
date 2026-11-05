@@ -39,7 +39,6 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
 use OCP\AppFramework\Http;
-use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -135,104 +134,8 @@ class CaseTaskControllerTest extends TestCase {
 			caseAccess: $this->guard,
 			userSession: $this->userSession,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
-			l10n: $this->l10n(),
 		);
 	}//end controller()
-
-	/**
-	 * An IL10N that fills the placeholders and translates nothing.
-	 *
-	 * @return IL10N The translator.
-	 */
-	private function l10n(): IL10N {
-		$l10n = $this->createMock(originalClassName: IL10N::class);
-		$l10n->method('t')->willReturnCallback(
-			static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters)
-		);
-
-		return $l10n;
-	}//end l10n()
-
-	/**
-	 * A completion answers with a success notice naming the task.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
-	 */
-	public function testACompletionAnswersWithASuccessNotice(): void {
-		$this->completion->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7', 'title' => 'Documenten beoordelen']);
-		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->completion->method('complete')->willReturn(['completed' => true, 'task' => 'task-1', 'case' => 'case-7', 'state' => 'completed', 'isTerminal' => true]);
-
-		$body = $this->controller()->complete(taskId: 'task-1')->getData();
-
-		$this->assertTrue($body['completed']);
-		$this->assertSame(expected: 'success', actual: $body['notice']['variant']);
-		$this->assertSame(expected: 'status', actual: $body['notice']['role']);
-		$this->assertSame(expected: 'Task Documenten beoordelen completed.', actual: $body['notice']['title']);
-	}//end testACompletionAnswersWithASuccessNotice()
-
-	/**
-	 * A cancel the engine refuses is a 409 whose notice carries the engine's reason.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
-	 */
-	public function testARefusedCancelAnswersWithTheEnginesReasonInANotice(): void {
-		$this->completion->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7', 'title' => 'Documenten beoordelen']);
-		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->completion->method('cancel')->willThrowException(
-			new RuntimeException('cancel_refused:Only the requester or an administrator may cancel this task.')
-		);
-
-		$response = $this->controller()->cancel(taskId: 'task-1');
-		$body = $response->getData();
-
-		$this->assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
-		$this->assertSame(expected: 'cancel_refused', actual: $body['error']);
-		$this->assertSame(expected: 'error', actual: $body['notice']['variant']);
-		$this->assertSame(expected: 'alert', actual: $body['notice']['role']);
-		$this->assertSame(expected: 'Cancelling refused for Documenten beoordelen:', actual: $body['notice']['title']);
-		$this->assertSame(expected: 'Only the requester or an administrator may cancel this task.', actual: $body['notice']['text']);
-	}//end testARefusedCancelAnswersWithTheEnginesReasonInANotice()
-
-	/**
-	 * Cancel takes the write guard on the task's own case before the engine is asked.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
-	 */
-	public function testCancelIsRefusedWithoutMutationAccess(): void {
-		$this->completion->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
-		$this->guard->method('hasCaseMutationAccess')->with('case-7')->willReturn(false);
-		$this->completion->expects($this->never())->method('cancel');
-
-		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $this->controller()->cancel(taskId: 'task-1')->getStatus());
-	}//end testCancelIsRefusedWithoutMutationAccess()
-
-	/**
-	 * An accepted cancel passes the reason on and answers what happened.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
-	 */
-	public function testAnAcceptedCancelPassesTheReason(): void {
-		$this->params['reason'] = 'Dubbel aangemaakt';
-		$this->completion->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
-		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->completion->expects($this->once())->method('cancel')
-			->with('task-1', 'Dubbel aangemaakt', 'behandelaar')
-			->willReturn(['cancelled' => true, 'task' => 'task-1']);
-
-		$response = $this->controller()->cancel(taskId: 'task-1');
-
-		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
-		$this->assertSame(expected: ['cancelled' => true, 'task' => 'task-1'], actual: $response->getData());
-	}//end testAnAcceptedCancelPassesTheReason()
 
 	/**
 	 * The engine is asked what it can do, and the answer is passed on whole.

@@ -52,6 +52,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
 use OCA\Dossiq\Service\Relation\CaseRelationLabels;
+use OCA\Dossiq\Service\Relation\SubjectLinkRule;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 
 /**
@@ -67,13 +68,6 @@ class CaseRelationService {
 	 * @var array<int, string>
 	 */
 	public const RELATION_TYPES = ['vervolg', 'subject', 'bijdrage', 'samenhang', 'waitsOn'];
-
-	/**
-	 * How far up a subject chain is walked when looking for a loop.
-	 *
-	 * @var int
-	 */
-	private const SUBJECT_CHAIN_LIMIT = 50;
 
 	/**
 	 * A case waits on another case, and that other case blocks it.
@@ -107,12 +101,14 @@ class CaseRelationService {
 	 * @param CaseRelationCodec $codec Relation-list encoding and pair operations.
 	 * @param CaseHierarchyOverlapGuard $hierarchyGuard Hoofdzaak/deelzaak overlap detection.
 	 * @param CaseRelationLabels $labels What each link is called from each side.
+	 * @param SubjectLinkRule $subjectRule A case hangs as the subject under one case only, without a loop.
 	 */
 	public function __construct(
 		private readonly CaseRelationStore $store,
 		private readonly CaseRelationCodec $codec,
 		private readonly CaseHierarchyOverlapGuard $hierarchyGuard,
 		private readonly CaseRelationLabels $labels,
+		private readonly SubjectLinkRule $subjectRule,
 	) {
 	}//end __construct()
 
@@ -307,112 +303,11 @@ class CaseRelationService {
 		}
 
 		if ($link['type'] === 'subject') {
-			return $this->refuseSubjectLink(pair: $pair, link: $link);
+			return $this->subjectRule->refusal(pair: $pair, link: $link);
 		}
 
 		return null;
 	}//end refuseLink()
-
-	/**
-	 * Why the target may not hang as the subject of the origin, or null.
-	 *
-	 * A case hangs as the subject of one case only, and a subject chain may
-	 * not loop back: the origin may not itself hang, directly or further up,
-	 * under the target.
-	 *
-	 * @param array{origin: array<string, mixed>, target: array<string, mixed>} $pair The two cases.
-	 * @param array{from: string, to: string, type: string}                     $link The link.
-	 *
-	 * @return array{ok: bool, reason: string, target: string, other: string}|null The refusal.
-	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
-	 */
-	private function refuseSubjectLink(array $pair, array $link): ?array {
-		$holder = $this->subjectHolderOf(caseId: $link['to']);
-		if ($holder !== null && $this->idOf(case: $holder) !== $link['from']) {
-			return [
-				'ok' => false,
-				'reason' => 'subject_taken',
-				'target' => $this->identifierOf(case: $pair['target']),
-				'other' => $this->identifierOf(case: $holder),
-			];
-		}
-
-		$seen    = [$link['from']];
-		$current = $this->subjectHolderOf(caseId: $link['from']);
-		while ($current !== null && count($seen) < self::SUBJECT_CHAIN_LIMIT) {
-			$currentId = $this->idOf(case: $current);
-			if ($currentId === $link['to']) {
-				return [
-					'ok' => false,
-					'reason' => 'subject_cycle',
-					'target' => $this->identifierOf(case: $pair['target']),
-					'other' => $this->identifierOf(case: $pair['origin']),
-				];
-			}
-
-			if (in_array($currentId, $seen, true) === true) {
-				break;
-			}
-
-			$seen[]  = $currentId;
-			$current = $this->subjectHolderOf(caseId: $currentId);
-		}
-
-		return null;
-	}//end refuseSubjectLink()
-
-	/**
-	 * The case that holds this case as its subject, or null.
-	 *
-	 * @param string $caseId The case.
-	 *
-	 * @return array<string, mixed>|null The holding case.
-	 */
-	private function subjectHolderOf(string $caseId): ?array {
-		foreach ($this->store->relationRows(caseUuid: $caseId, incoming: true) as $row) {
-			$rowId = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			if ($rowId === '' || $rowId === $caseId) {
-				continue;
-			}
-
-			$holder = $this->store->fetchCase(caseUuid: $rowId);
-			if ($holder !== null && $this->holdsLink(holder: $holder, edge: ['caseId' => $caseId, 'type' => 'subject']) === true) {
-				return $holder;
-			}
-		}
-
-		return null;
-	}//end subjectHolderOf()
-
-	/**
-	 * The uuid of a case row.
-	 *
-	 * @param array<string, mixed> $case The case.
-	 *
-	 * @return string
-	 */
-	private function idOf(array $case): string {
-		return (string)($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));
-	}//end idOf()
-
-	/**
-	 * The number a handler knows a case by, else its title, else its uuid.
-	 *
-	 * @param array<string, mixed> $case The case.
-	 *
-	 * @return string
-	 */
-	private function identifierOf(array $case): string {
-		foreach (['identifier', 'title'] as $field) {
-			$value = trim((string)($case[$field] ?? ''));
-			if ($value !== '') {
-				return $value;
-			}
-		}
-
-		return $this->idOf(case: $case);
-	}//end identifierOf()
 
 	/**
 	 * Write a link once, on the case that declared it.

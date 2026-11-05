@@ -30,14 +30,13 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Notice\ActionNotice;
+use OCA\Dossiq\Service\Notice\CaseActNotices;
 use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\CaseShareList;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -56,7 +55,7 @@ class CaseShareController extends Controller {
 	 * @param CaseShareList   $shares      The share rows.
 	 * @param CaseLinkShares  $linkShares  Whether a link is the case's, and revokes it.
 	 * @param IUserSession    $userSession The caller.
-	 * @param IL10N           $l10n        Translates the notice.
+	 * @param CaseActNotices  $notices     The refusal notice.
 	 *
 	 * @return void
 	 */
@@ -66,7 +65,7 @@ class CaseShareController extends Controller {
 		private readonly CaseShareList $shares,
 		private readonly CaseLinkShares $linkShares,
 		private readonly IUserSession $userSession,
-		private readonly IL10N $l10n,
+		private readonly CaseActNotices $notices,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -122,10 +121,7 @@ class CaseShareController extends Controller {
 		}
 
 		if ($this->linkShares->revokeLink(linkId: $linkId, userId: $user->getUID()) === false) {
-			$notice = ActionNotice::error(
-				title: $this->l10n->t('Revoking refused by OpenRegister:'),
-				text: $this->l10n->t('a link is revoked by the colleague who created it.')
-			);
+			$notice = $this->notices->revokeRefused();
 
 			return new JSONResponse(
 				['message' => $notice['title'] . ' ' . $notice['text'], 'error' => 'revoke_refused', 'notice' => $notice],

@@ -601,7 +601,7 @@ $extra = [
     ['name' => 'inspect#availability', 'url' => '/api/inspect/availability', 'verb' => 'GET'],
     ['name' => 'caseTask#complete',     'url' => '/api/case-tasks/{taskId}/complete',    'verb' => 'POST'],
     ['name' => 'caseTask#claim',        'url' => '/api/case-tasks/{taskId}/claim',       'verb' => 'POST'],
-    ['name' => 'caseTask#cancel',       'url' => '/api/case-tasks/{taskId}/cancel',      'verb' => 'POST'],
+    ['name' => 'caseTaskCancel#cancel', 'url' => '/api/case-tasks/{taskId}/cancel',      'verb' => 'POST'],
     ['name' => 'caseTask#attach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments', 'verb' => 'POST'],
     ['name' => 'caseTask#detach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments/{fileId}', 'verb' => 'DELETE'],
 

@@ -21,4 +21,4 @@ checked, and no endpoint listed the shares of a case.
 
 ## Scope
 
-Generic, named by what it does. The notice builder (`ActionNotice`) is shared by every endpoint that answers one.
+Generic, named by what it does. One notice builder (`CaseActNotices`) serves every endpoint that answers one.

@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseShareController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Notice\CaseActNotices;
 use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\CaseShareList;
 use OCP\AppFramework\Http;
@@ -76,7 +77,7 @@ class CaseShareControllerTest extends TestCase {
 			shares: new CaseShareList(linkShares: $this->linkShares, l10n: $l10n),
 			linkShares: $this->linkShares,
 			userSession: $session,
-			l10n: $l10n,
+			notices: new CaseActNotices(l10n: $l10n),
 		);
 	}//end controller()
 
