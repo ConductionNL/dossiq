@@ -38,7 +38,7 @@
 				{{ loading ? t('dossiq', 'Reloading…') : t('dossiq', 'Reload') }}
 			</NcButton>
 			<NcButton variant="secondary" @click="exportCsv">
-				{{ t('dossiq', 'Export CSV') }}
+				{{ t('dossiq', 'Download CSV') }}
 			</NcButton>
 		</div>
 		<table v-if="messages.length" class="stuf-audit-log__table" data-testid="stuf-audit-log-table">

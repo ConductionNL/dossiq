@@ -59,7 +59,7 @@
 
 				<!-- Import / Export -->
 				<NcButton type="tertiary" @click="exportWorkflow">
-					{{ t('dossiq', 'Export') }}
+					{{ t('dossiq', 'Download') }}
 				</NcButton>
 				<NcButton type="tertiary" @click="triggerImport">
 					{{ t('dossiq', 'Import') }}
