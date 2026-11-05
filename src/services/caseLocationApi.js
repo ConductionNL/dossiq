@@ -37,10 +37,13 @@ export function parcelOf(result) {
 }
 
 /**
- * The `case-location` record for an address chosen from the PDOK search.
+ * The `case-location` record for an address chosen from the PDOK search, or
+ * typed in while the search does not answer. A chosen address carries its BAG
+ * address designation, so it is saved as `bag` and the BAG check applies; a
+ * typed one has none and is saved as `free`.
  *
  * @param {string} caseId The case the location belongs to.
- * @param {{result: object, coordinates: object|null, address: string}} chosen What the address search (CnAddressSearch) emitted.
+ * @param {{result: object|null, coordinates: object|null, address: string, manual?: object}} chosen What the address search (CnAddressSearch) emitted.
  * @return {object} The record to save.
  * @spec openspec/specs/case-dashboard-view/spec.md
  */
@@ -56,7 +59,7 @@ export function caseLocationRecord(caseId, chosen) {
 		longitude: Number.isFinite(coordinates.lng) ? coordinates.lng : null,
 		addressDesignationId: result.nummeraanduiding_id || null,
 		parcelId: parcel ? parcel.label : null,
-		source: 'pdok',
+		source: result.nummeraanduiding_id ? 'bag' : 'free',
 	}
 }
 

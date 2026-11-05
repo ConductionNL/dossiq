@@ -5,8 +5,9 @@
   Adding a location to a case (board DqZaakLocatie).
 
   The address comes from the PDOK Locatieserver, so only a BAG address can be
-  saved: a typed string has no address designation and would put a pin
-  nowhere a later lookup can find. The map shows the chosen address with the
+  saved while the search answers. When the Locatieserver does not answer, the
+  search turns into fields to type the address in, and that address is saved
+  as a manual one (no BAG check, no pin) so the case can go on. The map shows the chosen address with the
   map layers the organisation configured; the BAG and the cadastre/WOZ cards
   show what those registers say about it, read through dossiq's own BRK and
   WOZ adapters. Saving writes one `case-location` on the case.
@@ -24,6 +25,9 @@
 		<div class="case-location-dialog">
 			<CnAddressSearch
 				:inputLabel="t('dossiq', 'Search address')"
+				manualFallback
+				:unavailableTitle="t('dossiq', 'Address search is not available right now')"
+				:unavailableText="t('dossiq', 'The link with the PDOK Locatieserver does not answer. Type the address yourself; the BAG details follow later.')"
 				data-testid="case-location-search"
 				@select="onSelect" />
 			<p class="case-location-dialog__hint">
