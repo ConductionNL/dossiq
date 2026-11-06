@@ -567,6 +567,7 @@ describe('the tabs', () => {
 		added.push('case-summary')
 		added.push('case-grant-decisions-card')
 		added.push('case-payment-schedule')
+		added.push('case-overview-sections')
 		expect(others(simple)).toEqual(others(original))
 		expect(find(simple, 'case-banner-stack')).toEqual({ ...find(original, 'case-banner-stack'), title: 'Status', _note: expect.any(String) })
 		// Its attention strip asks the reason behind one button, with the board's hint.
