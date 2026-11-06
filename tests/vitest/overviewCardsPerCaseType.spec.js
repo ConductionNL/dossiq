@@ -58,9 +58,10 @@ describe('overview cards per case type', () => {
 	})
 
 	it('keeps the domain cards on their own conditions', () => {
-		for (const id of overview.filter((candidate) => !GENERIC.includes(candidate))) {
+		for (const id of overview.filter((candidate) => !GENERIC.includes(candidate) && candidate !== 'case-overview-sections')) {
 			expect(JSON.stringify(widget(id).visibleWhen), id).toContain('@context.caseType.category')
 		}
+		expect(JSON.stringify(widget('case-overview-sections').visibleWhen)).toContain('@context.caseType.overviewSections')
 		expect(overview.slice(0, 3)).toEqual(['case-objection-grounds', 'case-objection-advice-card', 'case-summary'])
 	})
 
@@ -80,7 +81,7 @@ describe('overview cards per case type', () => {
 			expect(caseType.overviewCards).toBeUndefined()
 		}
 		const grant = packageCaseTypes('subsidie')[0]
-		expect(grant.overviewCards).toEqual(['case-grant-decisions-card', 'case-payment-schedule'])
+		expect(grant.overviewCards).toEqual(['case-overview-sections', 'case-grant-decisions-card', 'case-payment-schedule'])
 		for (const id of grant.overviewCards) {
 			expect(overview).toContain(id)
 		}

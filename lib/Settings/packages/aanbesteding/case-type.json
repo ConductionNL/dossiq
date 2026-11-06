@@ -19,6 +19,51 @@
     "sideCards": [
       "case-tile-deadline",
       "case-banner-stack"
+    ],
+    "overviewCards": [
+      "case-overview-sections",
+      "case-tender-bids"
+    ],
+    "overviewSections": [
+      {
+        "id": "procedure",
+        "title": "Procedure",
+        "columns": 2,
+        "rows": [
+          {
+            "label": "Procedure",
+            "field": "procedureSoort"
+          },
+          {
+            "label": "Geraamde waarde",
+            "field": "geraamdeWaarde"
+          },
+          {
+            "label": "Drempel",
+            "field": "drempel"
+          },
+          {
+            "label": "Percelen",
+            "field": "percelen"
+          },
+          {
+            "label": "Publicatie",
+            "field": "publicatie"
+          },
+          {
+            "label": "Gunningscriterium",
+            "field": "gunningscriterium"
+          },
+          {
+            "label": "Vragenronde",
+            "field": "vragenronde"
+          },
+          {
+            "label": "Sluiting",
+            "field": "sluiting"
+          }
+        ]
+      }
     ]
   },
   "statusTypes": [
