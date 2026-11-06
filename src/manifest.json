@@ -9107,7 +9107,7 @@
 								"name": "number",
 								"suffix": " d"
 							},
-							"footnote": "The darker, the longer a case stays in that phase.",
+							"footnote": "The darker, the longer a case stays in the phase. A phase adds up the days of all its statuses. A status without a phase stands under its own name. End statuses such as Closed form no column. Only finished stays count: an open case that went from Received to Assessment counts its two days in Received and nothing yet for Assessment.",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/process-mining",
 								"params": {
