@@ -5733,6 +5733,7 @@ OC.L10N.register(
         "no running cases": "geen lopende zaken",
         "No samenwerkverzoeken linked": "Geen samenwerkverzoeken gekoppeld",
         "No samenwerkverzoeken.": "Geen samenwerkverzoeken.",
+        "No schema: the links point to no register": "Geen schema: de koppelingen verwijzen niet naar een register",
         "No secrecy": "Geen geheimhouding",
         "No sender is wired, so the requester was not told.": "Er is geen verzender ingesteld, dus de verzoeker heeft geen bericht gekregen.",
         "No signatory is known.": "Er is geen ondertekenaar bekend.",

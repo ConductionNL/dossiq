@@ -5733,6 +5733,7 @@ OC.L10N.register(
         "no running cases": "no running cases",
         "No samenwerkverzoeken linked": "No samenwerkverzoeken linked",
         "No samenwerkverzoeken.": "No samenwerkverzoeken.",
+        "No schema: the links point to no register": "No schema: the links point to no register",
         "No secrecy": "No secrecy",
         "No sender is wired, so the requester was not told.": "No sender is wired, so the requester was not told.",
         "No signatory is known.": "No signatory is known.",
