@@ -109,6 +109,7 @@ import LinkProgrammeDialog from './dialogs/LinkProgrammeDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import NoticeOfDefaultDialog from './dialogs/NoticeOfDefaultDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
+import RecordStepsDialog from './dialogs/RecordStepsDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
 import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
@@ -134,6 +135,7 @@ import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 // (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
 import CaseConversationsPanel from './views/cases/components/CaseConversationsPanel.vue'
+import CaseOverviewSections from './views/cases/components/CaseOverviewSections.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 // The AVG panel on a data subject request case
@@ -643,6 +645,15 @@ const registry = {
 		_note: "Writes one portaalBericht from the handler to the applicant's portal inbox. Opened by the CaseDetail `message-applicant` header action (visible only on a case with a portalSubject) and by Reply on a resident's message in the timeline tab, which closes that message's follow-up on `sent`. recipientRef is the case's portalSubject, never a user id: the inbox is scoped on it. caseId may arrive as the unresolved `@objectId` token and the route answers instead, as for BerichtenboxComposeDialog.",
 	},
 
+	// --- A record written through steps, a CaseDetail header action. ---
+	// @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
+	RecordStepsDialog: {
+		kind: 'modal',
+		component: RecordStepsDialog,
+		propsSchema: {},
+		_note: 'The steps, fields, prefill and follow-up task come from the action, so a procedure is manifest config. Handhaving starten (DqHandhaving) is the first.',
+	},
+
 	// --- Generate document, the CaseDetail header action (documents-on-the-case). ---
 	// @spec openspec/specs/beschikking-generatie/spec.md
 	GenerateDocumentDialog: {
@@ -712,6 +723,16 @@ const registry = {
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	// @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	// @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md
+	'case-overview-sections': {
+		// @custom-widget-ratchet exclude reads a case type's own card list: the card set differs per case type, which a fixed manifest widget cannot declare
+		kind: 'widget',
+		chrome: 'bare',
+		component: CaseOverviewSections,
+		...PANEL_WIDGET_META,
+		_note: 'The cards a case type declares in overviewSections, on the Overview tab.',
+	},
+
 	'case-conversations-pane': {
 		// @custom-widget-ratchet exclude the surface is an ACT, not a collection of OpenRegister objects: it starts a Talk room, declares the case major and opens the one channel that declaration made, and a built-in object-list takes a register and a schema and offers no button. The records it lists live on the case itself as `case.conversations`, which no widget type can read as a collection either. Deleted the day the library ships a widget type that posts to an app endpoint and renders the array a field holds
 		kind: 'widget',

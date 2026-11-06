@@ -34,11 +34,11 @@ describe('the parts of a case type', () => {
 		expect(appended(widgetId).content).toMatchObject({ register: 'dossiq', schema, filter: { caseType: '@objectId' } })
 	})
 
-	it('places results, document and decision types under statuses, roles under rights', () => {
+	it('places results, document, decision and role types under statuses, as DqZaaktypeStatussen draws them', () => {
 		const tabs = appended('case-type-panels').content.tabs
 		const holds = (label) => tabs.find((tab) => tab.label === label).widgetIds
-		expect(holds('Statuses')).toEqual(['case-type-statuses-editor', 'case-type-results', 'case-type-document-types', 'case-type-decision-types', 'case-type-blueprint'])
-		expect(holds('Rights')).toEqual(['case-type-rights', 'case-type-roles'])
+		expect(holds('Statuses')).toEqual(['case-type-statuses-editor', 'case-type-results', 'case-type-document-types', 'case-type-decision-types', 'case-type-roles', 'case-type-blueprint'])
+		expect(holds('Rights')).toEqual(['case-type-rights'])
 		expect(holds('Phases and tasks')).not.toEqual(expect.arrayContaining(['case-type-document-types']))
 	})
 

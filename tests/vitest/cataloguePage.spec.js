@@ -34,13 +34,13 @@ describe('the Object types page', () => {
 			url: '/apps/dossiq/api/catalogue/object-types',
 			responsePath: 'results',
 		})
-		expect(objectTypes.content.columns.map((column) => column.key)).toEqual(['title', 'properties', 'views', 'caseTypes'])
+		expect(objectTypes.content.columns.map((column) => column.key)).toEqual(['title', 'schemaName', 'views', 'caseTypes'])
 		expect(objectTypes.content.columns.find((column) => column.key === 'caseTypes')).toMatchObject({ label: 'Used in', formatter: 'caseTypeCount' })
 		expect(objectTypes.content.emptyText).toBe('Object types appear here once cases link objects.')
 	})
 
-	it('pages the object types four at a time, as the board\'s pager does', () => {
-		expect(widget('catalogue-object-types').content.pageSize).toBe(4)
+	it('pages the object types five at a time, as the board\'s pager does', () => {
+		expect(widget('catalogue-object-types').content.pageSize).toBe(5)
 	})
 
 	it('heads the page: Download, then New object type as the primary action', () => {
@@ -54,6 +54,11 @@ describe('the Object types page', () => {
 	it('writes the schema and its object count under each type, as the server words it', () => {
 		const title = widget('catalogue-object-types').content.columns.find((column) => column.key === 'title')
 		expect(title.secondary).toBe('{schemaLine}')
+	})
+
+	it('writes the schema with its property count under it', () => {
+		const schema = widget('catalogue-object-types').content.columns.find((column) => column.key === 'schemaName')
+		expect(schema).toMatchObject({ label: 'Schema', secondary: '{propertyLine}' })
 	})
 
 	it('offers Add object type in the object types card, opening OpenRegister\'s schemas', () => {
