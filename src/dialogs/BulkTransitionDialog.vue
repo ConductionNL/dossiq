@@ -27,8 +27,9 @@
 	@spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="title"
+		:eyebrow="eyebrow"
 		data-testid="bulk-dialog"
 		size="large"
 		@closing="onClose">
@@ -48,19 +49,68 @@
 						:scope="scope"
 						@update:scope="scope = $event" />
 
-					<NcSelect
-						v-if="isTransition"
-						v-model="selectedTransition"
-						:options="transitionOptions"
-						:placeholder="t('dossiq', 'Pick a status transition')"
-						:inputLabel="t('dossiq', 'New status')"
-						label="label"
-						trackBy="id" />
+					<div class="bulk-transition-dialog__fields">
+						<div v-if="isTransition" class="bulk-transition-dialog__field">
+							<NcSelect
+								v-model="selectedTransition"
+								:options="transitionOptions"
+								:placeholder="t('dossiq', 'Pick a status transition')"
+								:inputLabel="t('dossiq', 'New status')"
+								label="label"
+								trackBy="id" />
+							<span class="bulk-transition-dialog__help">
+								{{ t('dossiq', 'Only statuses every chosen case may get from its current status.') }}
+							</span>
+						</div>
+						<div class="bulk-transition-dialog__field">
+							<NcTextField
+								v-model="reason"
+								data-testid="bulk-reason"
+								:label="t('dossiq', 'Reason')" />
+							<span class="bulk-transition-dialog__help">
+								{{ t('dossiq', 'Goes into the history of every case.') }}
+							</span>
+						</div>
+					</div>
 
-					<NcTextArea
-						v-model="reason"
-						data-testid="bulk-reason"
-						:label="t('dossiq', 'Reason, written onto every case')" />
+					<div
+v-if="showsChanges"
+						class="bulk-transition-dialog__changes"
+						data-testid="bulk-changes">
+						<strong>{{ changesTitle }}</strong>
+						<table class="bulk-transition-dialog__table">
+							<thead>
+								<tr>
+									<th scope="col">
+										{{ t('dossiq', 'Case') }}
+									</th>
+									<th scope="col">
+										{{ t('dossiq', 'Now') }}
+									</th>
+									<th scope="col">
+										{{ t('dossiq', 'Becomes') }}
+									</th>
+									<th scope="col">
+										{{ t('dossiq', 'Term') }}
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="row in changeRows" :key="row.id" data-testid="bulk-change-row">
+									<td>
+										<strong>{{ row.title }}</strong>
+										<span class="bulk-transition-dialog__help">{{ row.identifier }}</span>
+									</td>
+									<td>{{ row.status }}</td>
+									<td>{{ becomes }}</td>
+									<td>{{ row.deadline }}</td>
+								</tr>
+							</tbody>
+						</table>
+						<span class="bulk-transition-dialog__help">
+							{{ t('dossiq', 'The term does not move along: the final date is on the case and follows the statutory term, not the status.') }}
+						</span>
+					</div>
 
 					<NcTextField
 						v-if="mode === 'suspend'"
@@ -91,6 +141,9 @@
 					</NcNoteCard>
 
 					<div class="bulk-transition-dialog__actions">
+						<NcButton :disabled="starting" @click="onClose">
+							{{ t('dossiq', 'Cancel') }}
+						</NcButton>
 						<NcButton
 							variant="primary"
 							data-testid="bulk-rehearse"
@@ -98,8 +151,25 @@
 							@click="rehearse">
 							{{ t('dossiq', 'See what would happen') }}
 						</NcButton>
-						<NcButton :disabled="starting" @click="onClose">
-							{{ t('dossiq', 'Cancel') }}
+					</div>
+				</template>
+
+				<template v-else-if="allChanged">
+					<NcNoteCard type="success" data-testid="bulk-result">
+						<strong>{{ resultTitle }}</strong>
+						<p v-if="selectedTransition">
+							{{ t('dossiq', 'The cases now stand at {status}. Each case page shows the new status and the reason in the history.', { status: selectedTransition.label }) }}
+						</p>
+					</NcNoteCard>
+					<ul class="bulk-transition-dialog__result">
+						<li v-for="row in changeRows" :key="row.id" data-testid="bulk-result-row">
+							<span>{{ row.title }}</span>
+							<span class="bulk-transition-dialog__done">{{ t('dossiq', 'Succeeded') }}</span>
+						</li>
+					</ul>
+					<div class="bulk-transition-dialog__actions">
+						<NcButton data-testid="bulk-close" @click="onClose">
+							{{ t('dossiq', 'Close') }}
 						</NcButton>
 					</div>
 				</template>
@@ -120,20 +190,18 @@
 				</template>
 			</template>
 		</div>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
-import { CnBulkJobProgress, CnSelectionScope } from '@conduction/nextcloud-vue'
+import { CnBulkJobProgress, CnDialog, CnSelectionScope } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
-import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import {
 	ACTION_LIFECYCLE,
@@ -142,6 +210,8 @@ import {
 	readRefusal,
 } from '../services/bulkJobApi.js'
 import {
+	changeRow,
+	commonTransitions,
 	isLifecycleGesture,
 	lifecycleParameters,
 	transitionParameters,
@@ -153,13 +223,12 @@ export default {
 
 	components: {
 		CnBulkJobProgress,
+		CnDialog,
 		CnSelectionScope,
 		NcButton,
-		NcDialog,
 		NcLoadingIcon,
 		NcNoteCard,
 		NcSelect,
-		NcTextArea,
 		NcTextField,
 	},
 
@@ -206,6 +275,7 @@ export default {
 			loadingTransitions: true,
 			transitionsError: null,
 			transitions: [],
+			changeRows: [],
 			selectedTransition: null,
 			reason: '',
 			days: '14',
@@ -221,10 +291,7 @@ export default {
 
 	computed: {
 		/**
-		 * NcSelect options built from the available transitions of the first
-		 * selected case. Columns are homogeneous by design: the same status
-		 * name means the same available transitions, so one case represents
-		 * the column.
+		 * NcSelect options: the transitions every selected case offers.
 		 *
 		 * @return {Array<{id: string, label: string}>} The options.
 		 *
@@ -270,7 +337,74 @@ export default {
 				return t('dossiq', 'Extend the term of {count} cases', { count })
 			}
 
-			return t('dossiq', 'Change the status of {count} cases', { count })
+			return t('dossiq', 'Other status')
+		},
+
+		/**
+		 * The line above a transition's title.
+		 *
+		 * @return {string} The eyebrow, empty for the other gestures.
+		 *
+		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 */
+		eyebrow() {
+			return this.isTransition
+				? t('dossiq', '{count} cases selected · see first what changes', { count: this.caseIds.length })
+				: ''
+		},
+
+		/**
+		 * Whether the table of changes speaks for the whole act: a transition
+		 * on the selected rows, not on a result wider than the page.
+		 *
+		 * @return {boolean} Whether to show it.
+		 *
+		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 */
+		showsChanges() {
+			return this.isTransition && this.scope === SCOPE_PAGE && this.changeRows.length > 0
+		},
+
+		/**
+		 * @return {string} The heading over the table of changes.
+		 *
+		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 */
+		changesTitle() {
+			return t('dossiq', 'What changes: {count} cases', { count: this.changeRows.length })
+		},
+
+		/**
+		 * @return {string} The status the cases get, or a dash until one is picked.
+		 *
+		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 */
+		becomes() {
+			return this.selectedTransition ? this.selectedTransition.label : '—'
+		},
+
+		/**
+		 * Whether the job finished with every case changed.
+		 *
+		 * @return {boolean} True for the result panel.
+		 *
+		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-result-names-every-changed-case
+		 */
+		allChanged() {
+			const job = this.job
+			if (!this.showsChanges || !job || job.state !== 'completed') {
+				return false
+			}
+			return (job.counts?.applied ?? 0) === job.total
+		},
+
+		/**
+		 * @return {string} The heading of the result panel.
+		 *
+		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-result-names-every-changed-case
+		 */
+		resultTitle() {
+			return t('dossiq', '{applied} of {total} cases changed', { applied: this.job.counts.applied, total: this.job.total })
 		},
 
 		/**
@@ -319,37 +453,53 @@ export default {
 		t,
 
 		/**
-		 * Load the available transitions of the first selected case, which is
-		 * what fills the picker.
+		 * Load what every selected case offers, which fills the picker, and
+		 * the case itself, which fills the table of changes. Both are reads.
 		 *
 		 * @return {Promise<void>} Resolves when the picker is filled.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
 		 */
 		async loadTransitions() {
 			this.loadingTransitions = true
 			this.transitionsError = null
 
-			const caseId = this.caseIds[0]
-			if (!caseId) {
+			if (this.caseIds.length === 0) {
 				this.transitionsError = t('dossiq', 'No cases are selected.')
 				this.loadingTransitions = false
 				return
 			}
 
 			try {
-				const { data } = await axios.get(
-					generateUrl(
-						'/apps/dossiq/api/case/'
-							+ encodeURIComponent(caseId)
-							+ '/available-transitions',
-					),
-				)
-				this.transitions = data?.transitions || []
+				const offers = await Promise.all(this.caseIds.map((id) => this.readCase(id)))
+				this.transitions = commonTransitions(offers.map((offer) => offer.transitions))
+				this.changeRows = offers.map((offer) => offer.row)
 			} catch (err) {
 				this.transitionsError = err?.response?.data?.error || err.message
 			} finally {
 				this.loadingTransitions = false
+			}
+		},
+
+		/**
+		 * Read one case and what it offers.
+		 *
+		 * @param {string} id The case id.
+		 *
+		 * @return {Promise<{transitions: Array<object>, row: object}>} The offer and its table row.
+		 *
+		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 */
+		async readCase(id) {
+			const safeId = encodeURIComponent(id)
+			const [offer, object] = await Promise.all([
+				axios.get(generateUrl('/apps/dossiq/api/case/' + safeId + '/available-transitions')),
+				axios.get(generateUrl('/apps/openregister/api/objects/dossiq/case/' + safeId)),
+			])
+
+			return {
+				transitions: offer.data?.transitions || [],
+				row: changeRow(id, object.data, offer.data?.current),
 			}
 		},
 
@@ -493,9 +643,72 @@ export default {
 	gap: 4px;
 }
 
+.bulk-transition-dialog__fields {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 14px 16px;
+}
+
+.bulk-transition-dialog__help {
+	display: block;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
+.bulk-transition-dialog__changes {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.bulk-transition-dialog__table {
+	width: 100%;
+	border: 1px solid var(--color-border);
+	border-collapse: separate;
+	border-spacing: 0;
+	border-radius: 8px;
+}
+
+.bulk-transition-dialog__table th,
+.bulk-transition-dialog__table td {
+	padding: 9px 10px;
+	border-bottom: 1px solid var(--color-border);
+	text-align: start;
+	vertical-align: top;
+}
+
+.bulk-transition-dialog__table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.bulk-transition-dialog__result {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.bulk-transition-dialog__result li {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 10px;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+}
+
+.bulk-transition-dialog__done {
+	color: var(--color-success-text);
+	font-size: 12px;
+	font-weight: 600;
+}
+
 .bulk-transition-dialog__actions {
 	display: flex;
 	flex-wrap: wrap;
+	justify-content: flex-end;
 	gap: 8px;
 }
 
