@@ -9,7 +9,7 @@
  * seeded yet" beside them (round-4 cloud check). The real component is
  * mounted against an empty ledger and each answer the count can give.
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
@@ -40,6 +40,7 @@ vi.mock('@nextcloud/dialogs', () => ({
 }))
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: { name: 'NcButton', render: () => null },
+	NcSelect: { name: 'NcSelect', render: () => null },
 }))
 
 const { default: ShippedConfiguration } =

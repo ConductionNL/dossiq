@@ -131,4 +131,23 @@ class CaseEnricherTest extends TestCase {
 		$this->assertSame(expected: [null, null, null, null, null], actual: array_map(static fn (array $row): ?int => $row['_daysRemaining'], $rows));
 		$this->assertSame(expected: [false, false, false, false, false], actual: array_column($rows, '_isOpen'));
 	}//end testThroughputIsCountedForAClosedCase()
+
+	/**
+	 * The term a case had, start to deadline in days: the norm the
+	 * processing-time chart draws (DqDoorlooptijd "norm 28 dagen").
+	 *
+	 * @return void
+	 */
+	public function testNormDaysRunFromStartToDeadline(): void {
+		$rows = $this->enricher()->enrichCases(
+			cases: [
+				['id' => 'own', 'startDate' => '2026-03-02', 'endDate' => '2026-03-12', 'deadline' => '2026-03-30'],
+				['id' => 'from-type', 'startDate' => '2026-03-02', 'endDate' => '2026-03-12', 'caseType' => 'ct-1'],
+				['id' => 'none', 'startDate' => '2026-03-02', 'endDate' => '2026-03-12'],
+			],
+			caseTypes: [['id' => 'ct-1', 'processingDeadline' => 'P8W']],
+		);
+
+		$this->assertSame(expected: [28, 56, null], actual: array_column($rows, '_normDays'));
+	}//end testNormDaysRunFromStartToDeadline()
 }//end class

@@ -56,33 +56,29 @@
 				</div>
 
 				<div class="setting-row">
+					<NcSelect
+						v-model="draft.moment"
+						:inputLabel="t('dossiq', 'Moment')"
+						:options="momentOptions"
+						:reduce="(option) => option.value"
+						label="label" />
+				</div>
+
+				<div class="setting-row">
+					<NcSelect
+						v-model="draft.channel"
+						:inputLabel="t('dossiq', 'Channel')"
+						:options="channelOptions"
+						:reduce="(option) => option.value"
+						label="label" />
+				</div>
+
+				<div class="setting-row">
 					<label for="etpl-subject">{{ t('dossiq', 'Subject') }}</label>
 					<NcInputField
 						id="etpl-subject"
 						v-model="draft.subject"
 						@focus="activeField = 'subject'" />
-				</div>
-
-				<div class="setting-row">
-					<label for="etpl-body">{{ t('dossiq', 'Body') }}</label>
-					<NcTextArea
-						id="etpl-body"
-						v-model="draft.body"
-						rows="8"
-						@focus="activeField = 'body'" />
-				</div>
-
-				<!-- Live preview -->
-				<div class="setting-row">
-					<label>{{ t('dossiq', 'Preview') }}</label>
-					<!-- renderPreview() escapes &, < and > in the body and emits
-					     only its own fixed-class <span> and <br>, so no
-					     caller-supplied markup can reach the DOM. -->
-					<!-- eslint-disable vue/no-v-html -->
-					<div
-						class="email-template-admin__preview"
-						v-html="previewHtml" />
-					<!-- eslint-enable vue/no-v-html -->
 					<p
 						v-if="unresolved.length > 0"
 						class="email-template-admin__warning">
@@ -92,6 +88,23 @@
 							})
 						}}
 					</p>
+				</div>
+
+				<!-- The body is plain text with {{name}} variables: the editor
+				     previews it escaped, marks known and unknown variables and
+				     names the unknown ones under it. -->
+				<div class="setting-row" @focusin="activeField = 'body'">
+					<span>{{ t('dossiq', 'Body') }}</span>
+					<CnMarkdownEditor
+						v-model="draft.body"
+						mode="split"
+						variableSyntax="{{name}}"
+						plainText
+						:rows="8"
+						:ariaLabel="t('dossiq', 'Body')"
+						placeholder=""
+						:variables="variableList"
+						:unknownVariableText="t('dossiq', 'Unresolved variables: {names}')" />
 				</div>
 
 				<div class="email-template-admin__actions">
@@ -133,23 +146,22 @@
 </template>
 
 <script>
+import { CnMarkdownEditor } from '@conduction/nextcloud-vue'
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcInputField,
 	NcLoadingIcon,
 	NcNoteCard,
-	NcTextArea,
+	NcSelect,
 } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
-import {
-	collectUnresolved,
-	renderPreview,
-} from '../../../utils/emailTemplatePreview.js'
+import { collectUnresolved } from '../../../utils/emailTemplatePreview.js'
+import { MESSAGE_CHANNELS, MESSAGE_MOMENTS } from '../../../utils/messageDelivery.js'
 
 /**
  * Per-case-type email template CRUD with click-to-insert variables and a
- * live preview that highlights unresolved {{placeholders}} in red. No
+ * plain-text body editor that previews it and marks unresolved {{placeholders}}. No
  * compose/thread/queue components — display, compose and link come from the
  * email leaf + Nextcloud Mail.
  *
@@ -158,11 +170,12 @@ import {
 export default {
 	name: 'EmailTemplateAdmin',
 	components: {
+		CnMarkdownEditor,
 		NcButton,
 		NcInputField,
 		NcLoadingIcon,
 		NcNoteCard,
-		NcTextArea,
+		NcSelect,
 		Plus,
 	},
 
@@ -181,7 +194,7 @@ export default {
 			activeField: 'body',
 			templates: [],
 			variables: {},
-			draft: { id: null, name: '', subject: '', body: '' },
+			draft: { id: null, name: '', subject: '', body: '', moment: null, channel: null },
 		}
 	},
 
@@ -194,22 +207,49 @@ export default {
 			)
 		},
 
+		/**
+		 * The case events a message can go out on, translated.
+		 *
+		 * @return {Array<{value: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-messages-moment-channel/specs/case-types/spec.md
+		 */
+		momentOptions() {
+			return MESSAGE_MOMENTS.map((option) => ({ value: option.value, label: t('dossiq', option.label) }))
+		},
+
+		/**
+		 * The ways a message reaches the applicant, translated.
+		 *
+		 * @return {Array<{value: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-messages-moment-channel/specs/case-types/spec.md
+		 */
+		channelOptions() {
+			return MESSAGE_CHANNELS.map((option) => ({ value: option.value, label: t('dossiq', option.label) }))
+		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		flatVariableNames() {
 			return Object.values(this.variables).flat()
 		},
 
-		/** @spec openspec/specs/case-email-integration/spec.md */
+		/**
+		 * The subject's unresolved variables; the body editor names its own.
+		 *
+		 * @return {Array<string>} The names.
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		unresolved() {
-			return collectUnresolved(
-				`${this.draft.subject} ${this.draft.body}`,
-				this.flatVariableNames,
-			)
+			return collectUnresolved(this.draft.subject, this.flatVariableNames)
 		},
 
-		/** @spec openspec/specs/case-email-integration/spec.md */
-		previewHtml() {
-			return renderPreview(this.draft.body, this.flatVariableNames)
+		/**
+		 * The variables the body may use, each described by its group.
+		 *
+		 * @return {Array<{name: string, description: string}>} The variables.
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
+		variableList() {
+			return Object.entries(this.variables).flatMap(([group, names]) => names.map((name) => ({ name, description: this.groupLabel(group) })))
 		},
 
 		/** @spec openspec/specs/case-email-integration/spec.md */
@@ -298,7 +338,7 @@ export default {
 
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		startCreate() {
-			this.draft = { id: null, name: '', subject: '', body: '' }
+			this.draft = { id: null, name: '', subject: '', body: '', moment: null, channel: null }
 			this.editing = true
 			this.activeField = 'body'
 		},
@@ -313,6 +353,8 @@ export default {
 				name: tpl.name || '',
 				subject: tpl.subject || '',
 				body: tpl.body || '',
+				moment: tpl.moment || null,
+				channel: tpl.channel || null,
 			}
 			this.editing = true
 			this.activeField = 'body'
@@ -357,6 +399,8 @@ export default {
 						name: this.draft.name,
 						subject: this.draft.subject,
 						body: this.draft.body,
+						moment: this.draft.moment || null,
+						channel: this.draft.channel || null,
 					}),
 				})
 				this.editing = false
@@ -413,28 +457,6 @@ export default {
 	flex-direction: column;
 	gap: 4px;
 	margin-bottom: 12px;
-}
-
-.email-template-admin__preview {
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	padding: 12px;
-	min-height: 80px;
-	background: var(--color-main-background);
-}
-
-.email-template-admin__preview :deep(.etpl-var-bad) {
-	background: var(--color-error, #e9322d);
-	color: var(--color-primary-element-text, #fff);
-	border-radius: 3px;
-	padding: 0 2px;
-}
-
-.email-template-admin__preview :deep(.etpl-var-ok) {
-	background: var(--color-success, #2e7d32);
-	color: #fff;
-	border-radius: 3px;
-	padding: 0 2px;
 }
 
 .email-template-admin__warning {

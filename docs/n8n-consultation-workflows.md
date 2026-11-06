@@ -100,25 +100,20 @@ Cron-job die dagelijks per `adviesinstantie` de overdue-rate over de laatste 30 
 ### Stappen
 
 1. **Schedule trigger** — `n8n-nodes-base.scheduleTrigger`, daily at 08:00 (24 h interval).
-2. **GET** `/api/consultations/analytics?groupBy=adviesinstantieId&window=P30D` ⇒ `{bodies: [...]}` met `totalLast30Days`, `overdueLast30Days`, `avgDoorlooptijdDagen`, `avgDoorlooptijdDagenPrev30` per body.
-3. **Rule** (spec scenario "Consultation bottleneck detection") — when the 30-day overdue rate exceeds **20 %** the coordinator MUST be alerted.
+2. **GET** `/api/consultations/bottlenecks` ⇒ `{threshold, windowDays, bodies: [{adviceAuthority, total, late, lateShare, flagged}]}` over the last 30 days. dossiq computes the late share and the flag against the threshold set in Adviseringsbeheer (`consultation_bottleneck_threshold`, default 0.2).
+3. **Rule** — every body with `flagged: true` is alerted to the coordinators.
 4. **Output.** One `POST /api/notifications/send` per offending body with `recipientGroup: consultation-coordinators` en een gelokaliseerd bericht in de vorm: `"Welstandscommissie: 8 verlopen adviezen, gemiddelde doorlooptijd gestegen naar 25 dagen"`.
 
-### Analytics endpoint contract
+### Bottleneck endpoint contract
 
-`GET /api/consultations/analytics?groupBy=adviesinstantieId&window=P30D`
+`GET /api/consultations/bottlenecks` (administrators, `dossiq-coordinators`, the background service account)
 
 ```json
 {
+  "threshold": 0.2,
+  "windowDays": 30,
   "bodies": [
-    {
-      "adviesinstantie": { "id": "<uuid>", "naam": "Welstandscommissie" },
-      "totalLast30Days": 12,
-      "overdueLast30Days": 4,
-      "overdueRate": 0.33,
-      "avgDoorlooptijdDagen": 22.5,
-      "avgDoorlooptijdDagenPrev30": 11.0
-    }
+    { "adviceAuthority": "Welstandscommissie", "total": 12, "late": 4, "lateShare": 0.3333, "flagged": true }
   ]
 }
 ```
@@ -132,14 +127,14 @@ Cron-job die dagelijks per `adviesinstantie` de overdue-rate over de laatste 30 
 
 The service account behind the HTTP Basic credential needs:
 
-- Read access to `/api/consultations*` and `/api/consultations/analytics`.
+- To be dossiq's **background service account** (Beheerinstellingen, Systeem, Serviceaccount voor achtergrondtaken): the configured account, member of `dossiq-background-service`. As that account it sees every advice request on `/api/consultations/due-soon` and `/api/consultations/overdue` and may read `/api/consultations/bottlenecks`; any other account sees only requests on cases it may read, and is refused the bottleneck report unless it is an administrator or a coordinator.
 - Write access to `/api/consultations/{id}/audit`.
 - Write access to `/api/notifications/send`.
 
 ## Installatie
 
 1. Importeer de drie JSON-bestanden uit `n8n/` in n8n (Workflows → Import from File).
-2. Maak een credential **HTTP Basic Auth** met de service account die `n8n-procest` uid heeft, en koppel die aan alle Dossiq HTTP-nodes.
+2. Maak een credential **HTTP Basic Auth** met de achtergrondserviceaccount van dossiq (een app-wachtwoord van dat account), en koppel die aan alle Dossiq HTTP-nodes.
 3. Maak een credential **SMTP** met de uitgaande mailserver van de gemeente (TLS, poort 587).
 4. Stel de tijdzone in op `Europe/Amsterdam` (n8n → Settings → Timezone).
 5. Activeer de workflows. De cron-jobs draaien vanaf de eerstvolgende geplande tijd.
@@ -162,5 +157,5 @@ The service account behind the HTTP Basic credential needs:
 |----------|---------|-----------|
 | Geen mail verstuurd naar externe instantie | SMTP-credential ontbreekt of relay-IP geblokkeerd | Test SMTP-credential in n8n; voeg n8n-egress-IP toe aan SPF/relay van de gemeente. |
 | Dubbele T-5 waarschuwingen | `lastWarningAt` is leeg / niet teruggeschreven | Controleer dat de `notify` POST status 204 teruggeeft; werk het object alleen bij in Dossiq, niet in n8n. |
-| Bottleneck-melding blijft uit | Analytics-endpoint returned `403` | Service account credential is verlopen — genereer opnieuw en update de credential. |
+| Bottleneck-melding blijft uit | `/api/consultations/bottlenecks` geeft `403` | De credential is niet die van de achtergrondserviceaccount, of dat account zit niet meer in `dossiq-background-service`. |
 | Secure response link werkt niet | Token verlopen of consultation afgesloten | Coördinator opent de consultation en kiest **Token regenereren**, daarna stuurt Dossiq een nieuwe e-mail. |

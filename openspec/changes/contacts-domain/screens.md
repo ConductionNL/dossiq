@@ -1,11 +1,9 @@
 # Screens
 
-- DqContact https://identity.conduction.nl/screens/board?id=dossiq/DqContact
-- DqOrganisatie https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisatie
-- DqNieuweZaak https://identity.conduction.nl/screens/board?id=dossiq/DqNieuweZaak
-- DqContacten https://identity.conduction.nl/screens/board?id=dossiq/DqContacten
-- DqOrganisaties https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisaties
-- DqContacten https://identity.conduction.nl/screens/dossiq/DqContacten
-- DqContact https://identity.conduction.nl/screens/dossiq/DqContact
-- DqOrganisaties https://identity.conduction.nl/screens/dossiq/DqOrganisaties
-- DqOrganisatie https://identity.conduction.nl/screens/dossiq/DqOrganisatie
+- dossiq/DqContact contact https://identity.conduction.nl/screens/board?id=dossiq/DqContact
+- dossiq/DqOrganisatie organisatie https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisatie
+- dossiq/DqNieuweZaak nieuwe zaak, dialoog https://identity.conduction.nl/screens/board?id=dossiq/DqNieuweZaak
+- dossiq/DqContacten contacten https://identity.conduction.nl/screens/board?id=dossiq/DqContacten
+- dossiq/DqOrganisaties organisaties https://identity.conduction.nl/screens/board?id=dossiq/DqOrganisaties
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnFormDialog, CnIndexPage, CnMassActionBar, CnPagination, CnQuickFilterBar, CnRowActions, CnStatusBadge, CnTabs

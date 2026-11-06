@@ -1,0 +1,26 @@
+# Tasks: document-access-exception
+
+- [x] 1.1 Schema: `accessException` (users, groups, reason, setBy, setAt) and `accessExceptionHistory` on informatieobject, 1.4.2 to 1.5.0 (register.d/99-document-access-exception.json), digest recorded
+- [x] 1.2 AccessExceptionValue + DocumentAccessExceptionRule: listed users, listed groups, whoever may change a case of the document (handler, administrators); an exception naming nobody is none; a failed case lookup refuses
+- [x] 2.1 InformatieobjectAccessGuard asks the rule in canRead and filterDossierForUser, so listing (rows, groups, counts), detail, downloads, ZIP, linked documents, bulk actions and approval markers follow
+- [x] 2.2 Resident portal: a document with an exception is never published (PortalCaseDocuments::isPublished)
+- [x] 2.3 The file: FileRestrictionMirror restricts and frees it through OpenRegister's FileRestrictionService (openregister per-file-read-restriction); refused with 503 when OpenRegister cannot
+- [x] 2.4 FileRestrictionAdmitListener admits the case's handler when OpenRegister asks (DocumentRecordStore::recordIdOfFile, unscoped, id only)
+- [x] 3.1 PUT/DELETE /api/informatieobjecten/{id}/access-exception: DocumentCaseWriteGuard before any read, then the read rule, then validation (existing people and groups, a reason), then the write
+- [x] 3.2 DocumentAccessExceptionWriter: restricts the file first, saves the record, appends the history (who, when, old, new, reason), frees or restores the file when the save fails
+- [x] 4.1 Listing rows carry `accessExceptionNames` (display names) and `canChangeAccess` (DocumentCaseWriteGuard::writableDocuments, each case asked once)
+- [x] 4.2 Who can see this card: Default, Exception, Reason; Change exception opens DocumentAccessExceptionDialog, offered by `visibleIf.row.canChangeAccess` (needs nextcloud-vue files-browser-action-visible-if-row; before it the button shows for everyone and the server refuses)
+- [x] 4.3 DocumentAccessExceptionDialog: sharee search for people and groups, reason, save and remove, the server's sentence on a refusal
+- [x] 5.1 PHPUnit: rule, paths (listing, detail, download, ZIP, portal, clearance still applies), controller (order, validation, history, 503, failed save restores, remove), listener, names, per-row change right
+- [x] 5.2 Vitest: card fields and action, formatter, dialog load, save, remove, refusal, search
+- [ ] 6.1 Live check on :8080 — not run: the lane brief keeps :8080 read-only, and OpenRegister needs per-file-read-restriction merged first
+- [x] 6.2 Raw OpenRegister reads: informatieobject authorization on restricted / accessUsers / accessGroups (read, update, delete), RestrictedDocumentReaders derives them, saves as the background service account
+- [x] 6.3 Raw OpenRegister writes: property authorization on the five fields, only dossiq-background-service
+- [x] 6.4 A case's handler change refreshes accessUsers (RestrictedDocumentHandlerListener, DocumentCaseIds::documentIdsOf)
+- [x] 6.5 Redacted copies and signed versions inherit the exception (RedactedCopyRecorder, LibresignResultAssembler)
+- [x] 6.6 Woo publication refused while a disclosable document carries an exception
+- [x] 6.7 Merge development: the rule and writableDocuments read DocumentCaseIds (e6002cb15)
+- [x] 6.8 Tests for 6.2 to 6.6, red on the previous commit
+- [x] 6.9 Update and delete of a restricted record only for its cases' handlers (derived `accessHandlers`), not for a listed outsider; informatieobject 1.7.0
+- [x] 6.10 A handler that cannot be read is dropped from the readers, not kept
+- [x] 6.11 Depends on openregister omitted-unwritable-properties-are-kept (#4862): a PUT without the protected fields keeps them

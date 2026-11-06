@@ -192,7 +192,7 @@ class PreferencesController extends Controller {
 	 * @return string The key unchanged, or '' when it is refused.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
-	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	private function sanitizeKey(string $key): string {
 		if (strlen(string: $key) > self::MAX_KEY_LENGTH) {

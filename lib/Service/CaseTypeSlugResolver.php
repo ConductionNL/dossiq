@@ -44,6 +44,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -71,12 +72,15 @@ class CaseTypeSlugResolver {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Register/schema configuration and the ObjectService.
-	 * @param LoggerInterface $logger          Logger.
+	 * @param SettingsService   $settingsService Register/schema configuration and the ObjectService.
+	 * @param LoggerInterface   $logger          Logger.
+	 * @param IUserSession|null $userSession     Who is signed in; nobody means a background
+	 *                                           run, which reads as the system.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
 
@@ -147,11 +151,15 @@ class CaseTypeSlugResolver {
 		}
 
 		try {
-			$caseType = $this->findObjectAsArray(
+			$caseType = $this->asSystemWithoutUser(
 				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseTypeId,
+				userSession: $this->userSession,
+				operation: fn (): ?array => $this->findObjectAsArray(
+					objectService: $objectService,
+					register: $register,
+					schema: $schema,
+					id: $caseTypeId,
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(

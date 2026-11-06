@@ -76,6 +76,7 @@ interface WOODecisionObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WOODecisionService
  * @uses \OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer
  * @uses \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
+ * @uses \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
@@ -354,18 +355,76 @@ class WOODecisionServiceTest extends TestCase {
 	}//end testTheAssembledDecisionCarriesTheReadableSummary()
 
 	/**
+	 * The recorded decision is listed on its case, which is what the case
+	 * page's "Record the decision" checklist item reads. A decision listed
+	 * there before is kept.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-recorded-decision-is-listed-on-its-case-req-cm-81
+	 */
+	public function testTheRecordedDecisionIsListedOnItsCase(): void {
+		$store = $this->assembleForCases(
+			cases: [
+				'case-new' => ['title' => 'Brug'],
+				'case-earlier' => ['title' => 'Plein', 'decisions' => ['decision-before']],
+			],
+		);
+
+		$decisionOf = [];
+		foreach ($store->all(schema: 'decision') as $decision) {
+			$decisionOf[$decision['case']] = (string)$decision['id'];
+		}
+
+		$this->assertSame(
+			expected: [$decisionOf['case-new']],
+			actual: $store->find(id: 'case-new', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+		);
+		$this->assertSame(
+			expected: ['decision-before', $decisionOf['case-earlier']],
+			actual: $store->find(id: 'case-earlier', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+		);
+	}//end testTheRecordedDecisionIsListedOnItsCase()
+
+	/**
+	 * A decision id the caller sends opens a new decision and leaves the decision it names as it was.
+	 *
+	 * @return void
+	 */
+	public function testAForgedIdInTheDecisionDataDoesNotTouchTheNamedDecision(): void {
+		$victim = ['case' => 'case-other', 'description' => 'Een ander besluit'];
+		$store  = $this->assembleForCases(
+			cases: ['case-new' => ['title' => 'Brug']],
+			decisionData: ['id' => 'decision-victim', 'uuid' => 'decision-victim', '@self' => ['id' => 'decision-victim']],
+			decisions: ['decision-victim' => $victim],
+		);
+
+		$this->assertSame($victim + ['id' => 'decision-victim'], $store->row(schema: 'decision', uuid: 'decision-victim'));
+		$this->assertCount(2, $store->all(schema: 'decision'));
+		$created = $store->all(schema: 'decision')[1];
+		$this->assertSame('case-new', $created['case']);
+		$this->assertArrayNotHasKey('uuid', $created);
+	}//end testAForgedIdInTheDecisionDataDoesNotTouchTheNamedDecision()
+
+	/**
 	 * Assemble a decision for each seeded case against an in-memory register.
 	 *
-	 * @param array<string, array<string, mixed>> $cases The case rows by uuid.
+	 * @param array<string, array<string, mixed>> $cases        The case rows by uuid.
+	 * @param array<string, mixed>                $decisionData The caller's decision fields.
+	 * @param array<string, array<string, mixed>> $decisions    Stored decision rows by uuid.
 	 *
 	 * @return \OCA\Dossiq\Tests\Support\InMemoryRegister The register after assembly.
 	 */
-	private function assembleForCases(array $cases): \OCA\Dossiq\Tests\Support\InMemoryRegister {
+	private function assembleForCases(array $cases, array $decisionData = [], array $decisions = []): \OCA\Dossiq\Tests\Support\InMemoryRegister {
 		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
 
-		$store = new \OCA\Dossiq\Tests\Support\InMemoryRegister();
+		$store = new \OCA\Dossiq\Tests\Support\LifecycleRegister();
 		foreach ($cases as $uuid => $row) {
 			$store->seed(schema: 'case', uuid: $uuid, row: $row);
+		}
+
+		foreach ($decisions as $uuid => $row) {
+			$store->seed(schema: 'decision', uuid: $uuid, row: $row);
 		}
 
 		$objects = new class($store) {
@@ -439,7 +498,7 @@ class WOODecisionServiceTest extends TestCase {
 		]);
 
 		foreach (array_keys($cases) as $caseId) {
-			$this->service->assembleDecision((string)$caseId);
+			$this->service->assembleDecision((string)$caseId, $decisionData);
 		}
 
 		return $store;

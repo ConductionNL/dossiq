@@ -43,6 +43,8 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\People\LeaverHandoverService
  * @uses \OCA\Dossiq\Service\People\CaseSeats
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  *
  * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
  */
@@ -80,7 +82,8 @@ class LeaverHandoverTest extends TestCase {
 		$this->store->seed(
 			schema: 'caseType',
 			uuid: 'ct-draft',
-			row: ['title' => 'Concept zaaktype', 'isDraft' => true, '@self' => ['owner' => 'jan']],
+			// A case type title is translatable: the store answers a language map.
+			row: ['title' => ['nl' => 'Concept zaaktype'], 'isDraft' => true, '@self' => ['owner' => 'jan']],
 		);
 		$this->store->seed(
 			schema: 'caseType',

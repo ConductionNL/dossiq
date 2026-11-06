@@ -82,16 +82,16 @@ class PipelinqSurfaceReadsTest extends TestCase {
 	}//end kinds()
 
 	/**
-	 * Without pipelinq the editor offers dossiq's three and says whose they are.
+	 * Without pipelinq the editor offers dossiq's four and says whose they are.
 	 *
 	 * @return void
 	 */
-	public function testTheVocabularyFallsBackToDossiqsThree(): void {
+	public function testTheVocabularyFallsBackToDossiqsKinds(): void {
 		$answer = $this->kinds()->vocabulary();
 
 		$this->assertSame('dossiq', $answer['source']);
-		$this->assertSame(['person', 'organisation', 'address'], array_column($answer['kinds'], 'key'));
-	}//end testTheVocabularyFallsBackToDossiqsThree()
+		$this->assertSame(['person', 'organisation', 'colleague', 'address'], array_column($answer['kinds'], 'key'));
+	}//end testTheVocabularyFallsBackToDossiqsKinds()
 
 	/**
 	 * With pipelinq the editor offers every kind pipelinq holds, in a list.

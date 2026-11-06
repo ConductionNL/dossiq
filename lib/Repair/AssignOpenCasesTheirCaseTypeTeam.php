@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
  *
  * Only `assignedGroup` is written. Running it twice changes nothing.
  *
- * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	use SearchesObjects;
@@ -79,7 +79,7 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function getName(): string {
 		return 'Dossiq: give open cases without a team the handling team of their case type';
@@ -92,7 +92,7 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -127,7 +127,7 @@ class AssignOpenCasesTheirCaseTypeTeam implements IRepairStep {
 	 *
 	 * @return int The cases written.
 	 *
-	 * @spec openspec/changes/open-cases-take-their-case-type-team/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function assignAll(object $objectService, string $register, string $caseTypeSchema, string $caseSchema): int {
 		try {

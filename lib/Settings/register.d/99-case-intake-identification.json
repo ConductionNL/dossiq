@@ -1,0 +1,38 @@
+{
+  "_note": "requester-identified-at-intake: how the requester logged in when the case came in through a portal, and the portal's name. A portal intake writes both from the verified assertion and portaliq's config; the case's Aanvrager card and header read them. case 1.59.0.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.59.0",
+        "properties": {
+          "intakeIdentification": {
+            "type": "string",
+            "enum": ["digid", "eherkenning"],
+            "title": "Identified with",
+            "description": "How the requester logged in when the case came in through a portal. Empty for a case taken in any other way.",
+            "x-enum-labels": {
+              "digid": "DigiD",
+              "eherkenning": "eHerkenning"
+            },
+            "matchType": "exact",
+            "inputControl": "select",
+            "visible": false
+          },
+          "intakeSourceName": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Came in through",
+            "description": "The name of the portal the case came in through.",
+            "matchType": "exact",
+            "inputControl": "select",
+            "visible": false
+          }
+        }
+      }
+    }
+  }
+}

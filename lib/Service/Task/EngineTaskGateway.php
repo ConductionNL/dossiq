@@ -132,6 +132,33 @@ class EngineTaskGateway {
 
 
     /**
+     * Whether a task with this key exists, or null when the engine cannot say.
+     *
+     * Null is not "no": a caller that adds a task once per case must not add
+     * it when the engine cannot answer whether it is there already.
+     *
+     * @param string $key The engine task key.
+     *
+     * @return bool|null True when taken, false when free, null when the engine has no key lookup.
+     *
+     * @throws Throwable When the engine cannot read the key.
+     *
+     * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+     */
+    public function keyTaken(string $key): ?bool {
+        $service = $this->resolveService();
+        if ($service === null || method_exists($service, 'findByKey') === false) {
+            $this->lastError = 'the task engine cannot look a task up by its key';
+
+            return null;
+        }
+
+        // A failing lookup is not "free": it reaches the caller as an
+        // exception, which refuses to add the task.
+        return $service->findByKey($key) !== [];
+    }//end keyTaken()
+
+    /**
      * The most recent engine failure, for callers that report rather than log.
      *
      * @var string
@@ -224,7 +251,7 @@ class EngineTaskGateway {
             return 'openregister is not installed or not enabled';
         }
 
-        if (class_exists(self::TASK_SERVICE) === false) {
+        if ($this->taskServiceExists() === false) {
             return sprintf(
                 'openregister is installed but %s does not exist: the namespace moved and dossiq tasks are NOT reaching the engine',
                 self::TASK_SERVICE
@@ -423,6 +450,12 @@ class EngineTaskGateway {
         $sourceId = trim((string)($task['id'] ?? $task['uuid'] ?? ''));
         if ($sourceId !== '') {
             $payload['key'] = self::sourceKey(registerTaskId: $sourceId);
+        }
+
+        // A task that may exist once per case carries its once-key instead.
+        $onceKey = trim((string)($task['onceKey'] ?? ''));
+        if ($onceKey !== '') {
+            $payload['key'] = $onceKey;
         }
 
         // The case IS the object. No typed case reference exists engine-side.
@@ -758,6 +791,68 @@ class EngineTaskGateway {
     }//end complete()
 
     /**
+     * Cancel one open task through the engine, which rules on whether this
+     * caller may and whether the task is in a state that can be cancelled.
+     *
+     * @param string      $taskId The task to cancel.
+     * @param string|null $reason Why, recorded on the task and its audit.
+     * @param string|null $actor  The identity cancelling it.
+     *
+     * @return boolean Whether the engine accepted it; on false `lastError()` holds the engine's reason.
+     *
+     * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+     */
+    public function cancel(string $taskId, ?string $reason, ?string $actor): bool {
+        $id = trim($taskId);
+        $service = null;
+        if ($id !== '') {
+            $service = $this->resolveService();
+        }
+
+        if ($service === null) {
+            $this->lastError = 'The task engine cannot cancel a task on this instance.';
+
+            return false;
+        }
+
+        try {
+            // Positional, as for complete(): the service is resolved by name.
+            $service->cancel($id, $reason, $actor);
+
+            return true;
+        } catch (Throwable $e) {
+            $this->lastError = $e->getMessage();
+
+            $this->logger->warning(
+                'Dossiq: the engine refused a task cancellation',
+                ['exception' => $e->getMessage(), 'task' => $id]
+            );
+
+            return false;
+        }
+    }//end cancel()
+
+    /**
+     * Whether an engine task has the column a getter reads. OpenRegister's
+     * Task is a Nextcloud Entity, whose column getters are magic (`__call`),
+     * so a declared method and a declared property both count.
+     *
+     * @param object $task   The engine task.
+     * @param string $getter The accessor, `get<Column>`.
+     *
+     * @return bool
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     */
+    private static function answers(object $task, string $getter): bool {
+        if (method_exists($task, $getter) === true) {
+            return true;
+        }
+
+        return str_starts_with($getter, 'get') === true && property_exists($task, lcfirst(substr($getter, 3))) === true;
+    }//end answers()
+
+    /**
      * One string column of an engine task, or '' when the engine has none.
      *
      * @param object $task   The engine task.
@@ -768,7 +863,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
     private static function stringFrom(object $task, string $getter): string {
-        if (method_exists($task, $getter) === false) {
+        if (self::answers(task: $task, getter: $getter) === false) {
             return '';
         }
 
@@ -786,7 +881,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
     private static function dateFrom(object $task, string $getter): string {
-        if (method_exists($task, $getter) === false) {
+        if (self::answers(task: $task, getter: $getter) === false) {
             return '';
         }
 
@@ -809,7 +904,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
     private static function listFrom(object $task, string $getter): array {
-        if (method_exists($task, $getter) === false) {
+        if (self::answers(task: $task, getter: $getter) === false) {
             return [];
         }
 
@@ -820,6 +915,20 @@ class EngineTaskGateway {
 
         return $value;
     }//end listFrom()
+
+    /**
+     * Whether OpenRegister's task service class is declared.
+     *
+     * Protected, as a testing seam: in dossiq's unit suite whether
+     * OpenRegister loads depends on the run, and a test fixes the answer here.
+     *
+     * @return boolean True when the class exists.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    protected function taskServiceExists(): bool {
+        return class_exists(self::TASK_SERVICE);
+    }//end taskServiceExists()
 
     /**
      * Resolve OpenRegister's task service, or null.
@@ -841,7 +950,7 @@ class EngineTaskGateway {
             return null;
         }
 
-        if (class_exists(self::TASK_SERVICE) === false) {
+        if ($this->taskServiceExists() === false) {
             return null;
         }
 

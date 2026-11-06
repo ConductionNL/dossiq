@@ -9,4 +9,4 @@
 
 ## 2. Open
 
-- [ ] 2.1 The DqPubliceren dialog in place of the confirm-only action (separate change)
+- [ ] 2.1 Link out to opencatalogi's publish screen (board OcPubliceren, decision 256) in place of the confirm-only action (separate change)

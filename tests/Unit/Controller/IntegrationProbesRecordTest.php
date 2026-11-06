@@ -347,7 +347,6 @@ class IntegrationProbesRecordTest extends TestCase {
 		);
 
 		return new StufController(
-			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			register: $register,
 			bridge: $this->createMock(StufIntegriqBridge::class),

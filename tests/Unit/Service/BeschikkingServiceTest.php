@@ -576,6 +576,23 @@ class BeschikkingServiceTest extends TestCase {
 	}//end testSendingBindsTheRemedyTermOnTheDeclaredDays()
 
 	/**
+	 * Sending the besluit writes the day it went out on its case (REQ-CAP-001).
+	 *
+	 * @return void
+	 */
+	public function testSendingRecordsTheDaySentOnTheCase(): void {
+		$this->remedy->expects($this->once())->method('recordSent')->with(
+			'zaak-2026-wmo-1',
+			$this->callback(static fn (\DateTimeImmutable $sentOn): bool => $sentOn->format('Y-m-d') === (new \DateTimeImmutable())->format('Y-m-d')),
+		);
+
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+	}//end testSendingRecordsTheDaySentOnTheCase()
+
+	/**
 	 * The full lifecycle reaches gearchiveerd with all evidence recorded. [V01]
 	 *
 	 * @return void

@@ -309,4 +309,18 @@ class DerivedCaseTypePayloadTest extends TestCase {
 			$this->payloads->duplicate(source: $this->source())['processingDeadline']
 		);
 	}//end testUnnamedFieldsAreCarriedOver()
+
+	/**
+	 * A copy of a shipped case type is the organisation's own.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/case-types/spec.md#requirement-a-case-type-a-package-placed-reads-as-shipped
+	 */
+	public function testACopyOfAShippedCaseTypeIsNotShipped(): void {
+		$copy = (new DerivedCaseTypePayload())->duplicate(source: ['title' => 'Omgevingsvergunning', 'shipped' => true, 'package' => 'vth']);
+
+		$this->assertFalse(condition: $copy['shipped']);
+		$this->assertSame(expected: '', actual: $copy['package']);
+	}//end testACopyOfAShippedCaseTypeIsNotShipped()
 }//end class

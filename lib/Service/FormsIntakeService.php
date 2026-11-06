@@ -51,6 +51,19 @@ use Throwable;
 /**
  * Turns a submission of a bound form into a correctly clocked case.
  *
+ * @phpstan-type Submission array{
+ *     destination: array{register: string, schema: string},
+ *     mapping: array{fields: array<int, array<string, mixed>>, fixed: array<string, mixed>},
+ *     answers: array<string, mixed>,
+ *     formHash: string
+ * }
+ * @psalm-type Submission = array{
+ *     destination: array{register: string, schema: string},
+ *     mapping: array{fields: array<int, array<string, mixed>>, fixed: array<string, mixed>},
+ *     answers: array<string, mixed>,
+ *     formHash: string
+ * }
+ *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/specs/leaf-integrations/spec.md
@@ -115,6 +128,32 @@ class FormsIntakeService {
 			return null;
 		}
 
+		$target = $this->caseDestination(formHash: $formHash);
+		if ($target === null) {
+			return null;
+		}
+
+		// The mapping the case type was saved with is the mapping the case is
+		// written with. The receipt and start dates are not written here: the
+		// receipt listener sets them for every case by one rule (decision 218).
+		$submission = [
+			'destination' => $target['destination'],
+			'mapping' => $this->binding->mappingFor(caseType: $caseType, answers: $answers),
+			'answers' => $answers,
+			'formHash' => $formHash,
+		];
+
+		return $this->openCase(objectService: $target['objectService'], submission: $submission);
+	}//end caseFor()
+
+	/**
+	 * The object service and the case register and schema, when all three are configured.
+	 *
+	 * @param string $formHash The form, for the log.
+	 *
+	 * @return array{objectService: object, destination: array{register: string, schema: string}}|null The target, or null.
+	 */
+	private function caseDestination(string $formHash): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
@@ -127,19 +166,21 @@ class FormsIntakeService {
 			return null;
 		}
 
-		// The mapping the case type was saved with is the mapping the case is
-		// written with. The receipt and start dates are not written here: the
-		// receipt listener sets them for every case by one rule (decision 218).
-		$mapping = $this->binding->mappingFor(caseType: $caseType, answers: $answers);
+		return ['objectService' => $objectService, 'destination' => ['register' => $register, 'schema' => $caseSchema]];
+	}//end caseDestination()
 
+	/**
+	 * Write the case and answer its id.
+	 *
+	 * @param object     $objectService OpenRegister's object service.
+	 * @param Submission $submission    The destination, mapping, answers and form.
+	 *
+	 * @return string|null The new case's id, or `null` when the write failed or answered no id.
+	 */
+	private function openCase(object $objectService, array $submission): ?string {
+		$formHash = $submission['formHash'];
 		try {
-			$created = $this->write(
-				objectService: $objectService,
-				destination: ['register' => $register, 'schema' => $caseSchema],
-				mapping: $mapping,
-				answers: $answers,
-				formHash: $formHash
-			);
+			$created = $this->write(objectService: $objectService, submission: $submission);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'FormsIntakeService: could not open a case for a form submission',
@@ -164,7 +205,7 @@ class FormsIntakeService {
 		);
 
 		return $caseId;
-	}//end caseFor()
+	}//end openCase()
 
 	/**
 	 * The case type that named this form, when one did.
@@ -227,22 +268,22 @@ class FormsIntakeService {
 	 * it in one request. An OpenRegister without it gets the same object
 	 * through the object service.
 	 *
-	 * @param object                                                                       $objectService OpenRegister's object service.
-	 * @param array{register: string, schema: string}                                      $destination   The case register and schema.
-	 * @param array{fields: array<int, array<string, mixed>>, fixed: array<string, mixed>} $mapping       The binding's mapping.
-	 * @param array<string, mixed>                                                         $answers       The submitted answers.
-	 * @param string                                                                       $formHash      The form, as the scope of the submit.
+	 * @param object     $objectService OpenRegister's object service.
+	 * @param Submission $submission    The destination, the binding's mapping, the answers and the form as the submit's scope.
 	 *
 	 * @return mixed The written case, or the submit's answer; both name its id.
 	 */
-	private function write(object $objectService, array $destination, array $mapping, array $answers, string $formHash): mixed {
+	private function write(object $objectService, array $submission): mixed {
+		$destination = $submission['destination'];
+		$mapping = $submission['mapping'];
+		$answers = $submission['answers'];
 		$submitter = $this->settingsService->getOpenRegisterClass(self::FORM_SUBMIT);
 		if ($submitter !== null && method_exists($submitter, 'submit') === true) {
 			return $submitter->submit(
 				destination: $destination,
 				mapping: $mapping,
 				payload: $answers,
-				scope: $formHash
+				scope: $submission['formHash']
 			);
 		}
 

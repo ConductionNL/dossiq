@@ -62,7 +62,7 @@ export function fetchCaseTerms(caseId) {
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
  */
 export function fetchOpenWorkloadAge() {
-	return read('apps/dossiq/api/termijn/reports/open-workload-age')
+	return read('apps/dossiq/api/deadlines/reports/open-workload-age')
 }
 
 /**

@@ -1,0 +1,551 @@
+{
+  "caseType": {
+    "id": "ec042744-0941-59d9-96bc-1abac7f36d71",
+    "identifier": "melding-jeugdwet",
+    "title": "Melding Jeugdwet",
+    "category": "Jeugdhulp",
+    "colour": "teal",
+    "handlerLabel": "Regisseur",
+    "description": "Melding over een kind of gezin onder de Jeugdwet: onderzoek, indicatie en overleg tot een besluit over jeugdhulp.",
+    "purpose": "Vaststellen of en welke jeugdhulp een kind of gezin nodig heeft (Jeugdwet artikel 2.3).",
+    "trigger": "Melding van een verwijzer, zoals de huisarts, of een hulpvraag van ouders of jeugdige.",
+    "subject": "Jeugdhulp",
+    "processingDeadline": "P8W",
+    "extensionAllowed": false,
+    "suspensionAllowed": true,
+    "internalOrExternal": "extern",
+    "publicationRequired": false,
+    "isDraft": false,
+    "confidentiality": "vertrouwelijk",
+    "initialStatus": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+    "workflowDefinition": "8e7765d9-b8cc-56bd-b95e-3a01f46be282",
+    "specialDataCategories": [
+      "health"
+    ],
+    "sideCards": [
+      "side-special-data-health",
+      "side-social-consent",
+      "side-social-people",
+      "side-social-history",
+      "case-banner-stack"
+    ],
+    "overviewCards": [
+      "case-summary"
+    ],
+    "quickActions": [
+      "plan-case-meeting"
+    ],
+    "handling": {
+      "defaultGroup": "dossiq-sociaal-domein"
+    },
+    "processesPersonalData": true,
+    "personalDataCategories": [
+      "naw",
+      "bsn",
+      "gezondheid"
+    ],
+    "recordImports": [
+      {
+        "key": "jeugdwet-meldingen",
+        "sourceApp": "dossiq",
+        "sourceRegister": "dossiq",
+        "sourceSchema": "jeugdwetZaak",
+        "statusField": "status",
+        "statuses": {
+          "report": {
+            "status": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+            "term": "running"
+          },
+          "gezinsplan-opstellen": {
+            "status": "cea85ff4-c209-5d71-8a3b-c835c46ea3f1",
+            "term": "running"
+          },
+          "gezinsplan-gereed": {
+            "status": "c868dd79-7253-5f14-82ca-ef591d2fac19",
+            "term": "running"
+          },
+          "support-gestart": {
+            "status": "ee8d55db-4292-5e53-b4b1-626ee9d92193",
+            "term": "closed"
+          },
+          "support-loopt": {
+            "status": "ee8d55db-4292-5e53-b4b1-626ee9d92193",
+            "term": "closed"
+          },
+          "evaluation": {
+            "status": "193f2312-727f-52b8-97f2-63c0de836c63",
+            "term": "closed"
+          },
+          "extension-requested": {
+            "status": "eba70831-8cc1-5d84-8acc-844c0d1550a0",
+            "term": "closed"
+          },
+          "closed": {
+            "status": "79596e50-469e-577f-a661-fc5fb5c48d93",
+            "term": "closed"
+          },
+          "*": {
+            "status": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+            "term": "running"
+          }
+        },
+        "fields": [
+          {
+            "to": "title",
+            "value": "Melding Jeugdwet"
+          },
+          {
+            "to": "subjectBsn",
+            "from": "jeugdigeBsn"
+          },
+          {
+            "to": "initiatorDisplayName",
+            "from": "referrer"
+          },
+          {
+            "to": "assignee",
+            "from": "handlerId"
+          },
+          {
+            "to": "startDate",
+            "from": "requestDate",
+            "as": "date"
+          },
+          {
+            "to": "confidentiality",
+            "value": "vertrouwelijk"
+          },
+          {
+            "to": "externalReference",
+            "from": "@id"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "5dac9280-72ca-5eae-8893-d67b6b041264",
+              "name": "gezin"
+            },
+            "from": "familyId",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "67d9c4f3-2728-5fa2-9423-24cfbb5aae88",
+              "name": "leeftijdJeugdige"
+            },
+            "from": "juvenileAge",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "5555e4e3-3486-59d2-a24f-1c4feb5d3023",
+              "name": "meldkanaal"
+            },
+            "from": "requestChannel",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "84ecc2a7-4116-5389-b6f5-dd7dc27261f9",
+              "name": "jeugdteam"
+            },
+            "from": "districtTeam",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "6e664a5b-e524-5eb4-819f-95287541a97a",
+              "name": "tweedeBehandelaar"
+            },
+            "from": "secondHandlerId",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "a587681f-96f8-5a76-8370-dfa8d8d4842e",
+              "name": "verlengingen"
+            },
+            "from": "extensionHistory",
+            "as": "json"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "d72fb347-4197-55bf-a8bf-0b310e7a5abe",
+              "name": "avgClassificatie"
+            },
+            "from": "gdprClassification",
+            "as": "json"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "4ca7aaad-6d13-57da-9168-d4c38b488091",
+              "name": "hulpvraag"
+            },
+            "from": "supportRequest",
+            "as": "text"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "05f6f092-3729-5ecf-af4d-95f68ce2e5ed",
+              "name": "gezinsplan"
+            },
+            "from": "gezinsplanId",
+            "as": "text"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "6a7dff8c-adc3-5013-9f61-8d5abbd5bfdc",
+              "name": "mdoOverleggen"
+            },
+            "from": "mdoConsultationIds",
+            "as": "json"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "aee4b041-9558-5eea-9925-f82da6d2a645",
+              "name": "ondertoezichtstelling"
+            },
+            "from": "supervisionOrderActive",
+            "as": "boolean"
+          }
+        ],
+        "matchField": "externalReference",
+        "formerReference": {
+          "application": "dossiq",
+          "from": "caseNumber"
+        },
+        "dedupeBy": "caseNumber",
+        "references": [
+          {
+            "schema": "gezinsplan",
+            "field": "caseId"
+          },
+          {
+            "schema": "toestemming",
+            "field": "caseId"
+          },
+          {
+            "schema": "mdoOverleg",
+            "field": "caseIds",
+            "list": true
+          }
+        ],
+        "stamp": {
+          "caseId": "migratedTo",
+          "at": "migratedAt"
+        },
+        "carriesTerm": true,
+        "runOnUpgrade": true
+      }
+    ]
+  },
+  "propertyDefinitions": [
+    {
+      "id": "5dac9280-72ca-5eae-8893-d67b6b041264",
+      "name": "gezin",
+      "definition": "Gezin",
+      "description": "Het gezinssysteem waar deze melding over gaat.",
+      "category": "Jeugd",
+      "propertyType": "string",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "67d9c4f3-2728-5fa2-9423-24cfbb5aae88",
+      "name": "leeftijdJeugdige",
+      "definition": "Leeftijd jeugdige",
+      "description": "Vanaf zestien jaar geeft de jeugdige zelf toestemming.",
+      "category": "Jeugd",
+      "propertyType": "integer",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "5555e4e3-3486-59d2-a24f-1c4feb5d3023",
+      "name": "meldkanaal",
+      "definition": "Meldkanaal",
+      "description": "Via wie de melding binnenkwam: huisarts, school, consultatiebureau.",
+      "category": "Jeugd",
+      "propertyType": "string",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "84ecc2a7-4116-5389-b6f5-dd7dc27261f9",
+      "name": "jeugdteam",
+      "definition": "Jeugdteam",
+      "description": "Het jeugdteam dat de melding behandelt.",
+      "category": "Jeugd",
+      "propertyType": "string",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "filterable": true
+    },
+    {
+      "id": "6e664a5b-e524-5eb4-819f-95287541a97a",
+      "name": "tweedeBehandelaar",
+      "definition": "Tweede behandelaar",
+      "description": "Een tweede jeugdconsulent op deze melding.",
+      "category": "Jeugd",
+      "propertyType": "string",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "hideOnCreate": true
+    },
+    {
+      "id": "a587681f-96f8-5a76-8370-dfa8d8d4842e",
+      "name": "verlengingen",
+      "definition": "Verlengingen",
+      "description": "De eerdere gezinsplannen: de verlengingsketen.",
+      "category": "Jeugd",
+      "propertyType": "array",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "hideOnCreate": true
+    },
+    {
+      "id": "d72fb347-4197-55bf-a8bf-0b310e7a5abe",
+      "name": "avgClassificatie",
+      "definition": "AVG-classificatie",
+      "description": "Categorieën persoonsgegevens, grondslag, bewaartermijn en toegangsbeperking van deze melding.",
+      "category": "Jeugd",
+      "propertyType": "object",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "isRequired": true
+    },
+    {
+      "id": "4ca7aaad-6d13-57da-9168-d4c38b488091",
+      "name": "hulpvraag",
+      "definition": "Hulpvraag",
+      "description": "De hulpvraag in de woorden van de jeugdige of de ouders.",
+      "category": "Jeugd",
+      "propertyType": "string",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "sensitive": true
+    },
+    {
+      "id": "05f6f092-3729-5ecf-af4d-95f68ce2e5ed",
+      "name": "gezinsplan",
+      "definition": "Gezinsplan",
+      "description": "Verwijzing naar het gezinsplan dat nu geldt.",
+      "category": "Jeugd",
+      "propertyType": "string",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "sensitive": true,
+      "hideOnCreate": true
+    },
+    {
+      "id": "6a7dff8c-adc3-5013-9f61-8d5abbd5bfdc",
+      "name": "mdoOverleggen",
+      "definition": "Multidisciplinaire overleggen",
+      "description": "Verwijzingen naar de overleggen over deze melding.",
+      "category": "Jeugd",
+      "propertyType": "array",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "sensitive": true,
+      "hideOnCreate": true
+    },
+    {
+      "id": "aee4b041-9558-5eea-9925-f82da6d2a645",
+      "name": "ondertoezichtstelling",
+      "definition": "Ondertoezichtstelling",
+      "description": "Of er een ondertoezichtstelling loopt.",
+      "category": "Jeugd",
+      "propertyType": "boolean",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "sensitive": true,
+      "hideOnCreate": true
+    },
+    {
+      "id": "9351d74d-7824-5d7a-93f4-e78f8991ceeb",
+      "name": "onderzoeksstappen",
+      "definition": "Onderzoeksstappen",
+      "description": "De stappen van het onderzoek: gesprekken, huisbezoeken en opgevraagde informatie, met wie en waarop het rust.",
+      "category": "Jeugd",
+      "propertyType": "array",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Soort",
+            "enum": [
+              "gesprek",
+              "huisbezoek",
+              "informatie-opgevraagd",
+              "dossieronderzoek",
+              "anders"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Datum"
+          },
+          "by": {
+            "type": "string",
+            "title": "Door"
+          },
+          "withWhom": {
+            "type": "string",
+            "title": "Met wie"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Samenvatting"
+          },
+          "consentRef": {
+            "type": "string",
+            "title": "Toestemming"
+          },
+          "followUp": {
+            "type": "string",
+            "title": "Vervolg"
+          }
+        }
+      },
+      "sensitive": true,
+      "hideOnCreate": true
+    }
+  ],
+  "statusTypes": [
+    {
+      "id": "6ea508cb-3395-5603-98bc-38d4fd34b511",
+      "phase": "Ontvangst",
+      "name": "Melding ontvangen",
+      "description": "De melding is binnen en geregistreerd.",
+      "order": 1,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "role": "intake",
+      "colour": "blue"
+    },
+    {
+      "id": "cea85ff4-c209-5d71-8a3b-c835c46ea3f1",
+      "phase": "Beoordeling",
+      "name": "Onderzoek",
+      "description": "Het jeugdteam onderzoekt met het gezin wat er nodig is.",
+      "order": 2,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "role": "in-progress",
+      "colour": "purple"
+    },
+    {
+      "id": "7f5bc6ef-3623-5fcf-a9b1-dd0091fbae30",
+      "phase": "Beoordeling",
+      "name": "Indicatie",
+      "description": "De indicatie voor jeugdhulp wordt opgesteld.",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "purple"
+    },
+    {
+      "id": "c868dd79-7253-5f14-82ca-ef591d2fac19",
+      "phase": "Advies",
+      "name": "Overleg",
+      "description": "Het multidisciplinair overleg bespreekt de indicatie en het gezinsplan.",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "purple"
+    },
+    {
+      "id": "4543667e-c21a-54fa-a323-b3e81292e5a7",
+      "phase": "Besluit",
+      "name": "Besluit",
+      "description": "Het besluit over de jeugdhulp is genomen en verzonden.",
+      "order": 5,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "teal"
+    },
+    {
+      "id": "ee8d55db-4292-5e53-b4b1-626ee9d92193",
+      "name": "Jeugdhulp loopt",
+      "description": "De jeugdhulp is gestart en loopt.",
+      "order": 6,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "purple",
+      "phase": "Uitvoering"
+    },
+    {
+      "id": "193f2312-727f-52b8-97f2-63c0de836c63",
+      "phase": "Beoordeling",
+      "name": "Evaluatie",
+      "description": "De jeugdhulp en het gezinsplan worden geëvalueerd.",
+      "order": 7,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "purple"
+    },
+    {
+      "id": "eba70831-8cc1-5d84-8acc-844c0d1550a0",
+      "phase": "Beoordeling",
+      "name": "Verlenging aangevraagd",
+      "offPath": true,
+      "description": "Een verlenging van de jeugdhulp is aangevraagd.",
+      "order": 8,
+      "isFinal": false,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "orange"
+    },
+    {
+      "id": "79596e50-469e-577f-a661-fc5fb5c48d93",
+      "name": "Afgehandeld",
+      "description": "De melding is afgehandeld.",
+      "order": 9,
+      "isFinal": true,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "role": "closed",
+      "colour": "green"
+    },
+    {
+      "id": "189ed7f4-456a-5f45-b2df-fd2371ef389b",
+      "name": "Ingetrokken",
+      "offPath": true,
+      "description": "De melding of hulpvraag is ingetrokken.",
+      "order": 90,
+      "isFinal": true,
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71",
+      "colour": "grey"
+    }
+  ],
+  "roleTypes": [
+    {
+      "id": "05c6d972-32f2-5979-80e1-5ed1fa1c3096",
+      "name": "Melder",
+      "description": "Wie de melding doet, zoals de huisarts",
+      "genericRole": "initiator",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "1eda6c52-f71f-574e-bf79-3d0532f19ab6",
+      "name": "Regisseur",
+      "description": "De regisseur van het jeugdteam",
+      "genericRole": "handler",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "defa6e47-0b6f-50ad-8250-0bcce4e07b4d",
+      "name": "Consulent",
+      "description": "Een consulent die meekijkt vanuit een ander domein",
+      "genericRole": "advisor",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    },
+    {
+      "id": "539d8603-5537-5eb9-b837-b88c5c9600df",
+      "name": "Teamleider jeugd",
+      "description": "Neemt het besluit over de jeugdhulp",
+      "genericRole": "decision_maker",
+      "caseType": "ec042744-0941-59d9-96bc-1abac7f36d71"
+    }
+  ]
+}

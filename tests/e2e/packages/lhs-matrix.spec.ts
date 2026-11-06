@@ -46,9 +46,9 @@ async function rows(page: Page, schema: string): Promise<any[]> {
 }
 
 test.describe('package lhs-matrix', () => {
-	// @e2e openspec/changes/lhs-packages/specs/enforcement-lhs/spec.md#scenario-a-clean-install-has-one-active-matrix
-	// @e2e openspec/changes/lhs-packages/specs/enforcement-lhs/spec.md#scenario-an-instance-with-its-own-active-matrix-gets-no-second-one
-	// @e2e openspec/changes/lhs-packages/specs/enforcement-lhs/spec.md#scenario-the-grid-has-one-cell-for-each-row-and-column
+	// @e2e openspec/specs/enforcement-lhs/spec.md#scenario-a-clean-install-has-one-active-matrix
+	// @e2e openspec/specs/enforcement-lhs/spec.md#scenario-an-instance-with-its-own-active-matrix-gets-no-second-one
+	// @e2e openspec/specs/enforcement-lhs/spec.md#scenario-the-grid-has-one-cell-for-each-row-and-column
 	test('an enforcement officer finds one active matrix, a whole grid and an intervention', async ({
 		page,
 	}) => {

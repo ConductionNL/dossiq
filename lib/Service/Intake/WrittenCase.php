@@ -124,7 +124,7 @@ class WrittenCase {
 	 *
 	 * @return array<string, string> The keys that have a value.
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-confirmation-names-its-dates-as-days-req-wdi-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-confirmation-names-its-dates-as-days-req-wdi-003
 	 */
 	private function numberAndDeadline(array $case): array {
 		$answer = [];

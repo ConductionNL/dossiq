@@ -74,7 +74,14 @@ class InstallPackageCommand extends Command {
 			->addArgument('ids', InputArgument::IS_ARRAY | InputArgument::OPTIONAL, 'The package ids to install.')
 			->addOption('all', null, InputOption::VALUE_NONE, 'Install every package, including on-request ones.')
 			->addOption('list', null, InputOption::VALUE_NONE, 'List the packages and what is installed.')
-			->addOption('root', null, InputOption::VALUE_REQUIRED, 'Read the packages from this directory.');
+			->addOption('root', null, InputOption::VALUE_REQUIRED, 'Read the packages from this directory.')
+			->addOption(
+				'over-local-changes',
+				null,
+				InputOption::VALUE_NONE,
+				'Also give rows the package shipped and somebody changed here the keys the package ships'
+				. ' (other keys keep their value), even when the package is current.'
+			);
 	}//end configure()
 
 	/**
@@ -122,8 +129,13 @@ class InstallPackageCommand extends Command {
 		$exit = Command::FAILURE;
 		$this->withSystemIdentity(
 			objectService: $this->settings->getObjectService(),
-			work: function () use ($installer, $ids, $output, &$exit): void {
-				$exit = $this->installAll(installer: $installer, ids: $ids, output: $output);
+			work: function () use ($installer, $ids, $input, $output, &$exit): void {
+				$exit = $this->installAll(
+					installer: $installer,
+					ids: $ids,
+					overLocalChanges: ($input->getOption('over-local-changes') === true),
+					output: $output
+				);
 			}
 		);
 
@@ -149,17 +161,31 @@ class InstallPackageCommand extends Command {
 	/**
 	 * Install each id and report it.
 	 *
-	 * @param PackageInstaller   $installer The installer.
-	 * @param array<int, string> $ids       The ids.
-	 * @param OutputInterface    $output    The output.
+	 * @param PackageInstaller   $installer        The installer.
+	 * @param array<int, string> $ids              The ids.
+	 * @param boolean            $overLocalChanges Whether rows changed here take the package's keys.
+	 * @param OutputInterface    $output           The output.
 	 *
 	 * @return integer The exit code.
 	 */
-	private function installAll(PackageInstaller $installer, array $ids, OutputInterface $output): int {
+	private function installAll(PackageInstaller $installer, array $ids, bool $overLocalChanges, OutputInterface $output): int {
 		$exit = Command::SUCCESS;
 		foreach ($ids as $id) {
-			$outcome = $installer->install(id: $id);
+			$outcome = match ($overLocalChanges) {
+				true => $installer->installOverLocalChanges(id: $id),
+				false => $installer->install(id: $id),
+			};
 			$output->writeln("{$outcome['package']} {$outcome['version']}: {$outcome['status']}. {$outcome['message']}");
+			if (isset($outcome['refreshed']) === true) {
+				$kept = array_map('strval', (array)($outcome['kept'] ?? []));
+				$keptIds = '';
+				if ($kept !== []) {
+					$keptIds = ': ' . implode(', ', $kept);
+				}
+
+				$output->writeln('  ' . (int)$outcome['refreshed'] . ' row(s) refreshed, ' . count($kept) . ' kept as this instance holds them' . $keptIds);
+			}
+
 			foreach ((array)($outcome['errors'] ?? []) as $error) {
 				$output->writeln('  ' . $error);
 			}

@@ -39,6 +39,7 @@ use DateTimeInterface;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\OpensInTheInitialState;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
 use RuntimeException;
@@ -52,6 +53,7 @@ use Throwable;
 class SessionService {
 
 	use SearchesObjects;
+	use OpensInTheInitialState;
 
 	/**
 	 * Constructor.
@@ -284,13 +286,17 @@ class SessionService {
 	 *
 	 * @return array<string, mixed> The updated session.
 	 *
-	 * @throws InvalidArgumentException When minutes are missing or consent is absent.
+	 * @throws InvalidArgumentException When minutes are missing, consent is absent, or the payload changes a stored denial.
 	 * @throws RuntimeException When the session cannot be read or written.
 	 *
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-attendance-and-minutes-follow-the-session-definition-req-css-3
 	 */
 	public function addMinutes(string $sessionId, array $payload): array {
 		[$objectService, $register, $current, $definition] = $this->loadSession(sessionId: $sessionId);
+		$definition->rules()->assertDenialKept(
+			stored: (string)($current['recordingConsent'] ?? ''),
+			asked: (string)($payload['recordingConsent'] ?? 'denied')
+		);
 
 		$summary  = $this->field(primary: $payload, fallback: $current, key: 'minutesSummary');
 		$document = $this->field(primary: $payload, fallback: $current, key: 'minutesDocument');
@@ -431,6 +437,9 @@ class SessionService {
 	/**
 	 * Save a new session.
 	 *
+	 * It opens in the schema's initial status, and moves to the status the
+	 * record names through the schema's declared transitions.
+	 *
 	 * @param object               $objectService The object service.
 	 * @param string               $register      The register.
 	 * @param array<string, mixed> $record        The session.
@@ -441,12 +450,10 @@ class SessionService {
 	 */
 	private function save(object $objectService, string $register, array $record): array {
 		try {
-			return ($this->saveObjectAsArray(
+			return $this->createThenMove(
 				objectService: $objectService,
-				register: $register,
-				schema: $this->schemaKey(key: 'hearing_session_schema'),
-				object: $record
-			) ?? $record);
+				write: ['register' => $register, 'schema' => $this->schemaKey(key: 'hearing_session_schema'), 'object' => $record, 'field' => 'status']
+			);
 		} catch (Throwable $e) {
 			throw new RuntimeException('The session could not be saved: ' . $e->getMessage(), 0, $e);
 		}

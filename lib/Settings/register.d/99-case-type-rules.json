@@ -1,0 +1,213 @@
+{
+  "_note": "case-type-conditional-rules (openspec/changes/case-type-conditional-rules). A case type says, as configuration, what happens when a case meets a condition: 'Als Bouwkosten groter is dan 100.000, dan taak Toets door constructeur toevoegen'. Dossiq evaluates none of it: CaseTypeRuleProjector projects each rule at publish onto the engine that owns the action. A fragment per ADR-037. caseType 1.38.0: RENUMBER at merge if 1.35-1.37 are taken by then. case 1.51.0 `variant`: written by a chooseVariant rule (renumbered in b35b: 1.49.0 is DQ-REINT's, 1.50.0 case-type-rights-enforced's).",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "version": "1.38.0",
+        "properties": {
+          "rules": {
+            "type": "array",
+            "title": "Rules",
+            "description": "What happens when a case of this type meets a condition, in order. Each rule has a moment, conditions that must all hold and actions. Published with the version and frozen with it. The Rules tab lists them as 'Als ... / dan ...' rows.",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "when",
+                "actions"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "title": "Id",
+                  "description": "Stable within the case type; part of the key that makes a rule's effect happen once per case.",
+                  "maxLength": 64
+                },
+                "name": {
+                  "type": "string",
+                  "title": "Name",
+                  "description": "What the rule is called, when the sentence is not enough.",
+                  "maxLength": 255
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "title": "On",
+                  "description": "Whether the rule is projected at publish.",
+                  "default": true
+                },
+                "when": {
+                  "type": "object",
+                  "title": "When",
+                  "description": "The moment: event created, saved or statusEntered (with status, a statusType uuid).",
+                  "required": [
+                    "event"
+                  ],
+                  "properties": {
+                    "event": {
+                      "title": "Event",
+                      "description": "The moment the rule runs: created, saved or statusEntered.",
+                      "type": "string",
+                      "enum": [
+                        "created",
+                        "saved",
+                        "statusEntered"
+                      ]
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "string",
+                      "description": "The statusType uuid, for statusEntered."
+                    }
+                  }
+                },
+                "conditions": {
+                  "type": "array",
+                  "title": "Conditions",
+                  "description": "All must hold. kind fieldCompare {field, op: eq|neq|gt|gte|lt|lte, value}, fieldEquals {field, value}, fieldPresent {field}, documentPresent {documentType}, statusIs {status}. field names a case property or one of this type's property definitions.",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "kind"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "title": "Kind",
+                        "description": "What the condition tests: fieldCompare, fieldEquals, fieldPresent, documentPresent or statusIs.",
+                        "type": "string",
+                        "enum": [
+                          "fieldCompare",
+                          "fieldEquals",
+                          "fieldPresent",
+                          "documentPresent",
+                          "statusIs"
+                        ]
+                      },
+                      "field": {
+                        "title": "Field",
+                        "description": "The case property or property definition the condition reads.",
+                        "type": "string"
+                      },
+                      "op": {
+                        "title": "Operator",
+                        "description": "How fieldCompare compares the field with the value: eq, neq, gt, gte, lt or lte.",
+                        "type": "string",
+                        "enum": [
+                          "eq",
+                          "neq",
+                          "gt",
+                          "gte",
+                          "lt",
+                          "lte"
+                        ]
+                      },
+                      "value": {},
+                      "documentType": {
+                        "title": "Document type",
+                        "description": "The document type documentPresent looks for on the case.",
+                        "type": "string"
+                      },
+                      "status": {
+                        "title": "Status",
+                        "description": "The statusType uuid statusIs compares with the status of the case.",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "actions": {
+                  "type": "array",
+                  "title": "Actions",
+                  "description": "action addTask {title, taskType?}, setField {field, value}, chooseVariant {variant}, requireDocument {documentType}, sendMessage {emailTemplate}.",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "action"
+                    ],
+                    "properties": {
+                      "action": {
+                        "title": "Action",
+                        "description": "What the rule does: addTask, setField, chooseVariant, requireDocument or sendMessage.",
+                        "type": "string",
+                        "enum": [
+                          "addTask",
+                          "setField",
+                          "chooseVariant",
+                          "requireDocument",
+                          "sendMessage"
+                        ]
+                      },
+                      "title": {
+                        "title": "Task title",
+                        "description": "The title of the task addTask creates.",
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      "taskType": {
+                        "title": "Task type",
+                        "description": "The type of the task addTask creates, when it has one.",
+                        "type": "string"
+                      },
+                      "field": {
+                        "title": "Field",
+                        "description": "The case property setField writes.",
+                        "type": "string"
+                      },
+                      "value": {},
+                      "variant": {
+                        "title": "Variant",
+                        "description": "The variant chooseVariant picks for the case.",
+                        "type": "string"
+                      },
+                      "documentType": {
+                        "title": "Document type",
+                        "description": "The document type requireDocument asks for.",
+                        "type": "string"
+                      },
+                      "emailTemplate": {
+                        "title": "Email template",
+                        "description": "The template sendMessage sends.",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "entryRequirements": {
+            "type": "object",
+            "title": "Entry requirements",
+            "description": "Projected at publish from the rules, never edited by hand: per statusType uuid, the documents a case must carry before it enters that status ([{documentType, rule}]). Read by the statusEntryRequirements transition guard.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "documentType": {
+                    "type": "string"
+                  },
+                  "rule": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "case": {
+        "version": "1.51.0",
+        "properties": {
+          "variant": {
+            "matchType": "exact",
+            "inputControl": "text",
+            "type": "string",
+            "title": "Variant",
+            "description": "The route this case takes through its case type, by the variant's name (caseType.variants). Written by a chooseVariant rule of the case type; empty means the default variant.",
+            "maxLength": 255
+          }
+        }
+      }
+    }
+  }
+}

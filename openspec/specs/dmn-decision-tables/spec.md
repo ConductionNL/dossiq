@@ -1,7 +1,7 @@
 # dmn-decision-tables Specification
 
 ## Purpose
-TBD - created by archiving change dmn-decision-tables. Update Purpose after archive.
+Hold decision tables as OpenRegister data, evaluated with a closed and safe expression grammar that refuses missing input instead of defaulting.
 
 ## Requirements
 

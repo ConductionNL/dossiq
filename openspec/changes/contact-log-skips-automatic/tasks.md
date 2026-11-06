@@ -1,0 +1,4 @@
+- [x] tests/vitest/contactLogSkipsAutomatic.spec.js (red first)
+- [x] contactmoment 1.9.0 `automatic` (live and mock register)
+- [x] log and tab count filter `automatic: {isnull: true}`
+- [ ] example set: the Lindelaan receipt carries `automatic: true` (portaliq)

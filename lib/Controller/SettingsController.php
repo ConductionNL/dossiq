@@ -186,12 +186,15 @@ class SettingsController extends Controller {
 			$config = $this->settingsService->updateSettings($data);
 		} catch (RuntimeException $e) {
 			// A refusal (RefusedException) names its rule and status; anything else is not ours to answer.
-			if (method_exists($e, 'getRule') === false || method_exists($e, 'getStatus') === false) {
+			if (method_exists($e, 'getRule') === false
+				|| method_exists($e, 'getStatus') === false
+				|| method_exists($e, 'getSentence') === false
+			) {
 				throw $e;
 			}
 
 			return new JSONResponse(
-				['success' => false, 'error' => $e->getRule(), 'message' => $this->refusalSentence(rule: $e->getRule())],
+				['success' => false, 'error' => $e->getRule(), 'message' => $this->refusalSentence(rule: $e->getRule(), detail: $e->getSentence())],
 				$e->getStatus()
 			);
 		}
@@ -209,15 +212,24 @@ class SettingsController extends Controller {
 	/**
 	 * The translated sentence for a refused settings save.
 	 *
-	 * @param string $rule The refusal rule.
+	 * @param string $rule   The refusal rule.
+	 * @param string $detail What the rule names: the refused zone, or the setting and what it allows.
 	 *
 	 * @return string The sentence.
 	 *
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
-	private function refusalSentence(string $rule): string {
+	private function refusalSentence(string $rule, string $detail): string {
 		if ($rule === 'woo-throughput-needs-reader-group') {
 			return $this->l10n->t('Name an existing reader group before switching the throughput report on.');
+		}
+
+		if ($rule === 'unknown-timezone') {
+			return $this->l10n->t('"%s" is not a time zone dossiq can use.', [$detail]);
+		}
+
+		if ($rule === 'setting-out-of-range') {
+			return $this->l10n->t('This value is not allowed (%s).', [$detail]);
 		}
 
 		return $this->l10n->t('These settings could not be saved.');

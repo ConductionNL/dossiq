@@ -74,12 +74,12 @@ class SettingsControllerWriteTest extends TestCase {
 	private function controller(): SettingsController {
 		return new SettingsController(
 			request: $this->request,
-			container: $this->createMock(ContainerInterface::class),
-			appManager: $this->createMock(IAppManager::class),
+			container: $this->createMock(originalClassName: ContainerInterface::class),
+			appManager: $this->createMock(originalClassName: IAppManager::class),
 			settingsService: $this->settingsService,
-			groupManager: $this->createMock(IGroupManager::class),
-			userSession: $this->createMock(IUserSession::class),
-			l10n: $this->createMock(IL10N::class)
+			groupManager: $this->createMock(originalClassName: IGroupManager::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			l10n: $this->createMock(originalClassName: IL10N::class)
 		);
 	}//end controller()
 
@@ -91,8 +91,8 @@ class SettingsControllerWriteTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->request = $this->createMock(IRequest::class);
-		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->request = $this->createMock(originalClassName: IRequest::class);
+		$this->settingsService = $this->createMock(originalClassName: SettingsService::class);
 	}//end setUp()
 
 	/**
@@ -225,7 +225,7 @@ class SettingsControllerWriteTest extends TestCase {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function testARefusedThroughputSwitchAnswers422WithTheSentence(): void {
-		$this->request->method('getParams')->willReturn(['wooReviewerThroughputReport' => 'true']);
+		$this->request->method('getParams')->willReturn(['reviewerThroughputReport' => 'true']);
 		$this->settingsService->method('updateSettings')->willThrowException(
 			new \OCA\Dossiq\Exception\RefusedException(
 				rule: 'woo-throughput-needs-reader-group',
@@ -233,28 +233,62 @@ class SettingsControllerWriteTest extends TestCase {
 				status: 422
 			)
 		);
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => 'NL: ' . $text);
 
 		$controller = new SettingsController(
 			request: $this->request,
-			container: $this->createMock(ContainerInterface::class),
-			appManager: $this->createMock(IAppManager::class),
+			container: $this->createMock(originalClassName: ContainerInterface::class),
+			appManager: $this->createMock(originalClassName: IAppManager::class),
 			settingsService: $this->settingsService,
-			groupManager: $this->createMock(IGroupManager::class),
-			userSession: $this->createMock(IUserSession::class),
+			groupManager: $this->createMock(originalClassName: IGroupManager::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
 			l10n: $l10n
 		);
 		$response = $controller->update();
 
-		$this->assertSame(422, $response->getStatus());
+		$this->assertSame(expected: 422, actual: $response->getStatus());
 		$this->assertSame(
-			[
+			expected: [
 				'success' => false,
 				'error' => 'woo-throughput-needs-reader-group',
 				'message' => 'NL: Name an existing reader group before switching the throughput report on.',
 			],
-			$response->getData()
+			actual: $response->getData()
 		);
 	}//end testARefusedThroughputSwitchAnswers422WithTheSentence()
+
+	/**
+	 * A time zone dossiq cannot use is refused with a 400 that names it, and nothing is written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
+	 */
+	public function testAnUnknownTimeZoneAnswers400NamingIt(): void {
+		$this->request->method('getParams')->willReturn(['timezone' => 'Mars/Olympus']);
+		$this->settingsService->method('updateSettings')->willReturnCallback(
+			static function (array $data): array {
+				(new \OCA\Dossiq\Service\Settings\SettingValueRules())->assertValid(data: $data);
+				return [];
+			}
+		);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
+
+		$controller = new SettingsController(
+			request: $this->request,
+			container: $this->createMock(originalClassName: ContainerInterface::class),
+			appManager: $this->createMock(originalClassName: IAppManager::class),
+			settingsService: $this->settingsService,
+			groupManager: $this->createMock(originalClassName: IGroupManager::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			l10n: $l10n
+		);
+		$response = $controller->update();
+
+		$this->assertSame(expected: 400, actual: $response->getStatus());
+		$this->assertSame(expected: 'unknown-timezone', actual: $response->getData()['error']);
+		$this->assertSame(expected: '"Mars/Olympus" is not a time zone dossiq can use.', actual: $response->getData()['message']);
+	}//end testAnUnknownTimeZoneAnswers400NamingIt()
 }//end class

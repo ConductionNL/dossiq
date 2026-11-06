@@ -45,6 +45,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for SubCaseDeriver.
  *
  * @covers \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
+ * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseStore
+ * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseLink
  */
 class SubCaseDeriverTest extends TestCase {
 

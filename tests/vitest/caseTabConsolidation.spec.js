@@ -25,6 +25,7 @@
  * @spec openspec/changes/the-case-page-finished/specs/case-dashboard-view/spec.md
  */
 
+import { LIBRARY_WIDGET_KEYS } from '@conduction/nextcloud-vue/src/utils/libraryWidgetKeys.js'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
@@ -120,21 +121,21 @@ const TAB_CEILING = 15
 
 /** The fifteen labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
-	['case-data-panel', 'Data'],
+	['case-data-panel', 'Overview'],
 	['case-files', 'Files'],
-	['case-document-review', 'Review'],
+	['case-communication-panel', 'Contact'],
+	['case-work-panel', 'Tasks'],
+	['case-timeline-panel', 'Case history'],
 	['case-notes-panel', 'Notes'],
-	['case-timeline-panel', 'Timeline'],
 	['case-people-panel', 'People'],
-	['case-communication-panel', 'Communication'],
 	['case-email-panel', 'Email'],
-	['case-work-panel', 'Work'],
-	['case-change-proposals', 'Proposals'],
 	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
 	['case-custody-panel', 'Custody'],
 	['case-archival-panel', 'Archiving'],
 	['case-knowledge-panel', 'Knowledge'],
+	['case-document-review', 'Review'],
+	['case-change-proposals', 'Proposals'],
 ]
 
 /**
@@ -194,6 +195,12 @@ describe('the case page tab strip', () => {
 
 	it('names the fifteen tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
+	})
+
+	it('shows five tabs and puts the rest under More (REQ-CDV-16)', () => {
+		const content = widget('case-panels').content
+		expect(content.maxVisibleTabs).toBe(5)
+		expect(content.moreLabel).toBe('More')
 	})
 
 	it('labels every tab in sentence case, with no em-dash', () => {
@@ -347,21 +354,14 @@ describe('the container type this change depends on', () => {
 		// and renders nothing, silently, when the key is missing, and these
 		// components were registered only as sidebar `component:` entries.
 		const PANES = {
-			'case-notes-panel': 'case-notes-pane',
-			'case-email-panel': 'case-email-pane',
-			'case-decisions-panel': 'case-decisions-pane',
-			// Timeline arrived with #2846: every note, call and message on the
-			// case in one order. A single surface, keyed by TYPE like the three
-			// above it.
-			'case-timeline-panel': 'case-timeline-pane',
 			// Archiving arrived with #2850 as `type: "custom"` plus a
 			// `widget-case-archival` slot on the page, and this file carried a
 			// branch that asserted exactly that. The slot name did not match
 			// the widget id,
 			// and a page slot is read by the widget GRID and never reaches a
 			// widget inside a tab panel, so the tab drew nothing while this
-			// test stayed green. It is keyed by TYPE now, like the five above.
-			'case-archival-panel': 'case-archival-pane',
+			// test stayed green. It is the library's retention widget now.
+			'case-archival-panel': 'retention',
 			// Custody arrived with #2940: who has held this case, and who is
 			// asking for it. Keyed by TYPE for the same reason as the six
 			// above, and a custom pane rather than a data widget because a
@@ -371,7 +371,7 @@ describe('the container type this change depends on', () => {
 			'case-custody-panel': 'case-custody-pane',
 			// Review arrived with woo-review-triage: where a document review
 			// stands. A single surface keyed by TYPE (registry.js), like the rest.
-			'case-document-review': 'document-review',
+			'case-document-review': 'document-relevance-review',
 		}
 
 		// The tabs the LIBRARY draws from another app's leaf. Files is the
@@ -386,7 +386,21 @@ describe('the container type this change depends on', () => {
 		// empty tab and logs nothing.
 		const LEAVES = {
 			'case-files': 'files',
+			// Notes is the library notes leaf, wired by the manifest with the
+			// mention endpoint and the one note action dossiq adds.
+			'case-notes-panel': 'notes',
 			'case-change-proposals': 'portaliq-change-proposal-queue',
+			// decidiq's decisions, through the library integration widget,
+			// which says "Decidiq not available" when the leaf is absent.
+			'case-decisions-panel': 'decidesk-decisions',
+		}
+
+		// The tabs a library widget type draws from the manifest alone.
+		const LIBRARY_TYPES = {
+			'case-email-panel': 'mail',
+			// Timeline arrived with #2846: every note, call and message on the
+			// case in one order, now the library timeline in manage mode.
+			'case-timeline-panel': 'timeline',
 		}
 
 		// A leaf that lives inside a group, as `{ widgetId: [sectionWidgetId,
@@ -402,15 +416,22 @@ describe('the container type this change depends on', () => {
 				expect(widget(widgetId).integrationId).toBe(LEAVES[widgetId])
 				continue
 			}
+			if (LIBRARY_TYPES[widgetId]) {
+				expect(widget(widgetId).type).toBe(LIBRARY_TYPES[widgetId])
+				continue
+			}
 			if (PANES[widgetId]) {
 				const type = PANES[widgetId]
 				expect(widget(widgetId).type).toBe(type)
-				// And the type actually resolves. Without this the assertion
-				// above passes on a manifest naming a renderer nobody wrote.
-				expect(
-					registry,
-					`${type} is named by the manifest but registered nowhere, so the ${widgetId} tab renders nothing`,
-				).toContain(`'${type}': {`)
+				// And the type actually resolves, in this registry or as a
+				// library widget. Without this the assertion above passes on a
+				// manifest naming a renderer nobody wrote.
+				if (!LIBRARY_WIDGET_KEYS.includes(type)) {
+					expect(
+						registry,
+						`${type} is named by the manifest but registered nowhere, so the ${widgetId} tab renders nothing`,
+					).toContain(`'${type}': {`)
+				}
 				continue
 			}
 			expect(widget(widgetId).type).toBe('sections')

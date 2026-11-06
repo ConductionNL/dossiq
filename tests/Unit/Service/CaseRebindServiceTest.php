@@ -52,6 +52,7 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindGate
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindImpact
+ * @uses \OCA\Dossiq\Service\Cases\RebindMove
  * @uses \OCA\Dossiq\Service\Cases\RebindValueConverter
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
@@ -66,6 +67,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Support\TranslatedText
  * @uses \OCA\Dossiq\Service\Transitions\StatusPublicLabels
+ * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
  */
 class CaseRebindServiceTest extends TestCase {
 

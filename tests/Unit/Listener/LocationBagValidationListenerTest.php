@@ -14,7 +14,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+ * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -275,6 +275,8 @@ class LocationBagValidationListenerTest extends TestCase {
 
 		$this->assertTrue($event->isPropagationStopped());
 		$this->assertSame(['nummeraanduidingId.unknown'], $event->getErrors()['codes']);
+		$this->assertSame('bag-address-unknown', $event->getErrors()['code']);
+		$this->assertMatchesRegularExpression('/^\d{16}$/', $event->getErrors()['addressId']);
 	}//end testCheckOnAndNotFoundIsRefused()
 
 	/**
@@ -299,6 +301,8 @@ class LocationBagValidationListenerTest extends TestCase {
 
 			$this->assertTrue($event->isPropagationStopped(), $reason);
 			$this->assertSame([$code], $event->getErrors()['codes'], $reason);
+			$this->assertSame('bag-check-unavailable', $event->getErrors()['code'], $reason);
+			$this->assertArrayNotHasKey('addressId', $event->getErrors(), $reason);
 			$this->assertStringContainsString($says, $event->getErrors()['message'], $reason);
 		}
 	}//end testCheckOnWithoutAnAnswerIsRefusedNotPassed()

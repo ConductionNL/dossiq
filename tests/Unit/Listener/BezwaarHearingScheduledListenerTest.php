@@ -35,11 +35,18 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\BezwaarHearingScheduledListener
+ * @covers \OCA\Dossiq\Listener\Support\ObjectUpdatePayload
+ * @covers \OCA\Dossiq\Listener\Support\ReadsEventObjects
+ * @covers \OCA\Dossiq\Listener\Support\ActsOnStatusEntry
  *
  * @uses \OCA\Dossiq\Service\Bezwaar\HearingService
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  * @uses \OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner
  * @uses \OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder
+ * @uses \OCA\Dossiq\Service\Hearing\HearingPlan
+ * @uses \OCA\Dossiq\Service\Hearing\NewSession
+ * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
+ * @uses \OCA\Dossiq\Service\Hearing\SessionStore
  */
 class BezwaarHearingScheduledListenerTest extends TestCase {
 	use MakesBezwaarAuditTrail;

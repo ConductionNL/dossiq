@@ -51,8 +51,10 @@ const caseTypeProps = register.components.schemas.caseType.properties
 
 describe("the money is shillinq's, and the case page places its leaves", () => {
 	it.each([
-		['case-payment-requests', 'shillinq-payment-requests'],
-		['case-contract', 'shillinq-contracts'],
+		// The RENDER leaves shillinq registers; `shillinq-payment-requests` and
+		// `shillinq-contracts` are its data leaves, which no host can mount.
+		['case-payment-requests', 'shillinq-financial-documents-panel'],
+		['case-contract', 'shillinq-contracts-panel'],
 	])('%s is a placement of the %s leaf', (widgetId, integrationId) => {
 		const widget = widgetById(widgetId)
 		expect(widget, `${widgetId} is not declared`).toBeTruthy()

@@ -6,12 +6,13 @@ status-note: >-
   GeoService, WfsService, WfsExportService, WmsWfsService, LocationService,
   CaseGeoController and the /api/cases/geo and /wfs/cases endpoints, the
   Leaflet components under src/components/map, caseGeoService,
-  coordinateService, gisProxyService and the gis store. The cases-on-map
-  surface now consumes OpenRegister's maps-overview endpoints through
-  src/services/casesOnMapApi.js and renders them with the shared CnMapWidget,
-  which owns clustering and the PDOK base layer. What remains in this app is
+  coordinateService, gisProxyService and the gis store. 2026-10-19: the
+  cases-on-map surface is the Cases index in map view (`/cases?_view=map`,
+  `/map` redirects there), configured through `mapConfig` and drawn with the
+  shared CnMapWidget, which owns clustering and the PDOK base layer;
+  CasesOnMapView and casesOnMapApi.js are gone. What remains in this app is
   the marker shaping in src/services/mapFormatters.js, covered by
-  tests/vitest/casesOnMap.spec.js. This spec is retained for history; the geo
+  tests/vitest/mapFormatters.spec.js. This spec is retained for history; the geo
   capability is owned by OpenRegister.
 ---
 
@@ -23,8 +24,8 @@ GIS / geo capability for cases: a backend `GeoService` (RFC 7946 GeoJSON
 validation + JSON-encoded (de)serialisation + clustered case-geo assembly), an
 OGC WFS 2.0.0 endpoint (`/wfs/cases`, reusing `WfsExportService`), a clustered
 cases-on-map data endpoint (`/api/cases/geo`, with a per-object access guard),
-and a Leaflet-based frontend (read-only `GeoViewer` single-case map + full-screen
-`CasesOnMapView` dashboard with filters + GeoJSON export). PDOK base layers /
+and a Leaflet-based frontend (read-only `GeoViewer` single-case map + the case
+map, which is the Cases index in map view). PDOK base layers /
 geocoding are reached via OpenConnector and degrade gracefully when
 OpenConnector or PDOK is unavailable — the map never hard-fails.
 
@@ -34,12 +35,12 @@ OpenConnector or PDOK is unavailable — the map never hard-fails.
 ## Status
 
 `partial` — the core backend (GeoService, WfsService, WfsController,
-CaseGeoController) and the core frontend (GeoViewer, CasesOnMapView + pure
+CaseGeoController) and the core frontend (GeoViewer, the Cases index map + pure
 data-shaping helpers) are built, tested (PHPUnit + vitest + Newman) and gate-clean.
 Honest residue (cross-app / live-only): live PDOK address & parcel autocomplete
 in the LocationPicker rides on the OpenConnector PDOK adapter; WFS-endpoint CORS
 verification and map-performance testing with 1000+ markers require a live
-deployment + external tiles; a date-range filter on the cases-on-map view is a
+deployment + external tiles; a date-range filter on the case map is a
 UX refinement not yet built.
 
 ## Requirements
@@ -147,24 +148,27 @@ is set.
 - **WHEN** the GeoViewer is shown
 - **THEN** an empty-state MUST be displayed instead of a blank map
 
-### Requirement: CasesOnMapView MUST provide a full-screen map dashboard
+### Requirement: The case map MUST be the Cases index in map view
 
-The system SHALL provide a `CasesOnMapView` full-screen view that loads the
-`/api/cases/geo` FeatureCollection, shapes it via pure helpers, supports
-zaaktype/status filtering, navigates to case detail on marker click, and
-exports the visible single cases as GeoJSON. It MUST degrade gracefully when
-the backend or PDOK tiles are unavailable.
+The system SHALL offer the case map as the Cases index in its map view
+(`/cases?_view=map`); the old `/map` address SHALL redirect there. Through the
+index page's `mapConfig` it SHALL plot every case that matches the list's
+filters (`plotAll`, up to 500, with a note when more match), colour each marker
+by its status type (`markerColor`), and say how many cases it placed of how many
+match (`count`). Case type and status filtering are the list's own filters, and
+a marker click opens the case detail like a row click. It MUST degrade
+gracefully when the backend or the map tiles are unavailable.
 
-#### Scenario: Cases-on-map view renders the map dashboard
+#### Scenario: The case map renders the Cases index in map view
 
-- **GIVEN** the user opens the cases-on-map view
+- **GIVEN** the user opens the case map
 - **WHEN** the view loads
-- **THEN** the map dashboard MUST render with its filter sidebar and a count summary
-- **AND** a backend/data failure MUST surface a non-blocking notice rather than a broken page
+- **THEN** the Cases index MUST render in map view with the list's filters, drawing only the cases that carry a geometry
+- **AND** a backend/data failure MUST leave the page usable rather than broken
 
 #### Scenario: Map data shaping is pure and testable
 
-@e2e exclude pure data-shaping helpers, covered by tests/vitest/casesOnMap.spec.js.
+@e2e exclude pure data-shaping helpers, covered by tests/vitest/mapFormatters.spec.js.
 After bac6f7073 the shaping is shapeMarkerFeatures in
 src/services/mapFormatters.js, and that vitest spec asserts the coordinate
 order, the status colour and icon, malformed rows and non-array input.

@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BeschikkingGenerationService;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\IAppConfig;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -133,16 +134,16 @@ class BeschikkingGenerationServiceTest extends TestCase {
 	}//end testConstructorSetsProperties()
 
 	/**
-	 * Test that generateBeschikking returns a stub when filinq is unavailable.
+	 * Without the document app or the object service, nothing is saved, and the answer says so.
 	 *
-	 * When the container cannot resolve DocumentService, the method should
-	 * log a warning and return a successful result with a stub bijlage ID.
+	 * The container resolves neither filinq's DocumentService nor OpenRegister's
+	 * ObjectService, so the stub save throws as well.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
 	 */
-	public function testGenerateBeschikkingWhenDocumentAppUnavailableReturnsStub(): void {
+	public function testGenerateBeschikkingWhenNothingCanBeSavedAnswersFailure(): void {
 		$this->appConfig
 			->method('getValueString')
 			->willReturn('');
@@ -159,10 +160,10 @@ class BeschikkingGenerationServiceTest extends TestCase {
 			motivation: 'Voldoet aan alle eisen.'
 		);
 
-		$this->assertTrue($result['success']);
-		$this->assertArrayHasKey('bijlageId', $result);
-		$this->assertStringContainsString('stub', strtolower($result['message']));
-	}//end testGenerateBeschikkingWhenDocumentAppUnavailableReturnsStub()
+		$this->assertFalse(condition: $result['success']);
+		$this->assertSame(expected: '', actual: $result['bijlageId']);
+		$this->assertStringContainsString(needle: 'could not be saved', haystack: $result['message']);
+	}//end testGenerateBeschikkingWhenNothingCanBeSavedAnswersFailure()
 
 	/**
 	 * The happy path, asserted against the names and the method filinq really
@@ -340,4 +341,183 @@ class BeschikkingGenerationServiceTest extends TestCase {
 		$this->assertContains('dso_beschikking_template_verleend', $capturedKeys);
 		$this->assertNotContains('dso_beschikking_template_geweigerd', $capturedKeys);
 	}//end testGenerateBeschikkingOutcomeSelectsCorrectTemplate()
+
+	/**
+	 * A container that resolves the given document service (or none) and object service.
+	 *
+	 * @param object|null $documents The document service, or null when filinq is absent.
+	 * @param object      $objects   The object service.
+	 *
+	 * @return void
+	 */
+	private function serve(?object $documents, object $objects): void {
+		$this->container->method('get')->willReturnCallback(
+			static function (string $id) use ($documents, $objects): object {
+				if ($id === 'OCA\\OpenRegister\\Service\\ObjectService') {
+					return $objects;
+				}
+
+				if ($documents !== null && $id === 'OCA\\Filinq\\Service\\DocumentService') {
+					return $documents;
+				}
+
+				throw new \RuntimeException('not registered: ' . $id);
+			}
+		);
+	}//end serve()
+
+	/**
+	 * A document service that renders, or throws when told to.
+	 *
+	 * @param bool $fails Whether rendering throws.
+	 *
+	 * @return object The document service.
+	 */
+	private function documents(bool $fails): object {
+		return new class ($fails) {
+			/**
+			 * Constructor.
+			 *
+			 * @param bool $fails Whether rendering throws.
+			 */
+			public function __construct(private bool $fails) {
+			}
+
+			/**
+			 * Mirrors OCA\Filinq\Service\DocumentService::generateDocument().
+			 *
+			 * @param string $templateId The template UUID.
+			 * @param array  $dataRefs   OpenRegister data references.
+			 * @param array  $options    Generation options.
+			 *
+			 * @return array<string,mixed> The filinq generation envelope.
+			 */
+			public function generateDocument(string $templateId, array $dataRefs, array $options = []): array {
+				if ($this->fails === true) {
+					throw new \RuntimeException('render failed');
+				}
+
+				return ['output' => ['mode' => 'files', 'fileId' => 9, 'name' => 'beschikking_granted.pdf']];
+			}
+		};
+	}//end documents()
+
+	/**
+	 * An object service whose saveObject() answers the given entity, or throws when given null.
+	 *
+	 * @param ObjectEntity|null $saved The saved entity, or null to refuse the save.
+	 *
+	 * @return object The object service.
+	 */
+	private function objects(?ObjectEntity $saved): object {
+		return new class ($saved) {
+			/**
+			 * Constructor.
+			 *
+			 * @param ObjectEntity|null $saved The saved entity, or null to refuse the save.
+			 */
+			public function __construct(private ?ObjectEntity $saved) {
+			}
+
+			/**
+			 * Mirrors ObjectService::saveObject(), which answers an ObjectEntity.
+			 *
+			 * @param string              $register The register slug.
+			 * @param string              $schema   The schema slug.
+			 * @param array<string,mixed> $object   The object to persist.
+			 *
+			 * @return ObjectEntity The saved object.
+			 */
+			public function saveObject(string $register, string $schema, array $object): ObjectEntity {
+				if ($this->saved === null) {
+					throw new \RuntimeException('save refused');
+				}
+
+				return $this->saved;
+			}
+		};
+	}//end objects()
+
+	/**
+	 * A saved entity with the given uuid, as OpenRegister answers a save.
+	 *
+	 * @param string $uuid The uuid.
+	 *
+	 * @return ObjectEntity The entity.
+	 */
+	private function entity(string $uuid): ObjectEntity {
+		$entity = new ObjectEntity();
+		$entity->setUuid($uuid);
+
+		return $entity;
+	}//end entity()
+
+	/**
+	 * The attachment's id is read off the entity OpenRegister answers the save with.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/specs/dso-omgevingsloket/spec.md
+	 */
+	public function testGeneratedDocumentIsAttachedUnderTheSavedEntitysId(): void {
+		$this->appConfig->method('getValueString')->willReturn('tpl-1');
+		$this->serve(documents: $this->documents(fails: false), objects: $this->objects(saved: $this->entity(uuid: 'bijlage-7')));
+
+		$result = $this->service->generateBeschikking(caseId: 'zaak-1', outcome: 'granted', motivation: 'Past.');
+
+		$this->assertSame(expected: ['success' => true, 'bijlageId' => 'bijlage-7', 'message' => 'Beschikking generated and attached.'], actual: $result);
+	}//end testGeneratedDocumentIsAttachedUnderTheSavedEntitysId()
+
+	/**
+	 * A generated document whose attachment cannot be saved is not reported as attached.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/specs/dso-omgevingsloket/spec.md
+	 */
+	public function testAttachmentSaveFailureAnswersFailure(): void {
+		$this->appConfig->method('getValueString')->willReturn('tpl-1');
+		$this->serve(documents: $this->documents(fails: false), objects: $this->objects(saved: null));
+		$this->logger->expects($this->once())->method('error')
+			->with($this->stringContains(string: 'could not attach bijlage: save refused'));
+
+		$result = $this->service->generateBeschikking(caseId: 'zaak-1', outcome: 'granted', motivation: 'Past.');
+
+		$expected = ['success' => false, 'bijlageId' => '', 'message' => 'Beschikking generated, but the bijlage could not be saved.'];
+		$this->assertSame(expected: $expected, actual: $result);
+	}//end testAttachmentSaveFailureAnswersFailure()
+
+	/**
+	 * A failed generation whose stub cannot be saved either answers failure, not a stub.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/specs/dso-omgevingsloket/spec.md
+	 */
+	public function testGenerationAndStubSaveFailureAnswersFailure(): void {
+		$this->appConfig->method('getValueString')->willReturn('tpl-1');
+		$this->serve(documents: $this->documents(fails: true), objects: $this->objects(saved: null));
+
+		$result = $this->service->generateBeschikking(caseId: 'zaak-1', outcome: 'granted', motivation: 'Past.');
+
+		$expected = ['success' => false, 'bijlageId' => '', 'message' => 'Beschikking generation failed, and the stub bijlage could not be saved.'];
+		$this->assertSame(expected: $expected, actual: $result);
+	}//end testGenerationAndStubSaveFailureAnswersFailure()
+
+	/**
+	 * A failed generation whose stub is saved answers with the stub's id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/specs/dso-omgevingsloket/spec.md
+	 */
+	public function testGenerationFailureAnswersWithTheSavedStub(): void {
+		$this->appConfig->method('getValueString')->willReturn('tpl-1');
+		$this->serve(documents: $this->documents(fails: true), objects: $this->objects(saved: $this->entity(uuid: 'stub-7')));
+
+		$result = $this->service->generateBeschikking(caseId: 'zaak-1', outcome: 'granted', motivation: 'Past.');
+
+		$expected = ['success' => true, 'bijlageId' => 'stub-7', 'message' => 'Stub beschikking bijlage created (document generation failed).'];
+		$this->assertSame(expected: $expected, actual: $result);
+	}//end testGenerationFailureAnswersWithTheSavedStub()
 }//end class

@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -65,6 +66,7 @@ class DemoCaseloadSeedDataService {
 	 * @param EngineTaskGateway $engineTask The engine's task writer.
 	 * @param IUserSession $userSession The identity the seed command set.
 	 * @param LoggerInterface $logger The logger interface.
+	 * @param LanguageMapText $text Reads a translatable status name as text.
 	 *
 	 * @return void
 	 */
@@ -73,6 +75,7 @@ class DemoCaseloadSeedDataService {
 		private EngineTaskGateway $engineTask,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
+		private LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -98,6 +101,26 @@ class DemoCaseloadSeedDataService {
 		$now = ($now ?? new DateTimeImmutable('today'));
 		$seed = $this->readSeedFile();
 		$objectService = $this->gateway->objectService();
+
+		return $this->gateway->asSystem(
+			objectService: $objectService,
+			operation: fn (): array => $this->seedWith(seed: $seed, objectService: $objectService, now: $now),
+		);
+	}//end seed()
+
+	/**
+	 * Seed the demo caseload through one ObjectService, inside the system-operation scope.
+	 *
+	 * The seed creates cases in later lifecycle statuses, which OpenRegister
+	 * allows on create only to the system.
+	 *
+	 * @param array             $seed          The dataset.
+	 * @param object            $objectService The OpenRegister ObjectService.
+	 * @param DateTimeImmutable $now           The clock.
+	 *
+	 * @return array{cases: integer, tasks: integer, skipped: integer} What was created.
+	 */
+	private function seedWith(array $seed, object $objectService, DateTimeImmutable $now): array {
 		$ids = $this->gateway->schemaIds();
 
 		$caseTypes = $this->caseTypesByIdentifier(objectService: $objectService, ids: $ids);
@@ -147,7 +170,7 @@ class DemoCaseloadSeedDataService {
 		$this->logger->info('Dossiq: Demo caseload seeded', $summary);
 
 		return $summary;
-	}//end seed()
+	}//end seedWith()
 
 	/**
 	 * Create one case from its seed entry.
@@ -242,6 +265,11 @@ class DemoCaseloadSeedDataService {
 
 		if (isset($caseSeed['endInDays']) === true) {
 			$data['endDate'] = $this->offset(now: $now, days: (int)$caseSeed['endInDays'])->format('Y-m-d');
+		}
+
+		if (isset($caseSeed['lastActivityInDays']) === true) {
+			$data['lastActivityAt'] = $this->offset(now: $now, days: (int)$caseSeed['lastActivityInDays'])
+				->format(DateTimeImmutable::ATOM);
 		}
 
 		return $data;
@@ -472,7 +500,7 @@ class DemoCaseloadSeedDataService {
 
 		foreach ($statusTypes as $statusType) {
 			$row = $this->gateway->toArray(object: $statusType);
-			$name = (string)($row['name'] ?? '');
+			$name = $this->text->textOf(value: ($row['name'] ?? ''));
 			$caseType = (string)($row['caseType'] ?? '');
 			if ($name === '' || $caseType === '') {
 				continue;

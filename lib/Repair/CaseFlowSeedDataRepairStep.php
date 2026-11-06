@@ -66,6 +66,13 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	private const SEED_PATH = __DIR__ . '/../Settings/case_flow_seed_data.json';
 
 	/**
+	 * App-config key holding the seed version whose demo cases were planted.
+	 *
+	 * @var string
+	 */
+	public const CASES_SEEDED_KEY = 'case_flow_seed_cases_version';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService  $settingsService Settings and ObjectService bridge.
@@ -81,6 +88,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *                                           on the next repair pass.
 	 * @param LoggerInterface   $logger          Logger.
 	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param CaseFlowSeedPhaseBackfill $phaseBackfill Which stored statuses still lack the seed's phase.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -88,6 +96,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 		private readonly CaseFlowSeedIndex $index,
 		private readonly LoggerInterface $logger,
 		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly CaseFlowSeedPhaseBackfill $phaseBackfill = new CaseFlowSeedPhaseBackfill(),
 	) {
 	}//end __construct()
 
@@ -222,6 +231,8 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 */
 	private function seed(object $objectService, array $schemas, array $data, IOutput $output): array {
 		$counts = ['caseTypes' => 0, 'statuses' => 0, 'cases' => 0, 'skipped' => 0];
+		$withCases = $this->index->casesDue(data: $data);
+		$complete = true;
 
 		foreach (($data['caseTypes'] ?? []) as $caseType) {
 			if (is_array($caseType) === false || $this->text->textOf(value: ($caseType['title'] ?? null)) === '') {
@@ -229,15 +240,25 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			}
 
 			try {
-				$this->seedOne(
+				$caseTypeId = $this->seedOne(
 					objectService: $objectService,
 					schemas: $schemas,
-					data: $data,
 					caseType: $caseType,
 					counts: $counts,
 					output: $output
 				);
+				if ($withCases === true && $caseTypeId !== '') {
+					$counts['cases'] += $this->seedCases(
+						objectService: $objectService,
+						schemas: $schemas,
+						data: $data,
+						caseTypeId: $caseTypeId,
+						statusesByName: array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId)),
+						output: $output
+					);
+				}
 			} catch (Throwable $e) {
+				$complete = false;
 				$title = $this->text->textOf(value: ($caseType['title'] ?? null));
 				$output->warning('Case-flow seed failed for "' . $title . '": ' . $e->getMessage());
 				$this->logger->warning(
@@ -247,11 +268,16 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			}
 		}//end foreach
 
+		// A run that failed part-way is not recorded, so the next run finishes it.
+		if ($withCases === true && $complete === true) {
+			$this->settingsService->setConfigValue(key: self::CASES_SEEDED_KEY, value: $this->index->seedVersion(data: $data));
+		}
+
 		return $counts;
 	}//end seed()
 
 	/**
-	 * Seed one case type, its statuses and its cases.
+	 * Seed one case type and its statuses; {@see seed()} plants its cases.
 	 *
 	 * 🔑 Idempotency is per OBJECT, not per case type. Keying the whole seed on
 	 * "does the case type exist" means a run that created the case type and then
@@ -261,23 +287,21 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @param object               $objectService The ObjectService.
 	 * @param array<string,string> $schemas       Register and schema names.
-	 * @param array<string,mixed>  $data          The decoded seed.
 	 * @param array<string,mixed>  $caseType      The case type to seed.
 	 * @param array<string,int>    $counts        Running totals, updated in place.
 	 * @param IOutput              $output        Output sink.
 	 *
-	 * @return void
+	 * @return string The case type id, '' when it has none.
 	 *
 	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function seedOne(
 		object $objectService,
 		array $schemas,
-		array $data,
 		array $caseType,
 		array &$counts,
 		IOutput $output,
-	): void {
+	): string {
 		$title = $this->text->textOf(value: $caseType['title']);
 		$statusTypes = ($caseType['statusTypes'] ?? []);
 		unset($caseType['statusTypes']);
@@ -302,7 +326,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 
 		if ($caseTypeId === '') {
 			$output->warning('Case-flow seed: the case type has no id; skipping its statuses.');
-			return;
+			return '';
 		}
 
 		$counts['statuses'] += $this->seedStatuses(
@@ -312,14 +336,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			statusTypes: $statusTypes
 		);
 
-		$counts['cases'] += $this->seedCases(
-			objectService: $objectService,
-			schemas: $schemas,
-			data: $data,
-			caseTypeId: $caseTypeId,
-			statusesByName: array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId)),
-			output: $output
-		);
+		return $caseTypeId;
 	}//end seedOne()
 
 	/**
@@ -335,7 +352,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return array<string,mixed>|null The stored case type, or null.
 	 *
-	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 * @spec openspec/specs/case-type-seed-data/spec.md
 	 */
 	private function existingCaseType(array $schemas, array $caseType, string $title): ?array {
 		$slug = trim((string)($caseType['slug'] ?? ''));
@@ -387,8 +404,48 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			}
 		}
 
+		$this->backfillPhases(
+			objectService: $objectService,
+			schemas: $schemas,
+			caseTypeId: $caseTypeId,
+			statusTypes: $statusTypes
+		);
+
 		return $created;
 	}//end seedStatuses()
+
+	/**
+	 * Give the statuses an earlier run stored without a phase the seed's phase.
+	 *
+	 * A status is only created once, so one seeded before statuses carried a
+	 * phase kept none, and the process analysis drew it as a column of its own.
+	 * A phase an administrator set is left alone: only an empty one is filled.
+	 *
+	 * @param object               $objectService The ObjectService.
+	 * @param array<string,string> $schemas       Register and schema names.
+	 * @param string               $caseTypeId    The owning case type.
+	 * @param array<int,mixed>     $statusTypes   The statuses declared in the seed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/seed-status-phases-backfill/spec.md#requirement-a-seeded-status-without-a-phase-gets-the-seeds-phase
+	 */
+	private function backfillPhases(object $objectService, array $schemas, string $caseTypeId, array $statusTypes): void {
+		$pending = $this->phaseBackfill->pending(
+			statusTypes: $statusTypes,
+			rows: $this->statuses->rowsOf(caseTypeId: $caseTypeId),
+			caseTypeId: $caseTypeId
+		);
+		foreach ($pending as $id => $phase) {
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $schemas['register'],
+				schema: $schemas['statusType'],
+				id: (string)$id,
+				changes: ['phase' => $phase]
+			);
+		}
+	}//end backfillPhases()
 
 	/**
 	 * Create the demo cases belonging to this case type.

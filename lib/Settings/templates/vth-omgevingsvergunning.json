@@ -4,12 +4,12 @@
   "version": "1.0.0",
   "description": "Template voor omgevingsvergunning aanvragen (VTH module)",
   "statusTypes": [
-    {"name": "Ontvangen", "order": 1, "isFinal": false},
-    {"name": "Ontvankelijkheidstoets", "order": 2, "isFinal": false},
-    {"name": "In behandeling", "order": 3, "isFinal": false},
-    {"name": "Advies", "order": 4, "isFinal": false},
-    {"name": "Besluitvorming", "order": 5, "isFinal": false},
-    {"name": "Afgehandeld", "order": 6, "isFinal": true}
+    {"name": "Ontvangen", "colour": "blue", "order": 1, "isFinal": false},
+    {"name": "Ontvankelijkheidstoets", "colour": "purple", "order": 2, "isFinal": false},
+    {"name": "In behandeling", "colour": "purple", "order": 3, "isFinal": false},
+    {"name": "Advies", "colour": "purple", "order": 4, "isFinal": false},
+    {"name": "Besluitvorming", "colour": "teal", "order": 5, "isFinal": false},
+    {"name": "Afgehandeld", "colour": "green", "order": 6, "isFinal": true}
   ],
   "documentTypes": [
     {"name": "Bouwtekening"},

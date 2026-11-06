@@ -24,8 +24,7 @@
  * @spec openspec/specs/initiator-selection/spec.md
  */
 
-import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
+import { resolvePartyByAddress } from './caseParties.js'
 
 /**
  * Compose a person display name from a Haal Centraal naam block.
@@ -159,79 +158,33 @@ export function requesterPayload(result) {
 }
 
 /**
- * Whether a unified result is the one a requester payload names.
+ * A picked party as the four fields a case carries for its requester, from
+ * the kind it was found as (`person`, `company`, `contact`) and its row.
  *
- * The payload is what the form holds, so the picker has to recognise its
- * own choice coming back in. A bare uuid string is accepted too: that is
- * what `case.requester` holds on a case whose projection was written by
- * the semantic handoff rather than by the picker.
+ * A Nextcloud contact has no register row, so it is pointed at the party that
+ * already holds its address when OpenRegister knows one: two cases from one
+ * address then name one record, not two that no merge would find. A register
+ * row is already the record and is taken as it is.
  *
- * @param {object|string|null} value The current requester payload, uuid, or null.
- * @param {object} result A unified initiator result.
- * @return {boolean} True when the result is the current choice.
+ * @param {string} kind The source the row came from.
+ * @param {object} row The row.
+ * @return {Promise<object>} `{ requester, initiatorType, initiatorSourceId, initiatorDisplayName }`.
  * @spec openspec/specs/initiator-selection/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
-export function isCurrentRequester(value, result) {
-	if (!value || !result) {
-		return false
+export async function initiatorChoice(kind, row) {
+	const shapes = { person: personResult, company: companyResult, contact: contactResult }
+	const shape = shapes[kind]
+	if (!shape || !row) {
+		return {}
 	}
-	if (typeof value === 'string') {
-		return !!result.objectId && value === result.objectId
+	const result = shape(row)
+	const address = String(result.detail || '').trim()
+	if (!result.objectId && address.includes('@')) {
+		const party = await resolvePartyByAddress(address)
+		if (party) {
+			result.objectId = party.id || party['@self']?.id || party.uuid || null
+		}
 	}
-	if (value.initiatorType) {
-		return (
-			value.initiatorType === result.type
-			&& String(value.initiatorSourceId || '')
-				=== String(result.sourceId || '')
-		)
-	}
-	// A bare unified result (the shape the picker emitted before the
-	// payload carried the uuid).
-	return (
-		value.type === result.type
-		&& String(value.sourceId || '') === String(result.sourceId || '')
-	)
-}
-
-/**
- * Mask an identifying number to five dots plus its last four digits.
- *
- * The last four are kept on purpose: a handler has to be able to tell two
- * cases apart, and a fully hidden number makes the card useless without
- * revealing it. The number itself is still on the case object — this is a
- * display rule, not storage masking, which needs OpenRegister to mask a
- * field on read.
- *
- * @param {string} value The number to mask.
- * @return {string} The masked number, or '' for an empty value.
- * @spec openspec/specs/initiator-display/spec.md
- */
-export function maskNumber(value) {
-	const text = String(value || '')
-	if (text === '') {
-		return ''
-	}
-	return `•••••${text.slice(-4)}`
-}
-
-/**
- * Search Nextcloud contacts through the core contactsmenu endpoint.
- * Degrades to [] on any failure (Contacts absent, endpoint disabled) —
- * the picker shows an explicit empty state, never an error toast.
- *
- * @param {string} query The search filter.
- * @return {Promise<Array<object>>} Unified contact results.
- * @spec openspec/specs/initiator-selection/spec.md
- */
-export async function searchContacts(query) {
-	try {
-		const { data } = await axios.post(generateUrl('/contactsmenu/contacts'), {
-			filter: query,
-		})
-		const contacts = data?.contacts || []
-		return contacts.map(contactResult)
-	} catch (err) {
-		// Graceful degradation by spec — unavailable source is an empty state.
-		return []
-	}
+	return requesterPayload(result)
 }

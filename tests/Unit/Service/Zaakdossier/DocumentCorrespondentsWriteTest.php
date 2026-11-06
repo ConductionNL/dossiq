@@ -18,11 +18,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -34,6 +36,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\ZaakdossierService
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
@@ -189,6 +192,7 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 				settingsService: $settings,
 				groupManager: $this->createMock(originalClassName: IGroupManager::class),
 				logger: $logger,
+				exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 			),
 			statusLifecycle: new InformatieobjectStatusLifecycle(settingsService: $settings, logger: $logger),
 			normaliser: new InformatieobjectMetadataNormaliser(),
@@ -199,6 +203,7 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 				people: $people,
 				settingsService: $settings,
 				store: new DocumentRecordStore(settingsService: $settings),
+				labels: new DocumentListingLabels(settingsService: $settings),
 			),
 		);
 	}//end setUp()

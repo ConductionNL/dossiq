@@ -51,6 +51,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Notification\ApplicantMessage;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -127,6 +128,7 @@ class AdmissibilityJudgement {
 	 * @param CaseEndingActs           $endings   The ordinary close act.
 	 * @param ApplicantMessage         $letters   Sends the message the declared moment owes the applicant.
 	 * @param LoggerInterface          $logger    Says why a verdict could not be recorded.
+	 * @param IL10N                    $l10n      Words the publication warnings in the reader's language.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypes,
@@ -134,6 +136,7 @@ class AdmissibilityJudgement {
 		private readonly CaseEndingActs $endings,
 		private readonly ApplicantMessage $letters,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -228,13 +231,15 @@ class AdmissibilityJudgement {
 		$warnings = [];
 
 		if ($declaration['inadmissibleResultType'] === '') {
-			$warnings[] = 'This case type judges admissibility at intake and names no result '
-				. 'for an inadmissible aanvraag. Name one, or the close has no outcome to record.';
+			$warnings[] = $this->l10n->t('This case type judges admissibility at intake and names no result for an inadmissible '
+				. 'aanvraag. Name one, or the close has no outcome to record.');
 		}
 
 		if ($this->tellsTheApplicant(caseType: $caseType) === false) {
-			$warnings[] = 'This case type closes an inadmissible aanvraag without telling the '
-				. 'applicant. Add the moment ' . $declaration['moment'] . ' to its automatic messages.';
+			$warnings[] = $this->l10n->t(
+				'This case type closes an inadmissible aanvraag without telling the applicant. Add the moment %s to its automatic messages.',
+				[$declaration['moment']]
+			);
 		}
 
 		return $warnings;
@@ -263,34 +268,10 @@ class AdmissibilityJudgement {
 	public function judge(string $caseId, string $verdict, string $reason, string $judgedBy): array {
 		$verdict = trim($verdict);
 		$reason = trim($reason);
-
-		if (in_array($verdict, [self::ADMISSIBLE, self::INADMISSIBLE], true) === false) {
-			throw new RefusedException(
-				rule: 'admissibility-verdict-unknown',
-				sentence: 'Say whether the aanvraag is ontvankelijk or niet-ontvankelijk.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		if ($reason === '') {
-			throw new RefusedException(
-				rule: 'admissibility-reason-required',
-				sentence: 'Write down why. The applicant may object to this verdict, and the '
-					. 'file has to say what it was based on.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->assertJudgeable(verdict: $verdict, reason: $reason);
 
 		$case = $this->caseOf(caseId: $caseId);
-		$declaration = $this->declarationFor(caseType: $this->caseTypeOf(case: $case));
-
-		if ($declaration['enabled'] === false) {
-			throw new RefusedException(
-				rule: 'admissibility-not-declared',
-				sentence: 'This case type does not end intake with an admissibility judgement.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
+		$declaration = $this->declaredOn(case: $case);
 
 		$record = [
 			'verdict' => $verdict,
@@ -311,6 +292,74 @@ class AdmissibilityJudgement {
 			return ['verdict' => $verdict, 'record' => $record, 'closed' => false];
 		}
 
+		return $this->closeInadmissible(
+			judgement: ['caseId' => $caseId, 'case' => $case, 'declaration' => $declaration, 'record' => $record]
+		);
+	}//end judge()
+
+	/**
+	 * Refuse a verdict that is not one of the two, or that gives no reason.
+	 *
+	 * @param string $verdict The trimmed verdict.
+	 * @param string $reason  The trimmed reason.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the verdict is unknown or the reason is empty.
+	 */
+	private function assertJudgeable(string $verdict, string $reason): void {
+		if (in_array($verdict, [self::ADMISSIBLE, self::INADMISSIBLE], true) === false) {
+			throw new RefusedException(
+				rule: 'admissibility-verdict-unknown',
+				sentence: 'Say whether the aanvraag is ontvankelijk or niet-ontvankelijk.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		if ($reason === '') {
+			throw new RefusedException(
+				rule: 'admissibility-reason-required',
+				sentence: 'Write down why. The applicant may object to this verdict, and the '
+					. 'file has to say what it was based on.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertJudgeable()
+
+	/**
+	 * The declaration on the case's case type, refused when it asks for no verdict.
+	 *
+	 * @param array<string, mixed> $case The stored case.
+	 *
+	 * @return array{enabled: bool, inadmissibleResultType: string, moment: string} The declaration.
+	 *
+	 * @throws RefusedException When the case type does not end intake with a judgement.
+	 */
+	private function declaredOn(array $case): array {
+		$declaration = $this->declarationFor(caseType: $this->caseTypeOf(case: $case));
+		if ($declaration['enabled'] === false) {
+			throw new RefusedException(
+				rule: 'admissibility-not-declared',
+				sentence: 'This case type does not end intake with an admissibility judgement.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+
+		return $declaration;
+	}//end declaredOn()
+
+	/**
+	 * Close a case judged inadmissible with the declared result, then tell the applicant.
+	 *
+	 * @param array<string, mixed> $judgement The recorded verdict: caseId, case, declaration and record.
+	 *
+	 * @return array<string, mixed> What was recorded, what the close did and what happened to the message.
+	 *
+	 * @throws RefusedException When the case type names no result for an inadmissible aanvraag.
+	 */
+	private function closeInadmissible(array $judgement): array {
+		$declaration = $judgement['declaration'];
+		$record = $judgement['record'];
 		if ($declaration['inadmissibleResultType'] === '') {
 			throw new RefusedException(
 				rule: 'admissibility-result-not-declared',
@@ -321,31 +370,15 @@ class AdmissibilityJudgement {
 		}
 
 		$closed = $this->endings->finish(
-			caseId: $caseId,
-			reason: $reason,
+			caseId: $judgement['caseId'],
+			reason: $record['reason'],
 			resultTypeId: $declaration['inadmissibleResultType'],
 		);
 
-		// The applicant is told AFTER the close, and a message that could not
-		// go out does not undo it. A case left open because the letter failed
-		// is the dead intake phase this verdict exists to prevent, and it
-		// would be one nobody could see, because the verdict is recorded and
-		// the case still sits in intake.
-		$told = $this->letters->send(
-			case: $case,
-			caseType: $this->caseTypeOf(case: $case),
-			moment: $declaration['moment'],
-			template: self::TEMPLATE,
-			context: ['reason' => $reason],
-		);
-
-		$this->logger->info(
-			'Dossiq admissibility: case {case} closed as niet-ontvankelijk',
-			['case' => $caseId, 'judgedBy' => $judgedBy, 'applicantTold' => $told['sent']],
-		);
+		$told = $this->tellApplicant(judgement: $judgement);
 
 		return [
-			'verdict' => $verdict,
+			'verdict' => $record['verdict'],
 			'record' => $record,
 			'closed' => true,
 			'close' => $closed,
@@ -356,7 +389,36 @@ class AdmissibilityJudgement {
 			'applicantMessage' => $told,
 			'moment' => $declaration['moment'],
 		];
-	}//end judge()
+	}//end closeInadmissible()
+
+	/**
+	 * Tell the applicant through the declared moment, after the close.
+	 *
+	 * @param array<string, mixed> $judgement The recorded verdict: caseId, case, declaration and record.
+	 *
+	 * @return array<string, mixed> What the message did, with `sent`.
+	 */
+	private function tellApplicant(array $judgement): array {
+		// The applicant is told AFTER the close, and a message that could not
+		// go out does not undo it. A case left open because the letter failed
+		// is the dead intake phase this verdict exists to prevent, and it
+		// would be one nobody could see, because the verdict is recorded and
+		// the case still sits in intake.
+		$told = $this->letters->send(
+			case: $judgement['case'],
+			caseType: $this->caseTypeOf(case: $judgement['case']),
+			moment: $judgement['declaration']['moment'],
+			template: self::TEMPLATE,
+			context: ['reason' => $judgement['record']['reason']],
+		);
+
+		$this->logger->info(
+			'Dossiq admissibility: case {case} closed as niet-ontvankelijk',
+			['case' => $judgement['caseId'], 'judgedBy' => $judgement['record']['judgedBy'], 'applicantTold' => $told['sent']],
+		);
+
+		return $told;
+	}//end tellApplicant()
 
 	/**
 	 * The stored case, or a refusal when it cannot be read.

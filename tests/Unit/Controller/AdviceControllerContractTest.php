@@ -666,4 +666,45 @@ class AdviceControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 		$this->assertSame(['error' => 'Could not send reminder'], $response->getData());
 	}//end testDispatchReminderWithholdsTheInternalMessageOn500()
+	/**
+	 * The old VTH address still creates and lists, through the same guarded
+	 * methods as the generic one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
+	 */
+	public function testTheLegacyPathsAnswerAsTheGenericOnes(): void {
+		$this->authenticate();
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+		$this->adviceService->method('requestAdvice')->willReturn(['id' => 'advice-1']);
+		$this->adviceService->method('getAdviceForCase')->willReturn([['id' => 'advice-1']]);
+
+		$created = $this->bodylessController()->createForCaseLegacyPath(id: 'case-1');
+		$listed = $this->bodylessController()->getForCaseLegacyPath(id: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_CREATED, actual: $created->getStatus());
+		$this->assertSame(expected: [['id' => 'advice-1']], actual: $listed->getData());
+	}//end testTheLegacyPathsAnswerAsTheGenericOnes()
+
+	/**
+	 * Both addresses are routed, the generic one on the canonical names.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
+	 */
+	public function testTheGenericAddressCarriesTheCanonicalRouteNames(): void {
+		$routes = (require __DIR__ . '/../../../appinfo/routes.php')['routes'];
+		$byName = [];
+		foreach ($routes as $route) {
+			$byName[$route['name'] . ' ' . $route['verb']] = $route['url'];
+		}
+
+		$this->assertSame(expected: '/api/cases/{id}/advice-requests', actual: $byName['advice#createForCase POST']);
+		$this->assertSame(expected: '/api/cases/{id}/advice-requests', actual: $byName['advice#getForCase GET']);
+		$this->assertSame(expected: '/api/vth/cases/{id}/advice-requests', actual: $byName['advice#createForCaseLegacyPath POST']);
+		$this->assertSame(expected: '/api/vth/cases/{id}/advice-requests', actual: $byName['advice#getForCaseLegacyPath GET']);
+	}//end testTheGenericAddressCarriesTheCanonicalRouteNames()
 }//end class

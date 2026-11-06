@@ -1,7 +1,7 @@
 # iv3-taakveld-2023-refinement Specification
 
 ## Purpose
-TBD - created by archiving change iv3-taakveld-2023-refinement. Update Purpose after archive.
+Ship the 2023 Wmo and Jeugd refinement codes of the Iv3 taakveld list, and report cases on old and new codes in the same quarterly bucket.
 ## Requirements
 ### Requirement: The shipped taakveld list SHALL include the 18 official 2023 Wmo/Jeugd refinement codes and SHALL flag their 4 pre-2023 parent codes as deprecated
 

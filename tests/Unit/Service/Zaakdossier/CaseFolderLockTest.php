@@ -43,7 +43,7 @@ use RuntimeException;
  * and the loser met a LockedException that answered 500 on
  * `GET /api/cases/{id}/dossier/linked` (13 October, a Woo request).
  *
- * @spec openspec/changes/case-folder-lookup-survives-a-parallel-create/specs/document-projection/spec.md
+ * @spec openspec/specs/document-projection/spec.md
  */
 class CaseFolderLockTest extends TestCase {
 

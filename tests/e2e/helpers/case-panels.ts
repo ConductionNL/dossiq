@@ -22,7 +22,7 @@
  * renders its children instead of the grid. So a widget that moved into the
  * strip keeps its id in the manifest and loses the attribute in the DOM, and a
  * locator naming it matches nothing while the panel renders perfectly.
- * `case-core` made that move: it is the strip's first tab, `Data`.
+ * `case-core` made that move: it is the strip's first tab, Overview.
  *
  * The panels are also LAZY. A panel does not mount, and therefore does not
  * query, until its tab has been opened once, so the click is part of reaching
@@ -46,44 +46,44 @@ import { dismissSupportDialog } from './nav.ts'
  * panel body IS the tab body.
  */
 export const CASE_PANELS = {
-	data: { tab: /^(Data|Gegevens)$/, section: 'case-section-case-core' },
+	data: { tab: /^(Overview|Overzicht)\b/, section: 'case-section-case-core' },
 	locations: {
-		tab: /^(Data|Gegevens)$/,
+		tab: /^(Overview|Overzicht)\b/,
 		section: 'case-section-case-location-map',
 	},
 	// The Files tab IS the case folder: one widget, no sections. It pointed at
 	// `/^Documents$/` until 2026-09-13, a tab that had already been renamed, so
 	// every spec reaching for it timed out on a tab that does not exist.
-	files: { tab: /^Files$/, section: null },
-	notes: { tab: /^Notes$/, section: null },
+	files: { tab: /^(Files|Bestanden)\b/, section: null },
+	notes: { tab: /^(Notes|Notities)\b/, section: null },
 	// 🔴 STALE, and kept so the break stays a runtime one with a message.
 	// `case-documents`, the ZGW dossier list this opened, left the manifest
 	// when the Documents tab became Files, but `document-zaakdossier.spec.ts`
 	// still asks for it, so on development the key is simply absent and the
 	// call does not type-check. Pointing it at Files keeps the suite
 	// compiling; the spec belongs with whoever retired the list.
-	documents: { tab: /^Files$/, section: null },
-	parties: { tab: /^People$/, section: 'case-section-case-roles' },
+	documents: { tab: /^(Files|Bestanden)\b/, section: null },
+	parties: { tab: /^(People|Betrokkenen)\b/, section: 'case-section-case-roles' },
 	communication: {
-		tab: /^Communication$/,
+		tab: /^Contact\b/,
 		section: 'case-section-case-communication',
 	},
 	conversations: {
-		tab: /^Communication$/,
+		tab: /^Contact\b/,
 		section: 'case-section-case-conversations',
 	},
 	customerRecord: {
-		tab: /^Communication$/,
-		section: 'case-section-case-pipelinq-contact-moments',
+		tab: /^Contact\b/,
+		section: 'case-section-linked-contact-moments',
 	},
-	programme: { tab: /^Related$/, section: 'case-section-case-programme' },
-	email: { tab: /^Email$/, section: null },
-	tasks: { tab: /^Work$/, section: 'case-section-case-tasks' },
-	appointments: { tab: /^Work$/, section: 'case-section-case-calendar' },
-	besluiten: { tab: /^Decisions$/, section: null },
-	relatedCases: { tab: /^Related$/, section: 'case-section-case-related' },
-	subCases: { tab: /^Related$/, section: 'case-section-case-sub-cases' },
-	objects: { tab: /^Related$/, section: 'case-section-case-objects' },
+	programme: { tab: /^(Related|Gerelateerd)\b/, section: 'case-section-case-programme' },
+	email: { tab: /^(Email|E-mail)\b/, section: null },
+	tasks: { tab: /^(Tasks|Taken)\b/, section: 'case-section-case-tasks' },
+	appointments: { tab: /^(Tasks|Taken)\b/, section: 'case-section-case-calendar' },
+	besluiten: { tab: /^(Decisions|Besluiten)\b/, section: null },
+	relatedCases: { tab: /^(Related|Gerelateerd)\b/, section: 'case-section-case-related' },
+	subCases: { tab: /^(Related|Gerelateerd)\b/, section: 'case-section-case-sub-cases' },
+	objects: { tab: /^(Related|Gerelateerd)\b/, section: 'case-section-case-objects' },
 } as const
 
 export type CasePanel = keyof typeof CASE_PANELS
@@ -91,6 +91,24 @@ export type CasePanel = keyof typeof CASE_PANELS
 /** The tab strip on the case page. */
 export function caseStrip(page: Page): Locator {
 	return page.locator('.cn-tabs-widget')
+}
+
+/**
+ * Open a case tab by its label, through the More menu when it is not on the
+ * strip (REQ-CDV-16: five tabs on the strip, the rest under More).
+ *
+ * @param page The page, already on a case.
+ * @param name The tab's label.
+ */
+export async function openCaseTab(page: Page, name: RegExp): Promise<void> {
+	const strip = caseStrip(page)
+	const tab = strip.getByRole('tab', { name })
+	if ((await tab.count()) > 0) {
+		await tab.first().click()
+		return
+	}
+	await strip.locator('.cn-tabs__more button').first().click()
+	await page.getByRole('menuitem', { name }).click()
 }
 
 /**
@@ -111,7 +129,7 @@ export async function openCasePanel(page: Page, panel: CasePanel): Promise<Locat
 	const { tab, section } = CASE_PANELS[panel]
 	const strip = caseStrip(page)
 	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: tab }).click()
+	await openCaseTab(page, tab)
 
 	// `.cn-tabs__content >` is development's scoping (#2001) and it matters
 	// more here than it did there: a folded tab can hold a widget that draws

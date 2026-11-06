@@ -1,0 +1,37 @@
+{
+	"$comment": "Pieter's Woo request Parkeervergunningen binnenstad waits on the requester, as DqMijnWerk (Wacht op inwoner, longest 9 days) and the case lists (pill Wacht op inwoner) draw it: an open request for the missing authorisation, sent the day the case entered its status, and the case's waiting flag that the request sets. Pieter's task Herinnering sturen aan verzoeker and his note about the missing authorisation belong to the same wait.",
+	"objects": [
+		{
+			"key": "aanvulling-parkeervergunningen-machtiging",
+			"register": "dossiq",
+			"schema": "aanvullingsverzoek",
+			"data": {
+				"case": "{{object:woo-parkeervergunningen-binnenstad.id}}",
+				"summary": "Stuur de machtiging waarmee u namens de bewoners verzoekt",
+				"missingItems": [
+					{
+						"item": "Machtiging van de bewoners namens wie u het verzoek doet",
+						"received": false
+					}
+				],
+				"requestedBy": "{{cast:pieter.uid}}",
+				"requestedAt": "{{datetime:-9 14:00}}",
+				"hersteltermijn": "{{date:5}}",
+				"pauseDays": 14,
+				"state": "open"
+			}
+		}
+	],
+	"changes": [
+		{
+			"key": "parkeervergunningen-wacht-op-inwoner",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "woo-parkeervergunningen-binnenstad",
+			"set": {
+				"waitingOnApplicant": true,
+				"waitingOnApplicantSince": "{{datetime:-9 14:00}}"
+			}
+		}
+	]
+}

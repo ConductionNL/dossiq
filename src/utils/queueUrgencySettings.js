@@ -2,8 +2,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The queue urgency settings as the admin form and the case type editor
- * read and write them. The bounds are the server's (UrgencyProfile.php); the
+ * The queue urgency settings as the admin section (adminFields.js) and the
+ * case type editor read and write them. The bounds are the server's (UrgencyProfile.php); the
  * form refuses a value outside them before anything is sent, and the server
  * clamps anything that still gets through.
  *
@@ -98,47 +98,6 @@ export function checkQueueValue(raw, spec) {
 		return { value: null, error: boundsMessage(spec) }
 	}
 	return { value, error: '' }
-}
-
-/**
- * The form values the admin section starts from: initial state, else the defaults.
- *
- * @param {object} initial The `queueUrgencySettings` initial state.
- * @return {{[field: string]: number}} The values per field.
- *
- * @spec openspec/specs/admin-settings/spec.md
- */
-export function initialQueueUrgencyValues(initial) {
-	const values = {}
-	for (const spec of QUEUE_URGENCY_FIELDS) {
-		const stored = readNumber(initial && initial[spec.field])
-		values[spec.field] = stored === null ? spec.default : stored
-	}
-	return values
-}
-
-/**
- * Validate the admin form and build the settings write.
- *
- * @param {{[field: string]: unknown}} values The form values.
- * @return {{errors: {[field: string]: string}, payload: ({[key: string]: string}|null)}}
- *   The errors per field, and the body for POST /api/settings, or null when
- *   any field is refused, so nothing is sent.
- *
- * @spec openspec/specs/admin-settings/spec.md
- */
-export function buildQueueUrgencyPayload(values) {
-	const errors = {}
-	const payload = {}
-	for (const spec of QUEUE_URGENCY_FIELDS) {
-		const checked = checkQueueValue(values && values[spec.field], spec)
-		if (checked.error) {
-			errors[spec.field] = checked.error
-			continue
-		}
-		payload[spec.key] = String(checked.value)
-	}
-	return { errors, payload: Object.keys(errors).length > 0 ? null : payload }
 }
 
 /**

@@ -1,0 +1,145 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"change": "woo-review-reports",
+		"why-request": "The throughput report is a per-person figure that only the reader group the organisation named may read, and every read is recorded on the audit trail of each case it counts. Both checks live in WooReportController. So the table reads on request (`loadOn: \"request\"`): opening the page records nothing, pressing Show reads and records once."
+	},
+	"menu": [
+		{
+			"id": "DocumentReviewReportsMenu",
+			"label": "Woo reports",
+			"icon": "ChartBoxOutline",
+			"route": "DocumentReviewReports",
+			"section": "footer",
+			"order": 96,
+			"visibleIf": {
+				"woo.reportsOffered": true
+			}
+		}
+	],
+	"pages": [
+		{
+			"id": "DocumentReviewReports",
+			"route": "/document-review-reports",
+			"type": "dashboard",
+			"_note": "Shown in the menu only while a report is offered to this user (initial state woo_reports, runtime woo.reportsOffered). Each widget shows only while its report is offered (/api/reports/offered); WooReportController and MailPartiesReportController still refuse a read from anyone else, with their sentence.",
+			"title": "Woo reports",
+			"config": {
+				"allowEdit": false,
+				"showActionsMenu": false,
+				"showWidgetActions": false,
+				"appId": "dossiq",
+				"pageId": "WooReports",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"dateRange": {
+					"enabled": true,
+					"default": {
+						"preset": "last-30"
+					}
+				},
+				"headerActions": [
+					{
+						"id": "throughput-csv",
+						"label": "Download CSV",
+						"icon": "Download",
+						"href": "/apps/dossiq/api/document-review/reports/throughput?format=csv&from=@workspace.dateFrom&to=@workspace.dateTo",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/reports/offered",
+							"field": "throughput",
+							"op": "eq",
+							"value": true
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "throughput",
+						"type": "object-table",
+						"title": "Assessments per reviewer per day",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/reports/offered",
+							"field": "throughput",
+							"op": "eq",
+							"value": true
+						},
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/document-review/reports/throughput",
+								"params": {
+									"from": "@workspace.dateFrom",
+									"to": "@workspace.dateTo"
+								},
+								"responsePath": "rows",
+								"loadOn": "request",
+								"requestLabel": "Show",
+								"requestHint": "How many documents each reviewer assessed per day, by verdict. Every time you open this report, it is recorded on the Woo cases it counts.",
+								"truncatedText": "This period holds more assessments than one report reads. Choose a shorter period."
+							},
+							"columns": [
+								{
+									"key": "displayName",
+									"label": "Reviewer"
+								},
+								{
+									"key": "day",
+									"label": "Day"
+								},
+								{
+									"key": "openbaar",
+									"label": "Public"
+								},
+								{
+									"key": "deels_openbaar",
+									"label": "Partly public"
+								},
+								{
+									"key": "niet_openbaar",
+									"label": "Not public"
+								},
+								{
+									"key": "total",
+									"label": "Total"
+								}
+							],
+							"emptyText": "No assessments in this period"
+						}
+					},
+					{
+						"id": "mail-parties",
+						"type": "custom",
+						"title": "Collected mail by sender, recipient and domain",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/reports/offered",
+							"field": "parties",
+							"op": "eq",
+							"value": true
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": 1,
+						"widgetId": "throughput",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 7
+					},
+					{
+						"id": 2,
+						"widgetId": "mail-parties",
+						"gridX": 0,
+						"gridY": 7,
+						"gridWidth": 12,
+						"gridHeight": 8,
+						"showTitle": false
+					}
+				]
+			},
+			"slots": {
+				"widget-mail-parties": "MailPartiesReportWidget"
+			}
+		}
+	]
+}

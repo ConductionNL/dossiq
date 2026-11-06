@@ -1,7 +1,11 @@
 <?php
 
 /**
- * The goals of a gezinsplan, and what would count as meeting one.
+ * The goals of a case or of a gezinsplan, and what would count as meeting one.
+ *
+ * A goal belongs to a case directly (a Woo request, a permit: "what does the
+ * requester want to change?") or to a family plan. The rules below are the
+ * same for both.
  *
  * 🔴 "DE THUISSITUATIE VERBETEREN" CANNOT BE CLOSED BY ANYBODY, AND THAT IS
  * THE DEFECT THIS FILE REFUSES. A goal with no observable outcome attached is
@@ -39,7 +43,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 
 /**
- * Save, read and close the goals of one plan.
+ * Save, read and close the goals of one case or one plan.
  *
  * @psalm-suppress UnusedClass
  *
@@ -91,6 +95,25 @@ class CasePlanGoals {
 	}//end ofPlan()
 
 	/**
+	 * The goals that belong to one case directly.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<int, array<string, mixed>> The goals.
+	 *
+	 * @throws RefusedException When the store cannot be read.
+	 *
+	 * @spec openspec/changes/case-goals/specs/case-goals/spec.md#requirement-a-case-can-hold-goals-that-say-what-counts-as-met
+	 */
+	public function ofCase(string $caseId): array {
+		if (trim($caseId) === '') {
+			return [];
+		}
+
+		return $this->store->rows(schema: self::SCHEMA, filters: ['case' => $caseId]);
+	}//end ofCase()
+
+	/**
 	 * Save a goal, refusing one that names nothing measurable.
 	 *
 	 * @param array<string, mixed> $goal The goal.
@@ -100,13 +123,15 @@ class CasePlanGoals {
 	 * @throws RefusedException When the goal is not evaluable, or the write fails.
 	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 * @spec openspec/changes/case-goals/specs/case-goals/spec.md#requirement-a-case-can-hold-goals-that-say-what-counts-as-met
 	 */
 	public function save(array $goal): array {
 		$plan = trim((string)($goal['plan'] ?? ''));
-		if ($plan === '') {
+		$case = trim((string)($goal['case'] ?? ''));
+		if ($plan === '' && $case === '') {
 			throw new RefusedException(
-				rule: 'goal-needs-a-plan',
-				sentence: 'Say which family plan this goal belongs to.',
+				rule: 'goal-needs-an-owner',
+				sentence: 'Say which case or family plan this goal belongs to.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}

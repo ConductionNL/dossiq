@@ -14,15 +14,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
 	companyResult,
 	contactResult,
+	initiatorChoice,
 	initiatorProjection,
-	isCurrentRequester,
 	personDisplayName,
 	personResult,
 	requesterPayload,
-	searchContacts,
 } from '../../src/services/initiatorSearch.js'
 
 const axiosPost = vi.hoisted(() => vi.fn())
+const resolveParty = vi.hoisted(() => vi.fn())
+
+vi.mock('../../src/services/caseParties.js', () => ({
+	resolvePartyByAddress: (...args) => resolveParty(...args),
+}))
 
 vi.mock('@nextcloud/axios', () => ({
 	default: { post: (...args) => axiosPost(...args) },
@@ -151,58 +155,6 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 		expect(requesterPayload(null)).toEqual({})
 	})
 
-	it('recognises the requester already on the case', () => {
-		const result = {
-			type: 'person',
-			sourceId: '999990627',
-			displayName: 'Stephan Janssen',
-			objectId: 'uuid-1',
-		}
-		expect(isCurrentRequester('uuid-1', result)).toBe(true)
-		expect(isCurrentRequester('uuid-2', result)).toBe(false)
-		expect(
-			isCurrentRequester(
-				{ initiatorType: 'person', initiatorSourceId: '999990627' },
-				result,
-			),
-		).toBe(true)
-		expect(
-			isCurrentRequester(
-				{ initiatorType: 'company', initiatorSourceId: '999990627' },
-				result,
-			),
-		).toBe(false)
-		expect(isCurrentRequester(null, result)).toBe(false)
-	})
-
-	it('searches contacts via the core contactsmenu endpoint', async () => {
-		axiosPost.mockResolvedValue({
-			data: {
-				contacts: [
-					{
-						id: 'c1',
-						fullName: 'Anna de Wit',
-						emailAddresses: ['anna@example.org'],
-					},
-				],
-			},
-		})
-		const results = await searchContacts('anna')
-		expect(axiosPost).toHaveBeenCalledWith('/index.php/contactsmenu/contacts', {
-			filter: 'anna',
-		})
-		expect(results).toHaveLength(1)
-		expect(results[0]).toMatchObject({
-			type: 'contact',
-			displayName: 'Anna de Wit',
-		})
-	})
-
-	it('degrades to an empty list when the contacts source is unavailable', async () => {
-		axiosPost.mockRejectedValue(new Error('404 — Contacts absent'))
-		await expect(searchContacts('anna')).resolves.toEqual([])
-	})
-
 	it('shapes a contactsmenu entry into a unified contact result', () => {
 		const result = contactResult({
 			id: 'uid-9',
@@ -217,3 +169,33 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 		})
 	})
 })
+
+describe('initiatorChoice: no second party for an address somebody holds', () => {
+	beforeEach(() => {
+		resolveParty.mockReset()
+	})
+
+	it('points a contact at the party that already holds its address', async () => {
+		resolveParty.mockResolvedValue({ id: 'uuid-party-1', name: 'Jan de Vries' })
+		const payload = await initiatorChoice('contact', { id: 'contact-uid-1', fullName: 'Jan de Vries', emailAddresses: ['jan@example.nl'] })
+		expect(resolveParty).toHaveBeenCalledWith('jan@example.nl')
+		expect(payload).toEqual({ requester: 'uuid-party-1', initiatorType: 'contact', initiatorSourceId: 'contact-uid-1', initiatorDisplayName: 'Jan de Vries' })
+	})
+
+	it('records a contact unchanged when no party holds the address', async () => {
+		resolveParty.mockResolvedValue(null)
+		const payload = await initiatorChoice('contact', { id: 'contact-uid-1', fullName: 'Jan de Vries', emailAddresses: ['jan@example.nl'] })
+		expect(payload.requester).toBe('')
+	})
+
+	it('takes a register row as it is, without asking', async () => {
+		const payload = await initiatorChoice('person', { id: 'uuid-person-1', citizenServiceNumber: '999990627', displayName: 'Stephan Janssen' })
+		expect(resolveParty).not.toHaveBeenCalled()
+		expect(payload).toEqual({ requester: 'uuid-person-1', initiatorType: 'person', initiatorSourceId: '999990627', initiatorDisplayName: 'Stephan Janssen' })
+	})
+
+	it('answers nothing for a kind it does not know', async () => {
+		expect(await initiatorChoice('robot', { id: 'x' })).toEqual({})
+	})
+})
+

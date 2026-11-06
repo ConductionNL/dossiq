@@ -55,6 +55,19 @@ namespace OCA\Dossiq\Service\Email;
  */
 class CaseContactDirectory {
 	/**
+	 * The applicant's addresses: the case's own address and its initiator's.
+	 *
+	 * @param array<string, mixed> $caseData The case.
+	 *
+	 * @return array<int, string> The lowercase addresses, without duplicates.
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 */
+	public function applicantAddresses(array $caseData): array {
+		return array_values(array_unique($this->collectPrimaryContactEmails(caseData: $caseData)));
+	}//end applicantAddresses()
+
+	/**
 	 * Collect the normalised (lowercased) email addresses of all contacts on a case.
 	 *
 	 * Inspects the following fields (all optional): `betrokkenen`, `contacts`,

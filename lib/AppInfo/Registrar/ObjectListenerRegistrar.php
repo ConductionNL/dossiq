@@ -30,15 +30,19 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\CaseTypeDeleteGuard;
+use OCA\Dossiq\Listener\EmailTemplateVersionListener;
 use OCA\Dossiq\Listener\WooRefusalGroundDeleteGuard;
 use OCA\Dossiq\Listener\DependentTermListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
 use OCA\Dossiq\Notification\Notifier;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -80,14 +84,27 @@ class ObjectListenerRegistrar {
 			event: ObjectDeletingEvent::class,
 			listener: WooRefusalGroundDeleteGuard::class
 		);
+		$context->registerEventListener(
+			event: ObjectDeletingEvent::class,
+			listener: CaseTypeDeleteGuard::class
+		);
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $templateEvent) {
+			$context->registerEventListener(
+				event: $templateEvent,
+				listener: EmailTemplateVersionListener::class
+			);
+		}
 		(new IntakeListenerRegistrar())->register(context: $context);
 		(new ContactListenerRegistrar())->register(context: $context);
 		(new DocumentListenerRegistrar())->register(context: $context);
 		(new PersonListenerRegistrar())->register(context: $context);
+		(new CaseRequesterListenerRegistrar())->register(context: $context);
 		(new CaseAccessListenerRegistrar())->register(context: $context);
 		(new WooListenerRegistrar())->register(context: $context);
 		(new CaseLinkListenerRegistrar())->register(context: $context);
+		(new ForfeitInvoiceListenerRegistrar())->register(context: $context);
 		(new OnboardingListenerRegistrar())->register(context: $context);
+		(new CaseActivityListenerRegistrar())->register(context: $context);
 	}//end register()
 
 	/**

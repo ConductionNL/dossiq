@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Settings\RenamedSettingKeys;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -44,17 +45,30 @@ class WooReportSwitches {
 	/**
 	 * Throughput per reviewer per day (row 16.10).
 	 */
-	public const THROUGHPUT = 'wooReviewerThroughputReport';
+	public const THROUGHPUT = 'reviewerThroughputReport';
 
 	/**
 	 * The collection by sender, recipient and domain (row 16.11).
 	 */
-	public const PARTIES = 'wooCollectionPartiesReport';
+	public const PARTIES = 'collectionPartiesReport';
 
 	/**
 	 * The Nextcloud group whose members read the throughput report.
 	 */
-	public const READERS = 'wooReviewerThroughputReaders';
+	public const READERS = 'reviewerThroughputReaders';
+
+	/**
+	 * Each setting's earlier, procedure-named key. Read when the current key
+	 * was never written, and accepted on a save, so an instance configured
+	 * before the rename keeps its reports.
+	 *
+	 * @var array<string, string>
+	 */
+	public const LEGACY_KEYS = [
+		self::THROUGHPUT => 'wooReviewerThroughputReport',
+		self::PARTIES => 'wooCollectionPartiesReport',
+		self::READERS => 'wooReviewerThroughputReaders',
+	];
 
 	/**
 	 * The refusal rule when the throughput report has no existing reader group.
@@ -178,6 +192,7 @@ class WooReportSwitches {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function assertSaveAllowed(array $data): void {
+		$data = (new RenamedSettingKeys(earlierKeys: self::LEGACY_KEYS))->carry(data: $data);
 		if (array_key_exists(self::THROUGHPUT, $data) === false && array_key_exists(self::READERS, $data) === false) {
 			return;
 		}
@@ -224,7 +239,13 @@ class WooReportSwitches {
 	 * @return string The stored value.
 	 */
 	private function stored(string $key): string {
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		$value = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		$legacy = (self::LEGACY_KEYS[$key] ?? null);
+		if ($value !== '' || $legacy === null || $this->appConfig->hasKey(Application::APP_ID, $key) === true) {
+			return $value;
+		}
+
+		return $this->appConfig->getValueString(Application::APP_ID, $legacy, '');
 	}//end stored()
 
 	/**

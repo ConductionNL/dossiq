@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
+use OCA\Dossiq\Service\Pause\PauseChaseSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
@@ -55,7 +57,7 @@ use OCA\Dossiq\Tests\Support\InMemoryTermNoticeLedger;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\MakesOutboundCaseMail;
 use OCA\Dossiq\Tests\Support\RecordingMessage;
-use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
+use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\Mail\IMailer;
@@ -211,7 +213,13 @@ class TermNoticeDeliveryTest extends TestCase {
 		$terms->method('updateTermijnInstance')->willReturnCallback(static fn (string $id, array $patch): array => array_merge(['id' => $id], $patch));
 		$terms->method('recordEvent')->willReturn([]);
 
-		return [new TermijnNotificationService($terms, $sender, $this->logger()), $terms];
+		return [
+			new TermijnNotificationService(
+				notices: new TermNoticeSources(termService: $terms, sender: $sender),
+				logger: $this->logger()
+			),
+			$terms,
+		];
 	}//end notifications()
 
 	/**
@@ -248,9 +256,11 @@ class TermNoticeDeliveryTest extends TestCase {
 
 		return new PauseChaseService(
 			termService: $terms,
-			reasons: $reasons,
-			schedule: new ChaseSchedule(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
-			notifications: $notifications,
+			chase: new PauseChaseSources(
+				reasons: $reasons,
+				schedule: new ChaseSchedule(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
+				notifications: $notifications,
+			),
 			timeline: $this->createMock(CaseTimeline::class),
 			settings: $this->createMock(SettingsService::class),
 			logger: $this->logger(),

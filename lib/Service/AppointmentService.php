@@ -97,6 +97,8 @@ class AppointmentService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function bookAppointment(string $caseId, array $data): array {
+		// The keys of Support\CallerIdentity::KEYS, written out to keep this class's coupling down.
+		$data = array_diff_key($data, ['id' => true, 'uuid' => true, '@self' => true]);
 		$objectService = $this->getObjectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];

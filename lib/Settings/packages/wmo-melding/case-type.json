@@ -1,0 +1,493 @@
+{
+  "caseType": {
+    "id": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+    "identifier": "wmo-melding",
+    "title": "Wmo-melding",
+    "category": "Wmo",
+    "colour": "purple",
+    "icon": "HandHeartOutline",
+    "description": "Melding van een hulpvraag onder de Wet maatschappelijke ondersteuning 2015: onderzoek, besluit, ondersteuning en evaluatie.",
+    "purpose": "Vaststellen welke maatschappelijke ondersteuning een inwoner nodig heeft (Wmo 2015 artikel 2.3.2).",
+    "trigger": "Een melding van een hulpvraag door of namens een inwoner.",
+    "subject": "Maatschappelijke ondersteuning",
+    "processingDeadline": "P42D",
+    "extensionAllowed": false,
+    "suspensionAllowed": true,
+    "internalOrExternal": "extern",
+    "publicationRequired": false,
+    "isDraft": false,
+    "confidentiality": "vertrouwelijk",
+    "initialStatus": "a8352923-e31b-55d2-8434-a5784a3f0a0e",
+    "handling": {
+      "defaultGroup": "dossiq-sociaal-domein"
+    },
+    "workflowDefinition": "cb2756ac-6a90-5389-9af7-8d165d0da603",
+    "processesPersonalData": true,
+    "personalDataCategories": [
+      "naw",
+      "bsn",
+      "gezondheid"
+    ],
+    "specialDataCategories": [
+      "health"
+    ],
+    "sideCards": [
+      "side-special-data-health",
+      "case-banner-stack",
+      "side-social-consent",
+      "side-social-people"
+    ],
+    "overviewCards": [
+      "case-summary"
+    ],
+    "recordImports": [
+      {
+        "key": "wmo-meldingen",
+        "sourceApp": "dossiq",
+        "sourceRegister": "dossiq",
+        "sourceSchema": "wmoZaak",
+        "statusField": "status",
+        "statuses": {
+          "report": {
+            "status": "a8352923-e31b-55d2-8434-a5784a3f0a0e",
+            "term": "running"
+          },
+          "investigation-loopt": {
+            "status": "82624110-a91c-5b77-b221-6d3f032d44a5",
+            "term": "running"
+          },
+          "decision-voorbereiding": {
+            "status": "19c076c6-da63-5b17-9b15-3f17f8805f40",
+            "term": "running"
+          },
+          "decision-granted": {
+            "status": "46323a36-cd5b-5499-b082-dbb20a29cc37",
+            "term": "closed"
+          },
+          "execution": {
+            "status": "45740511-7cdc-566c-91a1-b5ded18b3b17",
+            "term": "closed"
+          },
+          "evaluation": {
+            "status": "09e3780d-6eb9-5572-8baf-fabef0df22f5",
+            "term": "closed"
+          },
+          "closed": {
+            "status": "e32b8339-ea44-5af2-a03d-e6ed1a974a53",
+            "term": "closed"
+          },
+          "*": {
+            "status": "a8352923-e31b-55d2-8434-a5784a3f0a0e",
+            "term": "running"
+          }
+        },
+        "fields": [
+          {
+            "to": "title",
+            "value": "Wmo-melding"
+          },
+          {
+            "to": "subjectBsn",
+            "from": "bsn"
+          },
+          {
+            "to": "initiatorDisplayName",
+            "from": "name"
+          },
+          {
+            "to": "assignee",
+            "from": "handlerId"
+          },
+          {
+            "to": "startDate",
+            "from": "requestDate",
+            "as": "date"
+          },
+          {
+            "to": "confidentiality",
+            "value": "vertrouwelijk"
+          },
+          {
+            "to": "externalReference",
+            "from": "@id"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "c39b8924-dc45-5735-9dde-bb7878b634ac",
+              "name": "soortOndersteuning"
+            },
+            "from": "requestKind",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "9c8e9e23-baff-518e-9ae6-86a560a9fa3d",
+              "name": "meldkanaal"
+            },
+            "from": "reportChannel",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "57351a0e-e380-5431-b760-60a007f096f1",
+              "name": "wijkteam"
+            },
+            "from": "districtTeam",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "4d4cabb1-c24d-5a56-b026-aca4ddba14e5",
+              "name": "tweedeBehandelaar"
+            },
+            "from": "secondHandlerId",
+            "as": "text"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "bf694d76-e53a-576d-95e3-f17960ac2979",
+              "name": "wettelijkeTermijnen"
+            },
+            "from": "leadTimeStatutory",
+            "as": "json"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "3adfe0dd-c386-553b-85b6-13b5b0d03ff7",
+              "name": "onderzoekstermijnOverschredenSinds"
+            },
+            "from": "investigationTermExceededSinds",
+            "as": "date"
+          },
+          {
+            "to": "properties",
+            "property": {
+              "definition": "32f82b12-48e1-5c90-a904-75acb0253ccb",
+              "name": "avgClassificatie"
+            },
+            "from": "gdprClassification",
+            "as": "json"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "03e896f1-5c87-532b-bc8e-2a52f3c6da6d",
+              "name": "hulpvraag"
+            },
+            "from": "supportRequest",
+            "as": "text"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "59a1d4a2-98e2-52d9-9909-546d795f612a",
+              "name": "huishoudsamenstelling"
+            },
+            "from": "householdsComposition",
+            "as": "text"
+          },
+          {
+            "to": "sensitiveProperties",
+            "property": {
+              "definition": "038bc402-87db-5261-92d8-06ece0dffd4c",
+              "name": "indicatiestelling"
+            },
+            "from": "needsAssessmentId",
+            "as": "text"
+          }
+        ],
+        "matchField": "externalReference",
+        "formerReference": {
+          "application": "dossiq",
+          "from": "caseNumber"
+        },
+        "dedupeBy": "caseNumber",
+        "references": [
+          {
+            "schema": "indicatiestelling",
+            "field": "caseId"
+          },
+          {
+            "schema": "toestemming",
+            "field": "caseId"
+          },
+          {
+            "schema": "mdoOverleg",
+            "field": "caseIds",
+            "list": true
+          }
+        ],
+        "stamp": {
+          "caseId": "migratedTo",
+          "at": "migratedAt"
+        },
+        "carriesTerm": false,
+        "runOnUpgrade": true
+      }
+    ]
+  },
+  "propertyDefinitions": [
+    {
+      "id": "c39b8924-dc45-5735-9dde-bb7878b634ac",
+      "name": "soortOndersteuning",
+      "definition": "Soort ondersteuning",
+      "description": "Waar de inwoner om vraagt.",
+      "category": "Wmo",
+      "propertyType": "string",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "enumValues": [
+        "huishoudelijke-hulp",
+        "dagbesteding",
+        "begeleiding",
+        "hulpmiddelen",
+        "respijtzorg",
+        "other"
+      ],
+      "filterable": true
+    },
+    {
+      "id": "9c8e9e23-baff-518e-9ae6-86a560a9fa3d",
+      "name": "meldkanaal",
+      "definition": "Meldkanaal",
+      "description": "Hoe de melding binnenkwam: telefonisch, aan de balie, online.",
+      "category": "Wmo",
+      "propertyType": "string",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53"
+    },
+    {
+      "id": "57351a0e-e380-5431-b760-60a007f096f1",
+      "name": "wijkteam",
+      "definition": "Wijkteam",
+      "description": "Het wijkteam dat de melding behandelt.",
+      "category": "Wmo",
+      "propertyType": "string",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "filterable": true
+    },
+    {
+      "id": "4d4cabb1-c24d-5a56-b026-aca4ddba14e5",
+      "name": "tweedeBehandelaar",
+      "definition": "Tweede behandelaar",
+      "description": "Een tweede consulent op deze melding.",
+      "category": "Wmo",
+      "propertyType": "string",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "hideOnCreate": true
+    },
+    {
+      "id": "bf694d76-e53a-576d-95e3-f17960ac2979",
+      "name": "wettelijkeTermijnen",
+      "definition": "Wettelijke termijnen",
+      "description": "Zes weken onderzoek en twee weken voor het besluit.",
+      "category": "Wmo",
+      "propertyType": "object",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "hideOnCreate": true
+    },
+    {
+      "id": "3adfe0dd-c386-553b-85b6-13b5b0d03ff7",
+      "name": "onderzoekstermijnOverschredenSinds",
+      "definition": "Onderzoekstermijn overschreden sinds",
+      "description": "Gezet wanneer de onderzoekstermijn is overschreden.",
+      "category": "Wmo",
+      "propertyType": "date",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "hideOnCreate": true
+    },
+    {
+      "id": "32f82b12-48e1-5c90-a904-75acb0253ccb",
+      "name": "avgClassificatie",
+      "definition": "AVG-classificatie",
+      "description": "Categorieën persoonsgegevens, grondslag, bewaartermijn en toegangsbeperking van deze melding.",
+      "category": "Wmo",
+      "propertyType": "object",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "isRequired": true
+    },
+    {
+      "id": "03e896f1-5c87-532b-bc8e-2a52f3c6da6d",
+      "name": "hulpvraag",
+      "definition": "Hulpvraag",
+      "description": "De hulpvraag in de woorden van de inwoner.",
+      "category": "Wmo",
+      "propertyType": "string",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "sensitive": true
+    },
+    {
+      "id": "59a1d4a2-98e2-52d9-9909-546d795f612a",
+      "name": "huishoudsamenstelling",
+      "definition": "Huishoudsamenstelling",
+      "description": "Wie het huishouden vormen.",
+      "category": "Wmo",
+      "propertyType": "string",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "sensitive": true
+    },
+    {
+      "id": "038bc402-87db-5261-92d8-06ece0dffd4c",
+      "name": "indicatiestelling",
+      "definition": "Indicatiestelling",
+      "description": "Verwijzing naar de indicatiestelling bij deze melding.",
+      "category": "Wmo",
+      "propertyType": "string",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "sensitive": true,
+      "hideOnCreate": true
+    }
+  ],
+  "statusTypes": [
+    {
+      "id": "a8352923-e31b-55d2-8434-a5784a3f0a0e",
+      "phase": "Ontvangst",
+      "name": "Melding ontvangen",
+      "description": "De melding is binnen en geregistreerd.",
+      "order": 1,
+      "isFinal": false,
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "role": "intake",
+      "colour": "blue"
+    },
+    {
+      "id": "82624110-a91c-5b77-b221-6d3f032d44a5",
+      "phase": "Beoordeling",
+      "name": "Onderzoek",
+      "description": "Het wijkteam onderzoekt met de inwoner wat er nodig is (het keukentafelgesprek).",
+      "order": 2,
+      "isFinal": false,
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "role": "in-progress",
+      "colour": "purple"
+    },
+    {
+      "id": "19c076c6-da63-5b17-9b15-3f17f8805f40",
+      "phase": "Besluit",
+      "name": "Besluit in voorbereiding",
+      "description": "Het besluit over de ondersteuning wordt voorbereid.",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "colour": "purple"
+    },
+    {
+      "id": "46323a36-cd5b-5499-b082-dbb20a29cc37",
+      "phase": "Besluit",
+      "name": "Besluit genomen",
+      "description": "De ondersteuning is toegekend of afgewezen.",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "colour": "teal"
+    },
+    {
+      "id": "45740511-7cdc-566c-91a1-b5ded18b3b17",
+      "phase": "Beoordeling",
+      "name": "Uitvoering",
+      "description": "De ondersteuning loopt.",
+      "order": 5,
+      "isFinal": false,
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "colour": "purple"
+    },
+    {
+      "id": "09e3780d-6eb9-5572-8baf-fabef0df22f5",
+      "phase": "Beoordeling",
+      "name": "Evaluatie",
+      "description": "De ondersteuning wordt geëvalueerd.",
+      "order": 6,
+      "isFinal": false,
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "colour": "purple"
+    },
+    {
+      "id": "e32b8339-ea44-5af2-a03d-e6ed1a974a53",
+      "name": "Afgehandeld",
+      "description": "De melding is afgehandeld.",
+      "order": 7,
+      "isFinal": true,
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "role": "closed",
+      "colour": "green"
+    },
+    {
+      "id": "45863b97-3708-5407-b810-fa8a109d2546",
+      "offPath": true,
+      "name": "Ingetrokken",
+      "description": "De melding is ingetrokken.",
+      "order": 90,
+      "isFinal": true,
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53",
+      "colour": "grey"
+    }
+  ],
+  "roleTypes": [
+    {
+      "id": "0c9427e9-4e99-5ea0-9182-8f837b069517",
+      "name": "Inwoner",
+      "description": "Wie de melding doet of over wie zij gaat",
+      "genericRole": "initiator",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53"
+    },
+    {
+      "id": "b6b3d742-8062-5c0d-aac2-104dadba7e05",
+      "name": "Consulent",
+      "description": "De Wmo-consulent van het wijkteam",
+      "genericRole": "handler",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53"
+    },
+    {
+      "id": "e734c1dd-427a-59cd-a6ce-6db307cfb7f7",
+      "name": "Tweede behandelaar",
+      "description": "Een tweede consulent op deze melding",
+      "genericRole": "advisor",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53"
+    },
+    {
+      "id": "2addea37-d965-591c-8423-03a6d96ea738",
+      "name": "Teamleider Wmo",
+      "description": "Neemt het besluit over de ondersteuning",
+      "genericRole": "decision_maker",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53"
+    }
+  ],
+  "resultTypes": [
+    {
+      "id": "9080fb23-607f-530b-966b-a7587836a3f3",
+      "name": "Toegekend",
+      "description": "De ondersteuning is toegekend.",
+      "archivalPeriod": "P15Y",
+      "archivalAction": "vernietigen",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53"
+    },
+    {
+      "id": "099c4762-697a-53d8-aadf-230c2497dd9b",
+      "name": "Afgewezen",
+      "description": "De ondersteuning is afgewezen.",
+      "archivalPeriod": "P15Y",
+      "archivalAction": "vernietigen",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53"
+    },
+    {
+      "id": "6814d640-7626-5642-9a79-01fc7f512550",
+      "name": "Ingetrokken",
+      "description": "De inwoner heeft de melding ingetrokken.",
+      "archivalPeriod": "P15Y",
+      "archivalAction": "vernietigen",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53"
+    },
+    {
+      "id": "35516856-22d9-57c4-abab-fc18621c0bbc",
+      "name": "Doorverwezen",
+      "description": "De inwoner is doorverwezen naar een voorliggende voorziening.",
+      "archivalPeriod": "P15Y",
+      "archivalAction": "vernietigen",
+      "caseType": "6c5c213b-c5c3-5a07-9ecf-0cbf08e71f53"
+    }
+  ]
+}

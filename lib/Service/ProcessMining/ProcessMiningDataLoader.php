@@ -47,6 +47,14 @@ class ProcessMiningDataLoader {
 	use SearchesObjects;
 
 	/**
+	 * The most records one read loads. A report that receives this many says
+	 * so, since anything past it is missing from its figures.
+	 *
+	 * @var int
+	 */
+	public const CASE_LIMIT = 2000;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Shared settings/OR resolver.
@@ -79,7 +87,7 @@ class ProcessMiningDataLoader {
 			return [];
 		}
 
-		$filters = ['_limit' => 2000];
+		$filters = ['_limit' => self::CASE_LIMIT];
 		if ($caseTypeFilter !== null && $caseTypeFilter !== '') {
 			$filters['caseType'] = $caseTypeFilter;
 		}

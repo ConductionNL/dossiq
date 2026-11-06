@@ -35,11 +35,20 @@ use OCP\IL10N;
  */
 class ApprovalSource extends RegisterBackedSource {
 	/**
-	 * The statuses an advice request has finished in.
+	 * The statuses an advice request has finished in: the register's own
+	 * (`received`, `expired`) and the Dutch ones older rows still carry.
 	 *
 	 * @var array<int, string>
 	 */
-	private const CLOSED_STATUSES = ['ontvangen', 'verwerkt', 'vervallen', 'ingetrokken', 'afgerond'];
+	private const CLOSED_STATUSES = ['received', 'expired', 'ontvangen', 'verwerkt', 'vervallen', 'ingetrokken', 'afgerond'];
+
+	/**
+	 * The case tab that holds the advice card, by the id the tabs widget
+	 * opens from the route hash.
+	 *
+	 * @var string
+	 */
+	public const ADVICE_TAB = 'case-decisions-panel';
 
 	/**
 	 * Constructor.
@@ -110,6 +119,7 @@ class ApprovalSource extends RegisterBackedSource {
 	 * @return array<int, QueueItem> The items.
 	 *
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function itemsFor(string $userId): array {
 		$rows = $this->rows(schema: 'adviesAanvraag', filters: ['advisor' => $userId]);
@@ -125,7 +135,7 @@ class ApprovalSource extends RegisterBackedSource {
 			$case = trim((string)($row['case'] ?? ''));
 			$route = ['name' => 'Cases'];
 			if ($case !== '') {
-				$route = ['name' => 'CaseDetail', 'params' => ['id' => $case], 'query' => ['tab' => 'advice']];
+				$route = ['name' => 'CaseDetail', 'params' => ['id' => $case], 'hash' => '#' . self::ADVICE_TAB];
 			}
 
 			$items[] = new QueueItem(

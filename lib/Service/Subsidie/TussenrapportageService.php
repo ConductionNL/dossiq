@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -145,6 +146,7 @@ class TussenrapportageService {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md#requirement-req-sub-004-tussenrapportage-as-typed-sub-zaak
 	 */
 	public function createExpected(string $uitvoeringId, array $payload): array {
+		$payload = array_diff_key($payload, CallerIdentity::KEYS);
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$record = array_merge(

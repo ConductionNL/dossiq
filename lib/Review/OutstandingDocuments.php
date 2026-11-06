@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
@@ -48,11 +49,13 @@ class OutstandingDocuments {
 	 * @param SettingsService        $settingsService The register and the document, assessment and exclusion schemas.
 	 * @param WooCaseDocuments|null  $caseDocuments   Where a case's documents are: its informatieobjecten.
 	 * @param DocumentRelevance|null $reviews         Each document's relevance; null keeps every document needing a verdict.
+	 * @param CaseDocumentDrafts|null $drafts         The document types the case type drafts itself; null reviews every document.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
 		private readonly ?DocumentRelevance $reviews = null,
+		private readonly ?CaseDocumentDrafts $drafts = null,
 	) {
 	}//end __construct()
 
@@ -91,17 +94,19 @@ class OutstandingDocuments {
 			return ['count' => 0, 'documents' => []];
 		}
 
-		// Collect all assessed document IDs.
-		$assessedDocIds = $this->collectAssessedDocumentIds(
+		$assessments = $this->assessmentRows(
 			objectService: $objectService,
 			register: $register,
 			assessmentSchema: $assessmentSchema,
 			caseId: $caseId,
 		);
+		$assessedDocIds = $this->refsOf(assessments: $assessments, field: 'documentRef');
 
 		// A document set aside before review is not waiting for assessment
-		// (woo-request-corpus-collection, REQ-WRC-003).
-		$excludedDocIds = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId);
+		// (woo-request-corpus-collection, REQ-WRC-003), and the redacted copy
+		// of a partly public document is part of that document's assessment.
+		$excludedDocIds = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
+			+ $this->refsOf(assessments: $assessments, field: 'redactedDocumentRef');
 
 		$outstanding = $this->outstandingOf(caseId: $caseId, allDocs: array_diff_key($allDocs, $excludedDocIds), assessedDocIds: $assessedDocIds);
 
@@ -141,7 +146,16 @@ class OutstandingDocuments {
 			return [];
 		}
 
-		$excluded = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId);
+		$excluded = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
+			+ $this->refsOf(
+				assessments: $this->assessmentRows(
+					objectService: $objectService,
+					register: $register,
+					assessmentSchema: $this->settingsService->getConfigValue('woo_assessment_schema'),
+					caseId: $caseId,
+				),
+				field: 'redactedDocumentRef'
+			);
 
 		return array_map('strval', array_keys(array_diff_key($allDocs, $excluded)));
 	}//end underReview()
@@ -185,7 +199,7 @@ class OutstandingDocuments {
 		// Where the case upload writes documents: informatieobjecten joined to
 		// the case (found by the e2e Woo journey, portaliq#1001).
 		if ($this->caseDocuments !== null) {
-			return array_fill_keys($this->caseDocuments->idsFor(caseId: $caseId), true);
+			return array_fill_keys($this->withoutDraftedDocuments(caseId: $caseId, ids: $this->caseDocuments->idsFor(caseId: $caseId)), true);
 		}
 
 		if (empty($docSchema) === true) {
@@ -212,42 +226,81 @@ class OutstandingDocuments {
 	}//end collectCaseDocumentIds()
 
 	/**
-	 * Collect the identifiers of every document of a case that already carries an assessment.
+	 * The case's documents without the ones the case drafts itself.
+	 *
+	 * A letter drafted from the case type's template (`documentDrafts`, the
+	 * decision letter) is the case's own answer, not a document to assess, so
+	 * a document of a drafted type is left out of the review.
+	 *
+	 * @param string       $caseId The case UUID.
+	 * @param list<string> $ids    The case's document identifiers.
+	 *
+	 * @return list<string> The identifiers under review.
+	 */
+	private function withoutDraftedDocuments(string $caseId, array $ids): array {
+		if ($this->drafts === null || $this->caseDocuments === null || $ids === []) {
+			return $ids;
+		}
+
+		$drafted = $this->drafts->documentTypesForCase(caseId: $caseId);
+		if ($drafted === []) {
+			return $ids;
+		}
+
+		return array_values(
+			array_filter(
+				$ids,
+				fn (string $id): bool => in_array((string)($this->caseDocuments->meta(documentId: $id)['informatieobjecttype'] ?? ''), $drafted, true) === false
+			)
+		);
+	}//end withoutDraftedDocuments()
+
+	/**
+	 * Every assessment of a case.
 	 *
 	 * @param object $objectService OpenRegister object service
 	 * @param mixed $register Configured register identifier
 	 * @param mixed $assessmentSchema Configured assessment schema identifier
 	 * @param string $caseId The case UUID
 	 *
-	 * @return array<string, bool> Assessed document identifiers as keys, empty when the schema is not configured
+	 * @return array<int, array<string, mixed>> The assessments, empty when the schema is not configured
 	 */
-	private function collectAssessedDocumentIds(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array {
+	private function assessmentRows(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array {
 		if (empty($assessmentSchema) === true) {
 			return [];
 		}
 
 		// Read regardless of the caller (REQ-WSA-004): a document assessed by a
 		// reviewer whose assessment this caller may not read is still assessed,
-		// not outstanding. Only the document reference is used; nothing of the
+		// not outstanding. Only document references are used; nothing of the
 		// assessment itself is answered.
-		$assessed = $this->searchObjectsAsArraysUnscoped(
+		return $this->searchObjectsAsArraysUnscoped(
 			objectService: $objectService,
 			register: $register,
 			schema: $assessmentSchema,
 			filters: ['caseRef' => $caseId, '_limit' => 500],
 		);
+	}//end assessmentRows()
 
-		// No is_array() guard: $assessed is already typed as an array.
-		$assessedDocIds = [];
-		foreach ($assessed as $item) {
-			$docRef = $item['documentRef'] ?? null;
-			if ($docRef !== null) {
-				$assessedDocIds[$docRef] = true;
+	/**
+	 * The document references one field of the assessments names.
+	 *
+	 * @param array<int, array<string, mixed>> $assessments The assessments.
+	 * @param string                           $field       `documentRef`, or `redactedDocumentRef` for the redacted copies.
+	 *
+	 * @return array<string, bool> The references as keys.
+	 */
+	private function refsOf(array $assessments, string $field): array {
+		$refs = [];
+		foreach ($assessments as $item) {
+			$ref = (string)($item[$field] ?? '');
+			if ($ref !== '') {
+				$refs[$ref] = true;
 			}
 		}
 
-		return $assessedDocIds;
-	}//end collectAssessedDocumentIds()
+		return $refs;
+	}//end refsOf()
 
 	/**
 	 * Collect the identifiers of every document of a case that was set aside before review.

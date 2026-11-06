@@ -174,6 +174,7 @@ class OfferedTransitions {
 		return $this->specReader->guardsWithImplicit(
 			transition: $transition,
 			approvalsWired: $this->guardRegistry->knows(type: GuardRegistry::APPROVAL_GATE),
+			entryGuardWired: $this->guardRegistry->knows(type: GuardRegistry::STATUS_ENTRY_REQUIREMENTS),
 		);
 	}//end guardsFor()
 
@@ -207,6 +208,9 @@ class OfferedTransitions {
 			// renders nothing rather than a blank line.
 			'explanation' => $this->moves->explanationOf(transition: $transition),
 			'toStatus' => (string)($transition['toStatus'] ?? ''),
+			// The destination's name, so a menu can say where the move goes
+			// ("Naar Besluit") when the move's own label is only that name.
+			'toStatusName' => $this->statuses->nameOf(statusTypeId: (string)($transition['toStatus'] ?? '')),
 			'guardsPassed' => count($failed) === 0,
 			'failedGuards' => $failed,
 			// Whether the move closes the case and the results it may close

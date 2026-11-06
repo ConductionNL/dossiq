@@ -17,6 +17,8 @@
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
 
+import { translate as t } from '@nextcloud/l10n'
+
 /** The rows the handler ticked. */
 export const SCOPE_PAGE = 'page'
 
@@ -50,13 +52,13 @@ export const SCOPE_RESULT = 'result'
  * Do not add the retired names back: they would suggest the prefix is handled,
  * and it is not.
  *
- * 🔴 NEITHER IS `_related[…]`, FOR THE SAME REASON. A filter on a case type's
- * own field narrows the result set exactly as a search term does: it is
- * openregister's related-row query over the `caseProperty` rows that hang off
- * each case, and it resolves inside the same `searchObjects()` call. Dropping
+ * 🔴 NEITHER IS `_element[…]` (or `_related[…]`), FOR THE SAME REASON. A filter
+ * on a case type's own field narrows the result set exactly as a search term
+ * does: it is openregister's array-element query over the answers in each
+ * case's `properties[]`, and it resolves inside the same `searchObjects()` call. Dropping
  * it would hand the job every case in the register while the button said
- * "Select all 43 cases matching this filter". This list is a DENY list, so a
- * `_related` key already survives; the point of saying so here is that it must
+ * "Select all 43 cases matching this filter". This list is a DENY list, so an
+ * `_element` key already survives; the point of saying so here is that it must
  * keep surviving, and the test that checks it is what makes adding it to this
  * list a change somebody has to defend.
  *
@@ -144,72 +146,41 @@ export function buildSelection({ scope, selectedIds, filters }) {
 }
 
 /**
- * Whether the whole result can honestly be offered.
+ * What CnBulkJobProgress says about a bulk act over cases, in dossiq's words.
  *
- * Offering "select all 400" without knowing that there are 400 is the exact
- * surprise this module exists to prevent, so an unknown total means the offer
- * is not made.
+ * The library says "items"; a handler reads "cases", and these sentences keep
+ * the Dutch dossiq already had. Each is a template the component fills.
  *
- * @param {object} state           What is known.
- * @param {number} state.pageCount How many rows the handler ticked.
- * @param {number} [state.total]   How many rows match the search, when known.
- *
- * @return {boolean} True when the whole result is a real, countable thing.
+ * @return {object} The labels.
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
-export function canOfferWholeResult({ pageCount, total }) {
-	const matching = Number(total)
-
-	return (
-		Number.isFinite(matching) === true
-		&& matching > 0
-		&& matching > Number(pageCount || 0)
-	)
-}
-
-/**
- * The sentence a handler reads about their own selection.
- *
- * It names the number and the scope in words, in that order, because the
- * number is what a handler checks and the scope is what they get wrong.
- *
- * @param {object}   state           What is known.
- * @param {string}   state.scope     SCOPE_PAGE or SCOPE_RESULT.
- * @param {number}   state.pageCount How many rows the handler ticked.
- * @param {number}   [state.total]   How many rows match the search.
- * @param {(app: string, text: string, vars?: object) => string} translate A `t`-shaped translator.
- *
- * @return {string} The sentence.
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
- */
-export function describeScope({ scope, pageCount, total }, translate) {
-	const t = translate || ((app, text) => text)
-
-	if (scope === SCOPE_RESULT) {
-		return t('dossiq', 'All {total} cases matching this search are selected.', {
-			total: Number(total || 0),
-		})
+export function caseJobLabels() {
+	return {
+		statePreviewed: t('dossiq', 'Nothing has been written yet. This is what would happen to {total} cases.'),
+		stateRunning: t('dossiq', 'Running. {processed} of {total} cases done.'),
+		stateCancelling: t('dossiq', 'Stopping after the case it is on.'),
+		stateCancelled: t('dossiq', 'Stopped. {processed} of {total} cases were done first.'),
+		stateFailed: t('dossiq', 'The act stopped on an error after {processed} of {total} cases.'),
+		stateCompleted: t('dossiq', 'Finished. {processed} of {total} cases done.'),
+		empty: t('dossiq', 'No cases with this outcome.'),
+		commit: t('dossiq', 'Apply to {total} cases'),
+		retry: t('dossiq', 'Run the cases it did not reach'),
+		rowsFailed: t('dossiq', 'The cases with this outcome could not be read.'),
+		retryFailed: t('dossiq', 'The rest of the cases could not be run.'),
 	}
-
-	return t('dossiq', '{count} cases on this page are selected.', {
-		count: Number(pageCount || 0),
-	})
 }
 
 /**
- * The label on the button that widens the selection.
+ * What CnSelectionScope says about a selection of cases, in dossiq's words.
  *
- * @param {object}   state         What is known.
- * @param {number}   state.total   How many rows match the search.
- * @param {(app: string, text: string, vars?: object) => string} translate A `t`-shaped translator.
- *
- * @return {string} The label.
+ * @return {object} The labels.
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
-export function widenLabel({ total }, translate) {
-	const t = translate || ((app, text) => text)
-
-	return t('dossiq', 'Select all {total} cases matching this search', {
-		total: Number(total || 0),
-	})
+export function caseScopeLabels() {
+	return {
+		page: t('dossiq', '{count} cases on this page are selected.'),
+		result: t('dossiq', 'All {total} cases matching this search are selected.'),
+		widen: t('dossiq', 'Select all {total} cases matching this search'),
+		narrow: t('dossiq', 'Go back to the {count} on this page'),
+	}
 }

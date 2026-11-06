@@ -51,17 +51,6 @@ export async function revokeSubstitution(id) {
 }
 
 /**
- * Fetch the substituted work routed to the current user (My Work integration).
- *
- * @return {Promise<{cases: Array, tasks: Array}>} Substituted cases + tasks.
- * @spec openspec/specs/handler-vervanging-waarneming/spec.md
- */
-export async function fetchSubstitutedWork() {
-	const { data } = await axios.get(base('/api/substitutions/work'))
-	return { cases: (data && data.cases) || [], tasks: (data && data.tasks) || [] }
-}
-
-/**
  * Fetch the capacity-stamped actions performed under a substitution.
  *
  * @param {string} id The substitution UUID.

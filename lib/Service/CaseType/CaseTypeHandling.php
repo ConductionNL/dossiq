@@ -110,7 +110,7 @@ final class CaseTypeHandling {
 	 * }
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
-	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
 	 */
 	public function block(array $caseType): array {
 		return [
@@ -168,7 +168,7 @@ final class CaseTypeHandling {
 	 *
 	 * @return array<int, string> The group ids, possibly empty.
 	 *
-	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
 	 */
 	public function teams(array $caseType): array {
 		$teams = [];
@@ -195,6 +195,9 @@ final class CaseTypeHandling {
 	/**
 	 * The user a new case of this type falls to.
 	 *
+	 * The legacy `defaultAssignee` is a user or group id string; a value of
+	 * any other shape names nobody.
+	 *
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
 	 * @return string The user id, or '' when the case stays unclaimed.
@@ -207,7 +210,12 @@ final class CaseTypeHandling {
 			return $declared;
 		}
 
-		return (string)($caseType['defaultAssignee'] ?? '');
+		$legacy = ($caseType['defaultAssignee'] ?? '');
+		if (is_string($legacy) === false && is_int($legacy) === false) {
+			return '';
+		}
+
+		return (string)$legacy;
 	}//end defaultHandler()
 
 	/**

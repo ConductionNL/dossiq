@@ -1,5 +1,7 @@
 # Screens
 
-- No screen: the freeze, the numbering and the successor are server rules and an API; showing the chain on the case moved to beschikking-chain-on-the-case.
-- DqDocumentGenereren https://identity.conduction.nl/screens/board?id=dossiq/DqDocumentGenereren
-- DqZaakBesluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
+- dossiq/DqDocumentGenereren document genereren https://identity.conduction.nl/screens/board?id=dossiq/DqDocumentGenereren
+- dossiq/DqZaakBesluiten zaak, besluiten https://identity.conduction.nl/screens/board?id=dossiq/DqZaakBesluiten
+- dossiq/DqBesluit besluit vastleggen, dialoog https://identity.conduction.nl/screens/board?id=dossiq/DqBesluit
+
+Components: CnActionButtons, CnActionDialog, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnChoiceCards, CnConfirmDialog, CnDetailCard, CnDetailGrid, CnDetailPage, CnFormDialog, CnMapWidget, CnNextStepCard, CnNoteCard, CnProgressBar, CnRecordListWidget, CnRelatedCollections, CnStatusBadge, CnTabs, CnTimelineStages

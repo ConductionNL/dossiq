@@ -129,6 +129,7 @@ class ComplaintCategoryController extends Controller {
 
 		try {
 			$data = $this->accessGuard->parseBody();
+			$data = array_diff_key($data, ['id' => true, 'uuid' => true, '@self' => true]);
 			$register = $this->settingsService->getConfigValue('register');
 			$schema = $this->settingsService->getConfigValue('complaint_category_schema');
 			$category = $objectService->saveObject(object: $data, register: $register, schema: $schema);

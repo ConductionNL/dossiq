@@ -182,21 +182,7 @@ class ConsultationRepository {
 			return [];
 		}
 
-		$openList = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['status' => 'open', '_limit' => 200],
-		);
-
-		$inProgressList = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['status' => 'in_handling', '_limit' => 200],
-		);
-
-		$all = array_merge($openList, $inProgressList);
+		$all = $this->getWaitingConsultations();
 		$today = date('Y-m-d');
 		$overdue = [];
 
@@ -209,6 +195,65 @@ class ConsultationRepository {
 
 		return $overdue;
 	}//end getOverdueConsultations()
+
+	/**
+	 * The consultations still waiting for their answer (open, received, in handling).
+	 *
+	 * @return array<int, array<string, mixed>> The consultations.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advice-requests-due-within-the-warning-offset-are-listed
+	 */
+	public function getWaitingConsultations(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('consultation_schema');
+		if ($objectService === null || empty($register) === true || empty($schema) === true) {
+			return [];
+		}
+
+		$waiting = [];
+		foreach (ConsultationTerms::WAITING as $status) {
+			$waiting = array_merge(
+				$waiting,
+				$this->searchObjectsAsArrays(
+					objectService: $objectService,
+					register: $register,
+					schema: $schema,
+					filters: ['status' => $status, '_limit' => 200],
+				)
+			);
+		}
+
+		return $waiting;
+	}//end getWaitingConsultations()
+
+	/**
+	 * The consultations created in the last days, newest first.
+	 *
+	 * @param int $days How many days back.
+	 *
+	 * @return array<int, array<string, mixed>> The consultations.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-advisory-bodies-past-the-bottleneck-threshold-are-flagged
+	 */
+	public function getRecentConsultations(int $days): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('consultation_schema');
+		if ($objectService === null || empty($register) === true || empty($schema) === true) {
+			return [];
+		}
+
+		$since = date('Y-m-d', strtotime('-' . $days . ' days'));
+		$rows = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['_order' => ['createdAt' => 'DESC'], '_limit' => 1000],
+		);
+
+		return array_values(array_filter($rows, static fn (array $row): bool => substr((string)($row['createdAt'] ?? ''), 0, 10) >= $since));
+	}//end getRecentConsultations()
 
 
 	/**

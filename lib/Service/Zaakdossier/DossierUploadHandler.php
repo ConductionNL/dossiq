@@ -197,8 +197,9 @@ class DossierUploadHandler {
 	 * @return bool True when the file appears to be an executable.
 	 *
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
 	 */
-	private function isExecutable(string $name, string $tmpName): bool {
+	public function isExecutable(string $name, string $tmpName): bool {
 		$extension = strtolower((string)pathinfo($name, PATHINFO_EXTENSION));
 		if (in_array($extension, self::BLOCKED_EXTENSIONS, true) === true) {
 			return true;

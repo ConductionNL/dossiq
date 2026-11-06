@@ -100,7 +100,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return string The translated sentence, or the sentence as written.
 	 *
-	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	private function refusalSentence(RefusedException $e): string {
 		$sentence = $e->getSentence();
@@ -128,7 +128,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return IL10N|null The translator.
 	 *
-	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	private function refusalTranslator(): ?IL10N {
 		$own = $this->refusalL10n();
@@ -155,7 +155,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return IL10N|null The translator, or null to use the app's.
 	 *
-	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	protected function refusalL10n(): ?IL10N {
 		return null;

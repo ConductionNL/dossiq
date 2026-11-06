@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Csv\CsvWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserManager;
@@ -129,14 +130,14 @@ class WooThroughputReport {
 	 */
 	public function toCsv(array $rows): string {
 		$columns = array_merge(['reviewer', 'displayName', 'day'], self::VERDICTS, ['total']);
-		$lines = [self::csvLine(cells: $columns)];
+		$lines = [(new CsvWriter())->line(cells: $columns)];
 		foreach ($rows as $row) {
 			$cells = [];
 			foreach ($columns as $column) {
 				$cells[] = (string)($row[$column] ?? '');
 			}
 
-			$lines[] = self::csvLine(cells: $cells);
+			$lines[] = (new CsvWriter())->line(cells: $cells);
 		}
 
 		return implode("\r\n", $lines) . "\r\n";
@@ -289,23 +290,4 @@ class WooThroughputReport {
 		return $name;
 	}//end displayName()
 
-	/**
-	 * One CSV line. A cell that starts like a formula is prefixed so a spreadsheet does not run it.
-	 *
-	 * @param list<string> $cells The cells.
-	 *
-	 * @return string The line.
-	 */
-	private static function csvLine(array $cells): string {
-		$out = [];
-		foreach ($cells as $cell) {
-			if ($cell !== '' && in_array($cell[0], ['=', '+', '-', '@'], true) === true) {
-				$cell = "'" . $cell;
-			}
-
-			$out[] = '"' . str_replace('"', '""', $cell) . '"';
-		}
-
-		return implode(',', $out);
-	}//end csvLine()
 }//end class

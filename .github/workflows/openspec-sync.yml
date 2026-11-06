@@ -8,6 +8,9 @@ on:
 
 jobs:
   sync:
+    permissions:
+      contents: read
+      issues: write
     uses: ConductionNL/.github/.github/workflows/openspec-sync.yml@main
     with:
       app-name: dossiq

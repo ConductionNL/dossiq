@@ -1,0 +1,43 @@
+[
+    {
+        "getConfigValue": "bezwaar_schema"
+    },
+    {
+        "getConfigValue": "register"
+    },
+    {
+        "getConfigValue": "bezwaar_decision_schema"
+    },
+    {
+        "findAll": {
+            "filters": {
+                "register": "reg",
+                "schema": "decision",
+                "objectionProceeding": "b-1"
+            },
+            "limit": 100
+        }
+    },
+    {
+        "getConfigValue": "register"
+    },
+    {
+        "getConfigValue": "bezwaar_schema"
+    },
+    {
+        "patchObject": {
+            "objectId": "b-1",
+            "data": {
+                "status": "Hearing held"
+            },
+            "register": "reg",
+            "schema": "objection"
+        }
+    },
+    {
+        "warning": "Dossiq bezwaar-decision: blocked transition into \"Decision on objection\" — no published bezwaarDecision; reverted to \"Hearing held\"",
+        "context": {
+            "bezwaarId": "b-1"
+        }
+    }
+]

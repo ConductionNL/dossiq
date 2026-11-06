@@ -142,9 +142,7 @@ class CaseStateFieldRuleProjector {
 		);
 
 		$requiredByStatus = $this->requiredByStatus(caseTypeId: $caseTypeId);
-		$roleFields = $this->roles->lifecycleFields(
-			caseType: $this->store->readCaseType(caseTypeId: $caseTypeId)
-		);
+		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
 
 		$states = [];
 		foreach ($statusTypes as $statusType) {
@@ -158,7 +156,10 @@ class CaseStateFieldRuleProjector {
 				fields: $fields,
 				required: ($requiredByStatus[$stateKey] ?? [])
 			);
-			$fields = $this->roles->foldInto(fields: $fields, roles: $roleFields);
+			$fields = $this->roles->foldInto(
+				fields: $fields,
+				roles: $this->roles->lifecycleFields(caseType: $caseType, statusId: $stateKey)
+			);
 
 			if ($fields === []) {
 				continue;

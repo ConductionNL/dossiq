@@ -147,6 +147,8 @@ class CrossDomainExistence {
 		}
 
 		$found = [];
+		// Procedures that moved onto a case type answer through their cases.
+		$caseContacts = $this->store->openCaseContactsAbout(bsn: $bsn);
 		foreach (SociaalDomeinStore::DOMAINS as $domain => $declaration) {
 			if ($domain === $ownDomain) {
 				continue;
@@ -158,21 +160,30 @@ class CrossDomainExistence {
 			// clean "nothing here" rather than an error.
 			$filters = [$declaration['bsnKey'] => $bsn];
 
+			$contact = null;
 			foreach ($this->store->rows(schema: $declaration['schema'], filters: $filters) as $row) {
-				if ($this->isOpen(row: $row) === false) {
+				// A record that moved onto a case answers through its case.
+				if ($this->isOpen(row: $row) === false || trim((string)($row['migratedTo'] ?? '')) !== '') {
 					continue;
 				}
 
-				// FIELD BY FIELD. Nothing of the row travels: not its title,
-				// not its status, not its dates and not its number. A property
-				// added to that schema tomorrow appears in nothing here.
-				$found[] = [
-					'exists' => true,
-					'domain' => $domain,
-					'contact' => $this->contactFor(row: $row, domain: $domain),
-				];
+				$contact = $this->contactFor(row: $row, domain: $domain);
 				break;
 			}
+
+			$contact = ($contact ?? ($caseContacts[$domain] ?? null));
+			if ($contact === null) {
+				continue;
+			}
+
+			// FIELD BY FIELD. Nothing of the row or the case travels: not its
+			// title, not its status, not its dates and not its number. A
+			// property added to either tomorrow appears in nothing here.
+			$found[] = [
+				'exists' => true,
+				'domain' => $domain,
+				'contact' => $contact,
+			];
 		}
 
 		// The log is written in the same act as the answer, including when the

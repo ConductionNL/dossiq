@@ -1,0 +1,64 @@
+{
+    "components": {
+        "registers": {
+            "dossiq": {
+                "schemas": [
+                    "colleague"
+                ]
+            }
+        },
+        "schemas": {
+            "colleague": {
+                "slug": "colleague",
+                "icon": "AccountTieOutline",
+                "version": "1.0.0",
+                "searchable": false,
+                "x-schema-org": "schema:Person",
+                "title": "Colleague",
+                "description": "A colleague of the municipality who takes part in a case: an adviser, an inspector, a member of the handling team. A party of kind colleague, linked to their Nextcloud account by user id, so a case can show who of the organisation is involved beside the people and organisations it is about.",
+                "type": "object",
+                "required": [
+                    "userId",
+                    "displayName"
+                ],
+                "properties": {
+                    "userId": {
+                        "type": "string",
+                        "title": "User",
+                        "description": "The colleague's Nextcloud user id.",
+                        "maxLength": 64
+                    },
+                    "displayName": {
+                        "type": "string",
+                        "title": "Name",
+                        "description": "The colleague's name as shown on the case.",
+                        "maxLength": 255
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email",
+                        "description": "The colleague's work e-mail address."
+                    },
+                    "jobTitle": {
+                        "type": "string",
+                        "title": "Job title",
+                        "description": "The colleague's job, such as tree expert or legal adviser.",
+                        "maxLength": 255
+                    },
+                    "department": {
+                        "type": "string",
+                        "title": "Department",
+                        "description": "The team or department the colleague works in.",
+                        "maxLength": 255
+                    }
+                },
+                "configuration": {
+                    "x-openregister-party": { "kind": "colleague", "nameProperty": "displayName" },
+                    "objectNameField": "displayName",
+                    "objectDescriptionField": "jobTitle"
+                }
+            }
+        }
+    }
+}

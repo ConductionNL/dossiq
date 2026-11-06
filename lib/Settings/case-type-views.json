@@ -1,0 +1,11 @@
+{
+  "_note": "Views of the Cases page per case type that every user gets, for case types an instance names by identifier rather than by a fixed id (Ruben, 19 October 2026: lists that were pages are views of the case list). The /api/manifest delta resolves each identifier to the instance's case type and adds the view; an instance without that case type gets none. The slug is what `?savedView=default:<slug>` names.",
+  "views": [
+    {
+      "slug": "complaints",
+      "name": "Complaints",
+      "description": "Case type complaint handling",
+      "caseTypeIdentifier": "klacht-behandeling"
+    }
+  ]
+}

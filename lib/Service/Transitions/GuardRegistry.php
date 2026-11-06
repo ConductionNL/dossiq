@@ -56,6 +56,11 @@ class GuardRegistry {
 	public const STATUS_CAPACITY = 'statusCapacity';
 
 	/**
+	 * The documents a status requires before a case enters it, appended by the engine.
+	 */
+	public const STATUS_ENTRY_REQUIREMENTS = 'statusEntryRequirements';
+
+	/**
 	 * The guard type every transition is checked against for a walked approval.
 	 *
 	 * The case type decides which acts it gates, so a transition that never
@@ -78,40 +83,26 @@ class GuardRegistry {
 	/**
 	 * Constructor.
 	 *
-	 * @param ChecklistGuard $checklist Built-in checklist evaluator
-	 * @param RequiredFieldGuard $requiredField Built-in required-field evaluator
-	 * @param RequiredDocumentGuard $requiredDocument Built-in required-document evaluator
-	 * @param RoleGuard $roleGuard Built-in role evaluator
-	 * @param DelegatedAuthorityGuard $authority Asks decidiq whether the acting person holds the authority
-	 * @param StatusChecklistGuard $statusChecklist Required-items-of-the-current-status evaluator
-	 * @param CapacityGuard $capacity Capacity-of-the-status-being-entered evaluator
-	 * @param LoggerInterface $logger Logger for unknown guard types
-	 * @param ApprovalGuard|null $approvalGuard The walked-approval evaluator. Optional, so a
-	 *                                          registry built before it existed builds as it did.
-	 * @param DocumentAssessmentGuard|null $documentAssessment Whether a case's documents are gathered
-	 *                                          and assessed. Optional for the same reason.
+	 * The container builds it, and nothing calls registerEvaluator(), so a guard
+	 * kind that is not in one of the three sets is not registered at all.
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten: one evaluator per guard kind, which is
-	 *   what this registry is. The container builds it, and nothing calls registerEvaluator(),
-	 *   so a guard kind that is not a parameter is not registered at all.
+	 * @param CaseContentGuards $caseContent The evaluators that read what the case holds.
+	 * @param ActorGuards       $actor       The evaluators that read who acts.
+	 * @param StatusEntryGuards $statusEntry The evaluators that read the status being entered.
+	 * @param LoggerInterface   $logger      Logger for unknown guard types.
 	 */
 	public function __construct(
-		ChecklistGuard $checklist,
-		RequiredFieldGuard $requiredField,
-		RequiredDocumentGuard $requiredDocument,
-		RoleGuard $roleGuard,
-		DelegatedAuthorityGuard $authority,
-		StatusChecklistGuard $statusChecklist,
-		CapacityGuard $capacity,
+		CaseContentGuards $caseContent,
+		ActorGuards $actor,
+		StatusEntryGuards $statusEntry,
 		private readonly LoggerInterface $logger,
-		?ApprovalGuard $approvalGuard = null,
-		?DocumentAssessmentGuard $documentAssessment = null,
 	) {
+		$authority = $actor->authority;
 		$this->evaluators = [
-			'checklist' => $checklist,
-			'requiredField' => $requiredField,
-			'requiredDocument' => $requiredDocument,
-			'roleGuard' => $roleGuard,
+			'checklist' => $caseContent->checklist,
+			'requiredField' => $caseContent->requiredField,
+			'requiredDocument' => $caseContent->requiredDocument,
+			'roleGuard' => $actor->roleGuard,
 			'delegatedAuthorityGuard' => $authority,
 			// The legacy key stays answered: workflow definitions stored on live
 			// instances still name it with no config, and an unknown guard type
@@ -119,19 +110,18 @@ class GuardRegistry {
 			'mandaatGuard' => $authority->withDefaults(defaults: ['actField' => 'mandaatCategorie']),
 			// Registered like any other type, but declared by no template: the
 			// engine appends it to every transition's guard list itself.
-			self::STATUS_CHECKLIST => $statusChecklist,
+			self::STATUS_CHECKLIST => $caseContent->statusChecklist,
 			// Appended by the engine too, and carrying the one thing it needs
 			// from the transition: which status is being entered.
-			self::STATUS_CAPACITY => $capacity,
+			self::STATUS_CAPACITY => $statusEntry->capacity,
 		];
 
-		if ($approvalGuard !== null) {
-			$this->evaluators[self::APPROVAL_GATE] = $approvalGuard;
-		}
-
-		if ($documentAssessment !== null) {
-			$this->evaluators[self::DOCUMENT_ASSESSMENT] = $documentAssessment;
-		}
+		$optional = [
+			self::APPROVAL_GATE => $statusEntry->approvalGuard,
+			self::DOCUMENT_ASSESSMENT => $statusEntry->documentAssessment,
+			self::STATUS_ENTRY_REQUIREMENTS => $statusEntry->entryRequirements,
+		];
+		$this->evaluators += array_filter($optional, static fn (?GuardEvaluatorInterface $guard): bool => $guard !== null);
 	}//end __construct()
 
 	/**

@@ -1,0 +1,38 @@
+{
+    "case read throws": {
+        "exception": [
+            "RuntimeException",
+            "Case not found: case-9"
+        ],
+        "calls": [
+            [
+                "getObjectService"
+            ],
+            [
+                "getConfigValue",
+                "register"
+            ],
+            [
+                "getConfigValue",
+                "case_schema"
+            ],
+            [
+                "find",
+                "case-9",
+                "dossiq",
+                "case"
+            ]
+        ],
+        "logs": [
+            [
+                "error",
+                "PublicationService::publish find failed",
+                {
+                    "app": "dossiq",
+                    "caseId": "case-9",
+                    "error": "store down"
+                }
+            ]
+        ]
+    }
+}

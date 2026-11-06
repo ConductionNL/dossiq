@@ -18,7 +18,7 @@
  * that are repeated here; if the library changes those lines this copy goes
  * stale, and the note says so rather than pretending otherwise.
  *
- * @spec openspec/specs/dashboard/spec.md#REQ-DASH-025
+ * @spec openspec/changes/archive/2026-10-10-simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-025
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -203,14 +203,17 @@ describe('whether the First today card shows', () => {
 		expect(none.met).toBe(false)
 	})
 
-	it('is a custom widget that counts on the declared condition, so nothing collapses its cell', () => {
-		// The card names one case through FirstTodayWidget, not a library
-		// banner, so there is no `text` for the dashboard to collapse the cell
-		// on. The widget reads the filter from the condition declared here,
-		// the one the feed (appinfo/attention.json) is asserted against.
+	it('is a library banner that names the first row of the declared condition', () => {
+		// The card names ONE case: the first row of the ordered query is its
+		// subject (CnDashboardPage hands the row to the banner with the
+		// verdict). The filter is the one the feed (appinfo/attention.json) is
+		// asserted against; the count is still met on the total.
 		const card = widget('simple-first-today')
-		expect(card.type).toBe('custom')
-		expect(card.content.reason).toContain('{value}')
+		expect(card.type).toBe('banner')
+		expect(card.content.title).toBe('{subject.title}')
+		expect(card.content.reason).toContain('{subject.identifier}')
+		expect(card.content.visibleWhen.source.order).toEqual({ deadline: 'asc' })
+		expect(card.content.visibleWhen.source.extend).toEqual(['caseType'])
 		expect(card.content.visibleWhen.source.filter['deadline[lt]']).toBe(
 			'@today+1d',
 		)

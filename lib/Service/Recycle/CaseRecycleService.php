@@ -91,6 +91,35 @@ class CaseRecycleService {
 	public const PAGE_SIZE = 50;
 
 	/**
+	 * OpenRegister's register mapper.
+	 *
+	 * @var string
+	 */
+	public const REGISTER_MAPPER = 'OCA\\OpenRegister\\Db\\RegisterMapper';
+
+	/**
+	 * OpenRegister's schema mapper.
+	 *
+	 * @var string
+	 */
+	public const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+
+	/**
+	 * The most deleted cases the lens reads. Rows past the recovery window are
+	 * purged, so the trash of one schema stays far below this.
+	 *
+	 * @var int
+	 */
+	public const DELETED_ROW_CAP = 1000;
+
+	/**
+	 * The constant that names OpenRegister's deleted lens on the object list.
+	 *
+	 * @var string
+	 */
+	public const DELETED_LENS = 'OCA\\OpenRegister\\Db\\MagicMapper\\MagicSearchHandler::DELETED_ONLY';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister plus app config.
@@ -120,6 +149,7 @@ class CaseRecycleService {
 	 * @param int $offset How many rows to skip.
 	 * @param string $forUser The caller's user id; an empty id sees nothing.
 	 * @param bool $isAdmin Whether the caller is an administrator.
+	 * @param string $search A term the number, title or deleter must hold; empty for all.
 	 *
 	 * @return array{results: array<int, array<string, mixed>>, total: int}
 	 *
@@ -135,43 +165,121 @@ class CaseRecycleService {
 		int $offset = 0,
 		string $forUser = '',
 		bool $isAdmin = false,
+		string $search = '',
 	): array {
-		$mapper = $this->settingsService->getOpenRegisterClass(class: self::MAGIC_MAPPER);
-		if ($mapper === null || method_exists($mapper, 'findDeletedAcrossAllMagicTables') === false) {
-			return [
-				'results' => [],
-				'total' => 0,
-			];
-		}
-
-		try {
-			$rows = $mapper->findDeletedAcrossAllMagicTables(limit: $limit, offset: $offset);
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: could not read the deleted cases: ' . $e->getMessage());
-			return [
-				'results' => [],
-				'total' => 0,
-			];
-		}
-
 		$cases = [];
-		foreach ($rows as $row) {
-			if ($this->isCase(entity: $row) === false) {
+		foreach ($this->deletedRows() as $row) {
+			if ($this->isCase(entity: $row) === false
+				|| $this->maySee(entity: $row, userId: $forUser, isAdmin: $isAdmin) === false
+			) {
 				continue;
 			}
 
-			if ($this->maySee(entity: $row, userId: $forUser, isAdmin: $isAdmin) === false) {
-				continue;
+			$case = $this->row(entity: $row);
+			if ($this->matches(case: $case, search: $search) === true) {
+				$cases[] = $case;
 			}
-
-			$cases[] = $this->row(entity: $row);
 		}
+
+		usort(
+			$cases,
+			static fn (array $first, array $second): int => strcmp($second['deletedAt'], $first['deletedAt'])
+		);
 
 		return [
-			'results' => $cases,
+			'results' => array_slice($cases, max(0, $offset), max(0, $limit)),
 			'total' => count($cases),
 		];
 	}//end deletedCases()
+
+	/**
+	 * The soft-deleted rows the lens chooses from.
+	 *
+	 * The case table's deleted rows when OpenRegister offers the `_deleted`
+	 * lens and can say which table that is, else every deleted row on the
+	 * instance. An OpenRegister without the lens drops deleted rows from the
+	 * object list, so asking it the table question would answer nothing. Never a page of either: the
+	 * lens scopes the rows first and pages after, or a case behind a page of
+	 * other apps' deletions would never be listed.
+	 *
+	 * @return array<int, object> OpenRegister's object entities.
+	 */
+	private function deletedRows(): array {
+		$mapper = $this->settingsService->getOpenRegisterClass(class: self::MAGIC_MAPPER);
+		if ($mapper === null) {
+			return [];
+		}
+
+		// A case table that cannot be resolved falls back on the scan of every table.
+		$table = null;
+		try {
+			$table = $this->caseTable();
+		} catch (Throwable $e) {
+			$this->logger->info('Dossiq: the case table could not be resolved: ' . $e->getMessage());
+		}
+
+		try {
+			if ($table !== null && $this->deletedLensAvailable() === true) {
+				return $mapper->searchObjectsInRegisterSchemaTable(
+					query: [
+						'_deleted' => 'true',
+						'_limit' => self::DELETED_ROW_CAP,
+					],
+					register: $table['register'],
+					schema: $table['schema']
+				);
+			}
+
+			return $mapper->findDeletedAcrossAllMagicTables();
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: could not read the deleted cases: ' . $e->getMessage());
+		}
+
+		return [];
+	}//end deletedRows()
+
+	/**
+	 * Whether OpenRegister's object list offers the `_deleted` lens.
+	 *
+	 * @return bool True when it does.
+	 */
+	protected function deletedLensAvailable(): bool {
+		return defined(self::DELETED_LENS);
+	}//end deletedLensAvailable()
+
+	/**
+	 * OpenRegister's register and schema entities of the case table, or null.
+	 *
+	 * @return array{register: object, schema: object}|null The pair.
+	 */
+	private function caseTable(): ?array {
+		$registers = $this->settingsService->getOpenRegisterClass(class: self::REGISTER_MAPPER);
+		$schemas = $this->settingsService->getOpenRegisterClass(class: self::SCHEMA_MAPPER);
+		if ($registers === null || $schemas === null) {
+			return null;
+		}
+
+		// An unconfigured id is a miss the mapper raises; the caller falls back on it.
+		return [
+			'register' => $registers->find($this->settingsService->getConfigValue('register')),
+			'schema' => $schemas->find($this->settingsService->getConfigValue('case_schema')),
+		];
+	}//end caseTable()
+
+	/**
+	 * Whether a lens row matches a search term on its number, title or deleter.
+	 *
+	 * @param array<string, mixed> $case The row.
+	 * @param string $search The term; empty matches everything.
+	 *
+	 * @return bool True when the row stays.
+	 */
+	private function matches(array $case, string $search): bool {
+		// An empty needle is found at position 0, so an empty term keeps every row.
+		$haystack = implode(' ', [$case['identifier'], $case['title'], $case['deletedBy']]);
+
+		return (mb_stripos($haystack, trim($search)) !== false);
+	}//end matches()
 
 	/**
 	 * One live case, as an associative array, or null.

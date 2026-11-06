@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
+use OCA\Dossiq\Portal\CitizenManifest;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -426,5 +427,19 @@ class PortalCaseDeclarationsTest extends TestCase {
 		}
 
 		$this->fail('mijnZaken is not declared');
+	}
+
+	/**
+	 * The organisation's text above Mijn zaken rides on the case collection
+	 * as `intro`, and an empty setting adds nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseListCarriesTheOrganisationsIntro(): void {
+		$with = (new CitizenManifest(caseListIntro: '  Hier ziet u de stand van uw aanvragen.  '))->caseCollection();
+		$this->assertSame(expected: 'Hier ziet u de stand van uw aanvragen.', actual: $with['intro']);
+
+		$without = (new CitizenManifest())->caseCollection();
+		$this->assertArrayNotHasKey(key: 'intro', array: $without);
 	}
 }

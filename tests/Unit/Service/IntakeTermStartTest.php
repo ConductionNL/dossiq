@@ -279,7 +279,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testADayOnlyReceiptOnAWorkingDayIsInside(): void {
 		$nineAm = new DateTimeImmutable('2026-03-10T09:00:00+01:00');
@@ -296,7 +296,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testADayOnlyReceiptOnASundayIsOutside(): void {
 		$monday = new DateTimeImmutable('2026-03-09T09:00:00+01:00');
@@ -312,7 +312,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testAnImportedReceiptAnswerIsTheArrival(): void {
 		$intake = $this->intake(answering: new DateTimeImmutable('2026-03-09T09:00:00+01:00'));

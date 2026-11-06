@@ -1,0 +1,2 @@
+- [x] 1.1 case-incidents-card as record-list rows (tests/vitest/incidentStatePillTones.spec.js)
+- [ ] 1.2 Live check on DqZaakTaken after the next wave

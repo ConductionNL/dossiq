@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Term\DayCount;
@@ -65,9 +66,7 @@ class CaseTermsService {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termService The one writer of a term instance.
-	 * @param TermDeclarationReader $declarations What the case type and its phases declare.
-	 * @param TermijnTimerService $timers The engine calendar bridge.
+	 * @param CaseTermSources $sources The term instances, the term declarations and the term timers.
 	 * @param LoggerInterface $logger Logger.
 	 * @param TermMoveHistory|null $moves The record of every move a term made, and
 	 *        why. Optional so a container that cannot build it leaves the binding
@@ -78,9 +77,7 @@ class CaseTermsService {
 	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
-		private readonly TermijnService $termService,
-		private readonly TermDeclarationReader $declarations,
-		private readonly TermijnTimerService $timers,
+		private readonly CaseTermSources $sources,
 		private readonly LoggerInterface $logger,
 		private readonly ?TermMoveHistory $moves = null,
 		private readonly ?WorkingDayRoll $calendar = null,
@@ -111,7 +108,7 @@ class CaseTermsService {
 	 * @return array<int, array<string, mixed>> The instances this call created or moved.
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function bindForCase(
 		string $caseId,
@@ -125,7 +122,7 @@ class CaseTermsService {
 		}
 
 		$from = ($start ?? new DateTimeImmutable());
-		$declared = $this->declarations->forCaseType(caseTypeId: $caseTypeId);
+		$declared = $this->sources->declarations->forCaseType(caseTypeId: $caseTypeId);
 
 		$bound = [];
 
@@ -198,11 +195,11 @@ class CaseTermsService {
 			return null;
 		}
 
-		$end = $this->timers->rollTermEndFor(date: new DateTimeImmutable($fixed))->format('Y-m-d');
-		$existing = $this->termService->getTermijnInstanceForZaak(caseId: $caseId);
+		$end = $this->sources->timers->rollTermEndFor(date: new DateTimeImmutable($fixed))->format('Y-m-d');
+		$existing = $this->sources->termService->getTermijnInstanceForZaak(caseId: $caseId);
 
 		if ($existing !== null && TermKind::ofInstance($existing) === TermKind::STATUTORY) {
-			return $this->termService->updateTermijnInstance(
+			return $this->sources->termService->updateTermijnInstance(
 				termInstanceId: (string)($existing['id'] ?? ''),
 				patch: [
 					'kind' => TermKind::STATUTORY,
@@ -212,7 +209,7 @@ class CaseTermsService {
 			);
 		}
 
-		return $this->termService->saveTermInstance(
+		return $this->sources->termService->saveTermInstance(
 			instance: [
 				'case' => $caseId,
 				'kind' => TermKind::STATUTORY,
@@ -256,7 +253,7 @@ class CaseTermsService {
 
 		$end = $this->endAfter(start: $start, days: $days, mode: $mode);
 
-		return $this->termService->saveTermInstance(
+		return $this->sources->termService->saveTermInstance(
 			instance: array_merge(
 				[
 					'case' => $caseId,
@@ -302,7 +299,7 @@ class CaseTermsService {
 		$raw = $this->calendar?->endAfterOrCalendarDays(start: $start, days: $days, mode: $mode)
 			?? $start->add(new DateInterval('P' . $days . 'D'));
 
-		return $this->timers->rollTermEndFor(date: $raw)->format('Y-m-d');
+		return $this->sources->timers->rollTermEndFor(date: $raw)->format('Y-m-d');
 	}//end endAfter()
 
 	/**
@@ -322,7 +319,7 @@ class CaseTermsService {
 		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);
 
 		$terms = [];
-		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
+		foreach ($this->sources->termService->instancesForCase(caseId: $caseId) as $row) {
 			$kind = TermKind::ofInstance($row);
 			$end = (string)($row['endDateCurrent'] ?? ($row['endDateCalculated'] ?? ''));
 			$daysLeft = $this->daysLeft(end: $end, today: $today);
@@ -388,7 +385,7 @@ class CaseTermsService {
 	): array {
 		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);
 		$terms = $this->termsForCase(caseId: $caseId, now: $today);
-		$phases = $this->declarations->phasesOf(caseTypeId: $caseTypeId);
+		$phases = $this->sources->declarations->phasesOf(caseTypeId: $caseTypeId);
 
 		$statutory = $this->firstOfKind(terms: $terms, kind: TermKind::STATUTORY);
 		$consumed = $this->consumedPercent(term: $statutory, today: $today);
@@ -437,7 +434,7 @@ class CaseTermsService {
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
 	 */
 	public function overviewFor(string $caseId, ?DateTimeImmutable $now = null): array {
-		$context = $this->declarations->caseContext(caseId: $caseId);
+		$context = $this->sources->declarations->caseContext(caseId: $caseId);
 
 		return [
 			'case' => $caseId,
@@ -464,6 +461,29 @@ class CaseTermsService {
 	public function citizenTermsFor(string $caseId, ?DateTimeImmutable $now = null): array {
 		return TermKind::citizenVisible($this->termsForCase(caseId: $caseId, now: $now));
 	}//end citizenTermsFor()
+
+	/**
+	 * How far one term instance has run and how long it has left, counted the
+	 * way the case page counts it (REQ-TERM-068).
+	 *
+	 * @param array<string, mixed> $instance The term instance row.
+	 * @param DateTimeImmutable|null $now The moment to judge against (default now).
+	 *
+	 * @return array{endDate: string, progressPercent: int, daysLeft: int}
+	 *
+	 * @spec openspec/changes/lists-and-dashboards-as-drawn/specs/termijn-reporting/spec.md#requirement-the-term-dashboard-lists-the-terms-that-end-first
+	 */
+	public function standingOf(array $instance, ?DateTimeImmutable $now = null): array {
+		$today = ($now ?? new DateTimeImmutable())->setTime(0, 0);
+		$end = (string)($instance['endDateCurrent'] ?? ($instance['endDateCalculated'] ?? ''));
+		$term = ['startDate' => (string)($instance['startDate'] ?? ''), 'endDate' => $end];
+
+		return [
+			'endDate' => $end,
+			'progressPercent' => $this->consumedPercent(term: $term, today: $today),
+			'daysLeft' => $this->daysLeft(end: $end, today: $today),
+		];
+	}//end standingOf()
 
 	/**
 	 * How much of a term has been consumed, as a percentage.

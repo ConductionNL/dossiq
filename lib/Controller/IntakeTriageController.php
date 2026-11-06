@@ -48,11 +48,13 @@ use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Email\IntakePolicy;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
+use OCA\Dossiq\Service\Intake\CaseMatchSuggestion;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
 use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeFanOut;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
+use OCA\Dossiq\Service\Intake\TriageChannel;
 use OCA\Dossiq\Service\Intake\TriageSleep;
 use OCA\Dossiq\Service\Routing\RefusalOutcome;
 use OCP\AppFramework\Controller;
@@ -110,6 +112,8 @@ class IntakeTriageController extends Controller {
 	 * @param CaseAccessGuard       $caseAccessGuard  Per-case authorization.
 	 * @param IUserSession          $userSession      The caller.
 	 * @param LoggerInterface       $logger           Logger.
+	 * @param CaseMatchSuggestion   $suggestions      The case each queued message probably belongs to.
+	 * @param TriageChannel         $channels         The channel each queued message came in on.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -128,6 +132,8 @@ class IntakeTriageController extends Controller {
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseMatchSuggestion $suggestions,
+		private readonly TriageChannel $channels,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -280,14 +286,23 @@ class IntakeTriageController extends Controller {
 	}//end judgeAdmissibility()
 
 	/**
-	 * The triage queue, with its sleeping items taken out.
+	 * The triage queue, with its sleeping items taken out and each item's likely case suggested.
+	 *
+	 * Every item names the channel it came in on (`email` for the mailbox).
+	 * `channels` counts the channels within the asked lens before the channel
+	 * narrows, so the channel facet keeps offering the others while one is
+	 * chosen.
+	 *
+	 * @param string $suggestion `IS NOT NULL` for the items that look like a case, `IS NULL` for the rest, empty for all.
+	 * @param string $channel    One channel, a comma list, or empty or `all` for every channel.
 	 *
 	 * @return JSONResponse The items a handler should see.
 	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	#[NoAdminRequired]
-	public function queue(): JSONResponse {
+	public function queue(string $suggestion = '', string $channel = ''): JSONResponse {
 		$refusal = $this->requireIntakeRole();
 		if ($refusal !== null) {
 			return $refusal;
@@ -302,11 +317,20 @@ class IntakeTriageController extends Controller {
 		}
 
 		$awake = $this->sleep->awake(queue: $items);
+		$lens = $this->channels->annotate(
+			items: $this->suggestions->narrow(
+				items: $this->suggestions->annotate(items: array_values($awake)),
+				suggestion: $suggestion
+			)
+		);
+		$results = $this->channels->narrow(items: $lens, channel: $channel);
 
 		return new JSONResponse(
 			[
-				'results' => $awake,
+				'results' => $results,
+				'total' => count($results),
 				'sleeping' => (count($items) - count($awake)),
+				'channels' => $this->channels->facet(items: $lens),
 			]
 		);
 	}//end queue()

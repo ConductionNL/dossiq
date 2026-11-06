@@ -112,7 +112,7 @@ class CaseAssignmentService {
 			throw new RuntimeException('already_assigned');
 		}
 
-		$this->write(caseId: $caseId, assignee: $userId);
+		$this->write(caseId: $caseId, assignee: $userId, extra: ['routingNote' => null]);
 
 		return $this->describe(caseId: $caseId, userId: $userId, assignee: $userId);
 	}//end claim()
@@ -292,6 +292,7 @@ class CaseAssignmentService {
 	 *
 	 * @param string      $caseId   The case UUID.
 	 * @param string|null $assignee The new handler, or null to clear the field.
+	 * @param array<string, mixed> $extra    Other fields of the same write.
 	 *
 	 * @return void
 	 *
@@ -299,7 +300,7 @@ class CaseAssignmentService {
 	 *
 	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
 	 */
-	private function write(string $caseId, ?string $assignee): void {
+	private function write(string $caseId, ?string $assignee, array $extra = []): void {
 		[$objectService, $register, $schema] = $this->openRegister();
 
 		try {
@@ -308,7 +309,7 @@ class CaseAssignmentService {
 				register: $register,
 				schema: $schema,
 				id: $caseId,
-				changes: ['assignee' => $assignee]
+				changes: ['assignee' => $assignee] + $extra
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(

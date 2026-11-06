@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices;
 use OCA\Dossiq\Service\CaseLifecycleService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
@@ -35,6 +36,7 @@ use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
  * Suspend, resume, extend and reopen.
  *
  * @covers \OCA\Dossiq\Service\CaseLifecycleService
+ * @covers \OCA\Dossiq\Service\Lifecycle\CaseDeadlineServices
  */
 class CaseLifecycleServiceTest extends TestCase {
 
@@ -134,9 +136,11 @@ class CaseLifecycleServiceTest extends TestCase {
 		$this->service = new CaseLifecycleService(
 			store: $this->store,
 			caseTypes: $this->caseTypes,
-			termService: $this->termService,
-			pauseService: $this->pauseService,
-			extensionService: $this->extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $this->termService,
+				pauseService: $this->pauseService,
+				extensionService: $this->extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
 			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);
@@ -178,9 +182,11 @@ class CaseLifecycleServiceTest extends TestCase {
 		$service = new CaseLifecycleService(
 			store: $this->store,
 			caseTypes: $caseTypes,
-			termService: $this->termService,
-			pauseService: $this->pauseService,
-			extensionService: $this->extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $this->termService,
+				pauseService: $this->pauseService,
+				extensionService: $this->extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
 			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);
@@ -242,9 +248,11 @@ class CaseLifecycleServiceTest extends TestCase {
 		$service = new CaseLifecycleService(
 			store: $this->store,
 			caseTypes: $this->caseTypes,
-			termService: $termService,
-			pauseService: $pauseService,
-			extensionService: $this->extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $termService,
+				pauseService: $pauseService,
+				extensionService: $this->extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
 			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);
@@ -341,9 +349,11 @@ class CaseLifecycleServiceTest extends TestCase {
 		$service = new CaseLifecycleService(
 			store: $this->store,
 			caseTypes: $caseTypes,
-			termService: $this->termService,
-			pauseService: $this->pauseService,
-			extensionService: $this->extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $this->termService,
+				pauseService: $this->pauseService,
+				extensionService: $this->extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
 			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);
@@ -501,9 +511,11 @@ class CaseLifecycleServiceTest extends TestCase {
 		return new CaseLifecycleService(
 			store: $store,
 			caseTypes: $this->caseTypes,
-			termService: $termService,
-			pauseService: $pauseService,
-			extensionService: $extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $termService,
+				pauseService: $pauseService,
+				extensionService: $extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
 			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);
@@ -515,7 +527,7 @@ class CaseLifecycleServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lifecycle-gesture-saves-the-case-as-stored/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testPauseOnATermSavesTheCaseTheMirrorWrote(): void {
 		$service = $this->serviceWithTheDeadlineMirror();
@@ -538,7 +550,7 @@ class CaseLifecycleServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lifecycle-gesture-saves-the-case-as-stored/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testExtendOnATermSavesTheCaseTheMirrorWrote(): void {
 		$service = $this->serviceWithTheDeadlineMirror();
@@ -662,9 +674,11 @@ class CaseLifecycleServiceTest extends TestCase {
 		return new CaseLifecycleService(
 			store: $this->store,
 			caseTypes: $caseTypes,
-			termService: $this->termService,
-			pauseService: $this->pauseService,
-			extensionService: $this->extensionService,
+			deadlines: new CaseDeadlineServices(
+				termService: $this->termService,
+				pauseService: $this->pauseService,
+				extensionService: $this->extensionService,
+			),
 			logger: $this->createMock(LoggerInterface::class),
 			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 		);

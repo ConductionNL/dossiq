@@ -53,7 +53,7 @@ The dashboard MUST display a row of five KPI cards at the top, providing headlin
 #### Scenario DASH-001b: Overdue cases count with action indicator
 - GIVEN there are 3 cases where `deadline < today` and status is not final
 - WHEN the user views the dashboard
-- THEN the system MUST display a KPI card titled "Overdue"
+- THEN the system MUST display a KPI card titled "Late" ("Te laat" in Dutch, as boards DqDashboard and DqMijnTeam name it)
 - AND the card MUST show the count "3"
 - AND the card MUST show a warning sub-label "action needed" to indicate urgency
 - AND clicking the card MUST navigate to the Cases view filtered by `overdue=true`
@@ -457,7 +457,7 @@ The dashboard MUST follow a configurable grid layout using `CnDashboardPage` fro
 - GIVEN the user views the dashboard for the first time
 - THEN the page MUST display the following sections in the default layout:
   1. Header with quick action buttons (New Case, New Task, Refresh)
-  2. KPI cards row (4 cards: Open Cases, Overdue, Completed This Month, My Tasks) each spanning 3 grid columns
+  2. KPI cards row (4 cards: Open Cases, Late, Completed This Month, My Tasks) each spanning 3 grid columns
   3. Two-column layout below the KPI row:
      - Left column (6 cols): Cases by Status chart, My Work preview
      - Right column (6 cols): Overdue Cases panel, Recent Activity feed
@@ -531,6 +531,8 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 
 ### Requirement: REQ-DASH-V1-001 Signalering: Deadline Alerts Widget [V1]
 
+The widget is titled "Termijnsignalen" in Dutch, as board DqNextcloudDashboard draws it; a late case reads "N dagen te laat".
+
 `DeadlineAlertsWidget.vue` SHALL display cases approaching or past their processing deadline. The warning threshold MUST be 3 days (configurable via `IAppConfig` in V2). It integrates `getDeadlineAlerts()` from `signaleringHelpers.js`.
 
 #### Scenario DASH-V1-001a: Cases approaching deadline within warning threshold
@@ -553,7 +555,7 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 #### Scenario DASH-V1-001c: No deadline alerts
 - GIVEN all open cases have deadlines more than 3 days away or have no deadline
 - WHEN the user views the Deadline Alerts widget
-- THEN the widget MUST display the message "No deadline alerts"
+- THEN the widget MUST display the message "Geen termijnsignalen" (en "No deadline alerts"), as board DqNextcloudDashboard draws it
 - AND the widget MUST NOT show an error state or broken layout
 
 #### Scenario DASH-V1-001d: Click on alert row navigates to case detail
@@ -562,6 +564,8 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 - THEN the system MUST navigate to the case detail view for that case
 
 ### Requirement: REQ-DASH-V1-002 Signalering: Task Due Reminders Widget [V1]
+
+The widget is titled "Taakherinneringen" in Dutch, as board DqNextcloudDashboard draws it.
 
 `TaskDueRemindersWidget.vue` SHALL show the current user's tasks with due dates within 3 days or past due. It integrates `getTaskReminders()` from `signaleringHelpers.js`. Tasks without a `dueDate` MUST be excluded.
 
@@ -590,6 +594,8 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 
 ### Requirement: REQ-DASH-V1-003 Signalering: Stalled Cases Widget [V1]
 
+The widget is titled "Stilstaande zaken" in Dutch, and a row reads "N dagen stil", as board DqNextcloudDashboard draws "31 dagen stil".
+
 `StalledCasesWidget.vue` SHALL identify open cases with no `updatedAt` change in 7+ calendar days. It integrates `getStalledCases()` from `signaleringHelpers.js`.
 
 #### Scenario DASH-V1-003a: Stalled cases identified by inactivity
@@ -608,7 +614,7 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 #### Scenario DASH-V1-003c: No stalled cases
 - GIVEN all open cases were updated within the last 7 days
 - WHEN the user views the Stalled Cases widget
-- THEN the widget MUST display "No stalled cases"
+- THEN the widget MUST display "Geen stilstaande zaken" (en "No stalled cases")
 
 ### Requirement: REQ-DASH-V1-004 Woo Deadline Tracking Panel [V1]
 
@@ -678,10 +684,16 @@ The dashboard SHALL provide an "Analytics" navigation item in the left sidebar (
 
 ### Requirement: REQ-DASH-V1-006 Workflow Board View [V1]
 
-`WorkflowBoard.vue` at `/workflow-board` SHALL provide a Kanban board with one column per
-non-final status type, case cards in each column, and a status transition control that MUST be
-operable by both drag-and-drop AND keyboard alone — drag-and-drop MUST NOT be the only path to
-advance a case's status.
+The Cases list in board view (`/cases?_view=board`, the library's CnBoardView, board DqWerkbord)
+SHALL provide a Kanban board with one column per non-final status type, case cards in each column,
+and a status transition control that MUST be operable by both drag-and-drop AND keyboard alone —
+drag-and-drop MUST NOT be the only path to advance a case's status. The former `/workflow-board`
+address MUST redirect there, so a bookmark never lands elsewhere.
+
+> Amended when the bespoke `WorkflowBoard.vue` retired in favour of the Cases board. The columns
+> come from the statusType rows (`columnFields[].source`), merged by name, narrowed to one case type
+> while the list is filtered on one; a move goes through `moveCaseStatus` and the targets through
+> `caseStatusTargets`.
 
 #### Scenario DASH-V1-006a: Board columns reflect status types
 
@@ -702,10 +714,10 @@ advance a case's status.
 - WHEN the user drags the card to the "In behandeling" column and drops it
 - THEN the system MUST update the case's `status` to the "In behandeling" statusType ID
 - AND the card MUST move to the "In behandeling" column
-- AND while the card is in the air the board MUST show it moving: a ghost under the pointer and a
-  placeholder in the column it is held over
 - AND a column the case cannot reach MUST refuse the card while it is in the air, faded, and when a
   guard is what holds the case the column MUST show the guard's reason under its header
+- AND a column whose status type declares a `capacity` and is full MUST refuse the card before
+  anything is posted, and its header MUST read the count against the limit
 - AND if the update fails (e.g., permission denied), the card MUST return to its original column
 
 #### Scenario DASH-V1-006d: Click on case card navigates to detail
@@ -723,16 +735,16 @@ advance a case's status.
 
 - GIVEN case "2026-0042" is in the "Ontvangen" column and the user is navigating with only a
   keyboard (no mouse/touch)
-- WHEN the user focuses the case card and presses `M`, then picks "In behandeling" from the move
-  dialog
+- WHEN the user focuses the case card and presses `M` (or opens the card's menu button), then picks
+  "In behandeling" from the card's menu
 - THEN the system MUST update the case's `status` to the "In behandeling" statusType ID via the
   same persistence path as the drag-and-drop scenario (optimistic move, the offered transition
   posted to the status-transition engine, revert-and-toast on failure)
 - AND the card MUST move to the "In behandeling" column
-- AND the card's existing "open case detail" keyboard activation (Enter/Space on the card body)
+- AND the card's existing "open case detail" keyboard activation (Enter on the card's title)
   MUST remain unaffected by the move gesture
-- AND the card MUST announce the `M` gesture in its accessible name, because the gesture has no
-  visible control to discover
+- AND the move MUST be discoverable without the `M` gesture: the card carries a focusable menu
+  button that opens the same menu
 
 > Superseded the tabbable "Move to…" menu this scenario originally specified. That menu listed
 > every board column, and columns are merged by status NAME across every case type on the
@@ -740,14 +752,13 @@ advance a case's status.
 > reach. The keyboard path is preserved as the `M` key; the list is now the engine's offer for
 > that one case.
 
-#### Scenario DASH-V1-006h: The move dialog offers only what the case can reach (NEW)
+#### Scenario DASH-V1-006h: The card menu says what the case can reach (NEW)
 
 - GIVEN a case whose workflow offers two transitions, one of them held by a failing guard
-- WHEN the user opens the move dialog, by right-clicking the card or pressing `M` on it
-- THEN the dialog MUST list exactly the statuses `/api/case/{id}/available-transitions` offers,
-  never the board's columns
+- WHEN the user opens the card's menu, with its menu button or by pressing `M` on the card
+- THEN only the statuses `/api/case/{id}/available-transitions` offers MUST be selectable; every
+  other column MUST be marked not allowed
 - AND a transition whose guards failed MUST be listed, unselectable, showing the guard's reason
-- AND a failure to read the offer MUST be reported as a failure, never as an empty list
 
 #### Scenario DASH-V1-006g: Drag path shares the move (NEW)
 
@@ -758,10 +769,8 @@ advance a case's status.
 - AND the card's click (Scenario DASH-V1-006d) and its selection checkbox MUST keep working: a
   press without movement is a click, and the checkbox is never a drag handle
 
-> Reworded when the drag moved from the browser's HTML5 drag events to Sortable (vue-draggable-plus).
-> The native drag showed a grab cursor and nothing else until the drop; this scenario used to ask
-> for that behaviour to stay identical, which is not what anybody wanted kept. What is kept is the
-> write path.
+> What is kept across the board's rewrites is the write path: one move, whichever gesture asks for
+> it.
 
 ### Requirement: REQ-DASH-FIX-001 Application.php Widget Registration [FIX]
 
@@ -930,44 +939,19 @@ to visible.
 - **WHEN** an administrator reads the configuration report
 - **THEN** it SHALL name the widget and the missing role
 
-### Requirement: The simple dashboard opens with the handler's own day (REQ-DASH-025)
-In the simple structure the dashboard MUST first show a greeting, a card for
-deadlines that end today, four counts of the handler's own cases, the deadlines
-of this week, the handler's cases per step and the handler's tasks. Every
-widget the dashboard held before MUST still be on the page. The full structure
-MUST keep the dashboard unchanged.
+### Requirement: The simple cases list leads with three counted views and six columns (REQ-DASH-026)
+In the simple structure the cases list MUST lead with the views Alles, Mijn
+zaken and Termijn deze week, each with a count, as board DqZaken draws them, and
+MUST keep every other lens reachable behind the overflow chip after them. It
+MUST show the columns Zaak (the title with the case number under it), Type,
+Status, Behandelaar, Team and Termijn.
 
-#### Scenario: A handler with a deadline today
-@e2e exclude Needs seeded cases with today's deadline on a live instance; the widgets, their filters and the layout are asserted in simpleListAndDashboard.spec.js, and the coordinator checks the page live.
-- **GIVEN** the simple structure and a handler with an open case whose deadline is today
-- **WHEN** they open the dashboard
-- **THEN** the card "First today" MUST be shown and MUST link to those cases
-- **AND** the week strip MUST mark that case as late
-
-#### Scenario: A handler without a deadline today
-@e2e exclude Same reason; the card's condition is asserted in simpleListAndDashboard.spec.js.
-- **GIVEN** the simple structure and a handler with no case past its deadline or ending today
-- **WHEN** they open the dashboard
-- **THEN** the card "First today" MUST NOT be shown
-
-#### Scenario: Nothing the dashboard held is lost
-@e2e exclude A comparison of the built page with the manifest, asserted in simpleListAndDashboard.spec.js.
-- **GIVEN** the simple structure
-- **WHEN** the dashboard is built
-- **THEN** every widget and every layout entry it had MUST still be there
-
-### Requirement: The simple cases list leads with five counted views and six columns (REQ-DASH-026)
-In the simple structure the cases list MUST lead with the views All, Mine, Due
-this week, Waiting on the applicant and Woo requests, each with a count, and
-MUST keep every other lens reachable. It MUST show the columns number, title,
-type, status, handler and deadline.
-
-#### Scenario: Five views and the rest behind the chip
+#### Scenario: Three views and the rest behind the chip
 @e2e exclude The counts need library 2.60.0 on a live instance; the lenses, their order and their filters are asserted in simpleListAndDashboard.spec.js.
 - **GIVEN** the simple structure
 - **WHEN** a handler opens the cases list
-- **THEN** the strip MUST show the five views with a count each
-- **AND** the other fifteen lenses MUST be offered behind the overflow chip
+- **THEN** the strip MUST show Alles, Mijn zaken and Termijn deze week with a count each
+- **AND** every other lens MUST be offered behind the overflow chip, which names how many it holds ("Nog 18 filters")
 
 ### Requirement: A deadline that ends today is late in the simple structure (REQ-DASH-027)
 In the simple structure a case whose deadline is today MUST be marked late on
@@ -1172,6 +1156,35 @@ token could name the reader's groups.
 - **THEN** it SHALL show its prompt and SHALL send no request
 
 @e2e exclude Library behaviour, covered by nextcloud-vue's tests/utils/resolveFilterTokensMyGroups.spec.js.
+
+### Requirement: The Recently opened tile shows when, whatever its width (REQ-DASH-030)
+
+The Recently opened tile SHALL keep its date column visible inside the tile. It
+SHALL show the case title with the case number under it, and the date at the end
+of the row; a long title SHALL wrap rather than push the date out of the tile.
+
+#### Scenario: The date stays visible in a narrow tile
+@e2e exclude {a layout measurement; the column setup is asserted in tests/vitest/recentTileViewedAt.spec.js and measured live at 1440px}
+
+- **GIVEN** the Dashboard at 1440px wide, where the tile is about 340px
+- **WHEN** the reader has opened a case with a long title
+- **THEN** the date column SHALL be inside the tile
+- **AND** the case number SHALL show under the title
+
+### Requirement: The workflow board page config declares no half register/schema pair
+
+No custom page in the manifest or a structure profile SHALL declare only one
+of `config.register` and `config.schema`.
+
+> The WorkflowBoard custom page this was written for has retired: the workflow
+> board is the Cases list in board view, an index page that declares both. The
+> rule for every other custom page stands.
+
+#### Scenario: Opening the workflow board
+<!-- @e2e exclude Manifest shape; proven by tests/vitest/customPageTypesConfig.spec.js and live on :8099 (console without the CnPageRenderer warning). -->
+- **GIVEN** a user opens the workflow board
+- **WHEN** the page renders
+- **THEN** the console holds no `declares only one of config.register / config.schema` warning
 
 ## Non-Functional Requirements
 

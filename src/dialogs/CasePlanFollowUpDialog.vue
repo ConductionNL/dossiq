@@ -26,28 +26,11 @@
   @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Plan a follow-up case')"
+	<CnDialog
+		:name="t('dossiq', 'Plan follow-up')"
 		data-testid="case-plan-dialog"
 		@closing="$emit('close')">
 		<div class="case-plan">
-			<p class="case-plan__explainer">
-				{{
-					t(
-						'dossiq',
-						'The case is created on the date you pick, related to this one. Until then it shows on the Related cases tab as planned.',
-					)
-				}}
-			</p>
-			<p class="case-plan__explainer">
-				{{
-					t(
-						'dossiq',
-						'Pick a repeat to plan a series, for example a yearly permit check. A series that lands on the 31st moves to the last day of a shorter month.',
-					)
-				}}
-			</p>
-
 			<NcSelect
 				v-model="caseType"
 				data-testid="case-plan-type"
@@ -57,6 +40,11 @@
 				:clearable="false"
 				:loading="loadingTypes" />
 
+			<NcTextField
+				v-model="title"
+				data-testid="case-plan-title"
+				:label="t('dossiq', 'Title of the follow-up')" />
+
 			<NcDateTimePicker
 				v-model="date"
 				data-testid="case-plan-date"
@@ -64,28 +52,26 @@
 				:min="earliest"
 				:label="t('dossiq', 'Date')" />
 
-			<NcTextField
-				v-model="title"
-				data-testid="case-plan-title"
-				:label="t('dossiq', 'Title of the follow-up')" />
-
-			<NcSelect
-				v-model="recurrence"
-				data-testid="case-plan-recurrence"
-				:inputLabel="t('dossiq', 'Repeat')"
-				:options="recurrences"
-				label="label"
-				:clearable="false" />
-
-			<template v-if="repeats">
+			<div class="case-plan__row">
 				<NcSelect
-					v-model="end"
-					data-testid="case-plan-end"
-					:inputLabel="t('dossiq', 'Ends')"
-					:options="ends"
+					v-model="recurrence"
+					data-testid="case-plan-recurrence"
+					:inputLabel="t('dossiq', 'Repeat (optional)')"
+					:options="recurrences"
 					label="label"
 					:clearable="false" />
 
+				<NcSelect
+					v-model="end"
+					data-testid="case-plan-end"
+					:inputLabel="t('dossiq', 'Ends (optional)')"
+					:options="ends"
+					label="label"
+					:disabled="!repeats"
+					:clearable="false" />
+			</div>
+
+			<template v-if="repeats">
 				<NcDateTimePicker
 					v-if="end && end.id === 'until'"
 					v-model="until"
@@ -102,6 +88,13 @@
 					min="1"
 					:label="t('dossiq', 'Number of cases')" />
 			</template>
+
+			<p class="case-plan__note">
+				{{ t('dossiq', 'Until its date the follow-up shows on Related, as planned.') }}
+				<template v-if="repeats">
+					{{ t('dossiq', 'A series that lands on the 31st moves to the last day of a shorter month.') }}
+				</template>
+			</p>
 
 			<p
 				v-if="error"
@@ -121,20 +114,20 @@
 				variant="primary"
 				:disabled="!canConfirm"
 				@click="confirm">
-				{{ t('dossiq', 'Plan follow-up') }}
+				{{ t('dossiq', 'Plan') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import {
@@ -153,7 +146,7 @@ export default {
 	components: {
 		NcButton,
 		NcDateTimePicker,
-		NcDialog,
+		CnDialog,
 		NcSelect,
 		NcTextField,
 	},
@@ -356,7 +349,14 @@ export default {
 	padding: 8px 0;
 }
 
-.case-plan__explainer {
+.case-plan__row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.case-plan__note {
+	font-size: 13px;
 	color: var(--color-text-maxcontrast);
 	margin: 0;
 }

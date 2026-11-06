@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Tenant\OnboardingStepGuide;
 use OCA\Dossiq\Service\TenantOnboardingService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -45,11 +46,13 @@ class TenantOnboardingController extends Controller {
 	 * @param IRequest $request Request.
 	 * @param TenantOnboardingService $onboarding Onboarding service.
 	 * @param IUserSession $userSession User session.
+	 * @param OnboardingStepGuide $guide What the checklist says under each step.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly TenantOnboardingService $onboarding,
 		private readonly IUserSession $userSession,
+		private readonly OnboardingStepGuide $guide,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -68,7 +71,7 @@ class TenantOnboardingController extends Controller {
 		return new JSONResponse(
 			[
 				'success' => true,
-				'progress' => $this->onboarding->getProgress($tenantId),
+				'progress' => $this->guide->withGuidance(progress: $this->onboarding->getProgress($tenantId)),
 			]
 		);
 	}//end progress()

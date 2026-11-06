@@ -1,7 +1,7 @@
 # case-bulk-status-transition Specification
 
 ## Purpose
-TBD - created by archiving change case-bulk-status-transition. Update Purpose after archive.
+Move many cases to a new status at once. Each move goes through the engine, a preview comes first, and the board selects per column.
 
 ## Requirements
 

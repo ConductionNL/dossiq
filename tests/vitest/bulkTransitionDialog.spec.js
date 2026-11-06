@@ -98,7 +98,6 @@ vi.mock('@nextcloud/l10n', () => ({
 	translatePlural: (app, one, many, count) => (count === 1 ? one : many),
 }))
 
-vi.mock('@nextcloud/vue/components/NcDialog', () => ({ default: box('NcDialog') }))
 vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({
 	default: box('NcLoadingIcon'),
 }))
@@ -115,9 +114,6 @@ vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
 }))
 vi.mock('@nextcloud/vue/components/NcSelect', () => ({
 	default: field('NcSelect'),
-}))
-vi.mock('@nextcloud/vue/components/NcTextArea', () => ({
-	default: field('NcTextArea'),
 }))
 vi.mock('@nextcloud/vue/components/NcTextField', () => ({
 	default: field('NcTextField'),
@@ -142,22 +138,12 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
 }))
 
 const previewBulkJob = vi.fn()
-const commitBulkJob = vi.fn()
 
 vi.mock('../../src/services/bulkJobApi.js', () => ({
 	ACTION_LIFECYCLE: 'dossiq:lifecycle-cases',
 	ACTION_REASSIGN: 'dossiq:reassign-cases',
 	ACTION_SET_ATTRIBUTE: 'dossiq:set-case-attribute',
 	ACTION_TRANSITION: 'dossiq:transition-cases',
-	ACTIVE_STATES: ['previewed', 'running', 'cancelling'],
-	FINAL_STATES: ['completed', 'failed', 'cancelled'],
-	bulkJobReportUrl: (id) => `/download/${id}`,
-	cancelBulkJob: vi.fn(),
-	commitBulkJob: (...args) => commitBulkJob(...args),
-	fetchBulkJob: vi.fn(),
-	fetchBulkJobMembers: vi.fn().mockResolvedValue({ results: [], total: 0 }),
-	isFinished: (job) =>
-		['completed', 'failed', 'cancelled'].includes(String(job?.state)),
 	previewBulkJob: (...args) => previewBulkJob(...args),
 	readRefusal: (error) => {
 		const body = (error && error.response && error.response.data) || {}
@@ -168,7 +154,6 @@ vi.mock('../../src/services/bulkJobApi.js', () => ({
 			details: body.details || {},
 		}
 	},
-	retryBulkJob: vi.fn(),
 }))
 
 const axios = (await import('@nextcloud/axios')).default
@@ -307,8 +292,14 @@ describe('BulkTransitionDialog, the rehearsal is not the act', () => {
 		// The whole change is that the skip list is read BEFORE the act. A
 		// dialog whose first button committed would pass every other
 		// assertion in this file and still be the old dialog.
+		// The commit is the library panel's own button; what reaches it here
+		// is the job as rehearsed, still `previewed`.
 		expect(previewBulkJob).toHaveBeenCalledTimes(1)
-		expect(commitBulkJob).not.toHaveBeenCalled()
+		const handed = JSON.parse(
+			wrapper.get('[data-testid="bulk-job-progress"]').attributes('data-props'),
+		)
+		expect(handed.job.state).toBe('previewed')
+		expect(handed.labels.commit).toBe('Apply to {total} cases')
 	})
 
 	it('the rehearsed job replaces the form, so the counts are what is read next', async () => {
@@ -369,11 +360,61 @@ describe('BulkTransitionDialog, the rehearsal is not the act', () => {
 })
 
 describe('BulkTransitionDialog, the transition mode', () => {
-	it('still asks the first case for its available transitions', async () => {
-		await open('transition')
+	it('asks every selected case what it offers and keeps what all of them offer', async () => {
+		axios.get = vi.fn((url) => Promise.resolve({
+			data: url.includes('available-transitions')
+				? { transitions: url.includes('case-1') ? [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }] : [{ id: 'b', label: 'B' }], current: { statusName: 'Received' } }
+				: { title: 'A case', identifier: '2026-1', deadline: '2026-10-31' },
+		}))
+		const wrapper = await open('transition')
 
-		expect(axios.get).toHaveBeenCalledTimes(1)
-		expect(String(axios.get.mock.calls[0][0])).toContain('case-1')
+		expect(wrapper.vm.transitionOptions).toEqual([{ id: 'b', label: 'B' }])
+		const rows = wrapper.findAll('[data-testid="bulk-change-row"]')
+		expect(rows).toHaveLength(2)
+		expect(rows[0].text()).toContain('A case')
+		expect(rows[0].text()).toContain('Received')
+	})
+
+	it('rehearses first and leaves the commit to the reader, even with every case ready', async () => {
+		const wrapper = await open('transition')
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		await typeReason(wrapper, 'Complete')
+		expect(rehearse(wrapper).text()).toBe('See what would happen')
+		await rehearse(wrapper).trigger('click')
+		await flush()
+
+		expect(previewBulkJob).toHaveBeenCalledTimes(1)
+		const handed = JSON.parse(
+			wrapper.get('[data-testid="bulk-job-progress"]').attributes('data-props'),
+		)
+		expect(handed.job.state).toBe('previewed')
+	})
+
+	it('leaves out the table for a selection widened to the whole result', async () => {
+		const wrapper = await open('transition', { matchingTotal: 40 })
+		wrapper.findComponent({ name: 'CnSelectionScope' }).vm.$emit('update:scope', 'result')
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('[data-testid="bulk-changes"]').exists()).toBe(false)
+	})
+
+	it('names every changed case once the job finished clean', async () => {
+		const wrapper = await open('transition')
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		wrapper.vm.job = { ...PREVIEWED, state: 'completed', processed: 2 }
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('[data-testid="bulk-result"]').text()).toContain('2 of 2 cases changed')
+		expect(wrapper.findAll('[data-testid="bulk-result-row"]')).toHaveLength(2)
+	})
+
+	it('keeps the progress panel when a case did not change', async () => {
+		const wrapper = await open('transition')
+		wrapper.vm.job = { ...PREVIEWED, state: 'completed', counts: { applied: 1, skipped: 0, refused: 0, failed: 1 } }
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('[data-testid="bulk-result"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="bulk-job-progress"]').exists()).toBe(true)
 	})
 
 	it('needs a transition as well as a reason', async () => {
@@ -412,7 +453,9 @@ describe('BulkTransitionDialog, the transition mode', () => {
 		await typeReason(wrapper, 'Handled in bulk')
 		await flush()
 
-		await wrapper.get('[data-testid="bulk-selection-widen"]').trigger('click')
+		// The widen button is the library's CnSelectionScope; the dialog's part
+		// is to take the scope it emits.
+		wrapper.findComponent({ name: 'CnSelectionScope' }).vm.$emit('update:scope', 'result')
 		await flush()
 		await rehearse(wrapper).trigger('click')
 		await flush()

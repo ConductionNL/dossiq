@@ -481,4 +481,20 @@ class CaseTermsController extends Controller {
 
 		return $body;
 	}//end jsonBody()
+
+	/**
+	 * workloadAge() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/reports/open-workload-age; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for workloadAge(); behaviour covered by the workloadAge() tests.
+	 */
+	#[NoAdminRequired]
+	public function workloadAgeLegacyPath(): JSONResponse {
+		return $this->workloadAge();
+	}//end workloadAgeLegacyPath()
 }//end class

@@ -5,7 +5,7 @@
  *
  * The admin settings surface for statutory term definitions (AWB 4:13/4:14).
  *
- * Closes the `/api/termijn/definities` half of procest#794. `TermijnDefinitiesTab.vue`
+ * Closes the `/api/termijn/definities` half of procest#794 (now `/api/deadlines/definitions`). `DeadlineDefinitionsTab.vue`
  * has always called this collection; `appinfo/routes.php` declared
  * `/api/termijn/instances*` and nothing else, so every request was answered by
  * Nextcloud's own HTML page under HTTP 200. The tab uses the correct
@@ -211,4 +211,70 @@ class TermijnDefinitieController extends Controller {
 			);
 		}//end try
 	}//end persist()
+
+	/**
+	 * index() on its old address.
+	 *
+	 * Deprecated alias of GET /api/deadlines/definitions; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function indexLegacyPath(): JSONResponse {
+		return $this->index();
+	}//end indexLegacyPath()
+
+	/**
+	 * calendar() on its old address.
+	 *
+	 * Deprecated alias of /api/deadlines/calendar; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function calendarLegacyPath(): JSONResponse {
+		return $this->calendar();
+	}//end calendarLegacyPath()
+
+	/**
+	 * create() on its old address.
+	 *
+	 * Deprecated alias of POST /api/deadlines/definitions; remove after the next major.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function createLegacyPath(): JSONResponse {
+		return $this->create();
+	}//end createLegacyPath()
+
+	/**
+	 * update() on its old address.
+	 *
+	 * Deprecated alias of PATCH /api/deadlines/definitions/{id}; remove after the next major.
+	 *
+	 * @param string $id The definition id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function updateLegacyPath(string $id): JSONResponse {
+		return $this->update(id: $id);
+	}//end updateLegacyPath()
 }//end class

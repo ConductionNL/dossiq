@@ -244,6 +244,30 @@ const MANIFEST_TEXT_FIELDS = new Set([
 // it does `emptyText`, so each value is a key the catalogue must carry.
 const MANIFEST_TEXT_MAPS = new Set(['lensReasonTexts'])
 
+// Maps keyed by a column or field name whose values are not text: a column
+// called `title` in `columnWidths` holds a width ("250px"), not a label.
+const NON_TEXT_MAPS = new Set(['columnWidths'])
+
+// `filterLabels` (nextcloud-vue index pages) names a filter per key: `label`
+// is caught as a text field below, and each `values` entry is a string the
+// Active line runs through the app's translate, so it is a key too.
+function recordFilterLabelValues (node, file, where) {
+	for (const [filterKey, entry] of Object.entries(node || {})) {
+		const values = entry && typeof entry === 'object' ? entry.values : null
+		if (!values || typeof values !== 'object' || Array.isArray(values)) {
+			continue
+		}
+		for (const [value, text] of Object.entries(values)) {
+			if (typeof text === 'string' && text.trim()) {
+				if (!used.has(text)) {
+					used.set(text, new Set())
+				}
+				used.get(text).add(`${path.relative(ROOT, file)}:${where}.${filterKey}.values.${value}`)
+			}
+		}
+	}
+}
+
 function recordManifestStrings (node, file, trail) {
 	if (Array.isArray(node)) {
 		node.forEach((v, i) => recordManifestStrings(v, file, `${trail}[${i}]`))
@@ -253,10 +277,13 @@ function recordManifestStrings (node, file, trail) {
 		return
 	}
 	for (const [key, value] of Object.entries(node)) {
-		if (key.startsWith('_')) {
+		if (key.startsWith('_') || NON_TEXT_MAPS.has(key)) {
 			continue
 		}
 		const where = trail ? `${trail}.${key}` : key
+		if (key === 'filterLabels' && value !== null && typeof value === 'object' && !Array.isArray(value)) {
+			recordFilterLabelValues(value, file, where)
+		}
 		if (MANIFEST_TEXT_MAPS.has(key) && value !== null && typeof value === 'object' && !Array.isArray(value)) {
 			for (const [mapKey, text] of Object.entries(value)) {
 				if (typeof text === 'string' && text.trim()) {
@@ -266,7 +293,9 @@ function recordManifestStrings (node, file, trail) {
 					used.get(text).add(`${path.relative(ROOT, file)}:${where}.${mapKey}`)
 				}
 			}
-		} else if (MANIFEST_TEXT_FIELDS.has(key) && typeof value === 'string' && value.trim()) {
+		} else if (MANIFEST_TEXT_FIELDS.has(key) && typeof value === 'string' && value.trim() && !value.startsWith('@')) {
+			// A value starting with `@` is a token the renderer reads from the
+			// record (`"label": "@object.subjectLabel"`), not text to translate.
 			const k = value
 			if (!used.has(k)) {
 				used.set(k, new Set())

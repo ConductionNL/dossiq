@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
@@ -42,6 +43,7 @@ use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\TermKind;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -91,11 +93,66 @@ class RemedyTermBindingTest extends TestCase {
 		return new CaseRemedy(
 			store: $store,
 			caseTypes: $resolver,
-			declaration: new RemedyClauseDeclaration(),
+			declaration: new RemedyClauseDeclaration(l10n: new SourceL10n()),
 			terms: $terms,
 			logger: new NullLogger(),
 		);
 	}//end remedyOver()
+
+	/**
+	 * The besluit going out writes the day it was sent on its case (REQ-CAP-001).
+	 *
+	 * @return void
+	 */
+	public function testSendingStampsTheDaySentOnTheCase(): void {
+		$saved = [];
+		$store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$store->method('loadCase')->with('case-1')->willReturn(['id' => 'case-1', 'caseType' => 'ct-omgeving']);
+		$store->expects($this->once())->method('saveCase')->willReturnCallback(
+			static function (array $case) use (&$saved): array {
+				$saved = $case;
+				return $case;
+			}
+		);
+
+		$this->remedyWithStore(store: $store)->recordSent(caseId: ' case-1 ', sentOn: new DateTimeImmutable('2026-09-01 16:30'));
+
+		self::assertSame(expected: '2026-09-01', actual: $saved[CaseRemedy::SENT_FIELD]);
+		self::assertSame(expected: 'decisionSentOn', actual: CaseRemedy::SENT_FIELD);
+		self::assertSame(expected: 'ct-omgeving', actual: $saved['caseType']);
+	}//end testSendingStampsTheDaySentOnTheCase()
+
+	/**
+	 * A decision without a case, or with a case that is gone, writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testNoCaseIsStampedWithoutOne(): void {
+		$store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$store->method('loadCase')->willReturn(null);
+		$store->expects($this->never())->method('saveCase');
+		$remedy = $this->remedyWithStore(store: $store);
+
+		$remedy->recordSent(caseId: '', sentOn: new DateTimeImmutable('2026-09-01'));
+		$remedy->recordSent(caseId: 'case-gone', sentOn: new DateTimeImmutable('2026-09-01'));
+	}//end testNoCaseIsStampedWithoutOne()
+
+	/**
+	 * A remedy over the given store and no case type reads.
+	 *
+	 * @param CaseStatusStore $store The store double.
+	 *
+	 * @return CaseRemedy The collaborator under test.
+	 */
+	private function remedyWithStore(CaseStatusStore $store): CaseRemedy {
+		return new CaseRemedy(
+			store: $store,
+			caseTypes: $this->createMock(originalClassName: CaseTypeResolver::class),
+			declaration: new RemedyClauseDeclaration(l10n: new SourceL10n()),
+			terms: $this->createMock(originalClassName: CaseTermsService::class),
+			logger: new NullLogger(),
+		);
+	}//end remedyWithStore()
 
 	/**
 	 * The besluit going out binds a remedy term of the declared length.
@@ -164,7 +221,7 @@ class RemedyTermBindingTest extends TestCase {
 		$remedy = new CaseRemedy(
 			store: $store,
 			caseTypes: $resolver,
-			declaration: new RemedyClauseDeclaration(),
+			declaration: new RemedyClauseDeclaration(l10n: new SourceL10n()),
 			terms: $this->createMock(originalClassName: CaseTermsService::class),
 			logger: new NullLogger(),
 		);
@@ -198,9 +255,11 @@ class RemedyTermBindingTest extends TestCase {
 		]);
 
 		$terms = new CaseTermsService(
-			termService: $termService,
-			declarations: $this->createMock(originalClassName: TermDeclarationReader::class),
-			timers: $this->createMock(originalClassName: TermijnTimerService::class),
+			sources: new CaseTermSources(
+				termService: $termService,
+				declarations: $this->createMock(originalClassName: TermDeclarationReader::class),
+				timers: $this->createMock(originalClassName: TermijnTimerService::class),
+			),
 			logger: new NullLogger(),
 		);
 

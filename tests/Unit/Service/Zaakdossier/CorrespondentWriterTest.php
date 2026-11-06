@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -112,6 +113,7 @@ class CorrespondentWriterTest extends TestCase {
 			people: $this->people,
 			settingsService: $settings,
 			store: new DocumentRecordStore(settingsService: $settings),
+			labels: new DocumentListingLabels(settingsService: $settings),
 		);
 	}//end setUp()
 
@@ -298,6 +300,7 @@ class CorrespondentWriterTest extends TestCase {
 			people: $people,
 			settingsService: $settings,
 			store: new DocumentRecordStore(settingsService: $settings),
+			labels: new DocumentListingLabels(settingsService: $settings),
 		);
 
 		$writer->describeAll(
@@ -336,6 +339,7 @@ class CorrespondentWriterTest extends TestCase {
 			people: $people,
 			settingsService: $settings,
 			store: new DocumentRecordStore(settingsService: $settings),
+			labels: new DocumentListingLabels(settingsService: $settings),
 		);
 
 		$this->assertSame(

@@ -66,10 +66,9 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog, tickCheckbox } from './helpers/nav.ts'
+import { dismissSupportDialog, openCaseTypeTab, tickCheckbox } from './helpers/nav.ts'
 
 /** Where `StatusesTab` is mounted. See the header. */
-const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
 /** OpenRegister's flow store and its synchronous test-run endpoint. */
 const FLOWS_BASE = '/index.php/apps/openregister/api/flows'
@@ -154,30 +153,14 @@ async function seedStatus(
 }
 
 /**
- * Open the authored case type's Statuses tab on the admin settings page.
- *
- * The row is found by this run's own title and CLICKED, which is how an
- * administrator reaches it: `CaseTypeList` passes every case type to
- * `CnIndexPage` in one page, so no pagination stands between the two.
+ * Open the authored case type's Statuses tab on its Case types page.
  *
  * @param page The Playwright page.
- * @return The case type admin section.
+ * @return The statuses editor.
  */
 async function openStatusesTab(page: Page): Promise<Locator> {
-	await page.goto(ADMIN_SETTINGS_URL, { timeout: 180_000 })
-	await dismissSupportDialog(page)
-
-	const admin = page.locator('.case-type-admin')
-	await expect(admin).toBeVisible({ timeout: 180_000 })
-
-	const row = admin.getByRole('row').filter({ hasText: authored.title })
-	await expect(
-		row,
-		`the case type list should offer ${authored.title}`,
-	).toBeVisible({ timeout: 60_000 })
-	await row.getByText(authored.title, { exact: true }).click()
-
-	await admin.getByRole('button', { name: /^(Statuses|Statussen)$/ }).click()
+	await openCaseTypeTab(page, authored.title, /^(Statuses|Statussen)/)
+	const admin = page.locator('.statuses-tab')
 	await expect(admin.locator('.statuses-tab__list')).toBeVisible({
 		timeout: 30_000,
 	})
@@ -625,7 +608,7 @@ test.describe('A status is authored on the page, and what was authored runs', ()
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 		await strip.getByRole('tab', { name: /^(Work|Werk)$/ }).click()
 		const panel = strip.locator('[role="tabpanel"]:not([hidden])')
-		await expect(panel.locator('[data-testid="case-task-pane"]')).toContainText(
+		await expect(panel.locator('.cn-tasks-widget')).toContainText(
 			CHECK_IDENTITY,
 			{ timeout: 30_000 },
 		)

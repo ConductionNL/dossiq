@@ -137,23 +137,6 @@ export function endOptions(translate) {
 }
 
 /**
- * A recurrence as the phrase a planned row reads it back as.
- *
- * @param {string} recurrence The recurrence token.
- * @param {(key: string) => string} translate The bound t(), taking one string.
- * @return {string} The phrase, empty for a follow-up that happens once.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
- */
-export function recurrenceLabel(recurrence, translate) {
-	const token = String(recurrence ?? 'none')
-	if (token === 'none') {
-		return ''
-	}
-	const match = recurrenceOptions(translate).find((row) => row.id === token)
-	return match ? match.label.toLowerCase() : ''
-}
-
-/**
  * Whether a planned follow-up is complete enough to send.
  *
  * The end is checked as well as the start. A series asked to end on a date
@@ -191,70 +174,4 @@ export function isPlanComplete(plan, earliest) {
 		return Number(plan?.count ?? 0) >= 1
 	}
 	return true
-}
-
-/**
- * The rows the Related cases tab shows for the follow-ups still to come.
- *
- * The label carries the date, because "Controle" on its own says nothing
- * about when it will exist and that is the only thing a planned row adds
- * over an ordinary related case. A SERIES adds one more thing: how often it
- * comes back, and how many cases it has already opened. Both go in the label,
- * so a handler reads a series without opening anything.
- *
- * @param {Array} rows The `planned` endpoint's results.
- * @param {(key: string) => string} translate The bound t(), taking one string.
- * @return {Array<{key: string, label: string, date: string, recurrence: string, occurrences: Array}>} The rows.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
- */
-export function plannedRows(rows, translate) {
-	if (Array.isArray(rows) === false) {
-		return []
-	}
-	return rows
-		.filter((row) => row && String(row.id ?? '') !== '')
-		.map((row) => {
-			const title = String(row.title ?? '').trim()
-			const date = String(row.date ?? '').trim()
-			const recurrence = String(row.recurrence ?? 'none')
-			const occurrences = Array.isArray(row.occurrences) ? row.occurrences : []
-			return {
-				key: String(row.id),
-				date,
-				recurrence,
-				occurrences,
-				label: plannedLabel(title, date, recurrence, occurrences, translate),
-			}
-		})
-}
-
-/**
- * The one line a planned row reads as.
- *
- * @param {string} title The planned case's title.
- * @param {string} date The next occurrence, as `YYYY-MM-DD`.
- * @param {string} recurrence The recurrence token.
- * @param {Array} occurrences The cases the series has already opened.
- * @param {(key: string) => string} translate The bound t(), taking one string.
- * @return {string} The label.
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
- */
-function plannedLabel(title, date, recurrence, occurrences, translate) {
-	const parts = [title]
-	const repeat = recurrenceLabel(recurrence, translate)
-	if (repeat !== '') {
-		parts.push(repeat)
-	}
-	if (date !== '') {
-		parts.push(translate('next on {date}').replace('{date}', date))
-	}
-	if (occurrences.length > 0) {
-		parts.push(
-			translate('{count} opened so far').replace(
-				'{count}',
-				String(occurrences.length),
-			),
-		)
-	}
-	return parts.filter((part) => part !== '').join(', ')
 }

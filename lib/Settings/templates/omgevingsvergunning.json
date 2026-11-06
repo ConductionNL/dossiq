@@ -22,13 +22,13 @@
     "origin": "aanvragen"
   },
   "statusTypes": [
-    { "name": "Ontvangen", "description": "Aanvraag ontvangen via DSO of direct", "order": 1, "isFinal": false },
-    { "name": "Ontvankelijkheidstoets", "description": "Controle op volledigheid van de aanvraag", "order": 2, "isFinal": false },
-    { "name": "Inhoudelijke toets", "description": "Inhoudelijke beoordeling van de aanvraag", "order": 3, "isFinal": false },
-    { "name": "Advies", "description": "Intern en extern advies inwinnen", "order": 4, "isFinal": false },
-    { "name": "Besluit", "description": "Formeel besluit nemen", "order": 5, "isFinal": false },
-    { "name": "Bekendmaking", "description": "Besluit bekendmaken en publiceren", "order": 6, "isFinal": false },
-    { "name": "Afgehandeld", "description": "Zaak is afgerond", "order": 7, "isFinal": true }
+    { "name": "Ontvangen", "colour": "blue", "description": "Aanvraag ontvangen via DSO of direct", "order": 1, "isFinal": false },
+    { "name": "Ontvankelijkheidstoets", "colour": "purple", "description": "Controle op volledigheid van de aanvraag", "order": 2, "isFinal": false },
+    { "name": "Inhoudelijke toets", "colour": "purple", "description": "Inhoudelijke beoordeling van de aanvraag", "order": 3, "isFinal": false },
+    { "name": "Advies", "colour": "purple", "description": "Intern en extern advies inwinnen", "order": 4, "isFinal": false },
+    { "name": "Besluit", "colour": "teal", "description": "Formeel besluit nemen", "order": 5, "isFinal": false },
+    { "name": "Bekendmaking", "colour": "green", "description": "Besluit bekendmaken en publiceren", "order": 6, "isFinal": false },
+    { "name": "Afgehandeld", "colour": "green", "description": "Zaak is afgerond", "order": 7, "isFinal": true }
   ],
   "propertyDefinitions": [
     { "name": "dsoZaaknummer", "definition": "DSO zaaknummer", "propertyType": "string", "isRequired": false },

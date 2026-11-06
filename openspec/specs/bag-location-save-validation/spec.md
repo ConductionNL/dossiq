@@ -1,8 +1,10 @@
 # bag-location-save-validation Specification
 
 ## Purpose
-TBD - created by archiving change bag-location-save-validation. Update Purpose after archive.
+The check on saving a case location that comes from the BAG: a syntactically valid nummeraanduiding id is required, and where the check is switched on the address is verified through integriq. Created by change bag-location-save-validation, extended by bag-client-retired (2026-10-30).
+
 ## Requirements
+
 ### Requirement: LocationBagValidationListener MUST reject a `source=bag` location that lacks a syntactically valid `nummeraanduidingId`
 
 For any `location`-schema object being created or updated with `source = bag`, `nummeraanduidingId` SHALL be present and SHALL match `^\d{16}$`, else the save SHALL be rejected.
@@ -38,43 +40,81 @@ A payload that fails either check SHALL be rejected pre-persist (`stopPropagatio
 
 #### Scenario: source=bag with a well-formed nummeraanduidingId and a dormant adapter is accepted
 
-- **GIVEN** a `location` payload `{source: 'bag', nummeraanduidingId: '0363010000123456'}`
-- **AND** `BagAdapterInterface::isDormant()` returns `true` (log-mode, the default)
+- **GIVEN** a `location` payload `{source: 'bag', nummeraanduidingId: '0363200000123456'}`
+- **AND** the BAG check is switched off (`integration.bag.check` is not `on`, the default)
 - **WHEN** the pre-persist event fires
 - **THEN** `LocationBagValidationListener` MUST NOT call `stopPropagation()`
-- **AND** `BagAdapterInterface::lookupObject()` MUST NOT be called
+- **AND** integriq MUST NOT be asked
 
-### Requirement: LocationBagValidationListener SHALL attempt best-effort BAG existence verification when the adapter is non-dormant, and SHALL fail open on any inconclusive outcome
+### Requirement: A BAG location is checked through integriq where the check is switched on
 
-When `nummeraanduidingId` is well-formed and `BagAdapterInterface::isDormant()` is `false`, the listener SHALL call `lookupObject('nummeraanduiding', $id)` and SHALL reject the save only on a definitive `NOT_FOUND`.
+Where the app config key `integration.bag.check` is `on`, the listener SHALL ask integriq whether
+the BAG holds the location's nummeraanduiding, and SHALL refuse the save when the BAG holds none.
+It SHALL also refuse the save, with a message saying the address could not be checked, when no
+clear answer comes: integriq is not installed or has no BAG read, PDOK does not answer, the answer
+is about another object, or the answer is simulated. A confirmed location SHALL be saved with
+`bagCheck` set to `checked`. Where the key holds any other value, integriq SHALL NOT be asked and
+the location SHALL be saved with `bagCheck` set to `not-checked`.
 
-Every other result (`FOUND`, `LOOKUP_ERROR`, `LOOKUP_DEFERRED`, `INVALID_INPUT`) — and any `Throwable` raised by the adapter call — SHALL accept the save, logging a warning for the non-`FOUND` outcomes.
+#### Scenario: The check is off
 
-#### Scenario: Non-dormant adapter returns FOUND — accepted
+- **GIVEN** `integration.bag.check` is not `on`
+- **WHEN** a `source=bag` location with a well-formed id is saved
+- **THEN** the save SHALL go through and integriq SHALL NOT be asked
+- **AND** the location SHALL carry `bagCheck: not-checked`
 
-- **GIVEN** a well-formed `nummeraanduidingId`
-- **AND** `BagAdapterInterface::isDormant()` returns `false`
-- **AND** `lookupObject('nummeraanduiding', $id)` returns a `FOUND` result
-- **WHEN** the pre-persist event fires
-- **THEN** `LocationBagValidationListener` MUST NOT call `stopPropagation()`
+#### Scenario: The BAG confirms the address
 
-#### Scenario: Non-dormant adapter returns NOT_FOUND — rejected
+- **GIVEN** `integration.bag.check` is `on` and integriq answers that the BAG holds the id
+- **WHEN** the location is saved
+- **THEN** the save SHALL go through and the location SHALL carry `bagCheck: checked`
 
-- **GIVEN** a well-formed `nummeraanduidingId`
-- **AND** `BagAdapterInterface::isDormant()` returns `false`
-- **AND** `lookupObject('nummeraanduiding', $id)` returns a `NOT_FOUND` result
-- **WHEN** the pre-persist event fires
-- **THEN** `LocationBagValidationListener` MUST call `stopPropagation()`
-- **AND** the event errors MUST include a translated message stating the BAG id could not be
-  found
+#### Scenario: The BAG does not hold the address
 
-#### Scenario: Adapter unavailable — accepted with a logged warning, not rejected
+- **GIVEN** `integration.bag.check` is `on` and integriq answers that the BAG holds no such id
+- **WHEN** the location is saved
+- **THEN** the save SHALL be refused with a message saying the id was not found in the BAG
 
-- **GIVEN** a well-formed `nummeraanduidingId`
-- **AND** `BagAdapterInterface::isDormant()` returns `false`
-- **AND** `lookupObject('nummeraanduiding', $id)` throws, or returns `LOOKUP_ERROR` /
-  `LOOKUP_DEFERRED` / `INVALID_INPUT`
-- **WHEN** the pre-persist event fires
-- **THEN** `LocationBagValidationListener` MUST NOT call `stopPropagation()`
-- **AND** a warning MUST be logged
+#### Scenario: No clear answer is a refusal, not a pass
 
+- **GIVEN** `integration.bag.check` is `on`
+- **AND** integriq is not installed, PDOK does not answer, the answer is about another object, or the answer is simulated
+- **WHEN** the location is saved
+- **THEN** the save SHALL be refused with a message saying the address could not be checked in the BAG
+
+#### Scenario: Integriq too old or absent is named in the refusal
+
+- **GIVEN** `integration.bag.check` is `on`
+- **AND** integriq is installed in a version without the BAG read, or is not installed
+- **WHEN** the location is saved
+- **THEN** the save SHALL be refused
+- **AND** the message SHALL say that integriq must be updated, or installed, for the check
+
+### Requirement: An instance that checked BAG locations before the upgrade keeps checking them
+
+On upgrade, a repair step SHALL set `integration.bag.check` to `on` where dossiq's own BAG client
+was switched on: `integration.bag.mode` at `test` or `live` (read as the deleted client read it,
+trimmed and case-insensitive), or `integration.bag.source` at `pdok`. It SHALL write nothing on any
+other instance, so the check stays off there. It SHALL write only while `integration.bag.check` does
+not exist, so running it twice changes nothing more and an administrator's own choice is kept. A
+failure SHALL be logged and SHALL NOT abort the upgrade. The step SHALL be registered under
+post-migration in `appinfo/info.xml`, with the app version moved so the upgrade runs it.
+
+#### Scenario: An instance that ran the check keeps it
+
+- **GIVEN** `integration.bag.mode` is `live` (or `test`), or `integration.bag.source` is `pdok`
+- **AND** `integration.bag.check` does not exist
+- **WHEN** the app is upgraded
+- **THEN** `integration.bag.check` SHALL be `on`
+
+#### Scenario: Every other instance stays off
+
+- **GIVEN** no old BAG setting switched the client on
+- **WHEN** the app is upgraded
+- **THEN** no app config key SHALL be written
+
+#### Scenario: An administrator's choice is kept
+
+- **GIVEN** `integration.bag.mode` is `live` and `integration.bag.check` is `off`
+- **WHEN** the app is upgraded again
+- **THEN** `integration.bag.check` SHALL stay `off`

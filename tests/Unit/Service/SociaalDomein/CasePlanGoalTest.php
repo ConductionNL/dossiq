@@ -114,16 +114,16 @@ class CasePlanGoalTest extends TestCase {
 	}//end testAGoalWithNothingMeasurableIsRefused()
 
 	/**
-	 * A goal with no plan and a goal with no title are refused too.
+	 * A goal with neither a plan nor a case, and a goal with no title, are refused too.
 	 *
 	 * @return void
 	 */
-	public function testAGoalNeedsAPlanAndATitle(): void {
+	public function testAGoalNeedsAnOwnerAndATitle(): void {
 		try {
 			$this->goals->save(goal: ['title' => 'x', 'metWhen' => 'y']);
-			self::fail('A goal with no plan must be refused.');
+			self::fail(message: 'A goal with no plan and no case must be refused.');
 		} catch (RefusedException $e) {
-			self::assertSame('goal-needs-a-plan', $e->getRule());
+			self::assertSame(expected: 'goal-needs-an-owner', actual: $e->getRule());
 		}
 
 		try {
@@ -132,7 +132,31 @@ class CasePlanGoalTest extends TestCase {
 		} catch (RefusedException $e) {
 			self::assertSame('goal-needs-a-title', $e->getRule());
 		}
-	}//end testAGoalNeedsAPlanAndATitle()
+	}//end testAGoalNeedsAnOwnerAndATitle()
+
+	/**
+	 * A goal can belong to a case directly (a Woo request, a permit), read back by the case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-goals/specs/case-goals/spec.md#requirement-a-case-can-hold-goals-that-say-what-counts-as-met
+	 */
+	public function testAGoalCanBelongToACase(): void {
+		$saved = $this->goals->save(
+			goal: [
+				'case' => 'case-woo',
+				'title' => 'De verzoeker weet waarom de verlichting uitbleef',
+				'metWhen' => 'Het besluit noemt de reden',
+			]
+		);
+
+		self::assertSame(expected: 'open', actual: $saved['state']);
+		self::assertSame(expected: 'case-woo', actual: $saved['case']);
+		self::assertCount(expectedCount: 1, haystack: $this->goals->ofCase(caseId: 'case-woo'));
+		self::assertSame(expected: [], actual: $this->goals->ofCase(caseId: 'case-other'));
+		self::assertSame(expected: [], actual: $this->goals->ofCase(caseId: ' '));
+		self::assertSame(expected: [], actual: $this->goals->ofPlan(planId: 'plan-1'));
+	}//end testAGoalCanBelongToACase()
 
 	/**
 	 * 🔴 A review closes a goal with what was observed, against its metWhen.

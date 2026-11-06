@@ -43,9 +43,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Actions\ActionResult;
-use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
 use OCA\Dossiq\Service\Flow\UnmappableStep;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
 use OCA\Filinq\Event\DocumentGenerationRequestedEvent;
@@ -59,8 +57,6 @@ use Throwable;
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class CaseDocumentGenerationService {
-	use SearchesObjects;
-
 	/**
 	 * Filinq's request event, named by string: Filinq is optional at runtime.
 	 *
@@ -72,22 +68,18 @@ class CaseDocumentGenerationService {
 	 * Constructor.
 	 *
 	 * @param CaseStatusStore        $cases           Reads the case the letter is about.
-	 * @param TemplateLibraryService $templates       The template library.
+	 * @param DocumentTemplating $templating The template library, the filer for generated documents and the retired template syntax.
 	 * @param SettingsService        $settingsService Bridge to OpenRegister + config.
 	 * @param IEventDispatcher       $events          Asks Filinq for the document.
-	 * @param GeneratedDocumentFiler $filer           Files the document in the dossier.
-	 * @param RetiredTemplateSyntax  $syntax          Rewrites the library template for Filinq.
 	 * @param IL10N                  $l10n            The refusal a person reads.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $cases,
-		private readonly TemplateLibraryService $templates,
+		private readonly DocumentTemplating $templating,
 		private readonly SettingsService $settingsService,
 		private readonly IEventDispatcher $events,
-		private readonly GeneratedDocumentFiler $filer,
-		private readonly RetiredTemplateSyntax $syntax,
 		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
@@ -105,7 +97,7 @@ class CaseDocumentGenerationService {
 	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function generate(string $caseId, string $templateId): ActionResult {
-		$template = $this->templates->loadTemplate($templateId);
+		$template = $this->templating->templates->loadTemplate($templateId);
 		if ($template === null) {
 			return new ActionResult(succeeded: false, error: 'template_not_found');
 		}
@@ -129,7 +121,7 @@ class CaseDocumentGenerationService {
 			return new ActionResult(succeeded: false, error: 'missing_template_field:' . $missing[0]);
 		}
 
-		$documentType = $this->resolveDocumentType(name: (string)($template['documentType'] ?? ''));
+		$documentType = trim((string)($template['documentType'] ?? ''));
 		if ($documentType === '') {
 			return new ActionResult(succeeded: false, error: 'missing_document_type');
 		}
@@ -140,7 +132,7 @@ class CaseDocumentGenerationService {
 		}
 
 		try {
-			$text = $this->syntax->forDocument(template: $body, what: 'template');
+			$text = $this->templating->syntax->forDocument(template: $body, what: 'template');
 		} catch (UnmappableStep $e) {
 			return new ActionResult(succeeded: false, error: 'template_not_supported: ' . $e->getMessage());
 		}
@@ -206,7 +198,7 @@ class CaseDocumentGenerationService {
 		}
 
 		try {
-			$created = $this->filer->file(
+			$created = $this->templating->filer->file(
 				caseId: $caseId,
 				fileId: $fileId,
 				title: $name,
@@ -262,46 +254,4 @@ class CaseDocumentGenerationService {
 
 		return array_values(array_unique($missing));
 	}//end missingFields()
-
-	/**
-	 * Resolve a template's document type NAME to the catalogue row's id.
-	 *
-	 * `informatieobject.informatieobjecttype` holds a reference, and a template
-	 * names its type the way a person would ("Ontvangstbevestiging"). When the
-	 * catalogue holds no such row the name is passed through unchanged rather
-	 * than blanked: the Documents tab renders an unresolved type as its raw
-	 * value, so the column still reads Ontvangstbevestiging instead of empty.
-	 *
-	 * @param string $name The type name the template declares.
-	 *
-	 * @return string The catalogue row id, or the name, or empty.
-	 *
-	 * @spec openspec/specs/template-library/spec.md
-	 */
-	private function resolveDocumentType(string $name): string {
-		if (trim($name) === '') {
-			return '';
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'dossier_informatieobjecttype_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return $name;
-		}
-
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['description' => $name, '_limit' => 1],
-		);
-
-		$id = (string)(($rows[0]['id'] ?? ($rows[0]['uuid'] ?? '')));
-		if ($id !== '') {
-			return $id;
-		}
-
-		return $name;
-	}//end resolveDocumentType()
 }//end class

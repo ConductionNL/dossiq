@@ -36,6 +36,9 @@ concurrency:
 jobs:
   unstable:
     if: github.ref == 'refs/heads/development'
+    permissions:
+      contents: write
+      pull-requests: write
     uses: ConductionNL/.github/.github/workflows/release.yml@main
     with:
       release-type: unstable
@@ -45,6 +48,9 @@ jobs:
 
   beta:
     if: github.ref == 'refs/heads/beta'
+    permissions:
+      contents: write
+      pull-requests: write
     uses: ConductionNL/.github/.github/workflows/release.yml@main
     with:
       release-type: beta
@@ -54,6 +60,9 @@ jobs:
 
   stable:
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      pull-requests: write
     uses: ConductionNL/.github/.github/workflows/release.yml@main
     with:
       release-type: stable

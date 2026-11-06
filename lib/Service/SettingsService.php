@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigurationImport;
 use OCA\Dossiq\Service\Settings\OpenRegisterBridge;
@@ -55,8 +56,8 @@ class SettingsService {
 		'appointment_backend_api_key',
 		// AI model URL reveals internal infrastructure topology; redact for non-admins.
 		'ai_model_url',
-		// Dwangsom callback HMAC secret — never expose to non-admin callers.
-		'dwangsom_callback_secret',
+		// Payout callback HMAC secret: never expose to non-admin callers.
+		'payout_callback_secret',
 	];
 
 	/**
@@ -70,6 +71,36 @@ class SettingsService {
 	 * @var string[]
 	 */
 	private const CONFIG_KEYS = ConfigKeys::ALL;
+
+	/**
+	 * The bounds and choices of the settings the admin tabs save
+	 * ({@see \OCA\Dossiq\Service\Settings\SettingValueRules}). A string and
+	 * not a `::class` reference: this class sits at PHPMD's coupling ceiling.
+	 * SettingValueRulesTest asserts the name resolves.
+	 *
+	 * @var string
+	 */
+	public const VALUE_RULES = 'OCA\\Dossiq\\Service\\Settings\\SettingValueRules';
+
+	/**
+	 * Current key => the procedure-named key it replaces, read while the current key is missing.
+	 *
+	 * @var array<string, string>
+	 */
+	private const RENAMED_KEYS = MoneyConfigKeys::LEGACY_KEYS;
+
+	/**
+	 * Keys that are written and never read back, to anyone.
+	 *
+	 * A settings read answers `<key>Set` (whether one is stored) in their
+	 * place, so a form can say "ingesteld" without the key leaving the server.
+	 *
+	 * @var string[]
+	 */
+	private const WRITE_ONLY_KEYS = [
+		'integration.brk.apiKey',
+		'integration.woz.apiKey',
+	];
 
 	/**
 	 * Default values for KCC-werkplek bridge behaviour settings.
@@ -323,7 +354,8 @@ class SettingsService {
 	/**
 	 * Get all current settings as an associative array.
 	 *
-	 * Returns full (unredacted) settings including secrets. Callers MUST
+	 * Returns full (unredacted) settings including secrets, except the
+	 * write-only keys, which read as `<key>Set`. Callers MUST
 	 * ensure only admin users receive this response.
 	 *
 	 * @return array
@@ -333,6 +365,11 @@ class SettingsService {
 	public function getSettings(): array {
 		$config = [];
 		foreach (self::CONFIG_KEYS as $key) {
+			if (in_array(needle: $key, haystack: self::WRITE_ONLY_KEYS, strict: true) === true) {
+				$config[$key.'Set'] = $this->appConfig->getValueString(Application::APP_ID, $key, '') !== '';
+				continue;
+			}
+
 			$config[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
 		}
 
@@ -374,7 +411,12 @@ class SettingsService {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function updateSettings(array $data): array {
+		$data = $this->withCurrentReportKeys(data: $data);
 		// Refused before anything is written, so a refused save changes nothing.
+		if ($this->container->has(self::VALUE_RULES) === true) {
+			$this->container->get(self::VALUE_RULES)->assertValid(data: $data);
+		}
+
 		// Only a save that touches the throughput switch or its readers is checked.
 		if (array_key_exists(WooReportSwitches::THROUGHPUT, $data) === true
 			|| array_key_exists(WooReportSwitches::READERS, $data) === true
@@ -394,6 +436,29 @@ class SettingsService {
 	}//end updateSettings()
 
 	/**
+	 * A save with each report switch posted under its earlier key carried onto its current key.
+	 *
+	 * A value posted under the current key wins. Written here rather than through
+	 * {@see \OCA\Dossiq\Service\Settings\RenamedSettingKeys} to keep this class's
+	 * coupling at phpmd's limit.
+	 *
+	 * @param array<string, mixed> $data The settings as posted.
+	 *
+	 * @return array<string, mixed> The settings, current keys filled in.
+	 *
+	 * @spec openspec/changes/ui-facing-names-are-generic/specs/ui-facing-names/spec.md
+	 */
+	private function withCurrentReportKeys(array $data): array {
+		foreach (array_diff_key(WooReportSwitches::LEGACY_KEYS, $data) as $current => $earlier) {
+			if (array_key_exists($earlier, $data) === true) {
+				$data[$current] = $data[$earlier];
+			}
+		}
+
+		return $data;
+	}//end withCurrentReportKeys()
+
+	/**
 	 * The Woo review report switches, built on the group manager the container holds.
 	 *
 	 * Built here rather than injected so the constructor keeps the shape its
@@ -411,6 +476,18 @@ class SettingsService {
 	}//end wooReportSwitches()
 
 	/**
+	 * The resident portal's name as portaliq holds it ("Mijn Zuiddrecht"),
+	 * or '' when portaliq names none.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
+	 */
+	public function getPortalName(): string {
+		return mb_substr(trim($this->appConfig->getValueString('portaliq', 'portalName', '')), 0, 255);
+	}//end getPortalName()
+
+	/**
 	 * Get a single configuration value by key.
 	 *
 	 * @param string $key The configuration key
@@ -422,6 +499,12 @@ class SettingsService {
 	 */
 	public function getConfigValue(string $key, string $default = ''): string {
 		$value = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+
+		// A renamed money key reads its legacy key until CarryRenamedSettingKeys has run.
+		$legacy = (self::RENAMED_KEYS[$key] ?? null);
+		if ($value === '' && $legacy !== null && $this->appConfig->hasKey(Application::APP_ID, $key) === false) {
+			$value = $this->appConfig->getValueString(Application::APP_ID, $legacy, $default);
+		}
 
 		// LAST, and only when nothing local answered.
 		//
@@ -559,7 +642,7 @@ class SettingsService {
 	 * idempotent re-import returns an empty `schemas` list, so the per-schema
 	 * config keys (case_type_schema, status_type_schema, status_record_schema,
 	 * workflow_template_schema, …) were never written — the status-name lookup
-	 * and the WorkflowBoard then silently broke on a fresh deploy.
+	 * and the workflow board then silently broke on a fresh deploy.
 	 *
 	 * This method closes that gap: for each schema slug Dossiq knows about it
 	 * resolves the LIVE schema ID via OpenRegister's SchemaMapper (slug-aware

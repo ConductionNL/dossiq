@@ -64,7 +64,7 @@ const TAB_TEXT_KEYS = ['moreLabel', 'ariaLabel']
  * @param {(text: string) => string} translate The host translate.
  * @return {void}
  *
- * @spec openspec/changes/dutch-copy-on-the-case-page/specs/frontend-locale-completeness/spec.md
+ * @spec openspec/specs/frontend-locale-completeness/spec.md
  */
 function translateTabsAndSections(content, translate) {
 	for (const key of TAB_TEXT_KEYS) {
@@ -165,7 +165,7 @@ const FIELD_OVERRIDE_KEYS = ['fieldOverrides', 'overrides']
  * @param {(text: string) => string} translate The host translate.
  * @return {object} The same manifest with its override labels translated.
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/frontend-locale-completeness/spec.md
+ * @spec openspec/specs/frontend-locale-completeness/spec.md
  */
 export function translateFieldOverrideLabels(manifest, translate) {
 	const seen = new Set()

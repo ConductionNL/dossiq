@@ -62,6 +62,18 @@ interface RedactionProposalObjectServiceStub {
 	 * @return array
 	 */
 	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array;
+
+	/**
+	 * Write some fields of a stored object (OpenRegister's PATCH seam).
+	 *
+	 * @param string      $objectId The object uuid.
+	 * @param array       $data     The fields to write.
+	 * @param string|null $register Register id/slug.
+	 * @param string|null $schema   Schema id/slug.
+	 *
+	 * @return array
+	 */
+	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array;
 }//end interface
 
 /**
@@ -440,10 +452,10 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn([$existing]);
 
 		$capturedObject = null;
-		$objectServiceMock->method('saveObject')->willReturnCallback(
-			function (array $object) use (&$capturedObject) {
-				$capturedObject = $object;
-				return $object;
+		$objectServiceMock->method('patchObject')->willReturnCallback(
+			function (string $objectId, array $data) use (&$capturedObject, $existing) {
+				$capturedObject = array_merge($existing, $data);
+				return $capturedObject;
 			}
 		);
 

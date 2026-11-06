@@ -568,7 +568,7 @@ export default {
 
 		/**
 		 * Delete a status node: guards "at least one final status must
-		 * remain" (mirrors `StatusesTab.vue::deleteStatusType()`),
+		 * remain",
 		 * confirms with the user, deletes the underlying `statusType`
 		 * object, then drops it (and its steps/incident transitions) from
 		 * the working copy via `workflowStore.removeStatusNode()`.

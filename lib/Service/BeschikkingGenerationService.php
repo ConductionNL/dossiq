@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Support\FleetAppId;
+use OCA\Dossiq\Support\NormalisesObjectRows;
 use OCP\IAppConfig;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -45,6 +46,11 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
  */
 class BeschikkingGenerationService {
+	use NormalisesObjectRows;
+
+	private const STUB_NOT_SAVED = 'could not create stub bijlage';
+	private const ATTACH_NOT_SAVED = 'could not attach bijlage';
+
 	/**
 	 * The document-generating app, by its CANONICAL (current) name.
 	 *
@@ -85,103 +91,174 @@ class BeschikkingGenerationService {
 	 * @param string $outcome Either 'granted' or 'refused'
 	 * @param string $motivation The motivation text for the beslissing
 	 *
-	 * @return array<string,mixed> Result with keys: success, bijlageId, message
+	 * @return array<string,mixed> Result with keys: success, bijlageId, message. `success` is false
+	 *                             when no bijlage could be saved, and `bijlageId` is then ''.
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
 	 */
 	public function generateBeschikking(string $caseId, string $outcome, string $motivation): array {
-		$templateKey = 'dso_beschikking_template_verleend';
-		if ($outcome === 'refused') {
-			$templateKey = 'dso_beschikking_template_geweigerd';
-		}
-
-		$templateId = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: $templateKey,
-			default: ''
-		);
-
+		$ask = ['caseId' => $caseId, 'outcome' => $outcome, 'motivation' => $motivation];
+		$templateId = $this->templateFor(outcome: $outcome);
 		$documentService = $this->resolveDocumentService();
 		$userId = $this->currentUserId();
 
 		if ($documentService === null || $templateId === '' || $userId === '') {
-			$this->logger->warning(
-				'Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.',
-				[
-					'app' => Application::APP_ID,
-					'caseId' => $caseId,
-					'outcome' => $outcome,
-					'templateId' => $templateId,
-					'hasDocumentService' => ($documentService !== null),
-					'hasUser' => ($userId !== ''),
-				]
+			return $this->unavailableAnswer(
+				ask: $ask,
+				found: ['templateId' => $templateId, 'hasDocumentService' => ($documentService !== null), 'hasUser' => ($userId !== '')]
 			);
-
-			$bijlageId = $this->createStubBijlage(
-				caseId: $caseId,
-				outcome: $outcome,
-				motivation: $motivation
-			);
-
-			return [
-				'success' => true,
-				'bijlageId' => $bijlageId,
-				'message' => 'Stub beschikking bijlage created (document generation not available or template not configured).',
-			];
-		}//end if
+		}
 
 		try {
 			$generated = $documentService->generateDocument(
 				$templateId,
 				[],
-				[
-					'format' => 'pdf',
-					'caseId' => $caseId,
-					'userId' => $userId,
-					'filename' => 'beschikking_' . $outcome,
-					'adHocData' => [
-						'caseId' => $caseId,
-						'outcome' => $outcome,
-						'motivation' => $motivation,
-						'date' => date('Y-m-d'),
-					],
-					'output' => ['mode' => 'files'],
-				]
+				$this->generationOptions(ask: $ask, userId: $userId)
 			);
 
-			$bijlageId = $this->attachBijlageToZaak(
-				caseId: $caseId,
-				generated: $generated,
-				outcome: $outcome
+			return $this->savedAnswer(
+				bijlageId: $this->attachBijlageToZaak(caseId: $caseId, generated: $generated, outcome: $outcome),
+				messages: ['Beschikking generated and attached.', 'Beschikking generated, but the bijlage could not be saved.']
 			);
-
-			return [
-				'success' => true,
-				'bijlageId' => $bijlageId,
-				'message' => 'Beschikking generated and attached.',
-			];
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq BeschikkingGenerationService: document generation failed: ' . $e->getMessage(),
-				[
-					'app' => Application::APP_ID,
-					'caseId' => $caseId,
-				]
-			);
-
-			$bijlageId = $this->createStubBijlage(
-				caseId: $caseId,
-				outcome: $outcome,
-				motivation: $motivation
-			);
-
-			return [
-				'success' => true,
-				'bijlageId' => $bijlageId,
-				'message' => 'Stub beschikking bijlage created (document generation failed).',
-			];
+			return $this->failedAnswer(ask: $ask, error: $e);
 		}//end try
 	}//end generateBeschikking()
+
+	/**
+	 * The configured template for an outcome: the refusal template for `refused`, the grant template otherwise.
+	 *
+	 * @param string $outcome The outcome.
+	 *
+	 * @return string The template id, or '' when none is configured.
+	 */
+	private function templateFor(string $outcome): string {
+		$templateKey = 'dso_beschikking_template_verleend';
+		if ($outcome === 'refused') {
+			$templateKey = 'dso_beschikking_template_geweigerd';
+		}
+
+		return $this->appConfig->getValueString(
+			app: Application::APP_ID,
+			key: $templateKey,
+			default: ''
+		);
+	}//end templateFor()
+
+	/**
+	 * What the document app is asked to render: a PDF owned by the session user, written to files.
+	 *
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask    The case, outcome and motivation.
+	 * @param string                                                      $userId The session user.
+	 *
+	 * @return array<string, mixed> The generation options.
+	 */
+	private function generationOptions(array $ask, string $userId): array {
+		return [
+			'format' => 'pdf',
+			'caseId' => $ask['caseId'],
+			'userId' => $userId,
+			'filename' => 'beschikking_' . $ask['outcome'],
+			'adHocData' => [
+				'caseId' => $ask['caseId'],
+				'outcome' => $ask['outcome'],
+				'motivation' => $ask['motivation'],
+				'date' => date('Y-m-d'),
+			],
+			'output' => ['mode' => 'files'],
+		];
+	}//end generationOptions()
+
+	/**
+	 * Say why the document could not be generated, and answer with a stub attachment.
+	 *
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask   The case, outcome and motivation.
+	 * @param array<string, mixed>                                        $found The template, and whether the document app and a session were found.
+	 *
+	 * @return array{success: bool, bijlageId: string, message: string} The answer.
+	 */
+	private function unavailableAnswer(array $ask, array $found): array {
+		$this->logger->warning(
+			'Dossiq BeschikkingGenerationService: filinq unavailable, template unconfigured or no session; creating stub bijlage.',
+			['app' => Application::APP_ID, 'caseId' => $ask['caseId'], 'outcome' => $ask['outcome']] + $found
+		);
+
+		return $this->stubAnswer(
+			ask: $ask,
+			messages: [
+				'Stub beschikking bijlage created (document generation not available or template not configured).',
+				'Document generation is not available, and the stub bijlage could not be saved.',
+			]
+		);
+	}//end unavailableAnswer()
+
+	/**
+	 * Log a failed generation, and answer with a stub attachment.
+	 *
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask   The case, outcome and motivation.
+	 * @param \Throwable                                                  $error What the document app threw.
+	 *
+	 * @return array{success: bool, bijlageId: string, message: string} The answer.
+	 */
+	private function failedAnswer(array $ask, \Throwable $error): array {
+		$this->logger->error(
+			'Dossiq BeschikkingGenerationService: document generation failed: ' . $error->getMessage(),
+			['app' => Application::APP_ID, 'caseId' => $ask['caseId']]
+		);
+
+		return $this->stubAnswer(
+			ask: $ask,
+			messages: [
+				'Stub beschikking bijlage created (document generation failed).',
+				'Beschikking generation failed, and the stub bijlage could not be saved.',
+			]
+		);
+	}//end failedAnswer()
+
+	/**
+	 * Save a stub attachment in place of the document, and answer with it.
+	 *
+	 * @param array{caseId: string, outcome: string, motivation: string} $ask      The case, outcome and motivation.
+	 * @param array{0: string, 1: string}                                 $messages Why a stub was saved, and the message when it could not be.
+	 *
+	 * @return array{success: bool, bijlageId: string, message: string} The answer.
+	 */
+	private function stubAnswer(array $ask, array $messages): array {
+		return $this->savedAnswer(
+			bijlageId: $this->createStubBijlage(caseId: $ask['caseId'], outcome: $ask['outcome'], motivation: $ask['motivation']),
+			messages: $messages
+		);
+	}//end stubAnswer()
+
+	/**
+	 * Answer with the saved bijlage, or with a failure when the save threw.
+	 *
+	 * @param string|null                 $bijlageId The saved bijlage's id, or null when it could not be saved.
+	 * @param array{0: string, 1: string} $messages  The message when saved, and the message when not.
+	 *
+	 * @return array{success: bool, bijlageId: string, message: string} The answer.
+	 */
+	private function savedAnswer(?string $bijlageId, array $messages): array {
+		if ($bijlageId === null) {
+			return ['success' => false, 'bijlageId' => '', 'message' => $messages[1]];
+		}
+
+		return ['success' => true, 'bijlageId' => $bijlageId, 'message' => $messages[0]];
+	}//end savedAnswer()
+
+	/**
+	 * The id of a saved object, which OpenRegister answers as an ObjectEntity.
+	 *
+	 * @param mixed  $saved    What saveObject() answered.
+	 * @param string $fallback The id to answer when it carries none.
+	 *
+	 * @return string The id, uuid, or fallback.
+	 */
+	private function savedId(mixed $saved, string $fallback): string {
+		$row = $this->objectToArray(row: $saved);
+
+		return (string)($row['id'] ?? ($row['uuid'] ?? $fallback));
+	}//end savedId()
 
 	/**
 	 * Resolve filinq's DocumentService, whatever namespace it ships under.
@@ -250,39 +327,22 @@ class BeschikkingGenerationService {
 	 * @param string $outcome The decision outcome
 	 * @param string $motivation The motivation text
 	 *
-	 * @return string The UUID of the created stub bijlage
+	 * @return string|null The UUID of the created stub bijlage, or null when it could not be saved
 	 */
-	private function createStubBijlage(string $caseId, string $outcome, string $motivation): string {
-		try {
-			$objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
-			$register = $this->appConfig->getValueString(
-				app: Application::APP_ID,
-				key: 'register',
-				default: ''
-			);
-
-			$bijlage = $objectService->saveObject(
-				register: $register,
-				schema: 'beschikking_bijlage',
-				object: [
-					'caseId' => $caseId,
-					'type' => 'beschikking',
-					'outcome' => $outcome,
-					'motivation' => $motivation,
-					'stub' => true,
-					'createdAt' => date('c'),
-					'title' => 'Beschikking ' . ucfirst($outcome) . ' (stub)',
-				]
-			);
-
-			return (string)($bijlage['id'] ?? ($bijlage['uuid'] ?? 'stub-' . $caseId));
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Dossiq BeschikkingGenerationService: could not create stub bijlage: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return 'stub-' . $caseId;
-		}//end try
+	private function createStubBijlage(string $caseId, string $outcome, string $motivation): ?string {
+		return $this->storeBijlage(
+			object: [
+				'caseId' => $caseId,
+				'type' => 'beschikking',
+				'outcome' => $outcome,
+				'motivation' => $motivation,
+				'stub' => true,
+				'createdAt' => date('c'),
+				'title' => 'Beschikking ' . ucfirst($outcome) . ' (stub)',
+			],
+			fallback: 'stub-' . $caseId,
+			failure: self::STUB_NOT_SAVED
+		);
 	}//end createStubBijlage()
 
 	/**
@@ -298,9 +358,39 @@ class BeschikkingGenerationService {
 	 * @param array<string,mixed> $generated The generation envelope from filinq
 	 * @param string $outcome The decision outcome
 	 *
-	 * @return string The bijlage UUID
+	 * @return string|null The bijlage UUID, or null when it could not be saved
 	 */
-	private function attachBijlageToZaak(string $caseId, array $generated, string $outcome): string {
+	private function attachBijlageToZaak(string $caseId, array $generated, string $outcome): ?string {
+		$output = [];
+		if (is_array($generated['output'] ?? null) === true) {
+			$output = $generated['output'];
+		}
+
+		return $this->storeBijlage(
+			object: [
+				'caseId' => $caseId,
+				'type' => 'beschikking',
+				'outcome' => $outcome,
+				'fileId' => ($output['fileId'] ?? ($generated['fileId'] ?? '')),
+				'fileName' => ($output['name'] ?? ($generated['fileName'] ?? ('beschikking_' . $outcome . '.pdf'))),
+				'createdAt' => date('c'),
+				'title' => 'Beschikking ' . ucfirst($outcome),
+			],
+			fallback: '',
+			failure: self::ATTACH_NOT_SAVED
+		);
+	}//end attachBijlageToZaak()
+
+	/**
+	 * Save a bijlage record in the configured register.
+	 *
+	 * @param array<string,mixed> $object   The bijlage record.
+	 * @param string              $fallback The id answered when the store returns none.
+	 * @param string              $failure  The log line for a save that fails.
+	 *
+	 * @return string|null The bijlage UUID, or null when it could not be saved
+	 */
+	private function storeBijlage(array $object, string $fallback, string $failure): ?string {
 		try {
 			$objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
 			$register = $this->appConfig->getValueString(
@@ -309,32 +399,34 @@ class BeschikkingGenerationService {
 				default: ''
 			);
 
-			$output = [];
-			if (is_array($generated['output'] ?? null) === true) {
-				$output = $generated['output'];
-			}
-
 			$bijlage = $objectService->saveObject(
 				register: $register,
 				schema: 'beschikking_bijlage',
-				object: [
-					'caseId' => $caseId,
-					'type' => 'beschikking',
-					'outcome' => $outcome,
-					'fileId' => ($output['fileId'] ?? ($generated['fileId'] ?? '')),
-					'fileName' => ($output['name'] ?? ($generated['fileName'] ?? ('beschikking_' . $outcome . '.pdf'))),
-					'createdAt' => date('c'),
-					'title' => 'Beschikking ' . ucfirst($outcome),
-				]
+				object: $object
 			);
 
-			return (string)($bijlage['id'] ?? ($bijlage['uuid'] ?? ''));
+			return $this->savedId(saved: $bijlage, fallback: $fallback);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq BeschikkingGenerationService: could not attach bijlage: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return '';
+			$this->logBijlageNotSaved(failure: $failure, error: $e);
+			return null;
 		}//end try
-	}//end attachBijlageToZaak()
+	}//end storeBijlage()
+
+	/**
+	 * Log a bijlage that could not be saved: an error for a generated document, a warning for a stub.
+	 *
+	 * @param string     $failure What could not be done.
+	 * @param \Throwable $error   Why.
+	 *
+	 * @return void
+	 */
+	private function logBijlageNotSaved(string $failure, \Throwable $error): void {
+		$message = 'Dossiq BeschikkingGenerationService: ' . $failure . ': ' . $error->getMessage();
+		if ($failure === self::ATTACH_NOT_SAVED) {
+			$this->logger->error($message, ['app' => Application::APP_ID]);
+			return;
+		}
+
+		$this->logger->warning($message, ['app' => Application::APP_ID]);
+	}//end logBijlageNotSaved()
 }//end class

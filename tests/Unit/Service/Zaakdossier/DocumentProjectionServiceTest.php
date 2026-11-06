@@ -438,6 +438,42 @@ class DocumentProjectionServiceTest extends TestCase {
 	}//end testTheFirstJoinMovesAnApiFirstFileIntoTheCase()
 
 	/**
+	 * A record that does not name its file yet names it before the move, so the move's own file event finds that
+	 * record instead of projecting a second one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-homed-document-keeps-its-record/specs/document-projection/spec.md#requirement-a-document-names-its-file-before-the-file-moves-into-the-case
+	 */
+	public function testARecordNamesItsFileBeforeTheFileMoves(): void {
+		$steps = [];
+		$this->store->method('findRecord')->willReturn(['id' => self::RECORD_ID, 'fileName' => 'x.pdf']);
+		$node = $this->createMock(originalClassName: File::class);
+		$node->method('getId')->willReturn(900);
+		$node->expects($this->once())->method('move')->willReturnCallback(
+			static function () use (&$steps, $node): File {
+				$steps[] = 'move';
+				return $node;
+			}
+		);
+		$own = $this->createMock(originalClassName: Folder::class);
+		$own->method('nodeExists')->with('x.pdf')->willReturn(true);
+		$own->method('get')->with('x.pdf')->willReturn($node);
+		$caseFolder = $this->createMock(originalClassName: Folder::class);
+		$caseFolder->method('getPath')->willReturn('/openregister/files/Open Registers/R/' . self::CASE_ID);
+		$this->folders = [self::RECORD_ID => $own, self::CASE_ID => $caseFolder];
+		$this->store->expects($this->once())->method('saveRecord')->willReturnCallback(
+			static function (array $record) use (&$steps): string {
+				$steps[] = 'save fileId ' . (string)($record['fileId'] ?? '');
+				return self::RECORD_ID;
+			}
+		);
+
+		$this->assertTrue(condition: $this->service->homeDocument(recordId: self::RECORD_ID, caseId: self::CASE_ID));
+		$this->assertSame(expected: ['save fileId 900', 'move'], actual: $steps);
+	}//end testARecordNamesItsFileBeforeTheFileMoves()
+
+	/**
 	 * @return void
 	 */
 	public function testASecondJoinLeavesTheFileWhereItIs(): void {

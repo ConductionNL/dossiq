@@ -36,6 +36,7 @@ use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Woo\WooRequestIntake;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -215,6 +216,53 @@ class AanvullingsverzoekServiceTest extends TestCase {
 		self::assertSame(expected: 'handler1', actual: $request['requestedBy']);
 		self::assertNotSame(expected: '', actual: (string)$request['requestedAt']);
 	}//end testAskingWritesTheRequestNamingBothItems()
+
+	/**
+	 * The service, told what the case's type is.
+	 *
+	 * @param string $case The case's type identifier or id.
+	 *
+	 * @return AanvullingsverzoekService&MockObject The service.
+	 */
+	private function serviceForCase(string $case): AanvullingsverzoekService {
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(['act' => $this->act, 'settingsService' => $this->settings, 'logger' => new NullLogger()])
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'caseTypeOf'])
+			->getMock();
+		$service->method('openFor')->willReturn(null);
+		$service->method('write')->willReturnArgument(0);
+		$service->method('caseTypeOf')->willReturn($case);
+
+		return $service;
+	}//end serviceForCase()
+
+	/**
+	 * A clarification may be asked on any version of the Woo request case
+	 * type, and on no other type.
+	 *
+	 * @return void
+	 */
+	public function testAClarificationIsAskedOnEveryVersionOfTheWooCaseType(): void {
+		$this->act->method('ask')->willReturn($this->sent());
+		$ask = static fn (AanvullingsverzoekService $service): array => $service->ask(
+			caseId: 'case-1',
+			items: [],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			question: 'Welke periode bedoelt u?',
+		);
+
+		self::assertSame(expected: 'verduidelijking', actual: $ask($this->serviceForCase(case: WooRequestIntake::CASE_TYPE_ID))['kind']);
+		self::assertSame(expected: 'verduidelijking', actual: $ask($this->serviceForCase(case: 'woo-verzoek'))['kind']);
+
+		try {
+			$ask($this->serviceForCase(case: 'melding-openbare-ruimte'));
+			self::fail(message: 'a clarification on another case type is refused');
+		} catch (RefusedException $e) {
+			self::assertSame(expected: 'aanvullingsverzoek-clarification-woo-only', actual: $e->getRule());
+		}
+	}//end testAClarificationIsAskedOnEveryVersionOfTheWooCaseType()
 
 	/**
 	 * The hersteltermijn is the one the suspension landed on.

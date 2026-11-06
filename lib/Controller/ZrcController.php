@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\CaseHeldException;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
@@ -88,7 +89,6 @@ class ZrcController extends ZgwController {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $appName The application name
 	 * @param IRequest $request The incoming request
 	 * @param ZgwService $zgwService The shared ZGW service
 	 * @param IL10N $l10n The localization service
@@ -97,7 +97,6 @@ class ZrcController extends ZgwController {
 	 * @param DocumentJoinHoming $joinHoming Refuses a join to a case without a folder, and moves the file into it
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly ZgwService $zgwService,
 		private readonly IL10N $l10n,
@@ -105,7 +104,7 @@ class ZrcController extends ZgwController {
 		private readonly ZrcStatusEffects $statusEffects,
 		private readonly DocumentJoinHoming $joinHoming,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

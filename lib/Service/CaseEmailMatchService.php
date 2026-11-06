@@ -56,10 +56,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Email\MailMatchSources;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
+use OCA\Dossiq\Service\Email\CaseMailLeaf;
 use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
-use OCA\Dossiq\Service\Email\MailMessageSource;
 use OCP\IUser;
 use OCP\IUserManager;
 use Psr\Container\ContainerInterface;
@@ -98,20 +99,16 @@ class CaseEmailMatchService {
 	 * Constructor.
 	 *
 	 * @param SettingsService           $settingsService Register/schema config and the object service.
-	 * @param CaseEmailMatchPreferences $preferences     Per-user settings, cursor and status.
-	 * @param CaseNumberRecognizer      $recognizer      Case numbers in text, resolved to cases.
+	 * @param MailMatchSources $matching The match preferences, the case number recognizer and the mail message source.
 	 * @param IUserManager              $userManager     Resolves the mailbox owner.
-	 * @param MailMessageSource         $messages        Mail accounts and messages.
 	 * @param ContainerInterface        $container       Resolves OpenRegister's email leaf.
 	 * @param LoggerInterface           $logger          Logger.
 	 * @param CaseMergeService          $mergeService    Follows a merged case to its survivor.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly CaseEmailMatchPreferences $preferences,
-		private readonly CaseNumberRecognizer $recognizer,
+		private readonly MailMatchSources $matching,
 		private readonly IUserManager $userManager,
-		private readonly MailMessageSource $messages,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly CaseMergeService $mergeService,
@@ -146,7 +143,7 @@ class CaseEmailMatchService {
 			return $nothing;
 		}
 
-		$settings = $this->preferences->getUserSettings(userId: $userId);
+		$settings = $this->matching->preferences->getUserSettings(userId: $userId);
 		$owner = $this->userManager->get($userId);
 		if ($settings['enabled'] === false || $settings['account'] <= 0 || $owner === null) {
 			return $nothing;
@@ -154,21 +151,21 @@ class CaseEmailMatchService {
 
 		$context = $this->prepareRun(owner: $owner, accountId: $settings['account']);
 		if (is_string($context) === true) {
-			$this->preferences->writeStatus(userId: $userId, linked: 0, scanned: 0, error: $context);
+			$this->matching->preferences->writeStatus(userId: $userId, linked: 0, scanned: 0, error: $context);
 			return $nothing;
 		}
 
-		$cursor = $this->preferences->readCursor(userId: $userId);
+		$cursor = $this->matching->preferences->readCursor(userId: $userId);
 		if ($cursor === CaseEmailMatchPreferences::CURSOR_UNSET) {
 			// First run on this account: start at what is already there, so
 			// switching matching on does not retro-link a mailbox history.
-			$this->preferences->writeCursor(userId: $userId, cursor: $this->messages->maxMessageId(accountId: $settings['account']));
-			$this->preferences->writeStatus(userId: $userId, linked: 0, scanned: 0, error: null);
+			$this->matching->preferences->writeCursor(userId: $userId, cursor: $this->matching->messages->maxMessageId(accountId: $settings['account']));
+			$this->matching->preferences->writeStatus(userId: $userId, linked: 0, scanned: 0, error: null);
 			return $nothing;
 		}
 
 		$outcome = $this->processBatchAsOwner(
-			batch: $this->messages->listMessagesSince(accountId: $settings['account'], sinceId: $cursor, limit: self::BATCH_SIZE),
+			batch: $this->matching->messages->listMessagesSince(accountId: $settings['account'], sinceId: $cursor, limit: self::BATCH_SIZE),
 			context: $context,
 			owner: $owner,
 			accountId: $settings['account'],
@@ -176,10 +173,10 @@ class CaseEmailMatchService {
 		);
 
 		if ($outcome['cursor'] > $cursor) {
-			$this->preferences->writeCursor(userId: $userId, cursor: $outcome['cursor']);
+			$this->matching->preferences->writeCursor(userId: $userId, cursor: $outcome['cursor']);
 		}
 
-		$this->preferences->writeStatus(userId: $userId, linked: $outcome['linked'], scanned: $outcome['scanned'], error: null);
+		$this->matching->preferences->writeStatus(userId: $userId, linked: $outcome['linked'], scanned: $outcome['scanned'], error: null);
 
 		return ['linked' => $outcome['linked'], 'scanned' => $outcome['scanned']];
 	}//end runForUser()
@@ -197,7 +194,7 @@ class CaseEmailMatchService {
 	 * @return array{objectService: object, linkService: object, pattern: string, register: string, schema: string}|string
 	 */
 	private function prepareRun(IUser $owner, int $accountId): array|string {
-		if ($this->messages->ownsAccount(accountId: $accountId, userId: $owner->getUID()) === false) {
+		if ($this->matching->messages->ownsAccount(accountId: $accountId, userId: $owner->getUID()) === false) {
 			$this->logger->warning(
 				'Dossiq: email case matching refused, the configured Mail account is not the user\'s own',
 				['app' => Application::APP_ID, 'userId' => $owner->getUID(), 'accountId' => $accountId]
@@ -205,7 +202,7 @@ class CaseEmailMatchService {
 			return 'account_not_owned';
 		}
 
-		$pattern = $this->recognizer->loadPattern();
+		$pattern = $this->matching->recognizer->loadPattern();
 		if ($pattern === null) {
 			return 'pattern_invalid';
 		}
@@ -375,8 +372,8 @@ class CaseEmailMatchService {
 	 * @return array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> The cases.
 	 */
 	private function casesIn(string $text, array $context, IUser $owner): array {
-		$cases = $this->recognizer->resolveCases(
-			candidates: $this->recognizer->extractCaseNumberCandidates(text: $text, pattern: $context['pattern']),
+		$cases = $this->matching->recognizer->resolveCases(
+			candidates: $this->matching->recognizer->extractCaseNumberCandidates(text: $text, pattern: $context['pattern']),
 			objectService: $context['objectService'],
 			register: $context['register'],
 			schema: $context['schema'],
@@ -434,14 +431,7 @@ class CaseEmailMatchService {
 			return false;
 		}
 
-		$linkService->linkEmail(
-			objectUuid: $case['uuid'],
-			registerId: $case['registerId'],
-			schemaId: $case['schemaId'],
-			mailAccountId: $accountId,
-			messageId: (string)$message['id'],
-			messageUid: $message['uid']
-		);
+		(new CaseMailLeaf(linkService: $linkService, accountId: $accountId))->link(case: $case, message: $message);
 
 		return true;
 	}//end linkCase()

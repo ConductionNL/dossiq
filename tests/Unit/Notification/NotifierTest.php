@@ -38,6 +38,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the Dossiq Notifier class.
  *
  * @covers \OCA\Dossiq\Notification\Notifier
+ * @uses   \OCA\Dossiq\Service\QuotaLimitLabel
  */
 class NotifierTest extends TestCase {
 
@@ -464,6 +465,12 @@ class NotifierTest extends TestCase {
 	 */
 	public static function subjectWordingProvider(): array {
 		return [
+			'tenant near its users limit' => [
+				Notifier::SUBJECT_QUOTA_SOFT_LIMIT,
+				['quotaType' => 'active_users', 'used' => 4, 'limit' => 5],
+				'Your organisation is close to its limit of 5 users',
+				'Used this period: 4 of 5 users.',
+			],
 			'milestone with a name and a count' => [
 				Notifier::SUBJECT_MILESTONE_BOTTLENECK,
 				['milestone' => 'Toets ontvankelijkheid', 'daysOverdue' => 4],

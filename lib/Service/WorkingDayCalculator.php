@@ -61,6 +61,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Weekend, holiday and working-day arithmetic for the Dutch calendar.
@@ -123,6 +124,14 @@ class WorkingDayCalculator {
 	 * @var boolean
 	 */
 	private bool $degradationLogged = false;
+
+	/**
+	 * The longest run of non-working days a search crosses before it says the
+	 * calendar has no working day at all.
+	 *
+	 * @var int
+	 */
+	private const MAX_NON_WORKING_RUN = 366;
 
 	/**
 	 * Constructor.
@@ -270,17 +279,14 @@ class WorkingDayCalculator {
 	 *
 	 * @return DateTimeImmutable The resulting date-time.
 	 *
+	 * @throws RuntimeException When the calendar has no working day in a year.
+	 *
 	 * @spec openspec/specs/milestone-tracking/spec.md
 	 */
 	public function addWorkingDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
 		$result = $start;
-		$remaining = max(0, $days);
-
-		while ($remaining > 0) {
-			$result = $result->modify('+1 day');
-			if ($this->isWorkingDay(date: $result) === true) {
-				$remaining--;
-			}
+		for ($remaining = max(0, $days); $remaining > 0; $remaining--) {
+			$result = $this->nextWorkingDay(date: $result->modify('+1 day'));
 		}
 
 		return $result;
@@ -300,11 +306,19 @@ class WorkingDayCalculator {
 	 *
 	 * @return DateTimeImmutable The first working day on or after the date.
 	 *
+	 * @throws RuntimeException When the calendar has no working day in a year.
+	 *
 	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function nextWorkingDay(DateTimeImmutable $date): DateTimeImmutable {
 		$cursor = $date;
-		while ($this->isWorkingDay(date: $cursor) === false) {
+		for ($step = 0; $this->isWorkingDay(date: $cursor) === false; $step++) {
+			if ($step >= self::MAX_NON_WORKING_RUN) {
+				throw new RuntimeException(
+					'The calendar has no working day in the '.self::MAX_NON_WORKING_RUN.' days from '.$date->format('Y-m-d').'.'
+				);
+			}
+
 			$cursor = $cursor->modify('+1 day');
 		}
 

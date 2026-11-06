@@ -236,7 +236,7 @@ class ConsultationController extends Controller {
 			return $authError;
 		}
 
-		$overdue = $this->consultationService->getOverdueConsultations();
+		$overdue = $this->consultationService->getOverdueConsultations(mayRead: $this->accessGuard->readableFilter());
 		return new JSONResponse(['results' => $overdue]);
 	}//end overdue()
 

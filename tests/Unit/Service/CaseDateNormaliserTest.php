@@ -48,10 +48,11 @@ class CaseDateNormaliserTest extends TestCase {
 	 *
 	 * @param string|null $tenantZone The administered zone, or null for none.
 	 * @param LoggerInterface|null $logger An optional logger to assert on.
+	 * @param string $appZone The app's own `timezone` setting.
 	 *
 	 * @return CaseDateNormaliser
 	 */
-	private function normaliser(?string $tenantZone, ?LoggerInterface $logger = null): CaseDateNormaliser {
+	private function normaliser(?string $tenantZone, ?LoggerInterface $logger = null, string $appZone = ''): CaseDateNormaliser {
 		$context = $this->createMock(originalClassName: TenantContext::class);
 		$context->method('isBound')->willReturn($tenantZone !== null);
 		$context->method('getTenantId')->willReturn('tenant-1');
@@ -66,6 +67,7 @@ class CaseDateNormaliserTest extends TestCase {
 
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
+		$settings->method('getConfigValue')->willReturnMap([['timezone', '', $appZone]]);
 
 		return new CaseDateNormaliser(
 			tenantContext: $context,
@@ -87,6 +89,20 @@ class CaseDateNormaliserTest extends TestCase {
 		self::assertSame(
 			expected: 'Europe/Amsterdam',
 			actual: $this->normaliser(tenantZone: null)->timeZone()->getName()
+		);
+	}
+
+	/**
+	 * With no tenant bound, the app's own time zone setting is the zone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
+	 */
+	public function testNoTenantReadsTheAppTimeZone(): void {
+		self::assertSame(
+			expected: 'Europe/Brussels',
+			actual: $this->normaliser(tenantZone: null, appZone: 'Europe/Brussels')->timeZone()->getName()
 		);
 	}
 

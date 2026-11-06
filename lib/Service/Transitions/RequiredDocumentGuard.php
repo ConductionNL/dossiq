@@ -27,12 +27,24 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCP\IL10N;
+
 /**
  * Guard: verifies the case has at least one document of the required type.
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T05
  */
 class RequiredDocumentGuard implements GuardEvaluatorInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param IL10N $l10n Translates the refusal.
+	 */
+	public function __construct(
+		private readonly IL10N $l10n,
+	) {
+	}//end __construct()
+
 	/**
 	 * Evaluate the required-document guard.
 	 *
@@ -71,7 +83,7 @@ class RequiredDocumentGuard implements GuardEvaluatorInterface {
 
 		return new GuardResult(
 			passed: false,
-			failureMessage: sprintf('Vereist document ontbreekt: %s', $required),
+			failureMessage: $this->l10n->t('Required document missing: %s', [$required]),
 			details: ['documentType' => $required],
 		);
 	}//end evaluate()

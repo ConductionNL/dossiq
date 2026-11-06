@@ -134,8 +134,8 @@ test.describe('The adaptive case plan after the local engine retired', () => {
 	 */
 	const row = (page: any, key: string) =>
 		page
-			.getByTestId('case-plan')
-			.locator('.case-plan__row')
+			.getByTestId('cn-plan')
+			.locator('.cn-plan-row')
 			.filter({
 				hasText: PLAN_ITEMS.find((item) => item.id === key)?.name ?? key,
 			})
@@ -157,21 +157,21 @@ test.describe('The adaptive case plan after the local engine retired', () => {
 		})
 
 		await page.goto(`/apps/${REGISTER}/cases/${liveCase}`)
-		await expect(page.getByTestId('case-plan')).toBeVisible(PAGE_LOAD)
+		await expect(page.getByTestId('cn-plan')).toBeVisible(PAGE_LOAD)
 
 		for (const item of PLAN_ITEMS) {
 			await expect(row(page, item.id)).toBeVisible({ timeout: 30_000 })
 		}
-		await expect(page.getByTestId('case-plan-error')).toHaveCount(0)
+		await expect(page.getByTestId('cn-plan-error')).toHaveCount(0)
 		expect(
 			planCalls.some((call) => call.includes(liveCase)),
 			'the plan is read from OpenRegister',
 		).toBe(true)
 
 		// The panel offers the move; OpenRegister takes it.
-		await page.getByTestId('case-plan-completed-controle').click()
+		await page.getByTestId('cn-plan-completed-controle').click()
 		await expect(
-			row(page, 'controle').locator('.case-plan__state'),
+			row(page, 'controle').locator('.cn-plan-row__state'),
 		).toHaveAttribute('data-state', 'completed', { timeout: 30_000 })
 		expect(
 			planCalls.some((call) => /^POST .*\/transition/.test(call)),
@@ -224,11 +224,11 @@ test.describe('The adaptive case plan after the local engine retired', () => {
 		await api.dispose()
 
 		await page.goto(`/apps/${REGISTER}/cases/${drainCase}`)
-		await expect(page.getByTestId('case-plan')).toBeVisible(PAGE_LOAD)
+		await expect(page.getByTestId('cn-plan')).toBeVisible(PAGE_LOAD)
 
 		for (const [key, state] of Object.entries(RECORDED)) {
 			await expect(
-				row(page, key).locator('.case-plan__state'),
+				row(page, key).locator('.cn-plan-row__state'),
 				`${key} is ${state}`,
 			).toHaveAttribute('data-state', state, { timeout: 30_000 })
 		}

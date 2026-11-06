@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service;
 
 use GuzzleHttp\Client;
 use OCA\Dossiq\Service\Outbound\OutboundUrlGuard;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
@@ -103,6 +104,7 @@ abstract class ZgwRulesBase {
 	 * @param LoggerInterface $logger The logger
 	 * @param SettingsService $settingsService The settings service
 	 * @param FieldValidator $fieldValidator The stateless field-format validator
+	 * @param LanguageMapText $text Reads a translatable field of a stored type row as text
 	 *
 	 * @return void
 	 */
@@ -110,6 +112,7 @@ abstract class ZgwRulesBase {
 		protected readonly LoggerInterface $logger,
 		protected readonly SettingsService $settingsService,
 		protected readonly FieldValidator $fieldValidator,
+		protected readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 		$this->results = new ZgwRuleResults(logger: $logger);
 		$this->lookups = new ZgwRuleLookups(settingsService: $settingsService);
@@ -574,6 +577,22 @@ abstract class ZgwRulesBase {
 	): array {
 		return $this->lookups->findAllObjectsByField(register: $register, schema: $schema, field: $field, value: $value);
 	}//end findAllObjectsByField()
+
+	/**
+	 * A translatable field of a stored type row as text.
+	 *
+	 * Type names and titles are declared translatable, so a row read from the
+	 * store carries them as a language map rather than a string.
+	 *
+	 * @param mixed $value A string or a language map.
+	 *
+	 * @return string The text, or '' when there is none.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	protected function textOf(mixed $value): string {
+		return $this->text->textOf(value: $value);
+	}//end textOf()
 
 	/**
 	 * Look up an object in OpenRegister by UUID and schema key.

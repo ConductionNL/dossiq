@@ -1,4 +1,3 @@
-import { useBezwaarStore } from './modules/bezwaar.js'
 import { useObjectStore } from './modules/object.js'
 import { useSettingsStore } from './modules/settings.js'
 
@@ -113,6 +112,14 @@ export async function initializeStores() {
 				config.register,
 			)
 		}
+		// A case type rule names its message by template id; the rule rows read the names through this type.
+		if (config.register) {
+			objectStore.registerObjectType(
+				'emailTemplate',
+				config.email_template_schema || 'emailTemplate',
+				config.register,
+			)
+		}
 		if (config.register && config.decision_type_schema) {
 			objectStore.registerObjectType(
 				'decisionType',
@@ -195,4 +202,4 @@ export async function initializeStores() {
 	return { settingsStore, objectStore }
 }
 
-export { useBezwaarStore, useObjectStore, useSettingsStore }
+export { useObjectStore, useSettingsStore }

@@ -81,7 +81,7 @@ class EmailSettings implements IDelegatedSettings {
 	 * @return TemplateResponse
 	 *
 	 * @spec openspec/specs/case-email-integration/spec.md
-	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getForm(): TemplateResponse {
 		return new TemplateResponse(

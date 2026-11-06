@@ -26,21 +26,13 @@
   @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:subtitle="t('dossiq', 'The case as OpenRegister stores it, nothing left out and nothing renamed.')"
 		:name="t('dossiq', 'Raw data')"
 		size="large"
 		data-testid="case-raw-data-dialog"
 		@closing="$emit('close')">
 		<div class="case-raw-data">
-			<p class="case-raw-data__explainer">
-				{{
-					t(
-						'dossiq',
-						'The case as Open Register stored it, with nothing left out and nothing renamed.',
-					)
-				}}
-			</p>
-
 			<NcLoadingIcon v-if="busy" :size="32" />
 
 			<pre
@@ -48,6 +40,23 @@
 				class="case-raw-data__json"
 				data-testid="case-raw-data-json"
 				>{{ raw }}</pre>
+
+			<p class="case-raw-data__note" data-testid="case-raw-data-note">
+				{{
+					t(
+						'dossiq',
+						'Only for administrators. Reading changes nothing, but opening it is recorded in the processing log.',
+					)
+				}}
+			</p>
+
+			<p
+				v-if="copied"
+				class="case-raw-data__copied"
+				data-testid="case-raw-data-copied"
+				role="status">
+				{{ t('dossiq', 'Copied to your clipboard.') }}
+			</p>
 
 			<p
 				v-if="error"
@@ -60,24 +69,35 @@
 
 		<template #actions>
 			<NcButton data-testid="case-raw-data-close" @click="$emit('close')">
-				{{ t('dossiq', 'Close') }}
+				{{ t('dossiq', 'Cancel') }}
+			</NcButton>
+			<NcButton
+				data-testid="case-raw-data-copy"
+				variant="primary"
+				:disabled="raw === ''"
+				@click="copy">
+				<template #icon>
+					<ContentCopy :size="20" />
+				</template>
+				{{ t('dossiq', 'Copy') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 
 export default {
 	name: 'CaseRawDataDialog',
 
-	components: { NcButton, NcDialog, NcLoadingIcon },
+	components: { NcButton, CnDialog, ContentCopy, NcLoadingIcon },
 
 	props: {
 		/**
@@ -97,6 +117,7 @@ export default {
 			raw: '',
 			error: '',
 			busy: false,
+			copied: false,
 		}
 	},
 
@@ -122,6 +143,22 @@ export default {
 
 	methods: {
 		t,
+
+		/**
+		 * Put the JSON on the clipboard, and say so.
+		 *
+		 * @return {Promise<void>} Nothing.
+		 * @spec openspec/specs/case-dialogs/spec.md#requirement-ruwe-gegevens-copies-the-stored-case-and-says-who-it-is-for
+		 */
+		async copy() {
+			this.copied = false
+			try {
+				await navigator.clipboard.writeText(this.raw)
+				this.copied = true
+			} catch {
+				this.error = t('dossiq', 'The JSON could not be copied. Select it and copy it by hand.')
+			}
+		},
 
 		/**
 		 * Fetch the stored object and render it as indented JSON.
@@ -169,8 +206,10 @@ export default {
 	padding: 8px 0;
 }
 
-.case-raw-data__explainer {
+.case-raw-data__note,
+.case-raw-data__copied {
 	color: var(--color-text-maxcontrast);
+	font-size: 13px;
 	margin: 0;
 }
 

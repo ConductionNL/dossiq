@@ -154,7 +154,7 @@ class CaseIdentitySchemaTest extends TestCase {
 		);
 		$pad = (int)$found[1];
 
-		$path = __DIR__ . '/../../../lib/Settings/register.d/46-demo-cases-english.json';
+		$path = __DIR__ . '/../../../lib/Settings/demo.d/46-english-cases.json';
 		$raw  = file_get_contents($path);
 		$this->assertIsString($raw, 'the shipped demo cases must be readable');
 

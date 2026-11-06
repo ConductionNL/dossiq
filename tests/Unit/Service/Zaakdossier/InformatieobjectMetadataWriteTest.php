@@ -19,12 +19,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Tests\Unit\Fixtures\PatchingObjectService;
@@ -43,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
  */
 class InformatieobjectMetadataWriteTest extends TestCase {
@@ -123,7 +126,7 @@ class InformatieobjectMetadataWriteTest extends TestCase {
 
 		return new ZaakdossierService(
 			$settings,
-			new InformatieobjectAccessGuard($settings, $this->createMock(IGroupManager::class), $logger),
+			new InformatieobjectAccessGuard($settings, $this->createMock(IGroupManager::class), $logger, $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true])),
 			new InformatieobjectStatusLifecycle($settings, $logger),
 			new InformatieobjectMetadataNormaliser(),
 			$logger,
@@ -133,6 +136,7 @@ class InformatieobjectMetadataWriteTest extends TestCase {
 				people: $this->createMock(originalClassName: PersonLinkReader::class),
 				settingsService: $settings,
 				store: new DocumentRecordStore(settingsService: $settings),
+				labels: new DocumentListingLabels(settingsService: $settings),
 			),
 		);
 

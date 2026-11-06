@@ -266,15 +266,71 @@ class RecordImportStore {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['identifier' => $caseType, '_limit' => 1]
+				filters: ['identifier' => $caseType, '_limit' => 50]
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('RecordImportStore: the case type could not be read', ['caseType' => $caseType, 'error' => $e->getMessage()]);
 			return null;
 		}
 
-		return ($rows[0] ?? null);
+		return $this->versionInUse(rows: $rows);
 	}//end caseType()
+
+		/**
+	 * Every case type version in use: not superseded and not a draft.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 *
+	 * @return list<array<string, mixed>> The case types.
+	 *
+	 * @throws Throwable When the case types cannot be read: an unread list is
+	 *                   not "no case type imports anything", so the caller says so.
+	 *
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-declared-imports-run-on-upgrade-req-cri-007
+	 */
+	public function caseTypesInUse(object $objectService): array {
+		$rows = $this->listAll(
+			objectService: $objectService,
+			register: (string)$this->settingsService->getConfigValue('register'),
+			schema: (string)$this->settingsService->getConfigValue('case_type_schema'),
+			filters: []
+		);
+
+		return array_values(array_filter($rows, fn (array $row): bool => $this->inUse(row: $row)));
+	}//end caseTypesInUse()
+
+	/**
+	 * Whether a case type version is in use: not superseded and not a draft.
+	 *
+	 * @param array<string, mixed> $row The case type.
+	 *
+	 * @return bool True when in use.
+	 */
+	private function inUse(array $row): bool {
+		return trim((string)($row['supersededBy'] ?? '')) === '' && ($row['isDraft'] ?? false) !== true;
+	}//end inUse()
+
+/**
+	 * Of the versions that share an identifier, the one new cases get: the
+	 * newest published version nothing has superseded, else the first row.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The versions.
+	 *
+	 * @return array<string, mixed>|null The version in use, or null when there is none.
+	 *
+	 * @spec openspec/changes/woo-five-steps/specs/case-type-version-chain/spec.md#requirement-the-woo-request-case-type-has-a-second-version-with-five-steps
+	 */
+	private function versionInUse(array $rows): ?array {
+		$current = array_values(
+			array_filter(
+				$rows,
+				fn (array $row): bool => $this->inUse(row: $row)
+			)
+		);
+		usort($current, static fn (array $left, array $right): int => ((int)($right['version'] ?? 0) <=> (int)($left['version'] ?? 0)));
+
+		return ($current[0] ?? ($rows[0] ?? null));
+	}//end versionInUse()
 
 	/**
 	 * Every row of one schema, page by page.

@@ -37,7 +37,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget;
-use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
@@ -75,18 +74,14 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SettingsService        $settingsService Schema slug bridge.
-	 * @param CaseTypeResolver       $resolver        The type's statuses, inherited ones included.
-	 * @param CaseTypeStore          $store           The type's active workflow template.
-	 * @param PortalWithdrawalTarget $target          Owns the rule.
+	 * @param CaseTypeLookup $caseTypes The case type resolver and store, and the portal withdrawal target.
 	 * @param IL10N                  $l10n            Translation service.
 	 * @param LoggerInterface        $logger          Structured logger.
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly CaseTypeResolver $resolver,
-		private readonly CaseTypeStore $store,
-		private readonly PortalWithdrawalTarget $target,
+		private readonly CaseTypeLookup $caseTypes,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly LanguageMapText $text = new LanguageMapText(),
@@ -140,7 +135,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 			return;
 		}
 
-		$refusal = $this->target->refusal(
+		$refusal = $this->caseTypes->target->refusal(
 			withdrawal: $withdrawal,
 			statuses: $this->statuses(caseTypeId: $self),
 			moves: $this->moves(caseTypeId: $self, payload: $payload)
@@ -197,8 +192,8 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 */
 	private function statuses(string $caseTypeId): array {
 		$statuses = [];
-		foreach ($this->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $status) {
-			$id = $this->store->rowId(row: $status);
+		foreach ($this->caseTypes->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $status) {
+			$id = $this->caseTypes->store->rowId(row: $status);
 			if ($id === '') {
 				continue;
 			}
@@ -232,7 +227,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 *
 	 * @return array<int, array<string, mixed>> The transitions.
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function moves(string $caseTypeId, array $payload): array {
 		$named = ($payload['workflowDefinition'] ?? null);
@@ -240,7 +235,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 			$named = null;
 		}
 
-		$raw = ($this->store->activeTemplate(caseTypeId: $caseTypeId, named: $named)['transitions'] ?? []);
+		$raw = ($this->caseTypes->store->activeTemplate(caseTypeId: $caseTypeId, named: $named)['transitions'] ?? []);
 		if (is_string($raw) === true) {
 			$raw = json_decode($raw, true);
 		}

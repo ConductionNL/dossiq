@@ -140,10 +140,10 @@ function idOf(row: any): string {
 }
 
 test.describe('package vth', () => {
-	// @e2e openspec/changes/vth-package/specs/vth-case-type-seed/spec.md#scenario-a-clean-install-has-the-six-vth-case-types
-	// @e2e openspec/changes/vth-package/specs/vth-case-type-seed/spec.md#scenario-an-upgraded-instance-keeps-one-case-type-per-title
-	// @e2e openspec/changes/vth-package/specs/vth-workflow-templates/spec.md#scenario-handhavingszaak-has-two-routes
-	// @e2e openspec/changes/vth-package/specs/vth-case-type-seed/spec.md#scenario-toezichtzaak-bouw-has-its-three-checklists
+	// @e2e openspec/specs/vth-case-type-seed/spec.md#scenario-a-clean-install-has-the-six-vth-case-types
+	// @e2e openspec/specs/vth-case-type-seed/spec.md#scenario-an-upgraded-instance-keeps-one-case-type-per-title
+	// @e2e openspec/specs/vth-workflow-templates/spec.md#scenario-handhavingszaak-has-two-routes
+	// @e2e openspec/specs/vth-case-type-seed/spec.md#scenario-toezichtzaak-bouw-has-its-three-checklists
 	test('an administrator finds the six VTH case types, both handhaving routes and the checklists', async ({
 		page,
 	}) => {
@@ -199,9 +199,9 @@ test.describe('package vth', () => {
 		}
 	})
 
-	// @e2e openspec/changes/vth-package/specs/vth-workflow-templates/spec.md#scenario-a-draft-flow-is-stored-as-a-draft
-	// @e2e openspec/changes/vth-package/specs/vth-workflow-templates/spec.md#scenario-a-case-does-not-follow-a-draft-flow
-	// @e2e openspec/changes/vth-package/specs/vth-workflow-templates/spec.md#scenario-a-case-type-with-only-a-draft-flow-keeps-its-basis-flow
+	// @e2e openspec/specs/vth-workflow-templates/spec.md#scenario-a-draft-flow-is-stored-as-a-draft
+	// @e2e openspec/specs/vth-workflow-templates/spec.md#scenario-a-case-does-not-follow-a-draft-flow
+	// @e2e openspec/specs/vth-workflow-templates/spec.md#scenario-a-case-type-with-only-a-draft-flow-keeps-its-basis-flow
 	test('the six draft flows are drafts, and no case follows one', async ({
 		page,
 	}) => {

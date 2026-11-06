@@ -37,24 +37,24 @@ would return 500 on every route in this app rather than only the store's.
 
 ### Requirement: REQ-DSS-002 No registry means no network call
 
-With no `registry_url` configured, the store surface SHALL report
+With no `registry_url` configured, the marketplace surface SHALL report
 `not_configured`, render the app's built-in templates, and make no outbound
 request.
 
-A local-only card grid is a Templates page. It may only be labelled "Store"
+A local-only card grid is a Templates page. It may only be labelled "Marketplace"
 because the registry path exists and is merely unconfigured.
 
 #### Scenario: An unconfigured instance stays offline
 
 - **GIVEN** an instance with no `registry_url` set
-- **WHEN** the store surface is opened
+- **WHEN** the marketplace surface is opened
 - **THEN** the response outcome MUST be `not_configured`
 - **AND** no outbound HTTP request MUST be made
 
 #### Scenario: The page still renders
 
 - **GIVEN** the same unconfigured instance
-- **THEN** the Store page MUST render dossiq's built-in templates rather than
+- **THEN** the Marketplace page MUST render dossiq's built-in templates rather than
   an error
 
 ### Requirement: REQ-DSS-003 Install accepts configuration and refuses records
@@ -75,27 +75,27 @@ accepting data.
 
 #### Scenario: A configuration component installs
 
-- **GIVEN** a store item carrying one `caseType` component
+- **GIVEN** a marketplace item carrying one `caseType` component
 - **WHEN** it is installed
 - **THEN** the case type MUST be written through the app's configured registry
 - **AND** the result MUST report that component as installed
 
 #### Scenario: A record component is refused
 
-- **GIVEN** a store item carrying one `case` component
+- **GIVEN** a marketplace item carrying one `case` component
 - **WHEN** it is installed
 - **THEN** nothing MUST be written for that component
 - **AND** the result MUST name it as refused
 
 #### Scenario: A mixed item installs the half it may
 
-- **GIVEN** a store item carrying a `caseType` and a `task`
+- **GIVEN** a marketplace item carrying a `caseType` and a `task`
 - **WHEN** it is installed
 - **THEN** the case type MUST be written and the task MUST be refused
 
 ### Requirement: REQ-DSS-004 The registry token is write-only
 
-Reading the store settings SHALL expose whether a token is set, never its value.
+Reading the marketplace settings SHALL expose whether a token is set, never its value.
 
 Saving an empty token SHALL leave the stored token unchanged, so an
 administrator editing the registry URL does not silently clear the credential.
@@ -105,7 +105,7 @@ administrator editing the registry URL does not silently clear the credential.
 #### Scenario: A read never returns the token
 
 - **GIVEN** a configured registry with a token
-- **WHEN** the store settings are read
+- **WHEN** the marketplace settings are read
 - **THEN** the response MUST carry `registryTokenSet: true`
 - **AND** the response MUST NOT carry the token value under any key
 
@@ -117,7 +117,7 @@ administrator editing the registry URL does not silently clear the credential.
 
 ### Requirement: REQ-DSS-005 Browsing is authenticated, installing is administrative
 
-Search SHALL require an authenticated user. Install and the store settings
+Search SHALL require an authenticated user. Install and the marketplace settings
 SHALL require administrator authorization.
 
 Installing writes case-type configuration that every handler then works
@@ -138,13 +138,13 @@ against, which is an administrative act even though browsing is not.
 
 ### Requirement: REQ-DSS-006 The menu entry names the concept
 
-The store menu entry SHALL be labelled `Store` and render the `StoreOutline`
+The marketplace menu entry SHALL be labelled `Marketplace` (Dutch `Marktplaats`) and render the `StoreOutline`
 icon, in the footer section between Documentation and Reports.
 
 #### Scenario: The entry carries the Tier A glyph
 
 - **GIVEN** the dossiq manifest
-- **THEN** the entry labelled `Store` MUST declare `icon: "StoreOutline"`
+- **THEN** the entry labelled `Marketplace` MUST declare `icon: "StoreOutline"`
 - **AND** it MUST sit in the `footer` section with an order between
   Documentation and Reports
 
@@ -157,7 +157,7 @@ NEW local object.
 OpenRegister resolves the object it writes from the payload itself: `saveObject`
 reads `@self.id` first and `id` second, and treats a match as the uuid to
 UPDATE. The write is PUT-semantic, so keys the payload omits are nulled rather
-than left alone. A store item carrying the uuid of a live case type would
+than left alone. A marketplace item carrying the uuid of a live case type would
 therefore not merely change it, it would gut it.
 
 The schema allowlist does NOT cover this. It governs which schema a component
@@ -171,7 +171,19 @@ idempotent it SHALL key on something dossiq controls.
 
 #### Scenario: A component carrying an id installs as a new object
 
-- **GIVEN** a store item whose component object carries `id`, `uuid` and `@self`
+- **GIVEN** a marketplace item whose component object carries `id`, `uuid` and `@self`
 - **WHEN** it is installed
 - **THEN** none of those keys MUST reach the write
 - **AND** the rest of the component MUST still install
+
+### Requirement: The publish route answers
+
+`POST /api/store/publish` MUST answer: 401 to an anonymous caller, 403 to a user `canPublish()` does not admit, 400 without an `item`, and otherwise the outcome OpenRegister's store service gives for dossiq's store.
+
+#### Scenario: a publish to dossiq's store
+
+@e2e exclude Asserted in tests/Unit/Controller/StoreControllerTest.php; dossiq declares no publish fields, so the outcome is not_publishable.
+
+- GIVEN a signed-in user
+- WHEN they post an item to /api/store/publish
+- THEN the answer is 200 with outcome not_publishable, never a server error

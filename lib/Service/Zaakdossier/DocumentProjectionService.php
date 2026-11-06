@@ -246,13 +246,20 @@ class DocumentProjectionService {
 
 		$node = $ownFolder->get($fileName);
 		$previousId = $node->getId();
+		if ((int)($record['fileId'] ?? 0) !== $previousId) {
+			// The move's file event finds the record by its file; without this it projects a second record.
+			$record['fileId'] = $previousId;
+			$this->store->saveRecord(record: $record);
+		}
+
 		$moved = $node->move($caseFolder->getPath() . '/' . $fileName);
 		$this->logger->info(
 			'Dossiq documents: moved ' . $fileName . ' of ' . $recordId . ' into case ' . $caseId,
 			['app' => Application::APP_ID],
 		);
 
-		if ($moved->getId() !== $previousId || (int)($record['fileId'] ?? 0) !== $moved->getId()) {
+		if ($moved->getId() !== $previousId) {
+			$record = ($this->store->findRecord(recordId: $recordId) ?? $record);
 			$record['fileId'] = $moved->getId();
 			$this->store->saveRecord(record: $record);
 		}
@@ -317,7 +324,7 @@ class DocumentProjectionService {
 	 *
 	 * @throws RuntimeException When the folder stays locked.
 	 *
-	 * @spec openspec/changes/case-folder-lookup-survives-a-parallel-create/specs/document-projection/spec.md
+	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	private function folderWhenUnlocked(object $fileService, string $objectId, string $register): mixed {
 		$attempt = 0;

@@ -118,11 +118,14 @@ describe('appinfo/attention.json follows the attention feed contract', () => {
 })
 
 describe('the declared item is the dashboard\'s own "First today" card', () => {
-	it('declares the item the card shows', () => {
+	it('declares the item the card counts on', () => {
+		// The card on the landing page names ONE case, the first row of the
+		// same query (`{subject.title}`); the feed item counts them (`{value}`).
+		// What they share is the count: severity, condition, query and link.
 		expect(item).toBeTruthy()
 		expect(card.layout).toBe('attention')
-		expect(item.title).toBe(card.title)
-		expect(item.reason).toBe(card.reason)
+		expect(card.title).toBe('{subject.title}')
+		expect(item.reason).toContain('{value}')
 		expect(item.severity).toBe(card.variant)
 		expect(item.op ?? 'gt').toBe(card.visibleWhen.op)
 		expect(item.value ?? 0).toBe(card.visibleWhen.value)

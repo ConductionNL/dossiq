@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Import;
 
+use OCA\Dossiq\Service\Import\RecordImportSteps;
 use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
@@ -49,6 +50,9 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore
+ * @covers \OCA\Dossiq\Service\Import\RecordValues
+ * @covers \OCA\Dossiq\Service\Import\RecordImportReferences
+ * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
@@ -59,25 +63,30 @@ class CaseRecordImportTest extends TestCase {
 	use MakesCaseDateNormaliser;
 
 	/**
-	 * The seeded Woo case type's uuid.
+	 * The seeded Woo case type's version in use (version 2), which carries the import.
 	 */
-	private const CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001';
+	private const CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a002';
+
+	/**
+	 * The first version, superseded, which shares the identifier.
+	 */
+	private const FIRST_VERSION = '3c0f5a00-0000-4000-a000-00000000a001';
 
 	/**
 	 * Its status uuids, as its declaration maps them.
 	 */
 	private const STAGE = [
-		'received' => '3c0f5a00-0000-4000-a000-00000000b001',
-		'in_progress' => '3c0f5a00-0000-4000-a000-00000000b004',
-		'awaiting_clarification' => '3c0f5a00-0000-4000-a000-00000000b002',
-		'decided' => '3c0f5a00-0000-4000-a000-00000000b008',
-		'withdrawn' => '3c0f5a00-0000-4000-a000-00000000b008',
+		'received' => '3c0f5a00-0000-4000-a000-00000000b011',
+		'in_progress' => '3c0f5a00-0000-4000-a000-00000000b012',
+		'awaiting_clarification' => '3c0f5a00-0000-4000-a000-00000000b012',
+		'decided' => '3c0f5a00-0000-4000-a000-00000000b015',
+		'withdrawn' => '3c0f5a00-0000-4000-a000-00000000b015',
 	];
 
 	/**
 	 * The result a withdrawn request ends with.
 	 */
-	private const RESULT_WITHDRAWN = '3c0f5a00-0000-4000-a000-00000000c004';
+	private const RESULT_WITHDRAWN = '3c0f5a00-0000-4000-a000-00000000c014';
 
 	/**
 	 * The register both apps' rows live in.
@@ -141,11 +150,14 @@ class CaseRecordImportTest extends TestCase {
 			$this->store->seed(schema: 'wooRequest', uuid: $row['id'], row: $row);
 		}
 
-		$fragment = json_decode((string)file_get_contents(dirname(__DIR__, 4) . '/lib/Settings/register.d/81-woo-verzoek.json'), true);
-		foreach ($fragment['components']['objects'] as $object) {
-			if (($object['id'] ?? '') === self::CASE_TYPE) {
-				unset($object['@self']);
-				$this->store->seed(schema: 'caseType', uuid: self::CASE_TYPE, row: $object);
+		foreach (['81-woo-verzoek.json', '81-woo-verzoek-version-2.json'] as $file) {
+			$fragment = json_decode((string)file_get_contents(dirname(__DIR__, 4) . '/lib/Settings/register.d/' . $file), true);
+			foreach ($fragment['components']['objects'] as $object) {
+				$id = (string)($object['id'] ?? '');
+				if ($id === self::CASE_TYPE || $id === self::FIRST_VERSION) {
+					unset($object['@self']);
+					$this->store->seed(schema: 'caseType', uuid: $id, row: $object);
+				}
 			}
 		}
 	}//end setUp()
@@ -206,7 +218,7 @@ class CaseRecordImportTest extends TestCase {
 		);
 
 		$apps = $this->createMock(IAppManager::class);
-		$apps->method('isInstalled')->willReturnCallback(fn (string $app): bool => $app === 'opencatalogi' && $installed === true);
+		$apps->method('isInstalled')->willReturnCallback(fn (string $app): bool => ($app === 'opencatalogi' && $installed === true) || $app === 'dossiq');
 
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new DateTime('2026-10-20T09:00:00+02:00'));
@@ -216,9 +228,16 @@ class CaseRecordImportTest extends TestCase {
 		return new CaseRecordImport(
 			settingsService: $settings,
 			appManager: $apps,
-			mapping: new RecordCaseMapping(dates: $dates),
-			term: new TermCarryOver(terms: $this->terms($store), timers: $this->timers(), dates: $dates),
-			store: new RecordImportStore(settingsService: $settings, mapping: new RecordCaseMapping(dates: $dates), time: $time, logger: $this->createMock(LoggerInterface::class)),
+			steps: new RecordImportSteps(
+				mapping: new RecordCaseMapping(dates: $dates),
+				term: new TermCarryOver(terms: $this->terms(store: $store), timers: $this->timers(), dates: $dates),
+				store: new RecordImportStore(
+					settingsService: $settings,
+					mapping: new RecordCaseMapping(dates: $dates),
+					time: $time,
+					logger: $this->createMock(originalClassName: LoggerInterface::class)
+				),
+			),
 		);
 	}//end import()
 
@@ -600,7 +619,7 @@ class CaseRecordImportTest extends TestCase {
 		$answer = $this->runImport(installed: false);
 
 		self::assertSame(
-			['key' => 'opencatalogi-woo-requests', 'sourceApp' => 'opencatalogi', 'installed' => false, 'imported' => 0, 'alreadyImported' => 0, 'failed' => [], 'unmigrated' => 0, 'migrated' => []],
+			['key' => 'opencatalogi-woo-requests', 'sourceApp' => 'opencatalogi', 'installed' => false, 'imported' => 0, 'alreadyImported' => 0, 'failed' => [], 'unmigrated' => 0, 'migrated' => [], 'duplicates' => [], 'repointed' => 0],
 			$answer
 		);
 		self::assertSame(0, $this->store->writes);
@@ -662,6 +681,270 @@ class CaseRecordImportTest extends TestCase {
 		self::assertStringContainsString('channel must be one of', $reasons);
 		self::assertSame([], $this->store->all('case'));
 	}//end testARecordTheDeclarationCannotReadFailsAndWritesNothing()
+
+	/**
+	 * A case type kept in dossiq's own register, without a statutory term,
+	 * whose import moves `trajectory` records and may run on upgrade.
+	 *
+	 * @param bool $onUpgrade Whether the declaration runs on upgrade.
+	 * @param bool $superseded Whether a later version replaced this one.
+	 *
+	 * @return void
+	 */
+	private function seedTrajectoryType(bool $onUpgrade, bool $superseded = false): void {
+		$supersededBy = '';
+		if ($superseded === true) {
+			$supersededBy = 'type-trajectory-2';
+		}
+
+		$this->store->seed(
+			schema: 'caseType',
+			uuid: 'type-trajectory',
+			row: [
+				'id' => 'type-trajectory',
+				'identifier' => 'trajectory',
+				'supersededBy' => $supersededBy,
+				'recordImports' => [[
+					'key' => 'trajectories',
+					'sourceApp' => 'dossiq',
+					'sourceRegister' => 'dossiq',
+					'sourceSchema' => 'trajectory',
+					'statuses' => ['*' => ['status' => 'status-running']],
+					'fields' => [
+						['to' => 'title', 'value' => 'Trajectory'],
+						['to' => 'startDate', 'from' => 'start', 'as' => 'date'],
+						['to' => 'externalReference', 'from' => '@id'],
+						['to' => 'properties', 'property' => ['definition' => 'def-kind', 'name' => 'kind'], 'from' => 'kind'],
+					],
+					'matchField' => 'externalReference',
+					'stamp' => ['caseId' => 'migratedTo', 'at' => 'migratedAt'],
+					'carriesTerm' => false,
+					'runOnUpgrade' => $onUpgrade,
+				]],
+			]
+		);
+		$this->store->seed(schema: 'trajectory', uuid: 'traj-1', row: ['id' => 'traj-1', 'start' => '2026-03-01', 'kind' => 'werkfit']);
+	}//end seedTrajectoryType()
+
+	/**
+	 * A record moves onto a case type without a term: the term engine is not
+	 * asked, and the record counts as moved.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeWithoutATermImportsWithoutOne(): void {
+		$this->seedTrajectoryType(onUpgrade: false);
+
+		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		self::assertSame(expected: 1, actual: $answer['imported']);
+		self::assertSame(expected: [], actual: $answer['failed']);
+		self::assertSame(expected: [], actual: $this->instances, message: 'the term engine is not asked');
+		self::assertSame(expected: [], actual: $this->armed);
+		$case = $this->store->row('case', $answer['migrated'][0]['caseId']);
+		self::assertSame(expected: 'status-running', actual: $case['status']);
+		self::assertSame(expected: [['propertyDefinition' => 'def-kind', 'name' => 'kind', 'value' => 'werkfit']], actual: $case['properties']);
+		self::assertSame(expected: $case['id'], actual: $this->store->row('trajectory', 'traj-1')['migratedTo']);
+	}//end testACaseTypeWithoutATermImportsWithoutOne()
+
+	/**
+	 * An upgrade runs only the flagged declarations of a version in use, and a
+	 * second upgrade imports nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUpgradeRunsOnlyTheFlaggedImportsOnce(): void {
+		$this->seedTrajectoryType(onUpgrade: true);
+
+		$first = $this->import()->runOnUpgrade();
+		$second = $this->import()->runOnUpgrade();
+
+		self::assertCount(expectedCount: 1, haystack: $first);
+		self::assertSame(expected: 'type-trajectory', actual: $first[0]['caseType']);
+		self::assertSame(expected: 'trajectories', actual: $first[0]['key']);
+		self::assertSame(expected: 1, actual: $first[0]['imported']);
+		self::assertCount(expectedCount: 1, haystack: $this->store->all('case'), message: 'the Woo import is not flagged, so no Woo request moved');
+		self::assertSame(expected: 0, actual: $second[0]['imported']);
+		self::assertSame(expected: 1, actual: $second[0]['alreadyImported']);
+	}//end testAnUpgradeRunsOnlyTheFlaggedImportsOnce()
+
+	/**
+	 * A superseded version's flagged import does not run on upgrade.
+	 *
+	 * @return void
+	 */
+	public function testAnUpgradeSkipsASupersededVersion(): void {
+		$this->seedTrajectoryType(onUpgrade: true, superseded: true);
+
+		self::assertSame(expected: [], actual: $this->import()->runOnUpgrade());
+		self::assertSame(expected: [], actual: $this->store->all('case'));
+	}//end testAnUpgradeSkipsASupersededVersion()
+
+	/**
+	 * Two source records carrying one number become one case; the second is
+	 * reported as a duplicate, stamped with that case, and a second run moves nothing.
+	 *
+	 * @return void
+	 */
+	public function testADuplicateNumberBecomesOneCaseAndIsReported(): void {
+		$this->seedTrajectoryType(onUpgrade: false);
+		$type = $this->store->row('caseType', 'type-trajectory');
+		$type['recordImports'][0]['dedupeBy'] = 'number';
+		$type['recordImports'][0]['formerReference'] = ['application' => 'dossiq', 'from' => 'number'];
+		$this->store->seed(schema: 'caseType', uuid: 'type-trajectory', row: $type);
+		$this->store->rows['trajectory']['traj-1']['number'] = 'PW-1';
+		$this->store->seed(schema: 'trajectory', uuid: 'traj-2', row: ['id' => 'traj-2', 'start' => '2026-03-01', 'kind' => 'werkfit', 'number' => 'PW-1']);
+
+		$first = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+		$second = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		self::assertSame(expected: 1, actual: $first['imported']);
+		self::assertCount(expectedCount: 1, haystack: $first['duplicates']);
+		self::assertCount(expectedCount: 1, haystack: $this->store->all('case'));
+		$caseId = $first['migrated'][0]['caseId'];
+		self::assertSame(expected: $caseId, actual: $first['duplicates'][0]['caseId']);
+		self::assertSame(expected: $caseId, actual: $this->store->row('trajectory', 'traj-2')['migratedTo']);
+		self::assertSame(expected: 0, actual: $second['imported']);
+		self::assertSame(expected: 2, actual: $second['alreadyImported']);
+	}//end testADuplicateNumberBecomesOneCaseAndIsReported()
+
+	/**
+	 * The trajectory type deduplicating by `number`, kept as a former reference of dossiq.
+	 *
+	 * @return void
+	 */
+	private function seedNumberedTrajectoryType(): void {
+		$this->seedTrajectoryType(onUpgrade: false);
+		$type = $this->store->row('caseType', 'type-trajectory');
+		$type['recordImports'][0]['dedupeBy'] = 'number';
+		$type['recordImports'][0]['formerReference'] = ['application' => 'dossiq', 'from' => 'number'];
+		$this->store->seed(schema: 'caseType', uuid: 'type-trajectory', row: $type);
+	}//end seedNumberedTrajectoryType()
+
+	/**
+	 * A half-finished record whose number already became another case is a
+	 * conflict: it is not completed onto its own case, not stamped and not
+	 * counted, and a later record with that number still joins the first case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-records-sharing-a-number-become-one-case-req-cri-008
+	 */
+	public function testAHalfFinishedRecordWhoseNumberIsOnAnotherCaseIsAConflict(): void {
+		$this->seedNumberedTrajectoryType();
+		$this->store->rows['trajectory']['traj-1']['number'] = 'N-r1';
+		$this->store->seed(schema: 'trajectory', uuid: 'traj-2', row: ['start' => '2026-03-01', 'kind' => 'werkfit', 'number' => 'N-r1']);
+		$this->store->seed(schema: 'trajectory', uuid: 'traj-3', row: ['start' => '2026-03-01', 'kind' => 'werkfit', 'number' => 'N-r1']);
+		$this->store->seed(schema: 'case', uuid: 'case-half', row: ['caseType' => 'type-trajectory', 'externalReference' => 'traj-2', 'title' => 'Trajectory']);
+
+		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		self::assertCount(expectedCount: 1, haystack: $answer['migrated']);
+		self::assertSame(expected: 'traj-1', actual: $answer['migrated'][0]['requestId']);
+		$caseR1 = $answer['migrated'][0]['caseId'];
+		self::assertCount(expectedCount: 1, haystack: $answer['failed']);
+		self::assertSame(expected: 'traj-2', actual: $answer['failed'][0]['requestId']);
+		self::assertSame(expected: 'N-r1', actual: $answer['failed'][0]['reference']);
+		self::assertStringContainsString(needle: 'case-half', haystack: $answer['failed'][0]['reason']);
+		self::assertStringContainsString(needle: $caseR1, haystack: $answer['failed'][0]['reason']);
+		self::assertArrayNotHasKey(key: 'migratedTo', array: $this->store->row('trajectory', 'traj-2'));
+		self::assertCount(expectedCount: 1, haystack: $answer['duplicates']);
+		self::assertSame(expected: $caseR1, actual: $answer['duplicates'][0]['caseId']);
+		self::assertSame(expected: $caseR1, actual: $this->store->row('trajectory', 'traj-3')['migratedTo']);
+		self::assertCount(expectedCount: 2, haystack: $this->store->all('case'));
+	}//end testAHalfFinishedRecordWhoseNumberIsOnAnotherCaseIsAConflict()
+
+	/**
+	 * A half-finished record that comes first does not hide the numbers the
+	 * stored cases already keep: a later record whose number is on a stored
+	 * case joins that case instead of getting a second one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-record-import/spec.md#requirement-records-sharing-a-number-become-one-case-req-cri-008
+	 */
+	public function testAHalfFinishedRecordFirstStillFindsTheStoredNumbers(): void {
+		$this->seedNumberedTrajectoryType();
+		$this->store->rows['trajectory']['traj-1']['number'] = 'N-1';
+		$this->store->seed(schema: 'trajectory', uuid: 'traj-2', row: ['start' => '2026-03-01', 'kind' => 'werkfit', 'number' => 'M-1']);
+		$this->store->seed(
+			schema: 'case',
+			uuid: 'case-half',
+			row: [
+				'caseType' => 'type-trajectory',
+				'externalReference' => 'traj-1',
+				'title' => 'Trajectory',
+				'formerReferences' => [['application' => 'dossiq', 'reference' => 'N-1']],
+			]
+		);
+		$this->store->seed(
+			schema: 'case',
+			uuid: 'case-old',
+			row: [
+				'caseType' => 'type-trajectory',
+				'externalReference' => 'elsewhere',
+				'title' => 'Trajectory',
+				'formerReferences' => [['application' => 'dossiq', 'reference' => 'M-1']],
+			]
+		);
+
+		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		self::assertSame(expected: [], actual: $answer['failed']);
+		self::assertSame(expected: 'case-half', actual: $answer['migrated'][0]['caseId']);
+		self::assertCount(expectedCount: 1, haystack: $answer['duplicates']);
+		self::assertSame(expected: 'case-old', actual: $answer['duplicates'][0]['caseId']);
+		self::assertSame(expected: 'case-old', actual: $this->store->row('trajectory', 'traj-2')['migratedTo']);
+		self::assertCount(expectedCount: 2, haystack: $this->store->all('case'));
+	}//end testAHalfFinishedRecordFirstStillFindsTheStoredNumbers()
+
+	/**
+	 * Records that point at a moved record by its id or its slug point at its
+	 * case afterwards; anything else is left alone.
+	 *
+	 * @return void
+	 */
+	public function testReferencesToAMovedRecordPointAtItsCase(): void {
+		$this->seedTrajectoryType(onUpgrade: false);
+		$type = $this->store->row('caseType', 'type-trajectory');
+		$type['recordImports'][0]['references'] = [['schema' => 'consent', 'field' => 'caseId']];
+		$this->store->seed(schema: 'caseType', uuid: 'type-trajectory', row: $type);
+		$this->store->rows['trajectory']['traj-1']['@self'] = ['slug' => 'traj-one'];
+		$this->store->seed(schema: 'consent', uuid: 'c-1', row: ['id' => 'c-1', 'caseId' => 'traj-1']);
+		$this->store->seed(schema: 'consent', uuid: 'c-2', row: ['id' => 'c-2', 'caseId' => 'traj-one']);
+		$this->store->seed(schema: 'consent', uuid: 'c-3', row: ['id' => 'c-3', 'caseId' => 'another-case']);
+
+		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		$caseId = $answer['migrated'][0]['caseId'];
+		self::assertSame(expected: 2, actual: $answer['repointed']);
+		self::assertSame(expected: $caseId, actual: $this->store->row('consent', 'c-1')['caseId']);
+		self::assertSame(expected: $caseId, actual: $this->store->row('consent', 'c-2')['caseId']);
+		self::assertSame(expected: 'another-case', actual: $this->store->row('consent', 'c-3')['caseId']);
+	}//end testReferencesToAMovedRecordPointAtItsCase()
+
+	/**
+	 * A list of references (`list: true`) has the moved record's entry
+	 * replaced by its case, the other entries kept in place.
+	 *
+	 * @return void
+	 */
+	public function testAListOfReferencesPointsAtTheCase(): void {
+		$this->seedTrajectoryType(onUpgrade: false);
+		$type = $this->store->row('caseType', 'type-trajectory');
+		$type['recordImports'][0]['references'] = [['schema' => 'meeting', 'field' => 'caseIds', 'list' => true]];
+		$this->store->seed(schema: 'caseType', uuid: 'type-trajectory', row: $type);
+		$this->store->seed(schema: 'meeting', uuid: 'm-1', row: ['id' => 'm-1', 'caseIds' => ['other-1', 'traj-1', 'other-2']]);
+		$this->store->seed(schema: 'meeting', uuid: 'm-2', row: ['id' => 'm-2', 'caseIds' => ['other-3']]);
+
+		$answer = $this->import()->run(caseType: 'type-trajectory')['imports'][0];
+
+		$caseId = $answer['migrated'][0]['caseId'];
+		self::assertSame(expected: 1, actual: $answer['repointed']);
+		self::assertSame(expected: ['other-1', $caseId, 'other-2'], actual: $this->store->row('meeting', 'm-1')['caseIds']);
+		self::assertSame(expected: ['other-3'], actual: $this->store->row('meeting', 'm-2')['caseIds']);
+	}//end testAListOfReferencesPointsAtTheCase()
 
 	/**
 	 * An unknown case type, or another import key, runs nothing.

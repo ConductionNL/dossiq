@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\People\FileRequestService;
 use OCA\Dossiq\Service\People\PartyIndicatorReader;
@@ -32,7 +33,6 @@ use RuntimeException;
 class FileRequestController extends Controller {
 
 	/**
-	 * @param string $appName The app id.
 	 * @param IRequest $request The request.
 	 * @param PersonLinkReader $people The people on the case.
 	 * @param FileRequestService $fileRequests Sends the request.
@@ -41,7 +41,6 @@ class FileRequestController extends Controller {
 	 * @param IUserSession $userSession The signed-in handler.
 	 */
 	public function __construct(
-		string $appName,
 		IRequest $request,
 		private readonly PersonLinkReader $people,
 		private readonly FileRequestService $fileRequests,
@@ -49,7 +48,7 @@ class FileRequestController extends Controller {
 		private readonly CaseAccessGuard $access,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: $appName, request: $request);
+		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

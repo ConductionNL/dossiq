@@ -7,7 +7,7 @@
 // case-list sub-case count badge (T10) and for what a refused delete says
 // (REQ-CM-35). They are deliberately DOM-free and side-effect-free so the
 // vitest suite (node environment) can pin the exact rendered copy without a
-// browser. The Vue layer (formatters.js, DeelzaakList.vue) consumes them.
+// browser. formatters.js consumes them.
 
 import { translate as t } from '@nextcloud/l10n'
 
@@ -67,4 +67,20 @@ export function refusalMessage(err) {
 		return sentence
 	}
 	return t('dossiq', 'The case could not be deleted. Please try again.')
+}
+
+/**
+ * The status a new sub-case starts in: its case type's `initialStatus`.
+ *
+ * OpenRegister starts a created case in that status and refuses another
+ * start state, so a sub-case type without one sends no status at all.
+ *
+ * @param {object|null} caseType The selected sub-case type.
+ * @return {string|null} The status id, or null when the type declares none.
+ * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-creation-from-parent-case
+ */
+export function subCaseInitialStatus(caseType) {
+	const initial = caseType?.initialStatus
+	const id = typeof initial === 'object' && initial !== null ? initial.id : initial
+	return typeof id === 'string' && id !== '' ? id : null
 }

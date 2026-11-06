@@ -26,7 +26,7 @@
  *    sub-dialog of `DsoCaseDetail` and nothing else ever imported it, so it
  *    became unreachable the moment that parent did. `BeschikkingDialog` and
  *    `DoorstuurDialog` were its two siblings and went the same way.
- *  - `BeschikkingComposerDialog` renamed its field to `rationale` and left the
+ *  - `GenerateDocumentDialog` renamed its field to `rationale` and left the
  *    textarea writing to `motivering`, so typing a motivering did nothing and
  *    the composed decision went out without one. The dialog is now the
  *    Generate document picker (documents-on-the-case), and the same shape of
@@ -45,9 +45,9 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
-import BeschikkingComposerDialog from '../../src/dialogs/BeschikkingComposerDialog.vue'
+import GenerateDocumentDialog from '../../src/dialogs/GenerateDocumentDialog.vue'
 
-// `BeschikkingComposerDialog` imports from the `@nextcloud/vue` BARREL, not
+// `GenerateDocumentDialog` imports from the `@nextcloud/vue` BARREL, not
 // from the per-component paths the other two use. Loading that barrel pulls
 // the whole library through Vite's transform on a cold cache and blew the
 // 5s test timeout, which reads as a failing assertion and is nothing of the
@@ -158,6 +158,8 @@ function control(name) {
 
 const stubs = {
 	NcDialog: passthrough('NcDialog'),
+	CnDialog: passthrough('CnDialog'),
+	CnChoiceCards: control('CnChoiceCards'),
 	NcButton: {
 		name: 'NcButton',
 		props: { disabled: { type: Boolean, default: false } },
@@ -181,9 +183,9 @@ const stubs = {
 	NcTextArea: control('NcTextArea'),
 }
 
-describe('BeschikkingComposerDialog', () => {
+describe('GenerateDocumentDialog', () => {
 	it('writes the picked template into the field the submit actually reads', async () => {
-		const wrapper = mount(BeschikkingComposerDialog, {
+		const wrapper = mount(GenerateDocumentDialog, {
 			props: { open: true, caseId: 'case-1' },
 			global: { stubs, mocks: { $route: { params: { id: 'case-1' } } } },
 		})
@@ -191,7 +193,7 @@ describe('BeschikkingComposerDialog', () => {
 		// renders only once that settles.
 		await flushPromises()
 
-		const picker = wrapper.findComponent({ name: 'NcSelect' })
+		const picker = wrapper.findComponent({ name: 'CnChoiceCards' })
 		expect(picker.exists()).toBe(true)
 
 		await picker.vm.$emit('update:modelValue', 'ontvangstbevestiging')
@@ -203,7 +205,7 @@ describe('BeschikkingComposerDialog', () => {
 	})
 
 	it('keeps Generate disabled until a template is picked', async () => {
-		const wrapper = mount(BeschikkingComposerDialog, {
+		const wrapper = mount(GenerateDocumentDialog, {
 			props: { open: true, caseId: 'case-1' },
 			global: { stubs, mocks: { $route: { params: { id: 'case-1' } } } },
 		})

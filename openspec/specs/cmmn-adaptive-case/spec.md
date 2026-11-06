@@ -1,7 +1,7 @@
 # cmmn-adaptive-case Specification
 
 ## Purpose
-TBD - created by archiving change cmmn-adaptive-case. Update Purpose after archive.
+Describe an adaptive case in CMMN terms: a case model, plan items with a lifecycle, and sentries that decide when an item becomes available.
 ## Requirements
 ### Requirement: REQ-CMMN-001 — Case-Model Definition
 

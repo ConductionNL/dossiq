@@ -69,6 +69,10 @@ trait WritesPackageRows {
 	 * if the store is genuinely broken. Answering true on a failed read would
 	 * skip a row the instance does not have.
 	 *
+	 * The read goes past the caller's access check: a package is installed by
+	 * an administrator, from the admin settings or `occ`, and a CLI run has no
+	 * user, so a case it shipped earlier would read as missing.
+	 *
 	 * @param object $objectService The OpenRegister object service.
 	 * @param string $register The register slug.
 	 * @param string $schema The schema slug.
@@ -78,7 +82,7 @@ trait WritesPackageRows {
 	 */
 	private function holds(object $objectService, string $register, string $schema, string $id): bool {
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($id, register: $register, schema: $schema, _rbac: false);
 		} catch (\Throwable $e) {
 			return false;
 		}

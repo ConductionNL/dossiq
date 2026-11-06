@@ -35,8 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
+use OCA\Dossiq\Service\Zaakdossier\DocumentWriteGate;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -63,8 +63,9 @@ class ZaakdossierController extends Controller {
 	 * @param IUserSession $userSession The user session.
 	 * @param DocumentApprovalClearance $approvals Reads decidiq's approval chain for a document,
 	 *        so a document in an unfinished route cannot be made final.
-	 * @param BulkDocumentActions $bulk One act over many documents: the clearance gate that runs
-	 *        before a bulk transition writes anything, and the metadata run that reports per id.
+	 * @param DocumentWriteGate $writes What a document write passes before it runs: the change right
+	 *        on every case the document belongs to, the clearance over a bulk selection, and the bulk
+	 *        metadata run behind them.
 	 */
 	public function __construct(
 		string $appName,
@@ -74,7 +75,7 @@ class ZaakdossierController extends Controller {
 		private readonly DossierUploadHandler $uploadHandler,
 		private readonly IUserSession $userSession,
 		private readonly DocumentApprovalClearance $approvals,
-		private readonly BulkDocumentActions $bulk,
+		private readonly DocumentWriteGate $writes,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -113,7 +114,14 @@ class ZaakdossierController extends Controller {
 			informatieobjecten: ($file['informatieobjecten'] ?? []),
 		);
 
-		$regrouped = $this->fileService->groupByType(documents: $filtered);
+		$regrouped = $this->fileService->groupByType(
+			documents: $this->writes->withChangeRight(
+				user: $user,
+				documents: $this->reader->withAccessExceptionNames(
+					documents: $this->reader->withReviewVerdicts(caseId: $caseId, documents: $this->reader->withScanVerdicts(documents: $filtered))
+				)
+			)
+		);
 
 		return new JSONResponse($regrouped);
 	}//end listDossier()
@@ -201,6 +209,12 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		// The CASE first, before the document is read: the document guard below
+		// says nothing about whether this caller may change the case it links into.
+		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
 		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
 		if ($authError !== null) {
 			return $authError;
@@ -233,6 +247,12 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		// The CASE first, before the document is read: the document guard below
+		// says nothing about whether this caller may change the case it links into.
+		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
 		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
 		if ($authError !== null) {
 			return $authError;
@@ -262,6 +282,11 @@ class ZaakdossierController extends Controller {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$refusal = $this->writes->refusedWrite(user: $user, documentId: $infoObjectId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
@@ -373,6 +398,11 @@ class ZaakdossierController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$refusal = $this->writes->refusedWrite(user: $user, documentId: $infoObjectId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
 		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
 		if ($authError !== null) {
 			return $authError;
@@ -409,12 +439,10 @@ class ZaakdossierController extends Controller {
 		$ids = (array)$this->request->getParam('ids', []);
 		$newStatus = (string)$this->request->getParam('status', '');
 
-		// Per-object clearance gate before any mutation.
-		if ($this->bulk->allReadable(user: $user, ids: $ids) === false) {
-			return new JSONResponse(
-				['error' => 'Insufficient clearance for one or more selected documents'],
-				Http::STATUS_FORBIDDEN,
-			);
+		// Case write and per-object clearance gate before any mutation.
+		$refusal = $this->writes->refusedBulkTransition(user: $user, ids: $ids);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$results = $this->fileService->bulkTransitionStatus(infoObjectIds: $ids, newStatus: $newStatus);
@@ -440,8 +468,13 @@ class ZaakdossierController extends Controller {
 		$ids = (array)$this->request->getParam('ids', []);
 		$metadata = (array)$this->request->getParam('metadata', []);
 
+		$refusal = $this->writes->refusedBulkMetadata(user: $user, ids: $ids);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
 		return new JSONResponse(
-			['results' => $this->bulk->updateAll(user: $user, ids: $ids, metadata: $metadata)]
+			['results' => $this->writes->updateAll(user: $user, ids: $ids, metadata: $metadata)]
 		);
 	}//end bulkUpdateMetadata()
 

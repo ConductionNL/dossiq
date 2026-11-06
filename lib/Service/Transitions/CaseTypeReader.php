@@ -62,7 +62,8 @@ class CaseTypeReader {
 	 * @param string $caseTypeId CaseType UUID.
 	 *
 	 * @return array{suspensionAllowed: bool, extensionAllowed: bool, extensionPeriod: string,
-	 *               maxExtensions: int|null, initialStatus: string, title: string}
+	 *               maxExtensions: int|null, initialStatus: string, title: string,
+	 *               entryRequirements: array<string, mixed>}
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
@@ -76,6 +77,8 @@ class CaseTypeReader {
 			'maxExtensions' => $this->limit(value: ($row['maxExtensions'] ?? null)),
 			'initialStatus' => (string)($row['initialStatus'] ?? ''),
 			'title' => $this->text->textOf(value: ($row['title'] ?? ($row['name'] ?? null))),
+			// What each status requires before a case enters it, projected from the case type's rules.
+			'entryRequirements' => (array)($row['entryRequirements'] ?? []),
 		];
 	}//end read()
 

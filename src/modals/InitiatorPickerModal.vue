@@ -32,7 +32,15 @@
 				}}
 			</p>
 
-			<InitiatorPicker :value="selection" @select="selection = $event" />
+			<CnPartyPicker
+				:modelValue="selection ? (selection.requester || selection.initiatorSourceId) : null"
+				:sources="sources"
+				:selectedLabel="selection ? selection.initiatorDisplayName : ''"
+				:inputLabel="t('dossiq', 'Search initiator')"
+				:labelOutside="true"
+				:placeholder="t('dossiq', 'Name, BSN, trade name or KvK number')"
+				data-testid="initiator-picker"
+				@select="onSelect" />
 
 			<div
 				v-if="selection"
@@ -45,11 +53,11 @@
 			</div>
 
 			<div class="initiator-picker-modal__actions">
-				<NcButton type="tertiary" @click="$emit('skip')">
+				<NcButton variant="tertiary" @click="$emit('skip')">
 					{{ t('dossiq', 'Skip') }}
 				</NcButton>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="!selection"
 					@click="$emit('confirm', selection)">
 					{{ t('dossiq', 'Use as initiator') }}
@@ -60,15 +68,31 @@
 </template>
 
 <script>
+import { CnPartyPicker } from '@conduction/nextcloud-vue'
+import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcModal } from '@nextcloud/vue'
-import InitiatorPicker from '../components/initiator/InitiatorPicker.vue'
+import { initiatorChoice } from '../services/initiatorSearch.js'
+
+/**
+ * Where a case's initiator is searched: the brpPerson and kvkCompany register
+ * sets and the reader's Nextcloud contacts. A person shows birth date and BSN
+ * and a company its KvK number, so two parties of one name are told apart.
+ * The `id` of each is the kind a choice is recorded as (`initiatorType`).
+ *
+ * @type {Array<object>}
+ */
+const PARTY_SOURCES_WITH_CONTACTS = Object.freeze([
+	{ id: 'person', register: 'dossiq', schema: 'brpPerson', lookup: { url: '/apps/dossiq/api/people/lookup', when: '^[0-9]{9}$' }, label: 'Resident', title: '{displayName}', secondary: '{birth.date}' },
+	{ id: 'company', register: 'dossiq', schema: 'kvkCompany', label: 'Organisation', title: '{tradeName}', secondary: 'KVK {kvkNumber}' },
+	{ id: 'contact', type: 'contacts', label: 'Contact' },
+])
 
 export default {
 	name: 'InitiatorPickerModal',
 	components: {
 		NcButton,
 		NcModal,
-		InitiatorPicker,
+		CnPartyPicker,
 	},
 
 	emits: ['close', 'confirm', 'skip'],
@@ -76,7 +100,24 @@ export default {
 	data() {
 		return {
 			selection: null,
+			sources: PARTY_SOURCES_WITH_CONTACTS,
 		}
+	},
+
+	methods: {
+		t,
+
+		/**
+		 * Take the picked party as the four fields the case carries, pointed
+		 * at the party already holding a contact's address when there is one.
+		 *
+		 * @param {{source: string, row: object}|null} picked What the picker chose.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		async onSelect(picked) {
+			this.selection = picked ? await initiatorChoice(picked.source, picked.row) : null
+		},
 	},
 }
 </script>

@@ -1,0 +1,21 @@
+{
+  "_note": "A choice list's options have a value a rule and the API use (digitaal) and a label a person reads (Digitaal). The new-case form reads a field's options by these labels (DqNieuweZaak Gewenste vorm, Soort verzoeker); an option without one shows its value. A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "propertyDefinition": {
+        "version": "1.10.0",
+        "properties": {
+          "enumLabels": {
+            "type": "object",
+            "title": "Option labels",
+            "description": "What a person reads per choice list option, by the option's value (digitaal: Digitaal). An option without one shows its value.",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 120
+            }
+          }
+        }
+      }
+    }
+  }
+}

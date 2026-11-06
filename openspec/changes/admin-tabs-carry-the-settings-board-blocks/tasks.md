@@ -1,0 +1,28 @@
+# Tasks: admin-tabs-carry-the-settings-board-blocks
+
+- [x] 1.1 Integrations: Add connection in integriq, apps dossiq needs, term table, queue urgency, search index run, Woo refusal grounds
+  - Files: src/views/settings/AdminRoot.vue, src/views/settings/components/*, src/views/settings/adminSettingsBlocks.js, lib/Settings/DependencyApps.php, lib/Settings/AdminSettings.php
+  - Test: tests/vitest/settingsBoardBlocks.spec.js, tests/Unit/Settings/DependencyAppsTest.php
+- [x] 1.2 Advanced: search index rows with the rebuild command and the OpenRegister-down notice
+  - Files: src/views/settings/components/SearchIndexFacts.vue, src/utils/searchIndexFacts.js, src/services/searchIndexApi.js
+  - Test: tests/vitest/settingsBoardBlocks.spec.js
+- [x] 1.3 General: time zone, date format, beta switch for the new case page
+  - Files: src/views/settings/adminFields.js
+  - Test: tests/vitest/settingsBoardBlocks.spec.js
+- [x] 1.4 VTH: advice and public notice cards, the cards three abreast
+  - Files: src/views/settings/AdminRoot.vue, src/views/settings/components/AdviceSettingsFacts.vue
+  - Test: tests/vitest/settingsBoardBlocks.spec.js
+- [x] 1.5 Setup wizard: first step titled Welcome
+  - Files: src/manifest.json, l10n/*
+  - Test: tests/vitest/settingsBoardBlocks.spec.js
+- [x] 1.6 Case types list: All / Published / Draft with counts, All versions last (DqZaaktypen)
+  - Files: src/manifest.json
+  - Test: tests/vitest/caseTypeAuthoringManifest.spec.js
+- [x] 2.1 Backend: the new config keys saved and read (queue_in_sight_days, queue_resident_wait_weight, timezone, date_format, feature_new_case_page, publication_template, publication_date_rule)
+  - Files: lib/Service/Settings/ConfigKeys.php, lib/Service/Settings/SettingValueRules.php, lib/Service/Queue/*, lib/Service/CaseDateNormaliser.php, lib/Listener/DisplaySettingsInitialStateListener.php, lib/Service/PublicationService.php, lib/Service/Publication/PublicationDateRule.php
+  - Test: tests/Unit/Service/Settings/SettingValueRulesTest.php, tests/Unit/Service/Queue/*, tests/Unit/Listener/DisplaySettingsInitialStateListenerTest.php, tests/Unit/Service/Publication/PublicationDateRuleTest.php
+- [x] 2.3 Backend: a case type a package placed carries `shipped` and `package`; a copy does not
+  - Files: lib/Settings/dossiq_register.json, lib/Service/CaseDefinition/PackageWriter.php, lib/Service/CaseType/DerivedCaseTypePayload.php
+  - Test: tests/Unit/Service/CaseDefinition/PackageWriterGoldenTest.php, tests/Unit/Service/CaseType/DerivedCaseTypePayloadTest.php
+- [ ] 2.4 Case types list: the quick filter Shipped and the row line Shipped / Own, once 2.3 is on the instance
+- [ ] 2.2 OpenRegister: rows in the tables and in the index, what a run indexed, and a POST that queues a maintenance run

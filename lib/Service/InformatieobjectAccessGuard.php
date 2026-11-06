@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCP\Files\NotPermittedException;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -75,11 +76,13 @@ class InformatieobjectAccessGuard {
 	 * @param SettingsService $settingsService Settings service (config + groups map).
 	 * @param IGroupManager $groupManager Nextcloud group manager.
 	 * @param LoggerInterface $logger Logger.
+	 * @param DocumentAccessExceptionRule $exceptions The access exception a document may carry: only named people and groups, and the case's handler.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
+		private readonly DocumentAccessExceptionRule $exceptions,
 	) {
 	}//end __construct()
 
@@ -157,15 +160,18 @@ class InformatieobjectAccessGuard {
 	 * @param IUser $user The requesting user.
 	 * @param array<string, mixed> $informatieobject The informatieobject record.
 	 *
-	 * @return bool True when the user's clearance meets or exceeds the document's classification.
+	 * @return bool True when the user's clearance meets or exceeds the document's classification
+	 *              and the document's access exception, if any, admits the user.
 	 *
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-readable-only-by-its-listed-people-the-cases-handler-and-administrators
 	 */
 	public function canRead(IUser $user, array $informatieobject): bool {
 		$docOrdinal = $this->ordinalOf(level: (string)($informatieobject['vertrouwelijkheidaanduiding'] ?? ''));
 		$userOrdinal = $this->getUserClearanceOrdinal(user: $user);
 
-		return $userOrdinal >= $docOrdinal;
+		return $userOrdinal >= $docOrdinal
+			&& $this->exceptions->admits(user: $user, record: $informatieobject) === true;
 	}//end canRead()
 
 	/**
@@ -218,6 +224,7 @@ class InformatieobjectAccessGuard {
 	 * @return array<int, array<string, mixed>> Records the user may read (re-indexed).
 	 *
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T03
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-with-an-exception-is-readable-only-by-its-listed-people-the-cases-handler-and-administrators
 	 */
 	public function filterDossierForUser(IUser $user, array $informatieobjecten): array {
 		$userOrdinal = $this->getUserClearanceOrdinal(user: $user);
@@ -225,7 +232,7 @@ class InformatieobjectAccessGuard {
 		$allowed = [];
 		foreach ($informatieobjecten as $record) {
 			$docOrdinal = $this->ordinalOf(level: (string)($record['vertrouwelijkheidaanduiding'] ?? ''));
-			if ($userOrdinal >= $docOrdinal) {
+			if ($userOrdinal >= $docOrdinal && $this->exceptions->admits(user: $user, record: $record) === true) {
 				$allowed[] = $record;
 			}
 		}

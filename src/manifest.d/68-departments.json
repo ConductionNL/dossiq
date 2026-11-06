@@ -1,0 +1,64 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"board": "DqAfdelingen",
+		"why": "Departments and staff as Nextcloud keeps them: the groups as folders with their member counts, a group's members with their function, roles, e-mail and today's presence. Read through the library's users entity source and groups folder source; dossiq keeps no copy. No group is named here: which groups an organisation has is the instance's, not the app's. The tree comes from the organisation roles (organisatieRol: its Nextcloud group and its parent role), so the departments nest as the organisation set them up."
+	},
+	"menu": [
+		{
+			"id": "DepartmentsMenu",
+			"label": "Departments and staff",
+			"icon": "AccountGroupOutline",
+			"route": "Departments",
+			"section": "settings",
+			"order": 91,
+			"permission": "admin"
+		}
+	],
+	"pages": [
+		{
+			"id": "Departments",
+			"route": "/settings/departments",
+			"type": "index",
+			"title": "Departments and staff",
+			"permission": "admin",
+			"config": {
+				"entitySource": "users",
+				"_selectableNote": "Board DqAfdelingen: no selection column. Staff come from Nextcloud and nothing acts on several of them at once here.",
+				"selectable": false,
+				"showTitle": true,
+				"showViewToggle": false,
+				"_showCountNote": "Board DqAfdelingen: no count line under the title; the folder heading already says how many staff.",
+				"showCount": false,
+				"folderSidebar": {
+					"source": "groups",
+					"filterField": "group",
+					"heading": true,
+					"allLabel": "All staff",
+					"countText": "{count} staff",
+					"headingParts": [
+						{ "field": "teamLead", "text": "team lead {value}", "format": "user" }
+					],
+					"parentsFrom": { "register": "dossiq", "schema": "organisatieRol", "groupField": "ncGroupId", "parentField": "parentRoleId" }
+				},
+				"breadcrumb": {
+					"label": "Settings",
+					"href": "/index.php/settings/admin/dossiq"
+				},
+				"headerMeta": "from Nextcloud groups, with function and absence",
+				"_headerButtonsNote": "Board DqAfdelingen: Downloaden in the header downloads the staff the list shows as CSV (the users source's columns).",
+				"searchPlaceholder": "Search…",
+				"showActionsMenu": true,
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					}
+				],
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		}
+	]
+}

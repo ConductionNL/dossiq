@@ -22,7 +22,7 @@
  * @param {unknown} [supportNoteShown] The `support_note_shown` initial state.
  * @return {boolean} The CnAppRoot `supportDialog` prop: false holds the note back.
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  * @spec openspec/changes/the-support-note-can-be-switched-off/specs/first-load-onboarding/spec.md#requirement-an-administrator-can-switch-the-support-note-off-req-flo-002
  */
 export function supportDialogForThisLoad(walkthroughSeen, supportNoteShown) {

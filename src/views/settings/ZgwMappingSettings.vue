@@ -11,27 +11,29 @@
 				</thead>
 				<tbody>
 					<tr v-for="key in resourceKeys" :key="key">
-						<td>{{ key }}</td>
+						<td>{{ resourceName(key) }}</td>
 						<td>
 							<span
 								v-if="mappings[key] && mappings[key].enabled"
-								class="status-enabled">
+								class="cn-status-badge cn-status-badge--success">
 								{{ t('dossiq', 'Enabled') }}
 							</span>
-							<span v-else-if="mappings[key]" class="status-disabled">
+							<span v-else-if="mappings[key]" class="cn-status-badge cn-status-badge--warning">
 								{{ t('dossiq', 'Disabled') }}
 							</span>
-							<span v-else class="status-unconfigured">
+							<span v-else class="cn-status-badge cn-status-badge--default">
 								{{ t('dossiq', 'Not configured') }}
 							</span>
 						</td>
 						<td>
-							<NcButton type="secondary" @click="editMapping(key)">
-								{{ t('dossiq', 'Edit') }}
-							</NcButton>
-							<NcButton type="tertiary" @click="resetMapping(key)">
-								{{ t('dossiq', 'Reset') }}
-							</NcButton>
+							<div class="zgw-mapping-settings__actions">
+								<NcButton type="secondary" @click="editMapping(key)">
+									{{ t('dossiq', 'Edit') }}
+								</NcButton>
+								<NcButton type="tertiary" @click="resetMapping(key)">
+									{{ t('dossiq', 'Reset') }}
+								</NcButton>
+							</div>
 						</td>
 					</tr>
 				</tbody>
@@ -52,9 +54,11 @@
 </template>
 
 <script>
+import { translate } from '@nextcloud/l10n'
 import { NcButton } from '@nextcloud/vue'
 import ZgwMappingDialog from '../../dialogs/ZgwMappingDialog.vue'
 import { useZgwMappingStore } from '../../store/modules/zgwMapping.js'
+import { zgwResourceName } from './zgwResourceNames.js'
 
 export default {
 	name: 'ZgwMappingSettings',
@@ -104,6 +108,17 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * A resource key as a person reads it ("Zaaktype", not "caseType").
+		 *
+		 * @param {string} key The stored resource key.
+		 * @return {string} The name.
+		 * @spec openspec/specs/admin-settings/spec.md#requirement-a-zgw-mapping-row-names-its-resource
+		 */
+		resourceName(key) {
+			return zgwResourceName(key, translate)
+		},
+
 		/**
 		 * @param {string} key The key.
 		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
@@ -159,16 +174,17 @@ export default {
 	font-weight: bold;
 }
 
-.status-enabled {
-	color: var(--color-success-text);
+.zgw-mapping-settings__actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
 }
 
-.status-disabled {
-	color: var(--color-warning-text);
-}
-
-.status-unconfigured {
-	color: var(--color-text-maxcontrast);
+/* The state reads as a pill and the row's buttons are 34px, as board
+   DqBeheerGeavanceerd "ZGW-API-koppeling" draws them. */
+.zgw-mapping-settings__actions :deep(.button-vue) {
+	min-height: 34px;
+	height: 34px;
 }
 
 .success-message {

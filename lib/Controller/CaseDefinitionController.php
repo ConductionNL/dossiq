@@ -267,43 +267,4 @@ class CaseDefinitionController extends Controller {
 		}
 	}//end newVersion()
 
-	/**
-	 * Delete a case type, but only when it is a draft.
-	 *
-	 * @param string $id The case type id to delete.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T07
-	 */
-	#[AuthorizedAdminSetting(AdminSettings::class)]
-	public function delete(string $id): JSONResponse {
-		try {
-			$result = $this->copyService->deleteDraft($id);
-
-			if ($result['ok'] === true) {
-				return new JSONResponse(['success' => true]);
-			}
-
-			$statusCode = match ($result['reason'] ?? 'error') {
-				'not_found' => Http::STATUS_NOT_FOUND,
-				'published' => Http::STATUS_CONFLICT,
-				default => Http::STATUS_INTERNAL_SERVER_ERROR,
-			};
-
-			$message = match ($result['reason'] ?? 'error') {
-				'not_found' => 'Case type not found',
-				'published' => 'Cannot delete a published case type. Unpublish it first.',
-				default => 'Delete failed',
-			};
-
-			return new JSONResponse(['error' => $message], $statusCode);
-		} catch (\Throwable $e) {
-			$this->logger->error('Case type delete failed: ' . $e->getMessage());
-			return new JSONResponse(
-				['error' => 'Delete failed: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end delete()
 }//end class

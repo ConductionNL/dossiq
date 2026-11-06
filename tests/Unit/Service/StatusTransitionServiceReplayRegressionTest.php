@@ -63,6 +63,8 @@ interface ReplayObjectServiceStub {
  * Regression tests for StatusTransitionService::replay().
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionStep
  * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
  * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver
@@ -77,6 +79,7 @@ interface ReplayObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  * @uses   \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class StatusTransitionServiceReplayRegressionTest extends TestCase {
 	use MakesStatusDeclarations;

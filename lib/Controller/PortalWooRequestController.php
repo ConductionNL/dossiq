@@ -167,14 +167,16 @@ class PortalWooRequestController extends Controller {
 	}//end start()
 
 	/**
-	 * What the intake reads: the resident and the branch from the verified
-	 * assertion only, the whitelisted fields from the body.
+	 * What the intake reads: the resident, the branch and the audience (how
+	 * they logged in) from the verified assertion only, the whitelisted
+	 * fields from the body.
 	 *
 	 * @param array<string, mixed> $claims The verified assertion.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
 	 */
 	private function intakeRequest(array $claims): array {
 		$request = ['subjectRef' => (string)$claims['sub']];
@@ -192,6 +194,7 @@ class PortalWooRequestController extends Controller {
 
 		$request['origin'] = 'portal';
 		$request['originReference'] = null;
+		$request['audience'] = (string)($claims['audience'] ?? '');
 
 		return $request;
 	}//end intakeRequest()
@@ -298,7 +301,7 @@ class PortalWooRequestController extends Controller {
 	 *
 	 * @return array<string, mixed> The body.
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
 	 */
 	private function refusalBody(WooRequestRefused $refused): array {
 		$sentence = $refused->getDetail();

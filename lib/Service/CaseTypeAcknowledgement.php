@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCP\IL10N;
 
 /**
  * What a case type says about confirming receipt.
@@ -51,6 +52,16 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
  * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
  */
 class CaseTypeAcknowledgement {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param IL10N $l10n Words the publication warnings in the reader's language.
+	 */
+	public function __construct(
+		private readonly IL10N $l10n,
+	) {
+	}//end __construct()
 
 	/**
 	 * The intake channels that count as an electronic submission.
@@ -100,6 +111,7 @@ class CaseTypeAcknowledgement {
 		'contentOnPlatform' => false,
 		'language' => 'nl',
 		'addressFields' => [],
+		'emailCopy' => false,
 	];
 
 	/**
@@ -130,6 +142,7 @@ class CaseTypeAcknowledgement {
 		$declaration['enabled'] = ($declaration['enabled'] !== false);
 		$declaration['statutory'] = ($declaration['statutory'] !== false);
 		$declaration['contentOnPlatform'] = ($declaration['contentOnPlatform'] === true);
+		$declaration['emailCopy'] = ($declaration['emailCopy'] === true);
 		$declaration['intakeChannels'] = $this->channelList(value: $declaration['intakeChannels']);
 		$declaration['defaultChannel'] = trim((string)$declaration['defaultChannel']);
 		$declaration['language'] = trim((string)$declaration['language']);
@@ -235,6 +248,19 @@ class CaseTypeAcknowledgement {
 	public function contentStaysOnPlatform(array $caseType): bool {
 		return ($this->declarationFor(caseType: $caseType)['contentOnPlatform'] === true);
 	}//end contentStaysOnPlatform()
+
+	/**
+	 * Whether the acknowledgement also goes by e-mail when another channel took it.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return boolean TRUE when the case type declares `emailCopy`.
+	 *
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	public function sendsEmailCopy(array $caseType): bool {
+		return ($this->declarationFor(caseType: $caseType)['emailCopy'] === true);
+	}//end sendsEmailCopy()
 
 	/**
 	 * The channel this acknowledgement goes out through.
@@ -354,18 +380,17 @@ class CaseTypeAcknowledgement {
 		$warnings = [];
 
 		if ($declaration['enabled'] === false) {
-			$warnings[] = 'This case type sends no acknowledgement of receipt. '
-				. 'Awb 4:3a asks for one on every electronic submission.';
+			$warnings[] = $this->l10n->t('This case type sends no acknowledgement of receipt. Awb 4:3a asks for one on every electronic submission.');
 		}
 
 		if ($declaration['enabled'] === true && $declaration['intakeChannels'] === []) {
-			$warnings[] = 'This case type names no intake channel that owes an acknowledgement, '
-				. 'so none is ever sent. Awb 4:3a asks for one on every electronic submission.';
+			$warnings[] = $this->l10n->t('This case type names no intake channel that owes an acknowledgement, so none is ever sent. '
+				. 'Awb 4:3a asks for one on every electronic submission.');
 		}
 
 		if ($this->statutoryMomentWasRemoved(caseType: $caseType) === true) {
-			$warnings[] = 'The statutory acknowledgement of receipt was removed from this case '
-				. 'type\'s automatic messages. Awb 4:3a asks for one on every electronic submission.';
+			$warnings[] = $this->l10n->t('The statutory acknowledgement of receipt was removed from this case type\'s automatic '
+				. 'messages. Awb 4:3a asks for one on every electronic submission.');
 		}
 
 		return $warnings;

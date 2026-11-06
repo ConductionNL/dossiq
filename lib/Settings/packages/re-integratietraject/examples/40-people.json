@@ -1,0 +1,13 @@
+{
+  "schema": "role_schema",
+  "rows": [
+    {
+      "id": "f06c2ba6-bf5a-5709-a73a-341f841d6ea3",
+      "name": "Pieter Jansen",
+      "roleType": "caa4f54b-4087-58a0-a361-17fcdf0ba3dc",
+      "case": "59547a3e-c601-58be-8f59-00b354c78575",
+      "participant": "pieter",
+      "description": "klantmanager werk en inkomen"
+    }
+  ]
+}

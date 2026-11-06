@@ -213,6 +213,24 @@ class ContactMomentServiceTest extends TestCase {
 	}//end testNoCaseWritesNoCase()
 
 	/**
+	 * A paper letter is a channel: it is logged as `brief`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/contact-channel-letter/spec.md
+	 */
+	public function testALetterIsLoggedAsAChannel(): void {
+		$this->signIn('handler');
+
+		$this->service->createContactMoment([
+			'notificationChannel' => 'brief',
+			'summary' => 'Bezwaarschrift per post ontvangen',
+		]);
+
+		$this->assertSame('brief', $this->saved['notificationChannel']);
+	}//end testALetterIsLoggedAsAChannel()
+
+	/**
 	 * The form payload, channel and direction and summary only, saves.
 	 *
 	 * @return void

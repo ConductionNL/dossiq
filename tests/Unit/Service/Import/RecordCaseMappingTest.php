@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
+ * @covers \OCA\Dossiq\Service\Import\RecordValues
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class RecordCaseMappingTest extends TestCase {
@@ -150,4 +151,58 @@ class RecordCaseMappingTest extends TestCase {
 		self::assertNull($mapping->read(case: $case, path: 'a.x'));
 		self::assertNull($mapping->read(case: $case, path: 'd.e'));
 	}//end testADotPathReadsANestedValue()
+
+	/**
+	 * A record without a status takes the `*` status, nested and typed values
+	 * are read, and `property` entries answer the case type's fields as text.
+	 *
+	 * @return void
+	 */
+	public function testANestedTypedRecordAnswersTheCaseTypesFields(): void {
+		$field = static fn (string $name, string $from, string $as): array => [
+			'to' => 'properties',
+			'property' => ['definition' => 'def-' . $name, 'name' => $name],
+			'from' => $from,
+			'as' => $as,
+		];
+		$mapped = (new RecordCaseMapping(dates: $this->caseDates()))->map(
+			import: [
+				'statuses' => ['*' => ['status' => 's-running']],
+				'fields' => [
+					['to' => 'assignee', 'from' => 'owner'],
+					$field('exempt', 'exemption.active', 'boolean'),
+					$field('mandatory', 'mandatory', 'boolean'),
+					$field('budget', 'budget', 'number'),
+					$field('items', 'items', 'json'),
+					$field('none', 'emptyList', 'json'),
+					$field('reason', 'exemption.reason', 'text'),
+					['to' => 'meta.flag', 'from' => 'exemption.active', 'as' => 'boolean'],
+				],
+			],
+			record: [
+				'owner' => 'km-1',
+				'exemption' => ['active' => true, 'reason' => 'Medisch'],
+				'mandatory' => false,
+				'budget' => '1250.5',
+				'items' => [['kind' => 'jobcoaching', 'budget' => 900]],
+				'emptyList' => [],
+			],
+			recordId: 'rec-9',
+			caseTypeId: 'type-9'
+		);
+
+		self::assertSame(expected: 's-running', actual: $mapped['case']['status']);
+		self::assertSame(expected: 'km-1', actual: $mapped['case']['assignee']);
+		self::assertTrue(condition: $mapped['case']['meta']['flag']);
+		self::assertSame(
+			expected: [
+				['propertyDefinition' => 'def-exempt', 'name' => 'exempt', 'value' => 'true'],
+				['propertyDefinition' => 'def-mandatory', 'name' => 'mandatory', 'value' => 'false'],
+				['propertyDefinition' => 'def-budget', 'name' => 'budget', 'value' => '1250.5'],
+				['propertyDefinition' => 'def-items', 'name' => 'items', 'value' => '[{"kind":"jobcoaching","budget":900}]'],
+				['propertyDefinition' => 'def-reason', 'name' => 'reason', 'value' => 'Medisch'],
+			],
+			actual: $mapped['case']['properties']
+		);
+	}//end testANestedTypedRecordAnswersTheCaseTypesFields()
 }//end class

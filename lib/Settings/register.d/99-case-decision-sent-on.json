@@ -1,0 +1,26 @@
+{
+  "_note": "case-actions-placed-on-the-case-page: decisionSentOn is the day the case's latest decision went out. CaseRemedy::recordSent() writes it when a decision is sent; portaliq reads it as the start of the bezwaar window on the case page (createBezwaar onCase.window.from). case 1.61.0.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.61.0",
+        "properties": {
+          "decisionSentOn": {
+            "matchType": "range",
+            "inputControl": "date-range",
+            "type": "string",
+            "format": "date",
+            "readOnly": true,
+            "title": "Decision sent on",
+            "description": "The day the latest decision on this case was sent. Set by dossiq when the decision goes out, not by hand.",
+            "visible": false
+          }
+        }
+      }
+    }
+  }
+}

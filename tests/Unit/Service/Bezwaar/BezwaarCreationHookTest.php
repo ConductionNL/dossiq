@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
 use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IUserSession;
@@ -308,4 +309,44 @@ class BezwaarCreationHookTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->service->onBezwaarCreated('bezwaar-1', 'decision-missing');
 	}//end testThrowsWhenDecisionNotFound()
+	/**
+	 * The objection carries no status the caller sends: the objection schema
+	 * declares neither a status nor a lifecycle. An id the caller sends opens a
+	 * new objection and leaves the one it names as it was.
+	 *
+	 * @return void
+	 */
+	public function testTheObjectionKeepsNoCallerStatusOrIdentity(): void {
+		$register = new LifecycleRegister();
+		$register->seed(schema: 'decision', uuid: 'decision-1', row: ['case' => 'primair-1']);
+		$register->seed(schema: 'case', uuid: 'bezwaar-1', row: ['title' => 'Bezwaar']);
+		$register->seed(schema: 'objection', uuid: 'victim-1', row: ['case' => 'other-case', 'grounds' => 'Ander bezwaar']);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				'decision_schema' => 'decision',
+				'objection_schema' => 'objection',
+				default => '',
+			}
+		);
+		$hook = new BezwaarCreationHook($settings, $this->userSession, $this->logger);
+
+		$created = $hook->onBezwaarCreated(
+			'bezwaar-1',
+			'decision-1',
+			['id' => 'victim-1', 'uuid' => 'victim-1', '@self' => ['id' => 'victim-1'], 'grounds' => 'Te laat', 'status' => 'Decision on objection']
+		);
+
+		$this->assertNotSame('victim-1', $created['id']);
+		$this->assertSame(['case' => 'other-case', 'grounds' => 'Ander bezwaar', 'id' => 'victim-1'], $register->row('objection', 'victim-1'));
+		$stored = $register->row('objection', (string)$created['id']);
+		$this->assertArrayNotHasKey('status', $stored);
+		$this->assertArrayNotHasKey('uuid', $stored);
+		$this->assertSame('Te laat', $stored['grounds']);
+		$this->assertSame('bezwaar-1', $stored['case']);
+	}//end testTheObjectionKeepsNoCallerStatusOrIdentity()
 }//end class

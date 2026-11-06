@@ -120,6 +120,11 @@
 					data-testid="case-ai-question-answer">
 					{{ answer }}
 				</div>
+				<AiSuggestionDecision
+					v-if="answer"
+					:text="answer"
+					testid="case-ai-question-decision"
+					@decide="decide('question', $event)" />
 				<p
 					v-if="answerFailed"
 					class="case-ai-features__unreadable"
@@ -237,6 +242,11 @@
 						:data-testid="`case-ai-feature-output-${feature.slug}`">
 						{{ runs[feature.slug].output }}
 					</div>
+					<AiSuggestionDecision
+						v-if="runs[feature.slug] && runs[feature.slug].output"
+						:text="runs[feature.slug].output"
+						:testid="`case-ai-feature-decision-${feature.slug}`"
+						@decide="decide(`feature:${feature.slug}`, $event)" />
 				</section>
 
 				<p class="case-ai-features__hint">
@@ -255,6 +265,8 @@
 <script>
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import AiSuggestionDecision from './AiSuggestionDecision.vue'
+import { createSuggestionTracker } from '../../services/aiSuggestionTracker.js'
 import { converse } from '../../services/assistantApi.js'
 import {
 	AiFeatureRefusal,
@@ -273,6 +285,7 @@ import {
 export default {
 	name: 'CaseAiFeaturesPanel',
 	components: {
+		AiSuggestionDecision,
 		NcButton,
 		NcLoadingIcon,
 		NcNoteCard,
@@ -300,8 +313,30 @@ export default {
 		}
 	},
 
+	/**
+	 * Start tracking the suggestions shown on this case, and report the
+	 * undecided ones as closed when the page is left.
+	 *
+	 * @spec openspec/specs/ai-oversight-dispatch/spec.md
+	 */
+	created() {
+		this.tracker = createSuggestionTracker({ caseId: this.objectId })
+		this.onPageHide = () => this.tracker.closeAll({ leaving: true })
+		window.addEventListener('pagehide', this.onPageHide)
+	},
+
 	async mounted() {
 		await this.load()
+	},
+
+	/**
+	 * Report the undecided suggestions as closed when the panel closes.
+	 *
+	 * @spec openspec/specs/ai-oversight-dispatch/spec.md
+	 */
+	beforeUnmount() {
+		window.removeEventListener('pagehide', this.onPageHide)
+		this.tracker.closeAll()
 	},
 
 	methods: {
@@ -360,12 +395,21 @@ export default {
 		 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-prompts-offered-on-a-case-come-from-hermiq
 		 */
 		async ask(prompt) {
+			this.tracker.dismiss('question', 'superseded')
 			this.asking = true
 			this.answer = ''
 			this.answerFailed = ''
 			try {
 				const result = await converse(this.objectId, prompt.prompt)
 				this.answer = String(result?.reply ?? '')
+				if (this.answer !== '') {
+					this.tracker.show('question', {
+						type: 'qa',
+						text: this.answer,
+						prompt: prompt.prompt,
+						model: String(result?.model ?? ''),
+					})
+				}
 			} catch (error) {
 				this.answerFailed =
 					String(error?.response?.data?.error ?? '')
@@ -373,6 +417,20 @@ export default {
 			} finally {
 				this.asking = false
 			}
+		},
+
+		/**
+		 * Report what the person did with the suggestion in a slot.
+		 *
+		 * @param {string} slot The slot key.
+		 * @param {object} decision `{userAction, actualValue?}` from AiSuggestionDecision.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/ai-oversight-dispatch/spec.md
+		 */
+		decide(slot, decision) {
+			return this.tracker.decide(slot, decision.userAction, {
+				actualValue: decision.actualValue,
+			})
 		},
 
 		/**
@@ -396,6 +454,7 @@ export default {
 		 */
 		async run(feature) {
 			const state = this.runs[feature.slug]
+			this.tracker.dismiss(`feature:${feature.slug}`, 'superseded')
 			state.busy = true
 			state.refusal = null
 			state.failed = false
@@ -407,6 +466,15 @@ export default {
 					instruction: state.instruction,
 				})
 				state.output = String(answer?.output ?? '')
+				if (state.output !== '') {
+					this.tracker.show(`feature:${feature.slug}`, {
+						type: 'decision_support',
+						text: state.output,
+						prompt: state.instruction,
+						model: String(answer?.model ?? ''),
+						documentId: state.documentReference,
+					})
+				}
 			} catch (error) {
 				if (error instanceof AiFeatureRefusal) {
 					state.refusal = {

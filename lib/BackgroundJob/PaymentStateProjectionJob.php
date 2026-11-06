@@ -211,12 +211,17 @@ class PaymentStateProjectionJob extends TimedJob {
 		}
 
 		try {
-			$this->patchObjectAsArray(
+			// `paymentState` and `paymentStateCheckedAt` are readOnly: clients may not
+			// write them, and OpenRegister lets only a system operation stamp them.
+			$this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseId,
-				changes: $projection,
+				operation: fn () => $this->patchObjectAsArray(
+					objectService: $objectService,
+					register: $register,
+					schema: $schema,
+					id: $caseId,
+					changes: $projection,
+				),
 			);
 		} catch (Throwable $e) {
 			// One case that cannot be written must not end the sweep.

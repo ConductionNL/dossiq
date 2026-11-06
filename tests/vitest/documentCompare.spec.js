@@ -69,8 +69,6 @@ vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
 
 const { default: DocumentCompareDialog } =
 	await import('../../src/dialogs/DocumentCompareDialog.vue')
-const { default: FileSetItems } =
-	await import('../../src/components/fileSet/FileSetItems.vue')
 const { isFilinqInstalled, loadFilinqCompare, resetFilinqCompare } =
 	await import('../../src/utils/filinqCompare.js')
 
@@ -251,94 +249,39 @@ describe('loadFilinqCompare', () => {
 	})
 })
 
-describe('FileSetItems', () => {
-	const content = {
-		filesUrl:
-			'/apps/dossiq/api/cases/{case}/woo/delivered-sets/{set}/items/{index}',
-		classificationLabels: {
-			openbaar: 'Public',
-			deels_openbaar: 'Disclosed in part',
-		},
-	}
-	const objectData = {
-		case: 'case-1',
-		items: [
-			{
-				fileName: 'besluit-gelakt.pdf',
-				classification: 'deels_openbaar',
-				deliveredRef: 'doc-red',
-				originalRef: 'doc-orig',
-				sha256: 'a'.repeat(64),
-			},
-			{
-				fileName: 'nota.pdf',
-				classification: 'openbaar',
-				deliveredRef: 'doc-2',
-				originalRef: 'doc-2',
-				sha256: 'b'.repeat(64),
-			},
-		],
-	}
+describe('the items of a delivered set', () => {
+	// The table, the Compare button and its accessible name are the library's
+	// field-list widget (tests/components/CnFieldListDialogAction.spec.js runs
+	// this very configuration). What dossiq owns is the declaration and the
+	// modal it names.
+	const root = path.resolve(__dirname, '../..')
+	const manifest = JSON.parse(
+		fs.readFileSync(path.join(root, 'src', 'manifest.json'), 'utf8'),
+	)
+	const registry = fs.readFileSync(path.join(root, 'src', 'registry.js'), 'utf8')
+	const page = manifest.pages.find((p) => p.id === 'WooDeliveredSetDetail')
+	const widget = page.config.widgets.find((w) => w.id === 'woo-delivered-set-items')
 
-	it('lists every item and offers Compare on the redacted one only', () => {
-		const wrapper = mount(FileSetItems, {
-			props: { objectId: 'set-1', objectData, content },
-		})
-
-		expect(wrapper.findAll('tbody tr')).toHaveLength(2)
-		expect(wrapper.find('[data-testid="file-set-item-0"]').text()).toContain(
-			'Disclosed in part',
-		)
-		expect(wrapper.find('[data-testid="file-set-compare-0"]').exists()).toBe(
-			true,
-		)
-		expect(wrapper.find('[data-testid="file-set-compare-1"]').exists()).toBe(
-			false,
-		)
-	})
-
-	it('offers no Compare when the case type configured no files URL', () => {
-		const wrapper = mount(FileSetItems, {
-			props: { objectId: 'set-1', objectData, content: {} },
-		})
-
-		expect(wrapper.find('[data-testid="file-set-compare-0"]').exists()).toBe(
-			false,
-		)
-		expect(wrapper.find('[data-testid="file-set-item-0"]').text()).toContain(
-			'deels_openbaar',
-		)
-	})
-
-	it('opens the compare dialog on that item with the configured URL and closes it again', async () => {
-		const wrapper = mount(FileSetItems, {
-			props: { objectId: 'set-1', objectData, content },
-		})
-
-		await wrapper.find('[data-testid="file-set-compare-0"]').trigger('click')
-		const opened = wrapper.findComponent(DocumentCompareDialog)
-		expect(opened.props('filesUrl')).toBe(BASE)
-
-		opened.vm.$emit('close')
-		await wrapper.vm.$nextTick()
-		expect(wrapper.findComponent(DocumentCompareDialog).exists()).toBe(false)
-	})
-
-	it('is registered, and the Woo case type configures it on the set detail page', () => {
-		const root = path.resolve(__dirname, '../..')
-		const registry = fs.readFileSync(
-			path.join(root, 'src', 'registry.js'),
-			'utf8',
-		)
-		const manifest = JSON.parse(
-			fs.readFileSync(path.join(root, 'src', 'manifest.json'), 'utf8'),
-		)
-		expect(registry).toMatch(
-			/'file-set-items': \{[\s\S]*?component: FileSetItems/,
-		)
-		const page = manifest.pages.find((p) => p.id === 'WooDeliveredSetDetail')
-		const widget = page.config.widgets.find((w) => w.type === 'file-set-items')
-		expect(widget.content.filesUrl).toContain('{index}')
+	it('lists the set\'s own items, read only, with the columns the record shows', () => {
+		expect(widget.type).toBe('field-list')
+		expect(widget.content).toMatchObject({ field: 'items', variant: 'table', readOnly: true, emptyText: 'This set has no items.' })
+		expect(widget.content.columns.map((c) => c.path)).toEqual(['fileName', 'classification', 'sha256'])
+		expect(widget.content.columns[1].map).toEqual({ openbaar: 'Public', deels_openbaar: 'Disclosed in part' })
 		expect(page.config.layout.some((l) => l.widgetId === widget.id)).toBe(true)
+	})
+
+	it('offers Compare only on an item whose file that went out is not its original', () => {
+		const [compare] = widget.content.rowActions
+		expect(compare).toMatchObject({ id: 'compare', label: 'Compare', placement: 'inline', dialog: 'DocumentCompareDialog' })
+		expect(compare.when).toEqual({ deliveredRef: { set: true, neq: '@row.originalRef' } })
+		expect(compare.ariaLabel).toBe('Compare {fileName} with the original')
+	})
+
+	it('opens the compare dialog on that item of that set of that case', () => {
+		const [compare] = widget.content.rowActions
+		expect(compare.props.filesUrl).toBe(
+			'/apps/dossiq/api/cases/@object.case/woo/delivered-sets/@objectId/items/@index',
+		)
+		expect(registry).toMatch(/DocumentCompareDialog: \{\s*kind: 'modal',\s*component: DocumentCompareDialog/)
 	})
 })

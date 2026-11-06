@@ -5,10 +5,10 @@
  *
  * Submits one filled-in checklist for a case and reads the runs a case has.
  * A run is an OpenRegister task (see
- * {@see \OCA\Dossiq\Service\Inspection\InspectionRunService}). The URLs keep
- * their first names (`/api/vth/cases/{id}/inspection-result`), because the
- * case panel, the offline client and the end-to-end tests call them; the code
- * behind them knows no procedure.
+ * {@see \OCA\Dossiq\Service\Inspection\InspectionRunService}) at
+ * `/api/cases/{id}/checklist-results`. The earlier
+ * `/api/vth/cases/{id}/inspection-result(s)` stays routed to the
+ * `*LegacyPath()` delegates, because the offline client replays to it.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -210,7 +210,7 @@ class TaskChecklistController extends Controller {
 	 *
 	 * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()`.
 	 *
-	 * `GET /api/vth/cases/{id}/inspection-results` is a per-case sub-resource
+	 * `GET /api/cases/{id}/checklist-results` is a per-case sub-resource
 	 * and `$id` is the CASE uuid, so the case-membership predicate applies
 	 * directly. Inspection results carry enforcement findings against a named
 	 * address, so this is a per-case read of supervision data and not a
@@ -239,4 +239,44 @@ class TaskChecklistController extends Controller {
 		$results = $this->runs->runsForCase(caseId: $id, actor: $user->getUID());
 		return new JSONResponse(data: $results, statusCode: Http::STATUS_OK);
 	}//end runs()
+
+	/**
+	 * submit() on its old address.
+	 *
+	 * Deprecated alias of POST /api/cases/{id}/checklist-results; remove after the next major.
+	 *
+	 * @param string $id UUID of the case
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for submit(); behaviour covered by the submit() tests.
+	 */
+	#[NoAdminRequired]
+	public function submitLegacyPath(string $id): JSONResponse {
+		return $this->submit(id: $id);
+	}//end submitLegacyPath()
+
+	/**
+	 * runs() on its old address.
+	 *
+	 * Deprecated alias of GET /api/cases/{id}/checklist-results; remove after the next major.
+	 *
+	 * @param string $id UUID of the case
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 *
+	 * @contract exclude Deprecated path alias for runs(); behaviour covered by the runs() tests.
+	 */
+	#[NoAdminRequired]
+	public function runsLegacyPath(string $id): JSONResponse {
+		return $this->runs(id: $id);
+	}//end runsLegacyPath()
 }//end class

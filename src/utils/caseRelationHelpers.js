@@ -106,7 +106,7 @@ export function relationErrorMessage(reason) {
  * @param {string} value The value.
  * @return {boolean} True for a uuid.
  *
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 export function isBareUuid(value) {
 	return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -129,7 +129,7 @@ export function isBareUuid(value) {
  * @return {Array} Sections `{key, label, icon, items}`.
  *
  * @spec openspec/specs/related-case-linking/spec.md
- * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 export function relationSections(relations) {
 	const groups = new Map()

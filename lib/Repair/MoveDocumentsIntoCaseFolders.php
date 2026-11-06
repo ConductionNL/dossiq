@@ -49,8 +49,14 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 
 	/**
 	 * The value the key holds once the step ran; bump it to run the step again.
+	 *
+	 * 2: joins stored straight into OpenRegister (an example set, an import)
+	 * before DocumentJoinHomingListener left their files outside the case
+	 * folder, so the case's Files tab stayed empty.
+	 * 3: such a record holds its file in `@self.files` with no `fileId`, which
+	 * version 2 still skipped.
 	 */
-	public const DONE_VERSION = '1';
+	public const DONE_VERSION = '3';
 
 	/**
 	 * How many records one page holds.
@@ -176,7 +182,7 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 	private function moveOne(array $row): string {
 		$recordId = trim((string)($row['id'] ?? (($row['@self'] ?? [])['id'] ?? '')));
 		$fileName = (string)($row['fileName'] ?? '');
-		if ($recordId === '' || $fileName === '' || (int)($row['fileId'] ?? 0) <= 0) {
+		if ($recordId === '' || $fileName === '' || $this->holdsFile(row: $row) === false) {
 			return 'skipped';
 		}
 
@@ -211,6 +217,19 @@ class MoveDocumentsIntoCaseFolders implements IRepairStep {
 			return 'missing';
 		}
 	}//end moveOne()
+
+	/**
+	 * Whether a record holds a file: a `fileId`, or one attached in `@self.files`.
+	 *
+	 * @param array<string, mixed> $row The record row.
+	 *
+	 * @return bool
+	 */
+	private function holdsFile(array $row): bool {
+		$attached = (($row['@self'] ?? [])['files'] ?? []);
+
+		return ((int)($row['fileId'] ?? 0) > 0 || (is_array($attached) === true && $attached !== []));
+	}//end holdsFile()
 
 	/**
 	 * The case of a record's earliest join, by registration date.

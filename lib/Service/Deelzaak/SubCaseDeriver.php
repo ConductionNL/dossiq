@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Deelzaak;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -97,24 +98,18 @@ class SubCaseDeriver {
 	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function derive(string $parentCaseUuid, array $childData): array {
+		$childData = array_diff_key($childData, CallerIdentity::KEYS);
 		if ($parentCaseUuid === '') {
 			return ['ok' => false, 'reason' => 'parent_not_found'];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register      = $this->settingsService->getConfigValue('register');
-		$schema        = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->store(parentCaseUuid: $parentCaseUuid);
+		if ($store === null) {
 			return ['ok' => false, 'reason' => 'not_configured'];
 		}
 
-		$parent = $this->findParent(
-			objectService: $objectService,
-			parentCaseUuid: $parentCaseUuid,
-			register: $register,
-			schema: $schema
-		);
-		if ($parent === null) {
+		$link = $this->link(store: $store);
+		if ($link === null) {
 			return ['ok' => false, 'reason' => 'parent_not_found'];
 		}
 
@@ -122,74 +117,137 @@ class SubCaseDeriver {
 		// declaration that says what to inherit hangs off this very property.
 		$childData[self::PARENT_PROPERTY] = $parentCaseUuid;
 
-		$relations   = $this->settingsService->getOpenRegisterClass(self::RELATION_SERVICE);
-		$declaration = $this->declaration(relations: $relations, parent: $parent);
-		$inherited   = [];
-
-		if ($relations !== null) {
-			$applied   = $relations->applyInheritance(
-				parent: $parent,
-				childData: $childData,
-				inherits: ($declaration['inherits'] ?? [])
-			);
-			$childData = ($applied['data'] ?? $childData);
-			$inherited = ($applied['inherited'] ?? []);
-		}
-
+		$applied = $this->inherit(link: $link, childData: $childData);
 		try {
-			$created = $objectService->saveObject(
-				object: $childData,
-				register: $register,
-				schema: $schema
-			);
+			$saved = $this->save(store: $store, childData: $applied['data']);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the sub-case could not be created',
-				['parent' => $parentCaseUuid, 'error' => $e->getMessage()]
+				['parent' => $store->parentCaseUuid, 'error' => $e->getMessage()]
 			);
 			return ['ok' => false, 'reason' => 'create_failed'];
 		}
 
-		if ($relations !== null) {
-			$this->record(
-				relations: $relations,
-				parent: $parent,
-				created: $created,
-				relationType: ($declaration['type'] ?? null),
-				inherited: $inherited
-			);
-		}
+		$this->record(link: $link, saved: ($saved + ['inherited' => $applied['inherited']]));
 
 		return [
 			'ok' => true,
-			'object' => $this->asArray(object: $created),
-			'inherited' => $inherited,
-			'inheritanceApplied' => ($relations !== null),
+			'object' => $this->asArray(object: $saved['created']),
+			'inherited' => $applied['inherited'],
+			'inheritanceApplied' => ($link->relations !== null),
 		];
 	}//end derive()
 
 	/**
+	 * Where the derive reads and saves, or null when dossiq is not configured for it.
+	 *
+	 * @param string $parentCaseUuid The parent case.
+	 *
+	 * @return SubCaseStore|null The store.
+	 */
+	private function store(string $parentCaseUuid): ?SubCaseStore {
+		$objectService = $this->settingsService->getObjectService();
+		$register      = $this->settingsService->getConfigValue('register');
+		$schema        = $this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return new SubCaseStore(objectService: $objectService, register: $register, schema: $schema, parentCaseUuid: $parentCaseUuid);
+	}//end store()
+
+	/**
+	 * The parent, the relation service and the declaration, or null when the parent cannot be read.
+	 *
+	 * @param SubCaseStore $store Where the parent is read.
+	 *
+	 * @return SubCaseLink|null The link.
+	 */
+	private function link(SubCaseStore $store): ?SubCaseLink {
+		$parent = $this->findParent(store: $store);
+		if ($parent === null) {
+			return null;
+		}
+
+		$relations = $this->settingsService->getOpenRegisterClass(self::RELATION_SERVICE);
+
+		return new SubCaseLink(
+			parent: $parent,
+			relations: $relations,
+			declaration: $this->declaration(relations: $relations, parent: $parent)
+		);
+	}//end link()
+
+	/**
+	 * The child with what it takes from its parent, through the relation service when it is there.
+	 *
+	 * @param SubCaseLink          $link      What the child is derived from.
+	 * @param array<string, mixed> $childData The child, naming its parent.
+	 *
+	 * @return array{data: mixed, inherited: mixed} The child to save and what it took.
+	 */
+	private function inherit(SubCaseLink $link, array $childData): array {
+		if ($link->relations === null) {
+			return ['data' => $childData, 'inherited' => []];
+		}
+
+		$applied = $link->relations->applyInheritance(
+			parent: $link->parent,
+			childData: $childData,
+			inherits: $link->inherits()
+		);
+
+		return ['data' => ($applied['data'] ?? $childData), 'inherited' => ($applied['inherited'] ?? [])];
+	}//end inherit()
+
+	/**
+	 * Save the child.
+	 *
+	 * @param SubCaseStore $store     Where the child is saved.
+	 * @param mixed        $childData The child.
+	 *
+	 * @return array{created: mixed} The created child.
+	 *
+	 * @throws \Throwable When the store refuses it.
+	 */
+	private function save(SubCaseStore $store, mixed $childData): array {
+		$created = $store->objectService->saveObject(
+			object: $childData,
+			register: $store->register,
+			schema: $store->schema
+		);
+
+		return ['created' => $created];
+	}//end save()
+
+	/**
+	 * The created child and what it took, for the provenance row.
+	 *
+	 * The array parameter type-checks what the relation service said was inherited.
+	 *
+	 * @param mixed                $created   The created child.
+	 * @param array<string, mixed> $inherited What the child took.
+	 *
+	 * @return array{created: mixed, inherited: array<string, mixed>} The derivation.
+	 */
+	private function derived(mixed $created, array $inherited): array {
+		return ['created' => $created, 'inherited' => $inherited];
+	}//end derived()
+
+	/**
 	 * The parent case as OpenRegister's own entity, which the derive needs.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $parentCaseUuid The parent case.
-	 * @param string $register The register.
-	 * @param string $schema The case schema.
+	 * @param SubCaseStore $store Where the parent is read.
 	 *
 	 * @return object|null The parent entity.
 	 */
-	private function findParent(
-		object $objectService,
-		string $parentCaseUuid,
-		string $register,
-		string $schema,
-	): ?object {
+	private function findParent(SubCaseStore $store): ?object {
 		try {
-			$parent = $objectService->find($parentCaseUuid, register: $register, schema: $schema);
+			$parent = $store->objectService->find($store->parentCaseUuid, register: $store->register, schema: $store->schema);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: the parent case could not be read for a derive',
-				['parent' => $parentCaseUuid, 'error' => $e->getMessage()]
+				['parent' => $store->parentCaseUuid, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -251,31 +309,30 @@ class SubCaseDeriver {
 	/**
 	 * Write the provenance row, without losing the case when it fails.
 	 *
-	 * @param object $relations OpenRegister's relation service.
-	 * @param object $parent The parent entity.
-	 * @param mixed $created The created child.
-	 * @param string|null $relationType The vocabulary key naming the link.
-	 * @param array<string, mixed> $inherited What the child took.
+	 * Nothing is recorded without OpenRegister's relation service.
+	 *
+	 * @param SubCaseLink                             $link  What the child is derived from.
+	 * @param array{created: mixed, inherited: mixed} $saved The created child and what it took.
 	 *
 	 * @return void
 	 */
-	private function record(
-		object $relations,
-		object $parent,
-		mixed $created,
-		?string $relationType,
-		array $inherited,
-	): void {
-		if (is_object($created) === false) {
+	private function record(SubCaseLink $link, array $saved): void {
+		if ($link->relations === null) {
+			return;
+		}
+
+		$relationType = $link->relationType();
+		$derived      = $this->derived(created: $saved['created'], inherited: $saved['inherited']);
+		if (is_object($derived['created']) === false) {
 			return;
 		}
 
 		try {
-			$relations->recordDerivation(
-				parent: $parent,
-				child: $created,
+			$link->relations->recordDerivation(
+				parent: $link->parent,
+				child: $derived['created'],
 				relationType: $relationType,
-				inherited: $inherited
+				inherited: $derived['inherited']
 			);
 		} catch (\Throwable $e) {
 			// The case exists and carries its parent. Losing the provenance row

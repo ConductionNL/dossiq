@@ -28,6 +28,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\DecisionDocument\DecisionLetter;
+use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
 use OCA\Dossiq\Service\Termijn\ExtensionNotice;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
@@ -78,8 +80,12 @@ class WOOAssessmentController extends Controller {
 	 * @param CaseAccessGuard $caseAccessGuard Per-case mutation authorization (fails closed)
 	 * @param LoggerInterface $logger Logger
 	 * @param IL10N $l10n Translations for the refusal a header action shows
+	 * @param HandlerActsAsSystem $handlerActs Runs a publish or withdraw as the system, for the
+	 *        case's handler at the publication step.
 	 * @param ExtensionNotice|null $extensionNotice Tells the requester about an extension, with the
 	 *        reason and the new end. Absent, the answer says the requester was not told.
+	 * @param DecisionLetter|null $letters Checks a chosen letter is on the case and links the
+	 *        decision to its letter. Absent, no letter is checked and none is linked.
 	 */
 	public function __construct(
 		string $appName,
@@ -93,7 +99,9 @@ class WOOAssessmentController extends Controller {
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly LoggerInterface $logger,
 		private readonly IL10N $l10n,
+		private readonly HandlerActsAsSystem $handlerActs,
 		private readonly ?ExtensionNotice $extensionNotice = null,
+		private readonly ?DecisionLetter $letters = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -248,11 +256,19 @@ class WOOAssessmentController extends Controller {
 			$decisionData = json_decode($decisionData, true) ?? [];
 		}
 
+		// A chosen letter must be a document of this case, checked before anything is written.
+		$letter = trim((string)$this->request->getParam('letter', ''));
 		try {
+			$this->letters?->assertOnCase(caseId: $id, documentId: $letter);
 			$result = $this->decisionService->assembleDecision(
 				caseId: $id,
 				decisionData: $decisionData,
+				letter: $letter,
 			);
+			if ($this->letters !== null) {
+				$result['letter'] = $this->letters->linkDecision(result: $result, letter: $letter);
+			}
+
 			return new JSONResponse($result);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
@@ -277,11 +293,11 @@ class WOOAssessmentController extends Controller {
 	/**
 	 * Publish an assembled WOO decision to OpenCatalogi.
 	 *
+	 * A non-handler is refused with 403 and a case not at the publication step with 422, both in Dutch.
+	 *
 	 * @param string $id The case UUID
 	 *
 	 * @return JSONResponse `{available, reason?, publicationId?, publicationUrl?}`
-	 *
-	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
@@ -292,15 +308,23 @@ class WOOAssessmentController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$this->requireCaseMutationAccess(caseId: $id, user: $user);
-
 		// Without a decision id the service uses the case's one Woo decision
 		// (design D-1), so a header action that knows only the case can publish.
 		$decisionId = (string)$this->request->getParam('decisionId', '');
 
 		try {
-			$result = $this->publicationService->publish(caseId: $id, decisionId: $decisionId);
+			// The handler decides; dossiq writes the publication, which the
+			// handler holds no create on in OpenCatalogi.
+			$result = $this->handlerActs->run(
+				caseId: $id,
+				user: $user,
+				stepField: 'wooPublicationStatus',
+				stepIn: ['ready', 'published'],
+				operation: fn (): array => $this->publicationService->publish(caseId: $id, decisionId: $decisionId),
+			);
 			return $this->publicationResponse(result: $result);
+		} catch (RefusedException $e) {
+			return $this->handlerRefusal(e: $e);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
@@ -309,11 +333,11 @@ class WOOAssessmentController extends Controller {
 	/**
 	 * Withdraw (depublish) a previously published WOO decision.
 	 *
+	 * A non-handler is refused with 403 and a case with nothing published with 422, both in Dutch.
+	 *
 	 * @param string $id The case UUID
 	 *
 	 * @return JSONResponse `{available, reason?}`
-	 *
-	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
@@ -324,13 +348,19 @@ class WOOAssessmentController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$this->requireCaseMutationAccess(caseId: $id, user: $user);
-
 		$decisionId = (string)$this->request->getParam('decisionId', '');
 
 		try {
-			$result = $this->publicationService->withdraw(decisionId: $decisionId, caseId: $id);
+			$result = $this->handlerActs->run(
+				caseId: $id,
+				user: $user,
+				stepField: 'wooPublicationStatus',
+				stepIn: ['published'],
+				operation: fn (): array => $this->publicationService->withdraw(decisionId: $decisionId, caseId: $id),
+			);
 			return $this->publicationResponse(result: $result);
+		} catch (RefusedException $e) {
+			return $this->handlerRefusal(e: $e);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
@@ -473,6 +503,10 @@ class WOOAssessmentController extends Controller {
 			'several_woo_decisions' => [Http::STATUS_CONFLICT, $this->l10n->t('This case has more than one Woo decision. Publish one by its decision id.')],
 			'pages_unseen' => [Http::STATUS_CONFLICT, $this->l10n->t('Publishing waits until every required page has been seen.')],
 			'no_publishable_documents' => [Http::STATUS_CONFLICT, $this->l10n->t('Nothing can be published yet: no document is assessed as public.')],
+			'documents_unreadable' => [
+				Http::STATUS_CONFLICT,
+				$this->l10n->t('A document that may be made public could not be read, so nothing was published. Check its file on the case and try again.'),
+			],
 			'no_publication' => [Http::STATUS_CONFLICT, $this->l10n->t('This decision has not been published.')],
 			'opencatalogi_not_installed' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenCatalogi is not installed, so nothing can be published.')],
 			'openregister_unavailable' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenRegister is not available.')],
@@ -484,6 +518,24 @@ class WOOAssessmentController extends Controller {
 			default => [Http::STATUS_CONFLICT, $this->l10n->t('The publication could not be changed.')],
 		};
 	}//end refusal()
+
+	/**
+	 * A refused handler check, in the user's language.
+	 *
+	 * @param RefusedException $e The refusal.
+	 *
+	 * @return JSONResponse `{message, error}` with the refusal's own status.
+	 *
+	 * @spec openspec/specs/case-access-control/spec.md
+	 */
+	private function handlerRefusal(RefusedException $e): JSONResponse {
+		$message = match ($e->getRule()) {
+			'not-the-handler' => $this->l10n->t('Claim this case first: only its handler can do this.'),
+			default => $this->l10n->t('This case is not at the step where this can be done.'),
+		};
+
+		return new JSONResponse(['message' => $message, 'error' => $e->getRule()], $e->getStatus());
+	}//end handlerRefusal()
 
 	/**
 	 * Require that the current user can mutate the given case.
@@ -513,4 +565,5 @@ class WOOAssessmentController extends Controller {
 	private function requireCaseMutationAccess(string $caseId, IUser $user): void {
 		$this->caseAccessGuard->assertCaseMutationAccess(caseId: $caseId, user: $user);
 	}//end requireCaseMutationAccess()
+
 }//end class

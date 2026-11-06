@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Service\Ai\CaseTypeAiFeatures;
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\Support\TranslatedText;
 
 /**
  * Lists the published case types a resident's conversation may be filed under.
@@ -51,12 +52,14 @@ class RequestCatalogue {
 	 *
 	 * @param CaseTypeStore      $caseTypes  Reads the case types.
 	 * @param CaseTypeAiFeatures $aiFeatures Reads each case type's surfaces.
+	 * @param TranslatedText     $text       Reads a translatable title or description as text, in the reader's language.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $caseTypes,
 		private readonly CaseTypeAiFeatures $aiFeatures,
+		private readonly TranslatedText $text = new TranslatedText(),
 	) {
 	}//end __construct()
 
@@ -89,10 +92,15 @@ class RequestCatalogue {
 				continue;
 			}
 
+			$title = $this->text->forReader(value: ($caseType['title'] ?? ($caseType['name'] ?? '')));
+			if ($title === '') {
+				$title = $type;
+			}
+
 			$entries[$type] = [
 				'type' => $type,
-				'title' => trim((string)($caseType['title'] ?? ($caseType['name'] ?? $type))),
-				'description' => trim((string)($caseType['description'] ?? '')),
+				'title' => $title,
+				'description' => $this->text->forReader(value: ($caseType['description'] ?? '')),
 			];
 		}//end foreach
 

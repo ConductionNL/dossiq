@@ -89,6 +89,7 @@ class TermijnTimerService {
 	 */
 	public const LADDER_DEFAULT = 'nl-termijn-default';
 
+
 	/**
 	 * Metadata marker the listener filters on.
 	 *
@@ -296,6 +297,13 @@ class TermijnTimerService {
 			ladder: (array)($definitie['escalationLadder'] ?? []),
 			slaDays: $slaDays
 		);
+		if ($rules === []) {
+			$rules = $this->shares->defaultRulesFor(
+				startDay: $this->dates->parse($this->dates->formatCalendarDate($start), 'startDate'),
+				end: $this->dates->tryParse($instance['endDateCurrent'] ?? null)
+			);
+		}
+
 		if ($rules !== []) {
 			unset($config['ladder']);
 			$config['escalationRules'] = $rules;

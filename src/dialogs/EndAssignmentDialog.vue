@@ -55,7 +55,7 @@ export default {
 	name: 'EndAssignmentDialog',
 	components: { NcButton, NcDialog },
 	props: {
-		// MandaatToewijzingenTable passes `:assignment="ending"`. The dialog acts
+		// RoleAssignmentsTable passes `:assignment="ending"`. The dialog acts
 		// on it through its own emit rather than rendering it, and the declaration
 		// is what keeps it a prop instead of a fallthrough attribute.
 		// eslint-disable-next-line vue/no-unused-properties

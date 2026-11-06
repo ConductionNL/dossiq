@@ -25,7 +25,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -47,10 +49,12 @@ use Throwable;
  * A document a `decisionDocument` links to a decision on this case is
  * returned with `kind: decision` and the decision's date.
  *
- * THE READ RUNS AS THE SYSTEM, for this one case only. Portaliq calls the
- * method after it proved the case is the resident's, in a request with no
- * Nextcloud user, where OpenRegister's RBAC would answer nothing. The case id
- * is the only input and every read is filtered on it.
+ * THE READ RUNS AS THE SYSTEM AND UNSCOPED, for this one case only. Portaliq
+ * calls the method after it proved the case is the resident's, in a request
+ * with no Nextcloud user, where OpenRegister's RBAC would answer nothing, or
+ * signed in as someone reading the case under a mandate, whom RBAC does not
+ * know as the case's party. The case id is the only input and every read is
+ * filtered on it.
  *
  * The file reference names the CASE object, because the document's bytes live
  * in the case's folder (DocumentRecordStore::storeFileOnObject). Portaliq
@@ -76,15 +80,27 @@ class PortalCaseDocuments {
 	public const READABLE_CONFIDENTIALITY = ['openbaar', 'beperkt_openbaar', 'zaakvertrouwelijk'];
 
 	/**
+	 * Reads each document unscoped.
+	 *
+	 * @var UnscopedObjectReader
+	 */
+	private readonly UnscopedObjectReader $reader;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
-	 * @param LoggerInterface $logger          Logger.
+	 * @param SettingsService           $settingsService OpenRegister access and the configured register and schemas.
+	 * @param LoggerInterface           $logger          Logger.
+	 * @param UnscopedObjectReader|null $reader          Reads unscoped; a fresh one when null.
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		?UnscopedObjectReader $reader = null,
 	) {
+		$this->reader = ($reader ?? new UnscopedObjectReader());
 	}//end __construct()
 
 	/**
@@ -123,6 +139,7 @@ class PortalCaseDocuments {
 	 * @return bool
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
+	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-every-path-that-returns-the-document-or-its-file-honours-the-exception
 	 */
 	public function isPublished(array $document, bool $isDecision): bool {
 		if (in_array(($document['status'] ?? ''), self::PUBLISHED_STATUSES, true) === false) {
@@ -130,6 +147,11 @@ class PortalCaseDocuments {
 		}
 
 		if (in_array(($document['vertrouwelijkheidaanduiding'] ?? ''), self::READABLE_CONFIDENTIALITY, true) === false) {
+			return false;
+		}
+
+		// A document that names its only readers never reaches the resident, who is never one of them.
+		if ((new AccessExceptionValue())->exceptionOf(record: $document) !== null) {
 			return false;
 		}
 
@@ -144,6 +166,8 @@ class PortalCaseDocuments {
 	 * @param string $caseId        The case.
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
 	private function entries(object $objectService, string $register, string $caseId): array {
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
@@ -168,7 +192,7 @@ class PortalCaseDocuments {
 				continue;
 			}
 
-			$document = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoId);
+			$document = $this->reader->find(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoId);
 			$entry = $this->entry(
 				document: (array)$document,
 				infoId: $infoId,

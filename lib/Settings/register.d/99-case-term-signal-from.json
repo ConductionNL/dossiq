@@ -1,0 +1,76 @@
+{
+  "_note": "deadline-signals-on-the-dashboard (REQ-SIG-004, board DqDashboard Termijnsignalen): termSignalFrom is the day a case enters the last quarter of its term, so the dashboard filters late cases and cases with under a quarter of their term left with one server-side filter. Declared after `deadline`, which it reads: save-time calculations run in declaration order and see the ones before them. case 1.62.0.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "case": {
+        "version": "1.62.0",
+        "configuration": {
+          "x-openregister-calculations": {
+            "termSignalFrom": {
+              "type": "string",
+              "format": "date",
+              "materialise": true,
+              "description": "The day the case enters the last quarter of its term: start date plus three quarters of the days from start to deadline. A case is a deadline signal once this day has come (late, or less than a quarter of its term left), as board DqDashboard's Termijnsignalen card draws it (REQ-SIG-004). Materialised so the dashboard can filter on it server-side; it is recomputed whenever the case is saved, and the term engine saves the case when the deadline moves. Empty without a deadline. Without a start date the term counts from the deadline itself, so the case signals only once late. After deploying, run occ openregister:rematerialise-calculations.",
+              "expression": {
+                "dateAdd": {
+                  "date": {
+                    "coalesce": [
+                      {
+                        "prop": "startDate"
+                      },
+                      {
+                        "prop": "deadline"
+                      }
+                    ]
+                  },
+                  "amount": {
+                    "round": [
+                      {
+                        "*": [
+                          {
+                            "dateDiff": {
+                              "from": {
+                                "formatDate": [
+                                  {
+                                    "coalesce": [
+                                      {
+                                        "prop": "startDate"
+                                      },
+                                      {
+                                        "prop": "deadline"
+                                      }
+                                    ]
+                                  },
+                                  "Y-m-d"
+                                ]
+                              },
+                              "to": {
+                                "formatDate": [
+                                  {
+                                    "prop": "deadline"
+                                  },
+                                  "Y-m-d"
+                                ]
+                              },
+                              "unit": "days"
+                            }
+                          },
+                          0.75
+                        ]
+                      }
+                    ]
+                  },
+                  "unit": "days"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

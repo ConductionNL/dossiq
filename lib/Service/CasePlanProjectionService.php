@@ -40,6 +40,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 use UnexpectedValueException;
@@ -57,6 +59,8 @@ use UnexpectedValueException;
  * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
  */
 class CasePlanProjectionService {
+
+	use SearchesObjects;
 
 	/**
 	 * OpenRegister's case layer, resolved by name.
@@ -136,12 +140,15 @@ class CasePlanProjectionService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister and config.
-	 * @param LoggerInterface $logger          Logger.
+	 * @param SettingsService   $settingsService Bridge to OpenRegister and config.
+	 * @param LoggerInterface   $logger          Logger.
+	 * @param IUserSession|null $userSession     Who is signed in; nobody means a background
+	 *                                           run, which reads as the system.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
 
@@ -659,7 +666,11 @@ class CasePlanProjectionService {
 		}
 
 		try {
-			$caseType = $objectService->find($caseTypeId, register: $register, schema: $schema);
+			$caseType = $this->asSystemWithoutUser(
+				objectService: $objectService,
+				userSession: $this->userSession,
+				operation: fn (): mixed => $objectService->find($caseTypeId, register: $register, schema: $schema),
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'CasePlanProjectionService: caseType lookup failed',

@@ -92,6 +92,29 @@ class AdminSettings implements IDelegatedSettings {
 				nextcloudMajor: $this->serverVersion->getMajorVersion()
 			)
 		);
+		// The apps whose records the admin tables list (integriq's connection
+		// registry and DSO mappings, shillinq's fee schedules), so a missing
+		// app reads as missing rather than as an empty table.
+		$this->initialState->provideInitialState(
+			'ownerApps',
+			[
+				'integriq' => $this->appManager->isInstalled(appId: 'integriq'),
+				'shillinq' => $this->appManager->isInstalled(appId: 'shillinq'),
+			]
+		);
+		// The siblings named by product name, with the app id each was found under.
+		$this->initialState->provideInitialState(
+			'dependencyApps',
+			(new DependencyApps())->read(appManager: $this->appManager)
+		);
+		// The publication card on VTH: the template and the publication date rule.
+		$this->initialState->provideInitialState(
+			'publicationSettings',
+			[
+				'template' => $this->settingsService->getConfigValue('publication_template', ''),
+				'dateRule' => $this->settingsService->getConfigValue('publication_date_rule', ''),
+			]
+		);
 		$this->initialState->provideInitialState(
 			'consultationSettings',
 			$this->consultationSettings()

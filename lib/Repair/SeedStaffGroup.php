@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
 /**
  * Seeds `dossiq-medewerkers` with the current handling teams and assignees.
  *
- * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+ * @spec openspec/specs/case-access-control/spec.md
  */
 class SeedStaffGroup implements IRepairStep {
 
@@ -110,7 +110,7 @@ class SeedStaffGroup implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function getName(): string {
 		return 'Put the current handling teams and assignees into the dossiq staff group';
@@ -123,7 +123,7 @@ class SeedStaffGroup implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->appConfig->getValueBool(Application::APP_ID, self::MARKER, false) === true) {

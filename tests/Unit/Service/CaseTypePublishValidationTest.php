@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks;
 use DateTime;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
@@ -45,6 +46,7 @@ use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCA\Dossiq\Service\Email\SenderIdentity;
 use PHPUnit\Framework\TestCase;
@@ -56,6 +58,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\CaseTypePublishService
  * @covers \OCA\Dossiq\Service\CaseType\PublicationChecks
+ * @covers \OCA\Dossiq\Service\CaseType\CaseTypeDeclarationChecks
  *
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\CaseTypeAcknowledgement
@@ -69,6 +72,7 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeReachability
  * @uses   \OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
  */
 class CaseTypePublishValidationTest extends TestCase {
 
@@ -165,11 +169,13 @@ class CaseTypePublishValidationTest extends TestCase {
 			checks: new PublicationChecks(
 				caseTypeResolver: new CaseTypeResolver(store: $store),
 				store: $store,
-				acknowledgement: new CaseTypeAcknowledgement(),
-				unreadTriggers: new UnreadTriggerService(),
-				admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
-				remedy: new RemedyClauseDeclaration(),
-				handling: new CaseTypeHandling(),
+				declarations: new CaseTypeDeclarationChecks(
+					acknowledgement: new CaseTypeAcknowledgement(l10n: new SourceL10n()),
+					admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+					remedy: new RemedyClauseDeclaration(l10n: new SourceL10n()),
+					handling: new CaseTypeHandling(),
+				),
+				unreadTriggers: new UnreadTriggerService(l10n: new SourceL10n()),
 				reachability: new CaseTypeReachability(),
 				senders: $this->createMock(originalClassName: SenderIdentity::class),
 			),

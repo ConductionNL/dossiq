@@ -28,6 +28,9 @@ use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\StatusEntryGuards;
+use OCA\Dossiq\Service\Transitions\ActorGuards;
+use OCA\Dossiq\Service\Transitions\CaseContentGuards;
 use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
@@ -54,6 +57,9 @@ use Psr\Log\NullLogger;
  * next author.
  *
  * @covers \OCA\Dossiq\Service\Transitions\TransitionSpecReader
+ * @uses \OCA\Dossiq\Service\Transitions\CaseContentGuards
+ * @uses \OCA\Dossiq\Service\Transitions\ActorGuards
+ * @uses \OCA\Dossiq\Service\Transitions\StatusEntryGuards
  * @covers \OCA\Dossiq\Service\Transitions\GuardRegistry
  *
  * @uses \OCA\Dossiq\Service\Transitions\ChecklistGuard
@@ -190,20 +196,31 @@ class GuardDialectTest extends TestCase {
 		$userManager->method('get')->willReturn($this->createMock(IUser::class));
 
 		return new GuardRegistry(
-			// The checklist guard reads the engine now. These tests are about
-			// the REGISTRY, so it gets an inert pair rather than a fixture.
-			new ChecklistGuard(
-				$this->getMockBuilder(EngineTaskInbox::class)->disableOriginalConstructor()->getMock(),
-				$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
-				new NullLogger()
+			caseContent: new CaseContentGuards(
+				// The checklist guard reads the engine now. These tests are about
+				// the REGISTRY, so it gets an inert pair rather than a fixture.
+				checklist: new ChecklistGuard(
+					$this->getMockBuilder(EngineTaskInbox::class)->disableOriginalConstructor()->getMock(),
+					$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
+					new NullLogger(),
+					l10n: new SourceL10n()
+				),
+				requiredField: new RequiredFieldGuard(l10n: new SourceL10n()),
+				requiredDocument: new RequiredDocumentGuard(l10n: new SourceL10n()),
+				statusChecklist: $this->createMock(StatusChecklistGuard::class),
 			),
-			new RequiredFieldGuard(),
-			new RequiredDocumentGuard(),
-			new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger()),
-			new DelegatedAuthorityGuard($this->createMock(\Psr\Container\ContainerInterface::class), $this->createMock(\Psr\Log\LoggerInterface::class)),
-			$this->createMock(StatusChecklistGuard::class),
-			$this->createMock(CapacityGuard::class),
-			$logger,
+			actor: new ActorGuards(
+				roleGuard: new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger(), l10n: new SourceL10n()),
+				authority: new DelegatedAuthorityGuard(
+					$this->createMock(\Psr\Container\ContainerInterface::class),
+					$this->createMock(\Psr\Log\LoggerInterface::class),
+					l10n: new SourceL10n()
+				),
+			),
+			statusEntry: new StatusEntryGuards(
+				capacity: $this->createMock(CapacityGuard::class),
+			),
+			logger: $logger,
 		);
 	}//end buildRegistry()
 }//end class

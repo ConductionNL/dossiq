@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Answers the case number for a case UUID.
  *
- * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
  */
 class CaseNumberReader {
 
@@ -68,7 +68,7 @@ class CaseNumberReader {
 	 *
 	 * @return bool True for a UUID.
 	 *
-	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
 	 */
 	public function isCaseId(string $reference): bool {
 		return preg_match(self::UUID, trim($reference)) === 1;
@@ -84,7 +84,7 @@ class CaseNumberReader {
 	 *
 	 * @return string The case number, or ''.
 	 *
-	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
 	 */
 	public function numberOf(string $caseId): string {
 		$objectService = $this->settings->getObjectService();

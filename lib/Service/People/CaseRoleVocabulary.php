@@ -197,26 +197,41 @@ class CaseRoleVocabulary {
 	/**
 	 * The published role types as vocabulary entries, keyed by uuid.
 	 *
+	 * Every role type, page by page, read regardless of who asks: the
+	 * vocabulary belongs to the instance, and a sync triggered by one user's
+	 * save must not shrink it to what that user may see.
+	 *
 	 * @return array<int, array<string, string>> The entries, ordered by label.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
 	 */
 	public function roleEntries(): array {
 		[$objectService, $register] = $this->requireRegister();
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $this->schema(key: 'role_type_schema'),
-			filters: ['_limit' => self::PAGE_SIZE],
-		);
+		$schema = $this->schema(key: 'role_type_schema');
 
 		$entries = [];
-		foreach ($rows as $row) {
-			$entry = $this->entryOf(row: $row);
-			if ($entry !== []) {
-				$entries[$entry['key']] = $entry;
+		$offset = 0;
+		do {
+			$rows = $this->searchObjectsAsArraysUnscoped(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['_limit' => self::PAGE_SIZE, '_offset' => $offset],
+			);
+			$before  = count($entries);
+			$fetched = count($rows);
+			foreach ($rows as $row) {
+				$entry = $this->entryOf(row: $row);
+				if ($entry !== []) {
+					$entries[$entry['key']] = $entry;
+				}
 			}
-		}
+
+			$offset += self::PAGE_SIZE;
+			// A full page that added nothing new is a service ignoring the
+			// offset: reading on would answer the same page forever.
+			$grew = count($entries) > $before;
+		} while ($fetched >= self::PAGE_SIZE && $grew === true);
 
 		$entries = array_values($entries);
 		usort($entries, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));
@@ -253,13 +268,29 @@ class CaseRoleVocabulary {
 	}//end entryOf()
 
 	/**
-	 * The case schema entity, or null when it cannot be read.
+	 * The case schema entity as stored, or null when it cannot be read.
+	 *
+	 * OpenRegister's mapper caches find() per request and update() leaves that
+	 * cache alone, so after another caller saves its own copy of the schema (a
+	 * register import does, after its update event already ran this sync),
+	 * find() still answers the copy this sync wrote. The cache is cleared and
+	 * the schema read again, so the comparison is against the stored row.
 	 *
 	 * @return object|null The schema.
+	 *
+	 * @spec openspec/changes/case-roles-survive-a-schema-reimport/specs/people-on-the-case/spec.md#requirement-the-case-schemas-role-vocabulary-survives-a-rewrite-of-the-schema
 	 */
 	private function caseSchema(): ?object {
 		try {
-			return $this->schemaMapper()->find($this->schema(key: 'case_schema'));
+			$mapper = $this->schemaMapper();
+			$key = $this->schema(key: 'case_schema');
+			$schema = $mapper->find($key);
+			if (is_callable([$mapper, 'clearFindCache']) === false || is_callable([$schema, 'getId']) === false) {
+				return $schema;
+			}
+
+			$mapper->clearFindCache((int)$schema->getId());
+			return $mapper->find($key);
 		} catch (Throwable $e) {
 			$this->logger->info('Dossiq people: the case schema could not be read: ' . $e->getMessage());
 			return null;

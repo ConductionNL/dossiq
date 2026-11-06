@@ -29,7 +29,7 @@ use PHPUnit\Framework\TestCase;
  * page, in a wider box, holding only the application information (round-4
  * cloud check). The panel is a section of AdminRoot; this form is empty.
  *
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 class EmailSettingsTest extends TestCase {
 

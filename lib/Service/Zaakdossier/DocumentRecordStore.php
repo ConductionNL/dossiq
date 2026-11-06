@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\KeepsLookupsInSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 use Throwable;
@@ -30,6 +31,7 @@ use Throwable;
  * @spec openspec/specs/document-projection/spec.md
  */
 class DocumentRecordStore {
+	use KeepsLookupsInSchema;
 	use SearchesObjects;
 
 	/**
@@ -303,6 +305,10 @@ class DocumentRecordStore {
 		}
 
 		if ($row === null || $row === []) {
+			return null;
+		}
+
+		if ($this->rowInSchema(row: $row, schema: $this->schema(key: $schemaKey)) === false) {
 			return null;
 		}
 

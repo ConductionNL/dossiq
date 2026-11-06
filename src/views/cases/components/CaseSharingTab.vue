@@ -137,6 +137,7 @@ import {
 	federatedSharesListEndpoint,
 	revokeFederatedShareEndpoint,
 } from '../../../utils/federatedShareHelpers.js'
+import { loadPartnerOrganisations } from '../../../utils/partnerOrganisations.js'
 
 export default {
 	name: 'CaseSharingTab',
@@ -441,20 +442,13 @@ export default {
 		 *
 		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md
 		 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+		 * @spec openspec/specs/share-dialog-lists-every-partner/spec.md#requirement-the-share-dialog-offers-every-partner-organisation
 		 *
 		 * @return {Promise<void>}
 		 */
 		async loadPartners() {
 			try {
-				const response = await axios.get(
-					generateUrl('/apps/openregister/api/organisations'),
-				)
-				// A partner is somebody ELSE's organisation that this instance
-				// shares cases WITH. Without the type filter the picker would
-				// offer this municipality its own tenant to share a case with.
-				this.partners = (response.data?.results || []).filter(
-					(organisation) => organisation.type === 'partner',
-				)
+				this.partners = await loadPartnerOrganisations()
 			} catch (err) {
 				this.partners = []
 				showError(t('dossiq', 'Could not load partner organisations'))

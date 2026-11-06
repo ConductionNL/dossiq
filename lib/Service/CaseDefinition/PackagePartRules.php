@@ -102,7 +102,8 @@ class PackagePartRules {
 		match ($part) {
 			'case-type' => $this->checkCaseType(files: $files),
 			'flows' => $this->checkRowFiles(files: $files, dir: 'flows/'),
-			'seed' => $this->checkSeed(files: $files),
+			'seed' => $this->checkSeed(files: $files, dir: 'seed/'),
+			'examples' => $this->checkSeed(files: $files, dir: 'examples/'),
 			'settings' => $this->checkSettings(files: $files),
 			default => null,
 		};
@@ -187,19 +188,21 @@ class PackagePartRules {
 	}//end checkRowFiles()
 
 	/**
-	 * Check the `seed/` files: each names the schema its rows go to, by
-	 * settings key for a schema of this app, or by app, register and slug for
-	 * a schema of another app. A file may name the property (`match`) an
-	 * existing row is recognised by; then every row carries it.
+	 * Check the `seed/` or `examples/` files: each names the schema its rows
+	 * go to, by settings key for a schema of this app, or by app, register and
+	 * slug for a schema of another app. A file may name the property (`match`)
+	 * an existing row is recognised by; then every row carries it. Example
+	 * files follow the same rules as seed files.
 	 *
 	 * @param array<string, string> $files The package files.
+	 * @param string                $dir   The part's directory, `seed/` or `examples/`.
 	 *
 	 * @return void
 	 */
-	private function checkSeed(array $files): void {
-		$paths = $this->jsonUnder(files: $files, dir: 'seed/');
+	private function checkSeed(array $files, string $dir): void {
+		$paths = $this->jsonUnder(files: $files, dir: $dir);
 		if ($paths === []) {
-			$this->errors[] = 'seed/: the part is declared but holds no .json file.';
+			$this->errors[] = "{$dir}: the part is declared but holds no .json file.";
 		}
 
 		foreach ($paths as $path) {

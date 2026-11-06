@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
+ * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
  */
 
 declare(strict_types=1);
@@ -91,7 +91,7 @@ class CarryBagCheckSetting implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
+	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
 	 */
 	public function getName(): string {
 		return 'Keep the BAG check on where the old BAG client was switched on';
@@ -104,7 +104,7 @@ class CarryBagCheckSetting implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
+	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-an-instance-that-checked-bag-locations-before-the-upgrade-keeps-checking-them
 	 */
 	public function run(IOutput $output): void {
 		try {

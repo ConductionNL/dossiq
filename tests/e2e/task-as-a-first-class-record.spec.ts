@@ -262,7 +262,7 @@ test.describe('The task as a first-class record', () => {
 		// they already are.
 		await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
 		const field = page.locator(
-			`[data-testid="case-task-pane-form-${taskId}-description"], [data-testid="case-task-pane-form-description"]`,
+			`[data-testid="cn-tasks-widget-work-form-description"]`,
 		)
 		await expect(field.first()).toBeVisible({ timeout: 30_000 })
 
@@ -335,15 +335,15 @@ test.describe('The task as a first-class record', () => {
 		const errors = trackDossiqErrors(page)
 		await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
 
-		const pane = page.locator('[data-testid="case-task-pane"]')
+		const pane = page.locator('.cn-tasks-widget')
 		await expect(pane).toBeVisible({ timeout: 30_000 })
 
-		const row = page.locator(`[data-testid="case-task-pane-task-${second}"]`)
+		const row = page.locator(`[data-testid="cn-tasks-widget-other-${second}"]`)
 		await expect(row).toBeVisible({ timeout: 30_000 })
 
 		const url = page.url()
 		await row
-			.locator(`[data-testid="case-task-pane-row-complete-${second}"]`)
+			.locator(`[data-testid="cn-tasks-widget-complete-${second}"]`)
 			.click()
 
 		// The whole claim of this surface: the task finished and the handler
@@ -370,7 +370,7 @@ test.describe('The task as a first-class record', () => {
 		})
 
 		await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
-		const reference = page.locator('[data-testid="case-task-pane-reference"]')
+		const reference = page.locator('[data-testid="cn-tasks-widget-work-reference"]')
 		await expect(reference).toBeVisible({ timeout: 30_000 })
 
 		// The engine has no task number today. The pane shows its identifier
@@ -378,7 +378,7 @@ test.describe('The task as a first-class record', () => {
 		// email and addresses nothing.
 		await expect(reference).not.toHaveText('')
 		await expect(
-			page.locator('[data-testid="case-task-pane-lock"]'),
+			page.locator('[data-testid="cn-tasks-widget-work-lock"]'),
 		).not.toHaveText('')
 	})
 

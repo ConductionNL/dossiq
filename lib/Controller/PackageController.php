@@ -107,6 +107,34 @@ class PackageController extends Controller {
 	}//end install()
 
 	/**
+	 * Reload the shipped templates: install every package that is installed
+	 * here or installs automatically.
+	 *
+	 * AuthorizedAdminSetting refuses a non-admin in the middleware, before
+	 * this runs; a request without a user is refused before the installer
+	 * reads or writes anything.
+	 *
+	 * @return JSONResponse `{ results: [...] }`, one outcome per package; 500 when one failed.
+	 *
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-administrator-reloads-the-shipped-templates
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function reload(): JSONResponse {
+		$refusal = $this->requireUser();
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$outcomes = $this->installer->reloadInstalled();
+		$status = Http::STATUS_OK;
+		if (in_array(PackageInstaller::FAILED, array_column($outcomes, 'status'), true) === true) {
+			$status = Http::STATUS_INTERNAL_SERVER_ERROR;
+		}
+
+		return new JSONResponse(['results' => $outcomes], $status);
+	}//end reload()
+
+	/**
 	 * Refuse a request without a user. AuthorizedAdminSetting decides
 	 * admin-ness in the middleware; this is the body-side check.
 	 *

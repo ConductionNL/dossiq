@@ -1,0 +1,21 @@
+{
+  "schema": "role_schema",
+  "rows": [
+    {
+      "id": "0af32d00-5320-5d85-8431-fcc5f73be8e9",
+      "name": "Fatma Kaya",
+      "roleType": "1eda6c52-f71f-574e-bf79-3d0532f19ab6",
+      "case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+      "participant": "fatma.kaya",
+      "description": "regisseur"
+    },
+    {
+      "id": "0798b016-58a2-52f0-9103-4d7310a12cf9",
+      "name": "Pieter Jansen",
+      "roleType": "defa6e47-0b6f-50ad-8250-0bcce4e07b4d",
+      "case": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+      "participant": "pieter",
+      "description": "consulent werk en inkomen"
+    }
+  ]
+}

@@ -102,6 +102,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	 * @param ZgwDocumentService $documentService The EXISTING binary document storage service.
 	 * @param LoggerInterface $logger Structured logger.
 	 * @param callable|null $sleeper Optional injectable `function(int $s): void` (tests pass a no-op).
+	 * @param callable|null $signedVersionOf Gives a signed version its original's access exception.
 	 */
 	public function __construct(
 		private readonly LibresignApiClient $apiClient,
@@ -112,10 +113,12 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 		ZgwDocumentService $documentService,
 		private readonly LoggerInterface $logger,
 		?callable $sleeper = null,
+		?callable $signedVersionOf = null,
 	) {
 		$this->assembler = new LibresignResultAssembler(
 			rootFolder: $rootFolder,
 			documentService: $documentService,
+			signedVersionOf: $signedVersionOf,
 		);
 
 		$this->sleeper = ($sleeper ?? static function (int $seconds): void {

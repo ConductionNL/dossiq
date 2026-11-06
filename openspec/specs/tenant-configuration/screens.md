@@ -1,3 +1,5 @@
 # Screens
 
-- DqInstellingenAlgemeen https://identity.conduction.nl/screens/board?id=dossiq/DqInstellingenAlgemeen
+- dossiq/DqInstellingenAlgemeen beheerinstellingen in Nextcloud, tab algemeen (huisstijl, teksten, werkdagen) https://identity.conduction.nl/screens/board?id=dossiq/DqInstellingenAlgemeen
+
+Components: CnAdminSettingsShell, CnCardGrid, CnDetailGrid, CnObjectCard, CnSettingsSection

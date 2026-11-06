@@ -382,10 +382,15 @@ class EngineTaskGatewayTest extends TestCase {
 	 * @return void
 	 */
 	public function testNamesTheClassWhenOpenRegisterIsPresentButTheServiceIsNot(): void {
-		// Installed, but the container hands back nothing and the class is
-		// absent from this test runtime (OpenRegister is not autoloadable in
-		// dossiq's unit suite), which is exactly the rename shape.
-		$gateway = new EngineTaskGateway($this->settings('1', true, null), $this->container(null), new NullLogger());
+		// Installed, but the class is absent, which is exactly the rename shape.
+		$gateway = new class ($this->settings('1', true, null), $this->container(null), new NullLogger()) extends EngineTaskGateway {
+			/**
+			 * @return boolean The class is absent.
+			 */
+			protected function taskServiceExists(): bool {
+				return false;
+			}
+		};
 
 		$this->assertFalse($gateway->isEnabled());
 
@@ -434,4 +439,167 @@ class EngineTaskGatewayTest extends TestCase {
 		$this->assertSame('available', $service->seen['state']);
 		$this->assertSame('dossiq', $service->seen['appId']);
 	}//end testReturnsTheEngineUuidOnSuccess()
+	/**
+	 * A once-key is looked up in the engine: taken, free, or unknown when the
+	 * engine cannot look a task up by its key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	public function testAOnceKeyIsTakenFreeOrUnknown(): void {
+		$service = new class {
+			public function findByKey(string $key): array {
+				return $key === 'dossiq:once:rule:t:r:case-1' ? [new \stdClass()] : [];
+			}
+		};
+		$gateway = $this->gatewayWith($service);
+
+		$this->assertTrue($gateway->keyTaken(key: 'dossiq:once:rule:t:r:case-1'));
+		$this->assertFalse($gateway->keyTaken(key: 'dossiq:once:rule:t:r:case-2'));
+		$this->assertNull($this->gatewayWith(new class {
+		})->keyTaken(key: 'dossiq:once:rule:t:r:case-1'));
+	}//end testAOnceKeyIsTakenFreeOrUnknown()
+
+	/**
+	 * A once-keyed task is written with its once-key as the engine key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-a-rules-effect-happens-once-per-rule-case-and-trigger-version
+	 */
+	public function testAOnceKeyedTaskCarriesItAsItsEngineKey(): void {
+		$payload = $this->gatewayWith(null)->toEnginePayload(
+			task: ['title' => 'Welstandsadvies vragen', 'onceKey' => 'dossiq:once:rule:t:r:case-1'],
+			caseId: 'case-1'
+		);
+
+		$this->assertSame('dossiq:once:rule:t:r:case-1', $payload['key']);
+	}//end testAOnceKeyedTaskCarriesItAsItsEngineKey()
+	/**
+	 * OpenRegister's Task is a Nextcloud Entity: its column getters are magic
+	 * (`__call`), so `method_exists()` says no. A task read through `find()`
+	 * still carries its case, its term, its candidates and its metadata, and a
+	 * column the engine does not have reads as empty instead of failing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 */
+	public function testFindReadsTheEntitysMagicColumns(): void {
+		$service = new class {
+			/**
+			 * @param string $id The task uuid.
+			 *
+			 * @return object The task, as an Entity answers it.
+			 */
+			public function get(string $id): object {
+				return new class {
+					/** @var string|null The run. */
+					protected ?string $runUuid = null;
+					/** @var string|null The flow node. */
+					protected ?string $nodeId = null;
+					/** @var string|null Who has it. */
+					protected ?string $assignee = null;
+					/** @var array|null The checklist. */
+					protected ?array $checklist = null;
+					/** @var string|null The case. */
+					protected ?string $objectUuid = 'case-9';
+					/** @var \DateTime|null The term. */
+					protected ?\DateTime $dueAt = null;
+					/** @var array|null The groups it is offered to. */
+					protected ?array $candidateGroups = ['vergunningen'];
+					/** @var array|null What dossiq declared. */
+					protected ?array $metadata = ['form' => 'x'];
+
+					/**
+					 * Sets the term.
+					 */
+					public function __construct() {
+						$this->dueAt = new \DateTime('2026-11-02T00:00:00+00:00');
+					}
+
+					/**
+					 * An Entity's magic getter: a column it has, else BadFunctionCallException.
+					 *
+					 * @param string       $name The method.
+					 * @param array<mixed> $args The arguments.
+					 *
+					 * @return mixed
+					 */
+					public function __call(string $name, array $args): mixed {
+						$property = lcfirst(substr($name, 3));
+						if (str_starts_with($name, 'get') === true && property_exists($this, $property) === true) {
+							return $this->{$property};
+						}
+
+						throw new \BadFunctionCallException($name . ' is not a valid attribute');
+					}
+
+					/** @return string */
+					public function getUuid(): string {
+						return 'task-1';
+					}
+
+					/** @return string */
+					public function getTitle(): string {
+						return 'Advies boomdeskundige beoordelen';
+					}
+
+					/** @return string */
+					public function getState(): string {
+						return 'available';
+					}
+				};
+			}
+		};
+
+		$task = $this->gatewayWith(service: $service)->find(taskId: 'task-1');
+
+		$this->assertSame(expected: 'case-9', actual: $task['objectUuid']);
+		$this->assertSame(expected: '2026-11-02T00:00:00+00:00', actual: $task['dueDate']);
+		$this->assertSame(expected: ['vergunningen'], actual: $task['candidateGroups']);
+		$this->assertSame(expected: ['form' => 'x'], actual: $task['metadata']);
+		$this->assertSame(expected: [], actual: $task['candidateUsers']);
+		$this->assertSame(expected: '', actual: $task['flowRun']);
+	}//end testFindReadsTheEntitysMagicColumns()
+
+	/**
+	 * A cancel goes to the engine's cancel verb with the reason and actor,
+	 * and an engine refusal keeps the engine's own reason.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 */
+	public function testCancelAsksTheEngineAndKeepsItsRefusal(): void {
+		$engine = new class {
+			/**
+			 * @var array<int, mixed>
+			 */
+			public array $calls = [];
+
+			/**
+			 * @param string      $uuid   The task.
+			 * @param string|null $reason Why.
+			 * @param string|null $actor  Who.
+			 *
+			 * @return void
+			 */
+			public function cancel(string $uuid, ?string $reason, ?string $actor): void {
+				$this->calls[] = [$uuid, $reason, $actor];
+				if ($uuid === 'locked') {
+					throw new \RuntimeException('Only the requester may cancel this task.');
+				}
+			}
+		};
+
+		$gateway = $this->gatewayWith(service: $engine);
+
+		$this->assertTrue($gateway->cancel(taskId: 'task-1', reason: 'Dubbel', actor: 'anouk'));
+		$this->assertSame(expected: [['task-1', 'Dubbel', 'anouk']], actual: $engine->calls);
+		$this->assertFalse($gateway->cancel(taskId: 'locked', reason: null, actor: 'anouk'));
+		$this->assertSame(expected: 'Only the requester may cancel this task.', actual: $gateway->lastError());
+		$this->assertFalse($this->gatewayWith(service: null)->cancel(taskId: 'task-1', reason: null, actor: 'anouk'));
+	}//end testCancelAsksTheEngineAndKeepsItsRefusal()
 }//end class

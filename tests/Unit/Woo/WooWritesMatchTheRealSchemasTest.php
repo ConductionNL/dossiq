@@ -56,6 +56,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses   \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
  * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses   \OCA\Dossiq\Woo\WooCaseLedger
@@ -77,6 +78,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 

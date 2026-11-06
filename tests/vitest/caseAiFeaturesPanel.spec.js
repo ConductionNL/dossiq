@@ -96,6 +96,16 @@ function mountPanel() {
 	})
 }
 
+/**
+ * Wait until the panel has loaded and offers the first prompt.
+ *
+ * @param {object} wrapper The mounted panel.
+ * @return {Promise<void>}
+ */
+async function promptShown(wrapper) {
+	await vi.waitFor(() => expect(wrapper.find('[data-testid="case-ai-question-p-1"]').exists()).toBe(true))
+}
+
 describe('CaseAiFeaturesPanel', () => {
 	beforeEach(() => {
 		vi.mocked(fetchCaseFeatures).mockReset()
@@ -292,7 +302,7 @@ describe('CaseAiFeaturesPanel', () => {
 			reply: 'Drie mails, alle van de aanvrager.',
 		})
 		const wrapper = mountPanel()
-		await flushPromises()
+		await promptShown(wrapper)
 
 		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
 		await flushPromises()
@@ -312,7 +322,7 @@ describe('CaseAiFeaturesPanel', () => {
 			response: { data: { error: 'Blocked by guardrail.' } },
 		})
 		const wrapper = mountPanel()
-		await flushPromises()
+		await promptShown(wrapper)
 
 		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
 		await flushPromises()
@@ -330,5 +340,105 @@ describe('CaseAiFeaturesPanel', () => {
 		expect(wrapper.find('[data-testid="case-ai-questions"]').exists()).toBe(
 			false,
 		)
+	})
+	/**
+	 * The record-action posts the panel made, in order.
+	 *
+	 * @return {object[]} The posted bodies.
+	 */
+	function decisions() {
+		return axios.post.mock.calls
+			.filter(([url]) => url === '/apps/dossiq/api/ai/record-action')
+			.map(([, body]) => body)
+	}
+
+	it('reports a used run output to the oversight trail', async () => {
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([SUMMARY])
+		axios.post.mockResolvedValue({ data: { output: 'Verleend.' } })
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		await wrapper
+			.find('[data-testid="case-ai-feature-document-document-summary"]')
+			.setValue('42')
+		await wrapper.find('form').trigger('submit')
+		await flushPromises()
+		await wrapper
+			.find('[data-testid="case-ai-feature-decision-document-summary-use"]')
+			.trigger('click')
+		await flushPromises()
+
+		expect(decisions()).toHaveLength(1)
+		expect(decisions()[0]).toMatchObject({
+			caseId: 'c-1',
+			type: 'decision_support',
+			userAction: 'accepted',
+			suggestion: 'Verleend.',
+			documentId: '42',
+		})
+	})
+
+	it('reports an adapted answer with the version that was used', async () => {
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([])
+		vi.mocked(fetchCasePrompts).mockResolvedValue([
+			{ id: 'p-1', label: 'Vraag', prompt: 'Vraag?' },
+		])
+		vi.mocked(converse).mockResolvedValue({ reply: 'Ja.' })
+		axios.post.mockResolvedValue({ data: {} })
+		const wrapper = mountPanel()
+		await promptShown(wrapper)
+
+		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
+		await flushPromises()
+		await wrapper
+			.find('[data-testid="case-ai-question-decision-adapt"]')
+			.trigger('click')
+		await wrapper
+			.find('[data-testid="case-ai-question-decision-draft"]')
+			.setValue('Ja, mits.')
+		await wrapper
+			.find('[data-testid="case-ai-question-decision-use-adapted"]')
+			.trigger('click')
+		await flushPromises()
+
+		expect(decisions()[0]).toMatchObject({
+			type: 'qa',
+			userAction: 'modified',
+			suggestion: 'Ja.',
+			actualValue: 'Ja, mits.',
+			prompt: 'Vraag?',
+		})
+	})
+
+	it('reports an answer nobody acted on as superseded by the next question, then closed', async () => {
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([])
+		vi.mocked(fetchCasePrompts).mockResolvedValue([
+			{ id: 'p-1', label: 'Vraag', prompt: 'Vraag?' },
+		])
+		vi.mocked(converse)
+			.mockResolvedValueOnce({ reply: 'Eerste.' })
+			.mockResolvedValueOnce({ reply: 'Tweede.' })
+		axios.post.mockResolvedValue({ data: {} })
+		const wrapper = mountPanel()
+		await promptShown(wrapper)
+
+		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
+		await flushPromises()
+		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
+		await flushPromises()
+		wrapper.unmount()
+		await flushPromises()
+
+		expect(decisions()).toHaveLength(2)
+		expect(decisions()[0]).toMatchObject({
+			userAction: 'ignored',
+			unusedBecause: 'superseded',
+			suggestion: 'Eerste.',
+		})
+		expect(decisions()[1]).toMatchObject({
+			userAction: 'ignored',
+			unusedBecause: 'closed',
+			suggestion: 'Tweede.',
+		})
 	})
 })

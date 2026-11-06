@@ -78,7 +78,7 @@ test.describe('A term declares how it counts', () => {
 		await page.goto(`/apps/${REGISTER}/settings`, PAGE_LOAD)
 		await page.getByText('Termijnen', { exact: false }).first().click()
 
-		const pills = page.getByTestId('termijn-counting-mode-pill')
+		const pills = page.getByTestId('deadline-counting-mode-pill')
 		await expect(pills.first()).toBeVisible({ timeout: 30_000 })
 
 		// Both modes are readable, which is the point: a pill that only ever
@@ -88,7 +88,7 @@ test.describe('A term declares how it counts', () => {
 
 		// And the field is offered when a new version is authored.
 		await page.getByText('New version', { exact: false }).first().click()
-		await expect(page.getByTestId('termijn-counting-mode')).toBeVisible({
+		await expect(page.getByTestId('deadline-counting-mode')).toBeVisible({
 			timeout: 30_000,
 		})
 

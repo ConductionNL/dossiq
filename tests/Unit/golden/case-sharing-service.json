@@ -1,0 +1,1940 @@
+{
+    "token / minimal": {
+        "answer": {
+            "share": {
+                "id": "share-1",
+                "shareType": "link"
+            },
+            "link": {
+                "id": 11,
+                "uuid": "link-11",
+                "url": "https://cloud.example/l/abc",
+                "expiresAt": "2026-12-01"
+            },
+            "url": "https://cloud.example/l/abc"
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": null,
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseLinkShares.store": {
+                    "caseId": "case-1",
+                    "label": "For the lawyer",
+                    "createdBy": "alice",
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc",
+                        "expiresAt": "2026-12-01"
+                    },
+                    "documents": [],
+                    "extra": []
+                }
+            }
+        ]
+    },
+    "token / blank label": {
+        "answer": {
+            "share": {
+                "id": "share-1",
+                "shareType": "link"
+            },
+            "link": {
+                "id": 11,
+                "uuid": "link-11",
+                "url": "https://cloud.example/l/abc",
+                "expiresAt": "2026-12-01"
+            },
+            "url": "https://cloud.example/l/abc"
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": null,
+                    "password": null,
+                    "label": null
+                }
+            },
+            {
+                "CaseLinkShares.store": {
+                    "caseId": "case-1",
+                    "label": "",
+                    "createdBy": "alice",
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc",
+                        "expiresAt": "2026-12-01"
+                    },
+                    "documents": [],
+                    "extra": []
+                }
+            }
+        ]
+    },
+    "token / all options": {
+        "answer": {
+            "share": {
+                "id": "share-1",
+                "shareType": "link"
+            },
+            "link": {
+                "id": 11,
+                "uuid": "link-11",
+                "url": "https://cloud.example/l/abc",
+                "expiresAt": "2026-12-01"
+            },
+            "url": "https://cloud.example/l/abc"
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": "2026-12-31",
+                    "password": "pw",
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-1",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": "pw",
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "2",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": "pw",
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseLinkShares.store": {
+                    "caseId": "case-1",
+                    "label": "For the lawyer",
+                    "createdBy": "alice",
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc",
+                        "expiresAt": "2026-12-01"
+                    },
+                    "documents": [
+                        {
+                            "fileId": "f-1",
+                            "linkId": 20,
+                            "linkUuid": "file-f-1",
+                            "url": "https://cloud.example/f/f-1"
+                        },
+                        {
+                            "fileId": "2",
+                            "linkId": 20,
+                            "linkUuid": "file-2",
+                            "url": "https://cloud.example/f/2"
+                        }
+                    ],
+                    "extra": {
+                        "advisoryBody": "Commissie"
+                    }
+                }
+            }
+        ]
+    },
+    "token / link without expiry": {
+        "answer": {
+            "share": {
+                "id": "share-1",
+                "shareType": "link"
+            },
+            "link": {
+                "id": 11,
+                "uuid": "link-11",
+                "url": "https://cloud.example/l/abc"
+            },
+            "url": "https://cloud.example/l/abc"
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": "2026-12-31",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-1",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-31",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-2",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-31",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseLinkShares.store": {
+                    "caseId": "case-1",
+                    "label": "For the lawyer",
+                    "createdBy": "alice",
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc"
+                    },
+                    "documents": [
+                        {
+                            "fileId": "f-1",
+                            "linkId": 20,
+                            "linkUuid": "file-f-1",
+                            "url": "https://cloud.example/f/f-1"
+                        },
+                        {
+                            "fileId": "f-2",
+                            "linkId": 20,
+                            "linkUuid": "file-f-2",
+                            "url": "https://cloud.example/f/f-2"
+                        }
+                    ],
+                    "extra": []
+                }
+            }
+        ]
+    },
+    "token / link without url": {
+        "answer": {
+            "share": {
+                "id": "share-1",
+                "shareType": "link"
+            },
+            "link": {
+                "id": 11
+            },
+            "url": ""
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": null,
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseLinkShares.store": {
+                    "caseId": "case-1",
+                    "label": "For the lawyer",
+                    "createdBy": "alice",
+                    "link": {
+                        "id": 11
+                    },
+                    "documents": [],
+                    "extra": []
+                }
+            }
+        ]
+    },
+    "token / mint refused": {
+        "answer": {
+            "error": "No access link service"
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": null,
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            }
+        ]
+    },
+    "token / one document refused": {
+        "answer": {
+            "share": {
+                "id": "share-1",
+                "shareType": "link"
+            },
+            "link": {
+                "id": 11,
+                "uuid": "link-11",
+                "url": "https://cloud.example/l/abc",
+                "expiresAt": "2026-12-01"
+            },
+            "url": "https://cloud.example/l/abc"
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": null,
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-1",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-2",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "log.warning": {
+                    "message": "Dossiq: a document named on a case share did not get a link",
+                    "context": {
+                        "caseId": "case-1",
+                        "fileId": "f-2",
+                        "error": "No such file"
+                    }
+                }
+            },
+            {
+                "CaseLinkShares.store": {
+                    "caseId": "case-1",
+                    "label": "For the lawyer",
+                    "createdBy": "alice",
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc",
+                        "expiresAt": "2026-12-01"
+                    },
+                    "documents": [
+                        {
+                            "fileId": "f-1",
+                            "linkId": 20,
+                            "linkUuid": "file-f-1",
+                            "url": "https://cloud.example/f/f-1"
+                        }
+                    ],
+                    "extra": []
+                }
+            }
+        ]
+    },
+    "token / bare document link": {
+        "answer": {
+            "share": {
+                "id": "share-1",
+                "shareType": "link"
+            },
+            "link": {
+                "id": 11,
+                "uuid": "link-11",
+                "url": "https://cloud.example/l/abc",
+                "expiresAt": "2026-12-01"
+            },
+            "url": "https://cloud.example/l/abc"
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": null,
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-1",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-2",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseLinkShares.store": {
+                    "caseId": "case-1",
+                    "label": "For the lawyer",
+                    "createdBy": "alice",
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc",
+                        "expiresAt": "2026-12-01"
+                    },
+                    "documents": [
+                        {
+                            "fileId": "f-1",
+                            "linkId": null,
+                            "linkUuid": null,
+                            "url": null
+                        },
+                        {
+                            "fileId": "f-2",
+                            "linkId": 20,
+                            "linkUuid": "file-f-2",
+                            "url": "https://cloud.example/f/f-2"
+                        }
+                    ],
+                    "extra": []
+                }
+            }
+        ]
+    },
+    "token / not recorded": {
+        "answer": {
+            "error": "Share schema missing"
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": null,
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-1",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-2",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseLinkShares.store": {
+                    "caseId": "case-1",
+                    "label": "For the lawyer",
+                    "createdBy": "alice",
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc",
+                        "expiresAt": "2026-12-01"
+                    },
+                    "documents": [
+                        {
+                            "fileId": "f-1",
+                            "linkId": 20,
+                            "linkUuid": "file-f-1",
+                            "url": "https://cloud.example/f/f-1"
+                        },
+                        {
+                            "fileId": "f-2",
+                            "linkId": 20,
+                            "linkUuid": "file-f-2",
+                            "url": "https://cloud.example/f/f-2"
+                        }
+                    ],
+                    "extra": []
+                }
+            },
+            {
+                "CaseLinkShares.revokeMinted": {
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc",
+                        "expiresAt": "2026-12-01"
+                    },
+                    "documents": [
+                        {
+                            "fileId": "f-1",
+                            "linkId": 20,
+                            "linkUuid": "file-f-1",
+                            "url": "https://cloud.example/f/f-1"
+                        },
+                        {
+                            "fileId": "f-2",
+                            "linkId": 20,
+                            "linkUuid": "file-f-2",
+                            "url": "https://cloud.example/f/f-2"
+                        }
+                    ],
+                    "userId": "alice"
+                }
+            },
+            {
+                "log.error": {
+                    "message": "Dossiq: a case share could not be recorded, so its links were withdrawn",
+                    "context": {
+                        "caseId": "case-1",
+                        "error": "Share schema missing",
+                        "linksNotRevoked": []
+                    }
+                }
+            }
+        ]
+    },
+    "token / not recorded, links left": {
+        "answer": {
+            "error": "Share schema missing",
+            "linksNotRevoked": [
+                11
+            ]
+        },
+        "calls": [
+            {
+                "CaseAccessLinkService.mintCaseLink": {
+                    "caseId": "case-1",
+                    "userId": "alice",
+                    "capabilities": [
+                        "read",
+                        "comment"
+                    ],
+                    "expiresAt": null,
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-1",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseAccessLinkService.mintFileLink": {
+                    "caseId": "case-1",
+                    "fileId": "f-2",
+                    "userId": "alice",
+                    "expiresAt": "2026-12-01",
+                    "password": null,
+                    "label": "For the lawyer"
+                }
+            },
+            {
+                "CaseLinkShares.store": {
+                    "caseId": "case-1",
+                    "label": "For the lawyer",
+                    "createdBy": "alice",
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc",
+                        "expiresAt": "2026-12-01"
+                    },
+                    "documents": [
+                        {
+                            "fileId": "f-1",
+                            "linkId": 20,
+                            "linkUuid": "file-f-1",
+                            "url": "https://cloud.example/f/f-1"
+                        },
+                        {
+                            "fileId": "f-2",
+                            "linkId": 20,
+                            "linkUuid": "file-f-2",
+                            "url": "https://cloud.example/f/f-2"
+                        }
+                    ],
+                    "extra": []
+                }
+            },
+            {
+                "CaseLinkShares.revokeMinted": {
+                    "link": {
+                        "id": 11,
+                        "uuid": "link-11",
+                        "url": "https://cloud.example/l/abc",
+                        "expiresAt": "2026-12-01"
+                    },
+                    "documents": [
+                        {
+                            "fileId": "f-1",
+                            "linkId": 20,
+                            "linkUuid": "file-f-1",
+                            "url": "https://cloud.example/f/f-1"
+                        },
+                        {
+                            "fileId": "f-2",
+                            "linkId": 20,
+                            "linkUuid": "file-f-2",
+                            "url": "https://cloud.example/f/f-2"
+                        }
+                    ],
+                    "userId": "alice"
+                }
+            },
+            {
+                "log.error": {
+                    "message": "Dossiq: a case share could not be recorded, so its links were withdrawn",
+                    "context": {
+                        "caseId": "case-1",
+                        "error": "Share schema missing",
+                        "linksNotRevoked": [
+                            11
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "partner / minimal": {
+        "answer": {
+            "caseId": "case-1",
+            "shareType": "partner",
+            "partnerId": "org-b",
+            "permissionLevel": "bekijken",
+            "createdBy": "alice",
+            "consentId": "consent-1",
+            "consentScope": [
+                "title"
+            ],
+            "consentUntil": "2027-01-01",
+            "id": "share-1"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "CaseTransferConsentGate.assess": {
+                    "caseId": "case-1",
+                    "sourceOrganisation": "",
+                    "receivingOrg": "org-b",
+                    "atDate": ""
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "partnerId": "org-b",
+                        "permissionLevel": "bekijken",
+                        "createdBy": "alice",
+                        "consentId": "consent-1",
+                        "consentScope": [
+                            "title"
+                        ],
+                        "consentUntil": "2027-01-01"
+                    },
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.getUuid": "share-1"
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Partner share created",
+                    "context": {
+                        "caseId": "case-1",
+                        "partnerId": "org-b",
+                        "shareId": "share-1"
+                    }
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-1"
+            }
+        ]
+    },
+    "partner / message": {
+        "answer": {
+            "caseId": "case-1",
+            "shareType": "partner",
+            "partnerId": "org-b",
+            "permissionLevel": "bekijken",
+            "createdBy": "alice",
+            "consentId": "consent-1",
+            "consentScope": [
+                "title"
+            ],
+            "consentUntil": "2027-01-01",
+            "message": "hello there",
+            "id": "share-1"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "CaseTransferConsentGate.assess": {
+                    "caseId": "case-1",
+                    "sourceOrganisation": "",
+                    "receivingOrg": "org-b",
+                    "atDate": ""
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "partnerId": "org-b",
+                        "permissionLevel": "bekijken",
+                        "createdBy": "alice",
+                        "consentId": "consent-1",
+                        "consentScope": [
+                            "title"
+                        ],
+                        "consentUntil": "2027-01-01",
+                        "message": "hello there"
+                    },
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.getUuid": "share-1"
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Partner share created",
+                    "context": {
+                        "caseId": "case-1",
+                        "partnerId": "org-b",
+                        "shareId": "share-1"
+                    }
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-1"
+            }
+        ]
+    },
+    "partner / blank message": {
+        "answer": {
+            "caseId": "case-1",
+            "shareType": "partner",
+            "partnerId": "org-b",
+            "permissionLevel": "bekijken",
+            "createdBy": "alice",
+            "consentId": "consent-1",
+            "consentScope": [
+                "title"
+            ],
+            "consentUntil": "2027-01-01",
+            "id": "share-1"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "CaseTransferConsentGate.assess": {
+                    "caseId": "case-1",
+                    "sourceOrganisation": "",
+                    "receivingOrg": "org-b",
+                    "atDate": ""
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "partnerId": "org-b",
+                        "permissionLevel": "bekijken",
+                        "createdBy": "alice",
+                        "consentId": "consent-1",
+                        "consentScope": [
+                            "title"
+                        ],
+                        "consentUntil": "2027-01-01"
+                    },
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.getUuid": "share-1"
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Partner share created",
+                    "context": {
+                        "caseId": "case-1",
+                        "partnerId": "org-b",
+                        "shareId": "share-1"
+                    }
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-1"
+            }
+        ]
+    },
+    "partner / exclusions": {
+        "answer": {
+            "caseId": "case-1",
+            "shareType": "partner",
+            "partnerId": "org-b",
+            "permissionLevel": "bekijken",
+            "createdBy": "alice",
+            "consentId": "consent-1",
+            "consentScope": [
+                "title"
+            ],
+            "consentUntil": "2027-01-01",
+            "fieldExclusions": "[\"title\",\"status\"]",
+            "id": "share-1"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "CaseTransferConsentGate.assess": {
+                    "caseId": "case-1",
+                    "sourceOrganisation": "",
+                    "receivingOrg": "org-b",
+                    "atDate": ""
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "partnerId": "org-b",
+                        "permissionLevel": "bekijken",
+                        "createdBy": "alice",
+                        "consentId": "consent-1",
+                        "consentScope": [
+                            "title"
+                        ],
+                        "consentUntil": "2027-01-01",
+                        "fieldExclusions": "[\"title\",\"status\"]"
+                    },
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.getUuid": "share-1"
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Partner share created",
+                    "context": {
+                        "caseId": "case-1",
+                        "partnerId": "org-b",
+                        "shareId": "share-1"
+                    }
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-1"
+            }
+        ]
+    },
+    "partner / unknown fields": {
+        "answer": {
+            "error": "Unknown case field: secret, other"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            }
+        ]
+    },
+    "partner / numeric field": {
+        "answer": {
+            "error": "Unknown case field: 7"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            }
+        ]
+    },
+    "partner / no object service": {
+        "answer": {
+            "error": "OpenRegister is not available"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            }
+        ]
+    },
+    "partner / consent refused": {
+        "answer": {
+            "error": "No consent for this partner.",
+            "rule": "consent-missing"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "CaseTransferConsentGate.assess": {
+                    "caseId": "case-1",
+                    "sourceOrganisation": "",
+                    "receivingOrg": "org-b",
+                    "atDate": ""
+                }
+            }
+        ]
+    },
+    "partner / consent by uuid": {
+        "answer": {
+            "caseId": "case-1",
+            "shareType": "partner",
+            "partnerId": "org-b",
+            "permissionLevel": "bekijken",
+            "createdBy": "alice",
+            "consentId": "u-1",
+            "consentScope": [],
+            "consentUntil": null,
+            "id": "share-1"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "CaseTransferConsentGate.assess": {
+                    "caseId": "case-1",
+                    "sourceOrganisation": "",
+                    "receivingOrg": "org-b",
+                    "atDate": ""
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "partnerId": "org-b",
+                        "permissionLevel": "bekijken",
+                        "createdBy": "alice",
+                        "consentId": "u-1",
+                        "consentScope": [],
+                        "consentUntil": null
+                    },
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.getUuid": "share-1"
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Partner share created",
+                    "context": {
+                        "caseId": "case-1",
+                        "partnerId": "org-b",
+                        "shareId": "share-1"
+                    }
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-1"
+            }
+        ]
+    },
+    "partner / no consent record": {
+        "answer": {
+            "caseId": "case-1",
+            "shareType": "partner",
+            "partnerId": "org-b",
+            "permissionLevel": "bekijken",
+            "createdBy": "alice",
+            "consentId": "",
+            "consentScope": null,
+            "consentUntil": null,
+            "id": "share-1"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "CaseTransferConsentGate.assess": {
+                    "caseId": "case-1",
+                    "sourceOrganisation": "",
+                    "receivingOrg": "org-b",
+                    "atDate": ""
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "partnerId": "org-b",
+                        "permissionLevel": "bekijken",
+                        "createdBy": "alice",
+                        "consentId": "",
+                        "consentScope": null,
+                        "consentUntil": null
+                    },
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.getUuid": "share-1"
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Partner share created",
+                    "context": {
+                        "caseId": "case-1",
+                        "partnerId": "org-b",
+                        "shareId": "share-1"
+                    }
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-1"
+            }
+        ]
+    },
+    "partner / unconfigured": {
+        "answer": {
+            "error": "Service unavailable"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            }
+        ]
+    },
+    "partner / no schema": {
+        "answer": {
+            "error": "Service unavailable"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            }
+        ]
+    },
+    "case id / found": {
+        "answer": "case-1",
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-7"
+            }
+        ]
+    },
+    "case id / as array": {
+        "answer": "case-1",
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            }
+        ]
+    },
+    "case id / numeric": {
+        "answer": "42",
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.jsonSerialize": ""
+            }
+        ]
+    },
+    "case id / without case": {
+        "answer": null,
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-7"
+            }
+        ]
+    },
+    "case id / not found": {
+        "answer": null,
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            }
+        ]
+    },
+    "case id / find throws": {
+        "answer": null,
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "log.debug": {
+                    "message": "CaseSharingService: getCaseIdForShare failed",
+                    "context": {
+                        "shareId": "share-7",
+                        "exception": "find failed"
+                    }
+                }
+            }
+        ]
+    },
+    "case id / no object service": {
+        "answer": null,
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            }
+        ]
+    },
+    "case id / no register": {
+        "answer": null,
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            }
+        ]
+    },
+    "case id / register zero": {
+        "answer": null,
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            }
+        ]
+    },
+    "case id / no schema": {
+        "answer": null,
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            }
+        ]
+    },
+    "case id / text register": {
+        "answer": "case-1",
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 0,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-7"
+            }
+        ]
+    },
+    "revoke / found": {
+        "answer": {
+            "id": "share-7",
+            "caseId": "case-1",
+            "shareType": "partner",
+            "status": "revoked",
+            "revokedBy": "alice",
+            "revokedAt": "<now>"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-7"
+            },
+            {
+                "CaseLinkShares.revokeLinksOf": {
+                    "share": {
+                        "id": "share-7",
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "status": "active"
+                    },
+                    "userId": "alice"
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "id": "share-7",
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "status": "revoked",
+                        "revokedBy": "alice",
+                        "revokedAt": "<now>"
+                    },
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Case share revoked",
+                    "context": {
+                        "shareId": "share-7",
+                        "revokedBy": "alice"
+                    }
+                }
+            },
+            {
+                "OpenRegisterSharingGateway.toArray": {
+                    "value": "<OCA\\Dossiq\\Tests\\Support\\RecordedShare>"
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-7"
+            }
+        ]
+    },
+    "revoke / as array": {
+        "answer": {
+            "id": "share-7",
+            "caseId": "case-1",
+            "shareType": "partner",
+            "status": "revoked",
+            "revokedBy": "alice",
+            "revokedAt": "<now>"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "CaseLinkShares.revokeLinksOf": {
+                    "share": {
+                        "id": "share-7",
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "status": "active"
+                    },
+                    "userId": "alice"
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "id": "share-7",
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "status": "revoked",
+                        "revokedBy": "alice",
+                        "revokedAt": "<now>"
+                    },
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Case share revoked",
+                    "context": {
+                        "shareId": "share-7",
+                        "revokedBy": "alice"
+                    }
+                }
+            },
+            {
+                "OpenRegisterSharingGateway.toArray": {
+                    "value": "<OCA\\Dossiq\\Tests\\Support\\RecordedShare>"
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-7"
+            }
+        ]
+    },
+    "revoke / links left": {
+        "answer": {
+            "id": "share-7",
+            "caseId": "case-1",
+            "shareType": "partner",
+            "status": "revoked",
+            "revokedBy": "alice",
+            "revokedAt": "<now>",
+            "linksNotRevoked": [
+                11,
+                12
+            ]
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-7"
+            },
+            {
+                "CaseLinkShares.revokeLinksOf": {
+                    "share": {
+                        "id": "share-7",
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "status": "active"
+                    },
+                    "userId": "alice"
+                }
+            },
+            {
+                "objects.saveObject": {
+                    "object": {
+                        "id": "share-7",
+                        "caseId": "case-1",
+                        "shareType": "partner",
+                        "status": "revoked",
+                        "revokedBy": "alice",
+                        "revokedAt": "<now>"
+                    },
+                    "register": 5,
+                    "schema": 9
+                }
+            },
+            {
+                "log.info": {
+                    "message": "Dossiq: Case share revoked",
+                    "context": {
+                        "shareId": "share-7",
+                        "revokedBy": "alice"
+                    }
+                }
+            },
+            {
+                "OpenRegisterSharingGateway.toArray": {
+                    "value": "<OCA\\Dossiq\\Tests\\Support\\RecordedShare>"
+                }
+            },
+            {
+                "saved.jsonSerialize": "share-7"
+            }
+        ]
+    },
+    "revoke / not found": {
+        "answer": {
+            "error": "Share not found"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            }
+        ]
+    },
+    "revoke / find throws": {
+        "answer": {
+            "threw": "RuntimeException",
+            "message": "find failed"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            },
+            {
+                "objects.find": {
+                    "id": "share-7",
+                    "register": 5,
+                    "schema": 9
+                }
+            }
+        ]
+    },
+    "revoke / no object service": {
+        "answer": {
+            "error": "OpenRegister is not available"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            }
+        ]
+    },
+    "revoke / no register": {
+        "answer": {
+            "error": "Service unavailable"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            }
+        ]
+    },
+    "revoke / no schema": {
+        "answer": {
+            "error": "Service unavailable"
+        },
+        "calls": [
+            {
+                "OpenRegisterSharingGateway.objectService": []
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "register",
+                    "default": ""
+                }
+            },
+            {
+                "SettingsService.getConfigValue": {
+                    "key": "case_share_schema",
+                    "default": ""
+                }
+            }
+        ]
+    },
+    "access / allowed": {
+        "answer": true,
+        "calls": [
+            {
+                "CaseAccessPolicy.canUserAccessCase": {
+                    "caseId": "case-1",
+                    "userId": "alice"
+                }
+            }
+        ]
+    },
+    "access / refused": {
+        "answer": false,
+        "calls": [
+            {
+                "CaseAccessPolicy.canUserAccessCase": {
+                    "caseId": "case-1",
+                    "userId": "mallory"
+                }
+            }
+        ]
+    },
+    "federated / create": {
+        "answer": {
+            "id": "fed-1"
+        },
+        "calls": [
+            {
+                "FederatedCaseShareService.createFederatedShare": {
+                    "caseId": "case-1",
+                    "remoteCloudId": "p@remote.example",
+                    "sharedFields": [
+                        "title"
+                    ],
+                    "sharedDocuments": [],
+                    "permissionLevel": "bekijken",
+                    "createdBy": "alice"
+                }
+            }
+        ]
+    },
+    "federated / revoke": {
+        "answer": {
+            "status": "revoked"
+        },
+        "calls": [
+            {
+                "FederatedCaseShareService.revokeFederatedShare": {
+                    "shareId": "fed-1",
+                    "userId": "alice"
+                }
+            }
+        ]
+    },
+    "federated / case id": {
+        "answer": "case-1",
+        "calls": [
+            {
+                "FederatedCaseShareService.getCaseIdForFederatedShare": {
+                    "shareId": "fed-1"
+                }
+            }
+        ]
+    }
+}

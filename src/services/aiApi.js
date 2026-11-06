@@ -101,37 +101,3 @@ export async function getAuditLog(filters = {}) {
 	const response = await axios.get(`${baseUrl}/audit`, { params: filters })
 	return response.data
 }
-
-/**
- * Get AI settings.
- *
- * @return {Promise<object>} AI configuration
- */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
-export async function getAiSettings() {
-	const response = await axios.get(`${baseUrl}/settings`)
-	return response.data
-}
-
-/**
- * Update AI settings.
- *
- * @param {object} settings Settings to update
- * @return {Promise<object>} Updated settings
- * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
- */
-export async function updateAiSettings(settings) {
-	const response = await axios.post(`${baseUrl}/settings`, settings)
-	return response.data
-}
-
-/**
- * Test AI model connectivity.
- *
- * @return {Promise<object>} Health check result
- */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
-export async function testAiHealth() {
-	const response = await axios.post(`${baseUrl}/health`)
-	return response.data
-}

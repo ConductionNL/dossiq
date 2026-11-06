@@ -454,23 +454,26 @@ export default {
 </script>
 
 <style scoped>
+/* A section of the admin card: no frame of its own. The tenant field and
+   Refresh stack at the content edge, as board DqBeheerGeavanceerd draws them. */
 .tenant-onboarding {
-	padding: 16px;
-	max-width: 1000px;
-	margin: 0 auto;
+	padding: 0;
 }
 
 .tenant-onboarding__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
 	margin-bottom: 16px;
 }
 
 .tenant-onboarding__controls {
 	display: flex;
-	gap: 8px;
-	align-items: center;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 16px;
+	max-width: 560px;
+}
+
+.tenant-onboarding__controls > :first-child {
+	align-self: stretch;
 }
 
 .tenant-onboarding__progress {

@@ -35,6 +35,7 @@ use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -79,6 +80,7 @@ class IntegrationStatusService {
 		'store',
 		'financial',
 		'brp',
+		'kadaster',
 		'kvk',
 		'pdok',
 		'berichtenbox',
@@ -112,8 +114,8 @@ class IntegrationStatusService {
 	/**
 	 * App-config keys per connection whose save asks integriq to resolve that
 	 * connection again. Each list is the connection's `requiredConfig` plus its
-	 * `adapter.configKey` in `lib/Settings/connections.json`; a unit test keeps
-	 * the two equal.
+	 * `adapter.configKey` and `switch.configKey` in `lib/Settings/connections.json`;
+	 * a unit test keeps the two equal.
 	 *
 	 * StUF, the mailbox and the store are absent on purpose: dossiq probes them
 	 * and reports the outcome, and a saved form says less than a probe does.
@@ -124,7 +126,8 @@ class IntegrationStatusService {
 		'zgw' => ['register', 'case_schema'],
 		'kcc' => ['identification_method'],
 		'dmn' => ['decision_table_schema'],
-		'financial' => ['dwangsom_callback_secret'],
+		'financial' => [MoneyConfigKeys::PAYOUT_CALLBACK_SECRET],
+		'kadaster' => ['integration.brk.mode'],
 		'berichtenbox' => ['digital_post_source', 'berichtenbox_adapter'],
 		'templates' => ['beschikking_template_adapter'],
 	];

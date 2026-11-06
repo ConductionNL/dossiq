@@ -64,6 +64,7 @@
 </template>
 
 <script>
+import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -138,6 +139,8 @@ export default {
 			try {
 				await linkCaseProgramme(this.caseId, this.chosen, this.caseTitle)
 				this.$emit('linked')
+				// The card that opened this dialog reads again.
+				emit('cn:page:refresh')
 				this.$emit('close')
 			} catch (error) {
 				this.error = refusalOf(

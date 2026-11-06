@@ -112,7 +112,7 @@
 								</span>
 							</td>
 							<td>
-								<span class="document-assess__pill">{{
+								<span class="document-assess__pill cn-status-badge cn-status-badge--default">{{
 									t('dossiq', 'No assessment yet')
 								}}</span>
 							</td>
@@ -174,7 +174,7 @@
 				data-testid="document-assess-save"
 				:disabled="!canSave"
 				@click="save">
-				{{ t('dossiq', 'Save assessment') }}
+				{{ busy ? t('dossiq', 'Saving…') : t('dossiq', 'Save assessment') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -253,6 +253,18 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
+		/**
+		 * The document to start with chosen, when the dialog is opened from a
+		 * document's row ("Beoordelen", DqZaakDocumenten). Ignored when it is
+		 * not outstanding.
+		 *
+		 * @spec openspec/specs/files-review-row-verdict/spec.md#requirement-a-document-is-assessed-from-its-row
+		 */
+		documentId: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['close'],
@@ -273,6 +285,7 @@ export default {
 			error: '',
 			notice: '',
 			refusals: {},
+			stored: [],
 		}
 	},
 
@@ -337,8 +350,11 @@ export default {
 		},
 	},
 
-	mounted() {
-		this.load()
+	async mounted() {
+		if (this.documentId !== '') {
+			this.selected = [this.documentId]
+		}
+		await this.load()
 	},
 
 	methods: {
@@ -385,10 +401,16 @@ export default {
 			this.loadError = ''
 			try {
 				const { data } = await axios.get(this.urlOf(this.outstandingUrl))
-				this.documents = (data?.documents || []).map((row) => ({
-					id: String(row?.id ?? ''),
-					title: String(row?.title ?? ''),
-				}))
+				// A document the server answered as saved is not outstanding,
+				// even when the list is read before the search sees the save.
+				this.documents = (data?.documents || [])
+					.map((row) => ({
+						id: String(row?.id ?? ''),
+						title: String(row?.title ?? ''),
+					}))
+					.filter(
+						(document) => this.stored.includes(document.id) === false,
+					)
 				const still = this.documents.map((document) => document.id)
 				this.selected = this.selected.filter((id) => still.includes(id))
 			} catch (failure) {
@@ -507,6 +529,22 @@ export default {
 		},
 
 		/**
+		 * The documents an answer says were saved.
+		 *
+		 * @param {object} answer The server's answer, with `saved`.
+		 * @param {string} fieldOfDocument What the document field of an assessment is called.
+		 * @return {Array<string>} Their ids.
+		 * @spec openspec/specs/document-assessment/spec.md
+		 */
+		savedIdsOf(answer, fieldOfDocument) {
+			return (Array.isArray(answer?.saved) ? answer.saved : [])
+				.map((row) =>
+					String(row?.[fieldOfDocument] ?? row?.documentRef ?? ''),
+				)
+				.filter((id) => id !== '')
+		},
+
+		/**
 		 * Post the assessment of the selection once, and show what the server said.
 		 *
 		 * @return {Promise<void>}
@@ -554,8 +592,16 @@ export default {
 				answer = data
 			}
 
+			const saved = this.savedIdsOf(answer, names.document)
 			const stored = Array.isArray(answer?.saved) ? answer.saved.length : 0
 			if (stored > 0) {
+				this.stored = [...new Set([...this.stored, ...saved])]
+				this.documents = this.documents.filter(
+					(document) => saved.includes(document.id) === false,
+				)
+				this.selected = this.selected.filter(
+					(id) => saved.includes(id) === false,
+				)
 				this.notice = n(
 					'dossiq',
 					'%n document assessed.',
@@ -596,6 +642,16 @@ export default {
 		}
 	}
 
+	// A label breaks between words, and a long word at a hyphenation point of
+	// the page language; "Deels openbaar" and a ground's name never split
+	// inside a word.
+	:deep(.vs__selected),
+	&__table td {
+		overflow-wrap: break-word;
+		word-break: normal;
+		hyphens: auto;
+	}
+
 	&__table-wrap {
 		border: 1px solid var(--color-border);
 		border-radius: var(--border-radius-large);
@@ -632,10 +688,9 @@ export default {
 
 	&__pill {
 		display: inline-block;
-		padding: 2px 10px;
-		border-radius: var(--border-radius-pill);
 		background: var(--color-background-dark);
-		color: var(--color-main-text);
+		--cn-status-badge-ink: var(--color-main-text);
+		color: var(--cn-status-badge-ink);
 		white-space: nowrap;
 	}
 

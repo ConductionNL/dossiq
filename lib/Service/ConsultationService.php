@@ -26,10 +26,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Consultation\ConsultationRecords;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
-use OCA\Dossiq\Service\Consultation\ConsultationRepository;
+use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Obligations\ObligationService;
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -82,26 +83,43 @@ class ConsultationService {
 	];
 
 	/**
+	 * The Adviseringsbeheer settings.
+	 *
+	 * @var ConsultationTerms
+	 */
+	private ConsultationTerms $terms;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
 	 * @param LoggerInterface $logger Logger
 	 * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
-	 * @param ConsultationRepository $repository OpenRegister reads/writes for consultations
-	 * @param ConsultationDependencyGraph $dependencyGraph `dependsOn` cycle detection
+	 * @param ConsultationRecords $records The consultation repository, the dependency graph and the obligations.
 	 * @param CaseDateNormaliser $dates The one date write path.
-	 * @param ObligationService $obligations The one mechanism a case waits on.
+	 * @param ConsultationTerms|null $terms The Adviseringsbeheer settings; read from the settings when not given.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly AdviceDelegationService $adviceDelegation,
-		private readonly ConsultationRepository $repository,
-		private readonly ConsultationDependencyGraph $dependencyGraph,
+		private readonly ConsultationRecords $records,
 		private readonly CaseDateNormaliser $dates,
-		private readonly ObligationService $obligations,
+		?ConsultationTerms $terms = null,
 	) {
+		$this->terms = ($terms ?? new ConsultationTerms(settingsService: $settingsService));
 	}//end __construct()
+
+	/**
+	 * The Adviseringsbeheer settings, read and applied.
+	 *
+	 * @return ConsultationTerms
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md
+	 */
+	public function terms(): ConsultationTerms {
+		return $this->terms;
+	}//end terms()
 
 	/**
 	 * Create a consultation linked to a parent case.
@@ -119,6 +137,7 @@ class ConsultationService {
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
 	public function createConsultation(array $data): array {
+		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -131,11 +150,14 @@ class ConsultationService {
 			throw new RuntimeException('Consultation schema not configured');
 		}
 
+		// A request without a deadline gets the default term (Adviseringsbeheer).
+		$data['latestResponseDate'] = $this->terms->deadlineFor(given: (string)($data['latestResponseDate'] ?? ''));
+
 		// Validate required fields.
 		$this->assertRequiredConsultationFields(data: $data);
 
 		// Generate unique consultation number.
-		$data['consultationNumber'] = $this->repository->nextConsultationNumber(
+		$data['consultationNumber'] = $this->records->repository->nextConsultationNumber(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
@@ -198,7 +220,7 @@ class ConsultationService {
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getConsultationsForCase(string $caseId): array {
-		return $this->repository->getConsultationsForCase(caseId: $caseId);
+		return $this->records->repository->getConsultationsForCase(caseId: $caseId);
 	}//end getConsultationsForCase()
 
 	/**
@@ -211,7 +233,7 @@ class ConsultationService {
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getConsultation(string $consultationId): ?array {
-		return $this->repository->getConsultation(consultationId: $consultationId);
+		return $this->records->repository->getConsultation(consultationId: $consultationId);
 	}//end getConsultation()
 
 	/**
@@ -338,18 +360,25 @@ class ConsultationService {
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function deleteConsultation(string $consultationId): bool {
-		return $this->repository->deleteConsultation(consultationId: $consultationId);
+		return $this->records->repository->deleteConsultation(consultationId: $consultationId);
 	}//end deleteConsultation()
 
 	/**
 	 * Get overdue consultations (past deadline with open/in_behandeling status).
 	 *
+	 * @param callable|null $mayRead Keeps a request the caller may see; asked of each before the list is built.
+	 *
 	 * @return array<int, array<string, mixed>> List of overdue consultations
 	 *
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
 	 */
-	public function getOverdueConsultations(): array {
-		return $this->repository->getOverdueConsultations();
+	public function getOverdueConsultations(?callable $mayRead = null): array {
+		$overdue = $this->records->repository->getOverdueConsultations();
+		if ($mayRead === null) {
+			return $overdue;
+		}
+
+		return array_values(array_filter($overdue, $mayRead));
 	}//end getOverdueConsultations()
 
 	/**
@@ -422,13 +451,13 @@ class ConsultationService {
 			return;
 		}
 
-		$obligationId = $this->obligations->idForSource(source: $consultationId);
+		$obligationId = $this->records->obligations->idForSource(source: $consultationId);
 		if ($obligationId === '') {
 			return;
 		}
 
 		if ($newStatus === 'withdrawn') {
-			$this->obligations->withdraw(
+			$this->records->obligations->withdraw(
 				obligationId: $obligationId,
 				reason: 'The advice request was withdrawn.',
 			);
@@ -436,7 +465,7 @@ class ConsultationService {
 			return;
 		}
 
-		$this->obligations->meet(
+		$this->records->obligations->meet(
 			obligationId: $obligationId,
 			note: 'The advice request reached ' . $newStatus . '.',
 		);
@@ -467,7 +496,7 @@ class ConsultationService {
 			return;
 		}
 
-		$this->obligations->place(
+		$this->records->obligations->place(
 			obligation: [
 				'case' => (string)($data['parentCase'] ?? ''),
 				'kind' => ObligationService::KIND_ADVICE,
@@ -494,7 +523,7 @@ class ConsultationService {
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function validateDependencyCycle(string $consultationId, array $dependsOn): bool {
-		return $this->dependencyGraph->wouldCreateCycle(
+		return $this->records->dependencyGraph->wouldCreateCycle(
 			consultationId: $consultationId,
 			dependsOn: $dependsOn
 		);

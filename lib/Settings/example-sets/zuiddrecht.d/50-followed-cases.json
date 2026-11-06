@@ -1,0 +1,25 @@
+{
+	"$comment": "The cases Pieter follows, as DqMijnWerk draws them under Zaken die u volgt: Anouk Bakker's Woo request Aanbesteding jeugdzorg 2026 (the aanbesteding package's example case, whose uuid the package fixes) and Subsidie buurtfeest Oosthaven.",
+	"watchers": [
+		{
+			"key": "pieter-volgt-aanbesteding-jeugdzorg",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "b84067ac-35ec-55b5-bf17-975206ce32f2",
+				"register": "dossiq",
+				"schema": "case",
+				"notify": true
+			}
+		},
+		{
+			"key": "pieter-volgt-subsidie-buurtfeest",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:subsidie-buurtfeest-oosthaven.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"notify": true
+			}
+		}
+	]
+}

@@ -1,0 +1,6 @@
+- [x] 1.1 casePlanGoal 1.2.0: optional `case`, `plan` no longer required, title Goal
+- [x] 1.2 CasePlanGoals: owner rule (plan or case), ofCase (tests/Unit/Service/SociaalDomein/CasePlanGoalTest.php, red first)
+- [x] 1.3 CaseGoalController GET/POST /api/cases/{caseId}/goals with the case access check first (tests/Unit/Controller/CaseGoalControllerTest.php, red first)
+- [x] 1.4 caseType.goalPrompt (caseType 1.45.0); both Woo request types set it
+- [x] 1.5 simple case page: case-goals record list in the Zaakplan card (tests/vitest/caseGoalsOnThePlan.spec.js, red first; needs nextcloud-vue feat/r34-case-goals-footer)
+- [ ] 2.1 Closing a case goal from the row (the existing close is under /api/family-plan-goals and has no case check; a case-scoped close is the next step)

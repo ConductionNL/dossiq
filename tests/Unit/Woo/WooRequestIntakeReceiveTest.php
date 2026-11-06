@@ -273,6 +273,44 @@ class WooRequestIntakeReceiveTest extends TestCase {
 	}//end testOpencatalogisAnswerKeysBecomeAWooCase()
 
 	/**
+	 * A request is filed on the version of the Woo case type that new cases
+	 * get: the fixed id names the first version, and a newer version that
+	 * superseded it is followed, with its own first status.
+	 *
+	 * @return void
+	 */
+	public function testARequestIsFiledOnTheCurrentVersionOfTheCaseType(): void {
+		$this->store->seed(
+			schema: 'caseType',
+			uuid: WooRequestIntake::CASE_TYPE_ID,
+			row: [
+				'title'         => 'Woo-verzoek',
+				'identifier'    => 'woo-verzoek',
+				'version'       => 1,
+				'initialStatus' => '3c0f5a00-0000-4000-a000-00000000b001',
+				'supersededBy'  => 'woo-v2',
+			]
+		);
+		$this->store->seed(
+			schema: 'caseType',
+			uuid: 'woo-v2',
+			row: [
+				'title'           => 'Woo-verzoek',
+				'identifier'      => 'woo-verzoek',
+				'version'         => 2,
+				'initialStatus'   => 'woo-v2-ontvangen',
+				'previousVersion' => WooRequestIntake::CASE_TYPE_ID,
+			]
+		);
+
+		$answer = $this->intake()->receive($this->answers(overrides: []), '2026-11-27T10:15:00+01:00');
+
+		self::assertSame(expected: 'armed', actual: $answer['outcome'], message: $answer['message']);
+		$case = $this->store->row(schema: 'case', uuid: $answer['requestId']);
+		self::assertSame(expected: 'woo-v2', actual: $case['caseType']);
+	}//end testARequestIsFiledOnTheCurrentVersionOfTheCaseType()
+
+	/**
 	 * opencatalogi's channel values land in the case's own enum, and a long
 	 * request is cut to a subject on a word boundary.
 	 *

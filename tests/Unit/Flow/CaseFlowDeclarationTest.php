@@ -66,9 +66,12 @@ class CaseFlowDeclarationTest extends TestCase {
 			'The case schema must declare its flow inside `configuration` — '
 			. 'that is the only place SchemaFlowImportListener looks.'
 		);
-		$this->assertCount(1, $flows, 'Exactly one case flow ships; a second would import as a separate flow.');
+		// One flow walks a case; the others are the case's macros, started by
+		// hand (`openregister.trigger-manual`) through a declared action.
+		$walking = array_values(array_filter($flows, static fn (array $flow): bool => ($flow['trigger'] ?? '') !== 'manual'));
+		$this->assertCount(1, $walking, 'Exactly one case flow walks a case; a second would import as a separate flow.');
 
-		$this->flow = $flows[0];
+		$this->flow = $walking[0];
 	}//end setUp()
 
 	/**

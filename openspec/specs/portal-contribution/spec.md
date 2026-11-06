@@ -224,13 +224,13 @@ and from a notice link.
 #### Scenario: The resident menu
 - **GIVEN** a resident signed in on the site
 - **WHEN** the site builds the menu from dossiq's contribution
-- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Voortgang van uw zaken", "Een bericht beantwoorden" and "Mijn verzoeken"
+- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Mijn verzoeken" and "Mijn afspraken", beside the site's "Mijn taken", as the menu board `MijnMenu` draws it
 - **AND** "Mijn zaken" and "Berichten" MUST appear once, as the site's own sections
 
 #### Scenario: A case opens from the site's case list
 - **GIVEN** a resident with a dossiq case in the site's "Mijn zaken"
 - **WHEN** they open it
-- **THEN** the page "Voortgang van uw zaken" MUST open with that case selected
+- **THEN** the case MUST open on its own case page, as the board `Zaak` draws it
 
 ### Requirement: The decision notice says what happened
 When the decision on a Woo request case is published for the first time and a resident follows the case
@@ -371,14 +371,15 @@ not reachable from each of its open statuses.
 - **WHEN** they save a withdrawal onto Ingetrokken while Ontvangen
 - **THEN** the save MUST be refused with a sentence naming Ingetrokken
 
-### Requirement: The Woo request action declares its four steps (REQ-SWS-001)
-The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`: "Uw vraag"
-(`onderwerp`, `omschrijving`), "Periode en documenten" (`periodeVan`, `periodeTot`,
-`documentSoorten`, `toelichting`), "Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`,
-`verzoekerType`) and "Controleren en versturen" as a review of every answer. Every whitelisted
-field MUST belong to exactly one step. Each step MUST use the keys `id`, `title`,
-`description` and `fields`; the review step MUST carry `review: true` and no fields. The
-labels MUST be the ones of `DossiqWoo.dc.html`. No field MUST be declared `required`: portaliq
+### Requirement: The Woo request action declares its three steps (REQ-SWS-001)
+The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`: "Uw verzoek"
+(`onderwerp`, `omschrijving`, `periodeVan`, `periodeTot`, `documentSoorten`, `toelichting`),
+"Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`, `verzoekerType`) and "Controleren en
+versturen" as a review of every answer. Every whitelisted field MUST belong to exactly one
+step. Each step MUST use the keys `id`, `title`, `description` and `fields`; the review step
+MUST carry `review: true` and no fields. The step titles MUST be the ones of the portal boards
+`WooVerzoek`, `WooVerzoekGegevens` and `WooVerzoekControleren`. The period and the kinds of
+document MUST keep their input, their options and the checks the route makes on them. No field MUST be declared `required`: portaliq
 drops `required` on an action without a schema (portaliq REQ-SMF-023). The steps, draft and
 confirmation follow portaliq REQ-SMF-020 to REQ-SMF-022, which cover endpoint actions with
 `fields`. This builds on REQ-PORTAL-020 and keeps its endpoint, method
@@ -387,8 +388,13 @@ and assertion.
 #### Scenario: A resident moves through the steps
 - **GIVEN** a resident signed in with DigiD on a site that renders declared steps
 - **WHEN** they start "Informatie opvragen (Woo-verzoek)"
-- **THEN** the form MUST show step 1 of 4, "Uw vraag", and only its two fields
-- **AND** step 4 MUST list every answer with a link to change the step it came from
+- **THEN** the form MUST show step 1 of 3, "Uw verzoek", with the question, the period and the kinds of document
+- **AND** step 3 MUST list every answer with a link to change the step it came from
+
+#### Scenario: The period and the kinds of document keep their checks
+- **GIVEN** the declared action
+- **WHEN** a resident sends an end date before the start date, a date that does not exist, or a kind of document that is not on the list
+- **THEN** the route MUST refuse the request and name that field
 
 #### Scenario: No form-only required field
 - **GIVEN** the declared action
@@ -513,6 +519,7 @@ portal inbox and close the follow-up.
 - **THEN** the timeline MUST show the question with an open follow-up
 - **AND** after the handler presses Reply and sends an answer, the follow-up
   MUST be closed and the answer MUST be in the resident's inbox
+
 ### Requirement: The resident sees what the organisation still needs from them (REQ-SRPD-001)
 An `aanvullingsverzoek` on a case that has a `portalSubject` MUST carry the same
 `portalSubject`, written when the request is asked. The citizen contribution, served to
@@ -538,13 +545,13 @@ The case schema MUST carry `portalTurn`, a calculation that is `applicant` when
 `thirdParty`, `us` otherwise, and empty when the case has an `endDate`. The citizen case
 projection MUST include `portalTurn`, `waitingOnApplicant` and `waitingOn`. The `mijnZaken`
 collection MUST declare `turnField: 'portalTurn'`, `dueField: 'deadline'` and value labels on
-`portalTurn`, so a case card reads "U bent aan zet", "Wij wachten op informatie van een ander"
-or "De gemeente is aan zet". A closed case MUST show no such line. This is a new requirement.
+`portalTurn`, so a case card reads "Wacht op u" when it is `applicant` and "In behandeling" when it is
+`thirdParty` or `us`. A closed case MUST show no such line. This is a new requirement.
 
 #### Scenario: The case waits on the resident
 - **GIVEN** a running case with an open aanvullingsverzoek
 - **WHEN** the resident's overview lists the case
-- **THEN** the case card MUST read "U bent aan zet"
+- **THEN** the case card MUST read "Wacht op u"
 
 #### Scenario: The card reads one declared field
 - **GIVEN** the `mijnZaken` collection
@@ -554,7 +561,7 @@ or "De gemeente is aan zet". A closed case MUST show no such line. This is a new
 #### Scenario: The case waits on the organisation
 - **GIVEN** a running case in a status whose `waitingOn` is `us` and no open request
 - **WHEN** the overview lists it
-- **THEN** the card MUST read "De gemeente is aan zet"
+- **THEN** the card MUST read "In behandeling"
 
 ### Requirement: A case hands the portal its steps (REQ-SRPD-003)
 The provider MUST answer `caseSteps(caseId)` with the case type's statuses in `order`, folded
@@ -630,3 +637,48 @@ sign in before the form opens.
 - **GIVEN** a site page with the start points widget and dossiq installed
 - **WHEN** a signed-out visitor opens it
 - **THEN** it MUST list "Informatie opvragen (Woo-verzoek)", "Bezwaar maken" and "Klacht indienen" with their summaries
+
+### Requirement: REQ-PORTAL-030: The citizen contribution MUST offer the resident's permits as products tagged with their theme
+
+Dossiq MUST record a `permit` for the resident when a case whose case type declares `issuesPermit` gets a granted decision, with the decision's validity and the details the case type names, and MUST mark it revoked when a later decision revokes it. The citizen contribution MUST declare a collection `mijnVergunningen` on schema `permit`, scoped by `portalSubject`, with `kind: products`, the permit's `theme`, and the title, validity, meta and count fields portaliq's products contract reads. It MUST NOT project a revoked permit. It MUST declare an `update` action that asks for a new licence plate by opening a change case, and MUST NOT let the portal write the permit itself.
+
+#### Scenario: a granted resident permit shows on the theme page
+- **WHEN** a "Parkeervergunning bewoners" case of resident S gets a granted decision effective 1 January 2026 until 31 December 2026
+- **THEN** a permit for S exists with theme `parkeren`, title "Bewonersvergunning binnenstad", the licence plate from the case and those dates
+- **AND** dossiq's citizen contribution for S lists it in `mijnVergunningen` with `kind: products`
+- @e2e exclude cross-app render belongs to portaliq's ThemaOverzicht e2e; the contribution and the issuing are covered by PHPUnit
+
+#### Scenario: a revoked permit leaves the list
+- **WHEN** a later decision on that case revokes the permit
+- **THEN** the permit's status is `revoked` and it is no longer in the collection
+- @e2e exclude backend listener; covered by PHPUnit
+
+#### Scenario: the resident asks for a new licence plate
+- **WHEN** resident S submits "Kenteken wijzigen" with plate GZ-123-X on her permit
+- **THEN** a change case is opened with the permit and the new plate, and the permit's plate is unchanged until that case is decided
+- @e2e exclude cross-app write path; covered by PHPUnit and portaliq's action e2e
+
+#### Scenario: another resident's permit
+- **WHEN** resident T reads `mijnVergunningen`
+- **THEN** S's permit is not returned
+- @e2e exclude scope check; covered by PHPUnit
+
+### Requirement: The Woo request form asks dates as dates and the requester as a choice (REQ-WDI-004)
+
+Both Woo request actions (`startWooVerzoek`, `startWooVerzoekAlgemeen`) SHALL declare `periodeVan` and `periodeTot` with `input: date`, and `verzoekerType` as choices whose Dutch words (Inwoner, Journalist, Organisatie) stand over the values the route keeps.
+
+#### Scenario: The period step
+- GIVEN a resident opens the Woo request from the overview tile or from a dossier
+- WHEN she reaches the period step
+- THEN the two dates are asked as dates
+- @e2e exclude pinned by `PortalContributionProviderTest::testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice`; the rendering is portaliq's
+
+### Requirement: The Woo request starts from the signed-in resident's name and e-mail address
+
+Both Woo request actions MUST declare `prefill: name` on `verzoekerNaam` and `prefill: email` on `verzoekerEmail`, so portaliq starts those fields from the signed-in resident's own details. The resident MUST still be able to change them.
+
+#### Scenario: Step 3 knows who is asking
+- GIVEN Henk Bakker is signed in to the portal
+- WHEN he reaches "Uw gegevens" in the Woo request
+- THEN his name and e-mail address are already filled in
+- @e2e exclude pinned by `PortalContributionProviderTest::testTheWooRequestPrefillsTheRequesterFromTheProfile`; the filling itself is portaliq's and pinned there

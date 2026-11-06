@@ -12,7 +12,7 @@
       "wooDocumentAssessment": {
         "slug": "wooDocumentAssessment",
         "icon": "FileEyeOutline",
-        "version": "1.2.1",
+        "version": "1.3.0",
         "title": "Woo document assessment",
         "description": "Per document of a Woo request case: may it be disclosed, and on which grounds is it withheld.",
         "type": "object",
@@ -91,6 +91,11 @@
             "type": "object",
             "title": "Redaction proposal",
             "description": "The proposed passages to redact, and the review of that proposal."
+          },
+          "redaction": {
+            "type": "object",
+            "title": "Redaction",
+            "description": "The redaction of a partly public document: the entities found and checked, who checked them, and how the redacted copy was made (filinq or an uploaded version)."
           },
           "groundsListVersion": {
             "type": "string",

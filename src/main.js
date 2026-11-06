@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+import * as ncVue from '@conduction/nextcloud-vue'
 import {
 	buildManifest,
 	CnPageRenderer,
@@ -26,7 +27,6 @@ import { generateUrl } from '@nextcloud/router'
 import { createApp, h, markRaw, watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
-import { registerNavCardGrid } from './components/case/registerNavCardGrid.js'
 import appIcons from './icons.js'
 import logger from './logger.js'
 import bundledManifest from './manifest.json'
@@ -35,10 +35,12 @@ import menuLayoutSimple from './menu-layout.simple.json'
 import pinia from './pinia.js'
 import registry from './registry.js'
 import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
-import cellWidgets from './services/cellWidgets.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
+import { installMyTeamNameSource, installMyTeamSource } from './services/myTeamSource.js'
 import { useObjectStore } from './store/modules/object.js'
+import { withConfigLabels } from './utils/configLabels.js'
+import { withConfiguredLenses } from './utils/configLenses.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
 import { installPageTitles } from './utils/pageTitle.js'
 import { currentPermissions } from './utils/permissions.js'
@@ -87,10 +89,6 @@ registerIcons(appIcons)
 // way doriath and hermiq do, before the first page renders.
 registerBuiltinDashboardWidgets()
 
-// The `case-sections` container type, which is what lets the case page's tab
-// strip hold six tabs instead of fourteen. See the module for why it goes in
-// the SHARED catalog and not in `registry.js`.
-registerNavCardGrid()
 try {
 	registerTranslations()
 } catch (e) {
@@ -215,7 +213,7 @@ const menuLayout =
  * The theming values the simple profile's nav placeholders read.
  *
  * @param {object|null} capabilities `getCapabilities()`.
- * @return {object} Nextcloud's theming block plus `emblem` from thematiq's
+ * @return {object} Nextcloud's theming block, `staffAppName`, and `emblem` from thematiq's
  *   `nldesign.logos.emblem`, or '' when the set ships none.
  *
  * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
@@ -223,7 +221,12 @@ const menuLayout =
 function navTheming(capabilities) {
 	const theming = capabilities?.theming ?? {}
 	const emblem = capabilities?.nldesign?.logos?.emblem
-	return { ...theming, emblem: typeof emblem === 'string' ? emblem : '' }
+	return {
+		...theming,
+		emblem: typeof emblem === 'string' ? emblem : '',
+		// The name staff know the app by (admin setting `staff_app_name`).
+		staffAppName: String(loadState('dossiq', 'staff_app_name', '') || ''),
+	}
 }
 
 const profiledManifest = {
@@ -243,10 +246,14 @@ const profiledManifest = {
 		},
 	},
 }
+// The app config the pages resolve `@config.<key>` against (DashboardController
+// provides it): the contacts and organisations lists open on the municipality's
+// city. A lens whose setting is empty is left out (utils/configLenses.js).
+const appConfig = loadState('dossiq', 'config', {})
 const builtManifest = markRaw(
 	translateFieldOverrideLabels(
 		translateBannerCopy(
-			translateLensLabels(profiledManifest, (label) => t('dossiq', label)),
+			translateLensLabels(withConfigLabels(withConfiguredLenses(profiledManifest, appConfig), appConfig), (label) => t('dossiq', label)),
 			(label) => t('dossiq', label),
 		),
 		(label) => t('dossiq', label),
@@ -327,6 +334,10 @@ watch(() => resolvedManifest.value?.menu, retitlePage)
 // screen". See src/services/caseLiveUpdates.js for what an event does, and for
 // the one thing it deliberately does not cover.
 installCaseLiveUpdates(router, () => useObjectStore())
+// The team the team queue opens on (@myTeam). Read through the namespace so
+// a library without the hook does not stop the app from starting.
+installMyTeamSource(ncVue.registerMyTeamSource)
+installMyTeamNameSource(ncVue.registerMyTeamNameSource)
 
 tryLoadTranslations()
 
@@ -340,7 +351,6 @@ const pageTypesProp = { ...defaultPageTypes }
 const registryProp = { ...registry }
 const mapFormattersProp = { ...mapFormatters }
 const formattersProp = { ...formatters }
-const cellWidgetsProp = { ...cellWidgets }
 
 const app = createApp({
 	// This root uses a native Vue-3 render() (h from 'vue'). @vue/compat would
@@ -373,7 +383,6 @@ const app = createApp({
 			pageTypes: pageTypesProp,
 			mapFormatters: mapFormattersProp,
 			formatters: formattersProp,
-			cellWidgets: cellWidgetsProp,
 		})
 	},
 })
@@ -384,6 +393,8 @@ const app = createApp({
 app.config.globalProperties.t = t
 app.config.globalProperties.n = n
 app.config.globalProperties.$mapFormatters = mapFormattersProp
+// Every page reads `@config.<key>` off this (nextcloud-vue `cnAppConfig`).
+app.provide('cnAppConfig', appConfig)
 
 app.use(pinia)
 app.use(router)

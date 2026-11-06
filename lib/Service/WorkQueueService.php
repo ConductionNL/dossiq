@@ -35,7 +35,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Queue\CaseQueueSource;
 use OCA\Dossiq\Service\Queue\QueueCaseFacts;
+use OCA\Dossiq\Service\Queue\QueueScoringRun;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\Queue\UrgencyProfile;
 use OCA\Dossiq\Service\Queue\UrgencyScorer;
@@ -68,6 +70,14 @@ class WorkQueueService {
 	 * Maximum number of cases fetched for the workload aggregation.
 	 */
 	private const WORKLOAD_LIMIT = 1000;
+
+	/**
+	 * The waiting-on declarations counted apart from ours, by their count key.
+	 */
+	private const WAITING_ON_BUCKETS = [
+		StatusDeclaration::WAITING_ON_APPLICANT => 'applicant',
+		StatusDeclaration::WAITING_ON_THIRD_PARTY => 'thirdParty',
+	];
 
 	/**
 	 * Constructor.
@@ -139,41 +149,35 @@ class WorkQueueService {
 	 * open tasks (assignee match, non-terminal status), scores every item,
 	 * and returns them sorted by score descending (most urgent first).
 	 *
+	 * Open cases the user covers for an absent colleague ({@see Substitution\CoveredWork})
+	 * join the ranking when given, scored the same way and never twice; each case item carries
+	 * `coveredFor` (`null` for the user's own), on the item and on its row.
+	 *
 	 * @param string $userId The Nextcloud user id to scope to.
 	 * @param DateTimeImmutable|null $now Optional "now" override for testing.
+	 * @param array<int, array<string, mixed>> $covered Open covered cases, each with `coveredFor`; already read-checked.
 	 *
 	 * @return array<int, array<string, mixed>> Scored, sorted queue items.
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	public function computeQueue(string $userId, ?DateTimeImmutable $now = null): array {
+	public function computeQueue(string $userId, ?DateTimeImmutable $now = null, array $covered = []): array {
 		$now = ($now ?? new DateTimeImmutable());
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $caseSchema === '' || $userId === '') {
+		$source = $this->caseSource();
+		if ($source === null || $userId === '') {
 			return [];
 		}
 
-		$profile = $this->urgencySettings->profile();
+		$run = new QueueScoringRun(source: $source, now: $now, profile: $this->urgencySettings->profile());
 
-		$items = [];
-		$caseItems = $this->queueCaseItems(
-			objectService: $objectService,
-			register: $register,
-			caseSchema: $caseSchema,
-			userId: $userId,
-			now: $now,
-			profile: $profile
+		$caseItems = $this->queueCaseItems(run: $run, userId: $userId);
+		$items = array_merge(
+			$caseItems,
+			$this->scoreCases(run: $run, cases: $this->notYetQueued(covered: $covered, caseItems: $caseItems)),
+			$this->queueTaskItems(run: $run, userId: $userId)
 		);
-		foreach ($caseItems as $item) {
-			$items[] = $item;
-		}
-
-		foreach ($this->queueTaskItems(userId: $userId, now: $now, profile: $profile) as $item) {
-			$items[] = $item;
-		}
 
 		usort(
 			$items,
@@ -200,25 +204,18 @@ class WorkQueueService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function countByWaitingOn(?string $userId = null): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $caseSchema === '') {
+		$source = $this->caseSource();
+		if ($source === null) {
 			return $this->tallyWaitingOn(cases: []);
 		}
 
 		$filters = ['_limit' => self::WORKLOAD_LIMIT];
-		if ($userId !== null && $userId !== '') {
+		if ((string)$userId !== '') {
 			$filters['assignee'] = $userId;
 		}
 
 		try {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: $filters
-			);
+			$cases = $this->searchCases(source: $source, filters: $filters);
 		} catch (\Throwable $e) {
 			$this->logger->warning('WorkQueue: waiting-on count search failed', ['error' => $e->getMessage()]);
 			return $this->tallyWaitingOn(cases: []);
@@ -249,31 +246,49 @@ class WorkQueueService {
 		$counts = ['ours' => 0, 'applicant' => 0, 'thirdParty' => 0, 'total' => 0];
 
 		foreach ($cases as $case) {
-			if (is_array($case) === false) {
-				continue;
-			}
-
-			if ((string)($case['endDate'] ?? '') !== '' || ($case['isFinalStatus'] ?? false) === true) {
+			if (is_array($case) === false || $this->isFinished(row: $case) === true) {
 				continue;
 			}
 
 			$counts['total']++;
-			$waitingOn = trim((string)($case['waitingOn'] ?? ''));
-			if ($waitingOn === StatusDeclaration::WAITING_ON_APPLICANT) {
-				$counts['applicant']++;
-				continue;
-			}
-
-			if ($waitingOn === StatusDeclaration::WAITING_ON_THIRD_PARTY) {
-				$counts['thirdParty']++;
-				continue;
-			}
-
-			$counts['ours']++;
+			$counts[$this->waitingBucket(row: $case)]++;
 		}
 
 		return $counts;
 	}//end tallyWaitingOn()
+
+	/**
+	 * Whether a case is closed or stands in a final status.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return bool True when nobody waits on it any more.
+	 */
+	private function isFinished(array $row): bool {
+		return $this->isClosed(row: $row) === true || ($row['isFinalStatus'] ?? false) === true;
+	}//end isFinished()
+
+	/**
+	 * Whether a case has an end date.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return bool True when the case is closed.
+	 */
+	private function isClosed(array $row): bool {
+		return (string)($row['endDate'] ?? '') !== '';
+	}//end isClosed()
+
+	/**
+	 * The count a case's waiting-on declaration falls in; an undeclared case is ours.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return string The bucket key.
+	 */
+	private function waitingBucket(array $row): string {
+		return (self::WAITING_ON_BUCKETS[trim((string)($row['waitingOn'] ?? ''))] ?? 'ours');
+	}//end waitingBucket()
 
 	/**
 	 * Compute per-handler open-case counts across all cases.
@@ -283,20 +298,13 @@ class WorkQueueService {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function computeWorkload(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $caseSchema === '') {
+		$source = $this->caseSource();
+		if ($source === null) {
 			return [];
 		}
 
 		try {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['_limit' => self::WORKLOAD_LIMIT]
-			);
+			$cases = $this->searchCases(source: $source, filters: ['_limit' => self::WORKLOAD_LIMIT]);
 		} catch (\Throwable $e) {
 			$this->logger->warning('WorkQueue: workload case search failed', ['error' => $e->getMessage()]);
 			return [];
@@ -324,8 +332,7 @@ class WorkQueueService {
 	private function countOpenCasesByHandler(array $cases): array {
 		$counts = [];
 		foreach ($cases as $case) {
-			$endDate = (string)($case['endDate'] ?? '');
-			if ($endDate !== '') {
+			if ($this->isClosed(row: $case) === true) {
 				// Closed case — not part of the open workload.
 				continue;
 			}
@@ -350,6 +357,58 @@ class WorkQueueService {
 	}//end countOpenCasesByHandler()
 
 	/**
+	 * The configured case source, or null while the register or case schema is not set.
+	 *
+	 * @return CaseQueueSource|null The source.
+	 */
+	private function caseSource(): ?CaseQueueSource {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $caseSchema === '') {
+			return null;
+		}
+
+		return new CaseQueueSource(objectService: $objectService, register: $register, caseSchema: $caseSchema);
+	}//end caseSource()
+
+	/**
+	 * Read cases from the source as plain arrays.
+	 *
+	 * @param CaseQueueSource      $source  Where the cases live.
+	 * @param array<string, mixed> $filters The search filters.
+	 *
+	 * @return array<int, array<string, mixed>> The case rows.
+	 */
+	private function searchCases(CaseQueueSource $source, array $filters): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $source->objectService,
+			register: $source->register,
+			schema: $source->caseSchema,
+			filters: $filters
+		);
+	}//end searchCases()
+
+	/**
+	 * The covered cases that are not already in the queue as the user's own.
+	 *
+	 * @param array<int, array<string, mixed>> $covered   The covered cases.
+	 * @param array<int, array<string, mixed>> $caseItems The user's own case items.
+	 *
+	 * @return array<int, array<string, mixed>> The covered cases still to score.
+	 */
+	private function notYetQueued(array $covered, array $caseItems): array {
+		$queuedIds = array_column($caseItems, 'id');
+
+		return array_values(
+			array_filter(
+				$covered,
+				static fn (array $case): bool => in_array((string)($case['id'] ?? ''), $queuedIds, true) === false
+			)
+		);
+	}//end notYetQueued()
+
+	/**
 	 * Build scored case queue items for one user.
 	 *
 	 * The cases are read with the filters the My Work list uses, so the
@@ -357,30 +416,17 @@ class WorkQueueService {
 	 * open case falls off a default page. Each item carries the case row, so
 	 * a list can render the card from the ranked answer.
 	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register slug/id.
-	 * @param string $caseSchema Case schema slug/id.
-	 * @param string $userId User id to scope to.
-	 * @param DateTimeImmutable $now Now.
-	 * @param UrgencyProfile $profile The instance profile.
+	 * @param QueueScoringRun $run    The source, instant and profile of this computation.
+	 * @param string          $userId User id to scope to.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
-	private function queueCaseItems(
-		object $objectService,
-		string $register,
-		string $caseSchema,
-		string $userId,
-		DateTimeImmutable $now,
-		UrgencyProfile $profile,
-	): array {
+	private function queueCaseItems(QueueScoringRun $run, string $userId): array {
 		try {
-			$cases = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
+			$cases = $this->searchCases(
+				source: $run->source,
 				filters: [
 					'assignee' => $userId,
 					'statusHiddenInLists' => false,
@@ -393,67 +439,108 @@ class WorkQueueService {
 			return [];
 		}
 
+		return $this->scoreCases(run: $run, cases: $cases);
+	}//end queueCaseItems()
+
+	/**
+	 * Score open cases into queue items, reading each case type's profile once.
+	 *
+	 * @param QueueScoringRun                  $run   The source, instant and instance profile.
+	 * @param array<int, array<string, mixed>> $cases The cases.
+	 *
+	 * @return array<int, array<string, mixed>> One item per open case, each with `coveredFor`.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function scoreCases(QueueScoringRun $run, array $cases): array {
 		$profilesByType = [];
 		$items = [];
 		foreach ($cases as $case) {
-			$endDate = (string)($case['endDate'] ?? '');
-			if ($endDate !== '') {
+			if ($this->isClosed(row: $case) === true) {
 				// Closed case — not part of the open queue.
 				continue;
 			}
 
-			$caseId = (string)($case['id'] ?? '');
-			$fallbackDate = (string)($case['deadline'] ?? '');
-			$deadline = $this->caseFacts->resolveCaseDeadline(objectService: $objectService, register: $register, caseId: $caseId, fallback: $fallbackDate);
-			$priority = (string)($case['priority'] ?? 'normal');
-
-			$caseTypeId = $this->caseFacts->caseTypeIdOf(case: $case);
+			$caseTypeId = $this->caseFacts->caseTypeIdOf($case);
 			if (array_key_exists($caseTypeId, $profilesByType) === false) {
-				$profilesByType[$caseTypeId] = $this->caseFacts->profileForCaseType(
-					objectService: $objectService,
-					register: $register,
-					caseTypeId: $caseTypeId,
-					profile: $profile
-				);
+				$profilesByType[$caseTypeId] = $this->caseTypeProfile(run: $run, caseTypeId: $caseTypeId);
 			}
 
-			$scoring = $this->scoreItem(
-				deadline: $deadline,
-				priority: $priority,
-				referenceDate: $this->caseFacts->lastActivityOf(case: $case),
-				now: $now,
-				profile: $profilesByType[$caseTypeId]
-			);
-
-			$items[] = array_merge(
-				[
-					'itemType' => 'case',
-					'id' => $caseId,
-					'title' => (string)($case['title'] ?? ($case['identifier'] ?? $caseId)),
-					'identifier' => (string)($case['identifier'] ?? ''),
-					'caseType' => ($case['caseType'] ?? null),
-					'status' => ($case['status'] ?? null),
-					'priority' => $priority,
-					'deadline' => $deadline,
-					'case' => $case,
-				],
-				$scoring
-			);
-		}//end foreach
+			$items[] = $this->caseItem(run: $run->withProfile(profile: $profilesByType[$caseTypeId]), row: $case);
+		}
 
 		return $items;
-	}//end queueCaseItems()
+	}//end scoreCases()
+
+	/**
+	 * The profile one case type scores with: its own thresholds over the instance profile.
+	 *
+	 * @param QueueScoringRun $run        The source and instance profile.
+	 * @param string          $caseTypeId The case type id.
+	 *
+	 * @return UrgencyProfile The profile.
+	 */
+	private function caseTypeProfile(QueueScoringRun $run, string $caseTypeId): UrgencyProfile {
+		return $this->caseFacts->profileForCaseType(
+			objectService: $run->source->objectService,
+			register: $run->source->register,
+			caseTypeId: $caseTypeId,
+			profile: $run->profile
+		);
+	}//end caseTypeProfile()
+
+	/**
+	 * Score one open case into a queue item.
+	 *
+	 * @param QueueScoringRun      $run  The source, instant and the case type's profile.
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return array<string, mixed> The queue item, carrying the row and `coveredFor`.
+	 */
+	private function caseItem(QueueScoringRun $run, array $row): array {
+		$rowId = (string)($row['id'] ?? '');
+		$deadline = $this->caseFacts->resolveCaseDeadline(
+			objectService: $run->source->objectService,
+			register: $run->source->register,
+			caseId: $rowId,
+			fallback: (string)($row['deadline'] ?? '')
+		);
+		$priority = (string)($row['priority'] ?? 'normal');
+		$referenceDate = $this->caseFacts->lastActivityOf($row);
+		$scoring = $this->scorer->withResidentWait(
+			scoring: $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: $referenceDate, now: $run->now, profile: $run->profile),
+			waiting: (($row['waitingOnApplicant'] ?? false) === true),
+			profile: $run->profile,
+		);
+
+		$row['coveredFor'] = ($row['coveredFor'] ?? null);
+
+		return array_merge(
+			[
+				'itemType' => 'case',
+				'id' => $rowId,
+				'title' => (string)($row['title'] ?? ($row['identifier'] ?? $rowId)),
+				'identifier' => (string)($row['identifier'] ?? ''),
+				'caseType' => ($row['caseType'] ?? null),
+				'status' => ($row['status'] ?? null),
+				'priority' => $priority,
+				'deadline' => $deadline,
+				'coveredFor' => $row['coveredFor'],
+				'case' => $row,
+			],
+			$scoring
+		);
+	}//end caseItem()
 
 	/**
 	 * Build scored task queue items for one user.
 	 *
-	 * @param string $userId User id to scope to.
-	 * @param DateTimeImmutable $now Now.
-	 * @param UrgencyProfile $profile The instance profile.
+	 * @param QueueScoringRun $run    The instant and instance profile.
+	 * @param string          $userId User id to scope to.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function queueTaskItems(string $userId, DateTimeImmutable $now, UrgencyProfile $profile): array {
+	private function queueTaskItems(QueueScoringRun $run, string $userId): array {
 		// The ENGINE, and the open/closed split is made THERE. Filtering a
 		// paged window client-side silently drops every open task past the
 		// boundary, which is how a queue comes to look empty on the day
@@ -469,7 +556,7 @@ class WorkQueueService {
 				$deadline = $dueDate;
 			}
 
-			$scoring = $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: null, now: $now, profile: $profile);
+			$scoring = $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: null, now: $run->now, profile: $run->profile);
 
 			$items[] = array_merge(
 				[

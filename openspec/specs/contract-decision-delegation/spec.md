@@ -1,7 +1,7 @@
 # contract-decision-delegation Specification
 
 ## Purpose
-TBD - created by archiving change dossiq-delegate-contract-decision. Update Purpose after archive.
+Keep ZGW case management and the contract expiry scan in dossiq, and leave contract decisions and mandate checks to the decision app.
 
 ## Requirements
 

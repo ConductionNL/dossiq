@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -148,6 +149,7 @@ class CaseTemplateService {
 	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function startFrom(string $templateId, array $overrides = []): array {
+		$overrides = array_diff_key($overrides, CallerIdentity::KEYS);
 		$template = $this->store->row(configKey: self::CASES, id: $templateId);
 		if ($template === null) {
 			return ['ok' => false, 'reason' => 'not_found', 'case' => []];
@@ -188,6 +190,8 @@ class CaseTemplateService {
 	 * carrying the same one is an archive problem, not a cosmetic one. The
 	 * dates go because a case starts when it is started, not when its template
 	 * was written. `templateName` goes because the new row is not a template.
+	 * `status` goes because the template's own status is not where a new case
+	 * starts: OpenRegister opens it in its case type's initial status.
 	 *
 	 * @param array<string, mixed> $template The template row.
 	 *
@@ -203,6 +207,7 @@ class CaseTemplateService {
 			$template['endDate'],
 			$template['deadline'],
 			$template['plannedEndDate'],
+			$template['status'],
 			$template['statusHistory'],
 			$template['startedFromTemplate'],
 		);

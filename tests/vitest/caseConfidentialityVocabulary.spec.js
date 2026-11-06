@@ -61,12 +61,8 @@ vi.mock('../../src/services/deelzaakApi.js', () => ({
 
 const { default: DeelzaakCreateModal } =
 	await import('../../src/modals/DeelzaakCreateModal.vue')
-const { getConfidentialityOptions } =
-	await import('../../src/utils/caseTypeValidation.js')
 
 const caseEnum = register.components.schemas.case.properties.confidentiality.enum
-const caseTypeEnum =
-	register.components.schemas.caseType.properties.confidentiality.enum
 
 /**
  * Run the modal's submit() for a sub-case type and capture the saved case.
@@ -119,16 +115,3 @@ describe('Sub-case confidentiality', () => {
 	})
 })
 
-describe('Case type confidentiality options', () => {
-	it('offers exactly the levels the caseType schema accepts, in order', () => {
-		expect(getConfidentialityOptions().map((option) => option.id)).toEqual(
-			caseTypeEnum,
-		)
-	})
-
-	it('gives every level a label', () => {
-		for (const option of getConfidentialityOptions()) {
-			expect(option.label).toBeTruthy()
-		}
-	})
-})

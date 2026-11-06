@@ -36,7 +36,7 @@ use Throwable;
  * request, which checks the permit is the resident's. The resident comes from
  * the verified `sub` claim only; a subject in the body is never read.
  *
- * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalPermitController extends Controller {
 	/**
@@ -83,7 +83,7 @@ class PortalPermitController extends Controller {
 	 *
 	 * @return JSONResponse 201 with the case, or the refusal's status.
 	 *
-	 * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

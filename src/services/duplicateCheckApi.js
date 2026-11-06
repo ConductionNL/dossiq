@@ -93,6 +93,8 @@ export async function fetchMatchedCases(uuids) {
 				generateUrl(
 					`/apps/openregister/api/objects/${REGISTER}/${SCHEMA}/${encodeURIComponent(id)}`,
 				),
+				// The case type inline, so the warning can name it.
+				{ params: { _extend: 'caseType' } },
 			)
 			return response?.data || null
 		} catch {

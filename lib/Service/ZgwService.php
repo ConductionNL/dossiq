@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\OpenRegister\Db\Mapping;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -33,6 +34,9 @@ use OCP\IRequest;
 use OCA\Dossiq\Service\Zgw\ZgwParentStateResolver;
 use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
 use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
+use OCA\Dossiq\Service\Zgw\ResourceRoute;
+use OCA\Dossiq\Service\Zgw\ResourceWrite;
+use OCA\Dossiq\Service\Zgw\RuleFlags;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -1077,72 +1081,104 @@ class ZgwService {
 		bool $hasForceer = true,
 		?bool $parentCaseTypeDraft = null,
 	): JSONResponse {
+		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource);
+		$mappingConfig = $this->mappingOrRefusal(route: $route);
+		if ($mappingConfig instanceof JSONResponse) {
+			return $mappingConfig;
+		}
+
+		return $this->create(
+			draft: new ResourceWrite(route: $route, mapping: $mappingConfig),
+			flags: new RuleFlags(action: 'create', parentCaseTypeDraft: $parentCaseTypeDraft, caseClosed: $caseClosed, hasGeforceerd: $hasForceer)
+		);
+	}//end handleCreate()
+
+	/**
+	 * The mapping configuration of a route, or the answer when the store or the mapping is missing.
+	 *
+	 * @param ResourceRoute $route The route.
+	 *
+	 * @return array|JSONResponse The mapping configuration, or the 503 or 404 answer
+	 */
+	private function mappingOrRefusal(ResourceRoute $route): array|JSONResponse {
 		if ($this->objectService === null) {
 			return $this->unavailableResponse();
 		}
 
-		$mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
+		$mappingConfig = $this->loadMappingConfig(zgwApi: $route->api, resource: $route->resource);
 		if ($mappingConfig === null) {
-			return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
+			return $this->mappingNotFoundResponse(zgwApi: $route->api, resource: $route->resource);
 		}
 
-		try {
-			$body = $this->getRequestBody(request: $request);
+		return $mappingConfig;
+	}//end mappingOrRefusal()
 
-			$ruleResult = $this->businessRulesService->validate(
-				zgwApi: $zgwApi,
-				resource: $resource,
-				action: 'create',
-				body: $body,
-				objectService: $this->objectService,
-				mappingConfig: $mappingConfig,
-				parentCaseTypeDraft: $parentCaseTypeDraft,
-				caseClosed: $caseClosed,
-				hasGeforceerd: $hasForceer
-			);
+	/**
+	 * Ask the business rules about a write.
+	 *
+	 * @param ResourceWrite $write The write, with its body.
+	 * @param RuleFlags     $flags The action and parent state flags.
+	 *
+	 * @return array The rule result (`valid`, `status`, `enrichedBody`, ...)
+	 */
+	private function checkRules(ResourceWrite $write, RuleFlags $flags): array {
+		return $this->businessRulesService->validate(
+			zgwApi: $write->route->api,
+			resource: $write->route->resource,
+			action: $flags->action,
+			body: $write->body,
+			existingObject: $write->existing,
+			objectService: $this->objectService,
+			mappingConfig: $write->mapping,
+			parentCaseTypeDraft: $flags->parentCaseTypeDraft,
+			caseClosed: $flags->caseClosed,
+			hasGeforceerd: $flags->hasGeforceerd
+		);
+	}//end checkRules()
+
+	/**
+	 * Validate, store and announce a new object.
+	 *
+	 * @param ResourceWrite $draft The write, before its body is read.
+	 * @param RuleFlags     $flags The action and parent state flags.
+	 *
+	 * @return JSONResponse The created object, or the refusal
+	 */
+	private function create(ResourceWrite $draft, RuleFlags $flags): JSONResponse {
+		$route = $draft->route;
+		try {
+			$write = $draft->withBody(body: $this->getRequestBody(request: $route->request));
+			$ruleResult = $this->checkRules(write: $write, flags: $flags);
 			if ($ruleResult['valid'] === false) {
 				return $this->ruleRefusal(ruleResult: $ruleResult);
 			}
 
 			// Map to English; direct OpenRegister fields (array fields like documentTypes/caseTypes
 			// that Twig cannot handle) bypass the inbound mapping.
-			$englishData = $this->mapInbound(enrichedBody: $ruleResult['enrichedBody'], mappingConfig: $mappingConfig)['data'];
+			$englishData = $this->mapInbound(enrichedBody: $ruleResult['enrichedBody'], mappingConfig: $write->mapping)['data'];
 
-			// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
-			if (is_array($englishData) === false) {
-				return new JSONResponse(
-					data: ['detail' => 'Invalid mapping result'],
-					statusCode: Http::STATUS_BAD_REQUEST
-				);
-			}
-
+			// `_directFields` reach the payload unmapped, so a create drops the keys that name a stored object.
 			$object = $this->objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $englishData
+				register: $write->mapping['sourceRegister'],
+				schema: $write->mapping['sourceSchema'],
+				object: array_diff_key($englishData, CallerIdentity::KEYS)
 			);
 
-			$outbound = $this->mapOutbound(request: $request, zgwApi: $zgwApi, resource: $resource, mappingConfig: $mappingConfig, object: $object);
+			$outbound = $this->outboundFor(write: $write, object: $object);
 			$objectUuid = $outbound['objectData']['id'] ?? ($outbound['objectData']['@self']['id'] ?? '');
 			$this->publishNotification(
-				zgwApi: $zgwApi,
-				resource: $resource,
+				zgwApi: $route->api,
+				resource: $route->resource,
 				resourceUrl: $outbound['baseUrl'] . '/' . $objectUuid,
 				action: 'create'
 			);
 
 			return new JSONResponse(data: $outbound['mapped'], statusCode: Http::STATUS_CREATED);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'ZGW create error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			$this->logger->error('ZGW create error: ' . $e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
 		}//end try
-	}//end handleCreate()
+	}//end create()
 
 	/**
 	 * Generic show (get single) operation for a ZGW resource.
@@ -1245,92 +1281,118 @@ class ZgwService {
 		// Resolve UUID from URL path — Nextcloud's getParam() merges JSON body
 		// into controller args, so a body "uuid" field can override the route's {uuid}.
 		$uuid = $this->resolvePathUuid(request: $request, uuid: $uuid);
-
-		if ($this->objectService === null) {
-			return $this->unavailableResponse();
+		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource, uuid: $uuid);
+		$draft = $this->existingWrite(route: $route, operation: 'ZGW update');
+		if ($draft instanceof JSONResponse) {
+			return $draft;
 		}
 
-		$mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
-		if ($mappingConfig === null) {
-			return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
+		$action = 'update';
+		if ($partial === true) {
+			$action = 'patch';
 		}
 
-		$existingData = $this->readExisting(uuid: $uuid, mappingConfig: $mappingConfig, operation: 'ZGW update', resource: $resource);
+		return $this->update(
+			draft: $draft,
+			flags: new RuleFlags(action: $action, parentCaseTypeDraft: $parentZtDraft, caseClosed: $caseClosed, hasGeforceerd: $hasForceer)
+		);
+	}//end handleUpdate()
+
+	/**
+	 * The write on a stored object, or the answer when the store, the mapping or the object is missing.
+	 *
+	 * @param ResourceRoute $route     The route, with the object id.
+	 * @param string        $operation What the request asks (`ZGW delete`), for the log
+	 *
+	 * @return ResourceWrite|JSONResponse The write, or the 503, 404 or 403 answer
+	 */
+	private function existingWrite(ResourceRoute $route, string $operation): ResourceWrite|JSONResponse {
+		$mappingConfig = $this->mappingOrRefusal(route: $route);
+		if ($mappingConfig instanceof JSONResponse) {
+			return $mappingConfig;
+		}
+
+		$existingData = $this->readExisting(uuid: $route->uuid, mappingConfig: $mappingConfig, operation: $operation, resource: $route->resource);
 		if ($existingData instanceof JSONResponse) {
 			return $existingData;
 		}
 
+		return new ResourceWrite(route: $route, mapping: $mappingConfig, existing: $existingData);
+	}//end existingWrite()
+
+	/**
+	 * Validate, store and announce an update of a stored object.
+	 *
+	 * @param ResourceWrite $draft The write on the stored object, before its body is read.
+	 * @param RuleFlags     $flags The action (update or patch) and parent state flags.
+	 *
+	 * @return JSONResponse The updated object, or the refusal
+	 */
+	private function update(ResourceWrite $draft, RuleFlags $flags): JSONResponse {
+		$route = $draft->route;
 		try {
-			$body = $this->getRequestBody(request: $request);
-
-			$action = 'update';
-			if ($partial === true) {
-				$action = 'patch';
-			}
-
-			$ruleResult = $this->businessRulesService->validate(
-				zgwApi: $zgwApi,
-				resource: $resource,
-				action: $action,
-				body: $body,
-				existingObject: $existingData,
-				objectService: $this->objectService,
-				mappingConfig: $mappingConfig,
-				parentCaseTypeDraft: $parentZtDraft,
-				caseClosed: $caseClosed,
-				hasGeforceerd: $hasForceer
-			);
+			$write = $draft->withBody(body: $this->getRequestBody(request: $route->request));
+			$ruleResult = $this->checkRules(write: $write, flags: $flags);
 			if ($ruleResult['valid'] === false) {
 				return $this->ruleRefusal(ruleResult: $ruleResult);
 			}
 
-			// Map to English; direct OpenRegister fields bypass the Twig inbound mapping.
-			$inbound = $this->mapInbound(enrichedBody: $ruleResult['enrichedBody'], mappingConfig: $mappingConfig);
-			$englishData = $inbound['data'];
-			$englishData['id'] = $uuid;
-
-			// For partial updates (PATCH), merge with the existing object read above.
-			if ($partial === true) {
-				$englishData = (new ZgwPatchMerger())->merge(
-					existingData: $existingData,
-					body: $body,
-					englishData: $englishData,
-					mappingConfig: $mappingConfig
-				);
-			}
-
-			// Apply _directFields after PATCH merge to ensure they override correctly.
-			if (empty($inbound['directFields']) === false) {
-				$englishData = array_merge($englishData, $inbound['directFields']);
-			}
-
 			$object = $this->objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $englishData,
-				uuid: $uuid
+				register: $write->mapping['sourceRegister'],
+				schema: $write->mapping['sourceSchema'],
+				object: $this->updatedData(write: $write, ruleResult: $ruleResult + ['patch' => $flags->isPatch()]),
+				uuid: $route->uuid
 			);
 
-			$outbound = $this->mapOutbound(request: $request, zgwApi: $zgwApi, resource: $resource, mappingConfig: $mappingConfig, object: $object);
+			$outbound = $this->outboundFor(write: $write, object: $object);
 			$this->publishNotification(
-				zgwApi: $zgwApi,
-				resource: $resource,
-				resourceUrl: $outbound['baseUrl'] . '/' . $uuid,
+				zgwApi: $route->api,
+				resource: $route->resource,
+				resourceUrl: $outbound['baseUrl'] . '/' . $route->uuid,
 				action: 'update'
 			);
 
 			return new JSONResponse(data: $outbound['mapped']);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'ZGW update error (' . $resource . ' ' . $uuid . '): ' . $e->getMessage(),
+				'ZGW update error (' . $route->objectLabel() . '): ' . $e->getMessage(),
 				['exception' => $e, 'trace' => $e->getTraceAsString()]
 			);
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
 		}//end try
-	}//end handleUpdate()
+	}//end update()
+
+	/**
+	 * The English data an update stores: mapped, merged over the stored object for a patch.
+	 *
+	 * @param ResourceWrite $write      The write, with its body and stored object.
+	 * @param array         $ruleResult The rule result, plus `patch` for a partial update.
+	 *
+	 * @return array The data to save
+	 */
+	private function updatedData(ResourceWrite $write, array $ruleResult): array {
+		// Map to English; direct OpenRegister fields bypass the Twig inbound mapping.
+		$inbound = $this->mapInbound(enrichedBody: $ruleResult['enrichedBody'], mappingConfig: $write->mapping);
+		$englishData = $inbound['data'];
+		$englishData['id'] = $write->route->uuid;
+
+		// For partial updates (PATCH), merge with the existing object read above.
+		if ($ruleResult['patch'] === true) {
+			$englishData = (new ZgwPatchMerger())->merge(
+				existingData: $write->existing,
+				body: $write->body,
+				englishData: $englishData,
+				mappingConfig: $write->mapping
+			);
+		}
+
+		// Apply _directFields after PATCH merge to ensure they override correctly.
+		if (empty($inbound['directFields']) === false) {
+			$englishData = array_merge($englishData, $inbound['directFields']);
+		}
+
+		return $englishData;
+	}//end updatedData()
 
 	/**
 	 * The response for a business-rule refusal.
@@ -1449,6 +1511,26 @@ class ZgwService {
 	}//end mapOutbound()
 
 	/**
+	 * Map a written object back to the ZGW shape of its route.
+	 *
+	 * @param ResourceWrite $write  The write.
+	 * @param mixed         $object The saved object.
+	 *
+	 * @return array{mapped: array, baseUrl: string, objectData: mixed} As mapOutbound()
+	 */
+	private function outboundFor(ResourceWrite $write, mixed $object): array {
+		$route = $write->route;
+
+		return $this->mapOutbound(
+			request: $route->request,
+			zgwApi: $route->api,
+			resource: $route->resource,
+			mappingConfig: $write->mapping,
+			object: $object
+		);
+	}//end outboundFor()
+
+	/**
 	 * Generic destroy (delete) operation for a ZGW resource.
 	 *
 	 * @param IRequest $request The request object
@@ -1474,50 +1556,43 @@ class ZgwService {
 		?bool $caseClosed = null,
 		bool $hasForceer = true,
 	): JSONResponse {
-		if ($this->objectService === null) {
-			return $this->unavailableResponse();
+		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource, uuid: $uuid);
+		$write = $this->existingWrite(route: $route, operation: 'ZGW delete');
+		if ($write instanceof JSONResponse) {
+			return $write;
 		}
 
-		$mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
-		if ($mappingConfig === null) {
-			return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
-		}
+		$flags = new RuleFlags(action: 'destroy', parentCaseTypeDraft: $parentZtDraft, caseClosed: $caseClosed, hasGeforceerd: $hasForceer);
 
-		$existingData = $this->readExisting(uuid: $uuid, mappingConfig: $mappingConfig, operation: 'ZGW delete', resource: $resource);
-		if ($existingData instanceof JSONResponse) {
-			return $existingData;
-		}
+		return $this->destroy(write: $write, flags: $flags);
+	}//end handleDestroy()
 
+	/**
+	 * Validate and delete a stored object, then announce it.
+	 *
+	 * @param ResourceWrite $write The write on the stored object.
+	 * @param RuleFlags     $flags The action and parent state flags.
+	 *
+	 * @return JSONResponse The 204, or the refusal
+	 */
+	private function destroy(ResourceWrite $write, RuleFlags $flags): JSONResponse {
+		$route = $write->route;
 		try {
-			$ruleResult = $this->businessRulesService->validate(
-				zgwApi: $zgwApi,
-				resource: $resource,
-				action: 'destroy',
-				body: [],
-				existingObject: $existingData,
-				objectService: $this->objectService,
-				mappingConfig: $mappingConfig,
-				parentCaseTypeDraft: $parentZtDraft,
-				caseClosed: $caseClosed,
-				hasGeforceerd: $hasForceer
-			);
+			$ruleResult = $this->checkRules(write: $write, flags: $flags);
 			if ($ruleResult['valid'] === false) {
-				return new JSONResponse(
-					data: $this->buildValidationError(ruleResult: $ruleResult),
-					statusCode: $ruleResult['status']
-				);
+				return $this->ruleRefusal(ruleResult: $ruleResult);
 			}
 
-			$this->objectService->deleteObject(uuid: $uuid);
+			$this->objectService->deleteObject(uuid: $route->uuid);
 		} catch (\Throwable $e) {
-			return $this->storeFailureResponse(error: $e, operation: 'ZGW delete', object: $resource . ' ' . $uuid);
+			return $this->storeFailureResponse(error: $e, operation: 'ZGW delete', object: $route->objectLabel());
 		}//end try
 
 		// The object is gone. A notification that fails does not make the delete fail.
-		$this->notifyDeleted(request: $request, zgwApi: $zgwApi, resource: $resource, uuid: $uuid);
+		$this->notifyDeleted(request: $route->request, zgwApi: $route->api, resource: $route->resource, uuid: $route->uuid);
 
 		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
-	}//end handleDestroy()
+	}//end destroy()
 
 	/**
 	 * Publish the notification of a delete that happened, logging a failure instead of answering it.

@@ -92,13 +92,17 @@ class ConfigKeys {
 		'hearing_session_schema',
 		'advisory_report_schema',
 		'appeal_decision_schema',
-		'default_case_type',
 		'portal_filing_case_types',
 		'inspectie_checklist_schema',
 		'inspectie_rapport_schema',
 		'handhavingsactie_schema',
 		'advies_aanvraag_schema',
 		'advice_reminder_days',
+		// The complaint targets the process analysis page holds a quarter against
+		// (ComplaintPatterns); empty reads the default.
+		'complaint_target_per_month',
+		'complaint_target_within_awb_percent',
+		'complaint_target_upheld_percent',
 		'tenant_schema',
 		'appointment_schema',
 		'appointment_product_schema',
@@ -187,6 +191,14 @@ class ConfigKeys {
 		// Outage banner copy (nl + en).
 		'pdok_outage_banner_nl',
 		'pdok_outage_banner_en',
+		// Kadaster (BRK) and WOZ bindings, read by IntegrationMode: the mode
+		// (log, test, live), the service address and its key.
+		'integration.brk.mode',
+		'integration.brk.baseUrl',
+		'integration.brk.apiKey',
+		'integration.woz.mode',
+		'integration.woz.baseUrl',
+		'integration.woz.apiKey',
 		// KCC-werkplek bridge schema config keys (kcc-werkplek-zaaksysteem-bridge).
 		'contactmoment_schema',
 		'kcc_quick_action_schema',
@@ -218,14 +230,14 @@ class ConfigKeys {
 		'termijn_definitie_schema',
 		'termijn_instance_schema',
 		'termijn_gebeurtenis_schema',
-		'ingebrekestelling_schema',
-		'dwangsom_berekening_schema',
-		'dwangsom_uitbetaling_schema',
+		'notice_of_default_schema',
+		'accruing_amount_schema',
+		'payout_schema',
 		// Shared secret validating the X-Procest-Signature HMAC-SHA256 header
 		// on the public dwangsom payment-confirmation callback (ADR-005;
 		// enforce-dwangsom-callback-signature spec). Empty = callback fails
 		// closed (401) rather than treated as an implicit pass.
-		'dwangsom_callback_secret',
+		'payout_callback_secret',
 		// Mandaat-matrix authorization engine.
 		'mandaterings_besluit_schema',
 		'mandaat_schema',
@@ -306,13 +318,10 @@ class ConfigKeys {
 		// absent from CONFIG_KEYS is silently dropped on save — the same
 		// silent-discard failure as the dead route these fields used to POST to
 		// (procest#794), just one layer deeper.
-		// ⚠️ MEASURED, not assumed: as of this commit NOTHING reads these four
-		// values. A repo-wide grep finds them only in the Vue tab and in this
-		// list; the n8n consultation workflows (n8n/consultation-deadline-
-		// monitor.json, n8n/consultation-bottleneck-detection.json) do not
-		// reference them either. Registering them makes the admin's save
-		// round-trip honestly instead of vanishing; wiring a consumer is
-		// tracked separately and must not be inferred from their presence here.
+		// Read by Consultation\ConsultationTerms: the default term of a new
+		// advice request, the due-soon list and the bottleneck report (which
+		// the n8n consultation workflows read), and the address an external
+		// advisory body is sent.
 		'consultation_default_deadline_days',
 		'consultation_warning_offset_days',
 		'consultation_external_response_url',
@@ -323,6 +332,8 @@ class ConfigKeys {
 		'queue_warning_days',
 		'queue_priority_weight',
 		'queue_idle_weight',
+		'queue_in_sight_days',
+		'queue_resident_wait_weight',
 		// Besluitvorming workflow integration endpoints (besluitvorming-workflow spec).
 		// Official publication (DROP / LVBB) — empty disables dispatch.
 		'drop_lvbb_endpoint',
@@ -382,11 +393,34 @@ class ConfigKeys {
 		// Which structure the app shows: `simple` (the default) or `full`
 		// (simple-structure-profile). Read through MenuStructure::normalise().
 		'menu_structure',
-		// The Woo review reports (woo-review-reports, decision D9): both off
-		// until an administrator says yes. WooReportSwitches reads them and
+		// The name staff know the app by (board DqInstellingenAlgemeen, Huisstijl).
+		'staff_app_name',
+		// The city of the municipality, the default lens of the contacts and
+		// organisations lists (boards DqContacten, DqOrganisaties); handed to
+		// the bundle as `@config.municipalityCity`.
+		'municipality_city',
+		// The organisation's text above Mijn zaken in the portal (CitizenManifest).
+		'portal_intro_text',
+		// The document review reports (woo-review-reports, decision D9): both
+		// off until an administrator says yes. WooReportSwitches reads them and
 		// refuses the throughput switch without an existing reader group.
+		'reviewerThroughputReport',
+		'reviewerThroughputReaders',
+		'collectionPartiesReport',
+		// Their earlier names, still read where the current key was never
+		// written (WooReportSwitches::LEGACY_KEYS).
 		'wooReviewerThroughputReport',
 		'wooReviewerThroughputReaders',
 		'wooCollectionPartiesReport',
+		// General: the app's own time zone when no tenant is bound
+		// (CaseDateNormaliser), the date format and the beta switch the page
+		// reads as initial state (DisplaySettingsInitialStateListener).
+		'timezone',
+		'date_format',
+		'feature_new_case_page',
+		// VTH public notices: the template integriq composes the text from and
+		// the rule for the publication date (PublicationService).
+		'publication_template',
+		'publication_date_rule',
 	];
 }//end class

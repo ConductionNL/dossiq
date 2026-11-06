@@ -31,7 +31,7 @@
             "id": "published-case-type",
             "title": "A published case type",
             "body": "Every case follows a case type. A draft type takes no cases.",
-            "screen": "/casetypes"
+            "screen": "/index.php/apps/dossiq/settings/case-types"
         },
         {
             "id": "role-with-holder",

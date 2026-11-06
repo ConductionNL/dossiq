@@ -2,97 +2,57 @@
  * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Unit tests for the case-list export URL builder
- * (src/utils/caseExportHelpers.js), consumed by
- * src/components/export/CaseListExportAction.vue.
+ * The case list exports through the library's own Export menu.
  *
- * Dossiq's Vitest project runs in the `node` environment with no Vue mount
- * harness installed (see vitest.config.js — no @vue/test-utils / jsdom /
- * vue-loader plugin registered), so the `.vue` single-file component cannot
- * be full-mounted here (see tests/vitest/deelzaakComponentLogic.spec.js for
- * the same constraint on other new components). Instead this spec imports
- * and exercises the REAL `buildCaseExportUrl()` helper the component calls
- * on click — the same "test the extracted pure logic directly" pattern used
- * by tests/vitest/pdokService.spec.js and tests/vitest/caseRelationApi.spec.js.
- * `@nextcloud/router`'s `generateUrl()` is aliased to the deterministic
- * `/index.php`-prefixing stub in tests/vitest/stubs/nextcloud-router.js.
- *
- * The component itself only wires `exportAs(format)` ->
- * `window.location.assign(buildCaseExportUrl(format, this.$route?.query ?? {}))`
- * and renders two NcActionButton entries (CSV / Excel) inside an NcActions
- * menu — there is no additional logic to duplicate/assert beyond what is
- * covered here.
+ * CnIndexPage draws the Export menu (CSV and Excel) when the page sets
+ * `allowExport` and the schema is flagged `exportable`. A click sends the
+ * browser to OpenRegister's export leaf for (dossiq, case) with the list's
+ * own query, so OpenRegister serialises the file and enforces access as the
+ * reader (ADR-022). Both flags are asserted here: without either one the
+ * menu does not render and nothing says why.
  *
  * @spec openspec/changes/case-list-export-via-or-export-leaf/specs/case-list-export-via-or-export-leaf/spec.md
  */
 
+import { buildExportUrl } from '@conduction/nextcloud-vue/src/utils/indexExportHelpers.js'
+import fs from 'fs'
+import path from 'path'
 import { describe, expect, it } from 'vitest'
-import {
-	buildCaseExportUrl,
-	CASE_EXPORT_ENDPOINT,
-} from '../../src/utils/caseExportHelpers.js'
 
-const EXPECTED_BASE = '/index.php/apps/openregister/api/objects/dossiq/case/export'
+const ROOT = path.resolve(__dirname, '../..')
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
+const register = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'), 'utf8'))
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 
-describe('CASE_EXPORT_ENDPOINT', () => {
-	it('points at the (dossiq, case) OpenRegister export leaf', () => {
-		expect(CASE_EXPORT_ENDPOINT).toBe(
-			'/apps/openregister/api/objects/dossiq/case/export',
-		)
+const cases = manifest.pages.find((entry) => entry.id === 'Cases')
+
+describe('the Cases page offers the library export', () => {
+	it('sets allowExport on the page', () => {
+		expect(cases.config.allowExport).toBe(true)
+	})
+
+	it('flags the case schema exportable where OpenRegister keeps the flag', () => {
+		expect(register.components.schemas.case.configuration.exportable).toBe(true)
+	})
+
+	it('mounts no app export component beside it', () => {
+		expect(cases.actionsComponent).toBeUndefined()
+		expect(registrySource).not.toContain('CaseListExportAction')
 	})
 })
 
-describe('buildCaseExportUrl', () => {
-	it('builds a CSV export URL with no query params', () => {
-		const url = buildCaseExportUrl('csv', {})
-		expect(url).toBe(`${EXPECTED_BASE}?format=csv`)
+describe('the export link the library builds for this page', () => {
+	it('points at the (dossiq, case) OpenRegister export leaf', () => {
+		const url = buildExportUrl('dossiq', 'case', {}, 'csv')
+		expect(url).toMatch(/\/apps\/openregister\/api\/objects\/dossiq\/case\/export\?format=csv$/)
 	})
 
-	it('builds an Excel export URL with no query params', () => {
-		const url = buildCaseExportUrl('excel', {})
-		expect(url).toBe(`${EXPECTED_BASE}?format=excel`)
-	})
-
-	it('defaults query to {} when omitted', () => {
-		const url = buildCaseExportUrl('csv')
-		expect(url).toBe(`${EXPECTED_BASE}?format=csv`)
-	})
-
-	it('passes a single route-query filter through (status=open)', () => {
-		const url = buildCaseExportUrl('csv', { status: 'open' })
-		expect(url).toBe(`${EXPECTED_BASE}?format=csv&status=open`)
-	})
-
-	it('passes multiple route-query filters through in insertion order', () => {
-		const url = buildCaseExportUrl('csv', { status: 'open', assignee: 'jdoe' })
-		expect(url).toBe(`${EXPECTED_BASE}?format=csv&status=open&assignee=jdoe`)
-	})
-
-	it('always sets format first even if the query object has a format-like key', () => {
-		const url = buildCaseExportUrl('excel', { status: 'open' })
+	it('carries the list filters and drops the paging', () => {
+		const url = buildExportUrl('dossiq', 'case', { status: 'open', _page: 3, _limit: 25 }, 'excel')
 		const params = new URLSearchParams(url.split('?')[1])
 		expect(params.get('format')).toBe('excel')
-		expect([...params.keys()][0]).toBe('format')
-	})
-
-	it('repeats an array-valued query entry as multiple key=value pairs', () => {
-		const url = buildCaseExportUrl('csv', { status: ['open', 'in_progress'] })
-		const params = new URLSearchParams(url.split('?')[1])
-		expect(params.getAll('status')).toEqual(['open', 'in_progress'])
-	})
-
-	it('skips null/undefined query values', () => {
-		const url = buildCaseExportUrl('csv', {
-			status: 'open',
-			assignee: null,
-			deadline: undefined,
-		})
-		expect(url).toBe(`${EXPECTED_BASE}?format=csv&status=open`)
-	})
-
-	it("falls back to {} when query is not provided (mirrors the component's $route-less guard)", () => {
-		const query = undefined
-		const url = buildCaseExportUrl('csv', query ?? {})
-		expect(url).toBe(`${EXPECTED_BASE}?format=csv`)
+		expect(params.get('status')).toBe('open')
+		expect(params.has('_page')).toBe(false)
+		expect(params.has('_limit')).toBe(false)
 	})
 })

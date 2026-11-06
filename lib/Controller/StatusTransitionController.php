@@ -328,7 +328,7 @@ class StatusTransitionController extends Controller {
 	 *
 	 * @return IL10N|null The injected translator, or null for the app's.
 	 *
-	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	protected function refusalL10n(): ?IL10N {
 		return $this->l10n;

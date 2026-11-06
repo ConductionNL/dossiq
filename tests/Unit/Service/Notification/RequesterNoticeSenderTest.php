@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Notification\RequesterNoticeSender
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
@@ -236,6 +237,23 @@ class RequesterNoticeSenderTest extends TestCase {
 		self::assertStringContainsString('ontvangen', $message['content']);
 		self::assertSame([], (new RealSchemaValidator())->errors('portaalBericht', $message), 'the message fits the real schema');
 	}//end testAPortalRequesterGetsAPortalMessageAndNoDigitalPost()
+
+	/**
+	 * REQ-ACK-COPY-001: a caller may name the channels to try; e-mail only
+	 * mails a portal requester, and records the message.
+	 *
+	 * @return void
+	 */
+	public function testACallerMayAskForEmailOnly(): void {
+		$case = $this->seedCase(fields: ['portalSubject' => 'ps-abc', 'email' => 'verzoeker@example.nl']);
+
+		$result = $this->sender(portaliq: true)->send($case, 'ontvangstbevestiging', $this->rendered(), 'acknowledgement', ['channels' => ['email']]);
+
+		self::assertSame('email', $result['channel']);
+		self::assertCount(1, $this->mailed);
+		self::assertSame([], $this->store->findObjects('dossiq', 'portaalBericht'));
+		self::assertSame(['email'], array_column($this->store->get('case', 'case-1')['outboundCommunications'], 'channel'));
+	}//end testACallerMayAskForEmailOnly()
 
 	/**
 	 * Without portaliq the inbox is not offered, and the notice goes on to the next channel.

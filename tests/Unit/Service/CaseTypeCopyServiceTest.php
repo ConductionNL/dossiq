@@ -42,6 +42,9 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\CaseTypeCopyService
  *
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeChildCopy
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeCopyTarget
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeDerivation
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences
@@ -546,7 +549,6 @@ class CaseTypeCopyServiceTest extends TestCase {
 
 		$this->assertNull($service->copy('ct-1'));
 		$this->assertNull($service->newVersion('ct-1'));
-		$this->assertFalse($service->deleteDraft('ct-1')['ok']);
 	}//end testBothGesturesRefuseWithoutAnObjectService()
 
 	/**
@@ -907,92 +909,6 @@ class CaseTypeCopyServiceTest extends TestCase {
 		$this->assertNull($store[$next['id']]['data']['workflowDefinition']);
 	}//end testAnUnmappableWorkflowPinIsCleared()
 
-	/**
-	 * deleteDraft() deletes a draft case type.
-	 *
-	 * @return void
-	 */
-	public function testDeleteDraftDeletesDraftCaseType(): void {
-		$store = [
-			'ct-draft' => [
-				'__schema' => 'caseType',
-				'data' => ['id' => 'ct-draft', 'title' => 'Testtype', 'isDraft' => true],
-			],
-		];
-		$objectService = $this->makeObjectService(store: $store);
-		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-		$service = new CaseTypeCopyService(
-			settingsService: $this->settingsService,
-			store: new CaseTypeStore($this->settingsService),
-			payloads: new DerivedCaseTypePayload(),
-			references: new DerivedCaseTypeReferences(
-				store: new CaseTypeStore($this->settingsService),
-				logger: $this->logger,
-			),
-			logger: $this->logger
-		);
-		$result = $service->deleteDraft('ct-draft');
 
-		$this->assertTrue($result['ok']);
-		$this->assertArrayNotHasKey('ct-draft', $store);
-	}//end testDeleteDraftDeletesDraftCaseType()
-
-	/**
-	 * deleteDraft() refuses to delete a published case type (409-equivalent).
-	 *
-	 * @return void
-	 */
-	public function testDeleteDraftBlocksPublishedCaseType(): void {
-		$store = [
-			'ct-pub' => [
-				'__schema' => 'caseType',
-				'data' => ['id' => 'ct-pub', 'title' => 'Omgevingsvergunning', 'isDraft' => false],
-			],
-		];
-		$objectService = $this->makeObjectService(store: $store);
-		$this->settingsService->method('getObjectService')->willReturn($objectService);
-
-		$service = new CaseTypeCopyService(
-			settingsService: $this->settingsService,
-			store: new CaseTypeStore($this->settingsService),
-			payloads: new DerivedCaseTypePayload(),
-			references: new DerivedCaseTypeReferences(
-				store: new CaseTypeStore($this->settingsService),
-				logger: $this->logger,
-			),
-			logger: $this->logger
-		);
-		$result = $service->deleteDraft('ct-pub');
-
-		$this->assertFalse($result['ok']);
-		$this->assertSame('published', $result['reason']);
-		$this->assertArrayHasKey('ct-pub', $store);
-	}//end testDeleteDraftBlocksPublishedCaseType()
-
-	/**
-	 * deleteDraft() reports not_found when the case type does not resolve.
-	 *
-	 * @return void
-	 */
-	public function testDeleteDraftReportsNotFound(): void {
-		$store = [];
-		$objectService = $this->makeObjectService(store: $store);
-		$this->settingsService->method('getObjectService')->willReturn($objectService);
-
-		$service = new CaseTypeCopyService(
-			settingsService: $this->settingsService,
-			store: new CaseTypeStore($this->settingsService),
-			payloads: new DerivedCaseTypePayload(),
-			references: new DerivedCaseTypeReferences(
-				store: new CaseTypeStore($this->settingsService),
-				logger: $this->logger,
-			),
-			logger: $this->logger
-		);
-		$result = $service->deleteDraft('does-not-exist');
-
-		$this->assertFalse($result['ok']);
-		$this->assertSame('not_found', $result['reason']);
-	}//end testDeleteDraftReportsNotFound()
 }//end class

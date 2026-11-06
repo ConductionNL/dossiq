@@ -106,36 +106,21 @@ class WidgetRolesBiteTest extends TestCase {
 	/**
 	 * Every declaration is bound to the visibility endpoint, on its own id.
 	 *
+	 * The binding is either the whole condition or one leaf of a top-level
+	 * `all`, which the library evaluates as "every leaf holds", so further
+	 * leaves can only hide the tile more. An `any` does not count: its other
+	 * branches could show the tile to a reader the binding refuses.
+	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function testEveryDeclarationIsBoundToTheVisibilityEndpoint(): void {
 		$unbound = [];
-
 		foreach ($this->declared() as $widget) {
-			$id = (string)$widget['id'];
-			$condition = ($widget['visibleWhen'] ?? null);
-
-			if (is_array($condition) === false) {
-				$unbound[] = $id . ' (no visibleWhen)';
-				continue;
-			}
-
-			if ((string)($condition['endpoint'] ?? '') !== self::ENDPOINT) {
-				$unbound[] = $id . ' (endpoint is ' . (string)($condition['endpoint'] ?? '') . ')';
-				continue;
-			}
-
-			// ITS OWN ID. A condition pointing at a sibling's verdict hides the
-			// wrong tile and reads correctly in review.
-			if ((string)($condition['field'] ?? '') !== 'visible.' . $id) {
-				$unbound[] = $id . ' (field is ' . (string)($condition['field'] ?? '') . ')';
-				continue;
-			}
-
-			if (($condition['value'] ?? null) !== true || (string)($condition['op'] ?? 'eq') !== 'eq') {
-				$unbound[] = $id . ' (the condition is not "visible is true")';
+			$reason = $this->unboundReason(widget: $widget);
+			if ($reason !== null) {
+				$unbound[] = (string)$widget['id'] . ' (' . $reason . ')';
 			}
 		}
 
@@ -147,6 +132,74 @@ class WidgetRolesBiteTest extends TestCase {
 			. implode("\n  ", $unbound)
 		);
 	}//end testEveryDeclarationIsBoundToTheVisibilityEndpoint()
+
+	/**
+	 * Why a widget's condition does not bind it, or null when it does.
+	 *
+	 * @param array<string, mixed> $widget The widget declaration.
+	 *
+	 * @return string|null The reason, or null when bound.
+	 */
+	private function unboundReason(array $widget): ?string {
+		$condition = ($widget['visibleWhen'] ?? null);
+		if (is_array($condition) === false) {
+			return 'no visibleWhen';
+		}
+
+		$leaves = [$condition];
+		if (is_array($condition['all'] ?? null) === true) {
+			$leaves = $condition['all'];
+		}
+
+		$reasons = array_map(fn ($leaf): ?string => $this->leafReason(leaf: $leaf, id: (string)$widget['id']), $leaves);
+		if (in_array(null, $reasons, true) === true) {
+			return null;
+		}
+
+		return implode('; ', $reasons);
+	}//end unboundReason()
+
+	/**
+	 * Why one condition leaf is not the binding, or null when it is.
+	 *
+	 * ITS OWN ID: a condition pointing at a sibling's verdict hides the wrong
+	 * tile and reads correctly in review.
+	 *
+	 * @param mixed  $leaf The condition leaf.
+	 * @param string $id   The widget's id.
+	 *
+	 * @return string|null The reason, or null when it binds.
+	 */
+	private function leafReason(mixed $leaf, string $id): ?string {
+		if (is_array($leaf) === false) {
+			return 'a leaf is not a condition';
+		}
+
+		if ((string)($leaf['endpoint'] ?? '') !== self::ENDPOINT) {
+			return 'endpoint is ' . (string)($leaf['endpoint'] ?? '');
+		}
+
+		if ((string)($leaf['field'] ?? '') !== 'visible.' . $id) {
+			return 'field is ' . (string)($leaf['field'] ?? '');
+		}
+
+		if ($this->isVisibleIsTrue(leaf: $leaf) === false) {
+			return 'the condition is not "visible is true"';
+		}
+
+		return null;
+	}//end leafReason()
+
+	/**
+	 * Whether a leaf asks for the verdict to equal true.
+	 *
+	 * @param array<string, mixed> $leaf The condition leaf.
+	 *
+	 * @return bool True when the leaf reads "visible is true".
+	 */
+	private function isVisibleIsTrue(array $leaf): bool {
+		return ($leaf['value'] ?? null) === true && (string)($leaf['op'] ?? 'eq') === 'eq';
+	}//end isVisibleIsTrue()
 
 	/**
 	 * The endpoint those conditions name is registered.

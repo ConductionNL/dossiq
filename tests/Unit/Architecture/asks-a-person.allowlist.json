@@ -10,6 +10,10 @@
 			"reason": "This notification IS the digest. It reports the queue rather than adding to it, and a source for it would put every morning's digest on the queue it summarises."
 		},
 		{
+			"mechanism": "flow:DossiqTxSuspendTermNode",
+			"reason": "Suspends the case term through DeadlinePauseService and asks nobody for anything. In a macro the step after it (dossiq.askPerson) is what asks the handler, and that node is covered by its own queue source."
+		},
+		{
 			"mechanism": "flow:DossiqTxBesluitvormingPublishNode",
 			"reason": "Publishes a decision that has already been taken. The approval that preceded it is what asked a person, and Decidiq's request-decision step carries that mechanism."
 		},
@@ -36,6 +40,14 @@
 		{
 			"mechanism": "notification:tenderPublished",
 			"reason": "The award of a tender to a supplier is mailed to the supplier at supplierRef.contactEmail (portal-contribution T3, decision 128). The recipient is a supplier outside the organisation: they have no dossiq queue for anything to land on."
+		},
+		{
+			"mechanism": "flow:DossiqTxSendMessageNode",
+			"reason": "Sends one of the case type's message templates to a role on the case (a case type rule's sendMessage action). The message informs; it asks nobody for anything and puts nothing on a queue."
+		},
+		{
+			"mechanism": "flow:DossiqTxSetCaseAnswerNode",
+			"reason": "Writes a property definition's answer on the case (a case type rule's setField action). It changes data and addresses nobody."
 		}
 	]
 }
