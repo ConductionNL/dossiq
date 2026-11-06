@@ -113,6 +113,13 @@ describe('the case tabs', () => {
 		expect(cases.valueLabels.aardRelatie.bijdrage).toBe('contribution')
 	})
 
+	it('reads the assistant note\'s provider and place from Hermiq, with the short note as the fallback', () => {
+		const chat = page.configAppend.widgets.find((entry) => entry.content?.noteFrom)
+		expect(chat.content.note).toBe('The assistant sees only what you see on this case. Without Hermiq this panel is off.')
+		expect(chat.content.noteFrom).toMatchObject({ url: '/apps/hermiq/api/ai-features/residency', match: { slug: 'chat-companion' }, requires: ['provider', 'location'] })
+		expect(chat.content.noteFrom.text).toContain('{provider}, {location}')
+	})
+
 	it('names the kind of each assistant suggestion (DqZaakAssistent)', () => {
 		const columns = widget('case-ai-activity').content.columns
 		expect(columns[2]).toMatchObject({ key: 'advisoryContext.suggestionType', label: 'Kind and action' })
