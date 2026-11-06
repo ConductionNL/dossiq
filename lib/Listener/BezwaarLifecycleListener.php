@@ -127,6 +127,10 @@ class BezwaarLifecycleListener implements IEventListener {
 	/**
 	 * Extract the OR object array from an event.
 	 *
+	 * `ObjectUpdatedEvent` carries the post-update entity on `getNewObject()`
+	 * and has no `getObject()`; reading only `getObject()` dropped every
+	 * update on the floor, so it is tried first.
+	 *
 	 * @param Event $event Event instance
 	 *
 	 * @return array<string, mixed>|null
@@ -134,7 +138,9 @@ class BezwaarLifecycleListener implements IEventListener {
 	private function extractObject(Event $event): ?array {
 		$object = null;
 
-		if (method_exists($event, 'getObject') === true) {
+		if (method_exists($event, 'getNewObject') === true) {
+			$object = $event->getNewObject();
+		} elseif (method_exists($event, 'getObject') === true) {
 			$object = $event->getObject();
 		}
 
