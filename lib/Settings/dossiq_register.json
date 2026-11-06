@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.93"
+        "version": "0.20.94"
     },
     "x-openregister": {
         "type": "application",
@@ -12923,6 +12923,79 @@
                     "slug": "klacht-behandeling"
                 },
                 "title": "Klacht behandeling",
+                "overviewCards": ["case-overview-sections"],
+                "overviewSections": [
+                  {
+                    "id": "gegevens",
+                    "title": "Gegevens",
+                    "columns": 2,
+                    "rows": [
+                      {
+                        "label": "Klager",
+                        "field": "klager"
+                      },
+                      {
+                        "label": "Ontvangen",
+                        "field": "receivedAt"
+                      },
+                      {
+                        "label": "Onderwerp",
+                        "field": "klachtOnderwerp"
+                      },
+                      {
+                        "label": "Afdeling",
+                        "field": "afdeling"
+                      },
+                      {
+                        "label": "Gaat over",
+                        "field": "gaatOver"
+                      },
+                      {
+                        "label": "Categorie",
+                        "field": "klachtCategorie"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "hoorgesprek",
+                    "title": "Hoorgesprek",
+                    "columns": 2,
+                    "pillField": "hoorgesprekStatus",
+                    "rows": [
+                      {
+                        "label": "Wanneer",
+                        "field": "hoorgesprekWanneer"
+                      },
+                      {
+                        "label": "Soort",
+                        "field": "hoorgesprekSoort"
+                      },
+                      {
+                        "label": "Waar",
+                        "field": "hoorgesprekWaar"
+                      },
+                      {
+                        "label": "Aanwezig",
+                        "field": "hoorgesprekAanwezig"
+                      },
+                      {
+                        "label": "Verslag",
+                        "field": "hoorgesprekVerslag"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "oordeel",
+                    "title": "Oordeel",
+                    "intro": "Na het hoorgesprek kies je een oordeel. Het gaat eerst ter goedkeuring naar de klachtencoördinator, de termijn loopt intussen door. Daarna maak je de antwoordbrief voor de klager.",
+                    "rows": [
+                      {
+                        "label": "Oordeel",
+                        "field": "oordeel"
+                      }
+                    ]
+                  }
+                ],
                 "colour": "orange",
                 "icon": "MessageAlertOutline",
                 "category": "Klachten en meldingen",

@@ -51,9 +51,9 @@ describe('the case type tab strip (REQ-CTB-1)', () => {
 })
 
 describe('Phases and tasks (REQ-CTB-2)', () => {
-	it('holds the board\'s four cards, in order', () => {
+	it('holds the board\'s five cards, in order', () => {
 		expect(idsOf(tab('phases'))).toEqual([
-			'case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages',
+			'case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages', 'case-type-milestones',
 		])
 	})
 

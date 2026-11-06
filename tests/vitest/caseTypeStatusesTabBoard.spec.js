@@ -24,12 +24,14 @@ describe('the Statuses tab against DqZaaktypeStatussen', () => {
 	it('says under Statuses and Results what each list is for', () => {
 		expect(dutch(widget('case-type-statuses-editor').subtitle)).toBe('Volgorde, kleur en wat de aanvrager ziet. Sleep om de volgorde te wijzigen.')
 		expect(dutch(widget('case-type-results').subtitle)).toBe('Hoe een zaak eindigt, en wat er daarna met het dossier gebeurt')
+		expect(dutch(widget('case-type-roles').title)).toBe('Roltypen')
+		expect(dutch(widget('case-type-roles').subtitle)).toBe('Welke rollen een betrokkene op een zaak van dit type kan hebben. Elk roltype wijst naar precies één generieke rol.')
 	})
 
 	it('names what each Add adds', () => {
-		const labels = ['case-type-statuses-editor', 'case-type-results', 'case-type-document-types', 'case-type-decision-types']
+		const labels = ['case-type-statuses-editor', 'case-type-results', 'case-type-document-types', 'case-type-decision-types', 'case-type-roles']
 			.map((id) => dutch(widget(id).content.addLabel))
-		expect(labels).toEqual(['Status toevoegen', 'Resultaat toevoegen', 'Documenttype toevoegen', 'Besluittype toevoegen'])
+		expect(labels).toEqual(['Status toevoegen', 'Resultaat toevoegen', 'Documenttype toevoegen', 'Besluittype toevoegen', 'Roltype toevoegen'])
 	})
 
 	it('names a status as a link with its colour as a dot, and a result as a link in sentence case', () => {

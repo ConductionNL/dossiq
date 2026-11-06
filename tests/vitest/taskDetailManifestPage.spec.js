@@ -66,7 +66,7 @@ describe('the TaskDetail manifest page', () => {
 		expect(config.layout.map((item) => item.widgetId)).toEqual(['task-panels'])
 		expect(panels.type).toBe('tabs')
 		expect(panels.content.tabs).toEqual([
-			{ label: 'Overview', widgetIds: ['task-checklist', 'task-appointments', 'task-notes'] },
+			{ label: 'Overview', widgetIds: ['task-checklist', 'task-question', 'task-appointments', 'task-notes'] },
 			{ label: 'Task history', widgetId: 'task-history' },
 		])
 		// Board DqTaak draws no description card: the description is the first line of the side Task card.
@@ -104,7 +104,7 @@ describe('the TaskDetail manifest page', () => {
 	})
 
 	it('names only widget types the library answers, with no dossiq task widget left', () => {
-		const library = ['tabs', 'facts', 'checklist', 'events', 'integration', 'audit-trail', 'notice']
+		const library = ['tabs', 'facts', 'checklist', 'events', 'integration', 'audit-trail', 'notice', 'task-form']
 		for (const key of ['task-notes', 'task-events', 'task-audit', 'task-waiting-case']) {
 			expect(registrySource).not.toMatch(new RegExp(`^\\t'${key}': \\{`, 'm'))
 		}
@@ -114,5 +114,11 @@ describe('the TaskDetail manifest page', () => {
 			}
 			expect(registrySource, entry.type).toMatch(new RegExp(`^\\t'${entry.type}': \\{`, 'm'))
 		}
+	})
+
+	it('asks the question of the flow only on a task whose step declares a form (DqTaak)', () => {
+		const question = page.config.widgets.find((w) => w.id === 'task-question')
+		expect(question).toMatchObject({ type: 'task-form', title: 'Question from the flow', visibleWhen: { field: 'form.kind', op: 'notEmpty' } })
+		expect(page.config.widgets[0].content.tabs[0].widgetIds.slice(0, 2)).toEqual(['task-checklist', 'task-question'])
 	})
 })
