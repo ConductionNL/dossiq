@@ -92,6 +92,28 @@ function deadlineNote(fill, kase, locale) {
 }
 
 /**
+ * The value of an extension fill: the period and the day it ends, or for
+ * `after-extension` the day after that end.
+ *
+ * @param {object} fill One fill, `from` naming the date the period counts from.
+ * @param {string} period The ISO 8601 period.
+ * @param {object} kase The case.
+ * @param {string} locale The locale for dates.
+ * @return {string|null} The value.
+ * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
+ */
+function extensionValue(fill, period, kase, locale) {
+	const from = dayOf(kase[fill.from])
+	const end = from ? endOf(from, period) : null
+	if (fill.as === 'after-extension') {
+		return end ? longDate(dayAfter(end), locale) : null
+	}
+	return end
+		? t('dossiq', '{period}, until {date}', { period: periodWords(period), date: longDate(end, locale) })
+		: periodWords(period)
+}
+
+/**
  * The value one fill reads off the case, or null when the case lacks it.
  *
  * @param {object} fill One fill.
@@ -109,19 +131,36 @@ function fillValue(fill, kase, locale) {
 		const day = dayOf(raw)
 		return day ? longDate(day, locale) : null
 	}
-	if (fill.as === 'extension') {
-		const from = dayOf(kase[fill.from])
-		const end = from ? endOf(from, raw) : null
-		return end
-			? t('dossiq', '{period}, until {date}', { period: periodWords(raw), date: longDate(end, locale) })
-			: periodWords(raw)
-	}
-	if (fill.as === 'after-extension') {
-		const from = dayOf(kase[fill.from])
-		const end = from ? endOf(from, raw) : null
-		return end ? longDate(dayAfter(end), locale) : null
+	if (fill.as === 'extension' || fill.as === 'after-extension') {
+		return extensionValue(fill, raw, kase, locale)
 	}
 	return String(raw)
+}
+
+/**
+ * One row of the card, or null for a fill that stays out of it.
+ *
+ * @param {object} fill One fill.
+ * @param {object} kase The case.
+ * @param {string} locale The locale for dates.
+ * @return {object|null} The row.
+ * @spec openspec/specs/generate-fills-per-template/spec.md#requirement-the-generate-dialog-shows-what-the-chosen-template-fills-in
+ */
+function fillRow(fill, kase, locale) {
+	if (fill && typeof fill.value === 'string' && fill.value !== '') {
+		return { label: fill.label, value: fill.value, fixed: true }
+	}
+	const value = fillValue(fill, kase, locale)
+	if (fill?.required === true) {
+		return value === null
+			? { label: fill.label, value: t('dossiq', 'Still to fill in, not in the case'), required: true, missing: true }
+			: { label: fill.label, value, required: true, missing: false }
+	}
+	if (value === null) {
+		return null
+	}
+	const note = fill?.as === 'deadline' ? deadlineNote(fill, kase, locale) : ''
+	return note === '' ? { label: fill.label, value } : { label: fill.label, value, note }
 }
 
 /**
@@ -145,20 +184,5 @@ export function templateFillRows(fills, kase, locale = getCanonicalLocale()) {
 	if (!Array.isArray(fills) || !kase) {
 		return []
 	}
-	return fills.map((fill) => {
-		if (fill && typeof fill.value === 'string' && fill.value !== '') {
-			return { label: fill.label, value: fill.value, fixed: true }
-		}
-		const value = fillValue(fill, kase, locale)
-		if (fill?.required === true) {
-			return value === null
-				? { label: fill.label, value: t('dossiq', 'Still to fill in, not in the case'), required: true, missing: true }
-				: { label: fill.label, value, required: true, missing: false }
-		}
-		if (value === null) {
-			return null
-		}
-		const note = fill?.as === 'deadline' ? deadlineNote(fill, kase, locale) : ''
-		return note === '' ? { label: fill.label, value } : { label: fill.label, value, note }
-	}).filter(Boolean)
+	return fills.map((fill) => fillRow(fill, kase, locale)).filter(Boolean)
 }
