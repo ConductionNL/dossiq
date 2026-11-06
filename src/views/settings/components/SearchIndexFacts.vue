@@ -19,9 +19,9 @@
 		</NcNoteCard>
 
 		<template v-else>
-			<SettingsFactsList :rows="rows" :layout="variant === 'run' ? 'inline' : 'grid'" />
+			<SettingsFactsList :rows="rows" :layout="variant === 'run' ? 'inline' : 'boxes'" />
 
-			<div v-if="variant === 'run'" class="search-index-facts__actions">
+			<div v-if="variant === 'run'" class="search-index-facts__actions cn-settings-row-actions">
 				<NcButton
 					variant="secondary"
 					:disabled="queueing"
