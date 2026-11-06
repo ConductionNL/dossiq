@@ -145,6 +145,8 @@
         "OpenRegister",
         "{minutes} min {seconds} s",
         "{seconds} s",
+        "E-mail",
+        "Thematiq",
         "{order} · {label}"
     ]
 }

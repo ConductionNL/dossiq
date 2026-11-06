@@ -72,9 +72,56 @@
 			},
 			{
 				"id": "done",
-				"type": "summary",
-				"title": "Done",
-				"healthCheck": true
+					"type": "summary",
+					"title": "Done",
+					"healthCheck": true,
+					"body": "Dossiq is set up. Each item below names the screen where you change it later.",
+					"note": "If you close this wizard it stays closed, also in another browser. You find everything under Settings.",
+					"cancelLabel": "Finish later",
+					"submitLabel": "Get started",
+					"rows": [
+						{
+							"step": "organisation-details",
+						"title": "Organisation details",
+							"link": {
+								"label": "Settings, general",
+								"href": "/index.php/settings/admin/dossiq?tab=general"
+							}
+						},
+						{
+							"step": "house-style",
+							"detail": "Skipped: you set the house style in Thematiq, not here",
+							"link": {
+								"label": "Thematiq",
+								"href": "/index.php/settings/admin/thematiq"
+							}
+						},
+						{
+							"step": "case-types",
+							"link": {
+								"label": "Case types",
+								"href": "/index.php/apps/dossiq/settings/case-types"
+							}
+						},
+						{
+							"step": "demo-data",
+							"link": {
+								"label": "Settings, sample data",
+								"href": "/index.php/settings/admin/dossiq?tab=general"
+							}
+						},
+						{
+							"id": "mail",
+							"title": "E-mail",
+							"readinessItem": "mail-account",
+							"detail": "The outgoing mail server is set up.",
+							"detailWhenOpen": "No outgoing mail server yet: without mail no acknowledgements of receipt go out",
+							"link": {
+								"label": "To the mail settings",
+								"href": "/index.php/settings/admin/dossiq?tab=general"
+							}
+						}
+					]
 			}
 		]
 	},
