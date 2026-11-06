@@ -155,6 +155,19 @@ class CaseAssignmentServiceTest extends TestCase {
 
 	}//end testReassignWithoutAReceiverIsRefused()
 
+	public function testAClaimClearsTheRoutingNote(): void {
+		$this->objects->cases['case-1']['assignee'] = '';
+
+		$this->service()->claim(caseId: 'case-1', userId: 'fatima');
+
+		$this->assertSame([['assignee' => 'fatima', 'routingNote' => null]], $this->objects->patches);
+	}//end testAClaimClearsTheRoutingNote()
+
+	/**
+	 * A case that is not there is not found.
+	 *
+	 * @return void
+	 */
 	public function testAnUnknownCaseIsNotFound(): void {
 		$this->expectExceptionObject(new RuntimeException('case_not_found'));
 		$this->service()->reassign(caseId: 'case-404', toUser: 'fatima', actorId: 'coordinator');
