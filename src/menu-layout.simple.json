@@ -8613,6 +8613,7 @@
 										"case-type-results",
 										"case-type-document-types",
 										"case-type-decision-types",
+										"case-type-roles",
 										"case-type-blueprint"
 									],
 									"countFrom": {
@@ -8657,8 +8658,7 @@
 									"id": "rights",
 									"label": "Rights",
 									"widgetIds": [
-										"case-type-rights",
-										"case-type-roles"
+										"case-type-rights"
 									]
 								},
 								{
@@ -9307,8 +9307,10 @@
 					{
 						"id": "case-type-roles",
 						"type": "object-list",
-						"title": "Roles",
+						"title": "Role types",
+						"subtitle": "Which roles a party on a case of this type can have. Each role type points to exactly one generic role.",
 						"content": {
+							"addLabel": "Add Role Type",
 							"register": "dossiq",
 							"schema": "roleType",
 							"filter": {
@@ -9322,7 +9324,11 @@
 							"columns": [
 								{
 									"key": "name",
-									"label": "Role"
+									"label": "Role type"
+								},
+								{
+									"key": "description",
+									"label": "Description"
 								},
 								{
 									"key": "genericRole",
