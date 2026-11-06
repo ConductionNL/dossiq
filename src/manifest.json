@@ -5475,6 +5475,7 @@
 											},
 											"groupsPath": "goals",
 											"itemsPath": "interventions",
+											"itemLook": "rows",
 											"itemGroupField": "goal",
 											"groupTitle": "{title}",
 											"groupLines": [
@@ -5488,12 +5489,26 @@
 													"{providerParty.displayName}",
 													"{providerName}",
 													"No provider recorded"
-												],
-												"By {targetDate}"
+												]
 											],
-											"itemFlag": {
-												"field": "overdue",
-												"label": "Overdue"
+											"itemDate": "target date {targetDate|date}",
+											"itemPill": {
+												"overdueWhen": { "field": "overdue", "op": "eq", "value": true },
+												"overdueLabel": "Late",
+												"cases": [
+													{ "when": { "field": "state", "op": "eq", "value": "planned" }, "label": "Planned", "variant": "default" },
+													{ "when": { "field": "state", "op": "eq", "value": "running" }, "label": "Running", "variant": "info" },
+													{ "when": { "field": "state", "op": "eq", "value": "complete" }, "label": "Completed", "variant": "success" },
+													{ "when": { "field": "state", "op": "eq", "value": "stopped" }, "label": "Stopped", "variant": "default" }
+												]
+											},
+											"groupPill": {
+												"cases": [
+													{ "when": { "field": "state", "op": "eq", "value": "open" }, "label": "Running", "variant": "info" },
+													{ "when": { "field": "state", "op": "eq", "value": "met" }, "label": "Met", "variant": "success" },
+													{ "when": { "field": "state", "op": "eq", "value": "not-met" }, "label": "Not met", "variant": "error" },
+													{ "when": { "field": "state", "op": "eq", "value": "withdrawn" }, "label": "Withdrawn", "variant": "default" }
+												]
 											},
 											"ungroupedTitle": "Not tied to a goal",
 											"columns": 1,
