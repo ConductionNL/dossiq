@@ -319,7 +319,7 @@ final class TimelineKinds {
 		],
 		[
 			'slug' => self::TERM_EVENT,
-			'title' => 'Termijngebeurtenis',
+			'title' => 'Termijn',
 			'description' => 'A term starting, pausing, resuming or falling due, with the dates it moved.',
 			'properties' => [
 				'event' => ['type' => 'string'],

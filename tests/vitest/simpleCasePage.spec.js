@@ -655,7 +655,7 @@ describe('the tabs', () => {
 		// is in the side column, so its full-profile cell goes too.
 		// The fees, the contract, the family plan and the PDF merge are cards
 		// of tabs, so they keep no cell under the tab card either.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6', 'full-linked', 'money-payments', 'money-contract', 'goal-plan-panel', 'documents-merge-to-pdf']
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'presence-strip', 'case-banners', '12', '11', '7', '6', 'full-linked', 'money-payments', 'money-contract', 'goal-plan-panel', 'documents-merge-to-pdf']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)
@@ -684,7 +684,10 @@ describe('the tabs', () => {
 		const order = [...simple.layout]
 			.sort((a, b) => a.gridY - b.gridY)
 			.map((entry) => entry.id)
-		expect(order.slice(0, 2)).toEqual(['presence-strip', '5'])
+		// Who else is here is the follow row's sentence; a grid item beside it
+		// draws an empty card while somebody else has the case open.
+		expect(order[0]).toBe('5')
+		expect(order).not.toContain('presence-strip')
 		// No two cards share a cell.
 		const cells = new Set()
 		for (const entry of simple.layout) {
