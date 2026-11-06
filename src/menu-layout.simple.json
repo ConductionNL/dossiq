@@ -6709,7 +6709,9 @@
 						"gridWidth": 6,
 						"gridHeight": 6,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": "18",
@@ -6719,7 +6721,9 @@
 						"gridWidth": 6,
 						"gridHeight": 6,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": "19",
@@ -6729,7 +6733,9 @@
 						"gridWidth": 6,
 						"gridHeight": 7,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": "20",
@@ -6739,7 +6745,9 @@
 						"gridWidth": 6,
 						"gridHeight": 7,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": "21",
@@ -6749,7 +6757,8 @@
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true
 					},
 					{
 						"id": "16",
@@ -6793,6 +6802,7 @@
 							"trailing": ["{daysSinceActivity} days idle"],
 							"chevron": false,
 							"rowRoute": "CaseDetail",
+							"footnote": "Seven days or longer without an update, longest idle first.",
 							"emptyText": "All cases active"
 						}
 					},
@@ -6969,11 +6979,11 @@
 						"id": "layout-note",
 						"type": "banner",
 						"title": "About this layout",
-						"_note": "Board DqDashboard: the info line under the grid. The board's first two sentences describe the in-page Edit layout button, which is gone (layout editing is buildiq's, Ruben 18 Oct), so only the sentence on who sees Within deadline stays (kpi-sla-compliance carries roles controllers, beheerders and admin).",
+						"_note": "Board DqDashboard: the info line under the grid. The board's first two sentences describe the in-page Edit layout button, which is gone (layout editing is buildiq's, Ruben 18 Oct), so the note opens on who sees Within deadline (kpi-sla-compliance carries roles controllers, beheerders and admin).",
 						"content": {
 							"variant": "info",
 							"icon": "ViewDashboardOutline",
-							"text": "Within deadline is only shown to those who monitor or manage."
+							"text": "Within deadline is only shown to those who monitor or manage. A widget with a role you do not have is not there, not even as an empty place, and the page does not send its data along. If a role matches nobody, the widget goes and the log names the widget and the role."
 						}
 					},
 					{
@@ -6987,6 +6997,10 @@
 							"route": "MyWorkHome"
 						},
 						"content": {
+							"footerLink": {
+								"label": "More in My work",
+								"route": "MyWorkHome"
+							},
 							"presentation": "rows",
 							"ruleAbove": true,
 							"chevron": false,
@@ -7007,7 +7021,7 @@
 										"field": "deadline",
 										"dir": "asc"
 									},
-									"limit": 3,
+									"limit": 2,
 									"title": "{title}",
 									"meta": {
 										"parts": [
@@ -7028,7 +7042,7 @@
 											"scope": "assigned",
 											"isTerminal": "false",
 											"sort": "dueAt",
-											"limit": 3
+											"limit": 1
 										},
 										"responsePath": "results"
 									},
@@ -7106,6 +7120,7 @@
 							"route": "TermijnDashboard"
 						},
 						"content": {
+							"footnote": "Fewest days first.",
 							"presentation": "rows",
 							"ruleAbove": true,
 							"chevron": false,
@@ -7202,6 +7217,7 @@
 							"route": "Tasks"
 						},
 						"content": {
+							"footnote": "Late ones on top, most days first, then by date.",
 							"presentation": "rows",
 							"ruleAbove": true,
 							"chevron": false,
@@ -7305,6 +7321,7 @@
 							}
 						},
 						"content": {
+							"footnote": "Red: late. Orange: two days or less. Yellow: a week or less. Green: on schedule. The requester is shown when known.",
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
