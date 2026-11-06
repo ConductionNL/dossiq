@@ -8276,6 +8276,7 @@
 									"label": "Publish",
 									"type": "open-modal",
 									"target": "CaseTypePublishDialog",
+									"note": "Downloading gives the whole case type as a file: fields, statuses, roles, document types and the flow template. Importing gives it back field by field.",
 									"visibleWhen": {
 										"field": "isDraft",
 										"op": "eq",
@@ -8370,6 +8371,52 @@
 											"caseType": "@objectId",
 											"isFinalStatus": false
 										}
+									}
+								},
+								{
+									"label": "Iv3 task field",
+									"path": "iv3TaskField",
+									"note": {
+										"parts": [
+											{ "text": "One code per case type, chosen from the BBV list in Shillinq, refinement code (6.71a) included; the code is stored as written. Without Shillinq this is a text field with the sentence \"Install Shillinq to choose from the BBV list\"." }
+										]
+									}
+								},
+								{
+									"as": "line",
+									"text": "Colour and icon",
+									"when": { "field": "colour", "op": "notEmpty" }
+								},
+								{
+									"as": "pill",
+									"path": "colour",
+									"template": "{title}",
+									"variantMap": {
+										"red": "error",
+										"red-light": "error",
+										"orange": "warning",
+										"orange-light": "warning",
+										"green": "success",
+										"green-light": "success",
+										"blue": "info",
+										"blue-light": "info",
+										"teal": "info",
+										"teal-light": "info"
+									}
+								},
+								{
+									"as": "line",
+									"text": "So the type shows in lists, in the tags and in the menu.",
+									"when": { "field": "colour", "op": "notEmpty" }
+								},
+								{
+									"label": "Queue",
+									"template": "Critical after {queueCriticalDays} days, nearly late after {queueWarningDays} days",
+									"when": { "field": "queueCriticalDays", "op": "notEmpty" },
+									"note": {
+										"parts": [
+											{ "text": "Two number fields under Edit; empty when the case type sets nothing." }
+										]
 									}
 								}
 							]
@@ -8789,7 +8836,10 @@
 								{ "field": "waitingOn", "value": "applicant", "label": "Term suspended" },
 								{ "field": "isFinal", "label": "End" }
 							],
-							"footnote": "Colour and order apply in lists, on the workboard and in the portal.",
+							"footnote": [
+								"Colour and order apply in lists, on the workboard and in the portal: the column heading and the status badge take the colour. Final statuses are not in the open lists; the Closed chip shows them.",
+								"Public name and description: the applicant reads them per status in the portal. A status without a public name shows its own name there, and no description."
+							],
 							"emptyText": "This case type has no statuses yet"
 						}
 					},
@@ -8797,7 +8847,8 @@
 						"id": "case-type-rights-summary",
 						"type": "record-list",
 						"title": "Rights",
-						"subtitle": "Who may do what with cases of this type",
+						"subtitle": "Who may do what with cases of this type, per role. Edit opens the Rights tab with the matrix of department and confidentiality.",
+						"headerWrap": true,
 						"_note": "DqZaaktypeOverzicht Rechten: the rights matrix read per role by GET /api/case-types/{id}/rights-by-role (CaseTypeRightsByRole). The full department x confidentiality matrix stays on the Rights tab (case-type-rights), which Edit opens.",
 						"headerActions": [
 							{
