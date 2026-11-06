@@ -112,6 +112,29 @@ class CaseTypePackageChoiceTest extends TestCase {
 	}//end testDecidedByAChoiceOrAnInstall()
 
 	/**
+	 * The marketplace lists valid packages with a summary, whatever their
+	 * install mode, and only an on-request package is on offer.
+	 *
+	 * @return void
+	 */
+	public function testShippedListsPackagesWithASummary(): void {
+		$written = [];
+		$base = ['title' => 'A package', 'version' => '1.0.0', 'summary' => 'Grants', 'install' => 'on-request', 'installed' => '', 'valid' => true];
+		$catalogue = [
+			[...$base, 'id' => 'subsidie'],
+			[...$base, 'id' => 'vth', 'install' => 'auto', 'installed' => '1.0.0'],
+			[...$base, 'id' => 'lhs-matrix', 'summary' => ''],
+			[...$base, 'id' => 'broken', 'valid' => false],
+		];
+		$choice = $this->choice(catalogue: $catalogue, config: [], outcome: null, written: $written);
+
+		self::assertSame(expected: ['subsidie', 'vth'], actual: array_column(array: $choice->shipped(), column_key: 'id'));
+		self::assertSame(expected: [true, false], actual: array_column(array: $choice->shipped(), column_key: 'onRequest'));
+		self::assertTrue(condition: $choice->isOffered(id: 'subsidie'));
+		self::assertFalse(condition: $choice->isOffered(id: 'vth'));
+	}//end testShippedListsPackagesWithASummary()
+
+	/**
 	 * A successful install records the choice.
 	 *
 	 * @return void

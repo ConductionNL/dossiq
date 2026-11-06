@@ -131,7 +131,7 @@ class PackageInstaller {
 	 * Every package the directory holds, with its version, install mode and
 	 * the version installed here.
 	 *
-	 * @return array<int, array{id: string, title: string, version: string, install: string, installed: string, valid: bool}>
+	 * @return array<int, array{id: string, title: string, version: string, summary: string, install: string, installed: string, valid: bool}>
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
@@ -146,6 +146,7 @@ class PackageInstaller {
 				'id' => $id,
 				'title' => (string)($manifest['title'] ?? ''),
 				'version' => (string)($manifest['version'] ?? ''),
+				'summary' => (string)($manifest['summary'] ?? ''),
 				'install' => (string)($manifest['install'] ?? 'auto'),
 				'installed' => $this->ledger->installedVersion(set: $id),
 				'valid' => $validation['valid'],

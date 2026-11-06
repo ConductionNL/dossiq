@@ -31,6 +31,7 @@
 import { candidateWithoutBlanks, duplicateAffordances, openDuplicateWarning, useObjectStore } from '@conduction/nextcloud-vue'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { checkForDuplicates, fetchMatchedCases } from './duplicateCheckApi.js'
+import { initiatorChoice } from './initiatorSearch.js'
 import { fetchIntakeRequirements } from './intakeTriageApi.js'
 
 /** The case field carrying why a case was filed over a warning. */
@@ -109,6 +110,28 @@ export async function duplicatePolicyFor(caseTypeId) {
 }
 
 /**
+ * The form's payload with the picked party as the fields a case carries for
+ * its requester. The form's `requesterChoice` never reaches the case, and a
+ * contact with no party in OpenRegister leaves `requester` out: the field holds
+ * uuids, and the projection names the contact.
+ *
+ * @param {object} payload The form's payload.
+ * @return {Promise<object>} The case to save.
+ * @spec openspec/specs/initiator-selection/spec.md
+ */
+async function withRequester(payload) {
+	const { requesterChoice, ...fields } = payload
+	if (!requesterChoice) {
+		return fields
+	}
+	const candidate = { ...fields, ...(await initiatorChoice(requesterChoice.source, requesterChoice.row)) }
+	if (!candidate.requester) {
+		delete candidate.requester
+	}
+	return candidate
+}
+
+/**
  * The create-override itself.
  *
  * @param {object} payload The form's values.
@@ -128,7 +151,7 @@ export async function createCaseWithDuplicateCheck(payload, context) {
 	// somewhere a reader would look.
 	const store = useObjectStore()
 	const type = context?.type || 'case'
-	const candidate = { ...payload }
+	const candidate = await withRequester(payload)
 
 	const [{ matches, checked }, policy] = await Promise.all([
 		checkForDuplicates(candidateWithoutBlanks(candidate)),

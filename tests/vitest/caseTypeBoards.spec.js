@@ -51,9 +51,9 @@ describe('the case type tab strip (REQ-CTB-1)', () => {
 })
 
 describe('Phases and tasks (REQ-CTB-2)', () => {
-	it('holds the board\'s four cards, in order', () => {
+	it('holds the board\'s five cards, in order', () => {
 		expect(idsOf(tab('phases'))).toEqual([
-			'case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages',
+			'case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages', 'case-type-milestones',
 		])
 	})
 
@@ -121,7 +121,7 @@ describe('the side facts (REQ-CTB-5)', () => {
 		const paths = facts.map((field) => field.path).filter(Boolean)
 		expect(paths).not.toContain('handlingModel')
 		expect(paths).not.toContain('confidentiality')
-		expect(facts.map((field) => field.label)).toEqual(['Domain', 'Origin', 'Origin', 'Form', 'Handling teams', 'Running cases'])
+		expect(facts.map((field) => field.label).filter(Boolean)).toEqual(['Domain', 'Origin', 'Origin', 'Form', 'Handling teams', 'Running cases', 'Iv3 task field', 'Queue'])
 	})
 
 	it('name a shipped case type as shipped', () => {

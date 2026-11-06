@@ -239,10 +239,10 @@ describe('the family plan', () => {
 		expect(goals.content.endpointSource.url).toBe('/apps/dossiq/api/cases/@objectId/family-plan')
 	})
 
-	it('puts each intervention under its goal, the loose ones apart, the late ones flagged in words, and fails closed', () => {
+	it('puts each intervention under its goal, the loose ones apart, the late ones marked in words, and fails closed', () => {
 		const goals = plan.content.sections[1].widget.content
 		expect(goals).toMatchObject({ groupsPath: 'goals', itemsPath: 'interventions', itemGroupField: 'goal', ungroupedTitle: 'Not tied to a goal', columns: 1 })
-		expect(goals.itemFlag).toEqual({ field: 'overdue', label: 'Overdue' })
+		expect(goals.itemPill).toMatchObject({ overdueWhen: { field: 'overdue', op: 'eq', value: true }, overdueLabel: 'Late' })
 		expect(goals.groupLines).toContain('Met when: {metWhen}')
 		expect(goals.errorText).toBe('The family plan could not be read.')
 	})

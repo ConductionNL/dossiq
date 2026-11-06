@@ -74,6 +74,8 @@ describe('party sources', () => {
 		for (const { field, override } of switched) {
 			expect(field).toBe('requester')
 			expect(override.kindSwitch).toEqual({ label: 'Kind of requester' })
+			expect(override.choiceKey).toBe('requesterChoice')
+			expect(override.sources.at(-1)).toEqual({ id: 'contact', type: 'contacts', kind: 'Contact', label: 'Contact' })
 			const [person, company] = override.sources
 			expect(person).toMatchObject({ id: 'person', kind: 'Person', schema: 'brpPerson', label: 'BRP', title: '{displayName}', secondary: 'born {birth.date|date} · BSN {citizenServiceNumber|masked}' })
 			expect(company).toMatchObject({ id: 'company', kind: 'Organisation', schema: 'kvkCompany', label: 'CoC', title: '{tradeName}', secondary: 'trade name {tradeName} · CoC number {kvkNumber}' })

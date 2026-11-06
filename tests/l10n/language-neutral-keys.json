@@ -10,6 +10,8 @@
         "English value in l10n/en.json instead, keeping the key, the way the other 189 entries do."
     ],
     "keys": [
+        "Maximum",
+        "{type}",
         "#",
         "1 week",
         "AVG",
@@ -142,6 +144,10 @@
         "Integriq",
         "OpenRegister",
         "{minutes} min {seconds} s",
-        "{seconds} s"
+        "{seconds} s",
+        "Registry",
+        "E-mail",
+        "Thematiq",
+        "{order} · {label}"
     ]
 }

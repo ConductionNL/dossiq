@@ -72,9 +72,56 @@
 			},
 			{
 				"id": "done",
-				"type": "summary",
-				"title": "Done",
-				"healthCheck": true
+					"type": "summary",
+					"title": "Done",
+					"healthCheck": true,
+					"body": "Dossiq is set up. Each item below names the screen where you change it later.",
+					"note": "If you close this wizard it stays closed, also in another browser. You find everything under Settings.",
+					"cancelLabel": "Finish later",
+					"submitLabel": "Get started",
+					"rows": [
+						{
+							"step": "organisation-details",
+						"title": "Organisation details",
+							"link": {
+								"label": "Settings, general",
+								"href": "/index.php/settings/admin/dossiq?tab=general"
+							}
+						},
+						{
+							"step": "house-style",
+							"detail": "Skipped: you set the house style in Thematiq, not here",
+							"link": {
+								"label": "Thematiq",
+								"href": "/index.php/settings/admin/thematiq"
+							}
+						},
+						{
+							"step": "case-types",
+							"link": {
+								"label": "Case types",
+								"href": "/index.php/apps/dossiq/settings/case-types"
+							}
+						},
+						{
+							"step": "demo-data",
+							"link": {
+								"label": "Settings, sample data",
+								"href": "/index.php/settings/admin/dossiq?tab=general"
+							}
+						},
+						{
+							"id": "mail",
+							"title": "E-mail",
+							"readinessItem": "mail-account",
+							"detail": "The outgoing mail server is set up.",
+							"detailWhenOpen": "No outgoing mail server yet: without mail no acknowledgements of receipt go out",
+							"link": {
+								"label": "To the mail settings",
+								"href": "/index.php/settings/admin/dossiq?tab=general"
+							}
+						}
+					]
 			}
 		]
 	},
@@ -95,7 +142,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "center",
 						"title": "Welcome to Dossiq",
-						"body": "A short tour of the menu. It takes less than a minute.",
+						"body": "A short tour of the menu. It takes less than a minute. The tour starts only here, on the dashboard; whoever arrives on a case through a link sees that case without a welcome card and gets the tour on their first visit to the dashboard. Restart it later from Help and explanation.",
 						"target": {
 							"kind": "page",
 							"ref": "Dashboard"
@@ -611,7 +658,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "choiceKey": "requesterChoice", "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }, { "id": "contact", "type": "contacts", "kind": "Contact", "label": "Contact" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -1148,7 +1195,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "choiceKey": "requesterChoice", "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }, { "id": "contact", "type": "contacts", "kind": "Contact", "label": "Contact" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -2122,50 +2169,8 @@
 									"icon": "Plus"
 								}
 							],
-							"viewMode": "list",
-							"viewModes": [
-								"list",
-								"cards"
-							],
-							"listConfig": {
-								"_layoutNote": "Board DqAanMijToegewezen: one list of rows by default, the urgency pill first, the case type and requester (and a cover line) under the title, the status and the term at the end. The same list as cards stays one click away under Cards.",
-								"titleField": "title",
-								"subtitleTemplate": "{identifier} · {caseType|caseTypeName} · {initiatorDisplayName} · {coveredFor|coveredFor}",
-								"leading": {
-									"key": "deadlineTier",
-									"formatter": "deadlineTierLabel",
-									"widget": "badge",
-									"width": "88px",
-									"widgetProps": {
-										"colorMap": {
-											"overdue": "error",
-											"critical": "error",
-											"warning": "warning",
-											"normal": "default"
-										}
-									}
-								},
-								"trailing": [
-									{
-										"key": "status",
-										"formatter": "statusTypeName",
-										"widget": "badge",
-										"width": "140px",
-										"widgetProps": {
-											"resolve": {
-												"register": "dossiq",
-												"schema": "statusType",
-												"colorField": "colour"
-											}
-										}
-									},
-									{
-										"key": "deadline",
-										"widget": "date",
-										"width": "96px"
-									}
-								]
-							},
+							"viewMode": "cards",
+							"viewModes": ["table", "cards", "board", "map"],
 							"columns": [
 								"identifier",
 								"title",
@@ -2491,6 +2496,8 @@
 							"listConfig": {
 								"titleField": "title",
 								"subtitleTemplate": "{identifier} · {initiatorDisplayName} · {status|statusTypeName} · {priority|priorityPhrase}",
+								"noteTemplate": "{routingNote|routingNote}",
+								"noteToneField": "routingNote.level",
 								"leading": {
 									"key": "startDate",
 									"widget": "age",
@@ -2873,6 +2880,8 @@
 					"statusField": "status",
 					"wrap": true,
 					"columnLimit": 3,
+					"fullNote": "Full: dragging a card here is refused",
+					"mergedNote": "Merged from {count} case types: no limit",
 					"columnSwitchLabel": "Columns",
 					"hint": "One column per value of the property. Drag a card to change its status.",
 					"moveHandler": "moveCaseStatus",
@@ -5466,6 +5475,7 @@
 											},
 											"groupsPath": "goals",
 											"itemsPath": "interventions",
+											"itemLook": "rows",
 											"itemGroupField": "goal",
 											"groupTitle": "{title}",
 											"groupLines": [
@@ -5479,12 +5489,26 @@
 													"{providerParty.displayName}",
 													"{providerName}",
 													"No provider recorded"
-												],
-												"By {targetDate}"
+												]
 											],
-											"itemFlag": {
-												"field": "overdue",
-												"label": "Overdue"
+											"itemDate": "target date {targetDate|date}",
+											"itemPill": {
+												"overdueWhen": { "field": "overdue", "op": "eq", "value": true },
+												"overdueLabel": "Late",
+												"cases": [
+													{ "when": { "field": "state", "op": "eq", "value": "planned" }, "label": "Planned", "variant": "default" },
+													{ "when": { "field": "state", "op": "eq", "value": "running" }, "label": "Running", "variant": "info" },
+													{ "when": { "field": "state", "op": "eq", "value": "complete" }, "label": "Completed", "variant": "success" },
+													{ "when": { "field": "state", "op": "eq", "value": "stopped" }, "label": "Stopped", "variant": "default" }
+												]
+											},
+											"groupPill": {
+												"cases": [
+													{ "when": { "field": "state", "op": "eq", "value": "open" }, "label": "Running", "variant": "info" },
+													{ "when": { "field": "state", "op": "eq", "value": "met" }, "label": "Met", "variant": "success" },
+													{ "when": { "field": "state", "op": "eq", "value": "not-met" }, "label": "Not met", "variant": "error" },
+													{ "when": { "field": "state", "op": "eq", "value": "withdrawn" }, "label": "Withdrawn", "variant": "default" }
+												]
 											},
 											"ungroupedTitle": "Not tied to a goal",
 											"columns": 1,
@@ -6068,21 +6092,32 @@
 									"labels": {
 										"ended": {
 											"label": "Case ended",
-											"unmetDetail": "Finish or abort the case first"
+											"unmetDetail": "Finish or abort the case first",
+											"hideWhenMet": true
 										},
 										"result": {
 											"label": "Result recorded"
 										},
 										"decision": {
 											"label": "Decision made",
+											"detail": "{date|date}",
+											"detailWhen": "date",
 											"unmetDetail": "No decision on this case"
+										},
+										"publication": {
+											"label": "Publication done",
+											"detail": "{date|date}, {channel}",
+											"detailWhen": "date",
+											"unmetDetail": "Not published"
 										},
 										"documents": {
 											"label": "Documents final",
 											"detail": "{count} of {total} final"
 										},
 										"openTasks": {
-											"label": "Open tasks: {count}"
+											"label": "Open tasks: {count}",
+											"detail": "no task open any more",
+											"unmetDetail": "{count} still open"
 										}
 									},
 									"required": [
@@ -7297,7 +7332,7 @@
 		},
 		{
 			"id": "CaseObjects",
-			"route": "/case-objects",
+			"route": "/objects",
 			"type": "index",
 			"title": "Objects",
 			"widgets": [
@@ -7786,6 +7821,7 @@
 									"label": "Overview",
 									"widgetIds": [
 										"task-checklist",
+										"task-question",
 										"task-appointments",
 										"task-notes"
 									]
@@ -7809,6 +7845,13 @@
 							"summaryInHeader": true,
 							"path": "checklist"
 						}
+					},
+					{
+						"id": "task-question",
+						"type": "task-form",
+						"title": "Question from the flow",
+						"_note": "DqTaak Vraag uit de flow: the form the task's flow step declares, shown only on a task that has one. No `draft` yet: OpenRegister has no draft route for a flow task, so Save as provisional stays away until it does (R20/DQ2-C/FOR-SIG.md).",
+						"visibleWhen": { "field": "form.kind", "op": "notEmpty" }
 					},
 					{
 						"id": "task-appointments",
@@ -9107,7 +9150,7 @@
 								"name": "number",
 								"suffix": " d"
 							},
-							"footnote": "The darker, the longer a case stays in that phase.",
+							"footnote": "The darker, the longer a case stays in the phase. A phase adds up the days of all its statuses. A status without a phase stands under its own name. End statuses such as Closed form no column. Only finished stays count: an open case that went from Received to Assessment counts its two days in Received and nothing yet for Assessment.",
 							"endpointSource": {
 								"url": "/apps/dossiq/api/reports/process-mining",
 								"params": {
@@ -11949,37 +11992,81 @@
 			"title": "Reports",
 			"_note": "ADR-112: one page of cards rather than a Reports submenu. The three report pages stay routable — deep links, e2e specs and these cards all address them by route NAME — they simply leave the navigation. Their menu entries are retired in src/menu-layout.json under `removals`.",
 			"config": {
-				"description": "Every report Dossiq offers, in one place. Pick a report to open it.",
-				"categories": {
-					"throughput": "Throughput and deadlines",
-					"process": "Process analysis"
+				"description": "Reports on every case in Zuiddrecht. Pick a report and set the period. Costs per task field are in Shillinq.",
+				"panel": {
+					"title": "Report overview",
+					"subtitle": "Each report groups cases on a field. An administrator sets them up under Settings.",
+					"link": {
+						"label": "Set up reports",
+						"href": "/index.php/settings/admin/dossiq"
+					}
 				},
 				"cards": [
 					{
+						"id": "TaskFieldCosts",
+						"label": "Costs per task field are in Shillinq",
+						"description": "Shillinq works out case costs per Iv3 task field, from the hours on the cases and the task field of the case type. In Dossiq you only set the task field per case type.",
+						"tone": "external",
+						"pill": "Shillinq",
+						"href": "/index.php/apps/shillinq/",
+						"linkLabel": "Open in Shillinq",
+						"requiresApp": "shillinq",
+						"missingText": "This report is in Shillinq. Shillinq is not installed."
+					},
+					{
 						"id": "Doorlooptijd",
-						"label": "Processing time",
-						"description": "How long cases take, per case type.",
+						"label": "Lead time",
+						"description": "Lead time per month and within the standard per case type.",
+						"meta": "Grouping: case type, per month",
 						"icon": "ChartLine",
 						"category": "throughput",
 						"route": "Doorlooptijd"
 					},
 					{
+						"id": "ProcessMiningDashboard",
+						"label": "Process analysis",
+						"description": "Days per phase per case type and where cases get stuck.",
+						"meta": "Grouping: phase, per case type",
+						"icon": "ChartSankey",
+						"category": "process",
+						"route": "ProcessMiningDashboard"
+					},
+					{
 						"id": "TermijnDashboard",
-						"label": "Deadline monitoring",
-						"description": "Statutory terms, and which cases are close to breaching one.",
+						"label": "Terms",
+						"description": "Cases approaching or exceeding their statutory deadline.",
+						"meta": "Grouping: deadline status",
 						"icon": "ClockAlertOutline",
 						"category": "throughput",
 						"route": "TermijnDashboard"
 					},
 					{
-						"id": "ProcessMiningDashboard",
-						"label": "Process mining",
-						"description": "The paths cases actually take, against the paths they were meant to.",
-						"icon": "ChartSankey",
+						"id": "Archiving",
+						"label": "Archiving",
+						"description": "Cases per retention period and what is destroyed or transferred this year.",
+						"meta": "Grouping: retention period",
+						"icon": "ArchiveOutline",
 						"category": "process",
-						"route": "ProcessMiningDashboard"
+						"_note": "A retention report is a later spec. Until it exists the card says so and opens nothing: the Cases list it used to open is a menu entry of its own (ADR-112 D2), and requiresApp names an app nothing answers to, so the panel draws missingText in place of a link.",
+						"href": "#",
+						"requiresApp": "dossiq-retention-report",
+						"missingText": "This report is not available yet."
+					},
+					{
+						"id": "KccVolume",
+						"label": "KCC volume and SLA",
+						"description": "Contact volume, handling time, first-contact resolution and SLA per week, with Excel and PDF.",
+						"meta": "Grouping: channel, team, employee · from pipelinq",
+						"tone": "highlight",
+						"href": "/index.php/apps/pipelinq/rapportage",
+						"requiresApp": "pipelinq",
+						"missingText": "This report is in Pipelinq. Pipelinq is not installed."
 					}
-				]
+				],
+				"categories": {
+					"throughput": "Throughput and deadlines",
+					"process": "Process analysis"
+				}
 			}
 		},
 		{
@@ -12239,6 +12326,7 @@
 									"key": "caseLabel",
 									"label": "Case",
 									"widget": "link",
+									"widgetProps": { "route": "CaseDetail", "params": { "id": "caseId" } },
 									"cellClass": "cn-cell--wrap"
 								},
 								{
@@ -12332,6 +12420,51 @@
 						"_noticesNote": "DqTermijnen draws one row per notice of default: the case (opens it), when it came in, the assessment, the penalty it started and where that money stands. GET /api/deadlines/notices joins notice, term, case and penalty calculation (NoticeOfDefaultRows); a fixed penalty is ready for payout until one is prepared, then reads the payout's status (prepared, signal sent, paid, rejected, on hold), a running one is not fixed yet, a notice without a penalty is not applicable (nextcloud-vue column emptyLabel)."
 					},
 					{
+						"id": "deadline-report-open-age",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": { "endpoint": "/apps/dossiq/api/dashboard/widget-visibility", "field": "visible.deadline-report-open-age", "op": "eq", "value": true },
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page.",
+						"_note": "Board DqTermijnen \"Leeftijd van de open werkvoorraad per status\" (REQ-TERM-069): GET /api/deadlines/reports/open-workload-age, read live over open cases only. The board's oldest case number is not in the answer; the column reads the oldest age.",
+						"type": "object-table",
+						"title": "Age of the open workload per status",
+						"subtitle": "Now",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/deadlines/reports/open-workload-age",
+								"responsePath": "perStatus"
+							},
+							"columns": [
+								{ "key": "status", "label": "Status", "formatter": "statusTypeName" },
+								{ "key": "cases", "label": "Open cases" },
+								{ "key": "averageDays", "label": "Average age", "format": { "style": "decimal", "decimals": 0, "suffix": " days" } },
+								{ "key": "oldestDays", "label": "Oldest", "format": { "style": "decimal", "decimals": 0, "suffix": " days" } }
+							],
+							"footnote": "Read live from the object register, over open cases only; closed cases do not count. A case that just changed status counts under the new one.",
+							"emptyText": "No open cases"
+						}
+					},
+					{
+						"id": "deadline-report-first-response",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": { "endpoint": "/apps/dossiq/api/dashboard/widget-visibility", "field": "visible.deadline-report-first-response", "op": "eq", "value": true },
+						"_rolesNote": "widget-roles-declared REQ-WRD-01, as the other cards on this page.",
+						"_note": "Board DqTermijnen \"Eerste reactie\" (term-configuration-beyond-the-case-type, row 8.24): GET /api/deadlines/reports/first-response counts what was stored on the cases. It reads every case, not this quarter: the route takes no period yet.",
+						"type": "stat-grid",
+						"title": "First response",
+						"subtitle": "Case types with a term for the first response",
+						"content": {
+							"columns": 3,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/deadlines/reports/first-response"
+							},
+							"cells": [
+								{ "label": "met", "valueField": "met" },
+								{ "label": "missed", "valueField": "missed" },
+								{ "label": "working days late, on average", "valueField": "averageOverrunDays", "format": { "style": "decimal", "decimals": 1 } }
+							]
+						}
+					},
+					{
 						"id": "deadline-report-ending-first",
 						"roles": [
 							"controllers",
@@ -12371,6 +12504,7 @@
 									"key": "caseLabel",
 									"label": "Case",
 									"widget": "link",
+									"widgetProps": { "route": "CaseDetail", "params": { "id": "caseId" } },
 									"cellClass": "cn-cell--wrap"
 								},
 								{
@@ -12429,6 +12563,7 @@
 							"columns": [
 								{
 									"key": "caseTypeTitle",
+									"cellClass": "cn-cell--wrap",
 									"label": "Case type"
 								},
 								{
@@ -12642,6 +12777,15 @@
 									"key": "paymentStatus",
 									"label": "Payment",
 									"widget": "badge",
+									"enum": ["voorbereid", "in-handling", "paid", "rejected", "on-hold-objection"],
+									"widgetProps": {
+										"colorMap": {
+											"in-handling": "info",
+											"paid": "success",
+											"rejected": "error",
+											"on-hold-objection": "warning"
+										}
+									},
 									"enumLabels": {
 										"voorbereid": "Prepared",
 										"in-handling": "In progress",
@@ -12754,6 +12898,26 @@
 						"gridWidth": 12,
 						"gridHeight": 8,
 						"sizeToContent": true
+					},
+					{
+						"id": 6,
+						"widgetId": "deadline-report-open-age",
+						"gridX": 0,
+						"gridY": 26,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"sizeToContent": true,
+						"sameHeight": true
+					},
+					{
+						"id": 7,
+						"widgetId": "deadline-report-first-response",
+						"gridX": 6,
+						"gridY": 26,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"sizeToContent": true,
+						"sameHeight": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl",
@@ -14185,6 +14349,63 @@
 						"description": "Application, assessment, award and accountability."
 					}
 				],
+				"shipped": {
+					"title": "Shipped packages",
+					"subtitle": "A package is a case type with its statuses, flows and templates; the code stays the same",
+					"parts": "Case type, statuses, flows, templates",
+					"notice": {
+						"title": "No registry set up.",
+						"text": "You see the packages shipped with dossiq; nothing was fetched from outside. Set up a registry under Advanced to search and install packages from other municipalities."
+					},
+					"crumbs": [
+						{
+							"label": "Settings",
+							"href": "/index.php/settings/admin/dossiq?tab=general"
+						},
+						{
+							"label": "Marketplace"
+						}
+					],
+					"buttons": [
+						{
+							"label": "Set up registry",
+							"href": "/index.php/settings/admin/dossiq?tab=general"
+						}
+					],
+					"aside": [
+						{
+							"title": "Registry",
+							"rows": [
+								{
+									"label": "Status",
+									"value": "Not set up",
+									"pill": true
+								},
+								{
+									"label": "Address",
+									"value": "None yet"
+								},
+								{
+									"label": "Access key",
+									"value": "Not set up"
+								},
+								{
+									"label": "Last search",
+									"value": "None, no connection was made"
+								}
+							],
+							"note": "Every employee can search; only an administrator can install and set up the registry.",
+							"link": {
+								"label": "To Advanced",
+								"href": "/index.php/settings/admin/dossiq?tab=general"
+							}
+						},
+						{
+							"title": "What installing does",
+							"text": "A package arrives as a new case type in your own configuration, beside what you already have. Only configuration is taken over: case types, statuses, roles, properties, templates and flows. Cases or tasks in a package are refused and reported."
+						}
+					]
+				},
 				"storeRegistry": true,
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
@@ -14673,7 +14894,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "choiceKey": "requesterChoice", "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }, { "id": "contact", "type": "contacts", "kind": "Contact", "label": "Contact" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -14772,6 +14993,15 @@
 								{
 									"path": "description",
 									"label": "Description"
+								},
+								{
+									"label": "Account owner",
+									"when": { "field": "accountOwner", "op": "notEmpty" },
+									"parts": [
+										{ "path": "accountOwner", "format": "user" },
+										{ "text": "the colleague who manages this contact" }
+									],
+									"separator": ", "
 								}
 							]
 						}
@@ -14845,7 +15075,7 @@
 							"extend": [
 								"case"
 							],
-							"limit": 3,
+							"limit": 4,
 							"presentation": "feed",
 							"icon": {
 								"field": "notificationChannel",
@@ -15460,7 +15690,7 @@
 								"widget": "textarea"
 							},
 							"requester": {
-								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }],
+								"widget": "party", "placeholder": "Name, BSN, trade name or KvK number", "testid": "initiator-picker-search", "kindSwitch": { "label": "Kind of requester" }, "choiceKey": "requesterChoice", "sources": [{ "id": "person", "kind": "Person", "register": "dossiq", "schema": "brpPerson", "lookup": { "url": "/apps/dossiq/api/people/lookup", "when": "^[0-9]{9}$" }, "label": "BRP", "title": "{displayName}", "secondary": "born {birth.date|date} · BSN {citizenServiceNumber|masked}" }, { "id": "company", "kind": "Organisation", "register": "dossiq", "schema": "kvkCompany", "label": "CoC", "title": "{tradeName}", "secondary": "trade name {tradeName} · CoC number {kvkNumber}" }, { "id": "contact", "type": "contacts", "kind": "Contact", "label": "Contact" }],
 								"label": "Requester"
 							},
 							"confidentiality": {
@@ -15894,6 +16124,7 @@
 										"contact-card",
 										"contact-open-cases",
 										"contact-open-tickets",
+										"org-contact-persons",
 										"contact-latest-moments"
 									],
 									"label": "Overview"
@@ -15950,6 +16181,7 @@
 						"type": "parties",
 						"title": "Contact persons",
 						"icon": "AccountMultipleOutline",
+						"subtitle": "People in a role at this organisation, one of them as main contact",
 						"_note": "The organisation's contact persons: OpenRegister person parties on the kvkCompany, by role with the main contact (the primary party) first. The roles are kvkCompany configuration (linkRoles); roleLabels give the four shipped ones their words, a role a municipality adds shows the label it declares. Changing them is the organisation's update right, which OpenRegister asks on every party write (organisation-contact-persons).",
 						"content": {
 							"roleLabels": {

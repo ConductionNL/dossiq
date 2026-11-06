@@ -57,3 +57,21 @@ line.
 
 - **GIVEN** OpenRegister's ObjectService is not available
 - **THEN** the row carries `objects: null` and the line reads "Bomenregister"
+
+### Requirement: The Schema column names the schema and its properties
+
+An object type's row SHALL carry the schema's title (`schemaName`) with the number of its properties under it
+(`propertyLine`, "9 eigenschappen"). A free-text object type SHALL say that its links point to no register, and its
+property line SHALL stay empty.
+
+#### Scenario: Boom names a schema with nine properties
+@e2e exclude a column text over a seeded row; ObjectTypeCatalogueTest reads the row
+
+- **GIVEN** a case links a Boom whose object URL names a schema with 9 properties
+- **THEN** the row's `schemaName` is the schema title and `propertyLine` reads "9 eigenschappen"
+
+#### Scenario: Gebouw is free text
+@e2e exclude a column text over a seeded row; ObjectTypeCatalogueTest reads the row
+
+- **GIVEN** links of type Gebouw with no URL
+- **THEN** the Schema cell reads "Geen schema: de koppelingen verwijzen niet naar een register"

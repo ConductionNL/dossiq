@@ -1,6 +1,7 @@
 {
   "id": "woo-verzoek",
   "title": "Woo-verzoek",
+  "summary": "Case type with statuses, acknowledgement of receipt, term monitoring and document templates.",
   "version": "1.2.1",
   "requires": [],
   "parts": [
