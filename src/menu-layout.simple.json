@@ -2934,12 +2934,13 @@
 							"headerActions": ["link", "compose"],
 							"heading": "Email",
 							"description": "Mail linked to this case, also from a shared mailbox",
-							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
+							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there. Every key in a template gets a value from the case, such as the name of the handler and the case number.",
 							"templates": {
 								"url": "/apps/dossiq/api/casetypes/@object.caseType/email-templates",
 								"responsePath": "results",
 								"labelField": "name",
-								"idField": "id"
+								"idField": "id",
+								"preselect": "first"
 							},
 							"noTemplatesText": "No templates for this case type yet",
 							"draft": {
@@ -3588,7 +3589,7 @@
 							"rowTitle": "text",
 							"sortable": true,
 							"filterable": true,
-							"headerNote": "{total} recorded",
+							"headerNote": "{total} recorded · the automatic acknowledgement is in the conversation, but does not count here",
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -6072,7 +6073,7 @@
 								}
 							],
 							"emptyText": "No decision letter written yet",
-							"footnote": "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced.",
+							"footnote": "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced. An objection that comes in later gets the warning: objection period possibly exceeded.",
 							"headerAction": {
 								"label": "Generate document",
 								"icon": "FileDocumentPlusOutline",

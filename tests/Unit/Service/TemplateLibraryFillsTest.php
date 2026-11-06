@@ -48,8 +48,9 @@ class TemplateLibraryFillsTest extends TestCase {
 
 		$this->assertSame(
 			expected: [
-				['label' => 'Decision deadline', 'field' => 'legalDecisionDate', 'as' => 'date'],
+				['label' => 'Decision deadline', 'field' => 'legalDecisionDate', 'as' => 'deadline', 'term' => 'statutoryTerm'],
 				['label' => 'Adjournment', 'field' => 'statutoryExtension', 'as' => 'extension', 'from' => 'legalDecisionDate'],
+				['label' => 'Effective date', 'field' => 'statutoryExtension', 'as' => 'after-extension', 'from' => 'legalDecisionDate'],
 				['label' => 'Statement of reasons', 'field' => 'extensionReason', 'required' => true],
 				['label' => 'Status after generating', 'value' => 'Draft (concept)'],
 			],
