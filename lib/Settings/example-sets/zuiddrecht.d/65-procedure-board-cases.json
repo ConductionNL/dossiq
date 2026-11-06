@@ -2,6 +2,45 @@
 	"$comment": "The cases DqAanbesteding, DqSubsidie and DqKlachten draw, beside the example cases other boards name. Status, title and the properties the case type's overviewSections read follow the boards.",
 	"objects": [
 		{
+			"key": "termijn-board-aanbesteding-groenonderhoud",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:board-aanbesteding-groenonderhoud.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-12 09:00}}",
+				"endDateCalculated": "{{date:30}}",
+				"endDateCurrent": "{{date:30}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "termijn-board-subsidie-buurtvereniging-oost",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:board-subsidie-buurtvereniging-oost.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-40 09:00}}",
+				"endDateCalculated": "{{date:60}}",
+				"endDateCurrent": "{{date:60}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "termijn-board-klacht-melding-openbare-ruimte",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:board-klacht-melding-openbare-ruimte.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-1 09:00}}",
+				"endDateCalculated": "{{date:20}}",
+				"endDateCurrent": "{{date:20}}",
+				"status": "lopend"
+			}
+		},
+		{
 			"key": "board-aanbesteding-groenonderhoud",
 			"register": "dossiq",
 			"schema": "case",
