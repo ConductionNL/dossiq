@@ -2894,6 +2894,8 @@
 							"visibilityLabel": false,
 							"readsToggle": "Also who read the case",
 							"_entriesNote": "DqZaakHistorie entries as drawn: '6 okt, 15:40' (momentFormat short) and an icon per kind in the rail circle (kindIcons; OpenRegister's kinds carry no icon). The message is followed by what the entry is about and the author reads by name, which nextcloud-vue does for every timeline.",
+							"errorTitle": "The timeline could not be read",
+							"errorText": "OpenRegister did not answer. No empty timeline is shown; the change history in the sidebar stands apart from this.",
 							"momentFormat": "short",
 							"kindIcons": {
 								"document": "FileDocumentOutline",
@@ -2901,7 +2903,8 @@
 								"bericht": "EmailOutline",
 								"ontvangstbevestiging": "EmailOutline",
 								"statuswijziging": "SwapHorizontal",
-								"toewijzing": "AccountOutline"
+								"toewijzing": "AccountOutline",
+								"termijngebeurtenis": "ClockOutline"
 							},
 							"entryActions": [
 								{
@@ -3011,12 +3014,7 @@
 					"kpi-2": null,
 					"kpi-5": null,
 					"3": null,
-					"presence-strip": {
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 1
-					},
+					"presence-strip": null,
 					"5": {
 						"gridX": 0,
 						"gridY": 1,
@@ -3789,6 +3787,8 @@
 							},
 							"completeAny": true,
 							"cancel": true,
+							"cancelInline": true,
+							"summaryNote": "the tasks of the whole case, also those of colleagues",
 							"rowRoute": "TaskDetail",
 							"completeUrl": "/apps/dossiq/api/case-tasks/{id}/complete",
 							"cancelUrl": "/apps/dossiq/api/case-tasks/{id}/cancel",
@@ -3867,6 +3867,7 @@
 							"headerNote": "{total} planned",
 							"footnote": "A milestone that depends on another part counts in working days from that part. When the hearing moves, the milestones after it move with it. A milestone without a predecessor counts from the start of the case.",
 							"footnoteVariant": "info",
+							"footnoteCompact": true,
 							"emptyText": "No next action is planned on this case"
 						},
 						"_rowsNote": "DqZaakTaken Wat hierna komt: the planned actions as the board's rows under a rule (calendar tile, the action, its owner (a person, else the team by its name: {ownerGroup|group}, nextcloud-vue feat/r32-template-group-format) and who planned it (the person who added it, else what planned it: plannedByRule, the steps of the case type, which a successor carries over), the planned date at the end) and '{total} gepland' in the title row, instead of a table. Same filter and order: the first row is still the answer to what comes next."
