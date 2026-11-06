@@ -8729,7 +8729,8 @@
 										"case-type-phase-board",
 										"case-type-variants",
 										"case-type-terms-written",
-										"case-type-messages"
+										"case-type-messages",
+										"case-type-milestones"
 									],
 									"countFrom": {
 										"endpoint": "/apps/dossiq/api/case-types/@objectId/phases",
@@ -8814,6 +8815,48 @@
 									"label": "Record history"
 								}
 							]
+						}
+					},
+					{
+						"id": "case-type-milestones",
+						"type": "record-list",
+						"title": "Milestones of this case type",
+						"subtitle": "In order, each with its own label, a trigger and a status that reaches the milestone by itself",
+						"_note": "DqZaaktype Mijlpalen: the milestoneDefinition rows of this case type, read as the milestone progress on a case reads them.",
+						"headerActions": [
+							{
+								"label": "Add milestone",
+								"icon": "Plus",
+								"action": {
+									"type": "open-form",
+									"formTitle": "Add milestone",
+									"formConfirmLabel": "Add",
+									"register": "dossiq",
+									"schema": "milestoneDefinition",
+									"includeFields": ["label", "identifier", "order", "triggerEvent", "mappedStatusType", "expectedDurationWorkingDays"],
+									"props": { "caseType": "@objectId" },
+									"successMessage": "The milestone is added."
+								}
+							}
+						],
+						"content": {
+							"register": "dossiq",
+							"schema": "milestoneDefinition",
+							"filter": { "caseType": "@objectId" },
+							"sort": { "field": "order", "dir": "asc" },
+							"limit": 20,
+							"presentation": "rows",
+							"title": "{order} · {label}",
+							"meta": { "parts": ["{identifier}", "trigger: {triggerEvent}"] },
+							"pill": {
+								"cases": [
+									{ "when": { "field": "mappedStatusType", "op": "notEmpty" }, "label": "Status", "variant": "info" },
+									{ "when": { "field": "triggerEvent", "op": "notEmpty" }, "label": "Flow", "variant": "info" }
+								],
+								"label": "Manual",
+								"variant": "default"
+							},
+							"emptyText": "This case type has no milestones yet"
 						}
 					},
 					{

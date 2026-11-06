@@ -18,9 +18,9 @@ const widgets = page.configAppend.widgets
 const tabs = widgets.find((w) => w.type === 'tabs').content.tabs
 
 describe('the Phases and tasks tab of a case type', () => {
-	it('opens with the phase board and draws the board\'s four cards', () => {
+	it('opens with the phase board and draws the board\'s five cards', () => {
 		const tab = tabs.find((t) => t.label === 'Phases and tasks')
-		expect(tab.widgetIds).toEqual(['case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages'])
+		expect(tab.widgetIds).toEqual(['case-type-phase-board', 'case-type-variants', 'case-type-terms-written', 'case-type-messages', 'case-type-milestones'])
 	})
 
 	it('reads the phases of this case type from the phases endpoint', () => {
