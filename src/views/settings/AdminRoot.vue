@@ -247,6 +247,7 @@
 			<CnSettingsSection
 				id="section-term-definitions"
 				:actionsInTitle="true"
+				:footerLink="{ label: t('dossiq', 'All term definitions'), href: allTermDefinitionsUrl }"
 				:name="t('dossiq', 'Term definitions (Awb)')"
 				:description="
 					t(
@@ -667,6 +668,7 @@
 			</CnSettingsSection>
 
 			<CnSettingsSection
+				id="section-term-definitions-all"
 				:name="t('dossiq', 'AWB term definitions')"
 				:description="
 					t(
@@ -1428,6 +1430,16 @@ export default {
 		 */
 		integriqAdminUrl() {
 			return generateUrl('/settings/admin/integriq')
+		},
+
+		/**
+		 * The full term table on the Advanced tab.
+		 *
+		 * @return {string} The address.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		allTermDefinitionsUrl() {
+			return generateUrl('/settings/admin/dossiq') + '?tab=advanced#section-term-definitions-all'
 		},
 
 		/**
