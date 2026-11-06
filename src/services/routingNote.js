@@ -30,6 +30,8 @@ function intakeSplitLabel(note) {
  *
  * @param {object|null} note The case's `routingNote`.
  * @return {string} The line, or '' without a note.
+ *
+ * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-the-team-queue-says-why-a-case-stands-there
  */
 export function routingNoteLabel(note) {
 	if (!note || typeof note !== 'object') {
