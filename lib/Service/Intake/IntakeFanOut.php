@@ -51,6 +51,7 @@ namespace OCA\Dossiq\Service\Intake;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Routing\RoutingNote;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -205,6 +206,7 @@ class IntakeFanOut {
 		}
 
 		$this->tieTogether(created: $created);
+		$this->noteRouting(created: $created, failed: $failed, submissionId: $submissionId);
 
 		return [
 			'created' => $created,
@@ -298,6 +300,47 @@ class IntakeFanOut {
 			'title' => $destination['title'],
 		];
 	}//end open()
+
+	/**
+	 * Leave a routing note on every opened case of a split or partial fan-out.
+	 *
+	 * A note that cannot be written costs no case: the fan-out stands.
+	 *
+	 * @param array<int, array<string, mixed>> $created      The cases that were opened.
+	 * @param array<int, array<string, mixed>> $failed       The destinations that opened no case.
+	 * @param string                           $submissionId The submission.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
+	 */
+	private function noteRouting(array $created, array $failed, string $submissionId): void {
+		if (count($created) < 2 && $failed === []) {
+			return;
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
+		foreach ($created as $case) {
+			$siblings = array_values(array_diff(array_column($created, 'title'), [$case['title']]));
+			$note = RoutingNote::intakeSplit(submission: $submissionId, siblings: $siblings, failed: $failed);
+			try {
+				$this->patchObjectAsArray(
+					objectService: $objectService,
+					register: $register,
+					schema: $schema,
+					id: (string)$case['id'],
+					changes: ['routingNote' => $note]
+				);
+			} catch (Throwable $e) {
+				$this->logger->warning(
+					'Dossiq fan-out: the routing note of case {case} was not written',
+					['case' => $case['id'], 'reason' => $e->getMessage()],
+				);
+			}
+		}
+	}//end noteRouting()
 
 	/**
 	 * Why one destination failed, in a sentence a handler can read.

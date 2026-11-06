@@ -25,6 +25,7 @@ import { approvalMarkerLabel } from './approvalMarker.js'
 import { caseAddress } from './caseAddress.js'
 import { caseAnswerText } from './caseAnswer.js'
 import { coveredForLabel } from './coveredFor.js'
+import { routingNoteLabel } from './routingNote.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
 
@@ -296,6 +297,15 @@ export default {
 	 * @return {string}
 	 */
 	coveredFor: (value) => coveredForLabel(value),
+
+	/**
+	 * A case's routing note, for the team queue row.
+	 *
+	 * @param {object|null} value The case's `routingNote`.
+	 * @return {string} The line.
+	 * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-the-team-queue-says-why-a-case-stands-there
+	 */
+	routingNote: (value) => routingNoteLabel(value),
 
 	/**
 	 * The urgency tier of a work queue row as its pill reads ("Late",

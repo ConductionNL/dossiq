@@ -1866,7 +1866,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.53.0",
+                "version": "1.54.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -3502,6 +3502,20 @@
                         "title": "Team",
                         "facetable": true,
                         "order": 6
+                    },
+                    "routingNote": {
+                        "type": "object",
+                        "description": "The facts of the case's last routing event: a refused handover, or an intake fan-out that opened siblings or missed a destination. Facts and no sentence, so each reader gets it in their own language. Cleared when someone picks the case up.",
+                        "title": "Routing note",
+                        "properties": {
+                            "kind": { "type": "string", "enum": ["handover-refused", "intake-split"] },
+                            "level": { "type": "string", "enum": ["error", "info"] },
+                            "team": { "type": "string" },
+                            "reason": { "type": "string" },
+                            "submission": { "type": "string" },
+                            "siblings": { "type": "array", "items": { "type": "string" } },
+                            "failed": { "type": "array", "items": { "type": "object" } }
+                        }
                     },
                     "handoverPending": {
                         "type": "boolean",

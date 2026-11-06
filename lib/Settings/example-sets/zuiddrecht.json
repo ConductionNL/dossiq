@@ -7396,6 +7396,12 @@
 				"statusHistory"
 			],
 			"data": {
+				"routingNote": {
+					"kind": "handover-refused",
+					"level": "error",
+					"team": "Belastingen",
+					"reason": "het zaaktype Woo-verzoek laat alleen Woo en informatie en Juridische zaken toe."
+				},
 				"title": "Afvalinzameling Oosthaven 2025",
 				"description": "Mevrouw Verbeek vraagt de afspraken met de inzamelaar en de klachten over de afvalinzameling in Oosthaven in 2025.",
 				"caseType": "{{lookup:caseType}}",

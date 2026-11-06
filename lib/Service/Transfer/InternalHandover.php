@@ -52,6 +52,7 @@ namespace OCA\Dossiq\Service\Transfer;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Routing\RoutingNote;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -398,6 +399,10 @@ class InternalHandover {
 		$changes = ['handoverPending' => false, 'handoverTo' => ''];
 		if ($status === 'rejected') {
 			$changes['assignedGroup'] = trim((string)($transfer['sourceTeam'] ?? ''));
+			$changes['routingNote'] = RoutingNote::handoverRefused(
+				team: trim((string)($transfer['targetTeam'] ?? '')),
+				reason: (string)($transfer['rejectionReason'] ?? ''),
+			);
 		}
 
 		$this->writeCase(case: $case, changes: $changes);

@@ -98,6 +98,22 @@ class FanOutCaseStore {
 
 		return $this->cases[$id];
 	}//end saveObject()
+
+	/**
+	 * Merge changes into a stored case.
+	 *
+	 * @param string               $objectId The case.
+	 * @param array<string, mixed> $data     The changes.
+	 * @param mixed                $register Unused.
+	 * @param mixed                $schema   Unused.
+	 *
+	 * @return array<string, mixed> The case as stored.
+	 */
+	public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+		$this->cases[$objectId] = array_merge($this->cases[$objectId] ?? [], $data);
+
+		return $this->cases[$objectId];
+	}//end patchObject()
 }//end class
 
 /**
@@ -106,6 +122,7 @@ class FanOutCaseStore {
  * @covers \OCA\Dossiq\Service\Intake\IntakeFanOut
  *
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Routing\RoutingNote
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class IntakeFanOutTest extends TestCase {
@@ -347,7 +364,32 @@ class IntakeFanOutTest extends TestCase {
 		$this->assertSame('Handhaving', $result['failed'][0]['destination']);
 		$this->assertSame('The case type has been retired.', $result['failed'][0]['reason']);
 		$this->assertSame('ct-onderhoud', $this->store->cases['case-1']['caseType']);
+		$this->assertSame(
+			expected: [
+				'kind' => 'intake-split',
+				'level' => 'info',
+				'submission' => 'sub-1',
+				'siblings' => [],
+				'failed' => [['destination' => 'Handhaving', 'reason' => 'The case type has been retired.']],
+			],
+			actual: $this->store->cases['case-1']['routingNote'],
+			message: 'The case that was opened says which destination it lost.',
+		);
 	}//end testAFailedDestinationIsReportedAndTheOthersAreCreated()
+
+	/**
+	 * Every case of a split names its siblings.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
+	 */
+	public function testEveryCaseOfASplitNamesItsSiblings(): void {
+		$this->fanOut()->submit(formCaseTypeId: 'ct-melding', submission: ['title' => 'Lantaarnpaal'], submissionId: 'sub-1');
+
+		$this->assertSame(expected: ['Onderhoud'], actual: $this->store->cases['case-1']['routingNote']['siblings']);
+		$this->assertSame(expected: ['Handhaving'], actual: $this->store->cases['case-2']['routingNote']['siblings']);
+	}//end testEveryCaseOfASplitNamesItsSiblings()
 
 	/**
 	 * A disabled destination opens no case.
