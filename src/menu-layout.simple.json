@@ -8095,6 +8095,7 @@
 					}
 				},
 				"searchPlaceholder": "Search a case type",
+				"footerNote": "20 per page",
 				"allowExport": true,
 				"_actionsMenuNote": "DqZaaktypen's Actions menu: import a case type, export the selected case types as JSON (nextcloud-vue `export-selected`, OpenRegister's export by `_ids`), and reload the shipped templates (POST /api/packages/reload, admin-only on the server; `adminOnly` only hides the entry from others).",
 				"headerActions": [
@@ -8152,21 +8153,25 @@
 					},
 					{
 						"key": "category",
-						"label": "Domain"
+						"label": "Domain",
+						"width": "149px"
 					},
 					{
 						"key": "processingDeadline",
 						"label": "Processing time",
+						"width": "158px",
 						"formatter": "processingTime"
 					},
 					{
 						"key": "version",
 						"label": "Version",
+						"width": "115px",
 						"formatter": "versionLabel"
 					},
 					{
 						"key": "isDraft",
 						"label": "Status",
+						"width": "130px",
 						"formatter": "draftState",
 						"widget": "badge",
 						"widgetProps": {
