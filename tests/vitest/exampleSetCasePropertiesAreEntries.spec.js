@@ -18,6 +18,26 @@ const files = [path.join(DIR, 'zuiddrecht.json')]
 
 const schemas = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../lib/Settings/dossiq_register.json'), 'utf8')).components.schemas
 
+describe('the example set fragments', () => {
+	it('declare an object of their own before the objects that refer to it', () => {
+		const wrong = []
+		for (const file of files) {
+			const seen = new Set()
+			const objects = JSON.parse(fs.readFileSync(file, 'utf8')).objects || []
+			const own = new Set(objects.map((object) => object.key))
+			for (const object of objects) {
+				for (const match of JSON.stringify(object).matchAll(/\{\{object:([^.}]+)\.id\}\}/g)) {
+					if (own.has(match[1]) && !seen.has(match[1]) && match[1] !== object.key) {
+						wrong.push(`${path.basename(file)}: ${object.key} -> ${match[1]}`)
+					}
+				}
+				seen.add(object.key)
+			}
+		}
+		expect(wrong).toEqual([])
+	})
+})
+
 describe('the example set cases', () => {
 	it('send as JSON text only the fields their schema keeps as text', () => {
 		const wrong = []
