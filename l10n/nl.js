@@ -913,7 +913,6 @@ OC.L10N.register(
         "Apply selected ({count})": "Geselecteerde toepassen ({count})",
         "Apply the rules to {count} document": "Regels toepassen op {count} document",
         "Apply the rules to {count} documents": "Regels toepassen op {count} documenten",
-        "Apply to {count} cases": "Uitvoeren voor {count} zaken",
         "Apply to {total} cases": "Toepassen op {total} zaken",
         "Applying…": "Toepassen…",
         "Appointment": "Afspraak",

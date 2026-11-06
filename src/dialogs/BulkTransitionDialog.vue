@@ -149,7 +149,7 @@ v-if="showsChanges"
 							data-testid="bulk-rehearse"
 							:disabled="!canRehearse"
 							@click="rehearse">
-							{{ primaryLabel }}
+							{{ t('dossiq', 'See what would happen') }}
 						</NcButton>
 					</div>
 				</template>
@@ -206,12 +206,10 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import {
 	ACTION_LIFECYCLE,
 	ACTION_TRANSITION,
-	commitBulkJob,
 	previewBulkJob,
 	readRefusal,
 } from '../services/bulkJobApi.js'
 import {
-	canCommitAtOnce,
 	changeRow,
 	commonTransitions,
 	isLifecycleGesture,
@@ -386,20 +384,6 @@ export default {
 		},
 
 		/**
-		 * The primary button says what it does: with the changes on screen it
-		 * runs the act, otherwise it rehearses.
-		 *
-		 * @return {string} The label.
-		 *
-		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-a-clean-rehearsal-runs-at-once
-		 */
-		primaryLabel() {
-			return this.showsChanges
-				? t('dossiq', 'Apply to {count} cases', { count: this.changeRows.length })
-				: t('dossiq', 'See what would happen')
-		},
-
-		/**
 		 * Whether the job finished with every case changed.
 		 *
 		 * @return {boolean} True for the result panel.
@@ -522,9 +506,8 @@ export default {
 		/**
 		 * Hand the act to the job and read back what it would do.
 		 *
-		 * The job comes back rehearsed, with a row per case. A rehearsal the
-		 * table already showed in full, with every case ready, runs at once;
-		 * any other is left in the progress panel, whose commit is the reader's.
+		 * Nothing is written by this. The job comes back rehearsed, with a row
+		 * per case, and the commit lives in the progress panel underneath.
 		 *
 		 * @return {Promise<void>} Resolves when the job has been rehearsed.
 		 *
@@ -535,7 +518,7 @@ export default {
 			this.refusal = ''
 
 			try {
-				const job = await previewBulkJob({
+				this.job = await previewBulkJob({
 					action: isLifecycleGesture(this.mode)
 						? ACTION_LIFECYCLE
 						: ACTION_TRANSITION,
@@ -547,9 +530,6 @@ export default {
 					}),
 					justification: this.reason.trim(),
 				})
-				this.job = this.showsChanges && canCommitAtOnce(job, this.changeRows.length)
-					? await commitBulkJob(job.id, this.reason.trim())
-					: job
 			} catch (err) {
 				this.refusal = this.refusalSentence(err)
 			} finally {

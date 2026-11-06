@@ -8,23 +8,18 @@ The bulk status dialog SHALL offer only the transitions every selected case offe
 - WHEN the dialog opens
 - THEN the picker offers B and the table lists both cases
 
-### Requirement: A clean rehearsal runs at once
-The primary button SHALL rehearse the act first. The dialog SHALL commit without a second step only when the rehearsal covers exactly the cases in the table and every one of them is ready. In every other case it SHALL stop at the progress panel and write nothing.
+### Requirement: The reader confirms after the rehearsal
+The primary button SHALL rehearse the act and SHALL write nothing. The dialog SHALL show the rehearsal in the progress panel, and the act SHALL commit only when the reader confirms there, also when every case is ready.
 
 #### Scenario: Every case is ready
-- GIVEN a rehearsal of the two cases in the table with both ready
-- WHEN the reader presses Apply
-- THEN the job is committed
+- GIVEN a selection in which every case is ready
+- WHEN the reader presses the primary button
+- THEN the rehearsal is shown, nothing is committed, and the panel offers the commit
 
 #### Scenario: A case would be skipped
 - GIVEN a rehearsal in which one case would be skipped
-- WHEN the reader presses Apply
-- THEN nothing is committed and the progress panel shows the skip
-
-#### Scenario: A selection wider than the page
-- GIVEN a selection widened to the whole result
-- WHEN the reader rehearses
-- THEN nothing is committed
+- WHEN the rehearsal is shown
+- THEN the panel names the skip before the reader confirms
 
 ### Requirement: The result names every changed case
 A job that finished with every case changed SHALL end on a panel with the count and one row per case. A job with any other outcome SHALL keep the progress panel with its counts and retry.

@@ -913,7 +913,6 @@ OC.L10N.register(
         "Apply selected ({count})": "Apply selected ({count})",
         "Apply the rules to {count} document": "Apply the rules to {count} document",
         "Apply the rules to {count} documents": "Apply the rules to {count} documents",
-        "Apply to {count} cases": "Apply to {count} cases",
         "Apply to {total} cases": "Apply to {total} cases",
         "Applying…": "Applying…",
         "Appointment": "Appointment",

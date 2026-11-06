@@ -138,14 +138,12 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
 }))
 
 const previewBulkJob = vi.fn()
-const commitBulkJob = vi.fn()
 
 vi.mock('../../src/services/bulkJobApi.js', () => ({
 	ACTION_LIFECYCLE: 'dossiq:lifecycle-cases',
 	ACTION_REASSIGN: 'dossiq:reassign-cases',
 	ACTION_SET_ATTRIBUTE: 'dossiq:set-case-attribute',
 	ACTION_TRANSITION: 'dossiq:transition-cases',
-	commitBulkJob: (...args) => commitBulkJob(...args),
 	previewBulkJob: (...args) => previewBulkJob(...args),
 	readRefusal: (error) => {
 		const body = (error && error.response && error.response.data) || {}
@@ -377,41 +375,27 @@ describe('BulkTransitionDialog, the transition mode', () => {
 		expect(rows[0].text()).toContain('Received')
 	})
 
-	it('runs a clean rehearsal of the shown cases at once', async () => {
-		commitBulkJob.mockResolvedValue({ ...PREVIEWED, state: 'running' })
+	it('rehearses first and leaves the commit to the reader, even with every case ready', async () => {
 		const wrapper = await open('transition')
 		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
 		await typeReason(wrapper, 'Complete')
-		expect(rehearse(wrapper).text()).toBe('Apply to 2 cases')
+		expect(rehearse(wrapper).text()).toBe('See what would happen')
 		await rehearse(wrapper).trigger('click')
 		await flush()
 
-		expect(commitBulkJob).toHaveBeenCalledWith(4, 'Complete')
+		expect(previewBulkJob).toHaveBeenCalledTimes(1)
+		const handed = JSON.parse(
+			wrapper.get('[data-testid="bulk-job-progress"]').attributes('data-props'),
+		)
+		expect(handed.job.state).toBe('previewed')
 	})
 
-	it('stops at the progress panel when a case would be skipped', async () => {
-		previewBulkJob.mockResolvedValue({ ...PREVIEWED, counts: { applied: 1, skipped: 1, refused: 0, failed: 0 } })
-		const wrapper = await open('transition')
-		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
-		await typeReason(wrapper, 'Complete')
-		await rehearse(wrapper).trigger('click')
-		await flush()
-
-		expect(commitBulkJob).not.toHaveBeenCalled()
-		expect(wrapper.find('[data-testid="bulk-job-progress"]').exists()).toBe(true)
-	})
-
-	it('never runs a selection widened to the whole result at once', async () => {
+	it('leaves out the table for a selection widened to the whole result', async () => {
 		const wrapper = await open('transition', { matchingTotal: 40 })
-		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
 		wrapper.findComponent({ name: 'CnSelectionScope' }).vm.$emit('update:scope', 'result')
-		await typeReason(wrapper, 'Complete')
 		await wrapper.vm.$nextTick()
-		expect(wrapper.find('[data-testid="bulk-changes"]').exists()).toBe(false)
-		await rehearse(wrapper).trigger('click')
-		await flush()
 
-		expect(commitBulkJob).not.toHaveBeenCalled()
+		expect(wrapper.find('[data-testid="bulk-changes"]').exists()).toBe(false)
 	})
 
 	it('names every changed case once the job finished clean', async () => {

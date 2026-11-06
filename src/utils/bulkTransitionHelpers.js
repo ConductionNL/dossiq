@@ -124,23 +124,3 @@ export function changeRow(id, object, current) {
 		deadline: deadline && !isNaN(deadline) ? deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '—',
 	}
 }
-
-/**
- * Whether a rehearsal may run without a second look: it covers exactly the
- * cases the table showed and every one of them is ready.
- *
- * @param {object} job The rehearsed job.
- * @param {number} shown How many cases the table showed.
- *
- * @return {boolean} True when nothing would be skipped, refused or fail.
- *
- * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-a-clean-rehearsal-runs-at-once
- */
-export function canCommitAtOnce(job, shown) {
-	const counts = job?.counts || {}
-
-	return job?.state === 'previewed'
-		&& job.total === shown
-		&& counts.applied === shown
-		&& !counts.skipped && !counts.refused && !counts.failed
-}

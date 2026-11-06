@@ -60,24 +60,6 @@ export async function previewBulkJob({
 }
 
 /**
- * Commit a rehearsed job.
- *
- * @param {number|string} jobId The job.
- * @param {string} [justification] Why the act was ordered.
- *
- * @return {Promise<object>} The job, running.
- *
- * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-a-clean-rehearsal-runs-at-once
- */
-export async function commitBulkJob(jobId, justification) {
-	const { data } = await axios.post(
-		generateUrl(`/apps/openregister/api/bulk-jobs/${encodeURIComponent(jobId)}/commit`),
-		justification ? { justification } : {},
-	)
-	return data
-}
-
-/**
  * Read a refusal out of an axios error, keeping its reason.
  *
  * A refusal is a 422 with a `reason` naming the rule. Everything else is a
