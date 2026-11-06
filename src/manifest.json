@@ -2873,6 +2873,8 @@
 					"statusField": "status",
 					"wrap": true,
 					"columnLimit": 3,
+					"fullNote": "Full: dragging a card here is refused",
+					"mergedNote": "Merged from {count} case types: no limit",
 					"columnSwitchLabel": "Columns",
 					"hint": "One column per value of the property. Drag a card to change its status.",
 					"moveHandler": "moveCaseStatus",
