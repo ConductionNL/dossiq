@@ -75,6 +75,12 @@ export default {
 	watch: {
 		'objectData.caseType': {
 			immediate: true,
+			/**
+			 * Reload the sections when the case's type changes.
+			 *
+			 * @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md
+			 * @return {void}
+			 */
 			handler() {
 				this.load()
 			},
