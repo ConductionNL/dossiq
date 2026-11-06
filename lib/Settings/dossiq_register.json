@@ -1866,7 +1866,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.53.0",
+                "version": "1.54.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -3502,6 +3502,20 @@
                         "title": "Team",
                         "facetable": true,
                         "order": 6
+                    },
+                    "routingNote": {
+                        "type": "object",
+                        "description": "The facts of the case's last routing event: a refused handover, or an intake fan-out that opened siblings or missed a destination. Facts and no sentence, so each reader gets it in their own language. Cleared when someone picks the case up.",
+                        "title": "Routing note",
+                        "properties": {
+                            "kind": { "type": "string", "enum": ["handover-refused", "intake-split"], "title": "Kind", "description": "What happened: a refused handover, or an intake that opened more than one case." },
+                            "level": { "type": "string", "enum": ["error", "info"], "title": "Level", "description": "How the note reads in a list: an error needs action, info only says what happened." },
+                            "team": { "type": "string", "title": "Team", "description": "The team the handover was addressed to." },
+                            "reason": { "type": "string", "title": "Reason", "description": "Why the receiving team refused the handover." },
+                            "submission": { "type": "string", "title": "Submission", "description": "The submission that opened the cases of an intake." },
+                            "siblings": { "type": "array", "items": { "type": "string" }, "title": "Sibling cases", "description": "The other cases the same submission opened." },
+                            "failed": { "type": "array", "items": { "type": "object" }, "title": "Missed destinations", "description": "The destinations of the submission that did not get a case." }
+                        }
                     },
                     "handoverPending": {
                         "type": "boolean",

@@ -7,7 +7,7 @@
   "components": {
     "schemas": {
       "case": {
-        "version": "1.54.0",
+        "version": "1.55.0",
         "properties": {
           "paymentState": {
             "x-enum-labels": {

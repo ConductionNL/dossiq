@@ -612,7 +612,7 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.53.0",
+        "version": "1.54.0",
         "digest": "8ad81e9f232daafac4dde683aadb37d648e57fceb45b0dc361735d4fd286928c"
     },
     "lib/Settings/dossiq_register.json::case-location": {
@@ -1772,7 +1772,7 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-payment-state-labels.json::case": {
-        "version": "1.54.0",
+        "version": "1.55.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-case-statutory-extension.json::case": {
