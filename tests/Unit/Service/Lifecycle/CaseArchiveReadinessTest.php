@@ -55,6 +55,9 @@ class CaseArchiveReadinessTest extends TestCase {
 			$register->seed('zaakinformatieobject', 'j-' . $at, ['case' => 'case-1', 'informatieobject' => 'io-' . $at]);
 		}
 
+		$register->seed('decision', 'd-dated', ['decisionDate' => '2026-10-28']);
+		$register->seed('decision', 'd-older', ['decisionDate' => '2026-09-01']);
+
 		// A document of another case is not counted.
 		$register->seed('informatieobject', 'io-other', ['status' => 'draft']);
 		$register->seed('zaakinformatieobject', 'j-other', ['case' => 'case-2', 'informatieobject' => 'io-other']);
@@ -65,6 +68,7 @@ class CaseArchiveReadinessTest extends TestCase {
 				'register' => 'dossiq',
 				'dossier_informatieobject_schema' => 'informatieobject',
 				'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
+				'decision_schema' => 'decision',
 			][$key] ?? $default
 		);
 
@@ -112,6 +116,27 @@ class CaseArchiveReadinessTest extends TestCase {
 		$this->assertSame(['id' => 'documents', 'met' => false, 'count' => 2, 'total' => 3], $checklist['documents']);
 		$this->assertSame(['id' => 'openTasks', 'met' => false, 'count' => 1], $checklist['openTasks']);
 	}//end testAFinishedCaseIsReadItemByItem()
+
+	public function testTheDecisionCarriesTheDateOfTheLatestOne(): void {
+		$checklist = $this->byId(
+			$this->readiness(documents: [], tasks: [])->checklist(caseId: 'case-1', case: ['decisions' => ['d-older', 'd-dated']])
+		);
+
+		$this->assertSame(['id' => 'decision', 'met' => true, 'count' => 2, 'date' => '2026-10-28'], $checklist['decision']);
+	}//end testTheDecisionCarriesTheDateOfTheLatestOne()
+
+	public function testAPublishedCaseNamesWhenAndWhere(): void {
+		$case = ['publishedAt' => '2026-10-28T10:00:00+01:00', 'publications' => [['channel' => 'website'], ['channel' => 'opencatalogi']]];
+		$checklist = $this->byId($this->readiness(documents: [], tasks: [])->checklist(caseId: 'case-1', case: $case));
+
+		$this->assertSame(['id' => 'publication', 'met' => true, 'date' => '2026-10-28T10:00:00+01:00', 'channel' => 'opencatalogi'], $checklist['publication']);
+	}//end testAPublishedCaseNamesWhenAndWhere()
+
+	public function testAnUnpublishedCaseSaysSo(): void {
+		$checklist = $this->byId($this->readiness(documents: [], tasks: [])->checklist(caseId: 'case-1', case: []));
+
+		$this->assertSame(['id' => 'publication', 'met' => false], $checklist['publication']);
+	}//end testAnUnpublishedCaseSaysSo()
 
 	public function testAnOpenCaseIsNotReadyAndNothingIsAssumed(): void {
 		$checklist = $this->byId(

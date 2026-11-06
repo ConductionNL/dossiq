@@ -1193,21 +1193,32 @@
 									"labels": {
 										"ended": {
 											"label": "Case ended",
-											"unmetDetail": "Finish or abort the case first"
+											"unmetDetail": "Finish or abort the case first",
+											"hideWhenMet": true
 										},
 										"result": {
 											"label": "Result recorded"
 										},
 										"decision": {
 											"label": "Decision made",
+											"detail": "{date|date}",
+											"detailWhen": "date",
 											"unmetDetail": "No decision on this case"
+										},
+										"publication": {
+											"label": "Publication done",
+											"detail": "{date|date}, {channel}",
+											"detailWhen": "date",
+											"unmetDetail": "Not published"
 										},
 										"documents": {
 											"label": "Documents final",
 											"detail": "{count} of {total} final"
 										},
 										"openTasks": {
-											"label": "Open tasks: {count}"
+											"label": "Open tasks: {count}",
+											"detail": "no task open any more",
+											"unmetDetail": "{count} still open"
 										}
 									},
 									"required": [
