@@ -121,7 +121,8 @@ export function textsAndAccessFields(t) {
 		},
 		{
 			key: 'feature_new_case_page',
-			label: t('dossiq', 'New case page visible to everyone at once, without waiting for the cache'),
+			label: t('dossiq', 'New case page'),
+			hint: t('dossiq', 'visible to everyone at once, without waiting for the cache'),
 			type: 'switch',
 			trueValue: 'true',
 			falseValue: 'false',
@@ -204,7 +205,7 @@ export function kadasterFields(t) {
 
 /**
  * The tone of each connection status on the integrations table: a working
- * connection is green, a failing one red, a simulated one the info blue, an
+ * connection is green, a failing one red, a simulated one purple, an
  * unavailable one amber, the rest neutral.
  *
  * @type {Readonly<Record<string, string>>}
@@ -213,7 +214,7 @@ export function kadasterFields(t) {
 export const CONNECTION_STATUS_TONES = Object.freeze({
 	configured: 'success',
 	error: 'error',
-	simulated: 'info',
+	simulated: 'purple',
 	unavailable: 'warning',
 })
 

@@ -1406,6 +1406,16 @@ Tenant onboarding SHALL draw its tenant field and Refresh stacked at the content
 #### Scenario: Tenant-onboarding
 - THEN the Tenant label starts at the card's content edge
 
+### Requirement: Integrations shows the newest term definitions
+
+The Integrations tab SHALL show the three newest term definitions, latest validity first, with a link to the full table on the Advanced tab; Ruben, 6 Nov.
+
+#### Scenario: More than three definitions
+
+- **WHEN** an administrator opens Integrations on an instance with more than three term definitions
+- **THEN** the card SHALL draw the three newest rows and a link "All term definitions"
+- **AND** the link SHALL open the Advanced tab at the full table
+
 ### Requirement: The AWB term definitions are one table
 
 The term definitions SHALL be listed as a table with the columns basis, duration, version, counting, closed day, validity and state, and a New version button per row; a case type column SHALL show when any definition names a case type.
