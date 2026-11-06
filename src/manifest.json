@@ -14429,6 +14429,8 @@
 			"type": "flow",
 			"title": "Flow",
 			"config": {
+				"listMode": true,
+				"testPayload": true,
 				"app": "dossiq",
 				"palette": "column",
 				"listLabel": "Settings / Flows",
