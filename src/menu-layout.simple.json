@@ -2275,6 +2275,7 @@
 										"case-summary",
 										"case-household-cases-card",
 										"goal-plan",
+										"case-consents-card",
 										"case-grant-decisions-card",
 										"case-payment-schedule",
 										"case-request",
@@ -4048,6 +4049,57 @@
 								}
 							],
 							"emptyText": "No description yet"
+						}
+					},
+					{
+						"id": "case-consents-card",
+						"type": "record-list",
+						"title": "Consents",
+						"subtitle": "Who gave consent, for sharing with which party, what for and until when",
+						"_note": "DqSociaalDomein Toestemmingen: every consent on this case, the side card shows the newest and withdraws it. The missing-consent row and the anonymised export notice need a read of the parties a case shares with.",
+						"visibleWhen": {
+							"any": [
+								{ "field": "gezinsplanId", "op": "notEmpty" },
+								{ "field": "@context.caseType.category", "op": "in", "value": ["Sociaal domein", "Jeugd", "Jeugdhulp"] }
+							]
+						},
+						"headerActions": [
+							{
+								"label": "Record consent",
+								"action": {
+									"type": "open-form",
+									"formTitle": "Record consent",
+									"formConfirmLabel": "Record",
+									"register": "dossiq",
+									"schema": "toestemming",
+									"includeFields": ["grantedByBsn", "grantedByName", "grantedDate", "validTo", "tedoel", "scope", "recordedViaChannel"],
+									"props": { "caseId": "@objectId" },
+									"successMessage": "The consent is recorded."
+								}
+							}
+						],
+						"content": {
+							"register": "dossiq",
+							"schema": "toestemming",
+							"filter": { "caseId": "@objectId" },
+							"sort": { "field": "grantedDate", "dir": "desc" },
+							"limit": 10,
+							"presentation": "rows",
+							"title": "{recipientParties.0}",
+							"meta": {
+								"parts": [
+									"Given by {grantedByName} on {grantedDate|date}",
+									"purpose: {tedoel}"
+								]
+							},
+							"pill": {
+								"cases": [
+									{ "when": { "field": "withdrawn", "op": "eq", "value": true }, "label": "Withdrawn", "variant": "default" }
+								],
+								"label": "Valid",
+								"variant": "success"
+							},
+							"emptyText": "No consent recorded"
 						}
 					},
 					{

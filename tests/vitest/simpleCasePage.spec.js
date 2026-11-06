@@ -565,6 +565,7 @@ describe('the tabs', () => {
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		added.push('case-summary')
+		added.push('case-consents-card')
 		added.push('case-grant-decisions-card')
 		added.push('case-payment-schedule')
 		expect(others(simple)).toEqual(others(original))

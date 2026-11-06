@@ -11,7 +11,26 @@
       "withdrawn": false,
       "tedoel": "Onderzoek naar jeugdhulp",
       "scope": "Gegevens over gezondheid en school van het kind, voor de duur van het onderzoek.",
-      "recordedViaChannel": "schriftelijk"
+      "recordedViaChannel": "schriftelijk",
+      "recipientParties": [
+        "School De Regenboog"
+      ]
+    },
+    {
+      "id": "7a1c2f64-1b0e-5c55-9a3e-2f6f0b7c1d21",
+      "caseId": "e0b306d2-c523-5938-9b5c-3474d292dc01",
+      "grantedByBsn": "999990019",
+      "grantedByName": "M. Oosthaven",
+      "grantedDate": "{{date:-20}}",
+      "validTo": "{{date:-17}}",
+      "withdrawalPossible": true,
+      "withdrawn": true,
+      "tedoel": "Medische gegevens delen",
+      "scope": "Gegevens van de huisarts.",
+      "recordedViaChannel": "schriftelijk",
+      "recipientParties": [
+        "Huisarts Praktijk Lindelaan"
+      ]
     }
   ]
 }
