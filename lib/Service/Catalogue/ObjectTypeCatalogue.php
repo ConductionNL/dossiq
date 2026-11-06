@@ -191,7 +191,8 @@ class ObjectTypeCatalogue {
 	 *
 	 * @return array{
 	 *     id: string, title: string, cases: int, schema: string, schemaLine: string,
-	 *     properties: int|null, objects: int|null, views: array<int, string>, schemaId: string
+	 *     schemaName: string, propertyLine: string, properties: int|null, objects: int|null,
+	 *     views: array<int, string>, schemaId: string
 	 * } The row.
 	 */
 	private function rowFor(string $type, int $cases, string $objectUrl): array {
@@ -206,6 +207,8 @@ class ObjectTypeCatalogue {
 			'cases'      => $cases,
 			'schema'     => ($schema['title'] ?? ''),
 			'schemaLine' => $this->schemaLine(title: ($schema['title'] ?? ''), objects: ($schema['objects'] ?? null)),
+			'schemaName' => $this->schemaName(title: ($schema['title'] ?? '')),
+			'propertyLine' => $this->propertyLine(properties: ($schema['properties'] ?? null)),
 			'properties' => ($schema['properties'] ?? null),
 			'objects'    => ($schema['objects'] ?? null),
 			'views'      => ($schema['views'] ?? []),
@@ -231,6 +234,40 @@ class ObjectTypeCatalogue {
 
 		return $title.' · '.$this->l10n->n('%n object', '%n objects', $objects);
 	}//end schemaLine()
+
+	/**
+	 * The Schema cell: the schema's title, or why a free-text type has none.
+	 *
+	 * @param string $title The schema title, '' for a free-text type.
+	 *
+	 * @return string The cell text.
+	 *
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	private function schemaName(string $title): string {
+		if ($title === '') {
+			return $this->l10n->t('No schema: the links point to no register');
+		}
+
+		return $title;
+	}//end schemaName()
+
+	/**
+	 * The line under the schema: how many properties it has.
+	 *
+	 * @param int|null $properties The property count, null without a schema.
+	 *
+	 * @return string The line, '' without a count.
+	 *
+	 * @spec openspec/specs/catalogue/spec.md
+	 */
+	private function propertyLine(?int $properties): string {
+		if ($properties === null) {
+			return '';
+		}
+
+		return $this->l10n->n('%n property', '%n properties', $properties);
+	}//end propertyLine()
 
 	/**
 	 * Every case id that links an object, once.

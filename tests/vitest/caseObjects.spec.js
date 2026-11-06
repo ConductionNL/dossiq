@@ -286,7 +286,7 @@ describe('the Objects index', () => {
 	it('reads the caseObject schema of the dossiq register', () => {
 		expect(page()).toBeDefined()
 		expect(page().type).toBe('index')
-		expect(page().route).toBe('/case-objects')
+		expect(page().route).toBe('/objects')
 		expect(page().config.register).toBe('dossiq')
 		expect(page().config.schema).toBe('caseObject')
 	})
