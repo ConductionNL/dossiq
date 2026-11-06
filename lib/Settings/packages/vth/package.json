@@ -1,6 +1,7 @@
 {
   "id": "vth",
   "title": "Vergunningen, toezicht en handhaving",
+  "summary": "Case types with prior consultation, review, decision and publication; map layer for the plot.",
   "version": "1.3.1",
   "requires": [],
   "parts": [

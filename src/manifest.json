@@ -14185,6 +14185,63 @@
 						"description": "Application, assessment, award and accountability."
 					}
 				],
+				"shipped": {
+					"title": "Shipped packages",
+					"subtitle": "A package is a case type with its statuses, flows and templates; the code stays the same",
+					"parts": "Case type, statuses, flows, templates",
+					"notice": {
+						"title": "No registry set up.",
+						"text": "You see the packages shipped with dossiq; nothing was fetched from outside. Set up a registry under Advanced to search and install packages from other municipalities."
+					},
+					"crumbs": [
+						{
+							"label": "Settings",
+							"href": "/index.php/settings/admin/dossiq?tab=general"
+						},
+						{
+							"label": "Marketplace"
+						}
+					],
+					"buttons": [
+						{
+							"label": "Set up registry",
+							"href": "/index.php/settings/admin/dossiq?tab=general"
+						}
+					],
+					"aside": [
+						{
+							"title": "Registry",
+							"rows": [
+								{
+									"label": "Status",
+									"value": "Not set up",
+									"pill": true
+								},
+								{
+									"label": "Address",
+									"value": "None yet"
+								},
+								{
+									"label": "Access key",
+									"value": "Not set up"
+								},
+								{
+									"label": "Last search",
+									"value": "None, no connection was made"
+								}
+							],
+							"note": "Every employee can search; only an administrator can install and set up the registry.",
+							"link": {
+								"label": "To Advanced",
+								"href": "/index.php/settings/admin/dossiq?tab=general"
+							}
+						},
+						{
+							"title": "What installing does",
+							"text": "A package arrives as a new case type in your own configuration, beside what you already have. Only configuration is taken over: case types, statuses, roles, properties, templates and flows. Cases or tasks in a package are refused and reported."
+						}
+					]
+				},
 				"storeRegistry": true,
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},

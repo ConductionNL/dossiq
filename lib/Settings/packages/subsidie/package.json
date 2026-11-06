@@ -1,6 +1,7 @@
 {
   "id": "subsidie",
   "title": "Subsidie",
+  "summary": "Case type with assessment, award, advance and settlement; flow for the payment.",
   "version": "1.5.0",
   "requires": [],
   "parts": [

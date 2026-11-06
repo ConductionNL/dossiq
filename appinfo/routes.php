@@ -1308,6 +1308,8 @@ $extra = [
         // its own — discovery belongs to the engine.
     ['name' => 'store#search',       'url' => '/api/store/items',                 'verb' => 'GET'],
     ['name' => 'store#install',      'url' => '/api/store/items/{slug}/install',  'verb' => 'POST', 'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
+    ['name' => 'storePackage#index',   'url' => '/api/store/packages',              'verb' => 'GET'],
+    ['name' => 'storePackage#install', 'url' => '/api/store/packages/{id}/install', 'verb' => 'POST', 'requirements' => ['id' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
     ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
     ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
     // Also in OpenRegister's canonical table; declared here so it is visible
