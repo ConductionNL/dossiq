@@ -7786,6 +7786,7 @@
 									"label": "Overview",
 									"widgetIds": [
 										"task-checklist",
+										"task-question",
 										"task-appointments",
 										"task-notes"
 									]
@@ -7809,6 +7810,13 @@
 							"summaryInHeader": true,
 							"path": "checklist"
 						}
+					},
+					{
+						"id": "task-question",
+						"type": "task-form",
+						"title": "Question from the flow",
+						"_note": "DqTaak Vraag uit de flow: the form the task's flow step declares, shown only on a task that has one. No `draft` yet: OpenRegister has no draft route for a flow task, so Save as provisional stays away until it does (R20/DQ2-C/FOR-SIG.md).",
+						"visibleWhen": { "field": "form.kind", "op": "notEmpty" }
 					},
 					{
 						"id": "task-appointments",

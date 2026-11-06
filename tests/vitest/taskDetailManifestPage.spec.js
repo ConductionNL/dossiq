@@ -115,4 +115,10 @@ describe('the TaskDetail manifest page', () => {
 			expect(registrySource, entry.type).toMatch(new RegExp(`^\\t'${entry.type}': \\{`, 'm'))
 		}
 	})
+
+	it('asks the question of the flow only on a task whose step declares a form (DqTaak)', () => {
+		const question = page.config.widgets.find((w) => w.id === 'task-question')
+		expect(question).toMatchObject({ type: 'task-form', title: 'Question from the flow', visibleWhen: { field: 'form.kind', op: 'notEmpty' } })
+		expect(page.config.widgets[0].content.tabs[0].widgetIds.slice(0, 2)).toEqual(['task-checklist', 'task-question'])
+	})
 })

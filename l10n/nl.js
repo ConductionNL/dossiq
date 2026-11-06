@@ -6955,6 +6955,7 @@ OC.L10N.register(
         "Question": "Vraag",
         "Question / item label": "Label van de vraag of het item",
         "Question / label": "Vraag / label",
+        "Question from the flow": "Vraag uit de flow",
         "Question ID": "Id van de vraag",
         "Question in pipelinq": "Vraag in pipelinq",
         "Question is required.": "Vraagstelling is verplicht.",
