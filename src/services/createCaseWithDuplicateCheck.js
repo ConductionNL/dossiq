@@ -31,8 +31,8 @@
 import { candidateWithoutBlanks, duplicateAffordances, openDuplicateWarning, useObjectStore } from '@conduction/nextcloud-vue'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { checkForDuplicates, fetchMatchedCases } from './duplicateCheckApi.js'
-import { fetchIntakeRequirements } from './intakeTriageApi.js'
 import { initiatorChoice } from './initiatorSearch.js'
+import { fetchIntakeRequirements } from './intakeTriageApi.js'
 
 /** The case field carrying why a case was filed over a warning. */
 export const FIELD_REASON = 'duplicateOverrideReason'
