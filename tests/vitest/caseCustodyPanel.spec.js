@@ -187,6 +187,9 @@ describe('the Custody tab', () => {
 	it('will not send a refusal without a reason', async () => {
 		const wrapper = await mountPanel()
 
+		expect(wrapper.find('[data-testid="case-custody-refuse"]').exists()).toBe(false)
+		await wrapper.find('[data-testid="case-custody-keep"]').trigger('click')
+
 		const refuse = wrapper.find('[data-testid="case-custody-refuse"]')
 		expect(
 			refuse.attributes('disabled'),
@@ -199,6 +202,7 @@ describe('the Custody tab', () => {
 	it('offers the refusal once a reason has been typed', async () => {
 		const wrapper = await mountPanel()
 
+		await wrapper.find('[data-testid="case-custody-keep"]').trigger('click')
 		await wrapper
 			.find('[data-testid="case-custody-refusal-reason"]')
 			.setValue('Ik ben er al mee bezig')
@@ -217,6 +221,14 @@ describe('the Custody tab', () => {
 		expect(axios.post.mock.calls[0][1]).toEqual({
 			reason: 'Ik ben er al mee bezig',
 		})
+	})
+
+	it('draws a request as a row: who asks, since when and why (DqZaakArchivering)', async () => {
+		const wrapper = await mountPanel()
+		const row = wrapper.find('[data-testid="case-custody-request"]')
+		expect(row.find('.case-custody__unit').text()).toBe('sofie asks for this case')
+		expect(row.find('.case-custody__meta').text()).toBe('reason: Dit dossier hoort bij mijn wijk')
+		expect(row.find('.case-custody__mark').text()).toBe('S')
 	})
 
 	it('draws "Overdragen" as a secondary button, as the board does', async () => {

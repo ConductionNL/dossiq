@@ -28,6 +28,15 @@ const OPEN = { isFinalStatus: false, statusHiddenInLists: false, isDraft: false 
 const FLOW_TASKS = '/apps/openregister/api/flow-tasks'
 
 describe('the dashboard signal tiles (DqDashboard)', () => {
+	it('lets the tiles end at their content, the pairs level, and keeps My open work to three rows', () => {
+		for (const id of SIGNAL_TILES) {
+			expect(overlay.config.layout.find((entry) => entry.widgetId === id).sizeToContent).toBe(true)
+		}
+		const [cases, tasks] = tile('my-open-work').content.sections
+		expect(cases.limit + tasks.endpointSource.params.limit).toBe(3)
+		expect(tile('my-open-work').content.footerLink.route).toBe('MyWorkHome')
+	})
+
 	it('places the five tiles under the case tiles, two by two and Woo full width, above the layout note', () => {
 		const layout = overlay.config.layout
 		const placed = (id) => layout.find((entry) => entry.widgetId === id)
