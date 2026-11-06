@@ -31,8 +31,8 @@ const tab = (id) => tabs.find((item) => item.id === id)
 const idsOf = (entry) => entry.widgetIds || [entry.widgetId]
 
 describe('the case type Fields tab (DqZaaktypeVelden)', () => {
-	it('holds the fields editor and the field rights only', () => {
-		expect(idsOf(tab('fields'))).toEqual(['case-type-fields-editor', 'case-type-field-rules'])
+	it('holds the fields editor, the field rights, the forms and receipt and the package', () => {
+		expect(idsOf(tab('fields'))).toEqual(['case-type-fields-editor', 'case-type-field-rules', 'case-type-forms-receipt', 'case-type-package'])
 	})
 
 	it('keeps the case type form, the raw terms, the collection settings and the list columns on an overflow Properties tab', () => {

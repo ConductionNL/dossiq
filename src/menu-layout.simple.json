@@ -8595,7 +8595,9 @@
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields-editor",
-										"case-type-field-rules"
+										"case-type-field-rules",
+										"case-type-forms-receipt",
+										"case-type-package"
 									],
 									"countFrom": {
 										"register": "dossiq",
@@ -8759,6 +8761,55 @@
 								"variant": "default"
 							},
 							"emptyText": "This case type has no milestones yet"
+						}
+					},
+					{
+						"id": "case-type-forms-receipt",
+						"type": "facts",
+						"title": "Forms and receipt",
+						"_note": "DqZaaktypeVelden Formulieren en ontvangst: what the case type already declares (intakeFormRef, acknowledgement). The list of bound forms with their mapping state waits for an endpoint over IntakeFormBindingCheck.",
+						"content": {
+							"headerPill": { "text": "Checked on publishing", "variant": "info" },
+							"hideEmpty": false,
+							"fields": [
+								{
+									"label": "Intake form",
+									"path": "intakeFormRef",
+									"emptyValue": "No form bound",
+									"note": {
+										"parts": [
+											{ "text": "A completed form makes a case of this type at once, in the first status, with channel form; dossiq does not set the start date itself." }
+										]
+									}
+								},
+								{
+									"label": "Acknowledgement of receipt",
+									"path": "acknowledgement.enabled",
+									"map": {
+										"true": "Automatic with every request, without the handler acting",
+										"false": "Off"
+									},
+									"emptyValue": "Automatic with every request, without the handler acting",
+									"note": {
+										"parts": [
+											{ "text": "To the applicant through the portal, to the sender of a mail, to the address on a form. One per case; a second run sends nothing." }
+										]
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-package",
+						"type": "facts",
+						"title": "From the marketplace",
+						"_note": "DqZaaktypeVelden Van de marktplaats: the package that placed this case type. Versions, changed fields and Update wait for dossiq-store-surface: a case type stores only the package id.",
+						"visibleWhen": { "field": "package", "op": "notEmpty" },
+						"content": {
+							"fields": [
+								{ "label": "Package", "path": "package" }
+							],
+							"footnote": "On updating the case type takes the newer version. A field the marketplace filled and you did not touch is updated too; fields you changed keep your value."
 						}
 					},
 					{
