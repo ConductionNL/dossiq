@@ -13220,6 +13220,9 @@
                         "term": {
                             "endDate": "afhandelDeadline"
                         },
+                        "stamp": {
+                            "caseId": "escalatedCase"
+                        },
                         "runOnUpgrade": true
                     }
                 ]
