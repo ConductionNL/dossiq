@@ -109,6 +109,7 @@ import LinkProgrammeDialog from './dialogs/LinkProgrammeDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import NoticeOfDefaultDialog from './dialogs/NoticeOfDefaultDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
+import RecordStepsDialog from './dialogs/RecordStepsDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
 import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
@@ -642,6 +643,15 @@ const registry = {
 		component: PortalMessageDialog,
 		propsSchema: {},
 		_note: "Writes one portaalBericht from the handler to the applicant's portal inbox. Opened by the CaseDetail `message-applicant` header action (visible only on a case with a portalSubject) and by Reply on a resident's message in the timeline tab, which closes that message's follow-up on `sent`. recipientRef is the case's portalSubject, never a user id: the inbox is scoped on it. caseId may arrive as the unresolved `@objectId` token and the route answers instead, as for BerichtenboxComposeDialog.",
+	},
+
+	// --- A record written through steps, a CaseDetail header action. ---
+	// @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
+	RecordStepsDialog: {
+		kind: 'modal',
+		component: RecordStepsDialog,
+		propsSchema: {},
+		_note: 'The steps, fields, prefill and follow-up task come from the action, so a procedure is manifest config. Handhaving starten (DqHandhaving) is the first.',
 	},
 
 	// --- Generate document, the CaseDetail header action (documents-on-the-case). ---

@@ -271,16 +271,16 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 38 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 39 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
 		}
 		// Every action is still there; the simple page orders them as DqZaakMeer lists them.
-		// The simple page adds three acts: Add location (DqZaakLocatie),
-		// Share with another organisation (DqZaakSamenwerken) and Plan a case
-		// meeting (DqSociaalDomein).
-		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids, 'add-location', 'share-with-organisation', 'plan-case-meeting'].sort())
+		// The simple page adds four acts: Add location (DqZaakLocatie),
+		// Share with another organisation (DqZaakSamenwerken), Plan a case
+		// meeting (DqSociaalDomein) and Start enforcement (DqHandhaving).
+		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids, 'add-location', 'start-enforcement', 'share-with-organisation', 'plan-case-meeting'].sort())
 		expect(simple.headerActions.map((action) => action.id).slice(0, overlay.configOrder.headerActions.length)).toEqual(overlay.configOrder.headerActions)
 
 		const placed = simple.headerActions.map((action) => {
@@ -290,10 +290,10 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(38)
+		expect(placed).toHaveLength(39)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(23)
+		expect(count('Case')).toBe(24)
 		expect(count('Publication')).toBe(4)
 		expect(count('Dossier')).toBe(5)
 		expect(count('admin')).toBe(2)
@@ -777,6 +777,7 @@ describe('the header and the side column', () => {
 		// and so is the case history card those case types show.
 		const gated = simple.sideColumn.filter((card) => typeof card === 'object' && card.visibleWhen && card.type !== 'banner' && card.type !== 'audit-trail')
 		expect(gated.map((card) => card.id)).toEqual([
+			'side-enforcement',
 			'side-objection-appeal',
 			'side-payment-amounts',
 			'side-grant-application',
