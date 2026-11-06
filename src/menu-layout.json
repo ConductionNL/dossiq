@@ -96,8 +96,7 @@
 		"WmsLayersMenu",
 		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
-		"IntegrationsMenu",
-		"CaseObjectsMenu"
+		"IntegrationsMenu"
 	],
 	"integrationsSection": [
 		"AvgRegisterLink",

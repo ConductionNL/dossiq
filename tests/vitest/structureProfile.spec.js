@@ -121,7 +121,7 @@ describe('the simple profile', () => {
 	const built = build(simpleFile)
 	const main = section(built.menu, 'main')
 
-	it('shows eight fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
+	it('shows nine fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
 		expect(main.map((entry) => entry.id)).toEqual([
 			'Dashboard',
 			'WorkGroup',
@@ -130,6 +130,7 @@ describe('the simple profile', () => {
 			'Cases',
 			'WorkflowBoard',
 			'Tasks',
+			'CaseObjectsMenu',
 			'RelationsCaption',
 			'Contacts',
 			'OrganisationsMenu',
@@ -361,12 +362,11 @@ describe('the simple profile', () => {
 		).toBe('Documentation')
 	})
 
-	it('moves the recycle bin, the object register and the mail intake log to settings', () => {
+	it('moves the recycle bin and the mail intake log to settings', () => {
 		const settings = section(built.menu, 'settings').map((entry) => entry.id)
 		expect(settings).toEqual(
 			expect.arrayContaining([
 				'CasesDeletedMenu',
-				'CaseObjectsMenu',
 				'MailIntakeLogMenu',
 				'DocumentReviewReportsMenu',
 			]),
