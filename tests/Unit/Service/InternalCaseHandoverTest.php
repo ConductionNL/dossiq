@@ -203,9 +203,9 @@ class InternalCaseHandoverTest extends TestCase {
 			'A refusal returns the case to the sending team.',
 		);
 		self::assertSame(
-			['kind' => 'handover-refused', 'level' => 'error', 'team' => 'toezicht', 'reason' => 'Dit is wel degelijk een vergunning'],
-			$this->store->row(schema: 'case', uuid: 'case-1')['routingNote'],
-			'The refusal stays on the case, for the queue to say.',
+			expected: ['kind' => 'handover-refused', 'level' => 'error', 'team' => 'toezicht', 'reason' => 'Dit is wel degelijk een vergunning'],
+			actual: $this->store->row(schema: 'case', uuid: 'case-1')['routingNote'],
+			message: 'The refusal stays on the case, for the queue to say.',
 		);
 	}//end testTheWrongTeamSendsItBack()
 

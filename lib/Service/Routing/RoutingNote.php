@@ -46,11 +46,11 @@ final class RoutingNote {
 	/**
 	 * The note of a fan-out, for one of the cases it opened.
 	 *
-	 * @param string                                             $submission The submission.
-	 * @param array<int, string>                                 $siblings   The titles of the other destinations opened.
-	 * @param array<int, array{destination: string, reason: string}> $failed     The destinations that opened no case.
+	 * @param string                               $submission The submission.
+	 * @param array<int, string>                   $siblings   The titles of the other destinations opened.
+	 * @param array<int, array<string, string>>    $failed     The destinations that opened no case.
 	 *
-	 * @return array{kind: string, level: string, submission: string, siblings: array<int, string>, failed: array<int, array{destination: string, reason: string}>}
+	 * @return array<string, mixed> The note: kind, level, submission, siblings and failed.
 	 *
 	 * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-a-case-keeps-a-note-of-its-last-routing-event
 	 */

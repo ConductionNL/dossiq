@@ -365,15 +365,15 @@ class IntakeFanOutTest extends TestCase {
 		$this->assertSame('The case type has been retired.', $result['failed'][0]['reason']);
 		$this->assertSame('ct-onderhoud', $this->store->cases['case-1']['caseType']);
 		$this->assertSame(
-			[
+			expected: [
 				'kind' => 'intake-split',
 				'level' => 'info',
 				'submission' => 'sub-1',
 				'siblings' => [],
 				'failed' => [['destination' => 'Handhaving', 'reason' => 'The case type has been retired.']],
 			],
-			$this->store->cases['case-1']['routingNote'],
-			'The case that was opened says which destination it lost.',
+			actual: $this->store->cases['case-1']['routingNote'],
+			message: 'The case that was opened says which destination it lost.',
 		);
 	}//end testAFailedDestinationIsReportedAndTheOthersAreCreated()
 
@@ -387,8 +387,8 @@ class IntakeFanOutTest extends TestCase {
 	public function testEveryCaseOfASplitNamesItsSiblings(): void {
 		$this->fanOut()->submit(formCaseTypeId: 'ct-melding', submission: ['title' => 'Lantaarnpaal'], submissionId: 'sub-1');
 
-		$this->assertSame(['Onderhoud'], $this->store->cases['case-1']['routingNote']['siblings']);
-		$this->assertSame(['Handhaving'], $this->store->cases['case-2']['routingNote']['siblings']);
+		$this->assertSame(expected: ['Onderhoud'], actual: $this->store->cases['case-1']['routingNote']['siblings']);
+		$this->assertSame(expected: ['Handhaving'], actual: $this->store->cases['case-2']['routingNote']['siblings']);
 	}//end testEveryCaseOfASplitNamesItsSiblings()
 
 	/**
