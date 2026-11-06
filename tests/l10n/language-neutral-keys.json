@@ -142,6 +142,7 @@
         "Integriq",
         "OpenRegister",
         "{minutes} min {seconds} s",
-        "{seconds} s"
+        "{seconds} s",
+        "{order} · {label}"
     ]
 }
