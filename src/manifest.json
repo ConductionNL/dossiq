@@ -2122,50 +2122,8 @@
 									"icon": "Plus"
 								}
 							],
-							"viewMode": "list",
-							"viewModes": [
-								"list",
-								"cards"
-							],
-							"listConfig": {
-								"_layoutNote": "Board DqAanMijToegewezen: one list of rows by default, the urgency pill first, the case type and requester (and a cover line) under the title, the status and the term at the end. The same list as cards stays one click away under Cards.",
-								"titleField": "title",
-								"subtitleTemplate": "{identifier} · {caseType|caseTypeName} · {initiatorDisplayName} · {coveredFor|coveredFor}",
-								"leading": {
-									"key": "deadlineTier",
-									"formatter": "deadlineTierLabel",
-									"widget": "badge",
-									"width": "88px",
-									"widgetProps": {
-										"colorMap": {
-											"overdue": "error",
-											"critical": "error",
-											"warning": "warning",
-											"normal": "default"
-										}
-									}
-								},
-								"trailing": [
-									{
-										"key": "status",
-										"formatter": "statusTypeName",
-										"widget": "badge",
-										"width": "140px",
-										"widgetProps": {
-											"resolve": {
-												"register": "dossiq",
-												"schema": "statusType",
-												"colorField": "colour"
-											}
-										}
-									},
-									{
-										"key": "deadline",
-										"widget": "date",
-										"width": "96px"
-									}
-								]
-							},
+							"viewMode": "cards",
+							"viewModes": ["table", "cards", "board", "map"],
 							"columns": [
 								"identifier",
 								"title",
