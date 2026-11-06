@@ -33,7 +33,7 @@ vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
 vi.mock('../../src/store/modules/settings.js', () => ({ useSettingsStore: () => ({ config: {} }) }))
 
 const CATALOGUE = {
-	propertyDefinition: [{ id: 'p0', name: 'situatietekening', propertyType: 'string' }, { id: 'p2', name: 'welstandsgebied', title: 'Welstandsgebied', propertyType: 'boolean' }],
+	propertyDefinition: [{ id: 'p0', name: 'situatietekening', propertyType: 'string' }, { id: 'p2', name: 'welstandsgebied', title: { nl: 'Welstandsgebied', en: 'Aesthetics area' }, propertyType: 'boolean' }],
 	statusType: [{ id: 'st-geweigerd', name: 'Geweigerd' }],
 	documentType: [],
 	emailTemplate: [{ id: 'tpl-weigering', name: 'Weigering met bezwaarclausule' }],

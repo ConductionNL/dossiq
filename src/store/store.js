@@ -112,6 +112,14 @@ export async function initializeStores() {
 				config.register,
 			)
 		}
+		// A case type rule names its message by template id; the rule rows read the names through this type.
+		if (config.register) {
+			objectStore.registerObjectType(
+				'emailTemplate',
+				config.email_template_schema || 'emailTemplate',
+				config.register,
+			)
+		}
 		if (config.register && config.decision_type_schema) {
 			objectStore.registerObjectType(
 				'decisionType',

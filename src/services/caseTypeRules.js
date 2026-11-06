@@ -12,6 +12,7 @@
  */
 
 import { conditionSentence } from '@conduction/nextcloud-vue'
+import { resolveTranslatable } from '../utils/i18nResolver.js'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -46,7 +47,7 @@ export function ruleFields({ propertyDefinitions = [], statusTypes = [], documen
 	const fields = propertyDefinitions
 		.filter((p) => p && p.name)
 		.map((p) => {
-			const field = { id: p.name, label: p.title || p.label || wordsOf(p.name), type: PROPERTY_TYPES[p.propertyType] || 'string' }
+			const field = { id: p.name, label: resolveTranslatable(p.title || p.label || wordsOf(p.name)).text, type: PROPERTY_TYPES[p.propertyType] || 'string' }
 			if (Array.isArray(p.enumValues) && p.enumValues.length > 0) {
 				field.options = p.enumValues.map((v) => ({ id: v, label: String(v) }))
 			}
@@ -56,11 +57,11 @@ export function ruleFields({ propertyDefinitions = [], statusTypes = [], documen
 			return field
 		})
 	if (statusTypes.length > 0) {
-		fields.push({ id: STATUS_FIELD, label: t('dossiq', 'status'), type: 'enum', options: statusTypes.map((s) => ({ id: s.id, label: s.name || s.title || s.id })) })
+		fields.push({ id: STATUS_FIELD, label: t('dossiq', 'status'), type: 'enum', options: statusTypes.map((s) => ({ id: s.id, label: resolveTranslatable(s.name || s.title || s.id).text })) })
 	}
 	for (const d of documentTypes) {
 		if (d && d.id) {
-			fields.push({ id: DOCUMENT_FIELD_PREFIX + d.id, label: t('dossiq', 'Document {name}', { name: d.name || d.title || d.id }), type: 'presence' })
+			fields.push({ id: DOCUMENT_FIELD_PREFIX + d.id, label: t('dossiq', 'Document {name}', { name: resolveTranslatable(d.name || d.title || d.id).text }), type: 'presence' })
 		}
 	}
 	return fields
