@@ -119,11 +119,12 @@ class CaseTypePackageChoiceTest extends TestCase {
 	 */
 	public function testShippedListsPackagesWithASummary(): void {
 		$written = [];
+		$base = ['title' => 'A package', 'version' => '1.0.0', 'summary' => 'Grants', 'install' => 'on-request', 'installed' => '', 'valid' => true];
 		$catalogue = [
-			['id' => 'subsidie', 'title' => 'Subsidie', 'version' => '1.5.0', 'summary' => 'Grants', 'install' => 'on-request', 'installed' => '', 'valid' => true],
-			['id' => 'vth', 'title' => 'VTH', 'version' => '1.3.1', 'summary' => 'Permits', 'install' => 'auto', 'installed' => '1.3.1', 'valid' => true],
-			['id' => 'lhs-matrix', 'title' => 'LHS', 'version' => '1.0.0', 'summary' => '', 'install' => 'auto', 'installed' => '', 'valid' => true],
-			['id' => 'broken', 'title' => 'Broken', 'version' => '1.0.0', 'summary' => 'No', 'install' => 'on-request', 'installed' => '', 'valid' => false],
+			[...$base, 'id' => 'subsidie'],
+			[...$base, 'id' => 'vth', 'install' => 'auto', 'installed' => '1.0.0'],
+			[...$base, 'id' => 'lhs-matrix', 'summary' => ''],
+			[...$base, 'id' => 'broken', 'valid' => false],
 		];
 		$choice = $this->choice(catalogue: $catalogue, config: [], outcome: null, written: $written);
 
