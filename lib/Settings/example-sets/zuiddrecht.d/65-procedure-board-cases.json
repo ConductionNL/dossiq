@@ -1,5 +1,5 @@
 {
-	"$comment": "The cases DqAanbesteding, DqSubsidie and DqKlachten draw, beside the example cases other boards name. These three boards were measured on other cases: Aanbesteding jeugdzorg 2026, Subsidie buurtfeest Oosthaven and a closed complaint. Status and title follow the boards. The board's Voorschotten stage is not a status of the Subsidie package, so that case stands at Beschikt.",
+	"$comment": "The cases DqAanbesteding, DqSubsidie and DqKlachten draw, beside the example cases other boards name. Status, title and the properties the case type's overviewSections read follow the boards.",
 	"objects": [
 		{
 			"key": "board-aanbesteding-groenonderhoud",
@@ -49,7 +49,8 @@
 				}
 			},
 			"jsonFields": [
-				"statusHistory"
+				"statusHistory",
+				"properties"
 			],
 			"data": {
 				"title": "Groenonderhoud 2027 tot 2030",
@@ -81,7 +82,17 @@
 						"enteredAt": "{{datetime:-12 09:00}}"
 					}
 				],
-				"deadline": "{{date:14}}"
+				"deadline": "{{date:14}}",
+				"properties": {
+					"procedureSoort": "Europees openbaar, diensten",
+					"geraamdeWaarde": "€ 1.840.000 over 4 jaar",
+					"drempel": "€ 221.000, dus Europees",
+					"percelen": "1, geen percelen",
+					"publicatie": "TenderNed 2026-412889, 1 sep 2026",
+					"gunningscriterium": "Beste prijs-kwaliteitverhouding",
+					"vragenronde": "12 vragen, nota van inlichtingen 22 sep",
+					"sluiting": "13 okt 2026, 12:00"
+				}
 			}
 		},
 		{
@@ -109,23 +120,24 @@
 						"name": "In behandeling"
 					}
 				},
-				"beschikt": {
-					"schema": "statusType",
-					"where": {
-						"caseType": "{{lookup:caseType}}",
-						"name": "Beschikt"
-					}
-				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Beschikt"
+						"name": "Voorschotten"
+					}
+				},
+				"voorschotten": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Voorschotten"
 					}
 				}
 			},
 			"jsonFields": [
-				"statusHistory"
+				"statusHistory",
+				"properties"
 			],
 			"data": {
 				"title": "Subsidie Buurtvereniging Oost, activiteiten 2026",
@@ -149,11 +161,22 @@
 						"enteredAt": "{{datetime:-74 09:00}}"
 					},
 					{
-						"status": "{{lookup:beschikt}}",
+						"status": "{{lookup:voorschotten}}",
 						"enteredAt": "{{datetime:-40 09:00}}"
 					}
 				],
-				"deadline": "{{date:60}}"
+				"deadline": "{{date:60}}",
+				"properties": {
+					"aanvrager": "Buurtvereniging Oost",
+					"regeling": "Subsidieregeling bewonersinitiatieven 2026",
+					"aangevraagd": "€ 27.500 op 8 jan 2026",
+					"verleend": "€ 24.000, beschikking van 12 feb 2026",
+					"beschikking": "Verleningsbeschikking van 12 feb",
+					"tussenrapportage": "Ontvangen 15 jul, beoordeeld als voldoende op 29 jul",
+					"eindverantwoording": "Uiterlijk 1 apr 2027",
+					"vaststelling": "Nog niet: binnen 13 weken na de eindverantwoording",
+					"terugvordering": "Nog geen voorstel"
+				}
 			}
 		},
 		{
@@ -197,7 +220,8 @@
 				}
 			},
 			"jsonFields": [
-				"statusHistory"
+				"statusHistory",
+				"properties"
 			],
 			"data": {
 				"title": "Klacht over de afhandeling van een melding openbare ruimte",
@@ -225,7 +249,20 @@
 						"enteredAt": "{{datetime:-1 09:00}}"
 					}
 				],
-				"deadline": "{{date:18}}"
+				"deadline": "{{date:18}}",
+				"properties": {
+					"klager": "R. de Boer, Lindelaan 12",
+					"klachtOnderwerp": "Melding over een losse stoeptegel is na vier weken niet opgepakt",
+					"afdeling": "Beheer openbare ruimte",
+					"gaatOver": "Melding 2026-1187",
+					"klachtCategorie": "Niet tijdig handelen",
+					"hoorgesprekStatus": "Gepland",
+					"hoorgesprekWanneer": "woensdag 5 nov 2026, 10:00",
+					"hoorgesprekSoort": "Videogesprek",
+					"hoorgesprekWaar": "Talk-gesprek Hoorgesprek",
+					"hoorgesprekAanwezig": "R. de Boer, Sanne Mulder, Joris Vink",
+					"hoorgesprekVerslag": "Nog niet vastgelegd"
+				}
 			}
 		}
 	]
