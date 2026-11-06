@@ -125,12 +125,12 @@ class CaseTypePackageChoiceTest extends TestCase {
 			['id' => 'lhs-matrix', 'title' => 'LHS', 'version' => '1.0.0', 'summary' => '', 'install' => 'auto', 'installed' => '', 'valid' => true],
 			['id' => 'broken', 'title' => 'Broken', 'version' => '1.0.0', 'summary' => 'No', 'install' => 'on-request', 'installed' => '', 'valid' => false],
 		];
-		$choice = $this->choice($catalogue, [], null, $written);
+		$choice = $this->choice(catalogue: $catalogue, config: [], outcome: null, written: $written);
 
-		self::assertSame(['subsidie', 'vth'], array_column($choice->shipped(), 'id'));
-		self::assertSame([true, false], array_column($choice->shipped(), 'onRequest'));
-		self::assertTrue($choice->isOffered(id: 'subsidie'));
-		self::assertFalse($choice->isOffered(id: 'vth'));
+		self::assertSame(expected: ['subsidie', 'vth'], actual: array_column(array: $choice->shipped(), column_key: 'id'));
+		self::assertSame(expected: [true, false], actual: array_column(array: $choice->shipped(), column_key: 'onRequest'));
+		self::assertTrue(condition: $choice->isOffered(id: 'subsidie'));
+		self::assertFalse(condition: $choice->isOffered(id: 'vth'));
 	}//end testShippedListsPackagesWithASummary()
 
 	/**

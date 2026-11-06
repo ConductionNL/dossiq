@@ -40,8 +40,18 @@ use ReflectionMethod;
  */
 class StorePackageControllerTest extends TestCase {
 
+	/**
+	 * The mocked choice.
+	 *
+	 * @var CaseTypePackageChoice&MockObject
+	 */
 	private CaseTypePackageChoice&MockObject $choice;
 
+	/**
+	 * The controller under test.
+	 *
+	 * @var StorePackageController
+	 */
 	private StorePackageController $controller;
 
 	/**
@@ -51,8 +61,8 @@ class StorePackageControllerTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->choice = $this->createMock(CaseTypePackageChoice::class);
-		$this->controller = new StorePackageController($this->createMock(IRequest::class), $this->choice);
+		$this->choice = $this->createMock(originalClassName: CaseTypePackageChoice::class);
+		$this->controller = new StorePackageController(request: $this->createMock(originalClassName: IRequest::class), choice: $this->choice);
 	}//end setUp()
 
 	/**
@@ -61,12 +71,12 @@ class StorePackageControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testOnlyTheInstallIsAdministrative(): void {
-		$install = new ReflectionMethod(StorePackageController::class, 'install');
-		$index = new ReflectionMethod(StorePackageController::class, 'index');
+		$install = new ReflectionMethod(objectOrMethod: StorePackageController::class, method: 'install');
+		$index = new ReflectionMethod(objectOrMethod: StorePackageController::class, method: 'index');
 
-		self::assertNotEmpty($install->getAttributes(AuthorizedAdminSetting::class));
-		self::assertEmpty($install->getAttributes(NoAdminRequired::class));
-		self::assertNotEmpty($index->getAttributes(NoAdminRequired::class));
+		self::assertNotEmpty(actual: $install->getAttributes(name: AuthorizedAdminSetting::class));
+		self::assertEmpty(actual: $install->getAttributes(name: NoAdminRequired::class));
+		self::assertNotEmpty(actual: $index->getAttributes(name: NoAdminRequired::class));
 	}//end testOnlyTheInstallIsAdministrative()
 
 	/**
@@ -78,7 +88,7 @@ class StorePackageControllerTest extends TestCase {
 		$packages = [['id' => 'subsidie']];
 		$this->choice->method('shipped')->willReturn($packages);
 
-		self::assertSame(['packages' => $packages], $this->controller->index()->getData());
+		self::assertSame(expected: ['packages' => $packages], actual: $this->controller->index()->getData());
 	}//end testTheListComesFromTheChoice()
 
 	/**
@@ -89,7 +99,7 @@ class StorePackageControllerTest extends TestCase {
 	public function testAMalformedIdIsABadRequest(): void {
 		$this->choice->expects(self::never())->method('install');
 
-		self::assertSame(400, $this->controller->install(id: '../vth')->getStatus());
+		self::assertSame(expected: 400, actual: $this->controller->install(id: '../vth')->getStatus());
 	}//end testAMalformedIdIsABadRequest()
 
 	/**
@@ -101,7 +111,7 @@ class StorePackageControllerTest extends TestCase {
 		$this->choice->method('isOffered')->willReturn(false);
 		$this->choice->expects(self::never())->method('install');
 
-		self::assertSame(404, $this->controller->install(id: 'vth')->getStatus());
+		self::assertSame(expected: 404, actual: $this->controller->install(id: 'vth')->getStatus());
 	}//end testAPackageNotOnOfferIsNotInstalled()
 
 	/**
@@ -113,7 +123,7 @@ class StorePackageControllerTest extends TestCase {
 		$this->choice->method('isOffered')->willReturn(true);
 		$this->choice->method('install')->willReturn(['success' => false, 'message' => 'Refused']);
 
-		self::assertSame(422, $this->controller->install(id: 'subsidie')->getStatus());
+		self::assertSame(expected: 422, actual: $this->controller->install(id: 'subsidie')->getStatus());
 	}//end testARefusalIsUnprocessable()
 
 	/**
@@ -127,7 +137,7 @@ class StorePackageControllerTest extends TestCase {
 
 		$response = $this->controller->install(id: 'subsidie');
 
-		self::assertSame(200, $response->getStatus());
-		self::assertTrue($response->getData()['success']);
+		self::assertSame(expected: 200, actual: $response->getStatus());
+		self::assertTrue(condition: $response->getData()['success']);
 	}//end testAnInstallAnswersItsOutcome()
 }//end class
