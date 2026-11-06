@@ -84,6 +84,7 @@
 		"Cases": "WorkGroup",
 		"CasesDeletedMenu": "WorkGroup",
 		"Tasks": "WorkGroup",
+		"CaseObjectsMenu": "WorkGroup",
 		"WorkflowBoard": "WorkGroup"
 	},
 	"removals": [

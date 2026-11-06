@@ -87,18 +87,17 @@ describe('the Contacts menu entry', () => {
 			)
 			.map((m) => m.id)
 
-		// FIVE, not the design's three. The design and the delta spec both say
+		// FOUR, not the design's three. The design and the delta spec both say
 		// the top level is Dashboard, My work and Contacts; the extra is
 		// `SettingsGroup`, the gear group's own header, which carries no route
-		// and is not a domain. `CaseObjectsMenu` (Objects) sits in the Cases
-		// part of the menu (Ruben, 6 November 2026).
+		// and is not a domain. `CaseObjectsMenu` (Objects) is relocated under
+		// Cases, so it spends no top-level slot (Ruben, 6 November 2026).
 		// Asserting the design's three would have been a test that fails on a
 		// correct tree, so the measurement is what is written down.
 		expect(topLevel).toEqual([
 			'Dashboard',
 			'WorkGroup',
 			'Contacts',
-			'CaseObjectsMenu',
 			'SettingsGroup',
 		])
 		// ADR-097 allows six. This change spends the fifth, so the NEXT domain
