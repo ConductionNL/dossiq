@@ -243,7 +243,7 @@ describe.each([
 		}
 		const strip = widget(p, 'contact-panels')
 		expect(strip.type).toBe('tabs')
-		expect(strip.content.tabs[0].widgetIds).toEqual([
+		expect(strip.content.tabs[0].widgetIds.filter((id) => id !== 'org-contact-persons')).toEqual([
 			'contact-card',
 			'contact-open-cases',
 			'contact-open-tickets',

@@ -292,6 +292,7 @@
 				},
 				"displayName": "{{cast:sanne.displayName}}",
 				"description": "Verzoeker Woo, verlichting fietspad Lindelaan",
+				"accountOwner": "{{cast:pieter.uid}}",
 				"masterEntityRef": "0f5e0000-0000-4000-8000-000000000012"
 			}
 		},
@@ -372,6 +373,32 @@
 						"kind": "correspondence",
 						"type": "email",
 						"value": "{{cast:keesdewit.email}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "persoon-ans-bos",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"name": {
+					"givenNames": "Ans",
+					"surname": "Bos"
+				},
+				"residence": {
+					"street": "Oosthavenweg",
+					"houseNumber": 12,
+					"postcode": "2999 AJ",
+					"city": "Zuiddrecht"
+				},
+				"displayName": "Ans Bos",
+				"description": "Contactpersoon zonder BSN",
+				"contactAddresses": [
+					{
+						"kind": "correspondence",
+						"type": "email",
+						"value": "ans.bos@zuiddrecht.example"
 					}
 				]
 			}
@@ -9481,6 +9508,14 @@
 				"objectUuid": "{{object:bedrijf-buurtoost.id}}",
 				"partyUuid": "{{object:persoon-kees-dewit.id}}",
 				"role": "secretary"
+			}
+		},
+		{
+			"key": "buurtoost-penningmeester-ans",
+			"data": {
+				"objectUuid": "{{object:bedrijf-buurtoost.id}}",
+				"partyUuid": "{{object:persoon-ans-bos.id}}",
+				"role": "treasurer"
 			}
 		}
 	],
