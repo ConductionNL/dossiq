@@ -741,6 +741,7 @@ OC.L10N.register(
         "All staff": "All staff",
         "All tasks": "All tasks",
         "All tasks of this case in Tasks": "All tasks of this case in Tasks",
+        "All term definitions": "All term definitions",
         "All time": "All time",
         "All types": "All types",
         "All versions": "All versions",

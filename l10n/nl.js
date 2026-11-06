@@ -741,6 +741,7 @@ OC.L10N.register(
         "All staff": "Alle",
         "All tasks": "Alle taken",
         "All tasks of this case in Tasks": "Alle taken van deze zaak in Taken",
+        "All term definitions": "Alle termijndefinities",
         "All time": "Alle tijd",
         "All types": "Alle typen",
         "All versions": "Alle versies",
