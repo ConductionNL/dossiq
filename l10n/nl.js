@@ -5820,6 +5820,7 @@ OC.L10N.register(
         "Normal": "Normaal",
         "Not a data subject request": "Geen AVG-verzoek",
         "Not accepted by this case type": "Niet geaccepteerd door dit zaaktype",
+        "Not admissible yet": "Nog niet ontvankelijk",
         "Not allowed": "Niet toegestaan",
         "Not appeared": "Niet verschenen",
         "Not applicable": "Niet van toepassing",

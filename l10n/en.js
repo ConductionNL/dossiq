@@ -5820,6 +5820,7 @@ OC.L10N.register(
         "Normal": "Normal",
         "Not a data subject request": "Not a data subject request",
         "Not accepted by this case type": "Not accepted by this case type",
+        "Not admissible yet": "Not admissible yet",
         "Not allowed": "Not allowed",
         "Not appeared": "Not appeared",
         "Not applicable": "Not applicable",
