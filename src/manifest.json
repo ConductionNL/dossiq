@@ -14772,6 +14772,15 @@
 								{
 									"path": "description",
 									"label": "Description"
+								},
+								{
+									"label": "Account owner",
+									"when": { "field": "accountOwner", "op": "notEmpty" },
+									"parts": [
+										{ "path": "accountOwner", "format": "user" },
+										{ "text": "the colleague who manages this contact" }
+									],
+									"separator": ", "
 								}
 							]
 						}
@@ -14845,7 +14854,7 @@
 							"extend": [
 								"case"
 							],
-							"limit": 3,
+							"limit": 4,
 							"presentation": "feed",
 							"icon": {
 								"field": "notificationChannel",
@@ -15894,6 +15903,7 @@
 										"contact-card",
 										"contact-open-cases",
 										"contact-open-tickets",
+										"org-contact-persons",
 										"contact-latest-moments"
 									],
 									"label": "Overview"
@@ -15950,6 +15960,7 @@
 						"type": "parties",
 						"title": "Contact persons",
 						"icon": "AccountMultipleOutline",
+						"subtitle": "People in a role at this organisation, one of them as main contact",
 						"_note": "The organisation's contact persons: OpenRegister person parties on the kvkCompany, by role with the main contact (the primary party) first. The roles are kvkCompany configuration (linkRoles); roleLabels give the four shipped ones their words, a role a municipality adds shows the label it declares. Changing them is the organisation's update right, which OpenRegister asks on every party write (organisation-contact-persons).",
 						"content": {
 							"roleLabels": {
