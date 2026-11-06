@@ -904,7 +904,7 @@
         "digest": "bb48c2734868033e2a338744b07d51b474182d7f6e3df9ee62829d49ed02ec2b"
     },
     "lib/Settings/register.d/25-brp-kvk.json::brpPerson": {
-        "version": "1.7.0",
+        "version": "1.8.0",
         "digest": "ea0271480e01c47e60831c6b03cebcd84393c5d6b1d8463ee2127600260c74dc"
     },
     "lib/Settings/register.d/25-brp-kvk.json::kvkCompany": {
@@ -1819,6 +1819,10 @@
         "version": "1.25.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/99-case-type-overview-sections.json::caseType": {
+        "version": "1.47.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/99-case-type-palette.json::caseType": {
         "version": "1.26.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1889,6 +1893,10 @@
     },
     "lib/Settings/register.d/99-email-template-moment-and-channel.json::emailTemplate": {
         "version": "1.3.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/99-enforcement-estimated-cost.json::handhavingsactie": {
+        "version": "1.2.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/99-status-type-off-path.json::statusType": {

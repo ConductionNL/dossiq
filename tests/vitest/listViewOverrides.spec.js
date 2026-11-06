@@ -164,9 +164,9 @@ describe('no case-type-specific pages or menu entries', () => {
 		}
 	})
 
-	it('keeps the own-record entries out of the main menu', () => {
+	it('keeps committees out of the main menu and Objects in the Cases part of it', () => {
 		expect(manifest.menu.find((item) => item.id === 'BezwaarCommitteesMenu').section).toBe('settings')
-		expect(full.settingsSection).toContain('CaseObjectsMenu')
-		expect(simple.settingsSection).toContain('CaseObjectsMenu')
+		expect(full.settingsSection).not.toContain('CaseObjectsMenu')
+		expect(simple.settingsSection).not.toContain('CaseObjectsMenu')
 	})
 })
