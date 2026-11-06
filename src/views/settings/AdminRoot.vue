@@ -178,15 +178,15 @@
 				:description="
 					t(
 						'dossiq',
-						'A connection stays off until you choose a source. Off means: not one request goes outside.',
+						'A connection stays off until you choose a source. Off means: not one request goes outside. The rows come from one dossiq file, in this order; integriq keeps them in its register and measures the status. A row without Settings has nothing to set here.',
 					)
 				">
-				<div v-if="ownerApps.integriq" class="dq-settings-action-row">
+				<div v-if="ownerApps.integriq" class="dq-settings-action-row cn-settings-row-actions">
 					<NcButton :href="integriqConnectionsUrl" variant="secondary" data-testid="dossiq-add-connection">
 						{{ t('dossiq', 'Add connection in integriq') }}
 					</NcButton>
 					<span class="dq-settings-action-row__note">
-						{{ t('dossiq', 'Opens integriq, Connections, filtered on app dossiq.') }}
+						{{ t('dossiq', 'Opens integriq, Connections, filtered on app dossiq. There is no general Add button, and dossiq\'s app menu shows no Integrations.') }}
 					</span>
 				</div>
 				<NcNoteCard v-if="!ownerApps.integriq" type="info">
@@ -247,6 +247,7 @@
 			<CnSettingsSection
 				id="section-term-definitions"
 				:actionsInTitle="true"
+				:footerLink="{ label: t('dossiq', 'All term definitions'), href: allTermDefinitionsUrl }"
 				:name="t('dossiq', 'Term definitions (Awb)')"
 				:description="
 					t(
@@ -256,17 +257,16 @@
 				"
 				:loading="!storesReady">
 				<template v-if="storesReady" #actions>
-					<NcButton variant="secondary" data-testid="dossiq-add-term-definition" @click="$refs.termSummary.openNew()">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('dossiq', 'Add definition') }}
-					</NcButton>
+					<span class="cn-settings-row-actions">
+						<NcButton variant="secondary" data-testid="dossiq-add-term-definition" @click="$refs.termSummary.openNew()">
+							{{ t('dossiq', 'Add definition') }}
+						</NcButton>
+					</span>
 				</template>
 				<DeadlineDefinitionsTab v-if="storesReady" ref="termSummary" :summary="true" />
 			</CnSettingsSection>
 
-			<div class="dq-settings-pair">
+			<div class="dq-settings-pair cn-settings-cards">
 				<CnSettingsFieldsSection
 					id="section-queue-order"
 					appId="dossiq"
@@ -277,6 +277,7 @@
 							'Decides the order of the team queue and Assigned to me. Save sends only what changed; an unchanged form sends nothing.',
 						)
 					"
+					:columns="2"
 					valuesPath="config"
 					:fields="queueOrderFields" />
 
@@ -304,12 +305,11 @@
 					)
 				">
 				<template #actions>
-					<NcButton :href="wooRefusalGroundsUrl" variant="secondary" data-testid="dossiq-add-refusal-ground">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('dossiq', 'Add ground') }}
-					</NcButton>
+					<span class="cn-settings-row-actions">
+						<NcButton :href="wooRefusalGroundsUrl" variant="secondary" data-testid="dossiq-add-refusal-ground">
+							{{ t('dossiq', 'Add ground') }}
+						</NcButton>
+					</span>
 				</template>
 				<CnWidgetObjectTable
 					:hideWrapper="true"
@@ -421,7 +421,7 @@
 					:emptyText="t('dossiq', 'No fee rules for dossiq yet.')" />
 			</CnSettingsSection>
 
-			<div class="dq-settings-trio">
+			<div class="dq-settings-trio cn-settings-cards">
 				<CnSettingsSection
 					:actionsInTitle="true"
 					:name="t('dossiq', 'Inspection checklists')"
@@ -668,6 +668,7 @@
 			</CnSettingsSection>
 
 			<CnSettingsSection
+				id="section-term-definitions-all"
 				:name="t('dossiq', 'AWB term definitions')"
 				:description="
 					t(
@@ -1432,6 +1433,16 @@ export default {
 		},
 
 		/**
+		 * The full term table on the Advanced tab.
+		 *
+		 * @return {string} The address.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		allTermDefinitionsUrl() {
+			return generateUrl('/settings/admin/dossiq') + '?tab=advanced#section-term-definitions-all'
+		},
+
+		/**
 		 * Integriq's Connections, filtered on dossiq, with the link dialog open.
 		 *
 		 * @return {string} The URL.
@@ -1624,15 +1635,16 @@ export default {
 }
 
 .dq-settings-trio {
-	grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+	align-items: stretch;
 }
 
-/* A button with its note under a card's description (Koppelingen). */
+/* A button with its note under it, below a card's description (Koppelingen). */
 .dq-settings-action-row {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 10px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
 }
 
 .dq-settings-action-row__note {

@@ -53,6 +53,16 @@ class TimelineKindsHistoryChipsTest extends TestCase {
 	}//end testTheHistoryChipsAreDeclaredKinds()
 
 	/**
+	 * The term chip reads as the board names it.
+	 *
+	 * @return void
+	 */
+	public function testTheTermChipReadsTermijn(): void {
+		$bySlug = array_column(TimelineKinds::DECLARATIONS, null, 'slug');
+		$this->assertSame(expected: 'Termijn', actual: $bySlug[TimelineKinds::TERM_EVENT]['title']);
+	}//end testTheTermChipReadsTermijn()
+
+	/**
 	 * Every slug is declared once.
 	 *
 	 * @return void

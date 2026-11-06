@@ -18,7 +18,7 @@
 	<CnDialog
 		:name="t('dossiq', 'Add location')"
 		:eyebrow="eyebrow"
-		width="wizard"
+		width="confirm"
 		data-testid="case-location-dialog"
 		v-bind="noticeProps"
 		@closing="$emit('close')">
@@ -407,10 +407,10 @@ export default {
 	overflow: hidden;
 }
 
-/* The map takes the row; the layer list beside it is 200px. */
+/* The map takes the row; the layer list beside it is 170px. */
 .case-location-dialog__map-row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 200px;
+	grid-template-columns: minmax(0, 1fr) 170px;
 	gap: 12px;
 }
 
@@ -458,8 +458,8 @@ export default {
 }
 
 .case-location-dialog__facts {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	display: flex;
+	flex-direction: column;
 	gap: 12px;
 }
 
@@ -507,8 +507,7 @@ export default {
 }
 
 @media (max-width: 600px) {
-	.case-location-dialog__map-row,
-	.case-location-dialog__facts {
+	.case-location-dialog__map-row {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }

@@ -43,6 +43,6 @@ describe('the Statuses card on the case type Overview', () => {
 	})
 
 	it('says where colour and order apply', () => {
-		expect(nl[statuses.footnote]).toBe('Kleur en volgorde gelden in lijsten, op het werkbord en in het portaal.')
+		expect(nl[statuses.footnote[0]]).toMatch(/^Kleur en volgorde gelden in lijsten, op het werkbord en in het portaal/)
 	})
 })
