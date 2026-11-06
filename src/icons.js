@@ -86,6 +86,7 @@ import ClipboardPulseOutline from 'vue-material-design-icons/ClipboardPulseOutli
 import ClipboardSearchOutline from 'vue-material-design-icons/ClipboardSearchOutline.vue'
 import ClipboardTextOutline from 'vue-material-design-icons/ClipboardTextOutline.vue'
 import ClockAlertOutline from 'vue-material-design-icons/ClockAlertOutline.vue'
+import ClockOutline from 'vue-material-design-icons/ClockOutline.vue'
 import ClockPlusOutline from 'vue-material-design-icons/ClockPlusOutline.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import CloudUploadOutline from 'vue-material-design-icons/CloudUploadOutline.vue'
@@ -325,6 +326,7 @@ export default {
 	ClipboardSearchOutline,
 	ClipboardTextOutline,
 	ClockAlertOutline,
+	ClockOutline,
 	ClockPlusOutline,
 	Close,
 	CloudUploadOutline,
