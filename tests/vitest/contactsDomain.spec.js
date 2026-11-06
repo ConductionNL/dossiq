@@ -90,8 +90,8 @@ describe('the Contacts menu entry', () => {
 		// FOUR, not the design's three. The design and the delta spec both say
 		// the top level is Dashboard, My work and Contacts; the extra is
 		// `SettingsGroup`, the gear group's own header, which carries no route
-		// and is not a domain. `CaseObjectsMenu` (Objects) is an own-record
-		// register and sits under settings (Ruben, 20 October 2026).
+		// and is not a domain. `CaseObjectsMenu` (Objects) is relocated under
+		// Cases, so it spends no top-level slot (Ruben, 6 November 2026).
 		// Asserting the design's three would have been a test that fails on a
 		// correct tree, so the measurement is what is written down.
 		expect(topLevel).toEqual([

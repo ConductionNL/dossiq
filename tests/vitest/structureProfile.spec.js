@@ -105,14 +105,14 @@ describe('the full profile', () => {
 		expect(overrides.sidePanel).toHaveLength(2)
 	})
 
-	it('counts 39 entries: 12 main, 5 footer, 19 settings, 3 integrations (Case objects is settings-only; re-integration pathways is a Cases view, not a menu entry)', () => {
+	it('counts 39 entries: 13 main, 5 footer, 18 settings, 3 integrations (re-integration pathways is a Cases view, not a menu entry)', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
 		expect(flat(menu)).toHaveLength(39)
-		expect(count('main')).toBe(12)
+		expect(count('main')).toBe(13)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(19)
+		expect(count('settings')).toBe(18)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -121,7 +121,7 @@ describe('the simple profile', () => {
 	const built = build(simpleFile)
 	const main = section(built.menu, 'main')
 
-	it('shows eight fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
+	it('shows nine fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
 		expect(main.map((entry) => entry.id)).toEqual([
 			'Dashboard',
 			'WorkGroup',
@@ -130,6 +130,7 @@ describe('the simple profile', () => {
 			'Cases',
 			'WorkflowBoard',
 			'Tasks',
+			'CaseObjectsMenu',
 			'RelationsCaption',
 			'Contacts',
 			'OrganisationsMenu',
@@ -139,7 +140,7 @@ describe('the simple profile', () => {
 			'Cases',
 			'Relations',
 		])
-		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(8)
+		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(9)
 	})
 
 	it('is flat: no entry holds another', () => {
@@ -361,12 +362,11 @@ describe('the simple profile', () => {
 		).toBe('Documentation')
 	})
 
-	it('moves the recycle bin, the object register and the mail intake log to settings', () => {
+	it('moves the recycle bin and the mail intake log to settings', () => {
 		const settings = section(built.menu, 'settings').map((entry) => entry.id)
 		expect(settings).toEqual(
 			expect.arrayContaining([
 				'CasesDeletedMenu',
-				'CaseObjectsMenu',
 				'MailIntakeLogMenu',
 				'DocumentReviewReportsMenu',
 			]),

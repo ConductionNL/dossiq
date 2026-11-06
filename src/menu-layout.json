@@ -84,6 +84,7 @@
 		"Cases": "WorkGroup",
 		"CasesDeletedMenu": "WorkGroup",
 		"Tasks": "WorkGroup",
+		"CaseObjectsMenu": "WorkGroup",
 		"WorkflowBoard": "WorkGroup"
 	},
 	"removals": [
@@ -96,8 +97,7 @@
 		"WmsLayersMenu",
 		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
-		"IntegrationsMenu",
-		"CaseObjectsMenu"
+		"IntegrationsMenu"
 	],
 	"integrationsSection": [
 		"AvgRegisterLink",
