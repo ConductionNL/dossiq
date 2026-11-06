@@ -1,6 +1,7 @@
 {
   "id": "wmo-melding",
   "title": "Wmo-melding",
+  "summary": "Case type with the support question, needs assessment and decision.",
   "version": "1.1.1",
   "requires": [],
   "parts": [

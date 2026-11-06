@@ -1,6 +1,7 @@
 {
   "id": "bezwaar-beroep",
   "title": "Bezwaar en beroep",
+  "summary": "Case type with hearing, advisory committee, 6-week term and the decision on objection.",
   "version": "1.6.1",
   "requires": [],
   "parts": [

@@ -102,6 +102,46 @@ class CaseTypePackageChoice {
 	}//end options()
 
 	/**
+	 * The packages the marketplace lists: every valid package with a summary.
+	 *
+	 * @return array<int, array{id: string, title: string, version: string, summary: string, installed: string, onRequest: bool}> The packages.
+	 *
+	 * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md#requirement-the-marketplace-lists-the-shipped-packages
+	 */
+	public function shipped(): array {
+		$shipped = [];
+		foreach ($this->packages->catalogue() as $entry) {
+			if ($entry['valid'] !== true || ($entry['summary'] ?? '') === '') {
+				continue;
+			}
+
+			$shipped[] = [
+				'id' => (string)$entry['id'],
+				'title' => (string)$entry['title'],
+				'version' => (string)$entry['version'],
+				'summary' => (string)$entry['summary'],
+				'installed' => (string)($entry['installed'] ?? ''),
+				'onRequest' => $entry['install'] === 'on-request',
+			];
+		}
+
+		return $shipped;
+	}//end shipped()
+
+	/**
+	 * Whether a package can be installed on request.
+	 *
+	 * @param string $id The package id.
+	 *
+	 * @return bool True for a valid on-request package.
+	 *
+	 * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md#requirement-an-administrator-installs-a-shipped-package
+	 */
+	public function isOffered(string $id): bool {
+		return in_array($id, array_column($this->offered(), 'id'), true);
+	}//end isOffered()
+
+	/**
 	 * Whether the step has been dealt with: a choice is stored, or an
 	 * on-request package is already installed.
 	 *

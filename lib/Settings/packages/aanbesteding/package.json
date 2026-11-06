@@ -1,7 +1,8 @@
 {
   "id": "aanbesteding",
   "title": "Aanbesteding",
-  "version": "1.6.0",
+  "summary": "Case type from preparation through publication, bids and evaluation to the award decision.",
+  "version": "1.7.0",
   "requires": [],
   "parts": [
     "case-type",
