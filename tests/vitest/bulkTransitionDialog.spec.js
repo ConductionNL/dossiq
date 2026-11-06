@@ -98,7 +98,6 @@ vi.mock('@nextcloud/l10n', () => ({
 	translatePlural: (app, one, many, count) => (count === 1 ? one : many),
 }))
 
-vi.mock('@nextcloud/vue/components/NcDialog', () => ({ default: box('NcDialog') }))
 vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({
 	default: box('NcLoadingIcon'),
 }))
@@ -115,9 +114,6 @@ vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
 }))
 vi.mock('@nextcloud/vue/components/NcSelect', () => ({
 	default: field('NcSelect'),
-}))
-vi.mock('@nextcloud/vue/components/NcTextArea', () => ({
-	default: field('NcTextArea'),
 }))
 vi.mock('@nextcloud/vue/components/NcTextField', () => ({
 	default: field('NcTextField'),
@@ -142,12 +138,14 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
 }))
 
 const previewBulkJob = vi.fn()
+const commitBulkJob = vi.fn()
 
 vi.mock('../../src/services/bulkJobApi.js', () => ({
 	ACTION_LIFECYCLE: 'dossiq:lifecycle-cases',
 	ACTION_REASSIGN: 'dossiq:reassign-cases',
 	ACTION_SET_ATTRIBUTE: 'dossiq:set-case-attribute',
 	ACTION_TRANSITION: 'dossiq:transition-cases',
+	commitBulkJob: (...args) => commitBulkJob(...args),
 	previewBulkJob: (...args) => previewBulkJob(...args),
 	readRefusal: (error) => {
 		const body = (error && error.response && error.response.data) || {}
@@ -364,11 +362,75 @@ describe('BulkTransitionDialog, the rehearsal is not the act', () => {
 })
 
 describe('BulkTransitionDialog, the transition mode', () => {
-	it('still asks the first case for its available transitions', async () => {
-		await open('transition')
+	it('asks every selected case what it offers and keeps what all of them offer', async () => {
+		axios.get = vi.fn((url) => Promise.resolve({
+			data: url.includes('available-transitions')
+				? { transitions: url.includes('case-1') ? [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }] : [{ id: 'b', label: 'B' }], current: { statusName: 'Received' } }
+				: { title: 'A case', identifier: '2026-1', deadline: '2026-10-31' },
+		}))
+		const wrapper = await open('transition')
 
-		expect(axios.get).toHaveBeenCalledTimes(1)
-		expect(String(axios.get.mock.calls[0][0])).toContain('case-1')
+		expect(wrapper.vm.transitionOptions).toEqual([{ id: 'b', label: 'B' }])
+		const rows = wrapper.findAll('[data-testid="bulk-change-row"]')
+		expect(rows).toHaveLength(2)
+		expect(rows[0].text()).toContain('A case')
+		expect(rows[0].text()).toContain('Received')
+	})
+
+	it('runs a clean rehearsal of the shown cases at once', async () => {
+		commitBulkJob.mockResolvedValue({ ...PREVIEWED, state: 'running' })
+		const wrapper = await open('transition')
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		await typeReason(wrapper, 'Complete')
+		expect(rehearse(wrapper).text()).toBe('Apply to 2 cases')
+		await rehearse(wrapper).trigger('click')
+		await flush()
+
+		expect(commitBulkJob).toHaveBeenCalledWith(4, 'Complete')
+	})
+
+	it('stops at the progress panel when a case would be skipped', async () => {
+		previewBulkJob.mockResolvedValue({ ...PREVIEWED, counts: { applied: 1, skipped: 1, refused: 0, failed: 0 } })
+		const wrapper = await open('transition')
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		await typeReason(wrapper, 'Complete')
+		await rehearse(wrapper).trigger('click')
+		await flush()
+
+		expect(commitBulkJob).not.toHaveBeenCalled()
+		expect(wrapper.find('[data-testid="bulk-job-progress"]').exists()).toBe(true)
+	})
+
+	it('never runs a selection widened to the whole result at once', async () => {
+		const wrapper = await open('transition', { matchingTotal: 40 })
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		wrapper.findComponent({ name: 'CnSelectionScope' }).vm.$emit('update:scope', 'result')
+		await typeReason(wrapper, 'Complete')
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('[data-testid="bulk-changes"]').exists()).toBe(false)
+		await rehearse(wrapper).trigger('click')
+		await flush()
+
+		expect(commitBulkJob).not.toHaveBeenCalled()
+	})
+
+	it('names every changed case once the job finished clean', async () => {
+		const wrapper = await open('transition')
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		wrapper.vm.job = { ...PREVIEWED, state: 'completed', processed: 2 }
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('[data-testid="bulk-result"]').text()).toContain('2 of 2 cases changed')
+		expect(wrapper.findAll('[data-testid="bulk-result-row"]')).toHaveLength(2)
+	})
+
+	it('keeps the progress panel when a case did not change', async () => {
+		const wrapper = await open('transition')
+		wrapper.vm.job = { ...PREVIEWED, state: 'completed', counts: { applied: 1, skipped: 0, refused: 0, failed: 1 } }
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('[data-testid="bulk-result"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="bulk-job-progress"]').exists()).toBe(true)
 	})
 
 	it('needs a transition as well as a reason', async () => {

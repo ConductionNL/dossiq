@@ -84,3 +84,63 @@ export const LIFECYCLE_GESTURES = ['suspend', 'resume', 'extend']
 export function isLifecycleGesture(mode) {
 	return LIFECYCLE_GESTURES.includes(mode)
 }
+
+/**
+ * The transitions every case offers, in the first case's order.
+ *
+ * @param {Array<Array<{id: string}>>} offers What each case offers.
+ *
+ * @return {Array<object>} The transitions on offer in all of them.
+ *
+ * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+ */
+export function commonTransitions(offers) {
+	const [first = [], ...rest] = offers
+
+	return first.filter((transition) =>
+		rest.every((offer) => offer.some((other) => other.id === transition.id)),
+	)
+}
+
+/**
+ * One row of the table of changes.
+ *
+ * @param {string} id The case id.
+ * @param {object} [object] The case.
+ * @param {object} [current] The case's current status as the engine reports it.
+ *
+ * @return {{id: string, title: string, identifier: string, status: string, deadline: string}} The row.
+ *
+ * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+ */
+export function changeRow(id, object, current) {
+	const deadline = object?.deadline ? new Date(object.deadline) : null
+
+	return {
+		id,
+		title: object?.title || id,
+		identifier: object?.identifier || '',
+		status: current?.statusName || '—',
+		deadline: deadline && !isNaN(deadline) ? deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '—',
+	}
+}
+
+/**
+ * Whether a rehearsal may run without a second look: it covers exactly the
+ * cases the table showed and every one of them is ready.
+ *
+ * @param {object} job The rehearsed job.
+ * @param {number} shown How many cases the table showed.
+ *
+ * @return {boolean} True when nothing would be skipped, refused or fail.
+ *
+ * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-a-clean-rehearsal-runs-at-once
+ */
+export function canCommitAtOnce(job, shown) {
+	const counts = job?.counts || {}
+
+	return job?.state === 'previewed'
+		&& job.total === shown
+		&& counts.applied === shown
+		&& !counts.skipped && !counts.refused && !counts.failed
+}
