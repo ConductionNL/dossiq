@@ -4,7 +4,7 @@
 		"spdx-copyright": "2026 Conduction B.V.",
 		"description": "The SIMPLE structure profile, and the default one (openspec/changes/archive/2026-10-10-simple-structure-profile). `menu-layout.json` is the FULL profile and is untouched: an administrator brings it back with the setting `menu_structure`. Both profiles are built from the same manifest and the same fragments, so nothing is deleted and every page stays routable; this file only decides what the navigation offers first. THE FOUR STANDARD KEYS (`relocations`, `removals`, `settingsSection`, `integrationsSection`) go to the library's buildManifest exactly as the full file's do. `relocations` is absent because nothing moves: the simple menu is flat, eight entries, the first group without a caption and the others under one each, as DqZijbalk draws them, plus the case types each user chose under My case types. The library's relocation step keeps a caption unless the relocations emptied it, so adding the key would not cost the captions. THE TWO PROFILE KEYS are read by src/utils/structureProfile.js, because buildManifest's layout has no word for either. `menu` is merged BEFORE the manifest's own menu. buildManifest merges entries by id and the FIRST definition of a key wins, so an entry here that carries only `id` and `order` takes its label, icon and route from the manifest and keeps the order written here, and an entry the manifest does not know (the three captions) is simply added. `pages` holds page overlays: `configAppend` appends items to a list in the page's config, by key. It is how My work and the dashboard gain the links that replace the three entries this profile takes out of the menu. A link, not a waiver: tests/vitest/structureProfile.spec.js fails when an entry is removed here and no reachable page links to its route.",
 		"removalsNote": "The first five are the full profile's own removals, repeated because buildManifest takes ONE list; the spec fails when the two drift. The last three are this profile's: `PersonalQueueMenu` (Your queue) and `MyWork` (Assigned to me) are reached from the My work page, and `EndOfDayMenu` (Close out your day) from My work and from the dashboard. `SettingsGroup` is an empty shell in the manifest (a label and no route). The full profile loses it to the relocation step's clean-up; this profile has no relocation step, so it is removed by name. Assigned to me and the team queue are views of the Cases page now (`my-work`, `team-queue`); their menu entries keep their ids and open the views.",
-		"settingsNote": "The first six are the full profile's. `CasesDeletedMenu`, `CaseObjectsMenu`, `MailIntakeLogMenu` and `DocumentReviewReportsMenu` join them here: a recycle bin, an object register, an intake log and the Woo review reports are set-up and inspection, not daily work. `DocumentReviewReportsMenu` shows only to the throughput reader group.",
+		"settingsNote": "The first six are the full profile's. `CasesDeletedMenu`, `MailIntakeLogMenu` and `DocumentReviewReportsMenu` join them here: a recycle bin, an intake log and the Woo review reports are set-up and inspection, not daily work. `DocumentReviewReportsMenu` shows only to the throughput reader group.",
 		"myCaseTypesNote": "The case types a user pins are views of the case list (case-type-pins-are-views): the library's My views section at the bottom of the menu lists them, so this profile has no My case types heading of its own. The backend `/api/manifest` delta adds one view per pinned case type to the Cases page.",
 		"footerNote": "The footer keeps Reports, Documentation, Store and Features & roadmap. The library's navigation has no help menu to move them under (nextcloud-vue development, 2026-10-05: CnAppNav renders main, footer and settings, and `actionsMenu.showHelpLinks` belongs to a detail page)."
 	},
@@ -30,7 +30,6 @@
 		"BezwaarCommitteesMenu",
 		"IntegrationsMenu",
 		"CasesDeletedMenu",
-		"CaseObjectsMenu",
 		"MailIntakeLogMenu",
 		"DocumentReviewReportsMenu"
 	],
@@ -91,6 +90,10 @@
 		{
 			"id": "Tasks",
 			"order": 26
+		},
+		{
+			"id": "CaseObjectsMenu",
+			"order": 28
 		},
 		{
 			"id": "RelationsCaption",
@@ -1193,21 +1196,32 @@
 									"labels": {
 										"ended": {
 											"label": "Case ended",
-											"unmetDetail": "Finish or abort the case first"
+											"unmetDetail": "Finish or abort the case first",
+											"hideWhenMet": true
 										},
 										"result": {
 											"label": "Result recorded"
 										},
 										"decision": {
 											"label": "Decision made",
+											"detail": "{date|date}",
+											"detailWhen": "date",
 											"unmetDetail": "No decision on this case"
+										},
+										"publication": {
+											"label": "Publication done",
+											"detail": "{date|date}, {channel}",
+											"detailWhen": "date",
+											"unmetDetail": "Not published"
 										},
 										"documents": {
 											"label": "Documents final",
 											"detail": "{count} of {total} final"
 										},
 										"openTasks": {
-											"label": "Open tasks: {count}"
+											"label": "Open tasks: {count}",
+											"detail": "no task open any more",
+											"unmetDetail": "{count} still open"
 										}
 									},
 									"required": [
@@ -1663,6 +1677,7 @@
 							"footnote": "Who may not see the access reads here only: you may not see who has access to this case."
 						}
 					},
+					{"id": "side-enforcement", "type": "record-list", "title": "Enforcement on the case", "visibleWhen": {"field": "@context.caseType.category", "op": "in", "value": ["Toezicht en handhaving"]}, "_note": "DqHandhaving Handhaving op de zaak: the enforcement actions of this case with their state. Forfeiting, executing and withdrawing are the handhavingsactie lifecycle's transitions.", "content": {"register": "dossiq", "schema": "handhavingsactie", "filter": {"case": "@objectId"}, "presentation": "rows", "title": "{type}", "valueLabels": {"type": {"warning": "Warning", "last_under_penaltypayment": "Penalty order", "bestuursdwang": "Administrative enforcement"}}, "meta": ["EUR {penaltyPaymentAmount} per violation · maximum EUR {penaltyPaymentMaximum} · {compliancePeriod} days to comply", "{effectuationDate|date}"], "pill": {"field": "status", "labels": {"opgelegd": "Imposed", "verbeurd": "Forfeited", "geeffectueerd": "Enforcement executed", "withdrawn": "Withdrawn"}, "colorMap": {"opgelegd": "warning", "verbeurd": "error", "geeffectueerd": "success"}}, "rowActionsInline": true, "rowActions": [{"label": "Record forfeiture", "endpoint": "/apps/openregister/api/objects/{id}/transition?action=forfeit", "visibleWhen": {"field": "status", "value": "opgelegd"}}, {"label": "Execute the enforcement", "endpoint": "/apps/openregister/api/objects/{id}/transition?action=execute", "visibleWhen": {"field": "status", "value": "verbeurd"}}, {"label": "Withdraw the order", "endpoint": "/apps/openregister/api/objects/{id}/transition?action=withdraw", "visibleWhen": {"field": "status", "op": "in", "value": ["opgelegd", "verbeurd"]}}], "emptyText": "No enforcement on this case yet"}},
 					{
 						"id": "side-objection-appeal",
 						"type": "record-list",
@@ -2275,6 +2290,7 @@
 										"case-summary",
 										"case-household-cases-card",
 										"goal-plan",
+										"case-overview-sections",
 										"case-grant-decisions-card",
 										"case-payment-schedule",
 										"case-request",
@@ -2891,6 +2907,8 @@
 							"visibilityLabel": false,
 							"readsToggle": "Also who read the case",
 							"_entriesNote": "DqZaakHistorie entries as drawn: '6 okt, 15:40' (momentFormat short) and an icon per kind in the rail circle (kindIcons; OpenRegister's kinds carry no icon). The message is followed by what the entry is about and the author reads by name, which nextcloud-vue does for every timeline.",
+							"errorTitle": "The timeline could not be read",
+							"errorText": "OpenRegister did not answer. No empty timeline is shown; the change history in the sidebar stands apart from this.",
 							"momentFormat": "short",
 							"kindIcons": {
 								"document": "FileDocumentOutline",
@@ -2898,7 +2916,8 @@
 								"bericht": "EmailOutline",
 								"ontvangstbevestiging": "EmailOutline",
 								"statuswijziging": "SwapHorizontal",
-								"toewijzing": "AccountOutline"
+								"toewijzing": "AccountOutline",
+								"termijngebeurtenis": "ClockOutline"
 							},
 							"entryActions": [
 								{
@@ -2931,12 +2950,13 @@
 							"headerActions": ["link", "compose"],
 							"heading": "Email",
 							"description": "Mail linked to this case, also from a shared mailbox",
-							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
+							"hint": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there. Every key in a template gets a value from the case, such as the name of the handler and the case number.",
 							"templates": {
 								"url": "/apps/dossiq/api/casetypes/@object.caseType/email-templates",
 								"responsePath": "results",
 								"labelField": "name",
-								"idField": "id"
+								"idField": "id",
+								"preselect": "first"
 							},
 							"noTemplatesText": "No templates for this case type yet",
 							"draft": {
@@ -3007,12 +3027,7 @@
 					"kpi-2": null,
 					"kpi-5": null,
 					"3": null,
-					"presence-strip": {
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 1
-					},
+					"presence-strip": null,
 					"5": {
 						"gridX": 0,
 						"gridY": 1,
@@ -3034,6 +3049,12 @@
 			},
 			"configAppend": {
 				"widgets": [
+					{
+						"id": "case-overview-sections",
+						"type": "case-overview-sections",
+						"visibleWhen": { "field": "@context.caseType.overviewSections", "op": "notEmpty" },
+						"_note": "The cards a case type declares itself: a complaint, a tender and a grant are configuration, so their cards live on the case type and this one widget draws them."
+					},
 					{
 						"id": "case-note-card",
 						"type": "timeline",
@@ -3585,7 +3606,7 @@
 							"rowTitle": "text",
 							"sortable": true,
 							"filterable": true,
-							"headerNote": "{total} recorded",
+							"headerNote": "{total} recorded · the automatic acknowledgement is in the conversation, but does not count here",
 							"register": "dossiq",
 							"schema": "contactmoment",
 							"filter": {
@@ -3785,6 +3806,8 @@
 							},
 							"completeAny": true,
 							"cancel": true,
+							"cancelInline": true,
+							"summaryNote": "the tasks of the whole case, also those of colleagues",
 							"rowRoute": "TaskDetail",
 							"completeUrl": "/apps/dossiq/api/case-tasks/{id}/complete",
 							"cancelUrl": "/apps/dossiq/api/case-tasks/{id}/cancel",
@@ -3863,6 +3886,7 @@
 							"headerNote": "{total} planned",
 							"footnote": "A milestone that depends on another part counts in working days from that part. When the hearing moves, the milestones after it move with it. A milestone without a predecessor counts from the start of the case.",
 							"footnoteVariant": "info",
+							"footnoteCompact": true,
 							"emptyText": "No next action is planned on this case"
 						},
 						"_rowsNote": "DqZaakTaken Wat hierna komt: the planned actions as the board's rows under a rule (calendar tile, the action, its owner (a person, else the team by its name: {ownerGroup|group}, nextcloud-vue feat/r32-template-group-format) and who planned it (the person who added it, else what planned it: plannedByRule, the steps of the case type, which a successor carries over), the planned date at the end) and '{total} gepland' in the title row, instead of a table. Same filter and order: the first row is still the answer to what comes next."
@@ -4801,6 +4825,18 @@
 							"presentation": "checklist",
 							"columns": 1,
 							"title": "{label}",
+							"meta": "{evidence}",
+							"metaAt": "end",
+							"missingText": "missing",
+							"headerPillFrom": {
+								"path": "verdict",
+								"labels": {
+									"incomplete": "Not admissible yet"
+								},
+								"colorMap": {
+									"incomplete": "warning"
+								}
+							},
 							"done": {
 								"field": "present",
 								"op": "eq",
@@ -4810,7 +4846,6 @@
 							"footnote": "When everything is present, Confirm admissibility moves the case to its next status. While the requester supplements, the term stands still.",
 							"footerAction": {
 								"label": "Confirm admissibility",
-								"icon": "CheckCircleOutline",
 								"type": "open-modal",
 								"target": "CnActionDialog",
 								"props": {
@@ -6069,7 +6104,7 @@
 								}
 							],
 							"emptyText": "No decision letter written yet",
-							"footnote": "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced.",
+							"footnote": "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced. An objection that comes in later gets the warning: objection period possibly exceeded.",
 							"headerAction": {
 								"label": "Generate document",
 								"icon": "FileDocumentPlusOutline",
@@ -6117,7 +6152,9 @@
 								{
 									"key": "advisoryContext.suggestionType",
 									"label": "Kind and action",
+									"secondary": "advisoryContext.action",
 									"enumLabels": {
+										"refusal-ground": "Classification",
 										"answer": "Question",
 										"question": "Question",
 										"draft": "Draft text",
@@ -6203,6 +6240,18 @@
 							"chatAppId": "hermiq",
 							"pill": "Hermiq",
 							"note": "The assistant sees only what you see on this case. Without Hermiq this panel is off.",
+							"noteFrom": {
+								"url": "/apps/hermiq/api/ai-features/residency",
+								"path": "results",
+								"match": {
+									"slug": "chat-companion"
+								},
+								"requires": [
+									"provider",
+									"location"
+								],
+								"text": "The assistant sees only what you see on this case; it gets this page and the case's reference. Provider and place, as Hermiq answers: {provider}, {location}. Dossiq sets no model itself. Without Hermiq this panel is off."
+							},
 							"placeholder": "Ask something about this case",
 							"sendLabel": "Ask",
 							"openSubjectSession": true,
@@ -6317,6 +6366,7 @@
 						}
 				],
 				"headerActions": [
+					{"id": "start-enforcement", "type": "open-modal", "target": "RecordStepsDialog", "label": "Start enforcement", "icon": "Gavel", "group": "Case", "props": {"dialogTitle": "Start enforcement", "schema": "handhavingsactie", "submitLabel": "Start enforcement", "successText": "Enforcement started. The task to assess the view is on the case.", "prefillFrom": {"schema": "lhsRecommendation", "map": {"severity": "severity", "behaviour": "behaviour", "finalIntervention": "type"}}, "task": {"title": "Assess the view after the term", "dueInDaysField": "opinionDays"}, "steps": [{"id": "classification", "title": "LHS classification", "fields": [{"key": "severity", "label": "Severity", "type": "select", "required": true, "options": [{"value": "gering", "label": "Minor"}, {"value": "aanzienlijk", "label": "Considerable"}, {"value": "ernstig", "label": "Serious"}]}, {"key": "behaviour", "label": "Behaviour", "type": "select", "required": true, "options": [{"value": "goedwillend", "label": "Well-meaning"}, {"value": "onverschillig", "label": "Indifferent"}, {"value": "calculerend", "label": "Calculating behaviour"}, {"value": "crimineel", "label": "Criminal behaviour"}]}, {"key": "type", "label": "Intervention", "type": "select", "required": true, "hint": "From the case's LHS advice, when it has one.", "options": [{"value": "warning", "label": "Warning"}, {"value": "last_under_penaltypayment", "label": "Penalty order"}, {"value": "bestuursdwang", "label": "Administrative enforcement"}]}]}, {"id": "details", "title": "Intervention details", "fields": [{"key": "penaltyPaymentAmount", "label": "Penalty per violation", "type": "number", "required": true, "when": {"field": "type", "in": ["last_under_penaltypayment"]}}, {"key": "penaltyPaymentMaximum", "label": "Maximum", "type": "number", "required": true, "when": {"field": "type", "in": ["last_under_penaltypayment"]}}, {"key": "compliancePeriod", "label": "Compliance period (days)", "type": "number", "required": true, "hint": "After it, the task Carry out the reinspection follows.", "when": {"field": "type", "in": ["last_under_penaltypayment"]}}, {"key": "effectuationDate", "label": "Enforcement date", "type": "text", "placeholder": "YYYY-MM-DD", "when": {"field": "type", "in": ["bestuursdwang"]}}, {"key": "estimatedCost", "label": "Estimated cost", "type": "number", "hint": "To recover from the offender", "when": {"field": "type", "in": ["bestuursdwang"]}}]}, {"id": "announcement", "title": "Pre-announcement", "intro": "On finishing, dossiq makes the enforcement action and the task to assess the view.", "fields": [{"key": "opinionDays", "label": "Term for a view (days)", "type": "number", "required": true, "transient": true, "default": 14}]}]}, "visibleWhen": {"all": [{"field": "@self.archived", "op": "empty"}, {"field": "@context.caseType.category", "op": "in", "value": ["Toezicht en handhaving"]}]}},
 					{
 						"id": "plan-case-meeting",
 						"type": "open-form",
@@ -6575,6 +6625,7 @@
 					"cross-domain-lookup",
 					"message-applicant",
 					"remedy-lodge",
+					"start-enforcement",
 					"advice-request",
 					"woo-publish",
 					"woo-withdraw",
@@ -6691,7 +6742,9 @@
 						"gridWidth": 6,
 						"gridHeight": 6,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": "18",
@@ -6701,7 +6754,9 @@
 						"gridWidth": 6,
 						"gridHeight": 6,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": "19",
@@ -6711,7 +6766,9 @@
 						"gridWidth": 6,
 						"gridHeight": 7,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": "20",
@@ -6721,7 +6778,9 @@
 						"gridWidth": 6,
 						"gridHeight": 7,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true,
+						"sameHeight": true
 					},
 					{
 						"id": "21",
@@ -6731,7 +6790,8 @@
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": true,
-						"clear": true
+						"clear": true,
+						"sizeToContent": true
 					},
 					{
 						"id": "16",
@@ -6775,6 +6835,7 @@
 							"trailing": ["{daysSinceActivity} days idle"],
 							"chevron": false,
 							"rowRoute": "CaseDetail",
+							"footnote": "Seven days or longer without an update, longest idle first.",
 							"emptyText": "All cases active"
 						}
 					},
@@ -6951,11 +7012,11 @@
 						"id": "layout-note",
 						"type": "banner",
 						"title": "About this layout",
-						"_note": "Board DqDashboard: the info line under the grid. The board's first two sentences describe the in-page Edit layout button, which is gone (layout editing is buildiq's, Ruben 18 Oct), so only the sentence on who sees Within deadline stays (kpi-sla-compliance carries roles controllers, beheerders and admin).",
+						"_note": "Board DqDashboard: the info line under the grid. The board's first two sentences describe the in-page Edit layout button, which is gone (layout editing is buildiq's, Ruben 18 Oct), so the note opens on who sees Within deadline (kpi-sla-compliance carries roles controllers, beheerders and admin).",
 						"content": {
 							"variant": "info",
 							"icon": "ViewDashboardOutline",
-							"text": "Within deadline is only shown to those who monitor or manage."
+							"text": "Within deadline is only shown to those who monitor or manage. A widget with a role you do not have is not there, not even as an empty place, and the page does not send its data along. If a role matches nobody, the widget goes and the log names the widget and the role."
 						}
 					},
 					{
@@ -6969,6 +7030,10 @@
 							"route": "MyWorkHome"
 						},
 						"content": {
+							"footerLink": {
+								"label": "More in My work",
+								"route": "MyWorkHome"
+							},
 							"presentation": "rows",
 							"ruleAbove": true,
 							"chevron": false,
@@ -6989,7 +7054,7 @@
 										"field": "deadline",
 										"dir": "asc"
 									},
-									"limit": 3,
+									"limit": 2,
 									"title": "{title}",
 									"meta": {
 										"parts": [
@@ -7010,7 +7075,7 @@
 											"scope": "assigned",
 											"isTerminal": "false",
 											"sort": "dueAt",
-											"limit": 3
+											"limit": 1
 										},
 										"responsePath": "results"
 									},
@@ -7088,6 +7153,7 @@
 							"route": "TermijnDashboard"
 						},
 						"content": {
+							"footnote": "Fewest days first.",
 							"presentation": "rows",
 							"ruleAbove": true,
 							"chevron": false,
@@ -7184,6 +7250,7 @@
 							"route": "Tasks"
 						},
 						"content": {
+							"footnote": "Late ones on top, most days first, then by date.",
 							"presentation": "rows",
 							"ruleAbove": true,
 							"chevron": false,
@@ -7287,6 +7354,7 @@
 							}
 						},
 						"content": {
+							"footnote": "Red: late. Orange: two days or less. Yellow: a week or less. Green: on schedule. The requester is shown when known.",
 							"register": "dossiq",
 							"schema": "case",
 							"filter": {
@@ -7960,6 +8028,62 @@
 			}
 		},
 		{
+			"id": "CaseObjects",
+			"_note": "The Objects overview DqCatalogus draws: the All cases list with the object first, one row per case on an object. Entry under Cases (Ruben, 6 Nov).",
+			"config": {
+				"showTitle": true,
+				"countText": "{shown} of {total} objects on cases, sorted by object",
+				"searchPlaceholder": "Search by identification",
+				"defaultOrder": "objectIdentification",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "add",
+						"label": "Add case object",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
+				"columns": [
+					{
+						"key": "objectIdentification",
+						"label": "Object",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{description}"
+					},
+					{
+						"key": "objectType",
+						"label": "Object type",
+						"width": "98px"
+					},
+					{
+						"key": "case",
+						"label": "Case",
+						"formatter": "caseTitle",
+						"sortable": false,
+						"secondary": "{caseRecord.identifier}",
+						"secondaryRefs": {
+							"caseRecord": { "field": "case", "register": "dossiq", "schema": "case" }
+						}
+					},
+					{
+						"key": "caseStatus",
+						"label": "Status",
+						"sortable": false,
+						"width": "135px",
+						"secondary": "{caseRecord.statusPublicLabel}",
+						"secondaryRefs": {
+							"caseRecord": { "field": "case", "register": "dossiq", "schema": "case" }
+						}
+					}
+				]
+			}
+		},
+		{
 			"id": "Organisations",
 			"config": {
 				"showTitle": true,
@@ -8022,6 +8146,7 @@
 					}
 				},
 				"searchPlaceholder": "Search a case type",
+				"footerNote": "20 per page",
 				"allowExport": true,
 				"_actionsMenuNote": "DqZaaktypen's Actions menu: import a case type, export the selected case types as JSON (nextcloud-vue `export-selected`, OpenRegister's export by `_ids`), and reload the shipped templates (POST /api/packages/reload, admin-only on the server; `adminOnly` only hides the entry from others).",
 				"headerActions": [
@@ -8079,21 +8204,25 @@
 					},
 					{
 						"key": "category",
-						"label": "Domain"
+						"label": "Domain",
+						"width": "149px"
 					},
 					{
 						"key": "processingDeadline",
 						"label": "Processing time",
+						"width": "158px",
 						"formatter": "processingTime"
 					},
 					{
 						"key": "version",
 						"label": "Version",
+						"width": "115px",
 						"formatter": "versionLabel"
 					},
 					{
 						"key": "isDraft",
 						"label": "Status",
+						"width": "130px",
 						"formatter": "draftState",
 						"widget": "badge",
 						"widgetProps": {
@@ -8595,7 +8724,9 @@
 									"label": "Fields",
 									"widgetIds": [
 										"case-type-fields-editor",
-										"case-type-field-rules"
+										"case-type-field-rules",
+										"case-type-forms-receipt",
+										"case-type-package"
 									],
 									"countFrom": {
 										"register": "dossiq",
@@ -8613,6 +8744,7 @@
 										"case-type-results",
 										"case-type-document-types",
 										"case-type-decision-types",
+										"case-type-roles",
 										"case-type-blueprint"
 									],
 									"countFrom": {
@@ -8630,7 +8762,8 @@
 										"case-type-phase-board",
 										"case-type-variants",
 										"case-type-terms-written",
-										"case-type-messages"
+										"case-type-messages",
+										"case-type-milestones"
 									],
 									"countFrom": {
 										"endpoint": "/apps/dossiq/api/case-types/@objectId/phases",
@@ -8657,8 +8790,7 @@
 									"id": "rights",
 									"label": "Rights",
 									"widgetIds": [
-										"case-type-rights",
-										"case-type-roles"
+										"case-type-rights"
 									]
 								},
 								{
@@ -8716,6 +8848,97 @@
 									"label": "Record history"
 								}
 							]
+						}
+					},
+					{
+						"id": "case-type-milestones",
+						"type": "record-list",
+						"title": "Milestones of this case type",
+						"subtitle": "In order, each with its own label, a trigger and a status that reaches the milestone by itself",
+						"_note": "DqZaaktype Mijlpalen: the milestoneDefinition rows of this case type, read as the milestone progress on a case reads them.",
+						"headerActions": [
+							{
+								"label": "Add milestone",
+								"icon": "Plus",
+								"action": {
+									"type": "open-form",
+									"formTitle": "Add milestone",
+									"formConfirmLabel": "Add",
+									"register": "dossiq",
+									"schema": "milestoneDefinition",
+									"includeFields": ["label", "identifier", "order", "triggerEvent", "mappedStatusType", "expectedDurationWorkingDays"],
+									"props": { "caseType": "@objectId" },
+									"successMessage": "The milestone is added."
+								}
+							}
+						],
+						"content": {
+							"register": "dossiq",
+							"schema": "milestoneDefinition",
+							"filter": { "caseType": "@objectId" },
+							"sort": { "field": "order", "dir": "asc" },
+							"limit": 20,
+							"presentation": "rows",
+							"title": "{order} · {label}",
+							"meta": { "parts": ["{identifier}", "trigger: {triggerEvent}"] },
+							"pill": {
+								"cases": [
+									{ "when": { "field": "mappedStatusType", "op": "notEmpty" }, "label": "Status", "variant": "info" },
+									{ "when": { "field": "triggerEvent", "op": "notEmpty" }, "label": "Flow", "variant": "info" }
+								],
+								"label": "Manual",
+								"variant": "default"
+							},
+							"emptyText": "This case type has no milestones yet"
+						}
+					},
+					{
+						"id": "case-type-forms-receipt",
+						"type": "facts",
+						"title": "Forms and receipt",
+						"_note": "DqZaaktypeVelden Formulieren en ontvangst: what the case type already declares (intakeFormRef, acknowledgement). The list of bound forms with their mapping state waits for an endpoint over IntakeFormBindingCheck.",
+						"content": {
+							"headerPill": { "text": "Checked on publishing", "variant": "info" },
+							"hideEmpty": false,
+							"fields": [
+								{
+									"label": "Intake form",
+									"path": "intakeFormRef",
+									"emptyValue": "No form bound",
+									"note": {
+										"parts": [
+											{ "text": "A completed form makes a case of this type at once, in the first status, with channel form; dossiq does not set the start date itself." }
+										]
+									}
+								},
+								{
+									"label": "Acknowledgement of receipt",
+									"path": "acknowledgement.enabled",
+									"map": {
+										"true": "Automatic with every request, without the handler acting",
+										"false": "Off"
+									},
+									"emptyValue": "Automatic with every request, without the handler acting",
+									"note": {
+										"parts": [
+											{ "text": "To the applicant through the portal, to the sender of a mail, to the address on a form. One per case; a second run sends nothing." }
+										]
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-type-package",
+						"type": "facts",
+						"title": "From the marketplace",
+						"_note": "DqZaaktypeVelden Van de marktplaats: the package that placed this case type. Versions, changed fields and Update wait for dossiq-store-surface: a case type stores only the package id.",
+						"visibleWhen": { "field": "package", "op": "notEmpty" },
+						"content": {
+							"fields": [
+								{ "label": "Package", "path": "package" }
+							],
+							"footnote": "On updating the case type takes the newer version. A field the marketplace filled and you did not touch is updated too; fields you changed keep your value."
 						}
 					},
 					{
@@ -9307,8 +9530,10 @@
 					{
 						"id": "case-type-roles",
 						"type": "object-list",
-						"title": "Roles",
+						"title": "Role types",
+						"subtitle": "Which roles a party on a case of this type can have. Each role type points to exactly one generic role.",
 						"content": {
+							"addLabel": "Add Role Type",
 							"register": "dossiq",
 							"schema": "roleType",
 							"filter": {
@@ -9322,7 +9547,11 @@
 							"columns": [
 								{
 									"key": "name",
-									"label": "Role"
+									"label": "Role type"
+								},
+								{
+									"key": "description",
+									"label": "Description"
 								},
 								{
 									"key": "genericRole",

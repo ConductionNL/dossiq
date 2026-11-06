@@ -38,7 +38,10 @@
 							<dt>{{ t('dossiq', 'Decision') }}</dt>
 							<dd>{{ kase.resultPublicLabel }}</dd>
 						</div>
-						<div v-for="fill in chosenTemplateFills" :key="fill.label">
+						<div
+							v-for="fill in chosenTemplateFills"
+							:key="fill.label"
+							:class="{ 'generate-document__fill--missing': fill.missing }">
 							<dt>
 								{{ t('dossiq', fill.label) }}
 								<CnStatusBadge
@@ -51,6 +54,7 @@
 							</dt>
 							<dd :class="{ 'generate-document__missing': fill.missing }">
 								{{ fill.fixed ? t('dossiq', fill.value) : fill.value }}
+								<span v-if="fill.note" class="generate-document__fill-note">· {{ fill.note }}</span>
 							</dd>
 						</div>
 					</dl>
@@ -62,16 +66,22 @@
 					</template>
 					{{ t('dossiq', 'The document is added to the case as a draft, under Documents. You sign and send it afterwards, from Decisions.') }}
 				</NcNoteCard>
-				<p v-if="missingRequired.length > 0" class="generate-document__note" data-testid="generate-document-missing">
+				<NcNoteCard v-if="missingRequired.length > 0" type="error" data-testid="generate-document-missing">
+					<template #icon>
+						<AlertCircle :size="18" />
+					</template>
 					{{ n('dossiq', 'A required field is missing: {fields}. The draft stays in Draft until you have filled it in; approval can only come after that.', 'Required fields are missing: {fields}. The draft stays in Draft until you have filled them in; approval can only come after that.', missingRequired.length, { fields: missingRequired.join(', ') }) }}
-				</p>
-				<p
+				</NcNoteCard>
+				<NcNoteCard
 					v-for="note in chosenTemplateNotes"
 					:key="note"
-					class="generate-document__note"
+					type="info"
 					data-testid="generate-document-template-note">
+					<template #icon>
+						<ClockOutline :size="18" />
+					</template>
 					{{ note }}
-				</p>
+				</NcNoteCard>
 				<NcNoteCard v-if="error" type="error">
 					{{ error }}
 				</NcNoteCard>
@@ -113,6 +123,8 @@ import {
 	NcButton,
 	NcNoteCard,
 } from '@nextcloud/vue'
+import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
+import ClockOutline from 'vue-material-design-icons/ClockOutline.vue'
 import FileDocumentCheckOutline from 'vue-material-design-icons/FileDocumentCheckOutline.vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
@@ -141,6 +153,8 @@ import { templateFillRows } from '../utils/templateFills.js'
 export default {
 	name: 'GenerateDocumentDialog',
 	components: {
+		AlertCircle,
+		ClockOutline,
 		CnChoiceCards,
 		CnDialog,
 		CnStatusBadge,
@@ -413,17 +427,25 @@ export default {
 	font-weight: 500;
 }
 
-.generate-document__required {
+.generate-document__required.generate-document__required {
 	margin-inline-start: 4px;
+	padding: 1px 8px;
+	border-radius: 10px;
+	font-size: 12px;
+	line-height: 14px;
+}
+
+.generate-document__fills-grid > .generate-document__fill--missing {
+	border-block-end-color: var(--color-error);
+}
+
+.generate-document__fill-note {
+	font-weight: 400;
+	color: var(--color-text-maxcontrast);
 }
 
 .generate-document__fills-grid dd.generate-document__missing {
 	color: var(--color-error-text);
-}
-
-.generate-document__note {
-	margin: 0;
-	color: var(--color-text-maxcontrast);
 }
 
 .generate-document__intro {
