@@ -268,6 +268,10 @@
             "{count} working day",
             "{count} working days"
         ],
+        "_{days} calendar day, late from {date}_::_{days} calendar days, late from {date}_": [
+            "{days} calendar day, late from {date}",
+            "{days} calendar days, late from {date}"
+        ],
         "_{total} case without an address_::_{total} cases without an address_": [
             "{total} case without an address",
             "{total} cases without an address"
@@ -4735,6 +4739,7 @@
         "Keep out of the case list": "Keep out of the case list",
         "Keep this one": "Keep this one",
         "Keep what is already here": "Keep what is already here",
+        "Keep, with a reason": "Keep, with a reason",
         "Kenmerk": "Reference",
         "Kept by the holder": "Kept by the holder",
         "Kept permanently": "Kept permanently",
@@ -6199,6 +6204,7 @@
         "Once": "Once",
         "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.": "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.",
         "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced.": "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced.",
+        "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced. An objection that comes in later gets the warning: objection period possibly exceeded.": "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced. An objection that comes in later gets the warning: objection period possibly exceeded.",
         "Once the decision is recorded the publication is ready. Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.": "Once the decision is recorded the publication is ready. Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.",
         "Once, with a reason. The requester gets a message.": "Once, with a reason. The requester gets a message.",
         "Ondertekend": "Signed",
@@ -7192,6 +7198,7 @@
         "Reason the step is blocked (surfaced in the UI)": "Reason the step is blocked (surfaced in the UI)",
         "Reason, written onto every case": "Reason, written onto every case",
         "Reason:": "Reason:",
+        "reason: {reason}": "reason: {reason}",
         "Reasoning": "Reasoning",
         "Reasoning / description of the request.": "Reasoning / description of the request.",
         "Reasoning underpinning the decision": "Reasoning underpinning the decision",
@@ -9488,6 +9495,7 @@
         "The dossiq task that assigns the batch.": "The dossiq task that assigns the batch.",
         "The draft is too long to keep": "The draft is too long to keep",
         "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.",
+        "The draft opens in Nextcloud Mail with the case details filled in. You send it from there. Every key in a template gets a value from the case, such as the name of the handler and the case number.": "The draft opens in Nextcloud Mail with the case details filled in. You send it from there. Every key in a template gets a value from the case, such as the name of the handler and the case number.",
         "The draft was made but could not be opened.": "The draft was made but could not be opened.",
         "The draft's file name.": "The draft's file name.",
         "The earlier set of the same case this delivery replaces, if any.": "The earlier set of the same case this delivery replaces, if any.",
@@ -12148,6 +12156,7 @@
         "{amount}, fixed": "{amount}, fixed",
         "{amount}, running since {date}": "{amount}, running since {date}",
         "{application, from}: the source number kept in formerReferences.": "{application, from}: the source number kept in formerReferences.",
+        "{asker} asks for this case": "{asker} asks for this case",
         "{assessed}/{total} documents assessed": "{assessed}/{total} documents assessed",
         "{candidateGroups}": "{candidateGroups}",
         "{capabilities}, without an account · the link can end": "{capabilities}, without an account · the link can end",
@@ -12233,6 +12242,8 @@
         "{courtReference} · filed {appellantFilingDate|date}": "{courtReference} · filed {appellantFilingDate|date}",
         "{date}, {start} to {end}": "{date}, {start} to {end}",
         "{daysSinceActivity} days idle": "{daysSinceActivity} days idle",
+        "{days} calendar day, late from {date}": "{days} calendar day, late from {date}",
+        "{days} calendar days, late from {date}": "{days} calendar days, late from {date}",
         "{days} days": "{days} days",
         "{days} days ago": "{days} days ago",
         "{days} days left": "{days} days left",
@@ -12404,6 +12415,7 @@
         "{total} organisations": "{total} organisations",
         "{total} planned": "{total} planned",
         "{total} recorded": "{total} recorded",
+        "{total} recorded · the automatic acknowledgement is in the conversation, but does not count here": "{total} recorded · the automatic acknowledgement is in the conversation, but does not count here",
         "{total} results in cases, objects and documents, only what you may see": "{total} results in cases, objects and documents, only what you may see",
         "{total} suppliers": "{total} suppliers",
         "{total} with access": "{total} with access",

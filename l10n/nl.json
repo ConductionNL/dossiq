@@ -268,6 +268,10 @@
             "{count} werkdag",
             "{count} werkdagen"
         ],
+        "_{days} calendar day, late from {date}_::_{days} calendar days, late from {date}_": [
+            "{days} kalenderdag, te laat vanaf {date}",
+            "{days} kalenderdagen, te laat vanaf {date}"
+        ],
         "_{total} case without an address_::_{total} cases without an address_": [
             "{total} zaak zonder adres",
             "{total} zaken zonder adres"
@@ -4735,6 +4739,7 @@
         "Keep out of the case list": "Buiten de zakenlijst houden",
         "Keep this one": "Deze houden",
         "Keep what is already here": "Houd wat er al staat",
+        "Keep, with a reason": "Houden, met reden",
         "Kenmerk": "Kenmerk",
         "Kept by the holder": "Behouden door de behandelaar",
         "Kept permanently": "Permanent",
@@ -6199,6 +6204,7 @@
         "Once": "Eenmalig",
         "Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.": "Na het archiveren kunt u documenten, taken en berichten van deze zaak niet meer wijzigen. De zaak blijft vindbaar tot de vernietigingsdatum.",
         "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced.": "Na het ondertekenen is de beschikking niet meer te wijzigen. De bezwaartermijn van zes weken start op de dag van bekendmaking.",
+        "Once signed, the decision letter can no longer be changed. The six-week objection period starts on the day it is announced. An objection that comes in later gets the warning: objection period possibly exceeded.": "Na het ondertekenen is de beschikking niet meer te wijzigen. De bezwaartermijn van zes weken start op de dag van bekendmaking. Een bezwaar dat later binnenkomt, krijgt de waarschuwing: Bezwaartermijn mogelijk overschreden.",
         "Once the decision is recorded the publication is ready. Publish (Woo) under More sends the public and partly public documents to the reading room. What is not public never goes along.": "Na het vastleggen staat de publicatie klaar. Met Publiceren (Woo) in Meer gaan de openbare en deels openbare documenten naar de leeskamer. Wat niet openbaar is, gaat nooit mee.",
         "Once, with a reason. The requester gets a message.": "Eén keer, met een reden. De verzoeker krijgt bericht.",
         "Ondertekend": "Ondertekend",
@@ -7192,6 +7198,7 @@
         "Reason the step is blocked (surfaced in the UI)": "Reden waarom de stap is geblokkeerd (wordt in de interface getoond)",
         "Reason, written onto every case": "Reden, op elke zaak vastgelegd",
         "Reason:": "Reden:",
+        "reason: {reason}": "reden: {reason}",
         "Reasoning": "Redenering",
         "Reasoning / description of the request.": "Redenering of omschrijving van het verzoek.",
         "Reasoning underpinning the decision": "Redenering waarop het besluit rust",
@@ -9488,6 +9495,7 @@
         "The dossiq task that assigns the batch.": "De dossiq-taak die de partij toewijst.",
         "The draft is too long to keep": "Het concept is te lang om te bewaren",
         "The draft opens in Nextcloud Mail with the case details filled in. You send it from there.": "Het concept opent in Nextcloud Mail met de zaakgegevens al ingevuld. Versturen doet u daar.",
+        "The draft opens in Nextcloud Mail with the case details filled in. You send it from there. Every key in a template gets a value from the case, such as the name of the handler and the case number.": "Het concept opent in Nextcloud Mail met de zaakgegevens al ingevuld. Versturen doet u daar. Elke invulsleutel in een sjabloon krijgt een waarde van de zaak, zoals de naam van de behandelaar en het zaaknummer.",
         "The draft was made but could not be opened.": "Het concept is gemaakt maar kon niet worden geopend.",
         "The draft's file name.": "De bestandsnaam van het concept.",
         "The earlier set of the same case this delivery replaces, if any.": "De eerdere set van dezelfde zaak die deze aanlevering vervangt, als die er is.",
@@ -12148,6 +12156,7 @@
         "{amount}, fixed": "{amount}, vastgesteld",
         "{amount}, running since {date}": "{amount}, loopt sinds {date}",
         "{application, from}: the source number kept in formerReferences.": "{application, from}: het bronnummer dat in formerReferences bewaard blijft.",
+        "{asker} asks for this case": "{asker} vraagt om deze zaak",
         "{assessed}/{total} documents assessed": "{assessed}/{total} documenten beoordeeld",
         "{candidateGroups}": "{candidateGroups}",
         "{capabilities}, without an account · the link can end": "{capabilities}, zonder account · de link kan eindigen",
@@ -12233,6 +12242,8 @@
         "{courtReference} · filed {appellantFilingDate|date}": "{courtReference} · ingediend {appellantFilingDate|date}",
         "{date}, {start} to {end}": "{date}, {start} tot {end}",
         "{daysSinceActivity} days idle": "{daysSinceActivity} dagen stil",
+        "{days} calendar day, late from {date}": "{days} kalenderdag, te laat vanaf {date}",
+        "{days} calendar days, late from {date}": "{days} kalenderdagen, te laat vanaf {date}",
         "{days} days": "{days} dagen",
         "{days} days ago": "{days} dagen geleden",
         "{days} days left": "Nog {days} dagen",
@@ -12404,6 +12415,7 @@
         "{total} organisations": "{total} organisaties",
         "{total} planned": "{total} gepland",
         "{total} recorded": "{total} vastgelegd",
+        "{total} recorded · the automatic acknowledgement is in the conversation, but does not count here": "{total} vastgelegd · de automatische ontvangstbevestiging staat wel in het gesprek, maar telt hier niet mee",
         "{total} results in cases, objects and documents, only what you may see": "{total} resultaten in zaken, objecten en documenten, alleen wat u mag zien",
         "{total} suppliers": "{total} leveranciers",
         "{total} with access": "{total} rechthebbenden",
