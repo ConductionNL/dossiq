@@ -7297,7 +7297,7 @@
 		},
 		{
 			"id": "CaseObjects",
-			"route": "/case-objects",
+			"route": "/objects",
 			"type": "index",
 			"title": "Objects",
 			"widgets": [
