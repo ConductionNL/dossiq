@@ -103,7 +103,7 @@
 			</thead>
 			<tbody>
 				<tr
-					v-for="def in definitions"
+					v-for="def in shownDefinitions"
 					:key="def.id"
 					class="deadline-definitions-tab__row"
 					:class="{ 'deadline-definitions-tab__row--inactive': !isActive(def) }">
@@ -162,6 +162,7 @@ import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import TimerSand from 'vue-material-design-icons/TimerSand.vue'
 import DeadlineDefinitionEditor from '../../../modals/DeadlineDefinitionEditor.vue'
+import { newestTermDefinitions } from '../../../utils/termDefinitions.js'
 
 export default {
 	name: 'DeadlineDefinitionsTab',
@@ -176,8 +177,8 @@ export default {
 
 	props: {
 		/**
-		 * One table of every term without the case type, the calendar line and
-		 * the row actions: the Integrations tab's "Term definitions (Awb)". The
+		 * The newest terms without the case type, the calendar line and the
+		 * row actions: the Integrations tab's "Term definitions (Awb)". The
 		 * section header carries Add definition and calls `openNew()`.
 		 */
 		summary: {
@@ -201,6 +202,16 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The rows of the table: the newest in the summary, else all of them.
+		 *
+		 * @return {Array<object>} The definitions to draw.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		shownDefinitions() {
+			return this.summary ? newestTermDefinitions(this.definitions) : this.definitions
+		},
+
 		/**
 		 * Whether any definition names its case type, so the column is worth drawing.
 		 *

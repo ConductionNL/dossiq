@@ -90,6 +90,7 @@ final class StatusTypePalette {
 		'Uitvoering' => 'purple',
 		'Veiligheidstoets' => 'purple',
 		'Verweerschrift in voorbereiding' => 'purple',
+		'Voorschotten' => 'purple',
 		'Voorstel opstellen' => 'purple',
 		'Zitting afgerond' => 'purple',
 		'Zoeken documenten' => 'purple',

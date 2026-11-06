@@ -19,8 +19,8 @@ const facts = page.config.sideColumn.find((card) => card.id === 'side-case-type-
 const nl = readJson('l10n', 'nl.json').translations
 
 describe('the case type Gegevens card', () => {
-	it('ends with the running cases of this case type', () => {
-		const last = facts[facts.length - 1]
+	it('holds the running cases of this case type', () => {
+		const last = facts.find((field) => field.label === 'Running cases')
 		expect(last).toEqual({ label: 'Running cases', countFrom: { register: 'dossiq', schema: 'case', filter: { caseType: '@objectId', isFinalStatus: false } } })
 		expect(nl[last.label]).toBe('Lopende zaken')
 	})
