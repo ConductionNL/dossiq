@@ -95,6 +95,13 @@ The system SHALL provide a guided wizard UI for creating enforcement actions bas
 - **THEN** the system SHALL create: handhavingsactie record, vooraankondiging document link, zienswijze task with deadline
 - **THEN** the case workflow SHALL advance to the "Vooraankondiging" step
 
+#### Scenario: The wizard is configuration
+
+- **WHEN** a case of the category Toezicht en handhaving is open
+- **THEN** the More menu SHALL offer Start enforcement, a generic RecordStepsDialog whose steps, fields, prefill and follow-up task come from the action in the manifest
+- **THEN** the wizard SHALL start from the case's LHS recommendation when it has one
+- **THEN** finishing SHALL write the handhavingsactie and the task to assess the view, due at the end of the term
+
 ### Requirement: Enforcement panel on case dashboard
 
 The system SHALL display an enforcement panel on the case dashboard for Handhaving case types.
@@ -107,6 +114,12 @@ The system SHALL display an enforcement panel on the case dashboard for Handhavi
 - **THEN** the "Handhaving" panel SHALL show: LHS classification (ernst x gedrag), interventie type, current enforcement status
 - **THEN** for dwangsom: the panel SHALL show bedrag per overtreding, maximum, begunstigingstermijn countdown, total verbeurd amount
 - **THEN** the timeline SHALL show all enforcement actions in chronological order
+
+#### Scenario: The card moves an action through its lifecycle
+
+- **WHEN** a user views the Enforcement on the case card of a case of the category Toezicht en handhaving
+- **THEN** each action SHALL show its kind, amounts and state
+- **THEN** Record forfeiture, Execute and Withdraw the order SHALL run the handhavingsactie lifecycle's transitions, each only from the states that allow it
 
 ### Requirement: The default LHS matrix ships as a case definition package
 
