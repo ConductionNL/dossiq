@@ -2275,6 +2275,7 @@
 										"case-summary",
 										"case-household-cases-card",
 										"goal-plan",
+										"case-overview-sections",
 										"case-grant-decisions-card",
 										"case-payment-schedule",
 										"case-request",
@@ -3034,6 +3035,12 @@
 			},
 			"configAppend": {
 				"widgets": [
+					{
+						"id": "case-overview-sections",
+						"type": "case-overview-sections",
+						"visibleWhen": { "field": "@context.caseType.overviewSections", "op": "notEmpty" },
+						"_note": "The cards a case type declares itself: a complaint, a tender and a grant are configuration, so their cards live on the case type and this one widget draws them."
+					},
 					{
 						"id": "case-note-card",
 						"type": "timeline",

@@ -34,6 +34,7 @@
     "confidentiality": "zaakvertrouwelijk",
     "initialStatus": "b3c1a000-0000-4000-a000-00005ab50001",
     "overviewCards": [
+      "case-overview-sections",
       "case-grant-decisions-card",
       "case-payment-schedule"
     ],
@@ -41,6 +42,57 @@
       "side-payment-amounts",
       "side-requester",
       "case-banner-stack"
+    ],
+    "overviewSections": [
+      {
+        "id": "verlening",
+        "title": "Verlening",
+        "columns": 2,
+        "rows": [
+          {
+            "label": "Aanvrager",
+            "field": "aanvrager"
+          },
+          {
+            "label": "Regeling",
+            "field": "regeling"
+          },
+          {
+            "label": "Aangevraagd",
+            "field": "aangevraagd"
+          },
+          {
+            "label": "Verleend",
+            "field": "verleend"
+          },
+          {
+            "label": "Beschikking",
+            "field": "beschikking"
+          }
+        ]
+      },
+      {
+        "id": "verantwoording",
+        "title": "Verantwoording en vaststelling",
+        "rows": [
+          {
+            "label": "Tussenrapportage",
+            "field": "tussenrapportage"
+          },
+          {
+            "label": "Eindverantwoording",
+            "field": "eindverantwoording"
+          },
+          {
+            "label": "Vaststelling",
+            "field": "vaststelling"
+          },
+          {
+            "label": "Terugvordering",
+            "field": "terugvordering"
+          }
+        ]
+      }
     ]
   },
   "propertyDefinitions": [
@@ -78,10 +130,21 @@
       "colour": "purple"
     },
     {
+      "id": "7d1c6a40-5b1e-5c55-9f3a-1e2d6f0a4b21",
+      "phase": "Voorschotten",
+      "name": "Voorschotten",
+      "description": "De subsidie is verleend en de voorschotten lopen. De zaak sluit na de vaststelling.",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
+      "role": "in-progress",
+      "colour": "purple"
+    },
+    {
       "id": "c1ae2604-721a-54ec-9300-7b0d1c8f9e91",
       "name": "Beschikt",
       "description": "Subsidie is verleend bij beschikking (Awb art. 4:29 e.v.)",
-      "order": 3,
+      "order": 4,
       "isFinal": true,
       "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
       "role": "closed",
@@ -91,7 +154,7 @@
       "id": "93b1b54f-4571-587e-a505-29c0952d342a",
       "name": "Afgewezen",
       "description": "Subsidieaanvraag is afgewezen",
-      "order": 4,
+      "order": 5,
       "isFinal": true,
       "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
       "colour": "red"
