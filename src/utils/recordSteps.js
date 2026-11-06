@@ -22,6 +22,8 @@ function isEmpty(value) {
  * @param {object} values The wizard's values.
  * @return {Array<object>} The step's fields that apply: a field with `when`
  *   only while the named field holds one of `when.in`.
+ *
+ * @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
  */
 export function stepFields(step, values) {
 	return (step.fields ?? []).filter((field) => !field.when || field.when.in.includes(values[field.when.field]))
@@ -31,6 +33,8 @@ export function stepFields(step, values) {
  * @param {object} step A step.
  * @param {object} values The wizard's values.
  * @return {object|null} The first required field left empty.
+ *
+ * @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
  */
 export function firstMissingField(step, values) {
 	return stepFields(step, values).find((field) => field.required && isEmpty(values[field.key])) ?? null
@@ -39,6 +43,8 @@ export function firstMissingField(step, values) {
 /**
  * @param {Array<object>} steps The steps.
  * @return {object} The fields' `default` values.
+ *
+ * @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
  */
 export function defaultValues(steps) {
 	return Object.fromEntries(steps.flatMap((step) => step.fields ?? [])
@@ -51,6 +57,8 @@ export function defaultValues(steps) {
  * @param {Record<string, string>} map The wizard's field for each of its fields.
  * @param {Array<object>} steps The steps.
  * @return {object} The values, without one a select does not offer.
+ *
+ * @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
  */
 export function prefillValues(source, map, steps) {
 	const fields = new Map(steps.flatMap((step) => step.fields ?? []).map((field) => [field.key, field]))
@@ -70,6 +78,8 @@ export function prefillValues(source, map, steps) {
  * @param {Array<object>} steps The steps.
  * @param {string} caseId The case.
  * @return {object} The record: the case and every applying field that is not `transient`.
+ *
+ * @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
  */
 export function recordFromValues(values, steps, caseId) {
 	const record = { case: caseId }
@@ -87,6 +97,8 @@ export function recordFromValues(values, steps, caseId) {
  * @param {string} caseId The case.
  * @param {number} now The current time in ms.
  * @return {object|null} The engine task, or null when the action asks for none.
+ *
+ * @spec openspec/specs/enforcement-lhs/spec.md#requirement-enforcement-wizard
  */
 export function followUpTask(task, values, caseId, now = Date.now()) {
 	if (!task) {
