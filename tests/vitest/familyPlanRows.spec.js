@@ -16,3 +16,13 @@ describe('the family plan card', () => {
 		expect(text).toContain('"itemsPath":"interventions","itemLook":"rows"')
 	})
 })
+
+describe('the family plan pills', () => {
+	const goals = JSON.stringify(manifest).match(/"id":"family-plan-goals".*?"errorText"/)[0]
+
+	it('names the state of a goal and of an intervention, late first', () => {
+		expect(goals).toContain('"groupPill"')
+		expect(goals).toContain('"overdueLabel":"Late"')
+		expect(goals).toContain('"itemDate":"target date {targetDate|date}"')
+	})
+})
