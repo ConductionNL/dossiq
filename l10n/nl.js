@@ -10438,6 +10438,7 @@ OC.L10N.register(
         "This relation already exists.": "Deze relatie bestaat al.",
         "This report is in Pipelinq. Pipelinq is not installed.": "Dit rapport staat in Pipelinq. Pipelinq is niet geïnstalleerd.",
         "This report is in Shillinq. Shillinq is not installed.": "Dit rapport staat in Shillinq. Shillinq is niet geïnstalleerd.",
+        "This report is not available yet.": "Dit rapport is nog niet beschikbaar.",
         "This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.": "Deze beoordelaar zit nog niet in de medewerkersgroep. Vraag een beheerder om toevoeging aan dossiq-medewerkers.",
         "This sample is not one of this case.": "Deze steekproef hoort niet bij deze zaak.",
         "This search is not stored on this case.": "Deze zoekopdracht is niet bij deze zaak bewaard.",

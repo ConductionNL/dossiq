@@ -12030,10 +12030,10 @@
 						"meta": "Grouping: retention period",
 						"icon": "ArchiveOutline",
 						"category": "process",
-						"route": "Cases",
-						"query": {
-							"isFinalStatus": "true"
-						}
+						"_note": "A retention report is a later spec. Until it exists the card says so and opens nothing: the Cases list it used to open is a menu entry of its own (ADR-112 D2), and requiresApp names an app nothing answers to, so the panel draws missingText in place of a link.",
+						"href": "#",
+						"requiresApp": "dossiq-retention-report",
+						"missingText": "This report is not available yet."
 					},
 					{
 						"id": "KccVolume",
