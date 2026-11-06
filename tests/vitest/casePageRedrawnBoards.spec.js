@@ -116,6 +116,8 @@ describe('the case tabs', () => {
 	it('names the kind of each assistant suggestion (DqZaakAssistent)', () => {
 		const columns = widget('case-ai-activity').content.columns
 		expect(columns[2]).toMatchObject({ key: 'advisoryContext.suggestionType', label: 'Kind and action' })
+		expect(columns[2].secondary).toBe('advisoryContext.action')
+		expect(columns[2].enumLabels['refusal-ground']).toBe('Classification')
 	})
 })
 
