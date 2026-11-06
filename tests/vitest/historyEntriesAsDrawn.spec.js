@@ -21,7 +21,7 @@ describe('history entries as drawn', () => {
 	})
 
 	it('names an icon for every kind on the board, each registered', () => {
-		expect(Object.keys(content.kindIcons).sort()).toEqual(['bericht', 'document', 'ontvangstbevestiging', 'statuswijziging', 'taak', 'toewijzing'])
+		expect(Object.keys(content.kindIcons).sort()).toEqual(['bericht', 'document', 'ontvangstbevestiging', 'statuswijziging', 'taak', 'termijngebeurtenis', 'toewijzing'])
 		for (const name of Object.values(content.kindIcons)) {
 			expect(icons).toContain(`import ${name} from 'vue-material-design-icons/${name}.vue'`)
 		}

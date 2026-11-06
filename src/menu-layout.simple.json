@@ -3010,12 +3010,7 @@
 					"kpi-2": null,
 					"kpi-5": null,
 					"3": null,
-					"presence-strip": {
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 1
-					},
+					"presence-strip": null,
 					"5": {
 						"gridX": 0,
 						"gridY": 1,
