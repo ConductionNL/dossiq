@@ -6132,7 +6132,9 @@
 								{
 									"key": "advisoryContext.suggestionType",
 									"label": "Kind and action",
+									"secondary": "advisoryContext.action",
 									"enumLabels": {
+										"refusal-ground": "Classification",
 										"answer": "Question",
 										"question": "Question",
 										"draft": "Draft text",
