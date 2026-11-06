@@ -70,6 +70,11 @@ describe('the completeness of the application (DqZaakDocumenten)', () => {
 		expect(evaluateVisibleWhenLocal(card.content.done, { present: false })).toBe(false)
 	})
 
+	it('draws the completeness rows with their source, "ontbreekt" and the verdict pill (DqZaakDocumenten)', () => {
+		expect(card.content).toMatchObject({ meta: '{evidence}', metaAt: 'end', missingText: 'missing' })
+		expect(card.content.headerPillFrom).toEqual({ path: 'verdict', labels: { incomplete: 'Not admissible yet' }, colorMap: { incomplete: 'warning' } })
+	})
+
 	it('confirms admissibility through the intake verdict route', () => {
 		const request = card.content.footerAction.props.config.confirm.request
 		expect(request).toEqual({ method: 'POST', url: '/apps/dossiq/api/cases/@objectId/admissibility', body: { verdict: 'admissible' } })

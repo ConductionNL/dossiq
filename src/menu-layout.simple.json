@@ -4801,6 +4801,18 @@
 							"presentation": "checklist",
 							"columns": 1,
 							"title": "{label}",
+							"meta": "{evidence}",
+							"metaAt": "end",
+							"missingText": "missing",
+							"headerPillFrom": {
+								"path": "verdict",
+								"labels": {
+									"incomplete": "Not admissible yet"
+								},
+								"colorMap": {
+									"incomplete": "warning"
+								}
+							},
 							"done": {
 								"field": "present",
 								"op": "eq",
@@ -4810,7 +4822,6 @@
 							"footnote": "When everything is present, Confirm admissibility moves the case to its next status. While the requester supplements, the term stands still.",
 							"footerAction": {
 								"label": "Confirm admissibility",
-								"icon": "CheckCircleOutline",
 								"type": "open-modal",
 								"target": "CnActionDialog",
 								"props": {
