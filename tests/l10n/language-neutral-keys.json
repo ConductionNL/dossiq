@@ -10,6 +10,8 @@
         "English value in l10n/en.json instead, keeping the key, the way the other 189 entries do."
     ],
     "keys": [
+        "Maximum",
+        "{type}",
         "#",
         "1 week",
         "AVG",
@@ -144,6 +146,7 @@
         "{minutes} min {seconds} s",
         "{seconds} s",
         "E-mail",
-        "Thematiq"
+        "Thematiq",
+        "{order} · {label}"
     ]
 }

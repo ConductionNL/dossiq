@@ -2178,6 +2178,11 @@
           "name"
         ],
         "properties": {
+          "accountOwner": {
+            "type": "string",
+            "title": "Account owner",
+            "description": "The Nextcloud user id of the colleague who manages this contact."
+          },
           "citizenServiceNumber": {
             "authorization": {
               "read": [
