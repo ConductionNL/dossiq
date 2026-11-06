@@ -49,7 +49,9 @@ describe('the count subtitles', () => {
 
 	it('the case\'s contact moments say how many are recorded, beside the title as the board draws it', () => {
 		const [list] = widgets(simple, 'case-contact-moments-card')
-		expect(nl[list.content.headerNote]).toBe('{total} vastgelegd')
+		expect(nl[list.content.headerNote]).toBe(
+			'{total} vastgelegd · de automatische ontvangstbevestiging staat wel in het gesprek, maar telt hier niet mee',
+		)
 		expect(list.content.headerSubtitle).toBeUndefined()
 	})
 

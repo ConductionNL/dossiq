@@ -2,9 +2,9 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The Add location dialog as the board draws it (DqZaakLocatie): the wizard
+ * The Add location dialog as the board draws it (DqZaakLocatie): the 560 wide
  * width, the address field named once by its own label, the map beside a
- * 200px layer list, and BAG and cadastre cards with a 17px title over 14px
+ * 170px layer list, and BAG and cadastre cards with a 17px title over 14px
  * rows 8px apart. Read from the component.
  *
  * @spec openspec/specs/case-dashboard-view/spec.md
@@ -34,8 +34,8 @@ function ruleFor(selector) {
 }
 
 describe('CaseLocationDialog in the board look', () => {
-	it('opens at the wizard width', () => {
-		expect(source).toMatch(/<CnDialog[^>]*\swidth="wizard"/)
+	it('opens 560 wide, as the board draws the main dialog', () => {
+		expect(source).toMatch(/<CnDialog[^>]*\swidth="confirm"/)
 	})
 
 	it('names the address field once, by the field\'s own label', () => {
@@ -68,8 +68,8 @@ describe('CaseLocationDialog in the board look', () => {
 		expect(hint).toContain('line-height: 1.2')
 	})
 
-	it('puts the map beside a 200px layer list in an 8px rounded frame', () => {
-		expect(ruleFor('.case-location-dialog__map-row')).toContain('grid-template-columns: minmax(0, 1fr) 200px')
+	it('puts the map beside a 170px layer list in an 8px rounded frame', () => {
+		expect(ruleFor('.case-location-dialog__map-row')).toContain('grid-template-columns: minmax(0, 1fr) 170px')
 		expect(ruleFor('.case-location-dialog__layers')).toContain('border-radius: 8px')
 		expect(ruleFor('.case-location-dialog__layers legend')).toContain('font-weight: 600')
 	})
