@@ -268,6 +268,10 @@
             "{count} working day",
             "{count} working days"
         ],
+        "_{days} calendar day, late from {date}_::_{days} calendar days, late from {date}_": [
+            "{days} calendar day, late from {date}",
+            "{days} calendar days, late from {date}"
+        ],
         "_{total} case without an address_::_{total} cases without an address_": [
             "{total} case without an address",
             "{total} cases without an address"
@@ -12232,6 +12236,8 @@
         "{courtReference} · filed {appellantFilingDate|date}": "{courtReference} · filed {appellantFilingDate|date}",
         "{date}, {start} to {end}": "{date}, {start} to {end}",
         "{daysSinceActivity} days idle": "{daysSinceActivity} days idle",
+        "{days} calendar day, late from {date}": "{days} calendar day, late from {date}",
+        "{days} calendar days, late from {date}": "{days} calendar days, late from {date}",
         "{days} days": "{days} days",
         "{days} days ago": "{days} days ago",
         "{days} days left": "{days} days left",

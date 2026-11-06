@@ -268,6 +268,10 @@
             "{count} werkdag",
             "{count} werkdagen"
         ],
+        "_{days} calendar day, late from {date}_::_{days} calendar days, late from {date}_": [
+            "{days} kalenderdag, te laat vanaf {date}",
+            "{days} kalenderdagen, te laat vanaf {date}"
+        ],
         "_{total} case without an address_::_{total} cases without an address_": [
             "{total} zaak zonder adres",
             "{total} zaken zonder adres"
@@ -12232,6 +12236,8 @@
         "{courtReference} · filed {appellantFilingDate|date}": "{courtReference} · ingediend {appellantFilingDate|date}",
         "{date}, {start} to {end}": "{date}, {start} tot {end}",
         "{daysSinceActivity} days idle": "{daysSinceActivity} dagen stil",
+        "{days} calendar day, late from {date}": "{days} kalenderdag, te laat vanaf {date}",
+        "{days} calendar days, late from {date}": "{days} kalenderdagen, te laat vanaf {date}",
         "{days} days": "{days} dagen",
         "{days} days ago": "{days} dagen geleden",
         "{days} days left": "Nog {days} dagen",
