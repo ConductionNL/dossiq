@@ -11949,37 +11949,81 @@
 			"title": "Reports",
 			"_note": "ADR-112: one page of cards rather than a Reports submenu. The three report pages stay routable — deep links, e2e specs and these cards all address them by route NAME — they simply leave the navigation. Their menu entries are retired in src/menu-layout.json under `removals`.",
 			"config": {
-				"description": "Every report Dossiq offers, in one place. Pick a report to open it.",
-				"categories": {
-					"throughput": "Throughput and deadlines",
-					"process": "Process analysis"
+				"description": "Reports on every case in Zuiddrecht. Pick a report and set the period. Costs per task field are in Shillinq.",
+				"panel": {
+					"title": "Report overview",
+					"subtitle": "Each report groups cases on a field. An administrator sets them up under Settings.",
+					"link": {
+						"label": "Set up reports",
+						"href": "/index.php/settings/admin/dossiq"
+					}
 				},
 				"cards": [
 					{
+						"id": "TaskFieldCosts",
+						"label": "Costs per task field are in Shillinq",
+						"description": "Shillinq works out case costs per Iv3 task field, from the hours on the cases and the task field of the case type. In Dossiq you only set the task field per case type.",
+						"tone": "external",
+						"pill": "Shillinq",
+						"href": "/index.php/apps/shillinq/",
+						"linkLabel": "Open in Shillinq",
+						"requiresApp": "shillinq",
+						"missingText": "This report is in Shillinq. Shillinq is not installed."
+					},
+					{
 						"id": "Doorlooptijd",
-						"label": "Processing time",
-						"description": "How long cases take, per case type.",
+						"label": "Lead time",
+						"description": "Lead time per month and within the standard per case type.",
+						"meta": "Grouping: case type, per month",
 						"icon": "ChartLine",
 						"category": "throughput",
 						"route": "Doorlooptijd"
 					},
 					{
+						"id": "ProcessMiningDashboard",
+						"label": "Process analysis",
+						"description": "Days per phase per case type and where cases get stuck.",
+						"meta": "Grouping: phase, per case type",
+						"icon": "ChartSankey",
+						"category": "process",
+						"route": "ProcessMiningDashboard"
+					},
+					{
 						"id": "TermijnDashboard",
-						"label": "Deadline monitoring",
-						"description": "Statutory terms, and which cases are close to breaching one.",
+						"label": "Terms",
+						"description": "Cases approaching or exceeding their statutory deadline.",
+						"meta": "Grouping: deadline status",
 						"icon": "ClockAlertOutline",
 						"category": "throughput",
 						"route": "TermijnDashboard"
 					},
 					{
-						"id": "ProcessMiningDashboard",
-						"label": "Process mining",
-						"description": "The paths cases actually take, against the paths they were meant to.",
-						"icon": "ChartSankey",
+						"id": "Archiving",
+						"label": "Archiving",
+						"description": "Cases per retention period and what is destroyed or transferred this year.",
+						"meta": "Grouping: retention period",
+						"icon": "ArchiveOutline",
 						"category": "process",
-						"route": "ProcessMiningDashboard"
+						"route": "Cases",
+						"query": {
+							"isFinalStatus": "true"
+						}
+					},
+					{
+						"id": "KccVolume",
+						"label": "KCC volume and SLA",
+						"description": "Contact volume, handling time, first-contact resolution and SLA per week, with Excel and PDF.",
+						"meta": "Grouping: channel, team, employee · from pipelinq",
+						"tone": "highlight",
+						"href": "/index.php/apps/pipelinq/rapportage",
+						"requiresApp": "pipelinq",
+						"missingText": "This report is in Pipelinq. Pipelinq is not installed."
 					}
-				]
+				],
+				"categories": {
+					"throughput": "Throughput and deadlines",
+					"process": "Process analysis"
+				}
 			}
 		},
 		{
