@@ -2090,6 +2090,52 @@
 			}
 		},
 		{
+			"key": "mijlpaal-regulier-v4-aanvraag-ontvangen",
+			"register": "dossiq",
+			"schema": "milestoneDefinition",
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"triggerEvent": "case.created",
+				"identifier": "aanvraag_ontvangen",
+				"label": "Aanvraag ontvangen",
+				"order": 1
+			}
+		},
+		{
+			"key": "mijlpaal-regulier-v4-documenten-compleet",
+			"register": "dossiq",
+			"schema": "milestoneDefinition",
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"triggerEvent": "documents.complete",
+				"identifier": "documenten_compleet",
+				"label": "Documenten compleet",
+				"order": 2
+			}
+		},
+		{
+			"key": "mijlpaal-regulier-v4-inhoudelijke-beoordeling",
+			"register": "dossiq",
+			"schema": "milestoneDefinition",
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"identifier": "inhoudelijke_beoordeling",
+				"label": "Inhoudelijke beoordeling gestart",
+				"order": 3
+			}
+		},
+		{
+			"key": "mijlpaal-regulier-v4-advies-ontvangen",
+			"register": "dossiq",
+			"schema": "milestoneDefinition",
+			"data": {
+				"caseType": "{{object:zaaktype-omgevingsvergunning-regulier-v4.id}}",
+				"identifier": "advies_ontvangen",
+				"label": "Adviezen ontvangen",
+				"order": 4
+			}
+		},
+		{
 			"key": "mailsjabloon-regulier-v4-ontvangen",
 			"register": "dossiq",
 			"schema": "emailTemplate",
