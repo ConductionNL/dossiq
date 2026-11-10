@@ -137,6 +137,47 @@ class MajorCaseDeclarationTest extends TestCase {
 	}//end testACalamiteitIsStoodUpInOneAct()
 
 	/**
+	 * No case, and no Talk to open a channel in, each answer their reason and
+	 * write nothing; an anonymous declaration is stored as declared by nobody.
+	 *
+	 * @return void
+	 */
+	public function testTheOtherWaysADeclarationEnds(): void {
+		$this->assertSame(
+			['ok' => false, 'reason' => \OCA\Dossiq\Service\Conversation\CaseConversationService::REASON_NO_CASE],
+			$this->service->declareMajor(caseId: 'case-404')
+		);
+
+		$this->responders->method('resolve')->willReturn(['ok' => true, 'users' => ['anna'], 'unresolved' => []]);
+		$this->broker->method('isAvailable')->willReturn(false);
+		$this->assertSame(
+			['ok' => false, 'reason' => \OCA\Dossiq\Service\Conversation\CaseConversationService::REASON_NO_TALK],
+			$this->service->declareMajor(caseId: 'case-1')
+		);
+		$this->assertArrayNotHasKey('isMajor', $this->register->row(schema: 'case', uuid: 'case-1'));
+	}//end testTheOtherWaysADeclarationEnds()
+
+	/**
+	 * A declaration without a declarer stores an empty one, and answers the
+	 * channel it stored.
+	 *
+	 * @return void
+	 */
+	public function testAnAnonymousDeclarationStoresNoDeclarer(): void {
+		$this->responders->method('resolve')->willReturn(['ok' => true, 'users' => ['anna'], 'unresolved' => []]);
+		$this->broker->method('isAvailable')->willReturn(true);
+		$this->broker->method('createRoom')->willReturn(['id' => 'room-8', 'url' => 'u']);
+
+		$result = $this->service->declareMajor(caseId: 'case-1');
+
+		$stored = $this->register->row(schema: 'case', uuid: 'case-1');
+		$this->assertSame('', $stored['majorDeclaredBy']);
+		$this->assertSame(['ok' => true, 'alreadyMajor' => false, 'channel' => $stored['majorChannel']], $result);
+		$this->assertSame(['roomId', 'roomUrl', 'openedAt', 'closedAt'], array_keys($stored['majorChannel']));
+		$this->assertSame('', $stored['majorChannel']['closedAt']);
+	}//end testAnAnonymousDeclarationStoresNoDeclarer()
+
+	/**
 	 * A second declaration finds the channel that is already open.
 	 *
 	 * @return void
