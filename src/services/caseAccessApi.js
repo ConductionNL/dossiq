@@ -445,84 +445,172 @@ export function asOfRows(history) {
  * @return {Array<object>} Rows of `{holder, right, source, detail}`.
  * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
  */
-export function grantRows({
-	objectPermissions = null,
-	objectGrants,
-	roleGrants,
-	callerScope,
-	denyRules,
-}) {
-	const rows = []
-
-	if (objectPermissions !== null) {
-		rows.push(...objectPermissionRows(objectPermissions))
-	}
-
-	for (const grant of (objectPermissions === null ? objectGrants : null) || []) {
-		for (const right of grant?.actions || []) {
-			rows.push({
-				holder: grant.principal || grant.userId || grant.groupId || '',
-				right,
-				// A grant that names its own source keeps it. That is how an
-				// inherited grant stays legible once OpenRegister's
-				// `rbac-inherits-to-children` reports one: the grant on a case
-				// type GROUP arrives here saying `group`, and this row says so
-				// instead of calling every grant on the object a share.
-				//
-				// 🔴 `inheritedFrom` IS NOT A SOURCE NAME, it is the id of the
-				// case the grant came from, and it used to fall into `source`
-				// whenever OpenRegister reported one without a `source`. That
-				// put a uuid through `sourceLabel`, which returns its argument
-				// unchanged for a key it does not know, so the Where it comes
-				// from column read as a raw identifier where a sentence
-				// belongs. The two are separated here: the source says what
-				// kind of rule it is, the ancestor rides alongside and the
-				// panel names it.
-				source:
-					grant.source || (grant.inheritedFrom ? 'inherited' : 'share'),
-				inheritedFrom: grant.inheritedFrom || '',
-				detail: grant.expires ? String(grant.expires) : '',
-			})
-		}
-	}
-
-	for (const role of (objectPermissions === null ? roleGrants?.roles : null)
-		|| []) {
-		for (const right of role?.actions || []) {
-			rows.push({
-				holder: role.role || '',
-				right,
-				source: 'role',
-				detail: '',
-			})
-		}
-	}
-
-	for (const rule of (objectPermissions === null ? denyRules?.rules : null)
-		|| []) {
-		rows.push({
-			holder: rule.principal || '',
-			right: rule.action || '',
-			source: denyRules.enforcing ? 'deny' : 'staged-deny',
-			detail: rule.level ? `${rule.level}: ${rule.subject || ''}` : '',
-		})
-	}
+export function grantRows(answers) {
+	const objectPermissions = answers.objectPermissions ?? null
+	const rows = objectPermissions !== null
+		? objectPermissionRows(objectPermissions)
+		: writtenRuleRows(answers)
 
 	// The caller's own row is last and separate: it is the only entry that is
 	// an ANSWER rather than a rule, and OpenRegister wrote both the verdict and
 	// the source on it.
-	for (const [right, record] of Object.entries(callerScope?.provenance || {})) {
-		rows.push({
-			holder: callerScope.user || '',
-			right,
-			source: record?.source || 'unknown',
-			granted: record?.granted,
-			detail: record?.role || record?.principal || '',
-			stagedDeny: record?.stagedDeny || null,
-		})
-	}
+	return [...rows, ...callerRows(answers.callerScope)]
+}
 
+/**
+ * The rows of the share, role and deny reads, for an object that answered
+ * no permission set of its own.
+ *
+ * @param {object} answers The reads, as `grantRows` takes them.
+ * @return {Array<object>} The rows, shares first, then roles, then denies.
+ */
+function writtenRuleRows(answers) {
+	return [
+		...shareRows(answers.objectGrants),
+		...roleRows(answers.roleGrants),
+		...denyRuleRows(answers.denyRules),
+	]
+}
+
+/**
+ * One row per right of each grant written on this case.
+ *
+ * @param {Array|null|undefined} objectGrants Grants written on this case.
+ * @return {Array<object>} Rows of `{holder, right, source, inheritedFrom, detail}`.
+ */
+function shareRows(objectGrants) {
+	const rows = []
+	for (const grant of objectGrants || []) {
+		rows.push(...(grant?.actions || []).map((right) => shareRow(grant, right)))
+	}
 	return rows
+}
+
+/**
+ * The row for one right of one grant.
+ *
+ * @param {object} grant A grant written on this case.
+ * @param {string} right One of its rights.
+ * @return {object} The row.
+ */
+function shareRow(grant, right) {
+	return {
+		holder: grantHolder(grant),
+		right,
+		// A grant that names its own source keeps it. That is how an
+		// inherited grant stays legible once OpenRegister's
+		// `rbac-inherits-to-children` reports one: the grant on a case
+		// type GROUP arrives here saying `group`, and this row says so
+		// instead of calling every grant on the object a share.
+		//
+		// 🔴 `inheritedFrom` IS NOT A SOURCE NAME, it is the id of the
+		// case the grant came from, and it used to fall into `source`
+		// whenever OpenRegister reported one without a `source`. That
+		// put a uuid through `sourceLabel`, which returns its argument
+		// unchanged for a key it does not know, so the Where it comes
+		// from column read as a raw identifier where a sentence
+		// belongs. The two are separated here: the source says what
+		// kind of rule it is, the ancestor rides alongside and the
+		// panel names it.
+		source: grantSource(grant),
+		inheritedFrom: grant.inheritedFrom || '',
+		detail: grant.expires ? String(grant.expires) : '',
+	}
+}
+
+/**
+ * Who a grant is written for: its principal, user or group.
+ *
+ * @param {object} grant A grant written on this case.
+ * @return {string} The holder, or ''.
+ */
+function grantHolder(grant) {
+	return grant.principal || grant.userId || grant.groupId || ''
+}
+
+/**
+ * The kind of rule a grant is: its own source, else inherited or a share.
+ *
+ * @param {object} grant A grant written on this case.
+ * @return {string} The source key.
+ */
+function grantSource(grant) {
+	return grant.source || (grant.inheritedFrom ? 'inherited' : 'share')
+}
+
+/**
+ * One row per right of each role.
+ *
+ * @param {object|null|undefined} roleGrants Roles and the verbs they hold.
+ * @return {Array<object>} Rows of `{holder, right, source, detail}`.
+ */
+function roleRows(roleGrants) {
+	const rows = []
+	for (const role of roleGrants?.roles || []) {
+		rows.push(...(role?.actions || []).map((right) => ({
+			holder: role.role || '',
+			right,
+			source: 'role',
+			detail: '',
+		})))
+	}
+	return rows
+}
+
+/**
+ * One row per deny rule as written, enforced or staged.
+ *
+ * @param {object|null|undefined} denyRules The deny rules as written.
+ * @return {Array<object>} Rows of `{holder, right, source, detail}`.
+ */
+function denyRuleRows(denyRules) {
+	return (denyRules?.rules || []).map((rule) => ({
+		holder: rule.principal || '',
+		right: rule.action || '',
+		source: denyRules.enforcing ? 'deny' : 'staged-deny',
+		detail: rule.level ? `${rule.level}: ${rule.subject || ''}` : '',
+	}))
+}
+
+/**
+ * One row per right the caller's own verdict names.
+ *
+ * @param {object|null|undefined} callerScope The caller's own effective verbs.
+ * @return {Array<object>} Rows of `{holder, right, source, granted, detail, stagedDeny}`.
+ */
+function callerRows(callerScope) {
+	return Object.entries(callerScope?.provenance || {})
+		.map((entry) => callerRow(entry, callerScope.user || ''))
+}
+
+/**
+ * The row for one right of the caller's own verdict.
+ *
+ * @param {Array} entry The right and OpenRegister's record of it.
+ * @param {string} holder The caller.
+ * @return {object} The row.
+ */
+function callerRow(entry, holder) {
+	const [right, record] = entry
+	const verdict = record || {}
+	return {
+		holder,
+		right,
+		source: verdict.source || 'unknown',
+		granted: verdict.granted,
+		detail: verdictDetail(verdict),
+		stagedDeny: verdict.stagedDeny || null,
+	}
+}
+
+/**
+ * What the caller's verdict on one right came through: a role or a principal.
+ *
+ * @param {object} verdict OpenRegister's record of one right.
+ * @return {string} The role or principal, or ''.
+ */
+function verdictDetail(verdict) {
+	return verdict.role || verdict.principal || ''
 }
 
 /**
