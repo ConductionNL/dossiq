@@ -116,6 +116,13 @@ class FakePublishCaseTypeObjectService {
 class PublishSeededCaseTypesTest extends TestCase {
 
 	/**
+	 * The logger the step writes to, when a test listens.
+	 *
+	 * @var LoggerInterface|null
+	 */
+	private ?LoggerInterface $log = null;
+
+	/**
 	 * The app config values written, by key.
 	 *
 	 * @var array<string, string>
@@ -171,9 +178,78 @@ class PublishSeededCaseTypesTest extends TestCase {
 		return new PublishSeededCaseTypes(
 			settingsService: $settings,
 			appConfig: $appConfig,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: ($this->log ?? $this->createMock(LoggerInterface::class)),
 		);
 	}//end step()
+
+	/**
+	 * What a run prints and logs: the counts, a failed write by slug, a
+	 * row without an id, `@self` that is not a map, and an unreadable store.
+	 *
+	 * @return void
+	 */
+	public function testARunPrintsAndLogsItsCounts(): void {
+		$lines = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		foreach (['warning', 'error'] as $level) {
+			$logger->method($level)->willReturnCallback(
+				static function (string $message, array $context = []) use (&$lines, $level): void {
+					$lines[] = [$level, $message, $context];
+				}
+			);
+		}
+
+		$this->log = $logger;
+		$output = $this->createMock(IOutput::class);
+		$output->method('info')->willReturnCallback(
+			static function (string $line) use (&$lines): void {
+				$lines[] = ['info', $line];
+			}
+		);
+
+		$objects = new FakePublishCaseTypeObjectService();
+		$objects->rows = [
+			$this->row(id: 'sloop', slug: 'sloopmelding', isDraft: true),
+			$this->row(id: 'iban', slug: 'leverancier-iban-wijziging', isDraft: false),
+			$this->row(id: 'klein', slug: 'omgevingsvergunning-kleinbouw', isDraft: true),
+			['@self' => ['slug' => 'sloopmelding'], 'isDraft' => true],
+			['@self' => 'not-a-map', 'id' => 'x', 'isDraft' => true],
+		];
+		$objects->failing = ['klein'];
+		$this->step(objects: $objects)->run($output);
+
+		self::assertSame([['sloop', ['isDraft' => false]]], $objects->patches);
+		self::assertSame(
+			[
+				['error', 'Dossiq: could not publish a seeded case type', ['app' => 'dossiq', 'slug' => 'omgevingsvergunning-kleinbouw', 'exception' => 'refused']],
+				['info', 'Seeded case types: 1 published, 1 already published, 1 failed.'],
+			],
+			$lines
+		);
+
+		$lines = [];
+		$broken = new class extends FakePublishCaseTypeObjectService {
+			/**
+			 * @param array<string, mixed> $query The query.
+			 * @param mixed                ...$scope The scope.
+			 *
+			 * @return array<int, array<string, mixed>> Never.
+			 */
+			public function searchObjects(array $query, mixed ...$scope): array {
+				throw new RuntimeException('store down');
+			}
+		};
+		$this->step(objects: $broken)->run($output);
+
+		self::assertSame(
+			[
+				['warning', 'Dossiq: could not read the case types to publish the seeded ones', ['app' => 'dossiq', 'exception' => 'store down']],
+				['info', 'Seeded case types: 0 published, 0 already published, 0 failed.'],
+			],
+			$lines
+		);
+		self::assertArrayNotHasKey(PublishSeededCaseTypes::DONE_KEY, $this->written);
+	}//end testARunPrintsAndLogsItsCounts()
 
 	/**
 	 * Only the seeded drafts are published; a published one and a case type

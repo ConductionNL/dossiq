@@ -558,4 +558,61 @@ class LhsControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 		$this->assertSame(['error' => 'Motivatie moet minimaal 20 tekens bevatten'], $response->getData());
 	}//end testOverrideMapsAnyOtherEngineRefusalTo422()
+
+	/**
+	 * The lookup refuses a caller without a session with 401.
+	 *
+	 * @return void
+	 */
+	public function testLookupRefusesAnUnauthenticatedCallerWith401(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->lhsLookupService->expects($this->never())->method('lookup');
+
+		$response = $this->controller->lookup();
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(['error' => 'Authenticatie vereist'], $response->getData());
+	}//end testLookupRefusesAnUnauthenticatedCallerWith401()
+
+	/**
+	 * The lookup needs both axes, and answers the cell.
+	 *
+	 * @return void
+	 */
+	public function testLookupNeedsBothAxesAndAnswersTheCell(): void {
+		$this->signIn();
+		$this->withParams(['behaviour' => 'onverschillig', 'gevolg' => '']);
+		$this->lhsLookupService->expects($this->never())->method('lookup');
+
+		$response = $this->controller->lookup();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'gedrag en gevolg zijn verplicht'], $response->getData());
+	}//end testLookupNeedsBothAxesAndAnswersTheCell()
+
+	/**
+	 * The lookup answers the cell, a refusal as 400 and a failure as a logged 500.
+	 *
+	 * @return void
+	 */
+	public function testLookupAnswersTheCellOrItsFailure(): void {
+		$this->signIn();
+		$this->withParams(['behaviour' => 'onverschillig', 'gevolg' => 'aanzienlijk']);
+		$this->lhsLookupService->method('lookup')->with('onverschillig', 'aanzienlijk')->willReturnOnConsecutiveCalls(
+			['cell' => 'B2'],
+			$this->throwException(new \RuntimeException('Onbekende cel')),
+			$this->throwException(new \LogicException('kapot'))
+		);
+		$this->logger->expects($this->once())->method('error')->with('Dossiq LHS lookup failed: kapot');
+
+		$this->assertSame(['cell' => 'B2'], $this->controller->lookup()->getData());
+
+		$refused = $this->controller->lookup();
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $refused->getStatus());
+		$this->assertSame(['error' => 'Onbekende cel'], $refused->getData());
+
+		$failed = $this->controller->lookup();
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
+		$this->assertSame(['error' => 'LHS opzoeken mislukt'], $failed->getData());
+	}//end testLookupAnswersTheCellOrItsFailure()
 }//end class

@@ -35,6 +35,7 @@ use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -112,11 +113,30 @@ class WooReportController extends Controller {
 			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$refusal = $this->throughputRefusal(user: $user);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->recordedThroughput(user: $user);
+	}//end throughput()
+
+	/**
+	 * Refuse a throughput read while the report is off, or by anyone outside the reader group.
+	 *
+	 * The group is the only way in: no admin bypass (REQ-WRR-002).
+	 *
+	 * @param IUser $user The caller.
+	 *
+	 * @return JSONResponse|null The 403, or null when the caller may read the report.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+	 */
+	private function throughputRefusal(IUser $user): ?JSONResponse {
 		if ($this->switches->isOn(switch: WooReportSwitches::THROUGHPUT) === false) {
 			return $this->notSwitchedOn();
 		}
 
-		// The group is the only way in: no admin bypass (REQ-WRR-002).
 		if ($this->switches->maySeeThroughput(userId: $user->getUID()) === false) {
 			return new JSONResponse(
 				[
@@ -127,6 +147,21 @@ class WooReportController extends Controller {
 			);
 		}
 
+		return null;
+	}//end throughputRefusal()
+
+	/**
+	 * Read the report for the requested case or period, record the read, and answer it.
+	 *
+	 * A read that cannot be recorded is not answered.
+	 *
+	 * @param IUser $user The reader.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+	 */
+	private function recordedThroughput(IUser $user): JSONResponse|DataDownloadResponse {
 		$caseId = trim((string)$this->request->getParam('case', ''));
 		$from = $this->calendarDate(value: trim((string)$this->request->getParam('from', '')));
 		$to = $this->calendarDate(value: trim((string)$this->request->getParam('to', '')));
@@ -145,6 +180,20 @@ class WooReportController extends Controller {
 			);
 		}
 
+		return $this->throughputAnswer(scope: $scope, report: $report);
+	}//end recordedThroughput()
+
+	/**
+	 * The report as the CSV download the request asks for, or as JSON with its scope.
+	 *
+	 * @param array<string, string> $scope  The case or the period.
+	 * @param array<string, mixed>  $report The report.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+	 */
+	private function throughputAnswer(array $scope, array $report): JSONResponse|DataDownloadResponse {
 		if ($this->request->getParam('format', '') === 'csv') {
 			return new DataDownloadResponse(
 				$this->throughputReport->toCsv(rows: $report['rows']),
@@ -154,7 +203,7 @@ class WooReportController extends Controller {
 		}
 
 		return new JSONResponse(['scope' => $scope] + $report);
-	}//end throughput()
+	}//end throughputAnswer()
 
 	/**
 	 * A period bound as the tenant's calendar date. A dashboard date range

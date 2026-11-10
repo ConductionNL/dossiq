@@ -14,9 +14,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Support\RepairSchema;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -37,7 +38,6 @@ use Throwable;
  */
 class BackfillPortalParty implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
 
 	/**
 	 * The app-config key that records the step has run.
@@ -91,18 +91,16 @@ class BackfillPortalParty implements IRepairStep {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'case_schema');
+		if ($target === null) {
 			$output->info('Dossiq portal party: OpenRegister or the case schema is unavailable; nothing filled.');
 			return;
 		}
 
 		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $register, $schema, $output): void {
-				$this->report(objectService: $objectService, register: $register, schema: $schema, output: $output);
+			objectService: $target->objectService,
+			work: function () use ($target, $output): void {
+				$this->report(target: $target, output: $output);
 			}
 		);
 	}//end run()
@@ -110,51 +108,30 @@ class BackfillPortalParty implements IRepairStep {
 	/**
 	 * Walk every case and fill the party where it is missing.
 	 *
-	 * @param object  $objectService OpenRegister's object service.
-	 * @param string  $register      The register.
-	 * @param string  $schema        The case schema.
-	 * @param IOutput $output        The upgrade output.
+	 * @param RepairSchema $target The schema it walks.
+	 * @param IOutput      $output The upgrade output.
 	 *
 	 * @return void
 	 */
-	private function report(object $objectService, string $register, string $schema, IOutput $output): void {
+	private function report(RepairSchema $target, IOutput $output): void {
 		$filled = 0;
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				$subject = trim((string)($row['portalSubject'] ?? ''));
-				$caseId = (string)($row['id'] ?? (($row['@self'] ?? [])['id'] ?? ''));
-				if ($subject === '' || $caseId === '' || trim((string)($row['portalParty'] ?? '')) !== '') {
-					continue;
-				}
-
-				try {
-					$this->patchObjectAsArray(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						id: $caseId,
-						changes: ['portalParty' => 'subject:' . $subject],
-					);
-					$filled++;
-				} catch (Throwable $e) {
-					$this->logger->warning(
-						'Dossiq portal party: case ' . $caseId . ' could not be given its party: ' . $e->getMessage(),
-						['app' => Application::APP_ID],
-					);
-				}
+		foreach ($target->rows(pageSize: self::PAGE_SIZE) as $row) {
+			$subject = trim((string)($row['portalSubject'] ?? ''));
+			$caseId = $target->idOf(row: $row);
+			if ($subject === '' || $caseId === '' || trim((string)($row['portalParty'] ?? '')) !== '') {
+				continue;
 			}
 
-			$page++;
-		}
+			try {
+				$target->patch(id: $caseId, changes: ['portalParty' => 'subject:' . $subject]);
+				$filled++;
+			} catch (Throwable $e) {
+				$this->logger->warning(
+					'Dossiq portal party: case ' . $caseId . ' could not be given its party: ' . $e->getMessage(),
+					['app' => Application::APP_ID],
+				);
+			}
+		}//end foreach
 
 		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		$output->info('Dossiq portal party: ' . $filled . ' case(s) now name the person they belong to.');

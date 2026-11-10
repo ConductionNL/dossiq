@@ -39,10 +39,11 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Custody\DossierRegister;
+use OCA\Dossiq\Service\Custody\StoredInstant;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -122,7 +123,7 @@ class IncidentStore {
 	): array {
 		$caseId = trim($caseId);
 		$description = trim($description);
-		$happened = $this->instant(value: $eventDate);
+		$happened = (new StoredInstant())->parse(value: $eventDate);
 
 		if ($caseId === '' || $description === '' || $happened === null) {
 			throw new RefusedException(
@@ -331,11 +332,11 @@ class IncidentStore {
 	 */
 	private function require(string $incidentId): array {
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 			$incident = $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_incident_schema'),
+				schema: $this->dossierRegister()->schema(key: 'case_incident_schema'),
 				id: trim($incidentId),
 			);
 		} catch (Throwable $e) {
@@ -367,12 +368,12 @@ class IncidentStore {
 	 */
 	private function rows(array $filters): array {
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 
 			return $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_incident_schema'),
+				schema: $this->dossierRegister()->schema(key: 'case_incident_schema'),
 				filters: $filters,
 			);
 		} catch (Throwable $e) {
@@ -399,11 +400,11 @@ class IncidentStore {
 		unset($incident['@self'], $incident['id'], $incident['uuid']);
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 			$saved = $this->saveObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_incident_schema'),
+				schema: $this->dossierRegister()->schema(key: 'case_incident_schema'),
 				object: $incident,
 				uuid: $uuid,
 			);
@@ -437,63 +438,12 @@ class IncidentStore {
 	private function uuidOf(array $row): string {
 		return trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
 	}//end uuidOf()
-
 	/**
-	 * A moment, or null when the value is empty or unreadable.
+	 * The dossier register and its configured schemas.
 	 *
-	 * @param string $value The candidate.
-	 *
-	 * @return DateTimeImmutable|null The moment.
+	 * @return DossierRegister The register reader.
 	 */
-	private function instant(string $value): ?DateTimeImmutable {
-		$value = trim($value);
-		if ($value === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end instant()
-
-	/**
-	 * The object service and the register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
+	private function dossierRegister(): DossierRegister {
+		return new DossierRegister(settingsService: $this->settingsService);
+	}//end dossierRegister()
 }//end class

@@ -41,7 +41,6 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -287,11 +286,11 @@ class CaseTakeoverRequest {
 	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function escalateOverdue(string $now = ''): array {
-		$moment = $this->instant(value: $now) ?? new DateTimeImmutable();
+		$moment = (new StoredInstant())->parse(value: $now) ?? new DateTimeImmutable();
 		$escalated = [];
 
 		foreach ($this->pending() as $record) {
-			$asked = $this->instant(value: (string)($record['requestedAt'] ?? ''));
+			$asked = (new StoredInstant())->parse(value: (string)($record['requestedAt'] ?? ''));
 			if ($asked === null) {
 				continue;
 			}
@@ -487,26 +486,6 @@ class CaseTakeoverRequest {
 
 
 
-
-	/**
-	 * A moment, or null when the value is empty or unreadable.
-	 *
-	 * @param string $value The candidate.
-	 *
-	 * @return DateTimeImmutable|null The moment.
-	 */
-	private function instant(string $value): ?DateTimeImmutable {
-		$value = trim($value);
-		if ($value === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end instant()
 
 
 }//end class
