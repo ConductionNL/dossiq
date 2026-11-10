@@ -256,47 +256,70 @@ class CitizenManifest {
 		return [
 			$this->caseCollection(),
 			$this->questionsCollection(),
-			[
-				'id' => 'berichten',
-				'kind' => 'inbox',
-				// A letter from the organisation to the applicant also goes to
-				// their government message box. Portaliq holds no BSN, so it
-				// asks this method for the recipient per message (dossiq#3192).
-				'messageBox' => ['recipientProvider' => 'messageBoxRecipient'],
-				'register' => PortalContributionProvider::REGISTER,
-				'schema' => 'portaalBericht',
-				'scopeField' => 'recipientRef',
-				'label' => 'Berichten',
-				'listable' => true,
-				'minTrust' => 'low',
-				...PortalContributionProvider::CITIZEN_INBOX,
-				// A reply carries the case of the message it answers, so the
-				// resident never types a case number (PortalConversation).
-				'reply' => (new PortalConversation())->inboxReply(),
-			],
-			[
-				'id' => 'verzoeken',
-				'register' => PortalContributionProvider::REGISTER,
-				'schema' => 'portaalVerzoek',
-				'scopeField' => 'submitterRef',
-				'label' => 'Mijn verzoeken',
-				'listable' => true,
-				'minTrust' => 'low',
-				'fields' => [
-					'kind',
-					'category',
-					'subject',
-					'rationale',
-					'reference',
-					'status',
-					'submittedAt',
-					'deadline',
-					'withinTerm',
-				],
-			],
+			$this->messagesCollection(),
+			$this->requestsCollection(),
 			$this->permitCollection(),
 		];
 	}//end collections()
+
+	/**
+	 * The resident's inbox: the organisation's letters, which also go to
+	 * their government message box, and the replies they send.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function messagesCollection(): array {
+		return [
+			'id' => 'berichten',
+			'kind' => 'inbox',
+			// A letter from the organisation to the applicant also goes to
+			// their government message box. Portaliq holds no BSN, so it
+			// asks this method for the recipient per message (dossiq#3192).
+			'messageBox' => ['recipientProvider' => 'messageBoxRecipient'],
+			'register' => PortalContributionProvider::REGISTER,
+			'schema' => 'portaalBericht',
+			'scopeField' => 'recipientRef',
+			'label' => 'Berichten',
+			'listable' => true,
+			'minTrust' => 'low',
+			...PortalContributionProvider::CITIZEN_INBOX,
+			// A reply carries the case of the message it answers, so the
+			// resident never types a case number (PortalConversation).
+			'reply' => (new PortalConversation())->inboxReply(),
+		];
+	}//end messagesCollection()
+
+	/**
+	 * The requests the resident submitted.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function requestsCollection(): array {
+		return [
+			'id' => 'verzoeken',
+			'register' => PortalContributionProvider::REGISTER,
+			'schema' => 'portaalVerzoek',
+			'scopeField' => 'submitterRef',
+			'label' => 'Mijn verzoeken',
+			'listable' => true,
+			'minTrust' => 'low',
+			'fields' => [
+				'kind',
+				'category',
+				'subject',
+				'rationale',
+				'reference',
+				'status',
+				'submittedAt',
+				'deadline',
+				'withinTerm',
+			],
+		];
+	}//end requestsCollection()
 
 	/**
 	 * The permits a resident holds, as portaliq's products on the theme page.
@@ -699,32 +722,7 @@ class CitizenManifest {
 			// contract names the method rather than embedding the
 			// entries, because the manifest is built once per subject
 			// and a timeline is read once per case.
-			'timeline' => [
-				'label' => 'Wat er is gebeurd',
-				'provider' => 'caseTimeline',
-			],
-			// The documents the organisation publishes on the case, the
-			// decision first. The method answers per case, and dossiq
-			// decides what a resident may see (dossiq#3205).
-			'documents' => [
-				'label' => 'Documenten',
-				'provider' => 'caseDocuments',
-			],
-			// The messages about the case, both ways, newest first. Read per
-			// case like the timeline, and only the resident's own.
-			'messages' => (new PortalConversation())->caseMessagesBlock(),
-			// WHERE THE CASE STANDS, in the public steps of its own case
-			// type. The method answers per case, as the timeline does
-			// (site-resident-portal-design D3).
-			'steps' => [
-				'label' => 'Waar staat uw aanvraag?',
-				'provider' => 'caseSteps',
-			],
-			// WHO IS AT TURN AND BY WHEN, on the case card. Portaliq reads
-			// one field for the turn (`turnField`) and one for the date
-			// (`dueField`). The WORDS are dossiq's and live here, so a
-			// portal administrator can reword them per site rather than
-			// waiting for a release (contribution-value-labels).
+			...$this->casePageBlocks(),
 			'turnField' => 'portalTurn',
 			'dueField' => 'deadline',
 			'valueLabels' => [
@@ -738,6 +736,43 @@ class CitizenManifest {
 			],
 		];
 	}//end caseDetailKeys()
+
+	/**
+	 * The blocks a resident's case page shows under its fields: what happened,
+	 * the documents, the messages and where the case stands.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function casePageBlocks(): array {
+		return [
+		'timeline' => [
+			'label' => 'Wat er is gebeurd',
+			'provider' => 'caseTimeline',
+		],
+		// The documents the organisation publishes on the case, the
+		// decision first. The method answers per case, and dossiq
+		// decides what a resident may see (dossiq#3205).
+		'documents' => [
+			'label' => 'Documenten',
+			'provider' => 'caseDocuments',
+		],
+		// The messages about the case, both ways, newest first. Read per
+		// case like the timeline, and only the resident's own.
+		'messages' => (new PortalConversation())->caseMessagesBlock(),
+		// WHERE THE CASE STANDS, in the public steps of its own case
+		// type. The method answers per case, as the timeline does
+		// (site-resident-portal-design D3).
+		'steps' => [
+			'label' => 'Waar staat uw aanvraag?',
+			'provider' => 'caseSteps',
+		],
+		// WHO IS AT TURN AND BY WHEN, on the case card. Portaliq reads
+		// one field for the turn (`turnField`) and one for the date
+		// (`dueField`). The WORDS are dossiq's and live here, so a
+		// portal administrator can reword them per site rather than
+		// waiting for a release (contribution-value-labels).
+		];
+	}//end casePageBlocks()
 
 	/**
 	 * How "Mijn zaken" lists a case: what makes it a case, when it is closed,
@@ -853,19 +888,9 @@ class CitizenManifest {
 			'recordField' => 'contestedCase',
 			'label' => 'Bezwaar maken',
 			'summary' => 'Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar.',
-			'audiences' => ['citizen', 'client'],
-			'register' => PortalContributionProvider::REGISTER,
-			'schema' => 'case',
-			// The resident's own cases are scoped by this field, so the new
-			// case is under "Mijn zaken" the moment it exists.
-			'scopeField' => 'portalSubject',
-			'minTrust' => 'low',
-			'fields' => [
-				'title',
-				'description',
-				'attachments',
-				'contestedCase',
-			],
+			// The resident's own cases are scoped by `portalSubject`, so the
+			// new case is under "Mijn zaken" the moment it exists.
+			...$this->residentCaseFiling(),
 			// The case type is not the citizen's to choose. An objection and a
 			// complaint run different statutory clocks, and a form that let the
 			// sender pick would let one arrive dressed as the other.
@@ -873,20 +898,11 @@ class CitizenManifest {
 			// The case is the one on screen, not a box the resident fills in;
 			// the other fields ask in the resident's words.
 			'requiredFields' => ['title', 'description'],
-			'fieldConfigs' => [
-				'contestedCase' => ['visible' => false],
-				'title' => ['label' => 'Waar gaat uw bezwaar over?'],
-				'description' => ['label' => 'Waarom bent u het niet eens met het besluit?', 'size' => 'large'],
-				'attachments' => ['label' => 'Stukken die u meestuurt'],
-			],
-			'crossRefs' => [
-				'contestedCase' => [
-					'register' => PortalContributionProvider::REGISTER,
-					'schema' => 'case',
-					'scopeField' => 'portalSubject',
-					'required' => true,
-				],
-			],
+			'fieldConfigs' => $this->filingFieldConfigs(
+				title: 'Waar gaat uw bezwaar over?',
+				description: 'Waarom bent u het niet eens met het besluit?'
+			),
+			'crossRefs' => $this->contestedCaseRef(required: true),
 			// On the page of the case it objects to, open from the day after
 			// the decision went out through the six weeks; portaliq computes
 			// the window and fills in the case.
@@ -937,6 +953,38 @@ class CitizenManifest {
 			// know it is true for an instance, so an editor adds it on the
 			// page instead of the app claiming it.
 			'summary' => 'Vertel ons wat er misging.',
+			...$this->residentCaseFiling(),
+			// Stamped server-side, like the objection's.
+			'defaults' => ['caseType' => $caseType, 'intakeChannel' => 'website'],
+			// The case is the one on screen, not a box the resident fills in;
+			// the "Klacht indienen" page leaves it empty.
+			'requiredFields' => ['title', 'description'],
+			'fieldConfigs' => $this->filingFieldConfigs(
+				title: 'Waar gaat uw klacht over?',
+				description: 'Wat ging er mis?'
+			),
+			'crossRefs' => $this->contestedCaseRef(required: false),
+			// On the page of the case it is about, after the bezwaar. The
+			// "Klacht indienen" page keeps the klacht about no case.
+			'onCase' => [
+				'crossRef' => 'contestedCase',
+				'order' => 20,
+			],
+			'successMessage' => 'Uw klacht is ontvangen.',
+		];
+	}//end complaintAction()
+
+	/**
+	 * What a resident's filing that opens a case shares: offered to residents
+	 * and clients, written as a `case` in their own scope at trust `low`, with
+	 * a title, a description, attachments and the case it is about.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 */
+	private function residentCaseFiling(): array {
+		return [
 			'audiences' => ['citizen', 'client'],
 			'register' => PortalContributionProvider::REGISTER,
 			'schema' => 'case',
@@ -948,33 +996,47 @@ class CitizenManifest {
 				'attachments',
 				'contestedCase',
 			],
-			// Stamped server-side, like the objection's.
-			'defaults' => ['caseType' => $caseType, 'intakeChannel' => 'website'],
-			// The case is the one on screen, not a box the resident fills in;
-			// the "Klacht indienen" page leaves it empty.
-			'requiredFields' => ['title', 'description'],
-			'fieldConfigs' => [
-				'contestedCase' => ['visible' => false],
-				'title' => ['label' => 'Waar gaat uw klacht over?'],
-				'description' => ['label' => 'Wat ging er mis?', 'size' => 'large'],
-				'attachments' => ['label' => 'Stukken die u meestuurt'],
-			],
-			'crossRefs' => [
-				'contestedCase' => [
-					'register' => PortalContributionProvider::REGISTER,
-					'schema' => 'case',
-					'scopeField' => 'portalSubject',
-					'required' => false,
-				],
-			],
-			// On the page of the case it is about, after the bezwaar. The
-			// "Klacht indienen" page keeps the klacht about no case.
-			'onCase' => [
-				'crossRef' => 'contestedCase',
-				'order' => 20,
-			],
-			'successMessage' => 'Uw klacht is ontvangen.',
 		];
-	}//end complaintAction()
+	}//end residentCaseFiling()
+
+	/**
+	 * How a filing's form asks: the case on screen hidden, the title and the
+	 * description in the resident's words, the attachments named.
+	 *
+	 * @param string $title       What the title field asks.
+	 * @param string $description What the description field asks.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 */
+	private function filingFieldConfigs(string $title, string $description): array {
+		return [
+			'contestedCase' => ['visible' => false],
+			'title' => ['label' => $title],
+			'description' => ['label' => $description, 'size' => 'large'],
+			'attachments' => ['label' => 'Stukken die u meestuurt'],
+		];
+	}//end filingFieldConfigs()
+
+	/**
+	 * The guard on the case a filing is about: one of the resident's own cases.
+	 *
+	 * @param bool $required Whether the filing must name a case.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 */
+	private function contestedCaseRef(bool $required): array {
+		return [
+			'contestedCase' => [
+				'register' => PortalContributionProvider::REGISTER,
+				'schema' => 'case',
+				'scopeField' => 'portalSubject',
+				'required' => $required,
+			],
+		];
+	}//end contestedCaseRef()
 
 }//end class
