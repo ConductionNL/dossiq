@@ -125,42 +125,54 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	 * @return void
 	 */
 	private function recolour(RepairSchema $target, IOutput $output): void {
-		$changed = 0;
-		$failed = 0;
+		$tally = ['changed' => 0, 'failed' => 0, 'skipped' => 0];
 		foreach ($target->rows(pageSize: self::PAGE_SIZE) as $row) {
-			$self = ($row['@self'] ?? []);
-			if (is_array($self) === false || ($self['owner'] ?? null) !== self::SYSTEM_OWNER) {
-				continue;
-			}
+			$tally[$this->recolourOne(target: $target, row: $row)]++;
+		}
 
-			$colour = $this->palette->recolour(row: $row);
-			$rowId = (string)($row['id'] ?? ($self['id'] ?? ''));
-			if ($colour === null || $rowId === '') {
-				continue;
-			}
-
-			try {
-				$target->patch(id: $rowId, changes: ['colour' => $colour]);
-			} catch (Throwable $e) {
-				$failed++;
-				$this->logger->warning(
-					'Dossiq status colours: status ' . $rowId . ' could not be recoloured and keeps its colour until the next run',
-					['app' => Application::APP_ID, 'error' => $e->getMessage()],
-				);
-				continue;
-			}
-
-			$changed++;
-			$this->logger->info(
-				sprintf('Dossiq status colours: status %s (%s) is now %s', $rowId, (string)($row['name'] ?? ''), $colour),
-				['app' => Application::APP_ID],
-			);
-		}//end foreach
-
-		if ($failed === 0) {
+		if ($tally['failed'] === 0) {
 			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		}
 
-		$output->info('Dossiq status colours: ' . $changed . ' shipped status(es) took their board colour, ' . $failed . ' left for the next run.');
+		$output->info('Dossiq status colours: ' . $tally['changed'] . ' shipped status(es) took their board colour, '
+			. $tally['failed'] . ' left for the next run.');
 	}//end recolour()
+
+	/**
+	 * Give one shipped status type its board colour.
+	 *
+	 * @param RepairSchema         $target The schema it walks.
+	 * @param array<string, mixed> $row    One stored row.
+	 *
+	 * @return string 'changed', 'failed' (logged, and left for the next run) or 'skipped'.
+	 */
+	private function recolourOne(RepairSchema $target, array $row): string {
+		$self = ($row['@self'] ?? []);
+		if (is_array($self) === false || ($self['owner'] ?? null) !== self::SYSTEM_OWNER) {
+			return 'skipped';
+		}
+
+		$colour = $this->palette->recolour(row: $row);
+		$rowId = (string)($row['id'] ?? ($self['id'] ?? ''));
+		if ($colour === null || $rowId === '') {
+			return 'skipped';
+		}
+
+		try {
+			$target->patch(id: $rowId, changes: ['colour' => $colour]);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq status colours: status ' . $rowId . ' could not be recoloured and keeps its colour until the next run',
+				['app' => Application::APP_ID, 'error' => $e->getMessage()],
+			);
+			return 'failed';
+		}
+
+		$this->logger->info(
+			sprintf('Dossiq status colours: status %s (%s) is now %s', $rowId, (string)($row['name'] ?? ''), $colour),
+			['app' => Application::APP_ID],
+		);
+
+		return 'changed';
+	}//end recolourOne()
 }//end class

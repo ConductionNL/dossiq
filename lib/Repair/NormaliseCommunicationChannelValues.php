@@ -123,43 +123,55 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 	 * @return void
 	 */
 	private function convert(RepairSchema $target, IOutput $output): void {
-		$converted = 0;
-		$failed = 0;
+		$tally = ['converted' => 0, 'failed' => 0, 'skipped' => 0];
 		foreach ($target->rows(pageSize: self::PAGE_SIZE) as $row) {
-			$value = ($row['communicationChannel'] ?? null);
-			$isSlug = in_array($value, CommunicationChannel::SLUGS, true);
-			if (is_string($value) === false || trim($value) === '' || $isSlug === true) {
-				continue;
-			}
+			$tally[$this->convertOne(target: $target, row: $row)]++;
+		}
 
-			$caseId = $target->idOf(row: $row);
-			if ($caseId === '') {
-				continue;
-			}
-
-			$changes = $this->channels->normalise(value: $value);
-			try {
-				$target->patch(id: $caseId, changes: $changes);
-			} catch (Throwable $e) {
-				$failed++;
-				$this->logger->warning(
-					'Dossiq communication channels: case ' . $caseId . ' could not be converted and keeps its value until the next run',
-					['app' => Application::APP_ID, 'error' => $e->getMessage()],
-				);
-				continue;
-			}
-
-			$converted++;
-			$this->logger->info(
-				sprintf('Dossiq channels: case %s now reads "%s"; it held "%s"', $caseId, (string)($changes['communicationChannel'] ?? ''), $value),
-				['app' => Application::APP_ID],
-			);
-		}//end foreach
-
-		if ($failed === 0) {
+		if ($tally['failed'] === 0) {
 			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		}
 
-		$output->info('Dossiq communication channels: ' . $converted . ' case(s) converted to a channel slug, ' . $failed . ' left for the next run.');
+		$output->info('Dossiq communication channels: ' . $tally['converted'] . ' case(s) converted to a channel slug, '
+			. $tally['failed'] . ' left for the next run.');
 	}//end convert()
+
+	/**
+	 * Convert one case's stored channel value to a slug.
+	 *
+	 * @param RepairSchema         $target The schema it walks.
+	 * @param array<string, mixed> $row    One stored row.
+	 *
+	 * @return string 'converted', 'failed' (logged, and left for the next run) or 'skipped'.
+	 */
+	private function convertOne(RepairSchema $target, array $row): string {
+		$value = ($row['communicationChannel'] ?? null);
+		$isSlug = in_array($value, CommunicationChannel::SLUGS, true);
+		if (is_string($value) === false || trim($value) === '' || $isSlug === true) {
+			return 'skipped';
+		}
+
+		$caseId = $target->idOf(row: $row);
+		if ($caseId === '') {
+			return 'skipped';
+		}
+
+		$changes = $this->channels->normalise(value: $value);
+		try {
+			$target->patch(id: $caseId, changes: $changes);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq communication channels: case ' . $caseId . ' could not be converted and keeps its value until the next run',
+				['app' => Application::APP_ID, 'error' => $e->getMessage()],
+			);
+			return 'failed';
+		}
+
+		$this->logger->info(
+			sprintf('Dossiq channels: case %s now reads "%s"; it held "%s"', $caseId, (string)($changes['communicationChannel'] ?? ''), $value),
+			['app' => Application::APP_ID],
+		);
+
+		return 'converted';
+	}//end convertOne()
 }//end class

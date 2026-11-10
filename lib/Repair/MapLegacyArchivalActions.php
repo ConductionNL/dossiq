@@ -127,41 +127,52 @@ class MapLegacyArchivalActions implements IRepairStep {
 	 * @return void
 	 */
 	private function map(RepairSchema $target, IOutput $output): void {
-		$mapped = 0;
-		$failed = 0;
+		$tally = ['mapped' => 0, 'failed' => 0, 'skipped' => 0];
 		foreach ($target->rows(pageSize: self::PAGE_SIZE) as $row) {
-			$value = ($row['archivalAction'] ?? null);
-			if (is_string($value) === false || isset(self::MAP[$value]) === false) {
-				continue;
-			}
+			$tally[$this->mapOne(target: $target, row: $row)]++;
+		}
 
-			$id = $target->idOf(row: $row);
-			if ($id === '') {
-				continue;
-			}
-
-			try {
-				$target->patch(id: $id, changes: ['archivalAction' => self::MAP[$value]]);
-			} catch (Throwable $e) {
-				$failed++;
-				$this->logger->warning(
-					'Dossiq archival actions: result type ' . $id . ' could not be written and keeps "' . $value . '" until the next run',
-					['app' => Application::APP_ID, 'error' => $e->getMessage()],
-				);
-				continue;
-			}
-
-			$mapped++;
-			$this->logger->info(
-				sprintf('Dossiq archival actions: result type %s now reads "%s"; it held "%s"', $id, self::MAP[$value], $value),
-				['app' => Application::APP_ID],
-			);
-		}//end foreach
-
-		if ($failed === 0) {
+		if ($tally['failed'] === 0) {
 			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
 		}
 
-		$output->info('Dossiq archival actions: ' . $mapped . ' result type(s) mapped, ' . $failed . ' left for the next run.');
+		$output->info('Dossiq archival actions: ' . $tally['mapped'] . ' result type(s) mapped, ' . $tally['failed'] . ' left for the next run.');
 	}//end map()
+
+	/**
+	 * Map one result type's legacy value.
+	 *
+	 * @param RepairSchema         $target The schema it walks.
+	 * @param array<string, mixed> $row    One stored row.
+	 *
+	 * @return string 'mapped', 'failed' (logged, and left for the next run) or 'skipped'.
+	 */
+	private function mapOne(RepairSchema $target, array $row): string {
+		$value = ($row['archivalAction'] ?? null);
+		if (is_string($value) === false || isset(self::MAP[$value]) === false) {
+			return 'skipped';
+		}
+
+		$id = $target->idOf(row: $row);
+		if ($id === '') {
+			return 'skipped';
+		}
+
+		try {
+			$target->patch(id: $id, changes: ['archivalAction' => self::MAP[$value]]);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq archival actions: result type ' . $id . ' could not be written and keeps "' . $value . '" until the next run',
+				['app' => Application::APP_ID, 'error' => $e->getMessage()],
+			);
+			return 'failed';
+		}
+
+		$this->logger->info(
+			sprintf('Dossiq archival actions: result type %s now reads "%s"; it held "%s"', $id, self::MAP[$value], $value),
+			['app' => Application::APP_ID],
+		);
+
+		return 'mapped';
+	}//end mapOne()
 }//end class
