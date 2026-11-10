@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Task\TaskAnswer;
 use RuntimeException;
 
 class InMemoryTaskEngine {
@@ -124,16 +125,15 @@ class InMemoryTaskEngine {
 	/**
 	 * Complete a task, as TaskFormCompletion::complete() does.
 	 *
-	 * @param string               $uuid       The task.
-	 * @param string               $outcome    The outcome.
-	 * @param string|null          $resultText Unused.
-	 * @param string|null          $comment    Unused.
-	 * @param array<string, mixed> $data       Unused.
-	 * @param string|null          $actor      Who completes it.
+	 * @param string               $uuid   The task.
+	 * @param TaskAnswer           $answer The outcome.
+	 * @param array<string, mixed> $data   Unused.
+	 * @param string|null          $actor  Who completes it.
 	 *
 	 * @return array<string, mixed> The completed task.
 	 */
-	public function complete(string $uuid, string $outcome, ?string $resultText, ?string $comment, array $data, ?string $actor): array {
+	public function complete(string $uuid, TaskAnswer $answer, array $data, ?string $actor): array {
+		$outcome = $answer->outcome;
 		if (array_key_exists($uuid, $this->tasks) === false) {
 			throw new RuntimeException('no such task');
 		}

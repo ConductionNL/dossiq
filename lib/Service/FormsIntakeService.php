@@ -45,6 +45,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
+use OCA\OpenRegister\Service\Form\FormSubmission;
+use OCA\OpenRegister\Service\Form\FormSubmitter;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -280,10 +282,11 @@ class FormsIntakeService {
 		$submitter = $this->settingsService->getOpenRegisterClass(self::FORM_SUBMIT);
 		if ($submitter !== null && method_exists($submitter, 'submit') === true) {
 			return $submitter->submit(
-				destination: $destination,
-				mapping: $mapping,
-				payload: $answers,
-				scope: $submission['formHash']
+				submission: new FormSubmission(
+					writes: [$destination + ['mapping' => $mapping]],
+					payload: $answers,
+					submitter: new FormSubmitter(scope: $submission['formHash'])
+				)
 			);
 		}
 

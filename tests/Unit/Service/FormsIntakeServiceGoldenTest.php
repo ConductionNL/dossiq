@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\FormsIntakeService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Form\FormSubmission;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -177,25 +178,20 @@ class FormsIntakeServiceGoldenTest extends TestCase {
 			}
 
 			/**
-			 * Record a submit.
+			 * Record a submit, logged as destination, mapping, payload and scope.
 			 *
-			 * @param array<string, string>     $destination    The destination.
-			 * @param array<string, mixed>|null $mapping        The mapping.
-			 * @param array<string, mixed>      $payload        The answers.
-			 * @param mixed                     $subject        The subject.
-			 * @param string|null               $idempotencyKey The idempotency key.
-			 * @param string                    $scope          The scope.
+			 * @param FormSubmission $submission     The writes, the payload and who submits.
+			 * @param string|null    $idempotencyKey The idempotency key.
 			 *
 			 * @return mixed The answer.
 			 */
-			public function submit(
-				array $destination,
-				?array $mapping,
-				array $payload,
-				mixed $subject = null,
-				?string $idempotencyKey = null,
-				string $scope = ''
-			): mixed {
+			public function submit(FormSubmission $submission, ?string $idempotencyKey = null): mixed {
+				$write = $submission->writes[0];
+				$mapping = $write['mapping'];
+				unset($write['mapping']);
+				$destination = $write;
+				$payload = $submission->payload;
+				$scope = $submission->scope;
 				$this->calls[] = ['submit', $destination, $mapping, $payload, $scope];
 				if ($this->answer === 'throw') {
 					throw new RuntimeException('submit down');

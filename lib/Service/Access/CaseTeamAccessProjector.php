@@ -50,6 +50,7 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
+use OCA\OpenRegister\Service\ShippedBaseline\ShippedDefinition;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -382,9 +383,11 @@ class CaseTeamAccessProjector {
 			$definition['authorization'] = $block;
 			$recorded = $baselines->record(
 				subject: $subject,
-				definition: $definition,
-				app: $baseline['app'],
-				appVersion: $baseline['appVersion'],
+				shipped: new ShippedDefinition(
+					definition: $definition,
+					app: $baseline['app'],
+					appVersion: $baseline['appVersion'],
+				),
 			);
 		} catch (Throwable) {
 			$recorded = false;

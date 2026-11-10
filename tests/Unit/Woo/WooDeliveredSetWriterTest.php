@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
+use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -47,9 +48,10 @@ class FakeArchiveHandler {
 	/** @var list<string> */
 	public array $calls = [];
 
-	public function freeze(string $identifier, ?string $reason = null, ?string $state = null, ?string $register = null, ?string $schema = null): array {
+	public function freeze(ObjectStateRequest $request, ?string $state = null): array {
+		$identifier = $request->identifier;
 		$this->calls[] = 'freeze ' . $identifier;
-		$this->frozen[$identifier] = ['reason' => $reason, 'state' => $state, 'register' => $register, 'schema' => $schema];
+		$this->frozen[$identifier] = ['reason' => $request->reason, 'state' => $state, 'register' => $request->register, 'schema' => $request->schema];
 
 		return ['uuid' => $identifier, 'frozen' => $this->frozen[$identifier]];
 	}//end freeze()

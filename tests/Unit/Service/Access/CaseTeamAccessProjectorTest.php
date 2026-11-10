@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use OCA\Dossiq\Tests\Support\SiblingOpenRegister;
+use OCA\OpenRegister\Service\ShippedBaseline\ShippedDefinition;
 use PHPUnit\Framework\TestCase;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -350,14 +351,15 @@ class CaseTeamAccessProjectorTest extends TestCase {
 			}
 
 			/**
-			 * @param string               $subject    The subject reference.
-			 * @param array<string, mixed> $definition The definition.
-			 * @param string               $app        The app.
-			 * @param string               $appVersion The app version.
+			 * @param string            $subject The subject reference.
+			 * @param ShippedDefinition $shipped The definition, the app and its version.
 			 *
 			 * @return bool Whether it was recorded.
 			 */
-			public function record(string $subject, array $definition, string $app, string $appVersion): bool {
+			public function record(string $subject, ShippedDefinition $shipped): bool {
+				$definition = $shipped->definition;
+				$app = $shipped->app;
+				$appVersion = $shipped->appVersion;
 				$this->recorded[] = ['subject' => $subject, 'definition' => $definition, 'app' => $app, 'appVersion' => $appVersion];
 				if ($this->throws === 'record') {
 					throw new \RuntimeException('baseline store unavailable');

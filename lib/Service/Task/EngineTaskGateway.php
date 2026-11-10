@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Task\TaskAnswer;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -769,11 +770,7 @@ class EngineTaskGateway {
             // that would report "no service" as "nothing to do".
             $completion = $this->container->get(self::COMPLETION_SERVICE);
 
-            // Positional, not named: this object is resolved by string from
-            // an app that need not be installed, and a named argument here
-            // would bind dossiq to OpenRegister's parameter NAMES as well as
-            // its order.
-            $completion->complete($id, $outcome, null, null, $data, $actor);
+            $completion->complete(uuid: $id, answer: new TaskAnswer(outcome: $outcome), data: $data, actor: $actor);
 
             return true;
         } catch (Throwable $e) {

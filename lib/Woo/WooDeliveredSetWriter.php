@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Woo;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -313,7 +314,15 @@ class WooDeliveredSetWriter {
 		}
 
 		[, $register, $schema] = $this->store();
-		$handler->freeze($setId, 'Woo-levering, publicatie ' . $publicationId, self::FREEZE_STATE, $register, $schema);
+		$handler->freeze(
+			request: new ObjectStateRequest(
+				identifier: $setId,
+				reason: 'Woo-levering, publicatie ' . $publicationId,
+				register: $register,
+				schema: $schema
+			),
+			state: self::FREEZE_STATE
+		);
 	}//end platformFreeze()
 
 	/**
@@ -330,7 +339,7 @@ class WooDeliveredSetWriter {
 		}
 
 		[, $register, $schema] = $this->store();
-		$handler->unfreeze($setId, 'Woo-intrekking stempelen', $register, $schema);
+		$handler->unfreeze(identifier: $setId, reason: 'Woo-intrekking stempelen', register: $register, schema: $schema);
 
 		return true;
 	}//end platformUnfreeze()

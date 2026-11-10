@@ -49,6 +49,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Rbac\SpecialRightGrant;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -247,10 +248,12 @@ class CaseRecordGrantsBackfill {
 		try {
 			$rights = $this->container->get(self::SPECIAL_RIGHTS);
 			$rights->giveInEveryOrganisation(
-				right: self::GRANT_MANAGE,
-				group: BackgroundServiceAccount::GROUP,
-				register: $this->settingsService->getConfigValue('register'),
-				schemas: $schemas
+				grant: new SpecialRightGrant(
+					right: self::GRANT_MANAGE,
+					group: BackgroundServiceAccount::GROUP,
+					register: $this->settingsService->getConfigValue('register'),
+					schemas: $schemas
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
