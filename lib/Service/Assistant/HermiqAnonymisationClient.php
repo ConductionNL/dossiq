@@ -45,7 +45,6 @@ use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Thin HTTP client for Hermiq's local structured PII-detection API.
@@ -60,13 +59,6 @@ class HermiqAnonymisationClient {
 	 * @var string
 	 */
 	private const DETECT_PII_PATH = '/index.php/apps/hermiq/api/assistant/detect-pii';
-
-	/**
-	 * Request timeout in seconds.
-	 *
-	 * @var int
-	 */
-	private const TIMEOUT_SECONDS = 30;
 
 	/**
 	 * Constructor.
@@ -117,49 +109,16 @@ class HermiqAnonymisationClient {
 	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
 	 */
 	public function detectPii(string $text, array $context): array {
-		if ($this->isAvailable() === false) {
-			throw new HermiqAssistantException(
-				message: 'Hermiq is not installed or enabled on this instance',
-				statusCode: 503
-			);
-		}
-
-		[$serviceUid, $serviceAppPassword] = $this->serviceCredentials();
-		if ($serviceUid === '' || $serviceAppPassword === '') {
-			$this->logger->warning(
-				'HermiqAnonymisationClient: service-account credentials are not configured',
-				['app' => Application::APP_ID]
-			);
-			throw new HermiqAssistantException(
-				message: 'The Hermiq service-account credentials are not configured',
-				statusCode: 503
-			);
-		}
+		$call = new HermiqServiceCall(logger: $this->logger, caller: 'HermiqAnonymisationClient');
+		$call->requireAvailable(available: $this->isAvailable());
+		$credentials = HermiqServiceCall::credentialsFrom(appConfig: $this->appConfig);
+		$call->requireCredentials(credentials: $credentials);
 
 		$url = rtrim($this->urlGenerator->getBaseUrl(), '/') . self::DETECT_PII_PATH;
+		$payload = ['text' => $text, 'context' => $context];
+		$post = new HermiqPost(url: $url, options: HermiqServiceCall::postOptions(credentials: $credentials, json: $payload));
 
-		$options = [
-			'timeout' => self::TIMEOUT_SECONDS,
-			'auth' => [$serviceUid, $serviceAppPassword],
-			'json' => ['text' => $text, 'context' => $context],
-			// We need the body + status on EVERY response (including 4xx/5xx)
-			// to relay Hermiq's specific error mapping (400/422/502/503) —
-			// never let the transport layer swallow it into a generic throw.
-			'http_errors' => false,
-			'headers' => ['Accept' => 'application/json'],
-		];
-
-		try {
-			$response = $this->clientService->newClient()->post($url, $options);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'HermiqAnonymisationClient: request failed',
-				['app' => Application::APP_ID, 'url' => $url, 'error' => $e->getMessage()]
-			);
-			throw new HermiqAssistantException(message: 'hermiq_unreachable', statusCode: 503, previous: $e);
-		}
-
-		return $this->decodeResponse(response: $response);
+		return $this->decodeResponse(response: $call->send(clients: $this->clientService, post: $post));
 	}//end detectPii()
 
 	/**
@@ -172,49 +131,11 @@ class HermiqAnonymisationClient {
 	 * @throws HermiqAssistantException On a non-2xx status or an undecodable body.
 	 */
 	private function decodeResponse(\OCP\Http\Client\IResponse $response): array {
-		$statusCode = $response->getStatusCode();
-		$decoded = json_decode((string)$response->getBody(), true);
-		if (is_array($decoded) === false) {
-			throw new HermiqAssistantException(message: 'hermiq_invalid_response', statusCode: 502);
-		}
+		$decoded = HermiqServiceCall::decoded(response: $response);
 
-		if ($statusCode < 200 || $statusCode >= 300) {
-			$errorCode = null;
-			if (isset($decoded['errorCode']) === true) {
-				$errorCode = (string)$decoded['errorCode'];
-			}
-
-			throw new HermiqAssistantException(
-				message: (string)($decoded['message'] ?? $decoded['error'] ?? 'hermiq_api_error'),
-				statusCode: $statusCode,
-				errorCode: $errorCode
-			);
-		}
-
-		$spans = [];
-		if (is_array($decoded['spans'] ?? null) === true) {
-			$spans = $decoded['spans'];
-		}
-
-		$usage = [];
-		if (is_array($decoded['usage'] ?? null) === true) {
-			$usage = $decoded['usage'];
-		}
-
-		return ['spans' => $spans, 'usage' => $usage];
+		return [
+			'spans' => HermiqServiceCall::listOf(decoded: $decoded, key: 'spans'),
+			'usage' => HermiqServiceCall::listOf(decoded: $decoded, key: 'usage'),
+		];
 	}//end decodeResponse()
-
-	/**
-	 * Read the configured service-account credentials — the SAME app-config
-	 * keys `HermiqAssistantClient` reads (one service account for every
-	 * outbound Hermiq call this app makes).
-	 *
-	 * @return array{0: string, 1: string} `[uid, appPassword]`.
-	 */
-	private function serviceCredentials(): array {
-		$uid = $this->appConfig->getValueString(Application::APP_ID, 'hermiq_service_uid', '');
-		$pwd = $this->appConfig->getValueString(Application::APP_ID, 'hermiq_service_app_password', '');
-
-		return [$uid, $pwd];
-	}//end serviceCredentials()
 }//end class
