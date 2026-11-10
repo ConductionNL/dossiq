@@ -301,6 +301,32 @@ class IntakeRequirementsListenerTest extends TestCase {
 	}//end testASaveOfAnotherSchemaIsLeftAlone()
 
 	/**
+	 * A case whose payload cannot be read leaves the save alone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 */
+	public function testAnUnreadablePayloadLeavesTheSaveAlone(): void {
+		$entity = new class extends ObjectEntity {
+			/**
+			 * A payload that cannot be read.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function jsonSerialize(): array {
+				throw new \RuntimeException('unreadable');
+			}//end jsonSerialize()
+		};
+		$entity->setSchema(self::CASE_SCHEMA);
+		$event = new ObjectCreatingEvent($entity);
+
+		$this->listener->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testAnUnreadablePayloadLeavesTheSaveAlone()
+
+	/**
 	 * A case type that cannot be resolved leaves the save alone, on purpose.
 	 *
 	 * 🔴 THIS IS THE ONE DOOR THIS LISTENER LEAVES OPEN, AND IT IS DELIBERATE.
