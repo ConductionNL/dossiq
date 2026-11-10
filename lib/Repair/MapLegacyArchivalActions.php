@@ -14,9 +14,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Support\RepairSchema;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -38,7 +39,6 @@ use Throwable;
  */
 class MapLegacyArchivalActions implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
 
 	/**
 	 * The app-config key that records the step has run.
@@ -104,18 +104,16 @@ class MapLegacyArchivalActions implements IRepairStep {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('result_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'result_type_schema');
+		if ($target === null) {
 			$output->info('Dossiq archival actions: OpenRegister or the result type schema is unavailable; nothing mapped.');
 			return;
 		}
 
 		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $register, $schema, $output): void {
-				$this->map(objectService: $objectService, register: $register, schema: $schema, output: $output);
+			objectService: $target->objectService,
+			work: function () use ($target, $output): void {
+				$this->map(target: $target, output: $output);
 			}
 		);
 	}//end run()
@@ -123,63 +121,42 @@ class MapLegacyArchivalActions implements IRepairStep {
 	/**
 	 * Walk every result type and rewrite the legacy values.
 	 *
-	 * @param object  $objectService OpenRegister's object service.
-	 * @param string  $register      The register.
-	 * @param string  $schema        The result type schema.
-	 * @param IOutput $output        The upgrade output.
+	 * @param RepairSchema $target The schema it walks.
+	 * @param IOutput      $output The upgrade output.
 	 *
 	 * @return void
 	 */
-	private function map(object $objectService, string $register, string $schema, IOutput $output): void {
+	private function map(RepairSchema $target, IOutput $output): void {
 		$mapped = 0;
 		$failed = 0;
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				$value = ($row['archivalAction'] ?? null);
-				if (is_string($value) === false || isset(self::MAP[$value]) === false) {
-					continue;
-				}
+		foreach ($target->rows(pageSize: self::PAGE_SIZE) as $row) {
+			$value = ($row['archivalAction'] ?? null);
+			if (is_string($value) === false || isset(self::MAP[$value]) === false) {
+				continue;
+			}
 
-				$id = (string)($row['id'] ?? (($row['@self'] ?? [])['id'] ?? ''));
-				if ($id === '') {
-					continue;
-				}
+			$id = $target->idOf(row: $row);
+			if ($id === '') {
+				continue;
+			}
 
-				try {
-					$this->patchObjectAsArray(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						id: $id,
-						changes: ['archivalAction' => self::MAP[$value]]
-					);
-				} catch (Throwable $e) {
-					$failed++;
-					$this->logger->warning(
-						'Dossiq archival actions: result type ' . $id . ' could not be written and keeps "' . $value . '" until the next run',
-						['app' => Application::APP_ID, 'error' => $e->getMessage()],
-					);
-					continue;
-				}
-
-				$mapped++;
-				$this->logger->info(
-					sprintf('Dossiq archival actions: result type %s now reads "%s"; it held "%s"', $id, self::MAP[$value], $value),
-					['app' => Application::APP_ID],
+			try {
+				$target->patch(id: $id, changes: ['archivalAction' => self::MAP[$value]]);
+			} catch (Throwable $e) {
+				$failed++;
+				$this->logger->warning(
+					'Dossiq archival actions: result type ' . $id . ' could not be written and keeps "' . $value . '" until the next run',
+					['app' => Application::APP_ID, 'error' => $e->getMessage()],
 				);
-			}//end foreach
+				continue;
+			}
 
-			$page++;
-		}//end while
+			$mapped++;
+			$this->logger->info(
+				sprintf('Dossiq archival actions: result type %s now reads "%s"; it held "%s"', $id, self::MAP[$value], $value),
+				['app' => Application::APP_ID],
+			);
+		}//end foreach
 
 		if ($failed === 0) {
 			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);

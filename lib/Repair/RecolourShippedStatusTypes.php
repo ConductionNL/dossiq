@@ -14,10 +14,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Support\RepairSchema;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTypePalette;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -39,7 +40,6 @@ use Throwable;
  */
 class RecolourShippedStatusTypes implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
 
 	/**
 	 * The app-config key that records the step has run.
@@ -102,18 +102,16 @@ class RecolourShippedStatusTypes implements IRepairStep {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('status_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'status_type_schema');
+		if ($target === null) {
 			$output->info('Dossiq status colours: OpenRegister or the status type schema is unavailable; nothing recoloured.');
 			return;
 		}
 
 		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $register, $schema, $output): void {
-				$this->recolour(objectService: $objectService, register: $register, schema: $schema, output: $output);
+			objectService: $target->objectService,
+			work: function () use ($target, $output): void {
+				$this->recolour(target: $target, output: $output);
 			}
 		);
 	}//end run()
@@ -121,58 +119,43 @@ class RecolourShippedStatusTypes implements IRepairStep {
 	/**
 	 * Walk every status type and recolour the shipped ones that still hold a shipped colour.
 	 *
-	 * @param object  $objectService OpenRegister's object service.
-	 * @param string  $register      The register.
-	 * @param string  $schema        The status type schema.
-	 * @param IOutput $output        The upgrade output.
+	 * @param RepairSchema $target The schema it walks.
+	 * @param IOutput      $output The upgrade output.
 	 *
 	 * @return void
 	 */
-	private function recolour(object $objectService, string $register, string $schema, IOutput $output): void {
+	private function recolour(RepairSchema $target, IOutput $output): void {
 		$changed = 0;
 		$failed = 0;
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				$self = ($row['@self'] ?? []);
-				if (is_array($self) === false || ($self['owner'] ?? null) !== self::SYSTEM_OWNER) {
-					continue;
-				}
+		foreach ($target->rows(pageSize: self::PAGE_SIZE) as $row) {
+			$self = ($row['@self'] ?? []);
+			if (is_array($self) === false || ($self['owner'] ?? null) !== self::SYSTEM_OWNER) {
+				continue;
+			}
 
-				$colour = $this->palette->recolour(row: $row);
-				$rowId = (string)($row['id'] ?? ($self['id'] ?? ''));
-				if ($colour === null || $rowId === '') {
-					continue;
-				}
+			$colour = $this->palette->recolour(row: $row);
+			$rowId = (string)($row['id'] ?? ($self['id'] ?? ''));
+			if ($colour === null || $rowId === '') {
+				continue;
+			}
 
-				try {
-					$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $rowId, changes: ['colour' => $colour]);
-				} catch (Throwable $e) {
-					$failed++;
-					$this->logger->warning(
-						'Dossiq status colours: status ' . $rowId . ' could not be recoloured and keeps its colour until the next run',
-						['app' => Application::APP_ID, 'error' => $e->getMessage()],
-					);
-					continue;
-				}
-
-				$changed++;
-				$this->logger->info(
-					sprintf('Dossiq status colours: status %s (%s) is now %s', $rowId, (string)($row['name'] ?? ''), $colour),
-					['app' => Application::APP_ID],
+			try {
+				$target->patch(id: $rowId, changes: ['colour' => $colour]);
+			} catch (Throwable $e) {
+				$failed++;
+				$this->logger->warning(
+					'Dossiq status colours: status ' . $rowId . ' could not be recoloured and keeps its colour until the next run',
+					['app' => Application::APP_ID, 'error' => $e->getMessage()],
 				);
-			}//end foreach
+				continue;
+			}
 
-			$page++;
-		}//end while
+			$changed++;
+			$this->logger->info(
+				sprintf('Dossiq status colours: status %s (%s) is now %s', $rowId, (string)($row['name'] ?? ''), $colour),
+				['app' => Application::APP_ID],
+			);
+		}//end foreach
 
 		if ($failed === 0) {
 			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);

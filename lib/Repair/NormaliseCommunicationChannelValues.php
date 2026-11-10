@@ -14,10 +14,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Repair\Support\RepairSchema;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -44,7 +45,6 @@ use Throwable;
  */
 class NormaliseCommunicationChannelValues implements IRepairStep {
 	use RunsUnderSystemIdentity;
-	use SearchesObjects;
 
 	/**
 	 * The app-config key that records the step has run.
@@ -100,18 +100,16 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'case_schema');
+		if ($target === null) {
 			$output->info('Dossiq communication channels: OpenRegister or the case schema is unavailable; nothing converted.');
 			return;
 		}
 
 		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use ($objectService, $register, $schema, $output): void {
-				$this->convert(objectService: $objectService, register: $register, schema: $schema, output: $output);
+			objectService: $target->objectService,
+			work: function () use ($target, $output): void {
+				$this->convert(target: $target, output: $output);
 			}
 		);
 	}//end run()
@@ -119,59 +117,44 @@ class NormaliseCommunicationChannelValues implements IRepairStep {
 	/**
 	 * Walk every case and convert the ones off the slugs.
 	 *
-	 * @param object  $objectService OpenRegister's object service.
-	 * @param string  $register      The register.
-	 * @param string  $schema        The case schema.
-	 * @param IOutput $output        The upgrade output.
+	 * @param RepairSchema $target The schema it walks.
+	 * @param IOutput      $output The upgrade output.
 	 *
 	 * @return void
 	 */
-	private function convert(object $objectService, string $register, string $schema, IOutput $output): void {
+	private function convert(RepairSchema $target, IOutput $output): void {
 		$converted = 0;
 		$failed = 0;
-		$page = 1;
-		$full = true;
-		while ($full === true) {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE_SIZE, '_page' => $page],
-			);
-			$full = (count($rows) === self::PAGE_SIZE);
-			foreach ($rows as $row) {
-				$value = ($row['communicationChannel'] ?? null);
-				$isSlug = in_array($value, CommunicationChannel::SLUGS, true);
-				if (is_string($value) === false || trim($value) === '' || $isSlug === true) {
-					continue;
-				}
+		foreach ($target->rows(pageSize: self::PAGE_SIZE) as $row) {
+			$value = ($row['communicationChannel'] ?? null);
+			$isSlug = in_array($value, CommunicationChannel::SLUGS, true);
+			if (is_string($value) === false || trim($value) === '' || $isSlug === true) {
+				continue;
+			}
 
-				$caseId = (string)($row['id'] ?? (($row['@self'] ?? [])['id'] ?? ''));
-				if ($caseId === '') {
-					continue;
-				}
+			$caseId = $target->idOf(row: $row);
+			if ($caseId === '') {
+				continue;
+			}
 
-				$changes = $this->channels->normalise(value: $value);
-				try {
-					$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId, changes: $changes);
-				} catch (Throwable $e) {
-					$failed++;
-					$this->logger->warning(
-						'Dossiq communication channels: case ' . $caseId . ' could not be converted and keeps its value until the next run',
-						['app' => Application::APP_ID, 'error' => $e->getMessage()],
-					);
-					continue;
-				}
-
-				$converted++;
-				$this->logger->info(
-					sprintf('Dossiq channels: case %s now reads "%s"; it held "%s"', $caseId, (string)($changes['communicationChannel'] ?? ''), $value),
-					['app' => Application::APP_ID],
+			$changes = $this->channels->normalise(value: $value);
+			try {
+				$target->patch(id: $caseId, changes: $changes);
+			} catch (Throwable $e) {
+				$failed++;
+				$this->logger->warning(
+					'Dossiq communication channels: case ' . $caseId . ' could not be converted and keeps its value until the next run',
+					['app' => Application::APP_ID, 'error' => $e->getMessage()],
 				);
-			}//end foreach
+				continue;
+			}
 
-			$page++;
-		}//end while
+			$converted++;
+			$this->logger->info(
+				sprintf('Dossiq channels: case %s now reads "%s"; it held "%s"', $caseId, (string)($changes['communicationChannel'] ?? ''), $value),
+				['app' => Application::APP_ID],
+			);
+		}//end foreach
 
 		if ($failed === 0) {
 			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::DONE_VERSION);
