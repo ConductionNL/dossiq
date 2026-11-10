@@ -58,6 +58,24 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 	private const CATALOGUE_PATH = __DIR__ . '/../Settings/verwerkingsactiviteiten.json';
 
 	/**
+	 * The catalogue's descriptive fields: the type check a value must pass and
+	 * the candidate entity properties, newest first. The string fields are
+	 * copied before the list fields.
+	 *
+	 * @var array<string, array{0: callable-string, 1: array<int, string>}>
+	 */
+	private const DESCRIPTIVE_FIELDS = [
+		'name' => ['is_string', ['name', 'naam']],
+		'beschrijving' => ['is_string', ['description', 'beschrijving']],
+		'doelbinding' => ['is_string', ['purpose', 'doelbinding']],
+		'rechtsgrond' => ['is_string', ['legalBasis', 'rechtsgrond']],
+		'bewaartermijn' => ['is_string', ['retentionPeriod', 'bewaartermijn']],
+		'categorieenBetrokkenen' => ['is_array', ['dataSubjectCategories', 'categorieenBetrokkenen']],
+		'categorieenPersoonsgegevens' => ['is_array', ['personalDataCategories', 'categorieenPersoonsgegevens']],
+		'ontvangers' => ['is_array', ['recipients', 'ontvangers']],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService OpenRegister availability check.
@@ -274,30 +292,11 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 		// how all 7 catalogue rows failed on every fresh install. Each field
 		// therefore lists its candidate entity properties, newest first, and
 		// the one the deployed entity actually declares wins.
-		$stringFields = [
-			'name' => ['name', 'naam'],
-			'beschrijving' => ['description', 'beschrijving'],
-			'doelbinding' => ['purpose', 'doelbinding'],
-			'rechtsgrond' => ['legalBasis', 'rechtsgrond'],
-			'bewaartermijn' => ['retentionPeriod', 'bewaartermijn'],
-		];
-		foreach ($stringFields as $field => $candidates) {
-			if (isset($definition[$field]) === true && is_string($definition[$field]) === true) {
+		foreach (self::DESCRIPTIVE_FIELDS as $field => [$isOfType, $candidates]) {
+			if (isset($definition[$field]) === true && $isOfType($definition[$field]) === true) {
 				$this->setFirstDeclared(entity: $entity, candidates: $candidates, value: $definition[$field]);
 			}
 		}
-
-		$arrayFields = [
-			'categorieenBetrokkenen' => ['dataSubjectCategories', 'categorieenBetrokkenen'],
-			'categorieenPersoonsgegevens' => ['personalDataCategories', 'categorieenPersoonsgegevens'],
-			'ontvangers' => ['recipients', 'ontvangers'],
-		];
-		foreach ($arrayFields as $field => $candidates) {
-			if (isset($definition[$field]) === true && is_array($definition[$field]) === true) {
-				$this->setFirstDeclared(entity: $entity, candidates: $candidates, value: $definition[$field]);
-			}
-		}
-
 	}//end hydrate()
 
 	/**
