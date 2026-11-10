@@ -87,7 +87,10 @@ class SetCaseAnswerHandler implements ActionHandlerInterface {
 			$objects->saveObject(
 				object: $stored,
 				options: new ObjectSaveOptions(
-					target: new ObjectFindTarget(register: $this->settings->getConfigValue(key: 'register'), schema: $this->settings->getConfigValue(key: 'case_schema'))
+					target: new ObjectFindTarget(
+						register: $this->settings->getConfigValue(key: 'register'),
+						schema: $this->settings->getConfigValue(key: 'case_schema')
+					)
 				)
 			);
 		} catch (Throwable $e) {
