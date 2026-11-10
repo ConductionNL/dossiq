@@ -55,15 +55,11 @@ final class CaseLeafReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param object          $objectService OpenRegister's object service.
-	 * @param string          $register      The register.
-	 * @param LoggerInterface $logger        Logger.
-	 *
-	 * @spec openspec/specs/case-leaf/spec.md#requirement-a-host-app-reads-a-partys-cases-by-master-entity
+	 * @param CaseLeafRegister $source The object service and register read from.
+	 * @param LoggerInterface  $logger Logger.
 	 */
 	public function __construct(
-		private readonly object $objectService,
-		private readonly string $register,
+		private readonly CaseLeafRegister $source,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -190,8 +186,8 @@ final class CaseLeafReader {
 	private function read(string $schema, array $filters): array {
 		try {
 			return $this->searchObjectsAsArrays(
-				objectService: $this->objectService,
-				register: $this->register,
+				objectService: $this->source->objectService,
+				register: $this->source->register,
 				schema: $schema,
 				filters: array_merge($filters, ['_limit' => CaseLeafProvider::MAX_ROWS])
 			);

@@ -127,7 +127,10 @@ class CaseLeafProvider {
 			return null;
 		}
 
-		return new CaseLeafReader(objectService: $objectService, register: $register, logger: $this->logger);
+		return new CaseLeafReader(
+			source: new CaseLeafRegister(objectService: $objectService, register: $register),
+			logger: $this->logger
+		);
 	}//end reader()
 
 	/**
