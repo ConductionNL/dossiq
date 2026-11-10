@@ -91,63 +91,112 @@ class ProcessingTimeReportService {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(string $period, ?string $caseType, ?string $view, float $threshold): array {
-		$today   = $this->dates->today();
-		$records = $this->loader->loadCases(caseTypeFilter: null);
-		$types   = $this->prepareTypes(rows: $this->loader->loadCaseTypes());
-		$finals  = $this->finalStatusIds(rows: $this->loader->loadStatusTypes());
+		$run            = new ProcessingTimeRun();
+		$run->period    = $period;
+		$run->caseType  = $caseType;
+		$run->view      = $view;
+		$run->threshold = $threshold;
+		$run->today     = $this->dates->today();
+		$records        = $this->loader->loadCases(caseTypeFilter: null);
+		$run->types     = $this->prepareTypes(rows: $this->loader->loadCaseTypes());
+		$run->finals    = $this->finalStatusIds(rows: $this->loader->loadStatusTypes());
 
-		$typeId  = $this->resolveType(types: $types, key: $caseType);
-		$typeIds = $this->resolveTypes(types: $types, key: $caseType);
-		$scoped  = [];
-		foreach ($records as $row) {
-			$record = $this->prepareRecord(row: $row, types: $types, finals: $finals);
-			if ($caseType === null || in_array($record['caseType'], $typeIds, true) === true) {
-				$scoped[] = $record;
-			}
-		}
-
-		$completed = array_values(
-			array_filter(
-				$scoped,
-				static fn (array $record): bool => $record['isFinal'] === true && $record['endDate'] !== null
-			)
-		);
-		$open      = array_values(array_filter($scoped, static fn (array $record): bool => $record['isFinal'] === false));
-		$from      = $this->periods->from(preset: $period, today: $today);
-		$inPeriod  = $this->inPeriod(records: $completed, from: $from);
-
-		$context = [
-			'today'     => $today,
-			'types'     => $types,
-			'completed' => $completed,
-			'inPeriod'  => $inPeriod,
-			'open'      => $open,
-			'months'    => $this->periods->trendMonths(preset: $period, today: $today),
-			'threshold' => $threshold,
-		];
-
-		$report = [
-			'period'    => [
-				'preset' => $period,
-				'from'   => $from?->format('Y-m-d'),
-				'to'     => $today->format('Y-m-d'),
-			],
-			'caseType'  => $typeId,
-			'truncated' => (count($records) >= ProcessMiningDataLoader::CASE_LIMIT),
-		];
-
-		foreach (self::VIEWS as $block) {
-			if ($view === null || $view === $block) {
-				$report = [...$report, ...$this->block(name: $block, context: $context)];
-			}
-		}
-
+		$report = $this->assemble(run: $run, records: $records);
 		if ($caseType === null) {
 			$this->steps->publisher->publish(report: $report);
 		}
 
 		return $report;
 	}//end getReport()
+
+	/**
+	 * The report: its head, then each block the view asks for.
+	 *
+	 * @param ProcessingTimeRun                $run     The report being built.
+	 * @param array<int, array<string, mixed>> $records The loaded case rows.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function assemble(ProcessingTimeRun $run, array $records): array {
+		$context = $this->context(run: $run, scoped: $this->scoped(run: $run, records: $records));
+		$report  = $this->reportHead(run: $run, records: $records);
+
+		foreach (self::VIEWS as $block) {
+			if ($run->view === null || $run->view === $block) {
+				$report = [...$report, ...$this->block(name: $block, context: $context)];
+			}
+		}
+
+		return $report;
+	}//end assemble()
+
+	/**
+	 * The prepared records of the case type asked for, or of every type.
+	 *
+	 * @param ProcessingTimeRun                $run     The report being built.
+	 * @param array<int, array<string, mixed>> $records The loaded case rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function scoped(ProcessingTimeRun $run, array $records): array {
+		$typeIds = $this->resolveTypes(types: $run->types, key: $run->caseType);
+		$scoped  = [];
+		foreach ($records as $row) {
+			$record = $this->prepareRecord(row: $row, types: $run->types, finals: $run->finals);
+			if ($run->caseType === null || in_array($record['caseType'], $typeIds, true) === true) {
+				$scoped[] = $record;
+			}
+		}
+
+		return $scoped;
+	}//end scoped()
+
+	/**
+	 * What the blocks read: the completed, in-period and open records and the numbers.
+	 *
+	 * @param ProcessingTimeRun                $run    The report being built.
+	 * @param array<int, array<string, mixed>> $scoped The prepared records in scope.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function context(ProcessingTimeRun $run, array $scoped): array {
+		$completed = array_values(
+			array_filter(
+				$scoped,
+				static fn (array $record): bool => $record['isFinal'] === true && $record['endDate'] !== null
+			)
+		);
+
+		return [
+			'today'     => $run->today,
+			'types'     => $run->types,
+			'completed' => $completed,
+			'inPeriod'  => $this->inPeriod(records: $completed, from: $this->periods->from(preset: $run->period, today: $run->today)),
+			'open'      => array_values(array_filter($scoped, static fn (array $record): bool => $record['isFinal'] === false)),
+			'months'    => $this->periods->trendMonths(preset: $run->period, today: $run->today),
+			'threshold' => $run->threshold,
+		];
+	}//end context()
+
+	/**
+	 * The head of the report: the period, the case type and whether the load was cut off.
+	 *
+	 * @param ProcessingTimeRun                $run     The report being built.
+	 * @param array<int, array<string, mixed>> $records The loaded case rows.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function reportHead(ProcessingTimeRun $run, array $records): array {
+		return [
+			'period'    => [
+				'preset' => $run->period,
+				'from'   => $this->periods->from(preset: $run->period, today: $run->today)?->format('Y-m-d'),
+				'to'     => $run->today->format('Y-m-d'),
+			],
+			'caseType'  => $this->resolveType(types: $run->types, key: $run->caseType),
+			'truncated' => (count($records) >= ProcessMiningDataLoader::CASE_LIMIT),
+		];
+	}//end reportHead()
 
 	/**
 	 * One named block of the report.
