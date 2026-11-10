@@ -284,23 +284,28 @@ const ACT_EXPLAINERS = new Map([
 ])
 
 /**
- * Ask the three endpoints behind the menu, settled one by one.
+ * Ask the three endpoints behind the menu and keep what each answered.
  *
  * `allSettled` and not `all`: one endpoint that is down must not empty
- * the menu.
+ * the menu. A refused or empty read answers no transitions, or null.
  *
  * @param {string} caseId The case.
- * @return {Promise<Array<object>>} The settled transitions, lifecycle and acts reads.
+ * @return {Promise<{transitions: Array, state: object|null, acts: object|null}>} The menu's input.
  */
-function readLifecycleAnswers(caseId) {
+async function readLifecycleMenu(caseId) {
 	const id = encodeURIComponent(caseId)
-	return Promise.allSettled([
+	const [moves, state, acts] = await Promise.allSettled([
 		axios.get(
 			generateUrl(`/apps/dossiq/api/case/${id}/available-transitions`),
 		),
 		axios.get(generateUrl(`/apps/dossiq/api/case/${id}/lifecycle`)),
 		axios.get(generateUrl(`/apps/dossiq/api/case/${id}/acts`)),
 	])
+	return {
+		transitions: settledData(moves)?.transitions ?? [],
+		state: settledData(state),
+		acts: settledData(acts),
+	}
 }
 
 /**
@@ -311,6 +316,43 @@ function readLifecycleAnswers(caseId) {
  */
 function settledData(result) {
 	return result.status === 'fulfilled' ? (result.value?.data ?? null) : null
+}
+
+/**
+ * Where to ask for the approval one act of a case waits on.
+ *
+ * @param {string} caseId The case.
+ * @param {string} act The act waiting on the approval.
+ * @return {string} The endpoint.
+ */
+function approvalRequestUrl(caseId, act) {
+	const id = encodeURIComponent(caseId)
+	return generateUrl(`/apps/dossiq/api/case/${id}/approvals/${encodeURIComponent(act)}`)
+}
+
+/**
+ * The translated sentence for a refused request.
+ *
+ * @param {object} error What the request threw.
+ * @return {string} What to show the handler.
+ */
+function refusalText(error) {
+	return refusalMessage(error?.response?.data ?? {}, (key) =>
+		t('dossiq', key),
+	)
+}
+
+/**
+ * The fields an act sends, each defaulted to the empty string.
+ *
+ * Only what the act asks now is sent: text typed before a pause
+ * reason was picked instead of Other is not a reason.
+ *
+ * @param {object} data What the act's form answers.
+ * @return {object} The fields to send.
+ */
+function askedFields(data) {
+	return { reason: '', resultTypeId: '', until: '', days: '', pauseReason: '', ...data }
 }
 
 export default {
@@ -620,23 +662,23 @@ export default {
 				this.loading = false
 				return
 			}
-			const [moves, state, acts] = await readLifecycleAnswers(this.targetCaseId)
+			const read = await readLifecycleMenu(this.targetCaseId)
 
-			const actsBody = settledData(acts)
-			const stateBody = settledData(state)
+			this.entries = this.withOwnDialogs(buildActsMenu(read))
+			this.readSummary()
+			this.choosePreset()
+			this.awaiting = awaitingApprovals(read.acts)
+			this.applyLifecycleState(read.state)
+			this.loading = false
+		},
 
-			this.entries = this.withOwnDialogs(buildActsMenu({
-				transitions: settledData(moves)?.transitions ?? [],
-				state: stateBody,
-				acts: actsBody,
-			}))
+		/**
+		 * Read the case summary for the menu's heading, in the background.
+		 */
+		readSummary() {
 			fetchCaseSummary(this.targetCaseId).then((kase) => {
 				this.kase = kase
 			})
-			this.choosePreset()
-			this.awaiting = awaitingApprovals(actsBody)
-			this.applyLifecycleState(stateBody)
-			this.loading = false
 		},
 
 		/**
@@ -678,17 +720,12 @@ export default {
 		async askForApproval(entry) {
 			this.busy = true
 			this.error = ''
-			const id = encodeURIComponent(this.targetCaseId)
-			const act = encodeURIComponent(entry.act)
+			const url = approvalRequestUrl(this.targetCaseId, entry.act)
 			try {
-				await axios.post(
-					generateUrl(`/apps/dossiq/api/case/${id}/approvals/${act}`),
-				)
+				await axios.post(url)
 				await this.load()
 			} catch (e) {
-				this.error = refusalMessage(e?.response?.data ?? {}, (key) =>
-					t('dossiq', key),
-				)
+				this.error = refusalText(e)
 			} finally {
 				this.busy = false
 			}
@@ -836,49 +873,89 @@ export default {
 			}
 			this.busy = true
 			this.error = ''
-			const id = encodeURIComponent(this.targetCaseId)
-			// Only what the act asks now is sent: text typed before a pause
-			// reason was picked instead of Other is not a reason.
-			const sent = { reason: '', resultTypeId: '', until: '', days: '', pauseReason: '', ...this.answers.data }
 			try {
-				if (this.chosen.kind === 'transition') {
-					const { data } = await axios.post(
-						generateUrl(`/apps/dossiq/api/case/${id}/transition`),
-						buildTransitionPayload({
-							transitionId: this.chosen.id,
-							comment: sent.reason,
-							resultTypeId: sent.resultTypeId,
-						}),
-					)
-					// A 200 is not the same as everything having happened: the
-					// status moves before the automatic actions run, and the
-					// engine answers `partial` naming what failed.
-					this.warnAboutFailedActions(data)
-				} else {
-					const { data } = await axios.post(
-						generateUrl(
-							`/apps/dossiq/api/case/${id}/${endpointFor(this.chosen)}`,
-						),
-						{
-							reason: sent.reason,
-							resultTypeId: sent.resultTypeId,
-							until: sent.until,
-							days: Number(sent.days) || 0,
-							pauseReason: sent.pauseReason,
-							...(this.chosen.id === 'archive' ? { notifyRequester: this.values.notifyRequester === true } : {}),
-							...(this.chosen.id === 'suspend' && this.reminder ? { remindRequester: this.values.remindRequester === true } : {}),
-						},
-					)
-					this.sayWhetherTheRequesterWasTold(data, this.chosen.id)
-				}
-				emit(PAGE_REFRESH, {})
-				this.$emit('close')
+				await this.postChosen(askedFields(this.answers.data))
+				this.refreshAndClose()
 			} catch (error) {
-				this.error = refusalMessage(error?.response?.data ?? {}, (s) =>
-					t('dossiq', s),
-				)
+				this.error = refusalText(error)
 			} finally {
 				this.busy = false
+			}
+		},
+
+		/**
+		 * Post the chosen act: a transition, or a lifecycle act.
+		 *
+		 * @param {object} sent The fields the act asks.
+		 * @return {Promise<void>}
+		 */
+		postChosen(sent) {
+			return this.chosen.kind === 'transition' ? this.postTransition(sent) : this.postAct(sent)
+		},
+
+		/**
+		 * Tell the page to re-read, and close the menu.
+		 */
+		refreshAndClose() {
+			emit(PAGE_REFRESH, {})
+			this.$emit('close')
+		},
+
+		/**
+		 * Take the chosen transition.
+		 *
+		 * @param {object} sent The fields the act asks.
+		 * @return {Promise<void>}
+		 */
+		async postTransition(sent) {
+			const id = encodeURIComponent(this.targetCaseId)
+			const { data } = await axios.post(
+				generateUrl(`/apps/dossiq/api/case/${id}/transition`),
+				buildTransitionPayload({
+					transitionId: this.chosen.id,
+					comment: sent.reason,
+					resultTypeId: sent.resultTypeId,
+				}),
+			)
+			// A 200 is not the same as everything having happened: the
+			// status moves before the automatic actions run, and the
+			// engine answers `partial` naming what failed.
+			this.warnAboutFailedActions(data)
+		},
+
+		/**
+		 * Post the chosen lifecycle act to its own endpoint.
+		 *
+		 * @param {object} sent The fields the act asks.
+		 * @return {Promise<void>}
+		 */
+		async postAct(sent) {
+			const id = encodeURIComponent(this.targetCaseId)
+			const { data } = await axios.post(
+				generateUrl(
+					`/apps/dossiq/api/case/${id}/${endpointFor(this.chosen)}`,
+				),
+				this.actPayload(sent),
+			)
+			this.sayWhetherTheRequesterWasTold(data, this.chosen.id)
+		},
+
+		/**
+		 * The body of a lifecycle act: the asked fields, plus whether to tell
+		 * the requester on an archive, or remind them on a suspend that offers it.
+		 *
+		 * @param {object} sent The fields the act asks.
+		 * @return {object} The request body.
+		 */
+		actPayload(sent) {
+			return {
+				reason: sent.reason,
+				resultTypeId: sent.resultTypeId,
+				until: sent.until,
+				days: Number(sent.days) || 0,
+				pauseReason: sent.pauseReason,
+				...(this.chosen.id === 'archive' ? { notifyRequester: this.values.notifyRequester === true } : {}),
+				...(this.chosen.id === 'suspend' && this.reminder ? { remindRequester: this.values.remindRequester === true } : {}),
 			}
 		},
 
