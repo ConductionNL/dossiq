@@ -43,6 +43,8 @@ use RuntimeException;
  * Allowed and refused outcomes of every applicatie endpoint.
  *
  * @covers \OCA\Dossiq\Controller\AcController
+ * @covers \OCA\Dossiq\Controller\Support\ApplicatieRules
+ * @covers \OCA\Dossiq\Controller\Support\ApplicatieRepresentation
  */
 class AcControllerCharacterisationTest extends TestCase {
 
