@@ -29,6 +29,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -386,7 +387,7 @@ class TenantOnboardingService {
 		}
 
 		try {
-			$anchor = $objectService->find($tenantId, register: Application::REGISTER_SLUG, schema: 'tenant', _rbac: false, _multitenancy: false);
+			$anchor = $objectService->find($tenantId, options: new ObjectFindOptions(register: Application::REGISTER_SLUG, schema: 'tenant'), _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			return 'basic';
 		}

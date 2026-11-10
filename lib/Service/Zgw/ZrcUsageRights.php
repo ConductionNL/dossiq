@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Settles and checks indicatieGebruiksrecht on a zaak's documents.
@@ -283,8 +284,7 @@ class ZrcUsageRights {
 	private function find(string $uuid, array $config): mixed {
 		return $this->zgwService->getObjectService()->find(
 			$uuid,
-			register: $config['sourceRegister'],
-			schema: $config['sourceSchema']
+			options: new ObjectFindOptions(register: $config['sourceRegister'], schema: $config['sourceSchema'])
 		);
 	}//end find()
 

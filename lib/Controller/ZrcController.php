@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\OpenRegister\Exception\HookStoppedException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -958,8 +959,7 @@ class ZrcController extends ZgwController {
 			$caseData = $this->objectToArray(
 				row: $this->zgwService->getObjectService()->find(
 					$uuid,
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema']
+					options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 				)
 			);
 			$caseVa = $caseData['confidentiality'] ?? ($caseData['vertrouwelijkheidaanduiding'] ?? 'openbaar');
@@ -1219,8 +1219,7 @@ class ZrcController extends ZgwController {
 		try {
 			$ztObj = $this->zgwService->getObjectService()->find(
 				$matches[1],
-				register: $ztConfig['sourceRegister'],
-				schema: $ztConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $ztConfig['sourceRegister'], schema: $ztConfig['sourceSchema'])
 			);
 			$ztData = $this->objectToArray(row: $ztObj);
 		} catch (\Throwable $e) {
@@ -1353,8 +1352,7 @@ class ZrcController extends ZgwController {
 		try {
 			$caseObj = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 		} catch (\Throwable $e) {
 			$caseObj = null;
@@ -1530,8 +1528,7 @@ class ZrcController extends ZgwController {
 			try {
 				$existingObj = $this->zgwService->getObjectService()->find(
 					$uuid,
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema']
+					options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 				);
 				$existingData = $this->objectToArray(row: $existingObj);
 
@@ -1856,8 +1853,7 @@ class ZrcController extends ZgwController {
 
 			$zioObj = $this->zgwService->getObjectService()->find(
 				$uuid,
-				register: $zioConfig['sourceRegister'],
-				schema: $zioConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $zioConfig['sourceRegister'], schema: $zioConfig['sourceSchema'])
 			);
 			$zioData = $this->objectToArray(row: $zioObj);
 

@@ -40,6 +40,7 @@ use Exception;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -211,7 +212,7 @@ class CaseAssistantService {
 		$schema = $this->settingsService->getConfigValue('case_schema');
 
 		try {
-			$case = $objectService->find(id: $caseId, register: $register, schema: $schema);
+			$case = $objectService->find(id: $caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->info(
 				'CaseAssistantService: case load failed',

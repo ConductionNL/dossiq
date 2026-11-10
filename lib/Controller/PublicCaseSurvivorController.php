@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseMergeService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -176,10 +177,7 @@ class PublicCaseSurvivorController extends Controller {
 		try {
 			$entity = $objectService->find(
 				id: $caseId,
-				_extend: [],
-				files: false,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 				_rbac: true,
 				_multitenancy: true
 			);

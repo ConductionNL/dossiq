@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Workflow;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -193,9 +194,8 @@ class WorkflowDefinitionRepository {
 
 		try {
 			$obj = $context['objectService']->find(
-				$uuid,
-				register: $context['register'],
-				schema: $context['schema']
+				id: $uuid,
+				options: new ObjectFindOptions(register: $context['register'], schema: $context['schema'])
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -400,9 +400,8 @@ class WorkflowDefinitionRepository {
 		try {
 			$current = $this->normalize(
 				row: $context['objectService']->find(
-					$uuid,
-					register: $context['register'],
-					schema: $context['schema']
+					id: $uuid,
+					options: new ObjectFindOptions(register: $context['register'], schema: $context['schema'])
 				)
 			);
 		} catch (\Throwable $e) {

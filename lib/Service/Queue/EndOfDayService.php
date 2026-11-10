@@ -32,6 +32,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -240,7 +241,7 @@ class EndOfDayService {
 			return null;
 		}
 
-		$object = $objectService->find((string)$item['subjectId'], register: $this->register(), schema: $this->caseSchema());
+		$object = $objectService->find((string)$item['subjectId'], options: new ObjectFindOptions(register: $this->register(), schema: $this->caseSchema()));
 		return $readState->readStateFor(object: $object, userId: $userId);
 	}//end readStateOf()
 

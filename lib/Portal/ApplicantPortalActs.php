@@ -53,6 +53,7 @@ use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
@@ -263,7 +264,7 @@ class ApplicantPortalActs {
 			return null;
 		}
 
-		$object = $objectService->find($caseId, register: $register, schema: $schema);
+		$object = $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		if (is_object($object) === false || method_exists($object, 'jsonSerialize') === false) {
 			return null;
 		}

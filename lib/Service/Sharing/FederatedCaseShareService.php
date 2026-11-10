@@ -48,6 +48,7 @@ use DateTime;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -217,7 +218,7 @@ class FederatedCaseShareService {
 			return ['error' => 'Federated case sharing is not configured'];
 		}
 
-		$shareObj = $objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema);
+		$shareObj = $objectService->find($shareId, options: new ObjectFindOptions(register: (int)$register, schema: (int)$shareSchema));
 		if ($shareObj === null) {
 			return ['error' => 'Federated share not found'];
 		}
@@ -288,7 +289,7 @@ class FederatedCaseShareService {
 		}
 
 		try {
-			$shareObj = $objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema);
+			$shareObj = $objectService->find($shareId, options: new ObjectFindOptions(register: (int)$register, schema: (int)$shareSchema));
 			if ($shareObj === null) {
 				return null;
 			}
@@ -346,7 +347,7 @@ class FederatedCaseShareService {
 		int $caseSchema,
 	): ?array {
 		try {
-			$caseObj = $objectService->find($caseId, register: $register, schema: $caseSchema);
+			$caseObj = $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $caseSchema));
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'CaseSharingService: createFederatedShare case load failed',

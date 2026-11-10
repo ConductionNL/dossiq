@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use RuntimeException;
 
 /**
@@ -300,7 +301,10 @@ class CaseResultWriter {
 
 		try {
 			return $this->toArray(
-				value: $context['objectService']->find($id, register: $context['register'], schema: $context['schema']),
+				value: $context['objectService']->find(
+					id: $id,
+					options: new ObjectFindOptions(register: $context['register'], schema: $context['schema'])
+				),
 			);
 		} catch (\Throwable $e) {
 			return [];

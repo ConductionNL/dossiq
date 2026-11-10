@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Sharing;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -217,7 +218,7 @@ class CaseLinkShares {
 
 		try {
 			$share = $this->gateway->toArray(
-				$objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema)
+				$objectService->find($shareId, options: new ObjectFindOptions(register: (int)$register, schema: (int)$shareSchema))
 			);
 			if ($share === []) {
 				return false;

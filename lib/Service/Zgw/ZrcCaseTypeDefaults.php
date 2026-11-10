@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\ZgwRulesBase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Default assignee and confidentiality of a zaak, read from its zaaktype.
@@ -86,8 +87,7 @@ class ZrcCaseTypeDefaults extends ZgwRulesBase {
 		try {
 			$caseType = $objectService->find(
 				id: $extractedUuid,
-				register: $register,
-				schema: $schema
+				options: new ObjectFindOptions(register: $register, schema: $schema)
 			);
 
 			$ztData = $caseType;

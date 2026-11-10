@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
@@ -189,8 +190,7 @@ class TenantService {
 		try {
 			$found = $objectService->find(
 				$uuid,
-				register: self::REGISTER,
-				schema: self::SCHEMA_TENANT,
+				options: new ObjectFindOptions(register: self::REGISTER, schema: self::SCHEMA_TENANT),
 				_rbac: false,
 				_multitenancy: false
 			);

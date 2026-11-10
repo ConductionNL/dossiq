@@ -33,6 +33,7 @@ use DateTimeInterface;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\People\CaseRoleHolder;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -381,7 +382,7 @@ class CaseAccessPurposeService {
 	 */
 	private function find(object $objectService, string $id, string $register, string $schema, RefusedException $refusal): object {
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($id, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			throw $refusal;
 		}

@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Access;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -248,7 +249,7 @@ class ObjectReadGrants {
 		try {
 			// A rule read: the caller manages this record's grants and may not
 			// read it (decision 234). Nothing read here is answered to the caller.
-			$object = $objectService->find($uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false);
+			$object = $objectService->find($uuid, options: new ObjectFindOptions(register: $register, schema: $schema), _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			return null;
 		}

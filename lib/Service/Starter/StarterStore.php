@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Service\Starter;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -313,8 +314,7 @@ class StarterStore {
 		try {
 			$object = $context['service']->find(
 				id: $id,
-				register: $context['register'],
-				schema: $context['schema'],
+				options: new ObjectFindOptions(register: $context['register'], schema: $context['schema']),
 				_rbac: false,
 			);
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {

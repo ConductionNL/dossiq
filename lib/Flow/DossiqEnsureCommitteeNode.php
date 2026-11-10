@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\IL10N;
 use OCP\WorkflowEngine\IManager;
@@ -283,7 +284,7 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
         }
 
         try {
-            $committee = $objectService->find($committeeId, register: $register, schema: $schema);
+            $committee = $objectService->find($committeeId, options: new ObjectFindOptions(register: $register, schema: $schema));
         } catch (Throwable $e) {
             throw new RuntimeException('Could not read committee ' . $committeeId . ': ' . $e->getMessage(), 0, $e);
         }

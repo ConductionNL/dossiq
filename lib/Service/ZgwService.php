@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\OpenRegister\Db\Mapping;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -1209,9 +1210,8 @@ class ZgwService {
 
 		try {
 			$object = $this->objectService->find(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				id: $uuid
+				id: $uuid,
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 		} catch (\Throwable $e) {
 			return $this->storeFailureResponse(error: $e, operation: 'ZGW show', object: $resource . ' ' . $uuid);
@@ -1439,8 +1439,7 @@ class ZgwService {
 	private function findSerialized(string $uuid, array $mappingConfig): ?array {
 		$existingObj = $this->objectService->find(
 			$uuid,
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema']
+			options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 		);
 		if ($existingObj === null) {
 			return null;

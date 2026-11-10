@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -262,8 +263,7 @@ class BrcDocumentLinkHandler {
 			// Read the BIO to get besluit URL before deletion.
 			$bioObj = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 		} catch (\Throwable $e) {
 			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete BIO', object: $object);

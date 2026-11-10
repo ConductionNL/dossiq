@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Transitions;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -92,7 +93,7 @@ class CaseStatusStore {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($caseId, register: $register, schema: $caseSchema));
+			return $this->toArray(value: $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $caseSchema)));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StatusTransitionService: loadCase failed',

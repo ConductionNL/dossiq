@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseTransfer;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+
 /**
  * One OpenRegister object service bound to the transfer register and schema.
  *
@@ -65,7 +67,7 @@ final class TransferStore {
 	 * @spec openspec/specs/federated-case-collaboration/spec.md
 	 */
 	public function read(string $transferId): ?array {
-		$transfer = $this->objectService->find($transferId, register: $this->register, schema: $this->schema);
+		$transfer = $this->objectService->find($transferId, options: new ObjectFindOptions(register: $this->register, schema: $this->schema));
 		if ($transfer === null) {
 			return null;
 		}

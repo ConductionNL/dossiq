@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Relation;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -111,7 +112,7 @@ class CaseRelationStore {
 		}
 
 		try {
-			$obj = $objectService->find($uuid, register: $register, schema: $schema);
+			$obj = $objectService->find($uuid, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseRelationService: ' . $what . ' lookup failed',

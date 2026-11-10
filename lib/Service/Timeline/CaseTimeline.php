@@ -49,6 +49,7 @@ namespace OCA\Dossiq\Service\Timeline;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -211,7 +212,7 @@ class CaseTimeline {
 		[$objectService, $register, $schema] = $coordinates;
 		$writer = $this->writer();
 
-		$object = $objectService->find($caseId, register: $register, schema: $schema);
+		$object = $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		if ($object === null) {
 			$this->soften(caseId: $caseId, kind: (string)$data['kind'], reason: 'the case could not be read');
 			return '';
@@ -311,8 +312,7 @@ class CaseTimeline {
 			// entries of the case asked for come back.
 			$object = $objectService->find(
 				$caseId,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -423,7 +423,7 @@ class CaseTimeline {
 			$seen[$relatedId] = true;
 
 			try {
-				$object = $objectService->find($relatedId, register: $register, schema: $schema);
+				$object = $objectService->find($relatedId, options: new ObjectFindOptions(register: $register, schema: $schema));
 			} catch (Throwable $e) {
 				$object = null;
 			}

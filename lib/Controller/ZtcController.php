@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Zgw\ZtcCrossReferenceEnricher;
 use OCA\Dossiq\Service\Zgw\ZtcTypeNameResolver;
 use OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -285,8 +286,7 @@ class ZtcController extends ZgwController {
 		try {
 			$existingObj = $this->zgwService->getObjectService()->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			$existingData = $this->objectToArray(row: $existingObj);
 

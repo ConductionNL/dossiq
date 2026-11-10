@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -248,7 +249,7 @@ class QuickActionService {
 		[$objectService, $register, $caseSchema] = $this->resolveCase();
 
 		try {
-			return $this->toArray(result: $objectService->find($caseId, register: $register, schema: $caseSchema));
+			return $this->toArray(result: $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $caseSchema)));
 		} catch (Throwable $e) {
 			throw new RuntimeException('Case not found');
 		}

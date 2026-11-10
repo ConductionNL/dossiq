@@ -58,6 +58,7 @@ use OCA\Dossiq\Service\Cases\RebindMove;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\TranslatedText;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -579,7 +580,7 @@ class CaseRebindService {
 		[$objectService, $register, $schema] = $this->scope();
 
 		try {
-			$found = $objectService->find($caseId, register: $register, schema: $schema);
+			$found = $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->refuseIndeterminate(
 				rule: 'case-unreadable',

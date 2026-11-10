@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Service\Bulk;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Throwable;
 
 /**
@@ -149,7 +150,7 @@ class CaseTypeVersionGuard {
 			}
 
 			try {
-				$case = $objectService->find($caseId, register: $register, schema: $schema);
+				$case = $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 			} catch (Throwable $e) {
 				continue;
 			}

@@ -27,6 +27,7 @@ use DateTimeInterface;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -106,7 +107,7 @@ class WooReportReadLog {
 		$written = 0;
 		foreach ($caseIds as $caseId) {
 			try {
-				$case = $objectService->find($caseId, register: $register, schema: $schema);
+				$case = $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 				$mapper->createAuditTrailEntry(
 					object: $case,
 					action: self::ACTION_THROUGHPUT,

@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Service\Publication\PublicationDateRule;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -338,7 +339,7 @@ class PublicationService {
 	 */
 	private function loadCase(object $objectService, string $caseId, mixed $register, mixed $schema): array {
 		try {
-			$obj = $objectService->find(id: $caseId, register: $register, schema: $schema);
+			$obj = $objectService->find(id: $caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'PublicationService::publish find failed',

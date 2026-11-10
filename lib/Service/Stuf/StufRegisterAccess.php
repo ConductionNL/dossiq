@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Stuf;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\AppFramework\IAppContainer;
 use OCP\IAppConfig;
@@ -112,7 +113,7 @@ class StufRegisterAccess {
 				return null;
 			}
 
-			$object = $service->find(id: $id, register: $this->getRegisterId(), schema: $schema);
+			$object = $service->find(id: $id, options: new ObjectFindOptions(register: $this->getRegisterId(), schema: $schema));
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				message: 'StUF register findById failed: {err}',

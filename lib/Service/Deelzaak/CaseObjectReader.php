@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Deelzaak;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -82,7 +83,7 @@ class CaseObjectReader {
 		}
 
 		try {
-			$obj = $objectService->find($caseUuid, register: $register, schema: $schema);
+			$obj = $objectService->find($caseUuid, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'Case lookup failed',
@@ -116,7 +117,7 @@ class CaseObjectReader {
 		}
 
 		try {
-			$obj = $objectService->find($caseTypeId, register: $register, schema: $schema);
+			$obj = $objectService->find($caseTypeId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable) {
 			return null;
 		}

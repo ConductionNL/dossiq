@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -748,8 +749,7 @@ class DrcController extends ZgwController {
 		try {
 			$this->zgwService->getObjectService()->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			return true;
 		} catch (\Throwable $e) {
@@ -794,9 +794,8 @@ class DrcController extends ZgwController {
 
 		try {
 			$object = $this->zgwService->getObjectService()->find(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				id: $uuid
+				id: $uuid,
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			$objectData = $this->objectToArray(row: $object);
 
@@ -925,8 +924,7 @@ class DrcController extends ZgwController {
 		try {
 			$existing = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			$existingData = $this->objectToArray(row: $existing);
 
@@ -1086,8 +1084,7 @@ class DrcController extends ZgwController {
 		try {
 			$existing = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			$existingData = $this->objectToArray(row: $existing);
 
@@ -1150,8 +1147,7 @@ class DrcController extends ZgwController {
 				try {
 					$this->zgwService->getObjectService()->find(
 						$uuid,
-						register: $mappingConfig['sourceRegister'],
-						schema: $mappingConfig['sourceSchema']
+						options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 					);
 				} catch (\Throwable $e) {
 					return new JSONResponse(
@@ -1425,8 +1421,7 @@ class DrcController extends ZgwController {
 		try {
 			$obj = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			$data = $this->objectToArray(row: $obj);
 
@@ -1496,8 +1491,7 @@ class DrcController extends ZgwController {
 					try {
 						$eioObj = $objectService->find(
 							$eioUuid,
-							register: $eioConfig['sourceRegister'],
-							schema: $eioConfig['sourceSchema']
+							options: new ObjectFindOptions(register: $eioConfig['sourceRegister'], schema: $eioConfig['sourceSchema'])
 						);
 						$eioData = $this->objectToArray(row: $eioObj);
 
@@ -1551,8 +1545,7 @@ class DrcController extends ZgwController {
 		try {
 			$eioObj = $objectService->find(
 				$ioMatches[1],
-				register: $eioConfig['sourceRegister'],
-				schema: $eioConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $eioConfig['sourceRegister'], schema: $eioConfig['sourceSchema'])
 			);
 			$eioData = $this->objectToArray(row: $eioObj);
 
@@ -1612,8 +1605,7 @@ class DrcController extends ZgwController {
 			// Find the EIO object.
 			$existing = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			$objectData = $this->objectToArray(row: $existing);
 
@@ -1784,8 +1776,7 @@ class DrcController extends ZgwController {
 		try {
 			$existing = $this->zgwService->getObjectService()->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			$objectData = $this->objectToArray(row: $existing);
 
@@ -2010,8 +2001,7 @@ class DrcController extends ZgwController {
 		$existingData = $this->objectToArray(
 			row: $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			)
 		);
 
@@ -2187,8 +2177,7 @@ class DrcController extends ZgwController {
 			$existingData = $this->objectToArray(
 				row: $objectService->find(
 					$uuid,
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema']
+					options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 				)
 			);
 		} catch (\Throwable $e) {
@@ -2229,8 +2218,7 @@ class DrcController extends ZgwController {
 		try {
 			$existing = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			$existingData = $this->objectToArray(row: $existing);
 
@@ -2268,8 +2256,7 @@ class DrcController extends ZgwController {
 		try {
 			$existing = $objectService->find(
 				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+				options: new ObjectFindOptions(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
 			);
 			$existingData = $this->objectToArray(row: $existing);
 

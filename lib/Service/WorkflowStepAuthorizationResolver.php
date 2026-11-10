@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -168,7 +169,7 @@ class WorkflowStepAuthorizationResolver {
 		}
 
 		try {
-			$roleType = $this->toArray(value: $objectService->find($roleTypeId, register: $register, schema: $roleTypeSchema));
+			$roleType = $this->toArray(value: $objectService->find($roleTypeId, options: new ObjectFindOptions(register: $register, schema: $roleTypeSchema)));
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'WorkflowStepAuthorizationResolver: roleType lookup failed',

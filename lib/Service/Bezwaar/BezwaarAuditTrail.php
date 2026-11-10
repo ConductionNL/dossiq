@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -210,7 +211,7 @@ class BezwaarAuditTrail {
 		$cause = null;
 		try {
 			$object = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService')
-				->find($objectUuid, register: $register, schema: $schema);
+				->find(id: $objectUuid, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$cause = $e;
 		}
