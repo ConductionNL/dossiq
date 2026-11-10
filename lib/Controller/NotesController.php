@@ -169,16 +169,7 @@ class NotesController extends Controller {
 		$data = $this->readJsonBody();
 
 		$objectId = (string)($data['objectId'] ?? '');
-		$register = (string)($data['register'] ?? '');
-		$schema = (string)($data['schema'] ?? '');
-		$noteId = (string)($data['noteId'] ?? '');
-		$mentionedUserIdsRaw = $data['mentionedUserIds'] ?? [];
-		$mentionedUserIds = [];
-		if (is_array($mentionedUserIdsRaw) === true) {
-			$mentionedUserIds = array_values(array_filter(array_map('strval', $mentionedUserIdsRaw)));
-		}
-
-		if ($objectId === '' || $mentionedUserIds === []) {
+		if ($objectId === '' || $this->mentionedIds(data: $data) === []) {
 			return new JSONResponse(
 				['error' => 'objectId and a non-empty mentionedUserIds array are required'],
 				Http::STATUS_BAD_REQUEST,
@@ -189,7 +180,39 @@ class NotesController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$mentionedUserIds = $this->existingUsers(userIds: $mentionedUserIds);
+		return $this->notifyMentioned(actor: $actor, data: $data);
+	}//end mention()
+
+	/**
+	 * The user ids the body mentions, as strings, without empties.
+	 *
+	 * @param array<string, mixed> $data The request body.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function mentionedIds(array $data): array {
+		$mentionedUserIdsRaw = $data['mentionedUserIds'] ?? [];
+		if (is_array($mentionedUserIdsRaw) === false) {
+			return [];
+		}
+
+		return array_values(array_filter(array_map('strval', $mentionedUserIdsRaw)));
+	}//end mentionedIds()
+
+	/**
+	 * Notify the mentioned users who exist; a failed dispatch is a logged 500.
+	 *
+	 * @param \OCP\IUser          $actor The caller who mentioned them.
+	 * @param array<string, mixed> $data  The request body.
+	 *
+	 * @return JSONResponse How many were notified.
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function notifyMentioned($actor, array $data): JSONResponse {
+		$mentionedUserIds = $this->existingUsers(userIds: $this->mentionedIds(data: $data));
 		if ($mentionedUserIds === []) {
 			return new JSONResponse(['notified' => 0], Http::STATUS_OK);
 		}
@@ -198,7 +221,12 @@ class NotesController extends Controller {
 			$notified = $this->mentionSvc->notifyMention(
 				actorUserId: $actor->getUID(),
 				actorDisplayName: $actor->getDisplayName(),
-				note: new MentionedNote(objectId: $objectId, register: $register, schema: $schema, noteId: $noteId),
+				note: new MentionedNote(
+					objectId: (string)($data['objectId'] ?? ''),
+					register: (string)($data['register'] ?? ''),
+					schema: (string)($data['schema'] ?? ''),
+					noteId: (string)($data['noteId'] ?? '')
+				),
 				mentionedUserIds: $mentionedUserIds,
 			);
 
@@ -213,7 +241,7 @@ class NotesController extends Controller {
 				Http::STATUS_INTERNAL_SERVER_ERROR,
 			);
 		}//end try
-	}//end mention()
+	}//end notifyMentioned()
 
 	/**
 	 * The user ids that belong to an existing account, in their given order.
