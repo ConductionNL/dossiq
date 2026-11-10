@@ -45,6 +45,37 @@ use OCA\Dossiq\Service\Zgw\ZgwRulesDispatcher;
  */
 class ZgwBusinessRulesService {
 	/**
+	 * The zrc-007 refusal of a write to a closed zaak without the geforceerd-bijwerken scope.
+	 *
+	 * @var array
+	 */
+	private const CLOSED_CASE_REFUSAL = [
+		'valid' => false,
+		'status' => 403,
+		'detail' => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan zonder scope zaken.geforceerd-bijwerken.',
+		'code' => 'permission_denied',
+		'invalidParams' => [
+			[
+				'name' => 'nonFieldErrors',
+				'code' => 'zaak-closed',
+				'reason' => 'De zaak is afgesloten.',
+			],
+		],
+		'enrichedBody' => [],
+	];
+
+	/**
+	 * The HTTP status per delete guard refusal code.
+	 *
+	 * @var array<string, int>
+	 */
+	private const DESTROY_REFUSAL_STATUS = [
+		'destroy_check_not_completed' => ZgwRuleResults::NOT_VERIFIED_STATUS,
+		'destroy_blocked_active_cases' => 409,
+		'destroy_requires_confirmation' => 409,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ZgwZtcRulesService $ztcRules ZTC (Catalogi) rules, used by the concept/publish/destroy guards
@@ -93,123 +124,144 @@ class ZgwBusinessRulesService {
 		?bool $caseClosed = null,
 		bool $hasGeforceerd = true,
 	): array {
-		// A rule that read the store and could not finish the read throws, and every
-		// such read ends here: nothing decided on it is an answer (REQ-ZBR-022).
+		$write = new ZgwWriteCheck();
+		$write->zgwApi = $zgwApi;
+		$write->resource = $resource;
+		$write->action = $action;
+		$write->body = $body;
+		$write->existingObject = $existingObject;
+		$write->objectService = $objectService;
+		$write->mappingConfig = $mappingConfig;
+		$write->parentCaseTypeDraft = $parentCaseTypeDraft;
+		$write->caseClosed = $caseClosed;
+		$write->hasGeforceerd = $hasGeforceerd;
+
+		return $this->checkWrite(write: $write);
+	}//end validate()
+
+	/**
+	 * Run the guards and the per-register rules over one write.
+	 *
+	 * A rule that read the store and could not finish the read throws, and every
+	 * such read ends here: nothing decided on it is an answer (REQ-ZBR-022).
+	 *
+	 * @param ZgwWriteCheck $write The write being checked
+	 *
+	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
+	 */
+	private function checkWrite(ZgwWriteCheck $write): array {
 		try {
-			// Set context on the ZTC rules this service guards with directly, and
-			// on every rules service the dispatcher can route to.
-			$this->ztcRules->setContext($objectService, $mappingConfig);
-			$this->dispatcher->setContext($objectService, $mappingConfig);
-
-			// ---- ZTC cross-cutting concerns (concept protection) ----
-			if ($zgwApi === 'catalogi') {
-				$draftCheck = $this->applyCatalogiDraftRules(
-					resource: $resource,
-					action: $action,
-					body: $body,
-					existingObject: $existingObject,
-					parentCaseTypeDraft: $parentCaseTypeDraft
-				);
-				if ($draftCheck !== null) {
-					return $draftCheck;
-				}
-
-				$publishGuard = $this->guardCaseTypePublish(
-					resource: $resource,
-					action: $action,
-					body: $body,
-					existingObject: $existingObject,
-					mappingConfig: $mappingConfig
-				);
-				if ($publishGuard !== null) {
-					return $publishGuard;
-				}
-
-				$destroyGuard = $this->guardCaseTypeDestroy(
-					resource: $resource,
-					action: $action,
-					body: $body,
-					existingObject: $existingObject,
-					mappingConfig: $mappingConfig
-				);
-				if ($destroyGuard !== null) {
-					return $destroyGuard;
-				}
-			}//end if
-
-			// ---- ZRC cross-cutting concern: closed zaak protection (zrc-007) ----
-			if ($caseClosed === true && $hasGeforceerd === false) {
-				return [
-					'valid' => false,
-					'status' => 403,
-					'detail' => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan zonder scope zaken.geforceerd-bijwerken.',
-					'code' => 'permission_denied',
-					'invalidParams' => [
-						[
-							'name' => 'nonFieldErrors',
-							'code' => 'zaak-closed',
-							'reason' => 'De zaak is afgesloten.',
-						],
-					],
-					'enrichedBody' => [],
-				];
-			}
-
-			// ---- Delegate to per-register rule services ----
-			return $this->dispatcher->dispatch(
-				zgwApi: $zgwApi,
-				resource: $resource,
-				action: $action,
-				body: $body,
-				existingObject: $existingObject
-			);
+			return $this->guardThenDispatch(write: $write);
 		} catch (LookupNotCompleted $e) {
 			return $this->results->notVerified(
-				rule: "{$zgwApi}/{$resource} {$action}",
+				rule: "{$write->zgwApi}/{$write->resource} {$write->action}",
 				object: $e->lookup,
 				cause: $e->getMessage()
 			);
-		}//end try
-	}//end validate()
+		}
+	}//end checkWrite()
+
+	/**
+	 * Set the rules context, return the first guard refusal, or else hand the
+	 * write to the per-register rule services.
+	 *
+	 * @param ZgwWriteCheck $write The write being checked
+	 *
+	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
+	 */
+	private function guardThenDispatch(ZgwWriteCheck $write): array {
+		// Set context on the ZTC rules this service guards with directly, and
+		// on every rules service the dispatcher can route to.
+		$this->ztcRules->setContext($write->objectService, $write->mappingConfig);
+		$this->dispatcher->setContext($write->objectService, $write->mappingConfig);
+
+		return $this->firstGuardRefusal(write: $write) ?? $this->dispatcher->dispatch(
+			zgwApi: $write->zgwApi,
+			resource: $write->resource,
+			action: $write->action,
+			body: $write->body,
+			existingObject: $write->existingObject
+		);
+	}//end guardThenDispatch()
+
+	/**
+	 * The catalogi concept guards, then the closed-zaak guard (zrc-007).
+	 *
+	 * @param ZgwWriteCheck $write The write being checked; its body is enriched in place
+	 *
+	 * @return array|null The guard response, or null when the write may proceed
+	 */
+	private function firstGuardRefusal(ZgwWriteCheck $write): ?array {
+		if ($write->zgwApi === 'catalogi') {
+			$catalogiRefusal = $this->catalogiRefusal(write: $write);
+			if ($catalogiRefusal !== null) {
+				return $catalogiRefusal;
+			}
+		}
+
+		if ($write->caseClosed === true && $write->hasGeforceerd === false) {
+			return self::CLOSED_CASE_REFUSAL;
+		}
+
+		return null;
+	}//end firstGuardRefusal()
+
+	/**
+	 * The ZTC cross-cutting concerns: concept protection, then the publish and destroy guards.
+	 *
+	 * @param ZgwWriteCheck $write The write being checked; its body is enriched in place
+	 *
+	 * @return array|null The guard response, or null when the write may proceed
+	 */
+	private function catalogiRefusal(ZgwWriteCheck $write): ?array {
+		return $this->applyCatalogiDraftRules(write: $write) ?? $this->caseTypeGuardRefusal(write: $write);
+	}//end catalogiRefusal()
+
+	/**
+	 * The CT-02b publish guard, then the CT-01d destroy guard.
+	 *
+	 * @param ZgwWriteCheck $write The write being checked
+	 *
+	 * @return array|null The guard response, or null when the write may proceed
+	 */
+	private function caseTypeGuardRefusal(ZgwWriteCheck $write): ?array {
+		return $this->guardCaseTypePublish(
+			resource: $write->resource,
+			action: $write->action,
+			body: $write->body,
+			existingObject: $write->existingObject,
+			mappingConfig: $write->mappingConfig
+		) ?? $this->guardCaseTypeDestroy(write: $write);
+	}//end caseTypeGuardRefusal()
 
 	/**
 	 * Apply the ZTC concept defaults/preservation and the ztc-009/ztc-010
 	 * published-type protection.
 	 *
-	 * @param string $resource The ZGW resource name
-	 * @param string $action The action
-	 * @param array $body The request body, enriched in place
-	 * @param array|null $existingObject The existing object data
-	 * @param bool|null $parentCaseTypeDraft Whether the parent zaaktype isDraft
+	 * @param ZgwWriteCheck $write The write being checked; its body is enriched in place
 	 *
 	 * @return array|null The guard response, or null when the request may proceed
 	 */
-	private function applyCatalogiDraftRules(
-		string $resource,
-		string $action,
-		array &$body,
-		?array $existingObject,
-		?bool $parentCaseTypeDraft,
-	): ?array {
+	private function applyCatalogiDraftRules(ZgwWriteCheck $write): ?array {
 		// Default concept=true for new concept resources.
-		if ($action === 'create') {
-			$body = $this->ztcRules->defaultConcept($body, $resource);
+		if ($write->action === 'create') {
+			$write->body = $this->ztcRules->defaultConcept($write->body, $write->resource);
 		}
 
 		// Preserve concept on update/patch (only changeable via /publish).
-		if (in_array($action, ['update', 'patch'], true) === true) {
-			$body = $this->ztcRules->preserveConcept($body, $resource, $existingObject);
+		if (in_array($write->action, ['update', 'patch'], true) === true) {
+			$write->body = $this->ztcRules->preserveConcept($write->body, $write->resource, $write->existingObject);
 		}
 
 		// Ztc-009/ztc-010: Protect published types from modification.
 		return $this->ztcRules->checkConceptProtection(
-			$resource,
-			$action,
-			$body,
-			$existingObject,
-			$parentCaseTypeDraft
+			$write->resource,
+			$write->action,
+			$write->body,
+			$write->existingObject,
+			$write->parentCaseTypeDraft
 		);
-	}//end applyCatalogiConceptRules()
+	}//end applyCatalogiDraftRules()
 
 	/**
 	 * CT-02b — publish guard: when a caseType transitions from draft to
@@ -231,23 +283,79 @@ class ZgwBusinessRulesService {
 		?array $existingObject,
 		?array $mappingConfig,
 	): ?array {
-		if ($resource !== 'zaaktypen'
-			|| in_array($action, ['update', 'patch'], true) === false
-			|| isset($body['isDraft']) === false
-			|| (bool)$body['isDraft'] !== false
-			|| is_array($existingObject) === false
-			|| (bool)($existingObject['isDraft'] ?? false) !== true
+		if ($this->isCaseTypeEdit(resource: $resource, action: $action) === false
+			|| $this->publishesDraft(body: $body, existingObject: $existingObject) === false
 		) {
 			return null;
 		}
 
+		$keys = $this->caseTypeKeys(mappingConfig: $mappingConfig, existingObject: $existingObject);
+		if ($keys === null) {
+			return null;
+		}
+
+		return $this->publishRefusal(
+			publishErrors: $this->ztcRules->validatePublish($keys['register'], $keys['caseTypeId']),
+			body: $body
+		);
+	}//end guardCaseTypePublish()
+
+	/**
+	 * Whether the write updates or patches a zaaktype.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $action The action
+	 *
+	 * @return bool
+	 */
+	private function isCaseTypeEdit(string $resource, string $action): bool {
+		return $resource === 'zaaktypen' && in_array($action, ['update', 'patch'], true) === true;
+	}//end isCaseTypeEdit()
+
+	/**
+	 * Whether the body sets isDraft false on a stored type that is still a draft.
+	 *
+	 * @param array $body The request body
+	 * @param array|null $existingObject The existing object data
+	 *
+	 * @return bool
+	 */
+	private function publishesDraft(array $body, ?array $existingObject): bool {
+		if (isset($body['isDraft']) === false || (bool)$body['isDraft'] !== false) {
+			return false;
+		}
+
+		return is_array($existingObject) === true && (bool)($existingObject['isDraft'] ?? false) === true;
+	}//end publishesDraft()
+
+	/**
+	 * The source register and the case type id a case type guard reads with,
+	 * or null when either is unknown.
+	 *
+	 * @param array|null $mappingConfig The mapping config
+	 * @param array|null $existingObject The stored case type
+	 *
+	 * @return array{register: string, caseTypeId: string}|null
+	 */
+	private function caseTypeKeys(?array $mappingConfig, ?array $existingObject): ?array {
 		$register = (string)($mappingConfig['sourceRegister'] ?? '');
 		$caseTypeId = (string)($existingObject['id'] ?? '');
 		if (in_array('', [$register, $caseTypeId], true) === true) {
 			return null;
 		}
 
-		$publishErrors = $this->ztcRules->validatePublish($register, $caseTypeId);
+		return ['register' => $register, 'caseTypeId' => $caseTypeId];
+	}//end caseTypeKeys()
+
+	/**
+	 * The 422 refusal for a publish with errors, or null when there are none.
+	 *
+	 * @param array $publishErrors What the publish check found missing
+	 * @param array $body The request body
+	 *
+	 * @return array|null
+	 */
+	private function publishRefusal(array $publishErrors, array $body): ?array {
 		if (count($publishErrors) === 0) {
 			return null;
 		}
@@ -259,74 +367,93 @@ class ZgwBusinessRulesService {
 			'code' => 'publish_validation_failed',
 			'enrichedBody' => $body,
 		];
-	}//end guardZaaktypePublish()
+	}//end publishRefusal()
 
 	/**
 	 * CT-01d — destroy guard: block deletion of a caseType that still has
 	 * active (non-final) cases. Allow closed-only with the caller's explicit
 	 * confirmation flag.
 	 *
-	 * @param string $resource The ZGW resource name
-	 * @param string $action The action
-	 * @param array $body The request body
-	 * @param array|null $existingObject The existing object data
-	 * @param array|null $mappingConfig The mapping config
+	 * @param ZgwWriteCheck $write The write being checked
 	 *
 	 * @return array|null The guard response, or null when the delete may proceed
 	 */
-	private function guardCaseTypeDestroy(
-		string $resource,
-		string $action,
-		array $body,
-		?array $existingObject,
-		?array $mappingConfig,
-	): ?array {
-		if ($resource !== 'zaaktypen'
-			|| $action !== 'destroy'
-			|| is_array($existingObject) === false
-		) {
+	private function guardCaseTypeDestroy(ZgwWriteCheck $write): ?array {
+		if ($this->isCaseTypeDelete(write: $write) === false) {
 			return null;
 		}
 
-		$register = (string)($mappingConfig['sourceRegister'] ?? '');
-		$caseTypeId = (string)($existingObject['id'] ?? '');
-		$confirmed = (bool)($body['_confirm'] ?? false);
-		if (in_array('', [$register, $caseTypeId], true) === true) {
+		$keys = $this->caseTypeKeys(mappingConfig: $write->mappingConfig, existingObject: $write->existingObject);
+		if ($keys === null) {
 			return null;
 		}
 
-		$delGuard = $this->ztcRules->validateDeletion($register, $caseTypeId);
+		return $this->destroyRefusal(
+			delGuard: $this->ztcRules->validateDeletion($keys['register'], $keys['caseTypeId']),
+			body: $write->body
+		);
+	}//end guardCaseTypeDestroy()
+
+	/**
+	 * Whether the write deletes a stored zaaktype.
+	 *
+	 * @param ZgwWriteCheck $write The write being checked
+	 *
+	 * @return bool
+	 */
+	private function isCaseTypeDelete(ZgwWriteCheck $write): bool {
+		return $write->resource === 'zaaktypen'
+			&& $write->action === 'destroy'
+			&& is_array($write->existingObject) === true;
+	}//end isCaseTypeDelete()
+
+	/**
+	 * The refusal for one verdict of the delete check, or null when the delete may proceed.
+	 *
+	 * @param array $delGuard What the delete check answered
+	 * @param array $body The request body
+	 *
+	 * @return array|null
+	 */
+	private function destroyRefusal(array $delGuard, array $body): ?array {
+		$code = $this->destroyRefusalCode(delGuard: $delGuard, confirmed: (bool)($body['_confirm'] ?? false));
+		if ($code === null) {
+			return null;
+		}
+
+		return [
+			'valid' => false,
+			'status' => self::DESTROY_REFUSAL_STATUS[$code],
+			'detail' => (string)$delGuard['message'],
+			'code' => $code,
+			'enrichedBody' => $body,
+		];
+	}//end destroyRefusal()
+
+	/**
+	 * Which refusal a delete check verdict leads to, or null for none.
+	 *
+	 * A check that could not read the cases says nothing about the request,
+	 * so it is no conflict but an unverified answer.
+	 *
+	 * @param array $delGuard What the delete check answered
+	 * @param bool $confirmed Whether the caller confirmed the delete
+	 *
+	 * @return string|null
+	 */
+	private function destroyRefusalCode(array $delGuard, bool $confirmed): ?string {
 		if (($delGuard['unverified'] ?? false) === true) {
-			// The check could not read the cases. Nothing says the request is wrong, so no conflict.
-			return [
-				'valid' => false,
-				'status' => ZgwRuleResults::NOT_VERIFIED_STATUS,
-				'detail' => (string)$delGuard['message'],
-				'code' => 'destroy_check_not_completed',
-				'enrichedBody' => $body,
-			];
+			return 'destroy_check_not_completed';
 		}
 
 		if ($delGuard['blocked'] === true) {
-			return [
-				'valid' => false,
-				'status' => 409,
-				'detail' => (string)$delGuard['message'],
-				'code' => 'destroy_blocked_active_cases',
-				'enrichedBody' => $body,
-			];
+			return 'destroy_blocked_active_cases';
 		}
 
 		if ($delGuard['requiresConfirmation'] === true && $confirmed === false) {
-			return [
-				'valid' => false,
-				'status' => 409,
-				'detail' => (string)$delGuard['message'],
-				'code' => 'destroy_requires_confirmation',
-				'enrichedBody' => $body,
-			];
+			return 'destroy_requires_confirmation';
 		}
 
 		return null;
-	}//end guardZaaktypeDestroy()
+	}//end destroyRefusalCode()
 }//end class
