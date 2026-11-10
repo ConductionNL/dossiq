@@ -291,27 +291,48 @@ class ContractDecisionDelegationService {
 	 * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md#requirement-a-consumer-can-read-back-a-decision-it-raised
 	 */
 	public function readDecisionState(string $decisionId, string $actorId): array {
-		$decisionId = trim($decisionId);
-		$actorId = trim($actorId);
-
-		$eventClass = $this->firstExistingClass(candidates: self::DECISION_STATE_EVENTS);
-		if ($eventClass === null || $decisionId === '' || $actorId === '') {
-			$reason = 'no decision id or no actor';
-			if ($eventClass === null) {
-				$reason = 'the read seam is not installed';
-			}
-
-			$this->logger->warning(
-				'ContractDecisionDelegationService: cannot read a decision state',
-				['decisionRef' => $decisionId, 'hasActor' => ($actorId !== ''), 'reason' => $reason]
-			);
-
-			return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
+		$read = new DecisionStateRead(decisionId: trim($decisionId), actorId: trim($actorId));
+		$read->eventClass = $this->firstExistingClass(candidates: self::DECISION_STATE_EVENTS);
+		if ($read->eventClass === null || $read->decisionId === '' || $read->actorId === '') {
+			return $this->unreadableRequest(read: $read);
 		}
 
+		return $this->dispatchStateRead(read: $read);
+	}//end readDecisionState()
+
+	/**
+	 * A read that is not dispatched at all: the seam is absent, or it names no
+	 * decision or no actor. Logged with the reason, answered unreadable.
+	 *
+	 * @param DecisionStateRead $read The read.
+	 *
+	 * @return array{state: string, status: string, envelope: array<string, mixed>}
+	 */
+	private function unreadableRequest(DecisionStateRead $read): array {
+		$reason = 'no decision id or no actor';
+		if ($read->eventClass === null) {
+			$reason = 'the read seam is not installed';
+		}
+
+		$this->logger->warning(
+			'ContractDecisionDelegationService: cannot read a decision state',
+			['decisionRef' => $read->decisionId, 'hasActor' => ($read->actorId !== ''), 'reason' => $reason]
+		);
+
+		return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
+	}//end unreadableRequest()
+
+	/**
+	 * Dispatch the read and answer from what decidiq wrote back.
+	 *
+	 * @param DecisionStateRead $read The read, with an installed event class.
+	 *
+	 * @return array{state: string, status: string, envelope: array<string, mixed>}
+	 */
+	private function dispatchStateRead(DecisionStateRead $read): array {
 		try {
 			// Positional ctor args (decidiq contract): sourceApp, decisionId, actorId.
-			$event = new $eventClass(self::SOURCE_APP, $decisionId, $actorId);
+			$event = new $read->eventClass(self::SOURCE_APP, $read->decisionId, $read->actorId);
 
 			$this->eventDispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
@@ -320,15 +341,28 @@ class ContractDecisionDelegationService {
 			// would strand a run whose decision is already taken.
 			$this->logger->error(
 				'ContractDecisionDelegationService: DecisionStateRequestedEvent dispatch failed',
-				['decisionRef' => $decisionId, 'error' => $e->getMessage()]
+				['decisionRef' => $read->decisionId, 'error' => $e->getMessage()]
 			);
 
 			return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
 		}//end try
 
-		// Unhandled is decidiq's own way of saying "ask me again": its listener
-		// leaves the event unhandled when the lookup could not be RESOLVED, and
-		// marks it handled for every fact it can actually report.
+		return $this->stateOfReadEvent(event: $event, decisionId: $read->decisionId);
+	}//end dispatchStateRead()
+
+	/**
+	 * The answer a dispatched read carries.
+	 *
+	 * Unhandled is decidiq's own way of saying "ask me again": its listener
+	 * leaves the event unhandled when the lookup could not be RESOLVED, and
+	 * marks it handled for every fact it can actually report.
+	 *
+	 * @param object $event      The dispatched read event.
+	 * @param string $decisionId The decision read.
+	 *
+	 * @return array{state: string, status: string, envelope: array<string, mixed>}
+	 */
+	private function stateOfReadEvent(object $event, string $decisionId): array {
 		if ((bool)$event->isHandled() === false) {
 			return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
 		}
@@ -342,7 +376,7 @@ class ContractDecisionDelegationService {
 		}
 
 		return $this->stateFromEnvelope(envelope: (array)($event->getEnvelope() ?? []), decisionId: $decisionId);
-	}//end readDecisionState()
+	}//end stateOfReadEvent()
 
 	/**
 	 * Read the outcome envelope decidiq answered with as one of the states.
