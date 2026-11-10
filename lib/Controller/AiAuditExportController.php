@@ -122,44 +122,12 @@ class AiAuditExportController extends Controller {
 	#[NoAdminRequired]
 	public function export(): DataDownloadResponse|JSONResponse {
 		try {
-			$user = $this->userSession->getUser();
-			if ($user === null) {
-				return new JSONResponse(
-					['message' => 'Authentication required'],
-					Http::STATUS_UNAUTHORIZED,
-				);
+			$refusal = $this->exportRefusal();
+			if ($refusal !== null) {
+				return $refusal;
 			}
 
-			$uid = $user->getUID();
-			if ($this->isAllowed(uid: $uid) === false) {
-				return new JSONResponse(
-					['message' => 'Audit export requires auditor role'],
-					Http::STATUS_FORBIDDEN,
-				);
-			}
-
-			$caseId = $this->request->getParam('caseId');
-			$type = $this->request->getParam('type');
-			$format = strtolower((string)$this->request->getParam('format', 'csv'));
-
-			$entries = $this->collectEntries(
-				filters: array_filter(['caseId' => $caseId, 'type' => $type]),
-			);
-
-			if ($format === 'json') {
-				return new JSONResponse(
-					[
-						'entries' => $entries,
-						'count' => count($entries),
-					]
-				);
-			}
-
-			return new DataDownloadResponse(
-				data: $this->buildCsv(entries: $entries),
-				filename: 'ai-audit-export.csv',
-				contentType: 'text/csv',
-			);
+			return $this->exportedEntries();
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: AI audit export failed',
@@ -172,6 +140,60 @@ class AiAuditExportController extends Controller {
 			);
 		}//end try
 	}//end export()
+
+	/**
+	 * Refuse a caller without a session (401) or without the auditor role (403).
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may export.
+	 */
+	private function exportRefusal(): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(
+				['message' => 'Authentication required'],
+				Http::STATUS_UNAUTHORIZED,
+			);
+		}
+
+		if ($this->isAllowed(uid: $user->getUID()) === false) {
+			return new JSONResponse(
+				['message' => 'Audit export requires auditor role'],
+				Http::STATUS_FORBIDDEN,
+			);
+		}
+
+		return null;
+	}//end exportRefusal()
+
+	/**
+	 * The audit entries the request filters on, as JSON or as a CSV download.
+	 *
+	 * @return DataDownloadResponse|JSONResponse
+	 */
+	private function exportedEntries(): DataDownloadResponse|JSONResponse {
+		$caseId = $this->request->getParam('caseId');
+		$type = $this->request->getParam('type');
+		$format = strtolower((string)$this->request->getParam('format', 'csv'));
+
+		$entries = $this->collectEntries(
+			filters: array_filter(['caseId' => $caseId, 'type' => $type]),
+		);
+
+		if ($format === 'json') {
+			return new JSONResponse(
+				[
+					'entries' => $entries,
+					'count' => count($entries),
+				]
+			);
+		}
+
+		return new DataDownloadResponse(
+			data: $this->buildCsv(entries: $entries),
+			filename: 'ai-audit-export.csv',
+			contentType: 'text/csv',
+		);
+	}//end exportedEntries()
 
 	/**
 	 * Check whether the given user id belongs to an allowed group (or is an
