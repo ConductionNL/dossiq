@@ -250,4 +250,40 @@ class RoleLinkServiceTest extends TestCase {
 		self::assertSame([], $errors);
 		self::assertSame('decision_schema', (new RoleLinkDefinition(config: self::REVIEWS))->targetSchema);
 	}//end testTheRoleFitsTheRealCaseTypeSchema()
+	/**
+	 * The case reads refuse with their sentences: no case, no case type, no store, no schema.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseReadsRefuseWithTheirSentences(): void {
+		$this->store->seed(schema: 'case', uuid: 'case-untyped', row: ['title' => 'No type']);
+		$this->store->seed(schema: 'case', uuid: 'case-lost', row: ['title' => 'Lost type', 'caseType' => ['uuid' => 'ct-gone']]);
+		$this->assertSame(['roles' => [], 'missing' => []], $this->service->rolesFor('case-untyped'));
+
+		foreach (['case-none' => 'Case not found', 'case-lost' => 'Case type not found'] as $caseId => $sentence) {
+			try {
+				$this->service->rolesFor($caseId);
+				$this->fail('refused');
+			} catch (\RuntimeException $e) {
+				$this->assertSame($sentence, $e->getMessage());
+			}
+		}
+
+		$bare = $this->createMock(SettingsService::class);
+		$bare->method('getObjectService')->willReturn(null);
+		$service = new RoleLinkService(settingsService: $bare, relations: $this->relations, userSession: $this->createMock(IUserSession::class));
+		try {
+			$service->rolesFor('case-c');
+			$this->fail('refused');
+		} catch (\RuntimeException $e) {
+			$this->assertSame('OpenRegister is not available', $e->getMessage());
+		}
+
+		$noSchema = $this->createMock(SettingsService::class);
+		$noSchema->method('getObjectService')->willReturn($this->store);
+		$noSchema->method('getConfigValue')->willReturn('');
+		$service = new RoleLinkService(settingsService: $noSchema, relations: $this->relations, userSession: $this->createMock(IUserSession::class));
+		$this->expectExceptionMessage("The schema 'case_schema' is not configured.");
+		$service->rolesFor('case-c');
+	}//end testTheCaseReadsRefuseWithTheirSentences()
 }//end class

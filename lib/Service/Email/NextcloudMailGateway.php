@@ -564,20 +564,32 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return $unavailable;
 		}
 
-		$recipients = [];
-		foreach ((array)($message['to'] ?? []) as $address) {
-			$recipients[] = ['email' => (string)$address];
+		$send = new OutboxSend(account: $account, outbox: $outbox);
+		$send->accountId = $accountId;
+		if ($this->saveToOutbox(send: $send, message: $message) === false) {
+			return $unavailable;
 		}
 
-		$attachments = [];
-		foreach ((array)($message['attachments'] ?? []) as $path) {
-			$attachments[] = ['type' => 'cloud', 'fileName' => (string)$path];
-		}
+		return $this->sendFromOutbox(send: $send);
+	}//end sendMessage()
+
+	/**
+	 * Save the message in the account's outbox; false (with a warning) when
+	 * Mail would not take it.
+	 *
+	 * @param OutboxSend           $send    The send.
+	 * @param array<string, mixed> $message The message.
+	 *
+	 * @return bool Whether Mail took it.
+	 */
+	private function saveToOutbox(OutboxSend $send, array $message): bool {
+		$recipients = $this->recipientsOf(message: $message);
+		$attachments = $this->attachmentsOf(message: $message);
 
 		try {
-			$saved = $outbox->saveMessage(
-				$account,
-				$this->localMessage(accountId: $accountId, message: $message),
+			$send->saved = $send->outbox->saveMessage(
+				$send->account,
+				$this->localMessage(accountId: $send->accountId, message: $message),
 				$recipients,
 				[],
 				[],
@@ -586,28 +598,84 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: Nextcloud Mail did not take the message into its outbox',
-				['account' => $accountId, 'error' => $e->getMessage()]
+				['account' => $send->accountId, 'error' => $e->getMessage()]
 			);
-			return $unavailable;
+			return false;
 		}
 
+		$send->outboxId = $this->outboxIdOf(saved: $send->saved);
+
+		return true;
+	}//end saveToOutbox()
+
+	/**
+	 * The message's recipients, as Mail's outbox takes them.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 *
+	 * @return array<int, array{email: string}>
+	 */
+	private function recipientsOf(array $message): array {
+		$recipients = [];
+		foreach ((array)($message['to'] ?? []) as $address) {
+			$recipients[] = ['email' => (string)$address];
+		}
+
+		return $recipients;
+	}//end recipientsOf()
+
+	/**
+	 * The message's attachments: paths in the sender's own files.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 *
+	 * @return array<int, array{type: string, fileName: string}>
+	 */
+	private function attachmentsOf(array $message): array {
+		$attachments = [];
+		foreach ((array)($message['attachments'] ?? []) as $path) {
+			$attachments[] = ['type' => 'cloud', 'fileName' => (string)$path];
+		}
+
+		return $attachments;
+	}//end attachmentsOf()
+
+	/**
+	 * The saved outbox row's id, or null when Mail gave none.
+	 *
+	 * @param object $saved The saved outbox row.
+	 *
+	 * @return int|null
+	 */
+	private function outboxIdOf(object $saved): ?int {
 		$outboxId = (int)$this->call(entity: $saved, method: 'getId', fallback: 0);
 		if ($outboxId <= 0) {
-			$outboxId = null;
+			return null;
 		}
 
+		return $outboxId;
+	}//end outboxIdOf()
+
+	/**
+	 * Send the saved message; when Mail cannot send it now it stays queued.
+	 *
+	 * @param OutboxSend $send The send, with its saved row.
+	 *
+	 * @return array{state: string, outboxId: int|null}
+	 */
+	private function sendFromOutbox(OutboxSend $send): array {
 		try {
-			$sent = $outbox->sendMessage($saved, $account);
+			$sent = $send->outbox->sendMessage($send->saved, $send->account);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: Nextcloud Mail could not send the message now; it stays in the outbox',
-				['account' => $accountId, 'outboxId' => $outboxId, 'error' => $e->getMessage()]
+				['account' => $send->accountId, 'outboxId' => $send->outboxId, 'error' => $e->getMessage()]
 			);
-			return ['state' => OutboundState::QUEUED, 'outboxId' => $outboxId];
+			return ['state' => OutboundState::QUEUED, 'outboxId' => $send->outboxId];
 		}
 
-		return ['state' => $this->stateOf(sent: $sent), 'outboxId' => $outboxId];
-	}//end sendMessage()
+		return ['state' => $this->stateOf(sent: $sent), 'outboxId' => $send->outboxId];
+	}//end sendFromOutbox()
 
 	/**
 	 * Mail's outbox service, or null when Mail is absent or moved it.

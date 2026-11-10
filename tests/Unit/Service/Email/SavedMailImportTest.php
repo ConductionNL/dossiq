@@ -154,6 +154,67 @@ class SavedMailImportTest extends TestCase {
 	}//end import()
 
 	/**
+	 * Every way a file is kept, with the whole outcome it answers.
+	 *
+	 * @return void
+	 */
+	public function testEveryKeptFileAnswersItsWholeOutcome(): void {
+		$kept = static fn (string $reason): array => ['outcome' => SavedMailImport::OUTCOME_KEPT, 'reason' => $reason, 'subject' => '', 'from' => '', 'receivedAt' => ''];
+		$this->cases->expects($this->never())->method('recordReceivedEmail');
+
+		self::assertSame(
+			$kept('This file is not on a case, so there is nothing to file a message on.'),
+			$this->import()->import('  ', 'a.eml', 'bytes')
+		);
+		self::assertSame(
+			$kept('The file is empty, so there is no message in it to read.'),
+			$this->import()->import('case-1', 'a.eml', '')
+		);
+
+		$noParse = $this->createMock(ContainerInterface::class);
+		$noParse->method('get')->willReturn(new \stdClass());
+		$step = new SavedMailImport($this->cases, $this->appManager, $noParse, $this->createMock(LoggerInterface::class));
+		self::assertSame(
+			$kept('Integriq is installed but carries no mail reader, so this version cannot read a saved mail file. The file is unchanged on this case.'),
+			$step->import('case-1', 'a.eml', 'bytes')
+		);
+
+		$throwing = $this->createMock(ContainerInterface::class);
+		$throwing->method('get')->willReturn(
+			new class {
+				/**
+				 * @param string $filename The file name.
+				 * @param string $raw      The bytes.
+				 *
+				 * @return object Never.
+				 */
+				public function parse(string $filename, string $raw): object {
+					throw new \RuntimeException('bad cfb');
+				}
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq: a saved mail file could not be read',
+			['case' => 'case-1', 'file' => 'a.msg', 'error' => 'bad cfb']
+		);
+		$step = new SavedMailImport($this->cases, $this->appManager, $throwing, $logger);
+		self::assertSame(
+			$kept('This file could not be read as a message. It is unchanged on this case.'),
+			$step->import('case-1', 'a.msg', 'bytes')
+		);
+
+		$absent = $this->createMock(IAppManager::class);
+		$absent->method('isInstalled')->willReturn(false);
+		$absent->method('isEnabledForUser')->willReturn(false);
+		$step = new SavedMailImport($this->cases, $absent, $this->container, $this->createMock(LoggerInterface::class));
+		self::assertSame(
+			$kept('Integriq is not installed, and it is what reads a saved mail file. The file is unchanged on this case.'),
+			$step->import('case-1', 'a.eml', 'bytes')
+		);
+	}//end testEveryKeptFileAnswersItsWholeOutcome()
+
+	/**
 	 * A parsed message is filed with its subject, sender and date.
 	 *
 	 * @return void
