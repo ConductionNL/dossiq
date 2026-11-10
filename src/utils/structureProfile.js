@@ -97,6 +97,51 @@ export function resolveStructureProfile(raw) {
  * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
  */
 export function applyPageOverlay(page, overlay) {
+	const config = replacedConfig(page, overlay)
+	patchItems(config, overlay.configPatch || {})
+	appendItems(config, overlay.configAppend || {})
+	orderItems(config, overlay.configOrder || {})
+	return { ...page, ...overlayTitle(overlay), config, ...overlaySlots(page, overlay) }
+}
+
+/**
+ * The title an overlay renames its page to, as a top-level key. The page
+ * title is a top-level key, and the renderer lets it win over any
+ * `config.title`, so an overlay that renames a page names it here.
+ *
+ * @param {object} overlay The overlay.
+ * @return {{title?: string}} The title, or nothing.
+ */
+function overlayTitle(overlay) {
+	return typeof overlay.title === 'string' && overlay.title !== ''
+		? { title: overlay.title }
+		: {}
+}
+
+/**
+ * The page's slots with the overlay's added. A `custom` widget resolves
+ * through the page's own top-level `slots` map, so a page that gains one
+ * needs its slot beside it.
+ *
+ * @param {object} page The built page.
+ * @param {object} overlay The overlay.
+ * @return {{slots?: object}} The slots, or nothing when the overlay adds none.
+ */
+function overlaySlots(page, overlay) {
+	if (!overlay.slots || typeof overlay.slots !== 'object') {
+		return {}
+	}
+	return { slots: { ...(page.slots || {}), ...overlay.slots } }
+}
+
+/**
+ * The page config with the overlay's keys replaced.
+ *
+ * @param {object} page The built page.
+ * @param {object} overlay The overlay.
+ * @return {object} A new config object.
+ */
+function replacedConfig(page, overlay) {
 	const config = { ...(page.config || {}), ...(overlay.config || {}) }
 	for (const key of Object.keys(overlay.config || {})) {
 		// A key set to null leaves the config: the folder pane of the cases
@@ -106,51 +151,76 @@ export function applyPageOverlay(page, overlay) {
 			delete config[key]
 		}
 	}
-	const patch = overlay.configPatch || {}
+	return config
+}
+
+/**
+ * The list a config key holds, or an empty list.
+ *
+ * @param {unknown} value The config value.
+ * @return {Array} The list.
+ */
+function listOf(value) {
+	return Array.isArray(value) ? value : []
+}
+
+/**
+ * Patch the named items of each listed config key; a null patch removes
+ * the item.
+ *
+ * @param {object} config The config being built.
+ * @param {object} patch Per config key, the changes by item name.
+ */
+function patchItems(config, patch) {
 	for (const key of Object.keys(patch)) {
 		const byName = patch[key] || {}
-		const current = Array.isArray(config[key]) ? config[key] : []
-		config[key] = current
+		config[key] = listOf(config[key])
 			.filter((item) => byName[overlayItemName(item)] !== null)
-			.map((item) => {
-				const change = byName[overlayItemName(item)]
-				return change === undefined || typeof item !== 'object'
-					? item
-					: mergePatch(key, item, change)
-			})
+			.map((item) => patchedItem({ key, item }, byName[overlayItemName(item)]))
 	}
-	const append = overlay.configAppend || {}
+}
+
+/**
+ * One list item with its change applied, untouched without one or when it
+ * is not an object.
+ *
+ * @param {{key: string, item: unknown}} listed The config key and the item.
+ * @param {object|undefined} change The change for the item.
+ * @return {unknown} The item.
+ */
+function patchedItem(listed, change) {
+	return change === undefined || typeof listed.item !== 'object'
+		? listed.item
+		: mergePatch(listed.key, listed.item, change)
+}
+
+/**
+ * Append the overlay's items to each listed config key.
+ *
+ * @param {object} config The config being built.
+ * @param {object} append Per config key, the items to append.
+ */
+function appendItems(config, append) {
 	for (const key of Object.keys(append)) {
-		const current = Array.isArray(config[key]) ? config[key] : []
-		const extra = Array.isArray(append[key]) ? append[key] : []
-		config[key] = [...current, ...extra]
+		config[key] = [...listOf(config[key]), ...listOf(append[key])]
 	}
-	const order = overlay.configOrder || {}
+}
+
+/**
+ * Move the named items of each listed config key to the front, in the
+ * order named; names that match nothing are skipped.
+ *
+ * @param {object} config The config being built.
+ * @param {object} order Per config key, the item names to lead with.
+ */
+function orderItems(config, order) {
 	for (const key of Object.keys(order)) {
-		const current = Array.isArray(config[key]) ? config[key] : []
-		const first = Array.isArray(order[key]) ? order[key] : []
-		const lead = first
+		const current = listOf(config[key])
+		const lead = listOf(order[key])
 			.map((name) => current.find((item) => overlayItemName(item) === name))
 			.filter((item) => item !== undefined)
 		config[key] = [...lead, ...current.filter((item) => !lead.includes(item))]
 	}
-	// The page title is a top-level key, and the renderer lets it win over
-	// any `config.title`, so an overlay that renames a page names it here.
-	const titled =
-		typeof overlay.title === 'string' && overlay.title !== ''
-			? { title: overlay.title }
-			: {}
-	if (overlay.slots && typeof overlay.slots === 'object') {
-		// A `custom` widget resolves through the page's own top-level `slots`
-		// map, so a page that gains one needs its slot beside it.
-		return {
-			...page,
-			...titled,
-			config,
-			slots: { ...(page.slots || {}), ...overlay.slots },
-		}
-	}
-	return { ...page, ...titled, config }
 }
 
 /** Config lists whose items a patch merges into deeply. */
@@ -286,54 +356,120 @@ export function buildProfiledManifest(
 	context = {},
 ) {
 	const file = profileFile || {}
+	const builtPages = buildManifest(profiledBase(base, file), fragments, profileLayout(file))
+	const built = withNav(builtPages, profileNav(file, context))
+
+	return withPageOverlays(built, Array.isArray(file.pages) ? file.pages : [])
+}
+
+/**
+ * The layout keys a profile file sets, for `buildManifest`.
+ *
+ * @param {object} file The profile's layout file.
+ * @return {object} The layout.
+ */
+function profileLayout(file) {
 	const layout = {}
 	for (const key of LAYOUT_KEYS) {
 		if (file[key] !== undefined) {
 			layout[key] = file[key]
 		}
 	}
+	return layout
+}
 
+/**
+ * The bundled manifest with the profile's menu entries in front of its own.
+ *
+ * @param {object} base The bundled manifest.
+ * @param {object} file The profile's layout file.
+ * @return {object} The base to build from.
+ */
+function profiledBase(base, file) {
 	const profileMenu = Array.isArray(file.menu) ? file.menu : []
-	const profiledBase =
-		profileMenu.length > 0
-			? {
-					...base,
-					// Copies, because buildManifest merges into the entries it is
-					// given and the profile file is a shared module object.
-					menu: [
-						...profileMenu.map((entry) => ({ ...entry })),
-						...(base.menu || []),
-					],
-				}
-			: base
+	if (profileMenu.length === 0) {
+		return base
+	}
+	return {
+		...base,
+		// Copies, because buildManifest merges into the entries it is
+		// given and the profile file is a shared module object.
+		menu: [
+			...profileMenu.map((entry) => ({ ...entry })),
+			...(base.menu || []),
+		],
+	}
+}
 
-	const builtPages = buildManifest(profiledBase, fragments, layout)
-	const built =
-		file.nav && typeof file.nav === 'object'
-			? {
-					...builtPages,
-					nav: {
-						...(builtPages.nav || {}),
-						...resolveNavPlaceholders(file.nav, context.theming ?? null),
-					},
-				}
-			: builtPages
+/**
+ * The profile's nav block with its placeholders resolved, null without one.
+ *
+ * @param {object} file The profile's layout file.
+ * @param {object} context `{ theming }`: the instance's theming capabilities.
+ * @return {object|null} The nav keys.
+ */
+function profileNav(file, context) {
+	if (!file.nav || typeof file.nav !== 'object') {
+		return null
+	}
+	return resolveNavPlaceholders(file.nav, context.theming ?? null)
+}
 
-	const overlays = Array.isArray(file.pages) ? file.pages : []
+/**
+ * The built manifest with the profile's nav keys over its own.
+ *
+ * @param {object} builtPages The built manifest.
+ * @param {object|null} nav The profile's nav keys.
+ * @return {object} The manifest.
+ */
+function withNav(builtPages, nav) {
+	if (nav === null) {
+		return builtPages
+	}
+	return {
+		...builtPages,
+		nav: {
+			...(builtPages.nav || {}),
+			...nav,
+		},
+	}
+}
+
+/**
+ * The manifest with each page overlay applied to the page it names. An
+ * overlay that names a page the manifest does not have is skipped and
+ * reported.
+ *
+ * @param {object} built The built manifest.
+ * @param {Array<object>} overlays The profile's page overlays.
+ * @return {object} The manifest.
+ */
+function withPageOverlays(built, overlays) {
 	if (overlays.length === 0) {
 		return built
 	}
 	const pages = [...(built.pages || [])]
 	for (const overlay of overlays) {
-		const at = pages.findIndex((page) => page.id === overlay?.id)
-		if (at === -1) {
-			logger.warn(
-				'structureProfile: page overlay names a page the manifest does not have; skipped.',
-				{ page: overlay?.id },
-			)
-			continue
-		}
-		pages[at] = applyPageOverlay(pages[at], overlay)
+		overlayPage(pages, overlay)
 	}
 	return { ...built, pages }
+}
+
+/**
+ * Apply one overlay to the page it names, in place in the page list, or
+ * report it when no page has that id.
+ *
+ * @param {Array<object>} pages The manifest's pages, a copy.
+ * @param {object} overlay One page overlay.
+ */
+function overlayPage(pages, overlay) {
+	const at = pages.findIndex((page) => page.id === overlay?.id)
+	if (at === -1) {
+		logger.warn(
+			'structureProfile: page overlay names a page the manifest does not have; skipped.',
+			{ page: overlay?.id },
+		)
+		return
+	}
+	pages[at] = applyPageOverlay(pages[at], overlay)
 }
