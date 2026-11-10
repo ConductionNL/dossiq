@@ -124,14 +124,38 @@ class CaseEmailService {
 			throw new InvalidArgumentException('invalid-category');
 		}
 
+		$send = new CaseMailSend(caseId: $caseId, recipient: $to);
+		$send->subject = $subject;
+		$send->body = $body;
+		$send->attachments = $attachments;
+		$send->category = $category;
+
+		$this->readCaseAndSender(send: $send);
+		$this->assertRecipientAllowed(send: $send);
+		$this->assertNotOptedOut(send: $send);
+		$this->handToMailAccount(send: $send);
+
+		return $this->sentResult(send: $send, messageId: $this->recordOnCase(send: $send));
+	}//end sendEmail()
+
+	/**
+	 * Read the case the user may see, and the sender the configured transport chose for it.
+	 *
+	 * @param CaseMailSend $send The send, given its case record and sender here.
+	 *
+	 * @return void
+	 *
+	 * @throws \RuntimeException If the case cannot be read
+	 */
+	private function readCaseAndSender(CaseMailSend $send): void {
 		// C4 IDOR: Load the case via OR with RBAC enabled to verify the current user
 		// has read access. If the case is not found (or the user has no access), OR
 		// returns null — we treat that as 403.
 		// The RAW record, not loadCaseVariables()'s six-key projection: the
 		// recipient policy reads the case's contact fields, and the projection
 		// drops every field it does not name.
-		$caseData = $this->repository->loadCaseRecord(caseId: $caseId);
-		if (empty($caseData) === true) {
+		$send->caseData = $this->repository->loadCaseRecord(caseId: $send->caseId);
+		if (empty($send->caseData) === true) {
 			throw new RuntimeException('Zaak niet gevonden of geen toegang.');
 		}
 
@@ -139,65 +163,103 @@ class CaseEmailService {
 		// Through the Mail account: the case type's declared account, else the
 		// one an administrator picked; an address no account holds is refused
 		// here, before anything is built (REQ-IMF-12).
-		$sender      = $this->sending->outbound->senderFor(caseData: $caseData);
-		$fromAddress = $sender['from'];
+		$send->sender      = $this->sending->outbound->senderFor(caseData: $send->caseData);
+		$send->fromAddress = $send->sender['from'];
+	}//end readCaseAndSender()
 
-		// H4: Validate the recipient against the allow-list. This prevents
-		// open-relay abuse where any email address could be supplied.
-		$this->assertRecipientAllowed(
-			recipient: $to,
-			caseData: $caseData,
-			caseId: $caseId,
-			fromAddress: $fromAddress,
+	/**
+	 * Ask integriq after the allow-list and before anything is built or sent.
+	 *
+	 * Opt-out-before-send: a refusal leaves no mail and no record.
+	 *
+	 * @param CaseMailSend $send The send, given integriq's decision here.
+	 *
+	 * @return void
+	 *
+	 * @throws RecipientOptedOutException If integriq says this person may not be sent it
+	 */
+	private function assertNotOptedOut(CaseMailSend $send): void {
+		$send->decision = $this->sending->optOut->decide(
+			recipient: $send->recipient,
+			category: $send->category,
+			caseId: $send->caseId
 		);
-
-		// Ask integriq after the allow-list and before anything is built or
-		// sent (opt-out-before-send). A refusal leaves no mail and no record.
-		$decision = $this->sending->optOut->decide(recipient: $to, category: $category, caseId: $caseId);
-		if ($decision['send'] === false) {
-			$this->logger->info(
-				'Case mail not sent: integriq said this person may not be sent it',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'category' => $category, 'code' => $decision['code']]
-			);
-			throw new RecipientOptedOutException(reasonCode: $decision['code'], reason: $decision['reason']);
+		if ($send->decision['send'] !== false) {
+			return;
 		}
 
+		$this->logger->info(
+			'Case mail not sent: integriq said this person may not be sent it',
+			['app' => Application::APP_ID, 'caseId' => $send->caseId, 'category' => $send->category, 'code' => $send->decision['code']]
+		);
+		throw new RecipientOptedOutException(reasonCode: $send->decision['code'], reason: $send->decision['reason']);
+	}//end assertNotOptedOut()
+
+	/**
+	 * Hand the mail to the Mail account.
+	 *
+	 * @param CaseMailSend $send The send, past every check; given its delivery state here.
+	 *
+	 * @return void
+	 */
+	private function handToMailAccount(CaseMailSend $send): void {
 		// H5: attachments are paths in the sending user's own files; Nextcloud
 		// Mail reads them from that folder and checks the download permission.
 		// Through the Mail account the unsubscribe link travels in the body
 		// only, because Mail builds its own headers.
 		$delivery = $this->sending->outbound->send(
-			sender: $sender,
-			to: $to,
-			subject: $subject,
-			body: $body,
-			unsubscribe: $decision['unsubscribe'],
-			attachments: $attachments,
+			sender: $send->sender,
+			to: $send->recipient,
+			subject: $send->subject,
+			body: $send->body,
+			unsubscribe: $send->decision['unsubscribe'],
+			attachments: $send->attachments,
 		);
 
-		$messageId = $this->recordSentEmail(
-			caseId: $caseId,
-			fromAddress: $fromAddress,
-			to: $to,
-			subject: $subject,
-			body: $body,
-			delivery: $delivery['state'],
-		);
+		$send->state = $delivery['state'];
+	}//end handToMailAccount()
 
+	/**
+	 * Record the handed-over mail on its case.
+	 *
+	 * @param CaseMailSend $send The send, handed over.
+	 *
+	 * @return string The stored message id.
+	 */
+	private function recordOnCase(CaseMailSend $send): string {
+		return $this->recordSentEmail(
+			caseId: $send->caseId,
+			fromAddress: $send->fromAddress,
+			to: $send->recipient,
+			subject: $send->subject,
+			body: $send->body,
+			delivery: $send->state,
+		);
+	}//end recordOnCase()
+
+	/**
+	 * Log the handover and answer the send result.
+	 *
+	 * @param CaseMailSend $send      The send, handed over and recorded.
+	 * @param string       $messageId The stored message id.
+	 *
+	 * @return array<string, mixed> Send result with message ID and `state`
+	 */
+	private function sentResult(CaseMailSend $send, string $messageId): array {
 		$this->logger->info(
 			'Email for case {caseId} handed to the Mail account: {state}',
-			['app' => Application::APP_ID, 'caseId' => $caseId, 'state' => $delivery['state']],
+			['app' => Application::APP_ID, 'caseId' => $send->caseId, 'state' => $send->state],
 		);
 
 		return [
 			'messageId' => $messageId,
-			'to' => $to,
-			'from' => $fromAddress,
-			'subject' => $subject,
-			'state' => $delivery['state'],
+			'to' => $send->recipient,
+			'from' => $send->fromAddress,
+			'subject' => $send->subject,
+			'state' => $send->state,
 			'sentAt' => date('Y-m-d\TH:i:s'),
 		];
-	}//end sendEmail()
+	}//end sentResult()
 
 	/**
 	 * Record a mail that went out about a case: the stored message and the timeline line.
@@ -270,45 +332,51 @@ class CaseEmailService {
 	 * contact fields `CaseContactDirectory` reads, so the address list was
 	 * always empty and an empty list meant "no restriction".
 	 *
-	 * @param string $recipient The recipient email address
-	 * @param array<string, mixed> $caseData The raw case record
-	 * @param string $caseId The case UUID (logging context)
-	 * @param string $fromAddress The resolved envelope from-address
+	 * @param CaseMailSend $send The send: recipient, raw case record, case UUID and envelope from-address
 	 *
 	 * @return void
 	 *
 	 * @throws \RuntimeException If the address is invalid or not allowed
 	 */
-	private function assertRecipientAllowed(
-		string $recipient,
-		array $caseData,
-		string $caseId,
-		string $fromAddress,
-	): void {
+	private function assertRecipientAllowed(CaseMailSend $send): void {
+		$recipient = $send->recipient;
 		if ($recipient === '' || filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
 			throw new RuntimeException('Ongeldig e-mailadres opgegeven.');
 		}
 
-		$entries = $this->sending->allowlist->entriesFor(fromAddress: $fromAddress);
-		$caseContacts = $this->contactDirectory->collectAddresses(caseData: $caseData);
+		$send->allowlistEntries = $this->sending->allowlist->entriesFor(fromAddress: $send->fromAddress);
+		$send->caseContacts = $this->contactDirectory->collectAddresses(caseData: $send->caseData);
 
 		$permitted = $this->sending->allowlist->permits(
 			recipient: $recipient,
-			entries: $entries,
-			caseContacts: $caseContacts,
+			entries: $send->allowlistEntries,
+			caseContacts: $send->caseContacts,
 		);
 		if ($permitted === true) {
 			return;
 		}
 
+		$this->refuseOffListRecipient(send: $send);
+	}//end assertRecipientAllowed()
+
+	/**
+	 * Log and refuse a recipient that is neither on the allow-list nor a case contact.
+	 *
+	 * @param CaseMailSend $send The send, with the allow-list entries and case contacts it was checked against.
+	 *
+	 * @return never
+	 *
+	 * @throws \RuntimeException Always
+	 */
+	private function refuseOffListRecipient(CaseMailSend $send): never {
 		$this->logger->warning(
 			'Blocked email to a recipient outside the allow-list',
 			[
 				'app' => Application::APP_ID,
-				'to' => $recipient,
-				'caseId' => $caseId,
-				'allowlistEntries' => count($entries),
-				'caseContacts' => count($caseContacts),
+				'to' => $send->recipient,
+				'caseId' => $send->caseId,
+				'allowlistEntries' => count($send->allowlistEntries),
+				'caseContacts' => count($send->caseContacts),
 			]
 		);
 
@@ -316,7 +384,7 @@ class CaseEmailService {
 			'Ontvanger staat niet op de lijst met toegestane e-mailadressen. '
 			. 'Voeg het adres of het domein toe bij de e-mailinstellingen.'
 		);
-	}//end assertRecipientAllowed()
+	}//end refuseOffListRecipient()
 
 	/**
 	 * Send an email using a template.
