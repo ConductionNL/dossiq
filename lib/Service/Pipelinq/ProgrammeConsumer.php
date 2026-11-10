@@ -39,6 +39,19 @@ use Psr\Log\LoggerInterface;
 class ProgrammeConsumer {
 
 	/**
+	 * The figure when pipelinq cannot answer for a programme's progress.
+	 *
+	 * @var array{available: bool, computable: bool, progress: null, mode: string, sentence: string}
+	 */
+	private const UNREADABLE_PROGRESS = [
+		'available' => false,
+		'computable' => false,
+		'progress' => null,
+		'mode' => '',
+		'sentence' => 'Progress cannot be read on this instance.',
+	];
+
+	/**
 	 * How a dossiq case names itself as a piece of work.
 	 *
 	 * `<app>:<schema>`, per pipelinq's work item contract.
@@ -79,37 +92,61 @@ class ProgrammeConsumer {
 	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
 	 */
 	public function linkCase(string $programmeId, string $caseId, string $title = ''): array {
-		$answer = $this->gateway->ask(
-			class: PipelinqGateway::PROGRAMMES,
-			method: 'linkWork',
+		$answer = $this->askLinkWork(
 			arguments: [
 				'programmeId' => trim($programmeId),
 				'domainObjectType' => self::OBJECT_TYPE,
 				'domainObjectRef' => trim($caseId),
 				'title' => trim($title),
-			],
-			fallback: null,
+			]
 		);
 
 		if ($answer['answered'] === false || is_array($answer['value']) === false) {
 			return ['linked' => false, 'reason' => $answer['reason']];
 		}
 
-		$result = $answer['value'];
-		if ((int)($result['status'] ?? 0) === 201) {
+		if ((int)($answer['value']['status'] ?? 0) === 201) {
 			return ['linked' => true, 'reason' => ''];
 		}
 
+		return $this->refuseLink(result: $answer['value'], where: ['case' => $caseId, 'programme' => $programmeId]);
+	}//end linkCase()
+
+	/**
+	 * Ask pipelinq to put a piece of work under a programme.
+	 *
+	 * @param array<string, string> $arguments The programme, the work's type and reference, and its title.
+	 *
+	 * @return array{answered: bool, value: mixed, reason: string} The gateway's answer.
+	 */
+	private function askLinkWork(array $arguments): array {
+		return $this->gateway->ask(
+			class: PipelinqGateway::PROGRAMMES,
+			method: 'linkWork',
+			arguments: $arguments,
+			fallback: null,
+		);
+	}//end askLinkWork()
+
+	/**
+	 * Log and answer a link pipelinq refused, with the refusal it gave.
+	 *
+	 * @param array<string, mixed>  $result The refusal pipelinq answered.
+	 * @param array<string, string> $where  The case and the programme, as the log context.
+	 *
+	 * @return array{linked: bool, reason: string} The refused outcome.
+	 */
+	private function refuseLink(array $result, array $where): array {
 		$reason = (string)($result['error'] ?? 'pipelinq refused the link');
 
 		$this->logger->info(
 			'Dossiq pipelinq: a case was not put under a programme, and the refusal names where it '
 			. 'already is: ' . $reason,
-			['case' => $caseId, 'programme' => $programmeId]
+			$where
 		);
 
 		return ['linked' => false, 'reason' => $reason];
-	}//end linkCase()
+	}//end refuseLink()
 
 	/**
 	 * How far along a programme is, ready to render.
@@ -133,30 +170,57 @@ class ProgrammeConsumer {
 		);
 
 		if ($answer['answered'] === false || is_array($answer['value']) === false) {
-			return [
-				'available' => false,
-				'computable' => false,
-				'progress' => null,
-				'mode' => '',
-				'sentence' => 'Progress cannot be read on this instance.',
-			];
+			return self::UNREADABLE_PROGRESS;
 		}
 
-		$figure = $answer['value'];
-		$mode = (string)($figure['mode'] ?? '');
-		$computable = (($figure['computable'] ?? false) === true);
+		return $this->figureOf(figure: $answer['value']);
+	}//end progressOf()
 
-		if ($computable === false) {
+	/**
+	 * Render the figure pipelinq answered, computable or not.
+	 *
+	 * @param array<string, mixed> $figure The figure pipelinq answered.
+	 *
+	 * @return array{available: bool, computable: bool, progress: int|null, mode: string, sentence: string}
+	 *   The figure and its sentence.
+	 */
+	private function figureOf(array $figure): array {
+		if (($figure['computable'] ?? false) !== true) {
 			// NOT zero. The reason pipelinq gave is what a reader needs.
-			return [
-				'available' => true,
-				'computable' => false,
-				'progress' => null,
-				'mode' => $mode,
-				'sentence' => (string)($figure['reason'] ?? 'Progress cannot be computed.'),
-			];
+			return self::uncomputableFigure(figure: $figure);
 		}
 
+		return $this->computableFigure(figure: $figure);
+	}//end figureOf()
+
+	/**
+	 * A figure pipelinq says it cannot compute, with pipelinq's reason.
+	 *
+	 * @param array<string, mixed> $figure The figure pipelinq answered.
+	 *
+	 * @return array{available: bool, computable: bool, progress: null, mode: string, sentence: string}
+	 *   The uncomputable figure.
+	 */
+	private static function uncomputableFigure(array $figure): array {
+		return [
+			'available' => true,
+			'computable' => false,
+			'progress' => null,
+			'mode' => (string)($figure['mode'] ?? ''),
+			'sentence' => (string)($figure['reason'] ?? 'Progress cannot be computed.'),
+		];
+	}//end uncomputableFigure()
+
+	/**
+	 * A computed figure, with the sentence that names its mode.
+	 *
+	 * @param array<string, mixed> $figure The figure pipelinq answered.
+	 *
+	 * @return array{available: bool, computable: bool, progress: int, mode: string, sentence: string}
+	 *   The computed figure.
+	 */
+	private function computableFigure(array $figure): array {
+		$mode = (string)($figure['mode'] ?? '');
 		$progress = (int)($figure['progress'] ?? 0);
 
 		return [
@@ -166,7 +230,7 @@ class ProgrammeConsumer {
 			'mode' => $mode,
 			'sentence' => "{$progress} per cent, " . $this->modeSentence(mode: $mode),
 		];
-	}//end progressOf()
+	}//end computableFigure()
 
 	/**
 	 * The programmes a case may be put under, as id and name.
@@ -212,15 +276,41 @@ class ProgrammeConsumer {
 	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
 	 */
 	public function programmeOf(string $caseId): array {
-		$items = $this->read(
-			schemaKey: self::WORK_ITEM_SCHEMA_KEY,
-			filters: ['domainObjectType' => self::OBJECT_TYPE, 'domainObjectRef' => trim($caseId)],
-		);
-
+		$items = $this->workItemsOf(caseId: $caseId);
 		if ($items === null) {
 			return ['available' => false, 'programme' => null];
 		}
 
+		$holder = self::holderOf(items: $items);
+		if ($holder === '') {
+			return ['available' => true, 'programme' => null];
+		}
+
+		return ['available' => true, 'programme' => $this->describeProgramme(holder: $holder)];
+	}//end programmeOf()
+
+	/**
+	 * The work items that hold a case by reference, or null when pipelinq cannot answer.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array<int, array<string, mixed>>|null The work items.
+	 */
+	private function workItemsOf(string $caseId): ?array {
+		return $this->read(
+			schemaKey: self::WORK_ITEM_SCHEMA_KEY,
+			filters: ['domainObjectType' => self::OBJECT_TYPE, 'domainObjectRef' => trim($caseId)],
+		);
+	}//end workItemsOf()
+
+	/**
+	 * The programme the first work item that names one hangs under.
+	 *
+	 * @param array<int, array<string, mixed>> $items The work items.
+	 *
+	 * @return string The programme id, '' when none names one.
+	 */
+	private static function holderOf(array $items): string {
 		$holder = '';
 		foreach ($items as $item) {
 			$holder = trim((string)($item['programme'] ?? ''));
@@ -229,39 +319,64 @@ class ProgrammeConsumer {
 			}
 		}
 
-		if ($holder === '') {
-			return ['available' => true, 'programme' => null];
-		}
+		return $holder;
+	}//end holderOf()
 
-		$record = ['id' => $holder];
+	/**
+	 * A programme by id, name and progress.
+	 *
+	 * @param string $holder The programme id.
+	 *
+	 * @return array{id: string, name: string, progress: array<string, mixed>} The programme.
+	 */
+	private function describeProgramme(string $holder): array {
+		$record = $this->programmeRecord(holder: $holder);
+
+		return [
+			'id' => $holder,
+			'name' => trim((string)($record['name'] ?? '')),
+			'progress' => $this->progressOf(programmeId: $holder, programme: $record, tasks: $this->tasksOf(programmeId: $holder)),
+		];
+	}//end describeProgramme()
+
+	/**
+	 * The stored programme record, or just its id when the list does not hold it.
+	 *
+	 * @param string $holder The programme id.
+	 *
+	 * @return array<string, mixed> The record, always carrying `id`.
+	 */
+	private function programmeRecord(string $holder): array {
 		foreach (($this->read(schemaKey: self::PROGRAMME_SCHEMA_KEY, filters: []) ?? []) as $row) {
 			if (self::idOf(row: $row) === $holder) {
-				$record = $row + ['id' => $holder];
-				break;
+				return $row + ['id' => $holder];
 			}
 		}
 
+		return ['id' => $holder];
+	}//end programmeRecord()
+
+	/**
+	 * The tasks of a programme, the rows that are not arrays left out.
+	 *
+	 * @param string $programmeId The programme.
+	 *
+	 * @return array<int, array<string, mixed>> The tasks.
+	 */
+	private function tasksOf(string $programmeId): array {
 		$tasks = $this->gateway->ask(
 			class: PipelinqGateway::PROGRAMMES,
 			method: 'tasksOf',
-			arguments: ['programmeId' => $holder],
+			arguments: ['programmeId' => $programmeId],
 			fallback: [],
 		);
 
-		$taskRows = [];
-		if (is_array($tasks['value']) === true) {
-			$taskRows = array_values(array_filter($tasks['value'], static fn ($task): bool => is_array($task) === true));
+		if (is_array($tasks['value']) === false) {
+			return [];
 		}
 
-		return [
-			'available' => true,
-			'programme' => [
-				'id' => $holder,
-				'name' => trim((string)($record['name'] ?? '')),
-				'progress' => $this->progressOf(programmeId: $holder, programme: $record, tasks: $taskRows),
-			],
-		];
-	}//end programmeOf()
+		return array_values(array_filter($tasks['value'], static fn ($task): bool => is_array($task) === true));
+	}//end tasksOf()
 
 	/**
 	 * Read rows of one of pipelinq's programme schemas, or null when it cannot answer.

@@ -43,6 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -301,16 +302,6 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	 * @return bool True when this is a beschikking.
 	 */
 	private function isBeschikkingSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('beschikking_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('beschikking_schema'));
 	}//end isBeschikkingSchema()
 }//end class
