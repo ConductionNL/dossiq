@@ -669,4 +669,81 @@ class StoreControllerTest extends TestCase {
 
 		$this->assertSame('a-new-token', $written['registry_token']);
 	}//end testASuppliedTokenIsWritten()
+
+	/**
+	 * A configuration component without an object is refused, with every report field, and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testAComponentWithoutAnObjectIsRefused(): void {
+		$this->storeService->method('resolve')->willReturn(
+			[
+				'slug' => 'empty-item',
+				'components' => [
+					['schema' => 'caseType'],
+					['schema' => 'case', 'object' => ['title' => 'x']],
+				],
+			]
+		);
+		$this->registry->expects($this->never())->method('save');
+
+		$data = $this->controller->install(slug: 'empty-item')->getData();
+
+		$this->assertSame(
+			[
+				'success' => false,
+				'components' => [
+					['schema' => 'caseType', 'status' => 'refused', 'message' => 'The component declares no object to install.'],
+					[
+						'schema' => 'case',
+						'status' => 'refused',
+						'message' => 'Only case configuration installs from the store; this component names a record schema.',
+					],
+				],
+			],
+			$data
+		);
+	}//end testAComponentWithoutAnObjectIsRefused()
+
+	/**
+	 * Without a publish authorizer every publish is refused with 403.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAnAuthorizerNobodyPublishes(): void {
+		$this->signIn();
+		$this->storeService->expects($this->never())->method('publish');
+		$controller = new StoreController(
+			$this->request,
+			$this->logger,
+			$this->userSession,
+			$this->appConfig,
+			$this->storeService,
+			$this->registry
+		);
+
+		$response = $controller->publish();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['outcome' => 'forbidden', 'slug' => ''], $response->getData());
+	}//end testWithoutAnAuthorizerNobodyPublishes()
+
+	/**
+	 * A search the engine cannot answer is a logged 200 that says the registry is unreachable.
+	 *
+	 * @return void
+	 */
+	public function testAFailedSearchReportsTheRegistryUnreachable(): void {
+		$this->signIn();
+		$this->request->method('getParam')->willReturnMap([['q', null, 'brief'], ['kind', null, ['not', 'a', 'string']]]);
+		$this->storeService->expects($this->once())->method('search')
+			->with($this->isInstanceOf(StoreDescriptor::class), 'brief', null)
+			->willThrowException(new \RuntimeException('registry timeout'));
+		$this->logger->expects($this->once())->method('error')->with('Dossiq store: search failed: registry timeout');
+
+		$response = $this->controller->search();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['outcome' => GenericStoreService::OUTCOME_UNREACHABLE, 'cards' => []], $response->getData());
+	}//end testAFailedSearchReportsTheRegistryUnreachable()
 }//end class

@@ -8,12 +8,11 @@
  * An amount of money in the reader's locale.
  *
  * @param {number} value The amount.
- * @param {string} currency The ISO 4217 code.
- * @param {string} locale The locale.
+ * @param {{currency: string, locale: string}} format The ISO 4217 code and the locale.
  * @return {string} The amount, e.g. "€ 125,00".
  */
-function money(value, currency, locale) {
-	return new Intl.NumberFormat(locale || undefined, { style: 'currency', currency: currency || 'EUR' }).format(Number(value))
+function money(value, format) {
+	return new Intl.NumberFormat(format.locale || undefined, { style: 'currency', currency: format.currency || 'EUR' }).format(Number(value))
 }
 
 /**
@@ -50,6 +49,65 @@ export function feeRuleBasis(rule) {
 	return [basis.regulation, basis.article].filter(Boolean).join(', ')
 }
 
+
+/**
+ * A percentage of a base, with its minimum when the rule has one.
+ *
+ * @param {object} rule The fee rule.
+ * @param {{t: (text: string, vars: object) => string, locale: string, currency: string}} format The bound t(), the locale and the currency.
+ * @return {string} The calculation in words.
+ */
+function percentageLine(rule, format) {
+	const { t } = format
+	return rule.minimumAmount
+		? t('{percentage} % of the {base}, at least {minimum}', { percentage: decimal(rule.percentage, format.locale), base: rule.baseProperty || '', minimum: money(rule.minimumAmount, format) })
+		: t('{percentage} % of the {base}', { percentage: decimal(rule.percentage, format.locale), base: rule.baseProperty || '' })
+}
+
+/**
+ * A price per unit, named by its unit label or its base.
+ *
+ * @param {object} rule The fee rule.
+ * @param {{t: (text: string, vars: object) => string, locale: string, currency: string}} format The bound t(), the locale and the currency.
+ * @return {string} The calculation in words.
+ */
+function perUnitLine(rule, format) {
+	const { t } = format
+	return t('{price} per {unit}', { price: money(rule.unitPrice, format), unit: rule.unitLabel || rule.baseProperty || '' })
+}
+
+/**
+ * The share of a fee that is refunded.
+ *
+ * @param {object} rule The fee rule.
+ * @param {{t: (text: string, vars: object) => string, locale: string, currency: string}} format The bound t(), the locale and the currency.
+ * @return {string} The calculation in words.
+ */
+function refundLine(rule, format) {
+	const { t } = format
+	return t('{percentage} % refunded', { percentage: decimal(rule.percentage, format.locale) })
+}
+
+/**
+ * A fixed amount, or nothing when the rule has none.
+ *
+ * @param {object} rule The fee rule.
+ * @param {{t: (text: string, vars: object) => string, locale: string, currency: string}} format The locale and the currency.
+ * @return {string} The amount.
+ */
+function fixedAmountLine(rule, format) {
+	return rule.amount === undefined || rule.amount === null ? '' : money(rule.amount, format)
+}
+
+/**
+ * The calculation in words per kind of rule; any other kind is a fixed amount.
+ */
+const FEE_CALCULATIONS = new Map([
+	['percentage', percentageLine],
+	['per_unit', perUnitLine],
+	['refund_percentage', refundLine],
+])
+
 /**
  * How the rule works the amount out, in words.
  *
@@ -63,17 +121,6 @@ export function feeRuleCalculation(rule, t, locale) {
 	if (!rule) {
 		return ''
 	}
-	const currency = rule.currency || 'EUR'
-	switch (rule.calculation || 'fixed') {
-	case 'percentage':
-		return rule.minimumAmount
-			? t('{percentage} % of the {base}, at least {minimum}', { percentage: decimal(rule.percentage, locale), base: rule.baseProperty || '', minimum: money(rule.minimumAmount, currency, locale) })
-			: t('{percentage} % of the {base}', { percentage: decimal(rule.percentage, locale), base: rule.baseProperty || '' })
-	case 'per_unit':
-		return t('{price} per {unit}', { price: money(rule.unitPrice, currency, locale), unit: rule.unitLabel || rule.baseProperty || '' })
-	case 'refund_percentage':
-		return t('{percentage} % refunded', { percentage: decimal(rule.percentage, locale) })
-	default:
-		return rule.amount === undefined || rule.amount === null ? '' : money(rule.amount, currency, locale)
-	}
+	const line = FEE_CALCULATIONS.get(rule.calculation || 'fixed') ?? fixedAmountLine
+	return line(rule, { t, locale, currency: rule.currency || 'EUR' })
 }
