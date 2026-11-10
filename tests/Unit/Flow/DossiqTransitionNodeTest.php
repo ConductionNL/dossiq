@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 use OCA\Dossiq\Flow\DossiqTxCreateTaskNode;
 use OCA\Dossiq\Service\Transitions\ActionResult;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
@@ -106,9 +107,11 @@ class DossiqTransitionNodeTest extends TestCase {
         $this->handler->method('handle')->willReturn(new ActionResult(true, null, ['sent' => 1]));
 
         $out = $this->node->execute(
-            [['json' => ['id' => 'case-1', 'title' => 'Bezwaar']]],
-            $this->config(),
-            []
+            call: new FlowNodeCall(
+            	items: [['json' => ['id' => 'case-1', 'title' => 'Bezwaar']]],
+            	config: $this->config(),
+            	context: []
+            )
         );
 
         $this->assertCount(1, $out);
@@ -137,9 +140,11 @@ class DossiqTransitionNodeTest extends TestCase {
         );
 
         $out = $this->node->execute(
-            [['json' => ['id' => 'case-1', 'title' => 'Bezwaar']]],
-            $this->config(),
-            []
+            call: new FlowNodeCall(
+            	items: [['json' => ['id' => 'case-1', 'title' => 'Bezwaar']]],
+            	config: $this->config(),
+            	context: []
+            )
         );
 
         $this->assertSame('Besluit', $out[0]['json']['besluitDocument']);
@@ -159,9 +164,11 @@ class DossiqTransitionNodeTest extends TestCase {
         $this->handler->method('handle')->willReturn(new ActionResult(true, null, ['sent' => 1]));
 
         $out = $this->node->execute(
-            [['json' => []]],
-            array_merge($this->config(), ['output' => 'taskResult']),
-            []
+            call: new FlowNodeCall(
+            	items: [['json' => []]],
+            	config: array_merge($this->config(), ['output' => 'taskResult']),
+            	context: []
+            )
         );
 
         $this->assertArrayHasKey('taskResult', $out[0]['json']);
@@ -187,7 +194,7 @@ class DossiqTransitionNodeTest extends TestCase {
         $this->expectException(UnexpectedValueException::class);
         $this->expectExceptionMessage('task_store_unavailable');
 
-        $this->node->execute([['json' => []]], $this->config(), []);
+        $this->node->execute(call: new FlowNodeCall(items: [['json' => []]], config: $this->config(), context: []));
 
     }//end testFailedActionThrowsRatherThanPassingThrough()
 
@@ -209,7 +216,7 @@ class DossiqTransitionNodeTest extends TestCase {
         unset($config['title']);
 
         $this->expectException(UnexpectedValueException::class);
-        $this->node->execute([['json' => []]], $config, []);
+        $this->node->execute(call: new FlowNodeCall(items: [['json' => []]], config: $config, context: []));
 
     }//end testUnvalidatedConfigIsRejectedAtExecution()
 
@@ -245,9 +252,11 @@ class DossiqTransitionNodeTest extends TestCase {
             ->willReturn(new ActionResult(true, null, []));
 
         $out = $this->node->execute(
-            [['json' => ['id' => 'a']], ['json' => ['id' => 'b']], ['json' => ['id' => 'c']]],
-            $this->config(),
-            []
+            call: new FlowNodeCall(
+            	items: [['json' => ['id' => 'a']], ['json' => ['id' => 'b']], ['json' => ['id' => 'c']]],
+            	config: $this->config(),
+            	context: []
+            )
         );
 
         $this->assertCount(3, $out);
