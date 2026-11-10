@@ -26,6 +26,55 @@ function generateUUID() {
 	})
 }
 
+/**
+ * The arguments a dispatcher that reads the transition takes.
+ *
+ * @param {object} action The action definition
+ * @param {{caseData: object, transition: object}} context The case and the transition
+ * @return {Array} The arguments
+ */
+function withTransition(action, context) {
+	return [action, context.caseData, context.transition]
+}
+
+/**
+ * The arguments a dispatcher that reads only the case takes.
+ *
+ * @param {object} action The action definition
+ * @param {{caseData: object}} context The case
+ * @return {Array} The arguments
+ */
+function withCase(action, context) {
+	return [action, context.caseData]
+}
+
+/**
+ * The result row of an automatic action that did not run.
+ *
+ * @param {object} action The action definition
+ * @param {string} error Why
+ * @return {{action: string, success: boolean, error: string}} The result
+ */
+function failedAction(action, error) {
+	return {
+		action: action.type,
+		success: false,
+		error,
+	}
+}
+
+// The store action that dispatches each automatic action type, and what it is
+// handed. A Map, so a type such as `toString` is unknown rather than found on
+// an object's prototype.
+const ACTION_DISPATCHERS = new Map([
+	['sendEmail', { method: 'dispatchEmailAction', args: withTransition }],
+	['createTask', { method: 'dispatchCreateTaskAction', args: withCase }],
+	['createSubCase', { method: 'dispatchCreateSubCaseAction', args: withCase }],
+	['webhook', { method: 'dispatchWebhookAction', args: withTransition }],
+	['setField', { method: 'dispatchSetFieldAction', args: withCase }],
+	['notify', { method: 'dispatchNotifyAction', args: withCase }],
+])
+
 export const useWorkflowStore = defineStore('workflow', {
 	state: () => ({
 		/** @type {object|null} Currently loaded workflow template */
@@ -675,57 +724,31 @@ export const useWorkflowStore = defineStore('workflow', {
 		async dispatchActions(actions, caseData, transition) {
 			const results = []
 			for (const action of actions) {
-				try {
-					switch (action.type) {
-						case 'sendEmail':
-							await this.dispatchEmailAction(
-								action,
-								caseData,
-								transition,
-							)
-							results.push({ action: action.type, success: true })
-							break
-						case 'createTask':
-							await this.dispatchCreateTaskAction(action, caseData)
-							results.push({ action: action.type, success: true })
-							break
-						case 'createSubCase':
-							await this.dispatchCreateSubCaseAction(action, caseData)
-							results.push({ action: action.type, success: true })
-							break
-						case 'webhook':
-							await this.dispatchWebhookAction(
-								action,
-								caseData,
-								transition,
-							)
-							results.push({ action: action.type, success: true })
-							break
-						case 'setField':
-							await this.dispatchSetFieldAction(action, caseData)
-							results.push({ action: action.type, success: true })
-							break
-						case 'notify':
-							await this.dispatchNotifyAction(action, caseData)
-							results.push({ action: action.type, success: true })
-							break
-						default:
-							results.push({
-								action: action.type,
-								success: false,
-								error: 'Unknown action type',
-							})
-					}
-				} catch (err) {
-					console.error(`Workflow action ${action.type} failed:`, err)
-					results.push({
-						action: action.type,
-						success: false,
-						error: err.message,
-					})
-				}
+				results.push(await this.dispatchAction(action, { caseData, transition }))
 			}
 			return results
+		},
+
+		/**
+		 * Dispatch one automatic action and answer its result row.
+		 *
+		 * @param {object} action The action definition
+		 * @param {{caseData: object, transition: object}} context The case and the transition that triggered it
+		 * @return {Promise<{action: string, success: boolean, error?: string}>} The result
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
+		async dispatchAction(action, context) {
+			const dispatcher = ACTION_DISPATCHERS.get(action.type)
+			if (dispatcher === undefined) {
+				return failedAction(action, 'Unknown action type')
+			}
+			try {
+				await this[dispatcher.method](...dispatcher.args(action, context))
+				return { action: action.type, success: true }
+			} catch (err) {
+				console.error(`Workflow action ${action.type} failed:`, err)
+				return failedAction(action, err.message)
+			}
 		},
 
 		/**
