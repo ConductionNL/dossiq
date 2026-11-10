@@ -475,19 +475,7 @@ class DwellTimeAnalyzer {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	private function statusLabel(string $statusId, array $statusTypeIndex): string {
-		if (isset($statusTypeIndex[$statusId]) === false) {
-			return $statusId;
-		}
-
-		$entry = $statusTypeIndex[$statusId];
-
-		// A status name is translatable, so the row carries a language map.
-		$name = $this->text->forReader(value: ($entry['name'] ?? ($entry['title'] ?? '')));
-		if ($name === '') {
-			return $statusId;
-		}
-
-		return $name;
+		return (new StatusLabels(text: $this->text, statusTypeIndex: $statusTypeIndex))->labelOf(statusId: $statusId);
 	}//end statusLabel()
 
 	/**
