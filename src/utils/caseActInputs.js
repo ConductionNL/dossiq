@@ -45,36 +45,233 @@ function actLayouts() {
 			reasonWidget: 'text',
 			reasonNote: '',
 		},
-		archive: {
-			title: t('dossiq', 'Archive this case'),
-			confirmIcon: ArchiveOutline,
-			reasonNote: t('dossiq', 'Goes into the history of the case. To bring it back, use Restore from the archive under Next step.'),
-			notifyRequester: true,
-			summary: {
-				when: 'kase',
-				testid: 'case-act-archive',
-				card: {
-					icon: FolderOutline,
-					title: 'kase.title',
-					meta: ['kase.identifier', 'kase.initiatorDisplayName'],
-					badge: 'kase.resultPublicLabel',
-				},
-				title: t('dossiq', 'Retention under the case type'),
-				facts: [
-					{ label: t('dossiq', 'Archive nomination'), path: 'kase.archiveNomination', fallback: t('dossiq', 'Not set') },
-					{ label: t('dossiq', 'Destruction date'), path: 'kase.archiveActionDate', fallback: t('dossiq', 'Not set') },
-					{ label: t('dossiq', 'Archive status afterwards'), fallback: t('dossiq', 'Archived') },
-				],
-			},
-			notice: {
-				type: 'info',
-				icon: 'LockOutline',
-				heading: t('dossiq', 'Read only afterwards'),
-				text: t('dossiq', 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.'),
-			},
+		archive: archiveLayout(),
+	}
+}
+
+/**
+ * The archive act's layout (board DqArchiveren): its title and confirm icon,
+ * the case with its retention, and the read-only notice.
+ *
+ * @return {object} The layout.
+ */
+function archiveLayout() {
+	return {
+		title: t('dossiq', 'Archive this case'),
+		confirmIcon: ArchiveOutline,
+		reasonNote: t('dossiq', 'Goes into the history of the case. To bring it back, use Restore from the archive under Next step.'),
+		notifyRequester: true,
+		summary: archiveSummary(),
+		notice: {
+			type: 'info',
+			icon: 'LockOutline',
+			heading: t('dossiq', 'Read only afterwards'),
+			text: t('dossiq', 'Once archived, the documents, tasks and messages of this case can no longer be changed. The case stays findable until its archive action date.'),
 		},
 	}
 }
+
+/**
+ * The case being archived, with the retention its case type gives it.
+ *
+ * @return {object} The summary.
+ */
+function archiveSummary() {
+	return {
+		when: 'kase',
+		testid: 'case-act-archive',
+		card: {
+			icon: FolderOutline,
+			title: 'kase.title',
+			meta: ['kase.identifier', 'kase.initiatorDisplayName'],
+			badge: 'kase.resultPublicLabel',
+		},
+		title: t('dossiq', 'Retention under the case type'),
+		facts: retentionFacts(),
+	}
+}
+
+/**
+ * The retention facts shown while archiving.
+ *
+ * @return {Array<object>} The facts.
+ */
+function retentionFacts() {
+	return [
+		{ label: t('dossiq', 'Archive nomination'), path: 'kase.archiveNomination', fallback: t('dossiq', 'Not set') },
+		{ label: t('dossiq', 'Destruction date'), path: 'kase.archiveActionDate', fallback: t('dossiq', 'Not set') },
+		{ label: t('dossiq', 'Archive status afterwards'), fallback: t('dossiq', 'Archived') },
+	]
+}
+
+/**
+ * What a form shows when the act's layout does not say, in form order.
+ */
+const FORM_DEFAULTS = Object.freeze({
+	columns: 1,
+	summary: null,
+	notice: null,
+	title: '',
+	confirmIcon: null,
+})
+
+/**
+ * The form around its inputs, laid out as the act's layout says.
+ *
+ * @param {object} layout The act's layout from actLayouts.
+ * @param {Array<object>} inputs The form's inputs.
+ * @return {object} The form.
+ */
+function formOf(layout, inputs) {
+	const form = { inputs }
+	for (const [key, fallback] of Object.entries(FORM_DEFAULTS)) {
+		form[key] = layout[key] ?? fallback
+	}
+	return form
+}
+
+/**
+ * The result template picker of an ending act.
+ *
+ * @param {object} run The form being built: `entry`, `asks`, `layout`, `scope`.
+ * @return {object} The input.
+ */
+function resultTemplateInput(run) {
+	// A template presets the outcome text and never writes over it.
+	return {
+		field: 'resultTemplate',
+		widget: 'template',
+		url: '/apps/dossiq/api/content-templates/result',
+		params: { caseType: run.scope.caseType, case: run.scope.caseId },
+		mapOption: contentTemplateOption,
+		label: t('dossiq', 'Result template'),
+		placeholder: t('dossiq', 'Start from a template'),
+		applyTo: 'reason',
+		testid: 'template-picker',
+	}
+}
+
+/**
+ * The pause reason picker: the case type's reasons, then Other for free
+ * text. Without declared reasons the picker is hidden and the text alone
+ * is asked.
+ *
+ * @return {object} The input.
+ */
+function pauseReasonInput() {
+	return {
+		field: 'pauseReason',
+		optionsSource: 'pauseReasons',
+		optionValue: 'key',
+		optionLabel: 'name',
+		required: true,
+		label: t('dossiq', 'Reason'),
+		other: { label: t('dossiq', 'Other'), input: 'reason' },
+		testid: 'case-act-pause-reason-picker',
+	}
+}
+
+/**
+ * The reason field, in the widget and with the note the act's layout asks.
+ *
+ * @param {object} run The form being built.
+ * @return {object} The input.
+ */
+function reasonInput(run) {
+	return {
+		field: 'reason',
+		widget: run.layout.reasonWidget ?? 'textarea',
+		required: true,
+		label: t('dossiq', 'Reason'),
+		labelOutside: true,
+		id: 'case-act-reason',
+		note: run.layout.reasonNote ?? t('dossiq', 'Goes into the history of the case.'),
+		rows: 2,
+		testid: 'case-act-reason-input',
+	}
+}
+
+/**
+ * The result picker. A closing move or an ending act picks from the case
+ * type's own result types. There is no free field: a typed name is not an
+ * id, and a case type with no results needs none.
+ *
+ * @return {object} The input.
+ */
+function resultTypeInput() {
+	return {
+		field: 'resultTypeId',
+		optionsSource: 'resultTypes',
+		optionValue: 'id',
+		optionLabel: 'name',
+		required: true,
+		label: t('dossiq', 'Result'),
+		testid: 'case-act-result-picker',
+	}
+}
+
+/**
+ * The date a held case comes back on.
+ *
+ * @return {object} The input.
+ */
+function untilInput() {
+	return {
+		field: 'until',
+		widget: 'date',
+		required: true,
+		label: t('dossiq', 'The case comes back on'),
+		testid: 'case-act-until-input',
+	}
+}
+
+/**
+ * The days the applicant is given, with the date the case comes back on.
+ *
+ * @return {object} The input.
+ */
+function daysInput() {
+	return {
+		field: 'days',
+		widget: 'number',
+		label: t('dossiq', 'Days the applicant is given'),
+		labelOutside: true,
+		id: 'case-act-days',
+		// The days the applicant gets are the recovery period of Awb 4:5;
+		// a picked pause reason names its own basis instead.
+		description: t('dossiq', 'Awb 4:5, recovery period'),
+		helperFrom: { input: 'pauseReason', key: 'legalBasis' },
+		prefillFrom: { input: 'pauseReason', key: 'defaultDays' },
+		dateField: comesBackField(),
+		testid: 'case-act-days-input',
+	}
+}
+
+/**
+ * The date shown beside the days: when the suspended case comes back.
+ *
+ * @return {object} The date field.
+ */
+function comesBackField() {
+	return {
+		label: t('dossiq', 'The case comes back on'),
+		note: t('dossiq', 'You pick the case up earlier if the answer comes in earlier.'),
+		testid: 'case-act-comes-back',
+	}
+}
+
+/**
+ * The inputs an act's form can hold, in form order, each with when the
+ * act asks it. The requester checkboxes follow them.
+ */
+const ACT_INPUTS = [
+	{ when: (run) => run.asks.result, build: resultTemplateInput },
+	{ when: (run) => run.asks.reason && run.layout.pauseReasons, build: pauseReasonInput },
+	{ when: (run) => run.asks.reason, build: reasonInput },
+	{ when: (run) => run.asks.result, build: resultTypeInput },
+	{ when: (run) => run.asks.until, build: untilInput },
+	{ when: (run) => run.asks.days, build: daysInput },
+]
 
 /**
  * The form one act opens: its input declarations and its layout.
@@ -94,106 +291,30 @@ function actLayouts() {
  */
 export function actForm(entry, { caseType = '', caseId = '', requester = '', reminder = null } = {}) {
 	if (!entry) {
-		return { inputs: [], columns: 1, summary: null, notice: null, title: '', confirmIcon: null }
+		return formOf({}, [])
 	}
-	const asks = inputsFor(entry)
-	const layout = actLayouts()[String(entry.id ?? '')] ?? {}
-	const inputs = []
+	const run = formRun(entry, { caseType, caseId, requester, reminder })
+	const inputs = ACT_INPUTS.filter((row) => row.when(run)).map((row) => row.build(run))
 
-	if (asks.result) {
-		// A template presets the outcome text and never writes over it.
-		inputs.push({
-			field: 'resultTemplate',
-			widget: 'template',
-			url: '/apps/dossiq/api/content-templates/result',
-			params: { caseType, case: caseId },
-			mapOption: contentTemplateOption,
-			label: t('dossiq', 'Result template'),
-			placeholder: t('dossiq', 'Start from a template'),
-			applyTo: 'reason',
-			testid: 'template-picker',
-		})
-	}
-	if (asks.reason && layout.pauseReasons) {
-		// The case type's reasons, then Other for free text. Without
-		// declared reasons the picker is hidden and the text alone is asked.
-		inputs.push({
-			field: 'pauseReason',
-			optionsSource: 'pauseReasons',
-			optionValue: 'key',
-			optionLabel: 'name',
-			required: true,
-			label: t('dossiq', 'Reason'),
-			other: { label: t('dossiq', 'Other'), input: 'reason' },
-			testid: 'case-act-pause-reason-picker',
-		})
-	}
-	if (asks.reason) {
-		inputs.push({
-			field: 'reason',
-			widget: layout.reasonWidget ?? 'textarea',
-			required: true,
-			label: t('dossiq', 'Reason'),
-			labelOutside: true,
-			id: 'case-act-reason',
-			note: layout.reasonNote ?? t('dossiq', 'Goes into the history of the case.'),
-			rows: 2,
-			testid: 'case-act-reason-input',
-		})
-	}
-	if (asks.result) {
-		// A closing move or an ending act picks from the case type's own
-		// result types. There is no free field: a typed name is not an id,
-		// and a case type with no results needs none.
-		inputs.push({
-			field: 'resultTypeId',
-			optionsSource: 'resultTypes',
-			optionValue: 'id',
-			optionLabel: 'name',
-			required: true,
-			label: t('dossiq', 'Result'),
-			testid: 'case-act-result-picker',
-		})
-	}
-	if (asks.until) {
-		inputs.push({
-			field: 'until',
-			widget: 'date',
-			required: true,
-			label: t('dossiq', 'The case comes back on'),
-			testid: 'case-act-until-input',
-		})
-	}
-	if (asks.days) {
-		inputs.push({
-			field: 'days',
-			widget: 'number',
-			label: t('dossiq', 'Days the applicant is given'),
-			labelOutside: true,
-			id: 'case-act-days',
-			// The days the applicant gets are the recovery period of Awb 4:5;
-			// a picked pause reason names its own basis instead.
-			description: t('dossiq', 'Awb 4:5, recovery period'),
-			helperFrom: { input: 'pauseReason', key: 'legalBasis' },
-			prefillFrom: { input: 'pauseReason', key: 'defaultDays' },
-			dateField: {
-				label: t('dossiq', 'The case comes back on'),
-				note: t('dossiq', 'You pick the case up earlier if the answer comes in earlier.'),
-				testid: 'case-act-comes-back',
-			},
-			testid: 'case-act-days-input',
-		})
-	}
+	inputs.push(...requesterInputs(run))
 
-	inputs.push(...requesterInputs(entry, layout, { requester, reminder }))
+	return formOf(run.layout, inputs)
+}
 
+/**
+ * The form being built for one act: the act, what it asks, its layout and
+ * the scope it was opened in.
+ *
+ * @param {object} entry The chosen act, a menu entry.
+ * @param {object} scope The case type, case id, requester and reminder policy.
+ * @return {{entry: object, asks: object, layout: object, scope: object}} The run.
+ */
+function formRun(entry, scope) {
 	return {
-		inputs,
-		columns: layout.columns ?? 1,
-		summary: layout.summary ?? null,
-		notice: layout.notice ?? null,
-		title: layout.title ?? '',
-		confirmIcon: layout.confirmIcon ?? null,
+		entry,
+		asks: inputsFor(entry),
+		layout: actLayouts()[String(entry.id ?? '')] ?? {},
+		scope,
 	}
 }
 
@@ -203,34 +324,63 @@ export function actForm(entry, { caseType = '', caseId = '', requester = '', rem
  * one (board DqVolgendeStap). Without the server's reminder policy the
  * reminder is not offered, so a handler never ticks a reminder nobody sends.
  *
- * @param {object} entry The chosen act.
- * @param {object} layout The act's layout from actLayouts.
- * @param {object} scope The requester's name and the reminder policy.
- * @param {string} scope.requester The requester's name.
- * @param {object|null} scope.reminder `{ afterDays, maxCount }` from `/lifecycle`.
+ * @param {object} run The form being built: the chosen act, its layout from
+ *   actLayouts, and the scope with the requester's name and the reminder
+ *   policy (`{ afterDays, maxCount }` from `/lifecycle`).
  * @return {Array<object>} The inputs.
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
-function requesterInputs(entry, layout, { requester, reminder }) {
-	if (layout.notifyRequester) {
-		return [{
-			field: 'notifyRequester',
-			widget: 'checkbox',
-			default: true,
-			required: false,
-			label: requester === ''
-				? t('dossiq', 'Let the requester know the case is completed')
-				: t('dossiq', 'Let {initiatorDisplayName} know the case is completed', { initiatorDisplayName: requester }),
-			testid: 'case-act-notify-requester',
-		}]
+function requesterInputs(run) {
+	if (run.layout.notifyRequester) {
+		return [notifyRequesterInput(run.scope.requester)]
 	}
-	const days = Number(reminder?.afterDays)
-	const count = Number(reminder?.maxCount)
-	if (String(entry?.id ?? '') !== 'suspend' || !(days > 0) || !(count > 0)) {
+	const policy = reminderPolicy(run.scope.reminder)
+	if (String(run.entry?.id ?? '') !== 'suspend' || policy === null) {
 		return []
 	}
 
-	return [{
+	return [remindRequesterInput(policy)]
+}
+
+/**
+ * The ticked checkbox that tells the requester the case is completed.
+ *
+ * @param {string} requester The requester's name, '' when unknown.
+ * @return {object} The input.
+ */
+function notifyRequesterInput(requester) {
+	return {
+		field: 'notifyRequester',
+		widget: 'checkbox',
+		default: true,
+		required: false,
+		label: requester === ''
+			? t('dossiq', 'Let the requester know the case is completed')
+			: t('dossiq', 'Let {initiatorDisplayName} know the case is completed', { initiatorDisplayName: requester }),
+		testid: 'case-act-notify-requester',
+	}
+}
+
+/**
+ * The reminder policy as numbers, null unless both are positive.
+ *
+ * @param {object|null} reminder `{ afterDays, maxCount }` from `/lifecycle`.
+ * @return {{days: number, count: number}|null} The policy.
+ */
+function reminderPolicy(reminder) {
+	const days = Number(reminder?.afterDays)
+	const count = Number(reminder?.maxCount)
+	return days > 0 && count > 0 ? { days, count } : null
+}
+
+/**
+ * The checkbox that reminds the requester while the case is suspended.
+ *
+ * @param {{days: number, count: number}} policy The reminder policy.
+ * @return {object} The input.
+ */
+function remindRequesterInput({ days, count }) {
+	return {
 		field: 'remindRequester',
 		widget: 'checkbox',
 		default: false,
@@ -238,5 +388,5 @@ function requesterInputs(entry, layout, { requester, reminder }) {
 		label: t('dossiq', 'Remind the requester if the answer does not come'),
 		note: t('dossiq', 'After {days} days, at most {count} times, to the address the request went to. Each reminder goes on the timeline with a count. If it stays quiet after the last one, the case tells the team lead once.', { days, count }),
 		testid: 'case-act-remind-requester',
-	}]
+	}
 }
