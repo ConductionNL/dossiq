@@ -22,22 +22,45 @@
  */
 export function translateLensLabels(manifest, translate) {
 	for (const page of manifest?.pages ?? []) {
-		for (const key of ['footerNote', 'bulkHint']) {
-			if (typeof page?.config?.[key] === 'string') {
-				page.config[key] = translate(page.config[key])
-			}
-		}
-		const lenses = page?.config?.quickFilters
-		if (!Array.isArray(lenses)) {
-			continue
-		}
-		page.config.quickFilters = lenses.map((lens) =>
-			lens && typeof lens.label === 'string'
-				? { ...lens, label: translate(lens.label) }
-				: lens,
-		)
+		translatePageNotes(page, translate)
+		translateQuickFilters(page, translate)
 	}
 	return manifest
+}
+
+/** The page config notes nextcloud-vue draws as written. */
+const PAGE_NOTE_KEYS = ['footerNote', 'bulkHint']
+
+/**
+ * Translate a page's footer note and bulk hint, when they are strings.
+ *
+ * @param {object|null} page One page of the manifest.
+ * @param {(text: string) => string} translate The host translate.
+ */
+function translatePageNotes(page, translate) {
+	for (const key of PAGE_NOTE_KEYS) {
+		if (typeof page?.config?.[key] === 'string') {
+			page.config[key] = translate(page.config[key])
+		}
+	}
+}
+
+/**
+ * Translate the string label of each of a page's quick filters.
+ *
+ * @param {object|null} page One page of the manifest.
+ * @param {(text: string) => string} translate The host translate.
+ */
+function translateQuickFilters(page, translate) {
+	const lenses = page?.config?.quickFilters
+	if (!Array.isArray(lenses)) {
+		return
+	}
+	page.config.quickFilters = lenses.map((lens) =>
+		lens && typeof lens.label === 'string'
+			? { ...lens, label: translate(lens.label) }
+			: lens,
+	)
 }
 
 /** The widget copy keys nextcloud-vue draws as written. */
