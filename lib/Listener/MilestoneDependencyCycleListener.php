@@ -51,6 +51,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Milestone\MilestoneSchedule;
 use OCA\Dossiq\Service\Settings\SchemaScopeResolver;
@@ -121,15 +122,20 @@ class MilestoneDependencyCycleListener implements IEventListener {
 	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/milestone-tracking/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getNewObject());
-		}
+		$this->preSave()->inspect(
+			event: $event,
+			inspect: fn (ObjectCreatingEvent|ObjectUpdatingEvent $saving, ObjectEntity $entity) => $this->inspect(event: $saving, entity: $entity)
+		);
 	}//end handle()
+
+	/**
+	 * The pre-save plumbing: the object saved, and its payload.
+	 *
+	 * @return PreSaveCheck
+	 */
+	private function preSave(): PreSaveCheck {
+		return new PreSaveCheck(logger: $this->logger);
+	}//end preSave()
 
 	/**
 	 * Refuse the save when the incoming declaration closes a loop.
@@ -146,7 +152,7 @@ class MilestoneDependencyCycleListener implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
-		$payload = $this->payload(entity: $entity);
+		$payload = $this->preSave()->read(entity: $entity, check: 'milestone cycle check');
 		if ($payload === null || $this->isMilestoneSchema(object: $payload) === false) {
 			return;
 		}
@@ -217,24 +223,6 @@ class MilestoneDependencyCycleListener implements IEventListener {
 			['caseType' => $caseTypeId, 'milestone' => $identifier, 'cycle' => $cycle]
 		);
 	}//end refuseCycle()
-
-	/**
-	 * Read an entity's payload, or null when it cannot be read.
-	 *
-	 * @param ObjectEntity $entity The entity carried by the event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null.
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: milestone cycle check could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
-	}//end payload()
 
 	/**
 	 * Whether the supplied payload belongs to the `milestoneDefinition` schema.

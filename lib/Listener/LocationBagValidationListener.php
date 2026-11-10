@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Service\External\IntegrationMode;
 use OCA\Dossiq\Service\Registry\BagObjectReader;
 use OCA\Dossiq\Service\SettingsService;
@@ -128,16 +129,20 @@ class LocationBagValidationListener implements IEventListener {
 	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getNewObject());
-			return;
-		}
+		$this->preSave()->inspect(
+			event: $event,
+			inspect: fn (ObjectCreatingEvent|ObjectUpdatingEvent $saving, ObjectEntity $entity) => $this->inspect(event: $saving, entity: $entity)
+		);
 	}//end handle()
+
+	/**
+	 * The pre-save plumbing: the object saved, and its payload.
+	 *
+	 * @return PreSaveCheck
+	 */
+	private function preSave(): PreSaveCheck {
+		return new PreSaveCheck(logger: $this->logger);
+	}//end preSave()
 
 	/**
 	 * Inspect the entity being saved: refuse it, or record how it was checked.

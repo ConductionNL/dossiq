@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -47,7 +48,6 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Refuse a case type save whose portal withdrawal lands where the workflow cannot go.
@@ -98,15 +98,20 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getNewObject());
-		}
+		$this->preSave()->inspect(
+			event: $event,
+			inspect: fn (ObjectCreatingEvent|ObjectUpdatingEvent $saving, ObjectEntity $entity) => $this->inspect(event: $saving, entity: $entity)
+		);
 	}//end handle()
+
+	/**
+	 * The pre-save plumbing: the object saved, and its payload.
+	 *
+	 * @return PreSaveCheck
+	 */
+	private function preSave(): PreSaveCheck {
+		return new PreSaveCheck(logger: $this->logger);
+	}//end preSave()
 
 	/**
 	 * Refuse the save when the incoming withdrawal cannot be written.
@@ -120,7 +125,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
-		$payload = $this->payload(entity: $entity);
+		$payload = $this->preSave()->read(entity: $entity, check: 'portal withdrawal check');
 		if ($payload === null || (new CaseTypeSchema(settingsService: $this->settingsService))->contains(object: $payload) === false) {
 			return;
 		}
@@ -247,21 +252,4 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 		return array_values(array_filter($raw, 'is_array'));
 	}//end moves()
 
-	/**
-	 * Read an entity's payload, or null when it cannot be read.
-	 *
-	 * @param ObjectEntity $entity The entity carried by the event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null.
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: portal withdrawal check could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
-	}//end payload()
 }//end class

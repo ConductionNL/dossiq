@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener
+ * @uses \OCA\Dossiq\Listener\Support\PreSaveCheck
  * @covers \OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget
  * @covers \OCA\Dossiq\Listener\CaseTypeLookup
  * @uses   \OCA\Dossiq\Service\CaseTypeResolver
