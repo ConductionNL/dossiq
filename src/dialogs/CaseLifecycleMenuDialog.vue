@@ -283,6 +283,36 @@ const ACT_EXPLAINERS = new Map([
 	['extend', extendExplainer],
 ])
 
+/**
+ * Ask the three endpoints behind the menu, settled one by one.
+ *
+ * `allSettled` and not `all`: one endpoint that is down must not empty
+ * the menu.
+ *
+ * @param {string} caseId The case.
+ * @return {Promise<Array<object>>} The settled transitions, lifecycle and acts reads.
+ */
+function readLifecycleAnswers(caseId) {
+	const id = encodeURIComponent(caseId)
+	return Promise.allSettled([
+		axios.get(
+			generateUrl(`/apps/dossiq/api/case/${id}/available-transitions`),
+		),
+		axios.get(generateUrl(`/apps/dossiq/api/case/${id}/lifecycle`)),
+		axios.get(generateUrl(`/apps/dossiq/api/case/${id}/acts`)),
+	])
+}
+
+/**
+ * The response body of a settled read, null when it was refused or empty.
+ *
+ * @param {object} result One `Promise.allSettled` result.
+ * @return {object|null} The body.
+ */
+function settledData(result) {
+	return result.status === 'fulfilled' ? (result.value?.data ?? null) : null
+}
+
 export default {
 	name: 'CaseLifecycleMenuDialog',
 
@@ -590,49 +620,48 @@ export default {
 				this.loading = false
 				return
 			}
-			const id = encodeURIComponent(this.targetCaseId)
-			const [moves, state, acts] = await Promise.allSettled([
-				axios.get(
-					generateUrl(`/apps/dossiq/api/case/${id}/available-transitions`),
-				),
-				axios.get(generateUrl(`/apps/dossiq/api/case/${id}/lifecycle`)),
-				axios.get(generateUrl(`/apps/dossiq/api/case/${id}/acts`)),
-			])
+			const [moves, state, acts] = await readLifecycleAnswers(this.targetCaseId)
 
-			const actsBody =
-				acts.status === 'fulfilled' ? (acts.value?.data ?? null) : null
+			const actsBody = settledData(acts)
+			const stateBody = settledData(state)
 
 			this.entries = this.withOwnDialogs(buildActsMenu({
-				transitions:
-					moves.status === 'fulfilled'
-						? (moves.value?.data?.transitions ?? [])
-						: [],
-				state:
-					state.status === 'fulfilled'
-						? (state.value?.data ?? null)
-						: null,
+				transitions: settledData(moves)?.transitions ?? [],
+				state: stateBody,
 				acts: actsBody,
 			}))
 			fetchCaseSummary(this.targetCaseId).then((kase) => {
 				this.kase = kase
 			})
+			this.choosePreset()
+			this.awaiting = awaitingApprovals(actsBody)
+			this.applyLifecycleState(stateBody)
+			this.loading = false
+		},
+
+		/**
+		 * Open the act the menu was opened for, when it is on offer and enabled.
+		 */
+		choosePreset() {
 			const preset = this.entries.find((entry) => entry.id === this.act && !entry.disabled)
 			if (this.act !== '' && preset !== undefined) {
 				this.choose(preset)
 			}
-			this.awaiting = awaitingApprovals(actsBody)
+		},
+
+		/**
+		 * Keep what the lifecycle answer says about the case type.
+		 *
+		 * @param {object|null} stateBody The lifecycle answer, null when refused.
+		 */
+		applyLifecycleState(stateBody) {
 			// The case type scopes the result templates. '' is a real answer:
 			// the picker then offers the templates meant for every case type.
-			this.caseType =
-				state.status === 'fulfilled'
-					? String(state.value?.data?.caseType ?? '')
-					: ''
-			this.pauseReasons =
-				state.status === 'fulfilled' && Array.isArray(state.value?.data?.pauseReasons)
-					? state.value.data.pauseReasons
-					: []
-			this.reminder = state.status === 'fulfilled' ? (state.value?.data?.requesterReminder ?? null) : null
-			this.loading = false
+			this.caseType = String(stateBody?.caseType ?? '')
+			this.pauseReasons = Array.isArray(stateBody?.pauseReasons)
+				? stateBody.pauseReasons
+				: []
+			this.reminder = stateBody?.requesterReminder ?? null
 		},
 
 		/**
