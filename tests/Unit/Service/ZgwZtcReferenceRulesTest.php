@@ -85,7 +85,7 @@ class ZgwZtcReferenceRulesTest extends TestCase {
 		if ($searches !== null) {
 			$objectService = $this->createMock(ZtcObjectServiceStub::class);
 			$objectService->method('find')->willReturnCallback(
-				static fn (string $id, string $register, string $schema): ?array => $objects[$id] ?? null
+				static fn (string $id, ?ObjectFindOptions $options = null): ?array => $objects[$id] ?? null
 			);
 			$objectService->method('buildSearchQuery')->willReturnCallback(
 				static fn (array $requestParams, string $register, string $schema): array => $requestParams

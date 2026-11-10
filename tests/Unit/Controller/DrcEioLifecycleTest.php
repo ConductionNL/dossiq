@@ -96,7 +96,7 @@ class DrcEioLifecycleTest extends TestCase {
 	private function controller(mixed $stored, array $searches=[], array $body=[], int $destroyStatus=Http::STATUS_NO_CONTENT): DrcController {
 		$objects = $this->createMock(DrcLifecycleObjectServiceStub::class);
 		$objects->method('find')->willReturnCallback(
-			static function (mixed $id, mixed $register, mixed $schema) use ($stored): mixed {
+			static function (mixed $id, ?ObjectFindOptions $options = null) use ($stored): mixed {
 				if ($stored instanceof \Throwable) {
 					throw $stored;
 				}

@@ -559,15 +559,7 @@ class DeliberationStartGuardTest extends TestCase {
 				$schema = ($options?->schema ?? '');
 				$uuid = ['bacadvicerequest-req-1' => 'req-1'][(string) $id] ?? $id;
 
-				return parent::find(
-					id: $uuid,
-					_extend: $_extend,
-					files: $files,
-					register: $register,
-					schema: $schema,
-					_rbac: $_rbac,
-					_multitenancy: $_multitenancy
-				);
+				return parent::find(id: $uuid, options: $options, _rbac: $_rbac, _multitenancy: $_multitenancy);
 			}
 
 			/**

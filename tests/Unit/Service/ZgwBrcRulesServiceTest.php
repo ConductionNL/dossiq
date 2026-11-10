@@ -96,7 +96,7 @@ class ZgwBrcRulesServiceTest extends TestCase {
 		if ($objects !== null) {
 			$objectService = $this->createMock(BrcObjectServiceStub::class);
 			$objectService->method('find')->willReturnCallback(
-				static function (string $id, string $register, string $schema) use ($objects): ?array {
+				static function (string $id, ?ObjectFindOptions $options = null) use ($objects): ?array {
 					return $objects[$id] ?? null;
 				}
 			);

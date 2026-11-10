@@ -379,11 +379,11 @@ class WOODecisionServiceTest extends TestCase {
 
 		$this->assertSame(
 			expected: [$decisionOf['case-new']],
-			actual: $store->find(id: 'case-new', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+			actual: $store->find(id: 'case-new', options: new ObjectFindOptions(register: 'dossiq', schema: 'case'))['decisions'] ?? null,
 		);
 		$this->assertSame(
 			expected: ['decision-before', $decisionOf['case-earlier']],
-			actual: $store->find(id: 'case-earlier', register: 'dossiq', schema: 'case')['decisions'] ?? null,
+			actual: $store->find(id: 'case-earlier', options: new ObjectFindOptions(register: 'dossiq', schema: 'case'))['decisions'] ?? null,
 		);
 	}//end testTheRecordedDecisionIsListedOnItsCase()
 
@@ -447,7 +447,7 @@ class WOODecisionServiceTest extends TestCase {
 			public function find(int|string $id, ?ObjectFindOptions $options = null): ?array {
 				$register = ($options?->register ?? '');
 				$schema = ($options?->schema ?? '');
-				return $this->store->find(id: $id, register: $register, schema: $schema);
+				return $this->store->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 			}
 
 			/**

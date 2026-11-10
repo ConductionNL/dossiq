@@ -190,7 +190,8 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		);
 
 		$service->method('find')->willReturnCallback(
-			function (string $id, string $register, string $schema): array {
+			function (string $id, ?ObjectFindOptions $options = null): array {
+				$schema = ($options?->schema ?? '');
 				if ($schema === 'caseType' && $this->caseTypeExists === true) {
 					return ['id' => $id, 'initialStatus' => 'status-ontvangen'];
 				}

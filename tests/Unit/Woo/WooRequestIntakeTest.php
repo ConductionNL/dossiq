@@ -224,7 +224,7 @@ class WooRequestIntakeTest extends TestCase {
 					return null;
 				}
 
-				return parent::find(id: $id, register: $register, schema: $schema);
+				return parent::find(id: $id, options: $options);
 			}
 
 			/**

@@ -112,7 +112,7 @@ class MigrateTenantsToOrganisationsTest extends TestCase {
 			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
 				$register = ($options?->register ?? '');
 				$schema = ($options?->schema ?? '');
-				return $this->entities->find(id: $id, register: $register, schema: $schema);
+				return $this->entities->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 			}
 
 			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {

@@ -1268,7 +1268,7 @@ class FailingWorkQueueStore extends FakeWorkQueueStore {
 			throw new \RuntimeException('down');
 		}
 
-		return parent::find($id, $register, $schema);
+		return parent::find(id: $id, options: $options);
 	}//end find()
 
 	/**

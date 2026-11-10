@@ -65,7 +65,7 @@ class UuidAnsweringRegister {
 	): ?array {
 		$register = ($options?->register ?? '');
 		$schema = ($options?->schema ?? '');
-		return $this->store->find(id: $id, register: $register, schema: $schema);
+		return $this->store->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 	}//end find()
 
 	/**

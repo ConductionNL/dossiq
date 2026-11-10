@@ -72,6 +72,8 @@ final class GoldenRebindObjects {
 	 * @return mixed
 	 */
 	public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->log[] = ['objects.find' => compact('id', 'register', 'schema')];
 		if (($this->behaviour['findThrows'] ?? false) === true) {
 			throw new RuntimeException('find failed');

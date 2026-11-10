@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Unit\Service\FakeObjectService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -121,7 +122,7 @@ class BezwaarArchiveTriggerTest extends TestCase {
 		$outcome = $this->trigger->process(trigger: $this->stored());
 
 		$this->assertSame(expected: BezwaarArchiveTrigger::ARCHIVED, actual: $outcome);
-		$this->assertFalse($this->objects->find('trig-1', 'dossiq', 'bezwaarTrigger')['archiveTriggerActive']);
+		$this->assertFalse($this->objects->find(id: 'trig-1', options: new ObjectFindOptions(register: 'dossiq', schema: 'bezwaarTrigger'))['archiveTriggerActive']);
 	}//end testALapsedTermArchivesTheBeschikking()
 
 	/**
@@ -135,7 +136,7 @@ class BezwaarArchiveTriggerTest extends TestCase {
 		$outcome = $this->trigger->process(trigger: $this->stored(fields: ['objectionReceived' => true]));
 
 		$this->assertSame(expected: BezwaarArchiveTrigger::OBJECTED, actual: $outcome);
-		$this->assertFalse($this->objects->find('trig-1', 'dossiq', 'bezwaarTrigger')['archiveTriggerActive']);
+		$this->assertFalse($this->objects->find(id: 'trig-1', options: new ObjectFindOptions(register: 'dossiq', schema: 'bezwaarTrigger'))['archiveTriggerActive']);
 	}//end testAReceivedObjectionSkipsTheArchive()
 
 	/**
@@ -167,7 +168,7 @@ class BezwaarArchiveTriggerTest extends TestCase {
 		$outcome = $this->trigger->process(trigger: $this->stored());
 
 		$this->assertSame(expected: BezwaarArchiveTrigger::FAILED, actual: $outcome);
-		$this->assertTrue($this->objects->find('trig-1', 'dossiq', 'bezwaarTrigger')['archiveTriggerActive']);
+		$this->assertTrue($this->objects->find(id: 'trig-1', options: new ObjectFindOptions(register: 'dossiq', schema: 'bezwaarTrigger'))['archiveTriggerActive']);
 	}//end testARefusedArchiveLeavesTheTriggerOn()
 
 	/**

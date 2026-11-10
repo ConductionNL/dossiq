@@ -433,7 +433,7 @@ class CaseRoleProjectionTest extends TestCase {
 			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				$register = ($options?->register ?? null);
 				$schema = ($options?->schema ?? null);
-				return $this->inner->find($id, $register, $schema);
+				return $this->inner->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 			}
 
 			/**

@@ -199,7 +199,7 @@ class BackgroundReadsRunAsSystemTest extends TestCase {
 				$register = ($options?->register ?? null);
 				$schema = ($options?->schema ?? null);
 				$this->seen[] = $this->inSystem;
-				return parent::find($id, $register, $schema);
+				return parent::find(id: $id, options: $options);
 			}
 		};
 		$this->objects = $objects;

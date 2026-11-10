@@ -66,7 +66,7 @@ class EntityAnsweringRegister {
 	): ObjectEntity {
 		$register = ($options?->register ?? '');
 		$schema = ($options?->schema ?? '');
-		$row = $this->register->find(id: $id, register: $register, schema: $schema);
+		$row = $this->register->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema));
 		if ($row === null) {
 			throw new DoesNotExistException('no such object');
 		}

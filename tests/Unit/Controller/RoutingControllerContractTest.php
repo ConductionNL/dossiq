@@ -245,7 +245,7 @@ class RoutingControllerContractTest extends TestCase {
 		$objectService = $this->createMock(RoutingControllerContractObjectService::class);
 		$objectService->expects($this->once())
 			->method('find')
-			->with('zaak-1', 'dossiq', 'zaak')
+			->with('zaak-1', $this->callback(static fn (ObjectFindOptions $options): bool => $options->register === 'dossiq' && $options->schema === 'zaak'))
 			->willReturn(['id' => 'zaak-1', 'workflowTemplate' => '']);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
