@@ -27,7 +27,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\External;
 
 /**
- * Coerces raw register values into the typed values of a DTO.
+ * Coerces raw register values into the typed values of a DTO. A mapper
+ * builds one per fragment it maps; it holds no state.
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
@@ -41,7 +42,7 @@ final class RegisterValues {
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
-	public static function stringOrNull(mixed $value): ?string {
+	public function stringOrNull(mixed $value): ?string {
 		if (is_string($value) === true && $value !== '') {
 			return $value;
 		}
@@ -62,7 +63,7 @@ final class RegisterValues {
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
-	public static function intOrNull(mixed $value): ?int {
+	public function intOrNull(mixed $value): ?int {
 		if (is_int($value) === true) {
 			return $value;
 		}
@@ -89,7 +90,7 @@ final class RegisterValues {
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
-	public static function toStringArray(mixed $value): array {
+	public function toStringArray(mixed $value): array {
 		if (is_string($value) === true && $value !== '') {
 			return [$value];
 		}
@@ -118,7 +119,7 @@ final class RegisterValues {
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
-	public static function mapFragments(array $rawList, callable $map): array {
+	public function mapFragments(array $rawList, callable $map): array {
 		$out = [];
 		foreach ($rawList as $item) {
 			if (is_array($item) === true) {

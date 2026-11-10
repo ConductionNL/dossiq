@@ -74,6 +74,7 @@ final class BrkResponseMapper {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function map(array $raw): array {
+		$values = new RegisterValues();
 		$aanduidingRaw = ($raw['kadastraleAanduiding'] ?? []);
 		if (is_array($aanduidingRaw) === false) {
 			$aanduidingRaw = [];
@@ -86,14 +87,14 @@ final class BrkResponseMapper {
 		$gerechtigdenRaw = ($raw['zakelijkGerechtigdheid'] ?? $raw['zakelijkGerechtigden'] ?? []);
 
 		return [
-			'kadastraleGemeente' => RegisterValues::stringOrNull(value: $municipalityNameRaw),
-			'kadastraleGemeenteCode' => RegisterValues::stringOrNull(value: $municipalityCodeRaw),
-			'sectie' => RegisterValues::stringOrNull(value: $aanduidingRaw['sectie'] ?? $raw['sectie'] ?? null),
-			'perceelnummer' => RegisterValues::intOrNull(value: $aanduidingRaw['perceelnummer'] ?? $raw['perceelnummer'] ?? null),
-			'appartementsrechtVolgnummer' => RegisterValues::stringOrNull(value: $sequenceNumberRaw),
-			'kadastraleAanduiding' => RegisterValues::stringOrNull(value: $raw['kadastraleAanduidingVolledig'] ?? $raw['aanduiding'] ?? null),
-			'oppervlakte' => RegisterValues::intOrNull(value: $grootteRaw),
-			'soortCultuurBebouwd' => RegisterValues::toStringArray(value: $raw['soortCultuurBebouwd'] ?? []),
+			'kadastraleGemeente' => $values->stringOrNull(value: $municipalityNameRaw),
+			'kadastraleGemeenteCode' => $values->stringOrNull(value: $municipalityCodeRaw),
+			'sectie' => $values->stringOrNull(value: $aanduidingRaw['sectie'] ?? $raw['sectie'] ?? null),
+			'perceelnummer' => $values->intOrNull(value: $aanduidingRaw['perceelnummer'] ?? $raw['perceelnummer'] ?? null),
+			'appartementsrechtVolgnummer' => $values->stringOrNull(value: $sequenceNumberRaw),
+			'kadastraleAanduiding' => $values->stringOrNull(value: $raw['kadastraleAanduidingVolledig'] ?? $raw['aanduiding'] ?? null),
+			'oppervlakte' => $values->intOrNull(value: $grootteRaw),
+			'soortCultuurBebouwd' => $values->toStringArray(value: $raw['soortCultuurBebouwd'] ?? []),
 			'zakelijkGerechtigden' => $this->mapBusinessGerechtigden(raw: $gerechtigdenRaw),
 			'geo' => $this->extractGeo(raw: $raw),
 		];
@@ -111,7 +112,7 @@ final class BrkResponseMapper {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function mapMany(array $rawList): array {
-		return RegisterValues::mapFragments(rawList: $rawList, map: fn (array $item): array => $this->map(raw: $item));
+		return (new RegisterValues())->mapFragments(rawList: $rawList, map: fn (array $item): array => $this->map(raw: $item));
 	}//end mapMany()
 
 	/**
@@ -132,6 +133,7 @@ final class BrkResponseMapper {
 			$raw = [$raw];
 		}
 
+		$values = new RegisterValues();
 		$out = [];
 		foreach ($raw as $entry) {
 			if (is_array($entry) === false) {
@@ -139,8 +141,8 @@ final class BrkResponseMapper {
 			}
 
 			$out[] = [
-				'identificatie' => RegisterValues::stringOrNull(value: $entry['identificatie'] ?? null),
-				'aardZakelijkRecht' => RegisterValues::stringOrNull(value: $entry['aardZakelijkRecht']['value'] ?? $entry['aardZakelijkRecht'] ?? null),
+				'identificatie' => $values->stringOrNull(value: $entry['identificatie'] ?? null),
+				'aardZakelijkRecht' => $values->stringOrNull(value: $entry['aardZakelijkRecht']['value'] ?? $entry['aardZakelijkRecht'] ?? null),
 			];
 		}
 

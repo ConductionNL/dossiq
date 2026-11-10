@@ -68,15 +68,16 @@ final class WozResponseMapper {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function map(array $raw): array {
+		$values = new RegisterValues();
 		$current = $this->mostRecentValue(raw: $raw);
 
 		return [
-			'wozobjectnummer' => RegisterValues::stringOrNull(value: $raw['wozobjectnummer'] ?? null),
-			'value' => RegisterValues::intOrNull(value: $current['vastgesteldeWaarde'] ?? $raw['value'] ?? null),
-			'waardepeildatum' => RegisterValues::stringOrNull(value: $current['waardepeildatum'] ?? $raw['waardepeildatum'] ?? null),
-			'grondoppervlakte' => RegisterValues::intOrNull(value: $raw['grondoppervlakte'] ?? null),
-			'gebruiksdoel' => RegisterValues::toStringArray(value: $raw['gebruiksdoelen'] ?? $raw['gebruiksdoel'] ?? []),
-			'addressDesignationId' => RegisterValues::stringOrNull(
+			'wozobjectnummer' => $values->stringOrNull(value: $raw['wozobjectnummer'] ?? null),
+			'value' => $values->intOrNull(value: $current['vastgesteldeWaarde'] ?? $raw['value'] ?? null),
+			'waardepeildatum' => $values->stringOrNull(value: $current['waardepeildatum'] ?? $raw['waardepeildatum'] ?? null),
+			'grondoppervlakte' => $values->intOrNull(value: $raw['grondoppervlakte'] ?? null),
+			'gebruiksdoel' => $values->toStringArray(value: $raw['gebruiksdoelen'] ?? $raw['gebruiksdoel'] ?? []),
+			'addressDesignationId' => $values->stringOrNull(
 				value: $raw['nummeraanduidingIdentificatie'] ?? $raw['adresseerbaarObjectIdentificatie'] ?? $raw['addressDesignationId'] ?? null
 			),
 		];
@@ -94,7 +95,7 @@ final class WozResponseMapper {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function mapMany(array $rawList): array {
-		return RegisterValues::mapFragments(rawList: $rawList, map: fn (array $item): array => $this->map(raw: $item));
+		return (new RegisterValues())->mapFragments(rawList: $rawList, map: fn (array $item): array => $this->map(raw: $item));
 	}//end mapMany()
 
 	/**
