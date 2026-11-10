@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Service\External\IntegrationMode;
 use OCA\Dossiq\Service\Registry\BagObjectReader;
 use OCA\Dossiq\Service\SettingsService;
@@ -128,15 +129,7 @@ class LocationBagValidationListener implements IEventListener {
 	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getNewObject());
-			return;
-		}
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->inspect(...));
 	}//end handle()
 
 	/**

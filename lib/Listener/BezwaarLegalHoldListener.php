@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Service\HoldOrder;
@@ -350,24 +351,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 * @return array<string, mixed>|null
 	 */
 	private function extractObject(Event $event): ?array {
-		$object = null;
-
-		if (method_exists($event, 'getObject') === true) {
-			$object = $event->getObject();
-		}
-
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return EventObjectPayload::of(event: $event);
 	}//end extractObject()
 
 	/**
