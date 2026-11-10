@@ -127,72 +127,99 @@ class SatelliteOrphanScanner {
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
 	 */
 	public function reportOrphans(): array {
-		$report = [
-			'scanned' => 0,
-			'orphans' => 0,
-			'templates' => 0,
-			'bySchema' => [],
-			'rows' => [],
-		];
-
 		$objectService = $this->settingsService->getObjectService();
 		$mapper = $this->getOrganisationMapper();
 		if ($objectService === null || $mapper === null) {
 			$this->logger->warning('Dossiq: orphan scan skipped, OpenRegister organisation services unavailable');
-			return $report;
+			return OrphanScan::EMPTY_REPORT;
 		}
 
 		// Resolution is cached per tenantRef: a register with thousands of
 		// satellite rows holds only a handful of distinct tenants, and the
 		// uncached form is one mapper read per row.
-		$resolves = [];
-
+		$scan = new OrphanScan(objectService: $objectService, mapper: $mapper);
 		foreach (self::SATELLITE_SCHEMAS as $schema) {
-			$perSchema = ['scanned' => 0, 'orphans' => 0, 'templates' => 0];
-
-			foreach ($this->readSatelliteRows(objectService: $objectService, schema: $schema) as $row) {
-				$perSchema['scanned']++;
-				$tenantRef = trim((string)($row['tenantRef'] ?? ''));
-
-				if (in_array($tenantRef, self::TIER_TEMPLATE_REFS, true) === true) {
-					$perSchema['templates']++;
-					continue;
-				}
-
-				if (array_key_exists($tenantRef, $resolves) === false) {
-					$resolves[$tenantRef] = ($tenantRef !== ''
-						&& $this->findOrganisationByUuid(mapper: $mapper, uuid: $tenantRef) !== null);
-				}
-
-				if ($resolves[$tenantRef] === true) {
-					continue;
-				}
-
-				$perSchema['orphans']++;
-				$report['rows'][] = [
-					'schema' => $schema,
-					'row' => (string)($row['id'] ?? ($row['uuid'] ?? '')),
-					'tenantRef' => $tenantRef,
-				];
-			}
-
-			$report['bySchema'][$schema] = $perSchema;
-			$report['scanned'] += $perSchema['scanned'];
-			$report['orphans'] += $perSchema['orphans'];
-			$report['templates'] += $perSchema['templates'];
+			$this->scanSchema(scan: $scan, schema: $schema);
 		}
 
 		$this->logger->info(
 			'Dossiq: satellite orphan scan complete',
 			[
-				'scanned' => $report['scanned'],
-				'orphans' => $report['orphans'],
-				'templates' => $report['templates'],
+				'scanned' => $scan->report['scanned'],
+				'orphans' => $scan->report['orphans'],
+				'templates' => $scan->report['templates'],
 			],
 		);
 
-		return $report;
+		return $scan->report;
 	}//end reportOrphans()
+
+	/**
+	 * Read one satellite schema's rows into the scan and add its counts to the report.
+	 *
+	 * @param OrphanScan $scan   The scan.
+	 * @param string     $schema The satellite schema.
+	 *
+	 * @return void
+	 */
+	private function scanSchema(OrphanScan $scan, string $schema): void {
+		$scan->schema = $schema;
+		$scan->perSchema = ['scanned' => 0, 'orphans' => 0, 'templates' => 0];
+		foreach ($this->readSatelliteRows(objectService: $scan->objectService, schema: $schema) as $row) {
+			$this->countRow(scan: $scan, row: $row);
+		}
+
+		$scan->report['bySchema'][$schema] = $scan->perSchema;
+		$scan->report['scanned'] += $scan->perSchema['scanned'];
+		$scan->report['orphans'] += $scan->perSchema['orphans'];
+		$scan->report['templates'] += $scan->perSchema['templates'];
+	}//end scanSchema()
+
+	/**
+	 * Count one satellite row: a tier template, a row whose tenant resolves, or an orphan.
+	 *
+	 * @param OrphanScan           $scan The scan.
+	 * @param array<string, mixed> $row  The satellite row.
+	 *
+	 * @return void
+	 */
+	private function countRow(OrphanScan $scan, array $row): void {
+		$scan->perSchema['scanned']++;
+		$tenantRef = trim((string)($row['tenantRef'] ?? ''));
+
+		if (in_array($tenantRef, self::TIER_TEMPLATE_REFS, true) === true) {
+			$scan->perSchema['templates']++;
+			return;
+		}
+
+		if ($this->resolves(scan: $scan, tenantRef: $tenantRef) === true) {
+			return;
+		}
+
+		$scan->perSchema['orphans']++;
+		$scan->report['rows'][] = [
+			'schema' => $scan->schema,
+			'row' => (string)($row['id'] ?? ($row['uuid'] ?? '')),
+			'tenantRef' => $tenantRef,
+		];
+	}//end countRow()
+
+	/**
+	 * Whether a tenant reference resolves to an Organisation, read once per reference.
+	 *
+	 * @param OrphanScan $scan      The scan.
+	 * @param string     $tenantRef The tenant reference; an empty one never resolves.
+	 *
+	 * @return bool True when it resolves.
+	 */
+	private function resolves(OrphanScan $scan, string $tenantRef): bool {
+		if (array_key_exists($tenantRef, $scan->resolves) === false) {
+			$scan->resolves[$tenantRef] = ($tenantRef !== ''
+				&& $this->findOrganisationByUuid(mapper: $scan->mapper, uuid: $tenantRef) !== null);
+		}
+
+		return $scan->resolves[$tenantRef];
+	}//end resolves()
 
 	/**
 	 * Read one satellite schema's rows, or none when the schema is absent.
