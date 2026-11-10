@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\LocationBagValidationListener
+ * @uses \OCA\Dossiq\Listener\Support\PreSaveCheck
  *
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
  */
