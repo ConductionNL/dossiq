@@ -56,6 +56,19 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 class DomainCopyService {
+	/**
+	 * The answer of a copy that did not happen; its reason is filled in.
+	 *
+	 * @var array{complete: false, domain: string, carried: array, notCarried: array, reason: string}
+	 */
+	private const NOT_COPIED = [
+		'complete' => false,
+		'domain' => '',
+		'carried' => [],
+		'notCarried' => [],
+		'reason' => '',
+	];
+
 
 	/**
 	 * The app config key naming the domain (case type group) schema.
@@ -99,40 +112,40 @@ class DomainCopyService {
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function copy(string $domainId, string $name): array {
-		$result = [
-			'complete' => false,
-			'domain' => '',
-			'carried' => [],
-			'notCarried' => [],
-			'reason' => '',
-		];
-
 		$source = $this->store->row(configKey: self::DOMAINS, id: $domainId);
 		if ($source === null) {
-			$result['reason'] = 'not_found';
-			return $result;
+			return array_merge(self::NOT_COPIED, ['reason' => 'not_found']);
 		}
 
 		$created = $this->store->save(
 			configKey: self::DOMAINS,
-			payload: [
-				'groupName' => $name,
-				'description' => (string)($source['description'] ?? ''),
-				'partner' => (string)($source['partner'] ?? ''),
-				'caseTypes' => [],
-			],
+			payload: $this->domainPayload(source: $source, name: $name),
 		);
 
-		$newDomainId = $this->store->idOf(row: $created);
-		if ($newDomainId === '') {
-			$result['reason'] = 'write_failed';
-			return $result;
+		$copy = new DomainCopy();
+		$copy->sourceId = $domainId;
+		$copy->source = $source;
+		$copy->name = $name;
+		$copy->newId = $this->store->idOf(row: $created);
+		if ($copy->newId === '') {
+			return array_merge(self::NOT_COPIED, ['reason' => 'write_failed']);
 		}
 
+		return $this->copyContent(copy: $copy);
+	}//end copy()
+
+	/**
+	 * Copy the case types and content templates into the new domain, link them, and answer the copy.
+	 *
+	 * @param DomainCopy $copy The copy, with its new domain.
+	 *
+	 * @return array{complete: bool, domain: string, carried: array<string, int>, notCarried: array<int, string>, reason: string}
+	 */
+	private function copyContent(DomainCopy $copy): array {
 		$notCarried = [];
 		$map = $this->copyCaseTypes(
-			sourceDomainId: $domainId,
-			newDomainId: $newDomainId,
+			sourceDomainId: $copy->sourceId,
+			newDomainId: $copy->newId,
 			notCarried: $notCarried,
 		);
 
@@ -140,27 +153,43 @@ class DomainCopyService {
 
 		$this->store->save(
 			configKey: self::DOMAINS,
-			payload: [
-				'groupName' => $name,
-				'description' => (string)($source['description'] ?? ''),
-				'partner' => (string)($source['partner'] ?? ''),
-				'caseTypes' => array_values($map),
-			],
-			id: $newDomainId,
+			payload: array_merge(
+				$this->domainPayload(source: $copy->source, name: $copy->name),
+				['caseTypes' => array_values($map)]
+			),
+			id: $copy->newId,
 		);
 
 		$this->logger->info(
 			'Dossiq starter: a domain was copied',
-			['source' => $domainId, 'created' => $newDomainId, 'notCarried' => $notCarried]
+			['source' => $copy->sourceId, 'created' => $copy->newId, 'notCarried' => $notCarried]
 		);
 
-		$result['complete'] = ($notCarried === []);
-		$result['domain'] = $newDomainId;
-		$result['carried'] = ['caseType' => count($map), 'contentTemplate' => $templates];
-		$result['notCarried'] = $notCarried;
+		return [
+			'complete' => ($notCarried === []),
+			'domain' => $copy->newId,
+			'carried' => ['caseType' => count($map), 'contentTemplate' => $templates],
+			'notCarried' => $notCarried,
+			'reason' => '',
+		];
+	}//end copyContent()
 
-		return $result;
-	}//end copy()
+	/**
+	 * The new domain as stored, before its case types are linked.
+	 *
+	 * @param array<string, mixed> $source The domain copied from.
+	 * @param string               $name   The new domain's name.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function domainPayload(array $source, string $name): array {
+		return [
+			'groupName' => $name,
+			'description' => (string)($source['description'] ?? ''),
+			'partner' => (string)($source['partner'] ?? ''),
+			'caseTypes' => [],
+		];
+	}//end domainPayload()
 
 	/**
 	 * Copy every case type of the source domain.

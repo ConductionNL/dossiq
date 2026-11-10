@@ -112,38 +112,74 @@ class FieldEvidenceController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$scope = $this->evidenceScope();
-		if ($scope === null) {
-			// 503 and not 500: the instance has not finished importing the
-			// offline register. That is an operator's job and a temporary
-			// state, and telling a device it made a bad request would have it
-			// discard a capture it cannot take again.
-			return new JSONResponse(
-				['error' => 'The field inspection register is not configured on this instance.'],
-				Http::STATUS_SERVICE_UNAVAILABLE,
-			);
+		$run = $this->evidenceScope(inspectionRef: $inspectionRef);
+		if ($run === null) {
+			return $this->unconfigured();
 		}
 
-		[$objectService, $register, $evidenceSchema, $inspectionSchema] = $scope;
-
-		$inspection = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $inspectionSchema,
-			id: $inspectionRef,
-		);
-		$caseId = trim((string)($inspection['caseRef'] ?? ''));
+		$inspection = $this->inspectionOf(run: $run);
 
 		// An inspection nobody can find and one on somebody else's case get the
 		// SAME answer. Distinguishing them tells an outsider which inspection
 		// ids exist.
-		if ($this->mayCapture(inspection: $inspection, caseId: $caseId, user: $user) === false) {
+		if ($this->mayCapture(inspection: $inspection, caseId: trim((string)($inspection['caseRef'] ?? '')), user: $user) === false) {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->fileEvidence(run: $run, inspection: $inspection);
+	}//end capture()
+
+	/**
+	 * The 503 for an instance that has not imported the offline register.
+	 *
+	 * 503 and not 500: the instance has not finished importing the offline
+	 * register. That is an operator's job and a temporary state, and telling a
+	 * device it made a bad request would have it discard a capture it cannot
+	 * take again.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function unconfigured(): JSONResponse {
+		return new JSONResponse(
+			['error' => 'The field inspection register is not configured on this instance.'],
+			Http::STATUS_SERVICE_UNAVAILABLE,
+		);
+	}//end unconfigured()
+
+	/**
+	 * The inspection the capture names, or null when nobody can find it.
+	 *
+	 * @param EvidenceCaptureRun $run The capture.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function inspectionOf(EvidenceCaptureRun $run): ?array {
+		return $this->findObjectAsArray(
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->inspectionSchema,
+			id: $run->inspectionRef,
+		);
+	}//end inspectionOf()
+
+	/**
+	 * Build the evidence from the request and store it on the inspection.
+	 *
+	 * @param EvidenceCaptureRun   $run        The capture.
+	 * @param array<string, mixed> $inspection The inspection, which the caller may add to.
+	 *
+	 * @return JSONResponse The stored record, or why it was not stored.
+	 *
+	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function fileEvidence(EvidenceCaptureRun $run, array $inspection): JSONResponse {
 		try {
 			$payload = $this->metadata->buildEvidencePayload(
-				inspectionRef: $inspectionRef,
+				inspectionRef: $run->inspectionRef,
 				type: $this->capturedType(),
 				extra: $this->capturedExtra(),
 				caseAddress: $this->fallbackPositionOf(inspection: $inspection),
@@ -156,10 +192,24 @@ class FieldEvidenceController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
+		return $this->storeEvidence(run: $run, payload: $payload);
+	}//end fileEvidence()
+
+	/**
+	 * Write the evidence, and queue a spoken memo for transcription.
+	 *
+	 * @param EvidenceCaptureRun   $run     The capture.
+	 * @param array<string, mixed> $payload The evidence record.
+	 *
+	 * @return JSONResponse The record as the device should see it, or a 500.
+	 *
+	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function storeEvidence(EvidenceCaptureRun $run, array $payload): JSONResponse {
 		$stored = $this->saveObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $evidenceSchema,
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->evidenceSchema,
 			object: $payload,
 		);
 		if ($stored === null) {
@@ -167,18 +217,19 @@ class FieldEvidenceController extends Controller {
 		}
 
 		return new JSONResponse($this->queueTranscriptionIfSpoken(stored: $stored));
-	}//end capture()
+	}//end storeEvidence()
 
 	/**
-	 * The object service and the three ids evidence is written against.
+	 * The object service and the three ids evidence is written against, for one inspection.
 	 *
-	 * @return array{0: object, 1: string, 2: string, 3: string}|null The service,
-	 *         the register, the evidence schema and the inspection schema, or null
-	 *         when the offline register has not been imported on this instance.
+	 * @param string $inspectionRef The inspection the capture names.
+	 *
+	 * @return EvidenceCaptureRun|null The capture, or null when the offline
+	 *                                 register has not been imported on this instance.
 	 *
 	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
 	 */
-	private function evidenceScope(): ?array {
+	private function evidenceScope(string $inspectionRef): ?EvidenceCaptureRun {
 		$objectService = $this->settings->getObjectService();
 		$register = $this->settings->getConfigValue('register');
 		$evidenceSchema = $this->settings->getConfigValue('field_evidence_schema');
@@ -188,7 +239,13 @@ class FieldEvidenceController extends Controller {
 			return null;
 		}
 
-		return [$objectService, $register, $evidenceSchema, $inspectionSchema];
+		$run = new EvidenceCaptureRun();
+		$run->objectService = $objectService;
+		$run->register = $register;
+		$run->evidenceSchema = $evidenceSchema;
+		$run->inspectionSchema = $inspectionSchema;
+		$run->inspectionRef = $inspectionRef;
+		return $run;
 	}//end evidenceScope()
 
 	/**

@@ -93,39 +93,17 @@ class SubstitutionAuditService {
 			return null;
 		}
 
-		$absentee = (string)($case['assignee'] ?? '');
-		if ($absentee === '' || $absentee === $actorId) {
-			// Own work (or unassigned) — never capacity-stamped.
+		$stamp = new CapacityStamp();
+		$stamp->caseId = $caseId;
+		$stamp->actorId = $actorId;
+		$stamp->action = $action;
+		$stamp->absentee = (string)($case['assignee'] ?? '');
+		$entry = $this->capacityEntry(stamp: $stamp, case: $case);
+		if ($entry === null) {
 			return null;
 		}
 
-		$caseType = null;
-		if (isset($case['caseType']) === true) {
-			$caseType = (string)$case['caseType'];
-		}
-
-		$sub = $this->substitutionService->resolveActingCapacity(
-			actorId: $actorId,
-			absentee: $absentee,
-			caseId: $caseId,
-			caseType: $caseType
-		);
-		if ($sub === null) {
-			return null;
-		}
-
-		$entry = [
-			'type' => 'substitution-action',
-			'action' => $action,
-			'actor' => $actorId,
-			'actedOnBehalfOf' => $absentee,
-			'substitutionId' => (string)($sub['id'] ?? ($sub['uuid'] ?? '')),
-			'timestamp' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-		];
-
-		$activity = $this->decodeActivity(raw: ($case['activity'] ?? null));
-		$activity[] = $entry;
-		$case['activity'] = json_encode($activity);
+		$case['activity'] = $this->appendedActivity(case: $case, entry: $entry);
 
 		try {
 			$objectService->updateObject(objectId: $caseId, data: $case);
@@ -136,6 +114,72 @@ class SubstitutionAuditService {
 
 		return $entry;
 	}//end stampIfSubstituted()
+
+	/**
+	 * The activity entry of an action taken in a covered absentee's name, or null for own work.
+	 *
+	 * @param CapacityStamp        $stamp The action.
+	 * @param array<string, mixed> $case  The stored case.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function capacityEntry(CapacityStamp $stamp, array $case): ?array {
+		if ($stamp->absentee === '' || $stamp->absentee === $stamp->actorId) {
+			// Own work (or unassigned) — never capacity-stamped.
+			return null;
+		}
+
+		$caseType = null;
+		if (isset($case['caseType']) === true) {
+			$caseType = (string)$case['caseType'];
+		}
+
+		$sub = $this->substitutionService->resolveActingCapacity(
+			actorId: $stamp->actorId,
+			absentee: $stamp->absentee,
+			caseId: $stamp->caseId,
+			caseType: $caseType
+		);
+		if ($sub === null) {
+			return null;
+		}
+
+		return $this->activityEntry(stamp: $stamp, substitution: $sub);
+	}//end capacityEntry()
+
+	/**
+	 * The substitution-action entry for the case's activity.
+	 *
+	 * @param CapacityStamp        $stamp        The action.
+	 * @param array<string, mixed> $substitution The covering substitution.
+	 *
+	 * @return array<string, string>
+	 */
+	private function activityEntry(CapacityStamp $stamp, array $substitution): array {
+		return [
+			'type' => 'substitution-action',
+			'action' => $stamp->action,
+			'actor' => $stamp->actorId,
+			'actedOnBehalfOf' => $stamp->absentee,
+			'substitutionId' => (string)($substitution['id'] ?? ($substitution['uuid'] ?? '')),
+			'timestamp' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+		];
+	}//end activityEntry()
+
+	/**
+	 * The case's activity with the entry appended, encoded as stored.
+	 *
+	 * @param array<string, mixed>  $case  The stored case.
+	 * @param array<string, string> $entry The entry.
+	 *
+	 * @return string|false
+	 */
+	private function appendedActivity(array $case, array $entry): string|false {
+		$activity = $this->decodeActivity(raw: ($case['activity'] ?? null));
+		$activity[] = $entry;
+
+		return json_encode($activity);
+	}//end appendedActivity()
 
 	/**
 	 * List every capacity-stamped action performed under a substitution.
@@ -181,6 +225,18 @@ class SubstitutionAuditService {
 			filters: ['assignee' => $absentee]
 		);
 
+		return $this->actionsOn(cases: $cases, substitutionId: $substitutionId);
+	}//end getActionsForSubstitution()
+
+	/**
+	 * The substitution's actions recorded on the cases, oldest first.
+	 *
+	 * @param array<int, array<string, mixed>> $cases          The absentee's cases.
+	 * @param string                           $substitutionId The substitution.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function actionsOn(array $cases, string $substitutionId): array {
 		$actions = [];
 		foreach ($cases as $case) {
 			$actions = array_merge(
@@ -200,7 +256,7 @@ class SubstitutionAuditService {
 		);
 
 		return $actions;
-	}//end getActionsForSubstitution()
+	}//end actionsOn()
 
 	/**
 	 * Collect the activity entries on a case that carry a substitution id.

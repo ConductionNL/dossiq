@@ -72,6 +72,14 @@ require_once __DIR__ . '/../../../Support/Mail/LocalMessage.php';
 class OutboundThroughMailAccountTest extends TestCase {
 
 	/**
+	 * The logger the gateway writes to, when a test listens.
+	 *
+	 * @var \Psr\Log\LoggerInterface|null
+	 */
+	private ?\Psr\Log\LoggerInterface $log = null;
+
+
+	/**
 	 * What Mail's outbox stand-in saw.
 	 *
 	 * @var array<string, mixed>
@@ -179,7 +187,7 @@ class OutboundThroughMailAccountTest extends TestCase {
 			appManager: $appManager,
 			container: $container,
 			mailTables: $this->createMock(MailMessageSource::class),
-			logger: new NullLogger()
+			logger: ($this->log ?? new NullLogger())
 		);
 	}//end gateway()
 
@@ -249,6 +257,34 @@ class OutboundThroughMailAccountTest extends TestCase {
 		);
 		self::assertFalse(OutboundState::isSent(OutboundState::QUEUED));
 	}//end testASendFailureLeavesTheMessageQueued()
+
+	/**
+	 * A message Mail would not take, and one it took but could not send, each
+	 * log their own warning.
+	 *
+	 * @return void
+	 */
+	public function testTheTwoFailuresLogTheirOwnLines(): void {
+		$lines = [];
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$lines): void {
+				$lines[] = [$message, array_keys($context), $context['account'] ?? null, $context['outboxId'] ?? null];
+			}
+		);
+		$this->log = $logger;
+
+		$this->gateway(status: 12, saveFails: true)->sendMessage(7, $this->message());
+		$this->gateway(status: null)->sendMessage(7, $this->message());
+
+		self::assertSame(
+			[
+				['Dossiq: Nextcloud Mail did not take the message into its outbox', ['account', 'error'], 7, null],
+				['Dossiq: Nextcloud Mail could not send the message now; it stays in the outbox', ['account', 'outboxId', 'error'], 7, 41],
+			],
+			$lines
+		);
+	}//end testTheTwoFailuresLogTheirOwnLines()
 
 	/**
 	 * When Mail takes nothing, the answer is unavailable.
