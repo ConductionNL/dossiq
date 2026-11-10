@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Flow;
 
 use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\IL10N;
 use OCP\WorkflowEngine\IManager;
@@ -183,9 +184,7 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
     /**
      * Resolve each item's committee and stamp the governance-body id on it.
      *
-     * @param array $items   The input items.
-     * @param array $config  The step configuration.
-     * @param array $context Run-level metadata.
+     * @param FlowNodeCall $call The items, the step config and the run context.
      *
      * @return array The items, each carrying the resolved id.
      *
@@ -197,7 +196,9 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
      * contract; the run's acting identity in it is applied by the engine's
      * dispatcher now (openregister#3332), not read here.
      */
-    public function execute(array $items, array $config, array $context): array {
+    public function execute(FlowNodeCall $call): array {
+        $items = $call->items;
+        $config = $call->config;
         $this->validateConfig(config: $config);
 
         $field     = $this->configString(config: $config, key: 'committeeField', fallback: self::DEFAULT_COMMITTEE_FIELD);

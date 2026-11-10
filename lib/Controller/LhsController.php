@@ -39,6 +39,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -97,10 +98,7 @@ class LhsController extends Controller {
 	public function recommend(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => 'Authenticatie vereist'],
-				Http::STATUS_UNAUTHORIZED,
-			);
+			return $this->unauthenticated();
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');
@@ -108,58 +106,124 @@ class LhsController extends Controller {
 		$behaviour = (string)$this->request->getParam('behaviour', '');
 		$actorType = (string)$this->request->getParam('actorType', '');
 		if (in_array('', [$caseId, $severity, $behaviour, $actorType], true) === true) {
-			return new JSONResponse(
-				['error' => 'caseId, ernst, gedrag en actorType zijn verplicht'],
-				Http::STATUS_BAD_REQUEST,
-			);
+			return $this->badRequest(error: 'caseId, ernst, gedrag en actorType zijn verplicht');
 		}
 
 		// This endpoint reads as a query but PERSISTS an `lhsRecommendation`
 		// (an enforcement-sanction record) against the named case, so it is
 		// guarded as a mutation.
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['error' => 'Not authorized'],
-				Http::STATUS_FORBIDDEN,
-			);
-		}
-
-		$versionParam = $this->request->getParam('lhsVersion');
-		$version = null;
-		if ($versionParam !== null) {
-			$version = (int)$versionParam;
-		}
-
-		$inspection = $this->request->getParam('inspection');
-		$inspectionId = null;
-		if (is_string($inspection) === true && $inspection !== '') {
-			$inspectionId = $inspection;
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		try {
-			$recommendation = $this->lhsService->recommend(
-				caseId: $caseId,
-				severity: $severity,
-				behaviour: $behaviour,
-				actorType: $actorType,
-				lhsVersion: $version,
-				inspection: $inspectionId,
-			);
-		} catch (RuntimeException $e) {
 			return new JSONResponse(
-				['error' => $e->getMessage()],
-				Http::STATUS_UNPROCESSABLE_ENTITY,
+				$this->lhsService->recommend(
+					caseId: $caseId,
+					severity: $severity,
+					behaviour: $behaviour,
+					actorType: $actorType,
+					lhsVersion: $this->requestedVersion(),
+					inspection: $this->requestedInspection(),
+				)
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq LHS recommend failed: ' . $e->getMessage());
-			return new JSONResponse(
-				['error' => 'LHS-aanbeveling mislukt'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
-		}//end try
-
-		return new JSONResponse($recommendation);
+			return $this->recommendFailed(exception: $e);
+		}
 	}//end recommend()
+
+	/**
+	 * The LHS version the request pins, or null for the current one.
+	 *
+	 * @return int|null
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 */
+	private function requestedVersion(): ?int {
+		$versionParam = $this->request->getParam('lhsVersion');
+		if ($versionParam === null) {
+			return null;
+		}
+
+		return (int)$versionParam;
+	}//end requestedVersion()
+
+	/**
+	 * The inspection the recommendation follows from, or null.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 */
+	private function requestedInspection(): ?string {
+		$inspection = $this->request->getParam('inspection');
+		if (is_string($inspection) === true && $inspection !== '') {
+			return $inspection;
+		}
+
+		return null;
+	}//end requestedInspection()
+
+	/**
+	 * The answer to a failed recommendation: the engine's refusal as 422, anything else a logged 500.
+	 *
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 */
+	private function recommendFailed(Throwable $exception): JSONResponse {
+		if ($exception instanceof RuntimeException) {
+			return new JSONResponse(
+				['error' => $exception->getMessage()],
+				Http::STATUS_UNPROCESSABLE_ENTITY,
+			);
+		}
+
+		$this->logger->error('Dossiq LHS recommend failed: ' . $exception->getMessage());
+		return $this->serverError(error: 'LHS-aanbeveling mislukt');
+	}//end recommendFailed()
+
+	/**
+	 * A 400 with its error.
+	 *
+	 * @param string $error The error.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 */
+	private function badRequest(string $error): JSONResponse {
+		return new JSONResponse(['error' => $error], Http::STATUS_BAD_REQUEST);
+	}//end badRequest()
+
+	/**
+	 * A 500 with its error.
+	 *
+	 * @param string $error The error.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 */
+	private function serverError(string $error): JSONResponse {
+		return new JSONResponse(['error' => $error], Http::STATUS_INTERNAL_SERVER_ERROR);
+	}//end serverError()
+
+	/**
+	 * The 401 every LHS endpoint answers a caller without a session.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 */
+	private function unauthenticated(): JSONResponse {
+		return new JSONResponse(
+			['error' => 'Authenticatie vereist'],
+			Http::STATUS_UNAUTHORIZED,
+		);
+	}//end unauthenticated()
 
 	/**
 	 * The id of the recommendation an override applies to.
@@ -236,10 +300,7 @@ class LhsController extends Controller {
 	public function override(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => 'Authenticatie vereist'],
-				Http::STATUS_UNAUTHORIZED,
-			);
+			return $this->unauthenticated();
 		}
 
 		$recommendationId = $this->resolveRecommendationId();
@@ -247,17 +308,7 @@ class LhsController extends Controller {
 		$justification = (string)$this->request->getParam('justification', '');
 		$hasBlank = in_array('', [$recommendationId, $intervention, $justification], true);
 		if ($hasBlank === true) {
-			return new JSONResponse(
-				['error' => 'recommendationId, intervention en justification zijn verplicht'],
-				Http::STATUS_BAD_REQUEST,
-			);
-		}
-
-		$declaredRole = (string)$this->request->getParam('userRole', '');
-		$isManager = $this->groupManager->isAdmin($user->getUID());
-		$userRole = 'inspector';
-		if ($declaredRole === 'manager' && $isManager === true) {
-			$userRole = 'manager';
+			return $this->badRequest(error: 'recommendationId, intervention en justification zijn verplicht');
 		}
 
 		try {
@@ -265,20 +316,37 @@ class LhsController extends Controller {
 				recommendationId: $recommendationId,
 				intervention: $intervention,
 				justification: $justification,
-				userRole: $userRole,
+				userRole: $this->roleOf(user: $user),
 			);
 		} catch (RuntimeException $e) {
 			return $this->overrideRefusal(exception: $e);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq LHS override failed: ' . $e->getMessage());
-			return new JSONResponse(
-				['error' => 'LHS-override mislukt'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
+			return $this->serverError(error: 'LHS-override mislukt');
 		}//end try
 
 		return new JSONResponse($updated);
 	}//end override()
+
+	/**
+	 * The role the override is weighed under: `manager` only for a caller who
+	 * declares it AND is an admin; everyone else is an `inspector`.
+	 *
+	 * @param IUser $user The caller.
+	 *
+	 * @return string `manager` or `inspector`.
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 */
+	private function roleOf(IUser $user): string {
+		$declaredRole = (string)$this->request->getParam('userRole', '');
+		$isManager = $this->groupManager->isAdmin($user->getUID());
+		if ($declaredRole === 'manager' && $isManager === true) {
+			return 'manager';
+		}
+
+		return 'inspector';
+	}//end roleOf()
 
 	/**
 	 * Look up an LHS interventieladder step for a gedrag × gevolg combination.
@@ -296,35 +364,23 @@ class LhsController extends Controller {
 	public function lookup(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => 'Authenticatie vereist'],
-				Http::STATUS_UNAUTHORIZED,
-			);
+			return $this->unauthenticated();
 		}
 
 		$behaviour = (string)$this->request->getParam('behaviour', '');
 		$gevolg = (string)$this->request->getParam('gevolg', '');
 
 		if ($behaviour === '' || $gevolg === '') {
-			return new JSONResponse(
-				['error' => 'gedrag en gevolg zijn verplicht'],
-				Http::STATUS_BAD_REQUEST,
-			);
+			return $this->badRequest(error: 'gedrag en gevolg zijn verplicht');
 		}
 
 		try {
 			$cell = $this->lhsLookupService->lookup(behaviour: $behaviour, gevolg: $gevolg);
 		} catch (RuntimeException $e) {
-			return new JSONResponse(
-				['error' => $e->getMessage()],
-				Http::STATUS_BAD_REQUEST,
-			);
+			return $this->badRequest(error: $e->getMessage());
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq LHS lookup failed: ' . $e->getMessage());
-			return new JSONResponse(
-				['error' => 'LHS opzoeken mislukt'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
+			return $this->serverError(error: 'LHS opzoeken mislukt');
 		}
 
 		return new JSONResponse($cell);

@@ -1,0 +1,8 @@
+[
+    {
+        "getInstalledApps": true
+    },
+    {
+        "getObjectService": false
+    }
+]

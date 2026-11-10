@@ -27,9 +27,8 @@ use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
-use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
-use OCP\IUser;
 use Throwable;
 
 /**
@@ -157,10 +156,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	/**
 	 * Move one case, or say what moving it would do.
 	 *
-	 * @param ObjectEntity         $object     The case the job is walking.
-	 * @param array<string, mixed> $parameters The job parameters.
-	 * @param bool                 $commit     False to rehearse, true to write.
-	 * @param IUser|null           $actor      The user the job runs as.
+	 * @param BulkStep $step The member object, the parameters, whether to commit and who started the job.
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
@@ -169,7 +165,10 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
-	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult {
+	public function apply(BulkStep $step): BulkActionResult {
+		$object = $step->object;
+		$parameters = $step->parameters;
+		$commit = $step->commit;
 		$caseId = $this->caseId(object: $object);
 		if ($caseId === '') {
 			return BulkActionResult::skipped(reason: 'no_case_id');

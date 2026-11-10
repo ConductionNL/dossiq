@@ -1,0 +1,73 @@
+[
+    {
+        "getInstalledApps": true
+    },
+    {
+        "getObjectService": true
+    },
+    {
+        "getConfigValue": "register"
+    },
+    {
+        "getConfigValue": "case_schema"
+    },
+    {
+        "searchObjectsBySlug": [
+            "dossiq",
+            "case",
+            {
+                "isFinalStatus": 0,
+                "isDraft": 0,
+                "_limit": 500
+            }
+        ]
+    },
+    {
+        "decide": "c-warn"
+    },
+    {
+        "warn": "c-warn",
+        "closesOn": "2026-12-01"
+    },
+    {
+        "decide": "c-close"
+    },
+    {
+        "close": "c-close",
+        "decision": "close"
+    },
+    {
+        "decide": "c-none"
+    },
+    {
+        "decide": "c-boom"
+    },
+    {
+        "warning": "AutoCloseOnSilenceJob: one case could not be evaluated",
+        "context": {
+            "caseId": "c-boom",
+            "exception": "no case type"
+        }
+    },
+    {
+        "decide": "c-failing-warn"
+    },
+    {
+        "warn": "c-failing-warn",
+        "closesOn": "2026-12-01"
+    },
+    {
+        "warning": "AutoCloseOnSilenceJob: one case could not be evaluated",
+        "context": {
+            "caseId": "c-failing-warn",
+            "exception": "mail down"
+        }
+    },
+    {
+        "info": "AutoCloseOnSilenceJob: swept the declared silence periods",
+        "context": {
+            "warned": 1,
+            "closed": 1
+        }
+    }
+]
