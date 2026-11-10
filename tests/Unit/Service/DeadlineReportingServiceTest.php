@@ -333,6 +333,18 @@ class DeadlineReportingServiceTest extends TestCase {
 	}
 
 	/**
+	 * A case-type filter that matches no row leaves every counter at zero.
+	 *
+	 * @return void
+	 */
+	public function testKpiFilteredToAnotherCaseTypeCountsNothing(): void {
+		$k = $this->service->getTermijnKpi(filters: ['caseType' => 'not-a-type']);
+
+		self::assertSame(0, $k['totalZaken']);
+		self::assertSame(0, $k['overrunCount']);
+	}//end testKpiFilteredToAnotherCaseTypeCountsNothing()
+
+	/**
 	 * @return void
 	 */
 	public function testKpiSummary(): void {
