@@ -286,10 +286,10 @@ class SettingsService {
 	 * rather than worked around with a self-addressed HTTP call, which is what
 	 * ADR-080 D2/D3 forbids.
 	 *
-	 * Same lazy-resolve contract as {@see self::getObjectService()} and
-	 * {@see self::getApprovalService()}: OpenRegister is an optional runtime
-	 * dependency, so the class is resolved through the container at call time
-	 * rather than type-hinted in the constructor, and callers MUST handle null.
+	 * Same lazy-resolve contract as {@see self::getObjectService()}: OpenRegister is an
+	 * optional runtime dependency, so the class is resolved through the
+	 * container at call time rather than type-hinted in the constructor, and
+	 * callers MUST handle null.
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
 	 *
@@ -298,26 +298,6 @@ class SettingsService {
 	public function getFileService(): ?object {
 		return $this->openRegister->fileService();
 	}//end getFileService()
-
-	/**
-	 * Lazily resolve OpenRegister's ApprovalService for parafering chain delegation.
-	 *
-	 * Per ADR-022 (apps consume OpenRegister abstractions) the parafering
-	 * (sign-off routing) chain-state backend is OpenRegister's
-	 * `approval-workflow` capability, exposed through
-	 * `OCA\OpenRegister\Service\ApprovalService`. OpenRegister is an optional
-	 * runtime dependency, so — exactly like getObjectService() — the class is
-	 * resolved through the container at call time rather than type-hinted in the
-	 * constructor. Callers MUST handle the null case (graceful degradation to
-	 * the legacy in-array path during the migration window).
-	 *
-	 * @return object|null The OpenRegister ApprovalService or null when unavailable
-	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
-	 */
-	public function getApprovalService(): ?object {
-		return $this->openRegister->approvalService();
-	}//end getApprovalService()
 
 	/**
 	 * Lazily resolve an OpenRegister DI class by fully-qualified name.
