@@ -25,10 +25,9 @@ namespace OCA\Dossiq\Tests\Unit\Listener\Support;
 use JsonSerializable;
 use OCA\Dossiq\Listener\BezwaarLegalHoldListener;
 use OCA\Dossiq\Listener\CasePhaseTermListener;
-use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
-use OCA\Dossiq\Listener\ContactMomentTimelineListener;
 use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\PortalMessageTimelineListener;
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -38,7 +37,7 @@ use ReflectionMethod;
  * Every listener reads the event's object the same way: an array as it is, a
  * serialisable entity as its array, anything else as nothing.
  *
- * @coversNothing
+ * @covers \OCA\Dossiq\Listener\Support\EventObjectPayload
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */
@@ -53,8 +52,6 @@ class EventObjectPayloadTest extends TestCase {
 		return [
 			'legal hold' => [BezwaarLegalHoldListener::class, 'extractObject'],
 			'phase term' => [CasePhaseTermListener::class, 'extractObject'],
-			'contact moment pipelinq' => [ContactMomentPipelinqListener::class, 'payload'],
-			'contact moment timeline' => [ContactMomentTimelineListener::class, 'payload'],
 			'custody' => [CustodyCaseCreatedListener::class, 'extractObject'],
 			'portal message timeline' => [PortalMessageTimelineListener::class, 'payload'],
 		];
@@ -78,6 +75,17 @@ class EventObjectPayloadTest extends TestCase {
 			$this->assertSame($expected, $read->invoke($listener, $event), $name);
 		}
 	}//end testTheListenerReadsEveryShape()
+
+	/**
+	 * The shared read answers every event shape.
+	 *
+	 * @return void
+	 */
+	public function testTheSharedReadAnswersEveryShape(): void {
+		foreach ($this->shapes() as $name => [$event, $expected]) {
+			$this->assertSame($expected, EventObjectPayload::of(event: $event), $name);
+		}
+	}//end testTheSharedReadAnswersEveryShape()
 
 	/**
 	 * Events and the array each one carries.
