@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
@@ -135,7 +136,9 @@ class AdvisoryCommitteeServiceGoldenTest extends TestCase {
 				return $answer;
 			}
 
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				return $this->answer('find', ['id' => $id, 'register' => $register, 'schema' => $schema]);
 			}
 

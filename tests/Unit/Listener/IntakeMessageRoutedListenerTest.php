@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Integriq\Event\IntakeMessageRoutedEvent;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -56,7 +57,7 @@ interface ChannelIntakeObjectServiceStub {
 	 *
 	 * @return mixed The object.
 	 */
-	public function find(string $id, string $register, string $schema): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null): mixed;
 
 	/**
 	 * Save or update an object.
@@ -189,7 +190,8 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		);
 
 		$service->method('find')->willReturnCallback(
-			function (string $id, string $register, string $schema): array {
+			function (string $id, ?ObjectFindOptions $options = null): array {
+				$schema = ($options?->schema ?? '');
 				if ($schema === 'caseType' && $this->caseTypeExists === true) {
 					return ['id' => $id, 'initialStatus' => 'status-ontvangen'];
 				}

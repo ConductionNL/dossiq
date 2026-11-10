@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\SociaalDomein;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+
 /**
  * A store of rows, keyed by schema slug then by uuid.
  */
@@ -143,7 +145,8 @@ class FakeSociaalDomeinObjects {
 	 *
 	 * @return array<string, mixed>|null The row.
 	 */
-	public function find(string $id, $register = null, $schema = null): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+		$schema = ($options?->schema ?? null);
 		if ($this->broken === true) {
 			throw new \RuntimeException('the store is unreachable');
 		}

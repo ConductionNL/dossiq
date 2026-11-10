@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -1174,7 +1175,8 @@ class FakeWorkQueueStore {
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+		$schema = ($options?->schema ?? null);
 		return ($this->store[(string)$schema][$id] ?? null);
 	}//end find()
 
@@ -1258,13 +1260,15 @@ class FailingWorkQueueStore extends FakeWorkQueueStore {
 	 *
 	 * @return array<string, mixed>|null The object, or null.
 	 */
-	public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->finds[(string) $schema][] = $id;
 		if (in_array((string) $schema, $this->failOn, true) === true) {
 			throw new \RuntimeException('down');
 		}
 
-		return parent::find($id, $register, $schema);
+		return parent::find(id: $id, options: $options);
 	}//end find()
 
 	/**

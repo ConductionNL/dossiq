@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Obligations;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -333,7 +334,7 @@ class ObligationService {
 
 		$row = null;
 		try {
-			$row = $objectService->find($obligationId, register: $register, schema: $schema);
+			$row = $objectService->find($obligationId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq obligations: the obligation to settle could not be read',

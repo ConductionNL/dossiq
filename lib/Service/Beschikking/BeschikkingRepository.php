@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Beschikking;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -80,7 +81,7 @@ class BeschikkingRepository {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($decisionId, register: $register, schema: $schema));
+			return $this->toArray(value: $objectService->find($decisionId, options: new ObjectFindOptions(register: $register, schema: $schema)));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BeschikkingService: find failed',

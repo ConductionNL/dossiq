@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\TermHandlerNotice;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
@@ -76,7 +77,8 @@ class TermHandlerNoticeTest extends TestCase {
 			/**
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, string $register, string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$schema = ($options?->schema ?? '');
 				return $this->rows[$schema][$id] ?? null;
 			}
 		};

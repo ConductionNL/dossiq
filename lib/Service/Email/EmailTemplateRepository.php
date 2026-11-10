@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use RuntimeException;
 
 /**
@@ -192,7 +193,7 @@ class EmailTemplateRepository {
 		}
 
 		try {
-			$obj = $objectService->find($id, register: $register, schema: $schema);
+			$obj = $objectService->find($id, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (\Throwable) {
 			return null;
 		}

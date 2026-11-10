@@ -30,6 +30,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessPurposeService;
 use OCA\Dossiq\Service\People\CaseRoleHolder;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -90,7 +91,7 @@ class CaseAccessPurposeServiceTest extends TestCase {
 			 *
 			 * @return object The entity.
 			 */
-			public function find(string $id, string $register, string $schema): object {
+			public function find(string $id, ?ObjectFindOptions $options = null): object {
 				if (isset($this->objects[$id]) === false) {
 					throw new RuntimeException('Object not found');
 				}

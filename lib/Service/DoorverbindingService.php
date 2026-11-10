@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -220,7 +221,7 @@ class DoorverbindingService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		try {
-			$record = $objectService->find($doorverbindingId, register: $register, schema: $schema);
+			$record = $objectService->find($doorverbindingId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			throw new RuntimeException('Doorverbinding not found');
 		}

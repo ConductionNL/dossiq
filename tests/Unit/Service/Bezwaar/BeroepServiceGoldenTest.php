@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Bezwaar\BeroepService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -61,7 +62,9 @@ final class GoldenAppealObjects {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, int|string $register, int|string $schema): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->log[] = ['find' => compact('id', 'register', 'schema')];
 		return ($this->behaviour['find'][$id] ?? null);
 	}//end find()

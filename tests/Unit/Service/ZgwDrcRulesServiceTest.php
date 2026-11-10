@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\FieldValidator;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwDrcRulesService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -36,7 +37,7 @@ use Psr\Log\LoggerInterface;
  * The ObjectService shape the DRC rules call with named arguments.
  */
 interface DrcObjectServiceStub {
-	public function find(string $id, string $register, string $schema): ?array;
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array;
 
 	public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
 
@@ -106,7 +107,7 @@ class ZgwDrcRulesServiceTest extends TestCase {
 		if ($objects !== null) {
 			$objectService = $this->createMock(DrcObjectServiceStub::class);
 			$objectService->method('find')->willReturnCallback(
-				static function (string $id, string $register, string $schema) use ($objects): ?array {
+				static function (string $id, ?ObjectFindOptions $options = null) use ($objects): ?array {
 					return $objects[$id] ?? null;
 				}
 			);

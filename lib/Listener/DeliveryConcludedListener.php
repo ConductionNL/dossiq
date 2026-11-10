@@ -36,6 +36,7 @@ use OCA\Dossiq\Listener\Support\ConcludedDelivery;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -252,7 +253,7 @@ class DeliveryConcludedListener implements IEventListener {
 	 * @return array<string, mixed>|null The case data, or null when not found.
 	 */
 	private function loadCase(object $objectService, string $caseId, mixed $register, mixed $schema): ?array {
-		$obj = $objectService->find(id: $caseId, register: $register, schema: $schema);
+		$obj = $objectService->find(id: $caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		if ($obj === null) {
 			return null;
 		}

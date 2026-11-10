@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -234,7 +235,7 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 	 */
 	private function foldOne(object $objectService, string $caseSchema, string $caseId, array $entries): string {
 		try {
-			$case = $objectService->find($caseId, ['_rbac' => false, '_multitenancy' => false]);
+			$case = $objectService->find($caseId, options: new ObjectFindOptions(extend: ['_rbac' => false, '_multitenancy' => false]));
 			if (is_object($case) === true && method_exists($case, 'jsonSerialize') === true) {
 				$case = $case->jsonSerialize();
 			}

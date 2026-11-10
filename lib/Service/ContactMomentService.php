@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -332,7 +333,7 @@ class ContactMomentService {
 				return false;
 			}
 
-			$case = $this->normalize(result: $objectService->find($caseId, register: $register, schema: $caseSchema));
+			$case = $this->normalize(result: $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $caseSchema)));
 
 			$activity = array_values((array)($case['activity'] ?? []));
 			$activity[] = [

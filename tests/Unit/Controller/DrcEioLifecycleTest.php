@@ -30,6 +30,7 @@ use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -41,7 +42,7 @@ use Psr\Log\LoggerInterface;
  * The ObjectService shape the EIO paths call.
  */
 interface DrcLifecycleObjectServiceStub {
-	public function find(mixed $id, mixed $register, mixed $schema): mixed;
+	public function find(mixed $id, ?ObjectFindOptions $options = null): mixed;
 
 	public function buildSearchQuery(array $requestParams, mixed $register, mixed $schema): array;
 
@@ -95,7 +96,7 @@ class DrcEioLifecycleTest extends TestCase {
 	private function controller(mixed $stored, array $searches=[], array $body=[], int $destroyStatus=Http::STATUS_NO_CONTENT): DrcController {
 		$objects = $this->createMock(DrcLifecycleObjectServiceStub::class);
 		$objects->method('find')->willReturnCallback(
-			static function (mixed $id, mixed $register, mixed $schema) use ($stored): mixed {
+			static function (mixed $id, ?ObjectFindOptions $options = null) use ($stored): mixed {
 				if ($stored instanceof \Throwable) {
 					throw $stored;
 				}

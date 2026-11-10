@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkflowStepAuthorizationResolver;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -42,12 +43,11 @@ interface AuthResolverObjectServiceStub {
 	 * Load a single object by id within a register/schema.
 	 *
 	 * @param string $id Object UUID.
-	 * @param string $register Register id.
-	 * @param string $schema Schema id.
+	 * @param ObjectFindOptions|null $options Register and schema.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, string $register, string $schema): ?array;
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array;
 }//end interface
 
 /**
@@ -87,7 +87,7 @@ final class WorkflowStepAuthorizationResolverTest extends TestCase {
 
 		$objectService = $this->createMock(AuthResolverObjectServiceStub::class);
 		$objectService->method('find')->willReturnCallback(
-			fn (string $id, string $register, string $schema): ?array => ($this->roleTypes[$id] ?? null)
+			fn (string $id, ?ObjectFindOptions $options = null): ?array => ($this->roleTypes[$id] ?? null)
 		);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);

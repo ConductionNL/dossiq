@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -178,7 +179,7 @@ class CaseCollaborationService {
 			return ['error' => 'Federated case collaboration is not configured'];
 		}
 
-		$shareObj = $objectService->find($federatedShareId, register: (int)$register, schema: (int)$shareSchema);
+		$shareObj = $objectService->find($federatedShareId, options: new ObjectFindOptions(register: (int)$register, schema: (int)$shareSchema));
 		if ($shareObj === null) {
 			return ['error' => 'Federated share not found'];
 		}

@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\CasePlanDrain;
 use OCA\Dossiq\Service\CasePlanDrain\CasePlanMigrationService;
 use OCA\Dossiq\Service\CasePlanProjectionService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use UnexpectedValueException;
@@ -348,7 +349,9 @@ final class CasePlanMigrationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The case.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				unset($register, $schema);
 
 				return ($this->cases[$id] ?? null);

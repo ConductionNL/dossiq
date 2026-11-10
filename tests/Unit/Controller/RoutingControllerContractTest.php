@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\CaseRouter;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -69,7 +70,7 @@ interface RoutingControllerContractObjectService {
 	 *
 	 * @return mixed The object.
 	 */
-	public function find(int|string $id, string $register = '', string $schema = ''): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null): mixed;
 }//end interface
 
 /**
@@ -244,7 +245,7 @@ class RoutingControllerContractTest extends TestCase {
 		$objectService = $this->createMock(RoutingControllerContractObjectService::class);
 		$objectService->expects($this->once())
 			->method('find')
-			->with('zaak-1', 'dossiq', 'zaak')
+			->with('zaak-1', $this->callback(static fn (ObjectFindOptions $options): bool => $options->register === 'dossiq' && $options->schema === 'zaak'))
 			->willReturn(['id' => 'zaak-1', 'workflowTemplate' => '']);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);

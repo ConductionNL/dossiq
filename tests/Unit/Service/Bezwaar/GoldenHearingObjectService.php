@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
 
@@ -53,7 +54,9 @@ class GoldenHearingObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, int|string $register, int|string $schema): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->note(call: ['find' => compact('id', 'register', 'schema')]);
 		$answer = ($this->behaviour['find'][$id] ?? 'missing');
 		if ($answer === 'missing') {

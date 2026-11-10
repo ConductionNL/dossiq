@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\Assistant\CaseAssistantService;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -67,7 +68,7 @@ class FakeCaseObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, string $register, string $schema): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null): mixed {
 		if ($this->throws !== null) {
 			throw $this->throws;
 		}

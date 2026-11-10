@@ -349,8 +349,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -467,8 +473,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -596,8 +608,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -716,8 +734,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -835,8 +859,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -942,8 +972,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1027,8 +1063,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1112,8 +1154,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1202,8 +1250,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -1237,8 +1291,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -1272,8 +1332,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -1307,8 +1373,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1360,8 +1432,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1435,8 +1513,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1504,8 +1588,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1635,8 +1725,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1808,8 +1904,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "obj-1",
-                    "register": "reg",
-                    "schema": "obj"
+                    "options": {
+                        "register": "reg",
+                        "schema": "obj",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1846,8 +1948,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "obj-1",
-                    "register": "reg",
-                    "schema": "obj"
+                    "options": {
+                        "register": "reg",
+                        "schema": "obj",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -1876,8 +1984,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "obj-1",
-                    "register": "reg",
-                    "schema": "obj"
+                    "options": {
+                        "register": "reg",
+                        "schema": "obj",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -1906,8 +2020,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "obj-1",
-                    "register": "reg",
-                    "schema": "obj"
+                    "options": {
+                        "register": "reg",
+                        "schema": "obj",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -2004,8 +2124,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "obj-1",
-                    "register": "reg",
-                    "schema": "obj"
+                    "options": {
+                        "register": "reg",
+                        "schema": "obj",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -2039,8 +2165,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "obj-1",
-                    "register": "reg",
-                    "schema": "obj"
+                    "options": {
+                        "register": "reg",
+                        "schema": "obj",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -2069,8 +2201,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "obj-1",
-                    "register": "reg",
-                    "schema": "obj"
+                    "options": {
+                        "register": "reg",
+                        "schema": "obj",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -2143,8 +2281,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -2167,8 +2311,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "obj-1",
-                    "register": "reg",
-                    "schema": "obj"
+                    "options": {
+                        "register": "reg",
+                        "schema": "obj",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -2202,8 +2352,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "dec-1",
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "register": "reg",
+                        "schema": "dec",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],

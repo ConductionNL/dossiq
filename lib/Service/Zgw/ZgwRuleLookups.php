@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
 
@@ -262,8 +263,7 @@ class ZgwRuleLookups {
 		try {
 			$obj = $this->objectService->find(
 				id: $uuid,
-				register: $register,
-				schema: $schema
+				options: new ObjectFindOptions(register: $register, schema: $schema)
 			);
 		} catch (DoesNotExistException $e) {
 			return null;

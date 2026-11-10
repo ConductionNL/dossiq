@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -103,7 +104,7 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 				return $answer;
 			}//end searchObjectsBySlug()
 
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): array {
 				if ($this->caseType === null) {
 					throw new DoesNotExistException('gone');
 				}

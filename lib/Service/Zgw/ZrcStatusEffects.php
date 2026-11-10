@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The zaak-level effects of creating a status or a resultaat.
@@ -380,8 +381,7 @@ class ZrcStatusEffects {
 	private function find(string $uuid, array $config): mixed {
 		return $this->zgwService->getObjectService()->find(
 			$uuid,
-			register: $config['sourceRegister'],
-			schema: $config['sourceSchema']
+			options: new ObjectFindOptions(register: $config['sourceRegister'], schema: $config['sourceSchema'])
 		);
 	}//end find()
 

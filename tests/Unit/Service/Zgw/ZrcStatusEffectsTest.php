@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\Dossiq\Service\Zgw\ZrcUsageRights;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -48,7 +49,8 @@ class ZrcEffectsObjectStore {
 	/** @var array<string, bool> schemas whose find() throws */
 	public array $findThrows = [];
 
-	public function find(mixed $id, mixed $register=null, mixed $schema=null): mixed {
+	public function find(mixed $id, ?ObjectFindOptions $options = null): mixed {
+		$schema = ($options?->schema ?? null);
 		if (isset($this->findThrows[(string)$schema]) === true) {
 			throw new \RuntimeException('find failed');
 		}

@@ -24,6 +24,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooDecisionNotice;
 use OCA\Dossiq\Woo\WooDossierReturn;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -76,12 +77,14 @@ class WooDossierReturnTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				if ((string)$schema === 'collection' && ($_rbac === true || $_multitenancy === true)) {
 					return null;
 				}
 
-				return parent::find(id: $id, register: $register, schema: $schema);
+				return parent::find(id: $id, options: $options);
 			}
 
 			/**

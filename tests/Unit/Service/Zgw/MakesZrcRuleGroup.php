@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
 use OCA\Dossiq\Service\FieldValidator;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -73,7 +74,8 @@ trait MakesZrcRuleGroup {
 			public function __construct(private array $objects, private int &$finds) {
 			}
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+				$schema = ($options?->schema ?? '');
 				$this->finds++;
 				$found = $this->objects[$id . '@' . $schema] ?? ($this->objects[$id] ?? null);
 				if ($found instanceof \Throwable) {

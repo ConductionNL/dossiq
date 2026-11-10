@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Deelzaak;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -182,7 +183,9 @@ class SubCaseDeriverGoldenTest extends TestCase {
 			 *
 			 * @return mixed The object.
 			 */
-			public function find(string|int $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string|int $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				$this->test->calls[] = ['find', ['id' => $id, 'register' => $register, 'schema' => $schema]];
 				if ($id !== 'parent-1') {
 					throw new DoesNotExistException('Object not found');

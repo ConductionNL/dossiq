@@ -63,6 +63,7 @@ namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
@@ -369,8 +370,7 @@ class OpenCatalogiApiClient {
 		try {
 			$stored = $objectService->findSilent(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(

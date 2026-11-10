@@ -1265,8 +1265,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1295,8 +1301,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             }
         ]
@@ -1322,8 +1334,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1352,8 +1370,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1382,8 +1406,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             }
         ]
@@ -1409,8 +1439,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1513,8 +1549,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 0,
-                    "schema": 9
+                    "options": {
+                        "register": 0,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1550,8 +1592,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1629,8 +1677,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1709,8 +1763,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1783,8 +1843,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             }
         ]
@@ -1813,8 +1879,14 @@
             {
                 "objects.find": {
                     "id": "share-7",
-                    "register": 5,
-                    "schema": 9
+                    "options": {
+                        "register": 5,
+                        "schema": 9,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             }
         ]

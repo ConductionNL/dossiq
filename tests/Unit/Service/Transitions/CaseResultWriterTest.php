@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -171,7 +172,7 @@ class ResultWriterObjectServiceDouble {
 	 *
 	 * @return array<string, mixed> An empty row.
 	 */
-	public function find(string $id, string $register, string $schema): array {
+	public function find(string $id, ?ObjectFindOptions $options = null): array {
 		return [];
 	}//end find()
 }//end class

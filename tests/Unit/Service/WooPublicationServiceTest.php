@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
 use OCA\Dossiq\Tests\Unit\Service\Publication\FakeWithheldDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Container\ContainerInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -69,7 +70,7 @@ interface WooPublicationObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, ?array $extend = null, bool $files = false, ?string $register = null, ?string $schema = null);
+	public function find(string $id, ?ObjectFindOptions $options = null);
 
 	/**
 	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
@@ -369,10 +370,12 @@ class WooPublicationServiceTest extends TestCase {
 		$this->appManager->method('isEnabledForUser')->willReturn(true);
 
 		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
-		$objectService->method('find')->willReturnMap([
-			['case-001', null, false, 'dossiq', 'case', ['id' => 'case-001', 'title' => 'Test case']],
-			['decision-001', null, false, 'dossiq', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit']],
-		]);
+		$objectService->method('find')->willReturnCallback(
+			static fn (string $id, ?ObjectFindOptions $options = null): ?array => [
+				'case-001' . '|' . 'case' => ['id' => 'case-001', 'title' => 'Test case'],
+				'decision-001' . '|' . 'decision' => ['id' => 'decision-001', 'decisionType' => 'WOO-besluit'],
+			][$id . '|' . (string)$options?->schema] ?? null
+		);
 		$objectService->method('searchObjectsBySlug')->willReturn([
 			['documentRef' => 'doc-001', 'classification' => 'niet_openbaar'],
 		]);
@@ -411,10 +414,12 @@ class WooPublicationServiceTest extends TestCase {
 		$this->appManager->method('isEnabledForUser')->willReturn(true);
 
 		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
-		$objectService->method('find')->willReturnMap([
-			['case-001', null, false, 'dossiq', 'case', ['id' => 'case-001', 'title' => 'Fietspad Lindelaan'] + $case],
-			['decision-001', null, false, 'dossiq', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'description' => 'Niet openbaar gemaakt']],
-		]);
+		$objectService->method('find')->willReturnCallback(
+			static fn (string $id, ?ObjectFindOptions $options = null): ?array => [
+				'case-001' . '|' . 'case' => ['id' => 'case-001', 'title' => 'Fietspad Lindelaan'] + $case,
+				'decision-001' . '|' . 'decision' => ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'description' => 'Niet openbaar gemaakt'],
+			][$id . '|' . (string)$options?->schema] ?? null
+		);
 		$objectService->method('searchObjectsBySlug')->willReturn($assessments);
 		$saves = [];
 		$objectService->method('saveObject')->willReturnCallback(
@@ -588,11 +593,13 @@ class WooPublicationServiceTest extends TestCase {
 		$this->appManager->method('isEnabledForUser')->willReturn(true);
 
 		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
-		$objectService->method('find')->willReturnMap([
-			['case-001', null, false, 'dossiq', 'case', ['id' => 'case-001', 'title' => 'Test case']],
-			['decision-001', null, false, 'dossiq', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'decisionDate' => '2026-07-13']],
-			['doc-001', null, false, 'dossiq', 'document', ['id' => 'doc-001', 'title' => 'Besluit document', 'fileName' => 'besluit.pdf', 'format' => 'application/pdf', 'content' => base64_encode('public content')]],
-		]);
+		$objectService->method('find')->willReturnCallback(
+			static fn (string $id, ?ObjectFindOptions $options = null): ?array => [
+				'case-001' . '|' . 'case' => ['id' => 'case-001', 'title' => 'Test case'],
+				'decision-001' . '|' . 'decision' => ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'decisionDate' => '2026-07-13'],
+				'doc-001' . '|' . 'document' => ['id' => 'doc-001', 'title' => 'Besluit document', 'fileName' => 'besluit.pdf', 'format' => 'application/pdf', 'content' => base64_encode('public content')],
+			][$id . '|' . (string)$options?->schema] ?? null
+		);
 		$objectService->method('searchObjectsBySlug')->willReturn([
 			['documentRef' => 'doc-001', 'classification' => 'openbaar'],
 		]);

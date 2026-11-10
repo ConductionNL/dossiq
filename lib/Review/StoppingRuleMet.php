@@ -29,6 +29,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -164,7 +165,7 @@ class StoppingRuleMet {
 		}
 
 		try {
-			$case = $objectService->find($caseId, register: $register, schema: $schema);
+			$case = $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 			$mapper->createAuditTrailEntry(object: $case, action: self::ACTION, context: $context, actorId: $userId, actorName: $userId);
 		} catch (Throwable $e) {
 			$this->logger->error(

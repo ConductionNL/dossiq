@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -288,8 +289,7 @@ abstract class ZgwRulesBase {
 		try {
 			$typeObject = $this->objectService->find(
 				id: $extractedUuid,
-				register: $register,
-				schema: $schema
+				options: new ObjectFindOptions(register: $register, schema: $schema)
 			);
 		} catch (\Throwable $e) {
 			return $this->error(
@@ -380,8 +380,7 @@ abstract class ZgwRulesBase {
 				try {
 					$this->objectService->find(
 						id: $ioUuid,
-						register: $register,
-						schema: $docSchema
+						options: new ObjectFindOptions(register: $register, schema: $docSchema)
 					);
 				} catch (\Throwable $e) {
 					// Document not found locally — acceptable for external DRC URLs.

@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -212,13 +213,12 @@ class OpenCatalogiApiClientObjectServiceDouble {
 	 */
 	public function findSilent(
 		string $id,
-		?array $_extend = [],
-		bool $files = false,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): OpenCatalogiApiClientObjectEntityDouble {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->findCalls[] = [
 			'id' => $id,
 			'register' => $register,

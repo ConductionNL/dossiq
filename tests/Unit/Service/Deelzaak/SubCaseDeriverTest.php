@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Deelzaak;
 
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -161,7 +162,7 @@ class SubCaseDeriverTest extends TestCase {
 				 *
 				 * @return object|null
 				 */
-				public function find(string $id, $register = null, $schema = null): ?object {
+				public function find(string $id, ?ObjectFindOptions $options = null): ?object {
 					return ($id === 'parent') ? $this->entity : null;
 				}//end find()
 

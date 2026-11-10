@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Subsidie\TerugvorderingService;
 use OCA\Dossiq\Service\Subsidie\VaststellingService;
 use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -66,7 +67,8 @@ class VaststellingFakeObjectService {
 	 *
 	 * @throws DoesNotExistException When the id is unknown.
 	 */
-	public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+	public function find(int|string $id, ?ObjectFindOptions $options = null): FakeStoredObject {
+		$schema = ($options?->schema ?? null);
 		$row = ($this->store[(string)$schema][(string)$id] ?? null);
 		if ($row === null) {
 			throw new DoesNotExistException('Object ' . $id . ' does not exist');

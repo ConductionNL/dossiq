@@ -49,6 +49,7 @@ use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -76,7 +77,7 @@ interface DrcDownloadLockObjectServiceStub {
 	 *
 	 * @return mixed The stored object row.
 	 */
-	public function find(int|string $id = '', ?string $register = null, ?string $schema = null): mixed;
+	public function find(int|string $id = '', ?ObjectFindOptions $options = null): mixed;
 
 	/**
 	 * Save or update an object.

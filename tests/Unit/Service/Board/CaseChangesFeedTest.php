@@ -22,6 +22,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Controller\CaseChangesController;
 use OCA\Dossiq\Service\Board\CaseChangesFeed;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -193,7 +194,7 @@ class CaseChangesFeedTest extends TestCase {
 			 * @param int|string $schema   The schema.
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, int|string $register, int|string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				if (isset($this->cases[$id]) === false) {
 					throw new \OCP\AppFramework\Db\DoesNotExistException(msg: 'not found for this reader');
 				}

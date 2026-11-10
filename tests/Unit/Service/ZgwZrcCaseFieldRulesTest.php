@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\FieldValidator;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwZrcRulesService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -37,7 +38,7 @@ use Psr\Log\LoggerInterface;
  * The ObjectService shape the rules base calls with named arguments.
  */
 interface CaseFieldObjectServiceStub {
-	public function find(string $id, string $register, string $schema): ?array;
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array;
 }//end interface
 
 /**
@@ -101,7 +102,7 @@ class ZgwZrcCaseFieldRulesTest extends TestCase {
 		if ($objects !== null) {
 			$objectService = $this->createMock(CaseFieldObjectServiceStub::class);
 			$objectService->method('find')->willReturnCallback(
-				static function (string $id, string $register, string $schema) use ($objects): ?array {
+				static function (string $id, ?ObjectFindOptions $options = null) use ($objects): ?array {
 					return $objects[$id] ?? null;
 				}
 			);

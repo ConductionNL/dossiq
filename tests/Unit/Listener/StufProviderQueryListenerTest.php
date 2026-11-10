@@ -33,6 +33,7 @@ use OCA\Integriq\Event\StufCaseMutationEvent;
 use OCA\Integriq\Event\StufCaseQueryEvent;
 use OCA\Integriq\Event\StufDocumentMutationEvent;
 use OCA\Integriq\Event\StufPersonQueryEvent;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -291,7 +292,8 @@ class StufProviderQueryListenerTest extends TestCase {
 			 *
 			 * @return array|null The case type.
 			 */
-			public function find(string $id, ?string $register=null, ?string $schema=null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$schema = ($options?->schema ?? null);
 				if ($schema === 'caseType' && $id === 'ct-uuid-1') {
 					return (['id' => 'ct-uuid-1'] + StufProviderQueryListenerTest::CASE_TYPE);
 				}

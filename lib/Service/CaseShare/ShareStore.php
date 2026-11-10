@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseShare;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+
 /**
  * One OpenRegister object service bound to the configured share register and schema.
  *
@@ -68,7 +70,7 @@ final class ShareStore {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md
 	 */
 	public function read(string $shareId): mixed {
-		$share = $this->objectService->find($shareId, register: (int)$this->register, schema: (int)$this->schema);
+		$share = $this->objectService->find($shareId, options: new ObjectFindOptions(register: (int)$this->register, schema: (int)$this->schema));
 		if ($share === null || is_array($share) === true) {
 			return $share;
 		}

@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 use OCA\Dossiq\Service\Kcc\ContactMomentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -75,7 +76,7 @@ class ContactMomentWritePathTest extends TestCase {
 				return $object + ['id' => $uuid ?? 'new-1'];
 			}
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
 				if ($this->findThrows === true) {
 					throw new \RuntimeException('gone');
 				}

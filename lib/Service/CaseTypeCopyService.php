@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\CaseType\CaseTypeDerivation;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -591,7 +592,7 @@ class CaseTypeCopyService {
 		}
 
 		try {
-			$obj = $target->objectService->find($id, register: $target->register, schema: $target->schema);
+			$obj = $target->objectService->find($id, options: new ObjectFindOptions(register: $target->register, schema: $target->schema));
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseTypeCopyService: object lookup failed',

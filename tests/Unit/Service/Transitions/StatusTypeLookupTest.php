@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -76,7 +77,8 @@ class StatusTypeLookupTest extends TestCase {
 				);
 			}
 
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				$schema = ($options?->schema ?? '');
 				if ($this->throws === true) {
 					throw new RuntimeException('unreadable');
 				}

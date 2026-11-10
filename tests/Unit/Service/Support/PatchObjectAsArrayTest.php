@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -94,7 +95,7 @@ class PatchObjectAsArrayTest extends TestCase {
 			/** @var string|null */
 			public ?string $savedUuid = null;
 
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				return [
 					'id' => $id,
 					'title' => 'Advies brandweer',
@@ -125,7 +126,7 @@ class PatchObjectAsArrayTest extends TestCase {
 	 */
 	public function testAnUnreadableObjectIsRefused(): void {
 		$objectService = new class {
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				return null;
 			}
 

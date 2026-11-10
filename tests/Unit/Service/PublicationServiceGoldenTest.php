@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\PublicationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCA\Integriq\Event\DeliveryRequestedEvent;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -112,7 +113,9 @@ class PublicationServiceGoldenTest extends TestCase {
 			 *
 			 * @return mixed The case.
 			 */
-			public function find(string $id, mixed $register, mixed $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				$this->calls[] = ['find', $id, $register, $schema];
 				$found = ($this->world['case'] ?? null);
 				if ($found === 'throw') {

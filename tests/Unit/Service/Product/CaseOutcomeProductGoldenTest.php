@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Product;
 use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -219,7 +220,9 @@ class CaseOutcomeProductGoldenTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException When there is none.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				$this->log(call: 'find', args: ['id' => $id, 'register' => $register, 'schema' => $schema]);
 				if (isset($this->world[$schema][$id]) === false) {
 					throw new DoesNotExistException('none');

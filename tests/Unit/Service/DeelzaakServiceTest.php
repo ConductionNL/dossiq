@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\DeelzaakService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -130,7 +131,7 @@ class DeelzaakServiceTest extends TestCase {
 			 *
 			 * @return object|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?object {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?object {
 				if (isset($this->store[$id]) === false) {
 					return null;
 				}

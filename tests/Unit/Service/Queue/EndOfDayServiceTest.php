@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\Queue\EndOfDayService;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -65,7 +66,8 @@ class EndOfDayServiceTest extends TestCase {
 			 *
 			 * @return object The object, its own `updated` always today.
 			 */
-			public function find(string $id, string $register, string $schema): object {
+			public function find(string $id, ?ObjectFindOptions $options = null): object {
+				$schema = ($options?->schema ?? '');
 				if ($schema === 'task') {
 					throw new RuntimeException('not an object');
 				}

@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -101,7 +102,7 @@ class TaskAttachmentTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function find(string $id, mixed $register, mixed $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				return $this->case;
 			}
 		};

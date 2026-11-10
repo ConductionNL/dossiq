@@ -28,6 +28,7 @@ use OCA\Dossiq\Portal\PortalCaseSteps;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -57,7 +58,7 @@ class PortalCaseStepsTest extends TestCase {
 	private function service(): PortalCaseSteps {
 		$objects = $this->createMock(ObjectServiceInterface::class);
 		$objects->method('runAsSystem')->willReturnCallback(static fn (callable $operation) => $operation());
-		$objects->method('find')->willReturnCallback(function ($id, $_extend = [], $files = false, $register = null, $schema = null, $_rbac = true, $_multitenancy = true) {
+		$objects->method('find')->willReturnCallback(function ($id, ?ObjectFindOptions $options = null, $_rbac = true, $_multitenancy = true) {
 			$this->findScopes[] = [$_rbac, $_multitenancy];
 			if ($id !== self::CASE_ID || $_rbac !== false || $_multitenancy !== false) {
 				return null;

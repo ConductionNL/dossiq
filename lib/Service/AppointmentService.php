@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\AppointmentBackend\AppointmentBackendInterface;
 use OCA\Dossiq\Service\AppointmentBackend\JccBackend;
 use OCA\Dossiq\Service\AppointmentBackend\QmaticBackend;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use Psr\Container\ContainerInterface;
@@ -179,7 +180,7 @@ class AppointmentService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointment = $objectService->find($appointmentId, register: (int)$register, schema: (int)$schema);
+		$appointment = $objectService->find($appointmentId, options: new ObjectFindOptions(register: (int)$register, schema: (int)$schema));
 		$data = $appointment->jsonSerialize();
 
 		// Cancel in backend.
@@ -211,7 +212,7 @@ class AppointmentService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('appointment_schema');
 
-		$appointment = $objectService->find($appointmentId, register: (int)$register, schema: (int)$schema);
+		$appointment = $objectService->find($appointmentId, options: new ObjectFindOptions(register: (int)$register, schema: (int)$schema));
 		$data = $appointment->jsonSerialize();
 		$data['status'] = 'no_show';
 

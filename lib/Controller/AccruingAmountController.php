@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Money\AccruingAmountSettler;
 use OCA\Dossiq\Service\Money\AmountObjectionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -174,7 +175,7 @@ class AccruingAmountController extends Controller {
 		}
 
 		try {
-			$row = $objectService->find($id, register: $register, schema: $schema);
+			$row = $objectService->find($id, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}

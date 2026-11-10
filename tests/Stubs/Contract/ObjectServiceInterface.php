@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\Contract;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUser;
 
 /**
@@ -199,27 +200,17 @@ interface ObjectServiceInterface {
 	 * Find a single object by id, UUID or slug.
 	 *
 	 * @param int|string $id Object id, UUID or slug.
-	 * @param ?array $_extend Relations to expand on the result.
-	 * @param bool $files Include file metadata.
-	 * @param string|int|null $register Register id, UUID or slug.
-	 * @param string|int|null $schema Schema id, UUID or slug.
+	 * @param ObjectFindOptions|null $options Register, schema, extend, files, render and audit.
 	 * @param bool $_rbac Apply register RBAC.
 	 * @param bool $_multitenancy Apply organisation scoping.
-	 * @param bool $_render Render the entity before returning it.
-	 * @param bool $_audit Write an audit-trail entry.
 	 *
 	 * @return ?ObjectEntityInterface The object, or null when absent or not permitted.
 	 */
 	public function find(
 		int|string $id,
-		?array $_extend = [],
-		bool $files = false,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
-		bool $_render = true,
-		bool $_audit = true,
 	): ?ObjectEntityInterface;
 
 	/**
@@ -612,10 +603,7 @@ interface ObjectServiceInterface {
 	 * Find an object without emitting audit or read events.
 	 *
 	 * @param string $id Object id, UUID or slug.
-	 * @param ?array $_extend Relations to expand on the result.
-	 * @param bool $files Include file metadata.
-	 * @param string|int|null $register Register id, UUID or slug.
-	 * @param string|int|null $schema Schema id, UUID or slug.
+	 * @param ObjectFindOptions|null $options Register, schema, extend and files.
 	 * @param bool $_rbac Apply register RBAC.
 	 * @param bool $_multitenancy Apply organisation scoping.
 	 *
@@ -623,10 +611,7 @@ interface ObjectServiceInterface {
 	 */
 	public function findSilent(
 		string $id,
-		?array $_extend = [],
-		bool $files = false,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): ObjectEntityInterface;

@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Sharing;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IGroupManager;
 use Psr\Log\LoggerInterface;
 
@@ -124,7 +125,7 @@ class CaseAccessPolicy {
 		}
 
 		try {
-			$caseObj = $objectService->find($caseId, register: (int)$register, schema: (int)$caseSchema);
+			$caseObj = $objectService->find($caseId, options: new ObjectFindOptions(register: (int)$register, schema: (int)$caseSchema));
 			if ($caseObj === null) {
 				// Case not found — deny (treated as 404 by callers).
 				return false;

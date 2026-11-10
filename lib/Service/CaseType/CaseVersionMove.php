@@ -52,6 +52,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -395,7 +396,7 @@ class CaseVersionMove {
 		[$objectService, $register, $schema] = $this->scope();
 
 		try {
-			$found = $objectService->find($caseId, register: $register, schema: $schema);
+			$found = $objectService->find($caseId, options: new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			throw RefusedException::indeterminate(
 				rule: 'case-unreadable',

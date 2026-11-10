@@ -51,6 +51,7 @@ use OCA\Dossiq\Service\Money\AmountObjectionService;
 use OCA\Dossiq\Service\Money\AccruingAmountSettler;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -111,7 +112,7 @@ interface AccruingAmountObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null): mixed;
 }//end interface
 
 /**

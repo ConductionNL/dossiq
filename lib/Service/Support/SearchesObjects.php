@@ -40,6 +40,7 @@
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use RuntimeException;
 
@@ -200,8 +201,7 @@ trait SearchesObjects {
 		try {
 			$object = $objectService->find(
 				id: $id,
-				register: $register,
-				schema: $schema
+				options: new ObjectFindOptions(register: $register, schema: $schema)
 			);
 		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
 			return null;

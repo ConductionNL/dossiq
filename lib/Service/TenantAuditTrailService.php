@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -248,8 +249,7 @@ class TenantAuditTrailService {
 			$objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
 			return $objectService->find(
 				$tenantId,
-				register: self::REGISTER,
-				schema: self::SCHEMA_TENANT,
+				options: new ObjectFindOptions(register: self::REGISTER, schema: self::SCHEMA_TENANT),
 				_rbac: false,
 				_multitenancy: false
 			);

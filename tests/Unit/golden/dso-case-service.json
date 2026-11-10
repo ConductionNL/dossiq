@@ -26,8 +26,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -55,8 +61,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -111,8 +123,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -138,8 +156,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -194,8 +218,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -222,8 +252,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -278,8 +314,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -306,8 +348,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -364,8 +412,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -393,8 +447,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -451,8 +511,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -480,8 +546,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -538,8 +610,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -567,8 +645,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -625,8 +709,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -684,8 +774,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -713,8 +809,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -758,8 +860,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -824,8 +932,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -853,8 +967,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -917,8 +1037,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -948,8 +1074,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -979,8 +1111,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -1010,8 +1148,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1052,8 +1196,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "register": "dossiq",
+                        "schema": "case",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1081,8 +1231,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1139,8 +1295,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "case-1",
-                    "register": "",
-                    "schema": ""
+                    "options": {
+                        "register": "",
+                        "schema": "",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1168,8 +1330,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1295,8 +1463,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ],
             [
@@ -1381,8 +1555,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],
@@ -1405,8 +1585,14 @@
                 "ObjectServiceInterface::find",
                 {
                     "id": "va-1",
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "register": "dso",
+                        "schema": "aanvraag",
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             ]
         ],

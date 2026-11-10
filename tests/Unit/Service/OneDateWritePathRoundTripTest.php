@@ -52,6 +52,7 @@ use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\PhpInputStream;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
@@ -73,7 +74,7 @@ interface RoundTripObjectStoreStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null): mixed;
 
 	/**
 	 * Persist an object and hand the payload back to the test.

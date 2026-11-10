@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -118,13 +119,12 @@ final class GoldenPackageObjects {
 	 */
 	public function find(
 		int|string $id,
-		mixed $_extend = null,
-		bool $files = false,
-		int|string $register = '',
-		int|string $schema = '',
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): ?array {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? '');
 		$this->log[] = ['find' => compact('id', 'register', 'schema', '_rbac', '_multitenancy')];
 		if (in_array((string)$id, ($this->behaviour['findThrows'] ?? []), true) === true) {
 			throw new RuntimeException('find failed for ' . $id);

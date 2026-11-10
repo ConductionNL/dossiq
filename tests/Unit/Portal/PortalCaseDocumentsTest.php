@@ -34,6 +34,7 @@ use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -131,7 +132,7 @@ class PortalCaseDocumentsTest extends TestCase {
 			$this->assertSame('dossiq', $register);
 			return $this->rows[$schema] ?? [];
 		});
-		$objects->method('find')->willReturnCallback(function ($id, $_extend = [], $files = false, $register = null, $schema = null, $_rbac = true, $_multitenancy = true) {
+		$objects->method('find')->willReturnCallback(function ($id, ?ObjectFindOptions $options = null, $_rbac = true, $_multitenancy = true) {
 			$this->findScopes[] = [$_rbac, $_multitenancy];
 			if (isset($this->documents[$id]) === false) {
 				return null;

@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\RewriteWooPublicationSummaries;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -121,7 +122,8 @@ class RewriteWooPublicationSummariesTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException When the row is not there.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				$schema = ($options?->schema ?? '');
 				if (isset($this->rows[(string)$schema][$id]) === false) {
 					throw new DoesNotExistException('gone');
 				}

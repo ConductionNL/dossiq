@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Queue\QueueCaseFacts;
 use OCA\Dossiq\Service\Queue\UrgencyProfile;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -109,7 +110,8 @@ class QueueCaseFactsTest extends TestCase {
 				return $this->rows;
 			}//end searchObjectsBySlug()
 
-			public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$schema = ($options?->schema ?? null);
 				$this->calls[] = ['find', $schema, $id];
 				if ($this->found instanceof \Throwable) {
 					throw $this->found;

@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Email\UnmatchedMailIntake;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -104,7 +105,9 @@ class UnmatchedMailIntakeGoldenTest extends TestCase {
 			 *
 			 * @return mixed The object.
 			 */
-			public function find(string|int $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string|int $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				$this->test->calls[] = ['find', ['id' => $id, 'register' => $register, 'schema' => $schema]];
 				if (array_key_exists('caseType', $this->world) === false) {
 					throw new DoesNotExistException('Object not found');

@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -142,7 +143,8 @@ class WooPublicationFieldsShippedTest extends TestCase {
 
 		$store = $this->createMock(ObjectServiceInterface::class);
 		$store->method('find')->willReturnCallback(
-			function (int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): ?ObjectEntityInterface {
+			function (int|string $id, ?ObjectFindOptions $options = null): ?ObjectEntityInterface {
+				$schema = ($options?->schema ?? null);
 				$row = ($this->rows[(string)$schema][(string)$id] ?? null);
 				if ($row === null) {
 					return null;

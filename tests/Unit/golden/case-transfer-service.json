@@ -1128,8 +1128,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             }
         ]
@@ -1162,8 +1168,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1185,8 +1197,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1208,8 +1226,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1253,8 +1277,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1363,8 +1393,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1473,8 +1509,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1583,8 +1625,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1672,8 +1720,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1706,8 +1760,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1761,8 +1821,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1868,8 +1934,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -1964,8 +2036,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2062,8 +2140,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 11,
-                    "schema": 13
+                    "options": {
+                        "register": 11,
+                        "schema": 13,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2173,8 +2257,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2275,8 +2365,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2377,8 +2473,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2479,8 +2581,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2572,8 +2680,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2595,8 +2709,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2618,8 +2738,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             }
         ]
@@ -2646,8 +2772,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2667,8 +2799,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2688,8 +2826,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             }
         ]
@@ -2706,8 +2850,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {
@@ -2727,8 +2877,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             }
         ]
@@ -2745,8 +2901,14 @@
             {
                 "objects.find": {
                     "id": "t-1",
-                    "register": 5,
-                    "schema": 7
+                    "options": {
+                        "register": 5,
+                        "schema": 7,
+                        "extend": [],
+                        "files": false,
+                        "render": true,
+                        "audit": true
+                    }
                 }
             },
             {

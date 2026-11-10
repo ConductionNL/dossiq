@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwZrcRulesService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -42,7 +43,7 @@ use Psr\Log\LoggerInterface;
  * calls resolve correctly.
  */
 interface ObjectServiceStub {
-	public function find(string $id, string $register, string $schema): ?array;
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array;
 
 	public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
 
@@ -156,7 +157,7 @@ class ZgwZrcRulesServiceTest extends TestCase {
 		// Zaaktype lookup returns a valid (published) zaaktype; hoofdzaak lookup returns null.
 		$objectService = $this->createMock(ObjectServiceStub::class);
 		$objectService->method('find')->willReturnCallback(
-			static function (string $id, string $register, string $schema) use ($zaaktypeUuid): ?array {
+			static function (string $id, ?ObjectFindOptions $options = null) use ($zaaktypeUuid): ?array {
 				if ($id === $zaaktypeUuid) {
 					return [
 						'id' => $zaaktypeUuid,

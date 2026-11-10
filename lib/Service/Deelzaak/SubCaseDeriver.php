@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Deelzaak;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -243,7 +244,7 @@ class SubCaseDeriver {
 	 */
 	private function findParent(SubCaseStore $store): ?object {
 		try {
-			$parent = $store->objectService->find($store->parentCaseUuid, register: $store->register, schema: $store->schema);
+			$parent = $store->objectService->find($store->parentCaseUuid, options: new ObjectFindOptions(register: $store->register, schema: $store->schema));
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: the parent case could not be read for a derive',

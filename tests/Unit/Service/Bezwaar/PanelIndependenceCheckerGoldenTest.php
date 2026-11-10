@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -86,7 +87,9 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 			 *
 			 * @return mixed The object.
 			 */
-			public function find(int|string $id, int|string $register = '', int|string $schema = ''): mixed {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				$this->calls[] = ['find', $id, $register, $schema];
 				$found = ($this->world['objects'][$schema][$id] ?? 'missing');
 				if ($found === 'missing') {

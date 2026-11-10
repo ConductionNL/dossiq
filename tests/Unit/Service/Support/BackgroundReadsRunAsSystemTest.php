@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Support;
 use OCA\Dossiq\Service\CasePlanProjectionService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -74,7 +75,7 @@ class AnonymousRefusingObjectService {
 	 *
 	 * @return array<string, mixed> The row.
 	 */
-	public function find(string $id, mixed $register = null, mixed $schema = null): array {
+	public function find(string $id, ?ObjectFindOptions $options = null): array {
 		if ($this->inSystem === false && $this->signedIn === false) {
 			throw new RuntimeException("User 'Anonymous' does not have permission to 'read' objects in schema 'Case Type'");
 		}
@@ -194,9 +195,11 @@ class BackgroundReadsRunAsSystemTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				$this->seen[] = $this->inSystem;
-				return parent::find($id, $register, $schema);
+				return parent::find(id: $id, options: $options);
 			}
 		};
 		$this->objects = $objects;
