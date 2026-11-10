@@ -44,6 +44,26 @@ use RuntimeException;
  */
 class DeadlinePauseService {
 	/**
+	 * What a resume clears besides the end date. The reason and its counters
+	 * go with the pause. A resumed term that still read "chased twice" would
+	 * put a reminder count beside a case nobody is waiting on any more, and the
+	 * engine cannot cancel the helper timer individually: clearing the reason
+	 * here is what makes the listener's re-read decide against a late rung.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private const RESUME_CLEARS = [
+		'status' => 'lopend',
+		'pauseDeadline' => null,
+		'pauseTimerId' => null,
+		'pauseReason' => '',
+		'pauseWaitingOn' => '',
+		'chasesSent' => 0,
+		'lastChasedAt' => null,
+		'chaseEscalatedAt' => null,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService TermijnService.
@@ -443,59 +463,21 @@ class DeadlinePauseService {
 	 */
 	public function resumeAfterPauze(string $termInstanceId, ?DateTimeImmutable $aanvullingDatum = null): array {
 		$aanvullingDatum = ($aanvullingDatum ?? new DateTimeImmutable());
-
-		$instance = $this->termService->getTermijnInstance($termInstanceId);
-		if ($instance === null) {
-			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
-		}
-
-		if (($instance['status'] ?? '') !== 'paused') {
-			throw new RuntimeException('TermijnInstance not in gepauzeerd state: ' . $termInstanceId);
-		}
-
-		$pauzeStart = new DateTimeImmutable((string)($instance['pauzeStartDatum'] ?? $aanvullingDatum->format('Y-m-d')));
-		$durationDays = (int)($instance['pauzeDuurDagen'] ?? 0);
-
-		// Days actually used (cap at the requested duration).
-		$diff = $this->days->between(from: $pauzeStart, to: $aanvullingDatum);
-		$consumed = max(0, min($durationDays, $diff));
-		$unused = $durationDays - $consumed;
-
-		// Pull back the unused portion of einddatumActueel, then let the
-		// administered calendar decide the day it lands on (Awt art. 1).
+		$instance = $this->pausedInstance(termInstanceId: $termInstanceId);
+		$unused = $this->unusedPauseDays(instance: $instance, received: $aanvullingDatum);
 		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $aanvullingDatum->format('Y-m-d')));
-		$remaining = $current->modify('-' . $unused . ' days');
-		$newEnd = ($this->timerService?->rollTermEndFor(date: $remaining) ?? $remaining)->format('Y-m-d');
+		$newEnd = $this->resumedEnd(current: $current, unused: $unused);
 
 		// Resume the engine timer: it re-projects the fire moment from the
 		// unconsumed remainder (AWB 4:15), landing on the same date the
-		// case-data arithmetic below computes. The hersteltermijn helper
+		// case-data arithmetic computes. The hersteltermijn helper
 		// cannot be cancelled individually (engine gap, see design D-2);
 		// the fired-listener's still-paused guard drops its late fire.
 		$this->timerService?->resumeBeslistermijn(
 			instance: $instance,
 			reason: 'Aanvulling ontvangen; termijn hervat'
 		);
-
-		// The reason and its counters go with the pause. A resumed term that
-		// still read "chased twice" would put a reminder count beside a case
-		// nobody is waiting on any more, and the engine cannot cancel the
-		// helper timer individually: clearing the reason here is what makes the
-		// listener's re-read decide against a late rung.
-		$updated = $this->termService->updateTermijnInstance(
-			$termInstanceId,
-			[
-				'endDateCurrent' => $newEnd,
-				'status' => 'lopend',
-				'pauseDeadline' => null,
-				'pauseTimerId' => null,
-				'pauseReason' => '',
-				'pauseWaitingOn' => '',
-				'chasesSent' => 0,
-				'lastChasedAt' => null,
-				'chaseEscalatedAt' => null,
-			]
-		);
+		$updated = $this->termService->updateTermijnInstance($termInstanceId, (['endDateCurrent' => $newEnd] + self::RESUME_CLEARS));
 
 		$this->termService->recordEvent(
 			termInstanceId: $termInstanceId,
@@ -508,4 +490,59 @@ class DeadlinePauseService {
 
 		return $updated ?? $instance;
 	}//end resumeAfterPauze()
+
+	/**
+	 * The instance a resume applies to.
+	 *
+	 * @param string $termInstanceId Instance id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When the instance is missing or not paused.
+	 */
+	private function pausedInstance(string $termInstanceId): array {
+		$instance = $this->termService->getTermijnInstance($termInstanceId);
+		if ($instance === null) {
+			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
+		}
+
+		if (($instance['status'] ?? '') !== 'paused') {
+			throw new RuntimeException('TermijnInstance not in gepauzeerd state: ' . $termInstanceId);
+		}
+
+		return $instance;
+	}//end pausedInstance()
+
+	/**
+	 * The pause days not used when the aanvulling arrived: the requested days
+	 * minus the days actually used, capped at the requested duration.
+	 *
+	 * @param array<string, mixed> $instance The paused instance.
+	 * @param DateTimeImmutable    $received When the aanvulling arrived.
+	 *
+	 * @return int
+	 */
+	private function unusedPauseDays(array $instance, DateTimeImmutable $received): int {
+		$pauzeStart = new DateTimeImmutable((string)($instance['pauzeStartDatum'] ?? $received->format('Y-m-d')));
+		$durationDays = (int)($instance['pauzeDuurDagen'] ?? 0);
+		$diff = $this->days->between(from: $pauzeStart, to: $received);
+		$consumed = max(0, min($durationDays, $diff));
+
+		return $durationDays - $consumed;
+	}//end unusedPauseDays()
+
+	/**
+	 * Pull back the unused portion of the end, then let the administered
+	 * calendar decide the day it lands on (Awt art. 1).
+	 *
+	 * @param DateTimeImmutable $current The current end.
+	 * @param int               $unused  The unused pause days.
+	 *
+	 * @return string The resumed end (`Y-m-d`).
+	 */
+	private function resumedEnd(DateTimeImmutable $current, int $unused): string {
+		$remaining = $current->modify('-' . $unused . ' days');
+
+		return ($this->timerService?->rollTermEndFor(date: $remaining) ?? $remaining)->format('Y-m-d');
+	}//end resumedEnd()
 }//end class
