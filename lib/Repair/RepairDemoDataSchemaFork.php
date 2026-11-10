@@ -291,60 +291,84 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 		}
 
 		$linked = $this->schemaIdsAnyRegisterLinks();
-		$deletion = $this->container->get('OCA\OpenRegister\Service\SchemaDeletionService');
-
-		$retired = 0;
-		$objects = 0;
-		$spared = [];
-
+		$run = new ForkRetirementRun(schemaMapper: $schemaMapper, deletion: $this->container->get('OCA\OpenRegister\Service\SchemaDeletionService'));
+		$run->linked = $linked;
 		foreach ($forked as $schema) {
-			$slug = (string)$schema->getSlug();
-			$reason = $this->reasonToSpare(
-				schemaMapper: $schemaMapper,
-				slug: $slug,
-				schemaId: (int)$schema->getId(),
-				linked: $linked
-			);
+			$this->retireOne(run: $run, schema: $schema);
+		}
 
-			if ($reason !== '') {
-				$spared[$slug] = $reason;
-				continue;
-			}
+		$this->reportRetirement(output: $output, run: $run);
+	}//end retireForkedSchemas()
 
-			try {
-				$result = $deletion->cascadeDeleteSchema(schema: $schema);
-				$retired++;
-				$objects += (int)($result['deletedCount'] ?? 0);
-			} catch (Throwable $e) {
-				$spared[$slug] = 'deletion failed: ' . $e->getMessage();
-			}
-		}//end foreach
+	/**
+	 * Retire one forked schema with its objects, or record why it is kept.
+	 *
+	 * @param ForkRetirementRun $run    The retirement.
+	 * @param object            $schema A `dossiq.demo` schema.
+	 *
+	 * @return void
+	 */
+	private function retireOne(ForkRetirementRun $run, object $schema): void {
+		$slug = (string)$schema->getSlug();
+		$reason = $this->reasonToSpare(run: $run, schema: $schema);
+		if ($reason !== '') {
+			$run->spared[$slug] = $reason;
+			return;
+		}
 
+		try {
+			$result = $run->deletion->cascadeDeleteSchema(schema: $schema);
+			$run->retired++;
+			$run->objects += (int)($result['deletedCount'] ?? 0);
+		} catch (Throwable $e) {
+			$run->spared[$slug] = 'deletion failed: ' . $e->getMessage();
+		}
+	}//end retireOne()
+
+	/**
+	 * Report the retirement: the counts, one warning per kept schema, one log line.
+	 *
+	 * @param IOutput           $output Repair output.
+	 * @param ForkRetirementRun $run    The finished retirement.
+	 *
+	 * @return void
+	 */
+	private function reportRetirement(IOutput $output, ForkRetirementRun $run): void {
 		$output->info(
 			sprintf(
 				'Demo-fork repair: retired %d forked schema(s) and the %d demo object(s) bound to them, '
 				. 'spared %d.',
-				$retired,
-				$objects,
-				count($spared)
+				$run->retired,
+				$run->objects,
+				count($run->spared)
 			)
 		);
 
-		foreach ($spared as $slug => $reason) {
+		foreach ($run->spared as $slug => $reason) {
 			$output->warning('Demo-fork repair: kept `dossiq.demo/' . $slug . '`, ' . $reason . '.');
 		}
 
+		$this->logRetirement(run: $run);
+	}//end reportRetirement()
+
+	/**
+	 * Log the retirement's outcome.
+	 *
+	 * @param ForkRetirementRun $run The finished retirement.
+	 *
+	 * @return void
+	 */
+	private function logRetirement(ForkRetirementRun $run): void {
 		$this->logger->warning(
 			'Dossiq: retired the dossiq.demo schema fork',
 			[
 				'app' => Application::APP_ID,
-				'retired' => $retired,
-				'objects' => $objects,
-				'spared' => $spared,
+				'retired' => $run->retired,
+				'objects' => $run->objects,
+				'spared' => $run->spared,
 			]
 		);
-
-	}//end retireForkedSchemas()
+	}//end logRetirement()
 
 	/**
 	 * Drop the deleted schema ids from the demo import's bookkeeping row.
@@ -405,23 +429,22 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 	 * into one boolean is what makes a report unactionable: an operator needs
 	 * to know WHICH of the three held.
 	 *
-	 * @param object            $schemaMapper OpenRegister's schema mapper.
-	 * @param string            $slug         The forked schema's slug.
-	 * @param integer           $schemaId     The forked schema's id.
-	 * @param array<int, int>   $linked       Schema ids some register links.
+	 * @param ForkRetirementRun $run    The retirement (its mapper and the linked schema ids).
+	 * @param object            $schema The forked schema.
 	 *
 	 * @return string The reason to spare it, or '' when every condition is met.
 	 */
-	private function reasonToSpare(object $schemaMapper, string $slug, int $schemaId, array $linked): string {
+	private function reasonToSpare(ForkRetirementRun $run, object $schema): string {
+		$slug = (string)$schema->getSlug();
 		if ($slug === '') {
 			return 'it has no slug, so its twin cannot be identified';
 		}
 
-		if (in_array($schemaId, $linked, true) === true) {
+		if (in_array((int)$schema->getId(), $run->linked, true) === true) {
 			return 'a register still links it, so it is reachable';
 		}
 
-		$twins = $schemaMapper->findAll(
+		$twins = $run->schemaMapper->findAll(
 			filters: [
 				'application' => Application::APP_ID,
 				'slug' => $slug,
