@@ -351,6 +351,7 @@
 <script>
 import { NcButton } from '@nextcloud/vue'
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import { parseJsonList, parseStepConfig } from './workflowConfigParsing.js'
 
 let nextCheckId = 1
 
@@ -425,77 +426,7 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseConfig(config) {
-			let raw = config
-			if (typeof raw === 'string') {
-				try {
-					raw = JSON.parse(raw)
-				} catch {
-					raw = null
-				}
-			}
-			const safe = raw && typeof raw === 'object' ? raw : {}
-			return {
-				sla: {
-					value:
-						safe.sla && Number.isFinite(safe.sla.value)
-							? safe.sla.value
-							: null,
-
-					unit:
-						safe.sla && typeof safe.sla.unit === 'string'
-							? safe.sla.unit
-							: '',
-				},
-
-				requiredFields: Array.isArray(safe.requiredFields)
-					? [...safe.requiredFields]
-					: [],
-
-				autoActions: Array.isArray(safe.autoActions)
-					? [...safe.autoActions]
-					: [],
-
-				escalationRule:
-					safe.escalationRule && typeof safe.escalationRule === 'object'
-						? {
-								trigger:
-									typeof safe.escalationRule.trigger === 'string'
-										? safe.escalationRule.trigger
-										: 'preBreach',
-
-								offset: Number.isFinite(safe.escalationRule.offset)
-									? safe.escalationRule.offset
-									: 0,
-
-								offsetUnit:
-									typeof safe.escalationRule.offsetUnit
-									=== 'string'
-										? safe.escalationRule.offsetUnit
-										: 'businessDays',
-
-								notifyRole:
-									typeof safe.escalationRule.notifyRole
-									=== 'string'
-										? safe.escalationRule.notifyRole
-										: '',
-
-								escalateToRole:
-									typeof safe.escalationRule.escalateToRole
-									=== 'string'
-										? safe.escalationRule.escalateToRole
-										: '',
-
-								openIncident: !!safe.escalationRule.openIncident,
-							}
-						: {
-								trigger: 'preBreach',
-								offset: 0,
-								offsetUnit: 'businessDays',
-								notifyRole: '',
-								escalateToRole: '',
-								openIncident: false,
-							},
-			}
+			return parseStepConfig(config)
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
@@ -553,15 +484,7 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseChecklist(checklist) {
-			if (!checklist) return []
-			if (typeof checklist === 'string') {
-				try {
-					return JSON.parse(checklist)
-				} catch {
-					return []
-				}
-			}
-			return [...checklist]
+			return parseJsonList(checklist)
 		},
 
 		/**
@@ -569,15 +492,7 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
 		 */
 		parseActions(actions) {
-			if (!actions) return []
-			if (typeof actions === 'string') {
-				try {
-					return JSON.parse(actions)
-				} catch {
-					return []
-				}
-			}
-			return [...actions]
+			return parseJsonList(actions)
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
