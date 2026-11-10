@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\HoldOrder;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -294,7 +295,10 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 				return false;
 			}
 
-			$legalHold->placeHold($caseObject, 'Awb-procedure — gemigreerd uit OverdrachtTrigger (opgeschort-juridische-procedure)');
+			$legalHold->placeHold(
+				object: $caseObject,
+				order: new HoldOrder(reason: 'Awb-procedure — gemigreerd uit OverdrachtTrigger (opgeschort-juridische-procedure)')
+			);
 			return true;
 		} catch (\Throwable $e) {
 			$this->logger->warning('Archival migration: hold placement failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);

@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command\Backfill;
 
+use OCA\OpenRegister\Service\HoldOrder;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -117,7 +118,7 @@ class LegalHoldApplier {
 		}
 
 		try {
-			$run->legalHoldService->placeHold($caseObject, $this->reasonFor(meta: $candidate['meta']));
+			$run->legalHoldService->placeHold(object: $caseObject, order: new HoldOrder(reason: $this->reasonFor(meta: $candidate['meta'])));
 			return ['held', '  <info>[HELD]</info> ' . $described];
 		} catch (\Throwable $e) {
 			return ['unresolved', '  <error>[FAILED]</error> ' . $caseId . ' — ' . $e->getMessage()];

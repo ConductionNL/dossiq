@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Service\HoldOrder;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Container\ContainerInterface;
@@ -187,9 +188,9 @@ class BezwaarLegalHoldListener implements IEventListener {
 		try {
 			$hasHold = (bool)$legalHoldService->hasActiveHold($caseObject);
 			if ($place === true && $hasHold === false) {
-				$legalHoldService->placeHold($caseObject, $reason);
+				$legalHoldService->placeHold(object: $caseObject, order: new HoldOrder(reason: $reason));
 			} elseif ($place === false && $hasHold === true) {
-				$legalHoldService->releaseHold($caseObject, $reason);
+				$legalHoldService->releaseHold(object: $caseObject, order: new HoldOrder(reason: $reason));
 			}
 		} catch (\Throwable $e) {
 			$this->logger->warning(

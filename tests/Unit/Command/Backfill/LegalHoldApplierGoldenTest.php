@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Command\Backfill;
 use ArrayObject;
 use OCA\Dossiq\Command\Backfill\LegalHoldApplier;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\HoldOrder;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -113,12 +114,12 @@ class LegalHoldApplierGoldenTest extends TestCase {
 
 			/**
 			 * @param object $object The case.
-			 * @param string $reason The reason.
+			 * @param HoldOrder $order The hold and its reason.
 			 *
 			 * @return void
 			 */
-			public function placeHold(object $object, string $reason): void {
-				$this->trace->append(['placeHold', $object->id, $reason]);
+			public function placeHold(object $object, HoldOrder $order): void {
+				$this->trace->append(['placeHold', $object->id, $order->reason]);
 				if ($object->id === 'c-refused') {
 					throw new RuntimeException('hold refused');
 				}
