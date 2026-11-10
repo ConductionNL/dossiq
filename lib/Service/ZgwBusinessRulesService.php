@@ -199,12 +199,23 @@ class ZgwBusinessRulesService {
 			}
 		}
 
-		if ($write->caseClosed === true && $write->hasGeforceerd === false) {
+		if ($this->isClosedCaseWithoutForce(write: $write) === true) {
 			return self::CLOSED_CASE_REFUSAL;
 		}
 
 		return null;
 	}//end firstGuardRefusal()
+
+	/**
+	 * Whether the write touches a closed zaak without the geforceerd-bijwerken scope (zrc-007).
+	 *
+	 * @param ZgwWriteCheck $write The write being checked
+	 *
+	 * @return bool
+	 */
+	private function isClosedCaseWithoutForce(ZgwWriteCheck $write): bool {
+		return $write->caseClosed === true && $write->hasGeforceerd === false;
+	}//end isClosedCaseWithoutForce()
 
 	/**
 	 * The ZTC cross-cutting concerns: concept protection, then the publish and destroy guards.
@@ -450,10 +461,22 @@ class ZgwBusinessRulesService {
 			return 'destroy_blocked_active_cases';
 		}
 
+		return $this->confirmationRefusalCode(delGuard: $delGuard, confirmed: $confirmed);
+	}//end destroyRefusalCode()
+
+	/**
+	 * The refusal code of a delete that needs a confirmation the caller did not give, or null.
+	 *
+	 * @param array $delGuard What the delete check answered
+	 * @param bool $confirmed Whether the caller confirmed the delete
+	 *
+	 * @return string|null
+	 */
+	private function confirmationRefusalCode(array $delGuard, bool $confirmed): ?string {
 		if ($delGuard['requiresConfirmation'] === true && $confirmed === false) {
 			return 'destroy_requires_confirmation';
 		}
 
 		return null;
-	}//end destroyRefusalCode()
+	}//end confirmationRefusalCode()
 }//end class
