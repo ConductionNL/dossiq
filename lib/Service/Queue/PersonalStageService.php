@@ -128,14 +128,7 @@ class PersonalStageService {
 			$raw = '';
 		}
 
-		if (trim($raw) === '') {
-			return [];
-		}
-
-		$decoded = json_decode($raw, true);
-		if (is_array($decoded) === false) {
-			return [];
-		}
+		$decoded = JsonPreference::decode(raw: $raw);
 
 		$stages = [];
 		foreach ($decoded as $caseId => $stage) {
