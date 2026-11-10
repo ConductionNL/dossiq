@@ -633,45 +633,72 @@ class DeadlineReportingService {
 	 * @return array{total:int,within:int,missed:int,overrun:int,durations:array<int,int>} Counters plus the collected doorlooptijden.
 	 */
 	private function collectKpiTotals(array $rows, array $filters): array {
-		$total = 0;
-		$within = 0;
-		$missed = 0;
-		$overrun = 0;
-		$durations = [];
+		$totals = [
+			'total' => 0,
+			'within' => 0,
+			'missed' => 0,
+			'overrun' => 0,
+			'durations' => [],
+		];
 		foreach ($rows as $row) {
 			if (isset($filters['caseType']) === true && (string)($row['caseType'] ?? '') !== $filters['caseType']) {
 				continue;
 			}
 
-			$total++;
-			$outcome = $this->outcomes->classify(row: $row);
-			if ($outcome === TermOutcome::MET) {
-				$within++;
-			}
+			$totals = $this->countKpiRow(totals: $totals, row: $row);
+		}
 
-			if ($outcome === TermOutcome::MISSED) {
-				$missed++;
-			}
-
-			if ((string)($row['status'] ?? '') === 'exceeded') {
-				$overrun++;
-			}
-
-			$start = (string)($row['startDate'] ?? '');
-			$end = (string)($row['endDateCurrent'] ?? '');
-			if ($start !== '' && $end !== '') {
-				$durations[] = $this->days->between(from: new DateTimeImmutable(substr($start, 0, 10)), to: new DateTimeImmutable($end));
-			}
-		}//end foreach
-
-		return [
-			'total' => $total,
-			'within' => $within,
-			'missed' => $missed,
-			'overrun' => $overrun,
-			'durations' => $durations,
-		];
+		return $totals;
 	}//end collectKpiTotals()
+
+	/**
+	 * Count one instance row into the KPI counters.
+	 *
+	 * @param array{total:int,within:int,missed:int,overrun:int,durations:array<int,int>} $totals The counters so far.
+	 * @param array<string, mixed>                                                           $row    An instance row.
+	 *
+	 * @return array{total:int,within:int,missed:int,overrun:int,durations:array<int,int>} The counters.
+	 */
+	private function countKpiRow(array $totals, array $row): array {
+		$totals['total']++;
+		$outcome = $this->outcomes->classify(row: $row);
+		if ($outcome === TermOutcome::MET) {
+			$totals['within']++;
+		}
+
+		if ($outcome === TermOutcome::MISSED) {
+			$totals['missed']++;
+		}
+
+		if ((string)($row['status'] ?? '') === 'exceeded') {
+			$totals['overrun']++;
+		}
+
+		$duration = $this->durationOf(row: $row);
+		if ($duration !== null) {
+			$totals['durations'][] = $duration;
+		}
+
+		return $totals;
+	}//end countKpiRow()
+
+	/**
+	 * The days from an instance's start to its current end, or null when
+	 * either is missing.
+	 *
+	 * @param array<string, mixed> $row An instance row.
+	 *
+	 * @return int|null
+	 */
+	private function durationOf(array $row): ?int {
+		$start = (string)($row['startDate'] ?? '');
+		$end = (string)($row['endDateCurrent'] ?? '');
+		if ($start === '' || $end === '') {
+			return null;
+		}
+
+		return $this->days->between(from: new DateTimeImmutable(substr($start, 0, 10)), to: new DateTimeImmutable($end));
+	}//end durationOf()
 
 	/**
 	 * The generic names of a row's procedure-named keys, with their values.
