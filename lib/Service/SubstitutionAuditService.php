@@ -128,7 +128,7 @@ class SubstitutionAuditService {
 		$case['activity'] = json_encode($activity);
 
 		try {
-			$objectService->updateObject($register, $caseSchema, $caseId, $case);
+			$objectService->updateObject(objectId: $caseId, data: $case);
 		} catch (\Throwable $e) {
 			$this->logger->error('Substitution capacity stamp failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
 			return null;

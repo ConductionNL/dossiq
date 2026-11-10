@@ -79,7 +79,7 @@ class CaseAssigneeWriter {
 		string $actorId,
 		string $batchId,
 	): bool {
-		[$objectService, $register] = $this->context();
+		[$objectService] = $this->context();
 		$schema = (string)$this->settingsService->getConfigValue('case_schema');
 
 		$batch = new ReassignmentBatch(
@@ -92,7 +92,6 @@ class CaseAssigneeWriter {
 
 		$written = $this->reassignItem(
 			objectService: $objectService,
-			register: $register,
 			schema: $schema,
 			id: $caseId,
 			item: $case,

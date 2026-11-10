@@ -252,18 +252,19 @@ class CaseVersionMoveTest extends TestCase {
 			/**
 			 * Record a write and apply it to the store.
 			 *
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 * @param string               $id       The object id.
-			 * @param array<string, mixed> $object   The object.
+			 * @param string               $objectId      The object id.
+			 * @param array<string, mixed> $data          The object's complete new data.
+			 * @param bool                 $_rbac         Apply register RBAC.
+			 * @param bool                 $_multitenancy Apply organisation scoping.
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function updateObject(string $register, string $schema, string $id, array $object): array {
-				$this->writes[] = ['schema' => $schema, 'id' => $id, 'object' => $object];
-				$this->store[$id] = ['__schema' => $schema, 'data' => $object];
+			public function updateObject(string $objectId, array $data, bool $_rbac = true, bool $_multitenancy = true): array {
+				$schema = (string)($this->store[$objectId]['__schema'] ?? '');
+				$this->writes[] = ['schema' => $schema, 'id' => $objectId, 'object' => $data];
+				$this->store[$objectId] = ['__schema' => $schema, 'data' => $data];
 
-				return $object;
+				return $data;
 			}//end updateObject()
 		};
 	}//end objectService()
