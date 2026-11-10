@@ -34,6 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Status;
 
+use OCA\Dossiq\Service\Support\FilledValue;
+
 /**
  * Evaluates a status's declared conditions against a case.
  *
@@ -225,15 +227,7 @@ class DerivedStatusEvaluator {
 			return false;
 		}
 
-		if (is_string($value) === true) {
-			return trim($value) !== '';
-		}
-
-		if (is_array($value) === true) {
-			return $value !== [];
-		}
-
-		return true;
+		return FilledValue::isFilled(value: $value);
 	}//end isPresent()
 
 	/**
