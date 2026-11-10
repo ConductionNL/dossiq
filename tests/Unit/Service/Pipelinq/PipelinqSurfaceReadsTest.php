@@ -290,6 +290,47 @@ class PipelinqSurfaceReadsTest extends TestCase {
 	}//end testAnUncomputableProgressIsNotZero()
 
 	/**
+	 * The first work item naming a programme decides it, and a programme the
+	 * list does not hold still answers, by id and with no name.
+	 *
+	 * @return void
+	 */
+	public function testAnUnlistedProgrammeAnswersByIdWithNoName(): void {
+		$portfolio = $this->portfolio(
+			workItems: [
+				['programme' => ' ', 'domainObjectType' => 'dossiq:case', 'domainObjectRef' => 'case-1'],
+				['programme' => 'p-9', 'domainObjectType' => 'dossiq:case', 'domainObjectRef' => 'case-1'],
+				['programme' => 'p-1', 'domainObjectType' => 'dossiq:case', 'domainObjectRef' => 'case-1'],
+			],
+			programmes: [['id' => 'p-1', 'name' => 'Lindelaan leefbaar 2026']],
+			tasks: [['status' => 'closed'], 'not a task', ['status' => 'open']],
+		);
+		$this->services[PipelinqGateway::PROGRAMMES] = $portfolio;
+
+		$consumer = new ProgrammeConsumer($this->gateway(), $this->createMock(LoggerInterface::class));
+		$answer = $consumer->programmeOf(caseId: ' case-1 ');
+
+		$this->assertSame(
+			[
+				'available' => true,
+				'programme' => [
+					'id' => 'p-9',
+					'name' => '',
+					'progress' => [
+						'available' => true,
+						'computable' => true,
+						'progress' => 50,
+						'mode' => 'fromTasks',
+						'sentence' => '50 per cent, derived from the tasks that are closed.',
+					],
+				],
+			],
+			$answer
+		);
+		$this->assertSame(['schemaKey' => 'programme_schema', 'filters' => []], $portfolio->reads[1]);
+	}//end testAnUnlistedProgrammeAnswersByIdWithNoName()
+
+	/**
 	 * A case under no programme is a real empty; no pipelinq is unavailable.
 	 *
 	 * @return void
