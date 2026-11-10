@@ -250,74 +250,113 @@ class PdokLocatieserverService {
 	 *               when the call fails after exhausting retries.
 	 */
 	private function call(string $method, array $params, int $ttl): array {
-		$queryString = http_build_query(data: $params);
-		$cacheKey = $method . '_' . md5(string: $queryString);
+		$read = new LocatieserverCall();
+		$read->method = $method;
+		$read->params = $params;
+		$read->ttl = $ttl;
+		$read->queryString = http_build_query(data: $params);
+		$read->cacheKey = $method . '_' . md5(string: $read->queryString);
 
-		$cached = $this->cache->get($cacheKey);
+		$cached = $this->cache->get($read->cacheKey);
 		if ($cached !== null) {
 			$this->logger->debug(
 				'Dossiq PDOK Locatieserver cache hit',
-				['method' => $method, 'key' => $cacheKey]
+				['method' => $method, 'key' => $read->cacheKey]
 			);
 			return $cached;
 		}
 
-		$started = microtime(as_float: true);
-		$source = $this->appConfig->getValueString(
+		$read->started = microtime(as_float: true);
+		$read->source = $this->appConfig->getValueString(
 			Application::APP_ID,
 			'pdok_locatieserver_source',
 			''
 		);
 
+		try {
+			$body = $this->fetchBody(read: $read);
+		} catch (RuntimeException $e) {
+			return $this->failedRead(read: $read, exception: $e);
+		}
+
+		return $this->decodedAndCached(read: $read, body: $body);
+	}//end call()
+
+	/**
+	 * The raw body of the read: through the gateway when a source is set, otherwise from PDOK.
+	 *
+	 * @param LocatieserverCall $read The read.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When the read failed.
+	 */
+	private function fetchBody(LocatieserverCall $read): string {
 		$endpoint = $this->appConfig->getValueString(
 			Application::APP_ID,
 			'pdok_locatieserver_endpoint',
 			self::DEFAULT_ENDPOINT
 		);
 
-		$url = rtrim(string: $endpoint, characters: '/') . '/' . $method . '?' . $queryString;
+		$url = rtrim(string: $endpoint, characters: '/') . '/' . $read->method . '?' . $read->queryString;
 
-		try {
-			if (empty($source) === false) {
-				$body = $this->callViaOpenConnector(sourceSlug: $source, path: $method, params: $params);
-			}
+		if (empty($read->source) === false) {
+			return $this->callViaOpenConnector(sourceSlug: $read->source, path: $read->method, params: $read->params);
+		}
 
-			if (empty($source) === true) {
-				$body = $this->callDirect(url: $url);
-			}
-		} catch (RuntimeException $e) {
-			$this->recordFailure(statusCode: $e->getCode());
-			$this->logger->warning(
-				'Dossiq PDOK Locatieserver call failed',
-				[
-					'method' => $method,
-					'error' => $e->getMessage(),
-					'status' => $e->getCode(),
-				]
-			);
-			return ['response' => ['docs' => []]];
-		}//end try
+		return $this->callDirect(url: $url);
+	}//end fetchBody()
 
+	/**
+	 * Record a failed read towards the outage budget, log it, and answer no documents.
+	 *
+	 * @param LocatieserverCall $read      The read.
+	 * @param RuntimeException  $exception Why it failed; its code is the HTTP status, or 0.
+	 *
+	 * @return array{response: array{docs: array}}
+	 */
+	private function failedRead(LocatieserverCall $read, RuntimeException $exception): array {
+		$this->recordFailure(statusCode: $exception->getCode());
+		$this->logger->warning(
+			'Dossiq PDOK Locatieserver call failed',
+			[
+				'method' => $read->method,
+				'error' => $exception->getMessage(),
+				'status' => $exception->getCode(),
+			]
+		);
+		return ['response' => ['docs' => []]];
+	}//end failedRead()
+
+	/**
+	 * The decoded body, cached; a body that is no JSON object reads as no documents.
+	 *
+	 * @param LocatieserverCall $read The read.
+	 * @param string            $body The raw body.
+	 *
+	 * @return array
+	 */
+	private function decodedAndCached(LocatieserverCall $read, string $body): array {
 		$decoded = json_decode(json: $body, associative: true);
 		if (is_array(value: $decoded) === false) {
 			$decoded = ['response' => ['docs' => []]];
 		}
 
-		$this->cache->set($cacheKey, $decoded, $ttl);
+		$this->cache->set($read->cacheKey, $decoded, $read->ttl);
 
-		$elapsedMs = (int)((microtime(as_float: true) - $started) * 1000);
+		$elapsedMs = (int)((microtime(as_float: true) - $read->started) * 1000);
 		$this->logger->info(
 			'Dossiq PDOK Locatieserver call',
 			[
-				'method' => $method,
+				'method' => $read->method,
 				'cache' => 'miss',
 				'elapsedMs' => $elapsedMs,
-				'viaSource' => (empty($source) === false),
+				'viaSource' => (empty($read->source) === false),
 			]
 		);
 
 		return $decoded;
-	}//end call()
+	}//end decodedAndCached()
 
 	/**
 	 * Direct HTTP GET to PDOK with a JSON Accept header.
@@ -428,12 +467,7 @@ class PdokLocatieserverService {
 				'Dossiq PDOK Locatieserver: OpenConnector not available, falling back to direct HTTP',
 				['sourceSlug' => $sourceSlug, 'error' => $e->getMessage()]
 			);
-			$endpoint = $this->appConfig->getValueString(
-				Application::APP_ID,
-				'pdok_locatieserver_endpoint',
-				self::DEFAULT_ENDPOINT
-			);
-			return $this->callDirect(url: rtrim(string: $endpoint, characters: '/') . '/' . $path . '?' . http_build_query(data: $params));
+			return $this->directFallback(path: $path, params: $params);
 		}
 
 		// We intentionally call CallService dynamically; the signature has
@@ -456,6 +490,22 @@ class PdokLocatieserverService {
 			);
 		}
 
+		return $this->gatewayBody(result: $result);
+	}//end callViaOpenConnector()
+
+	/**
+	 * The body the gateway answered, as a string; an unknown shape is a refusal.
+	 *
+	 * The minimum contract is a body string under `['body']` or
+	 * `['response']['body']`; an array body is encoded.
+	 *
+	 * @param mixed $result What the gateway answered.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When the shape is not recognised (502).
+	 */
+	private function gatewayBody(mixed $result): string {
 		if (is_array(value: $result) === true) {
 			$body = ($result['body'] ?? ($result['response']['body'] ?? null));
 			if (is_string(value: $body) === true) {
@@ -470,7 +520,26 @@ class PdokLocatieserverService {
 		}
 
 		throw new RuntimeException('OpenConnector returned an unrecognised response shape', 502);
-	}//end callViaOpenConnector()
+	}//end gatewayBody()
+
+	/**
+	 * Call PDOK directly when the gateway is not there.
+	 *
+	 * @param string               $path   The endpoint suffix.
+	 * @param array<string, mixed> $params The query string parameters.
+	 *
+	 * @return string The raw body.
+	 *
+	 * @throws RuntimeException When the direct call fails.
+	 */
+	private function directFallback(string $path, array $params): string {
+		$endpoint = $this->appConfig->getValueString(
+			Application::APP_ID,
+			'pdok_locatieserver_endpoint',
+			self::DEFAULT_ENDPOINT
+		);
+		return $this->callDirect(url: rtrim(string: $endpoint, characters: '/') . '/' . $path . '?' . http_build_query(data: $params));
+	}//end directFallback()
 
 	/**
 	 * Record a successful call (clears the failure counter).

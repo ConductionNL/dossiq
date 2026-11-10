@@ -160,23 +160,10 @@ class WOODeadlineService {
 	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function extendDeadline(string $caseId, string $reason): array {
-		if (trim($reason) === '') {
-			throw new RefusedException(
-				rule: 'woo-extension-reason-missing',
-				sentence: 'A reason is required to extend the term of a Woo request.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->refuseWithoutReason(reason: $reason);
 
 		$definition = $this->wooDefinition();
-		$period = (int)($definition['extensionCapacity'] ?? 0);
-		if ($period <= 0 || $this->extensions === null) {
-			throw new RefusedException(
-				rule: 'woo-extension-unavailable',
-				sentence: 'The Woo term cannot be extended: no extension is declared, or the term engine is not available.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$period = $this->extensionPeriod(definition: $definition);
 
 		// The ceiling (one extension, Woo art. 4.4 lid 2) is the term engine's,
 		// and refuses with 409 and its own rule.
@@ -187,13 +174,7 @@ class WOODeadlineService {
 			caseId: $caseId,
 			rationale: $reason,
 			days: $period,
-			baseOf: fn (array $term): string => $this->dates->formatCalendarDate(
-				$this->definitions->countedEndDateFor(
-					start: $this->dates->parse((string)($term['startDate'] ?? ''), 'startDate'),
-					days: (int)($definition['standardDurationDays'] ?? 0),
-					definitie: $definition
-				)
-			),
+			baseOf: $this->countedEndOf(definition: $definition),
 		);
 
 		$term = $extended['instance'];
@@ -214,6 +195,64 @@ class WOODeadlineService {
 			'termInstanceId' => (string)($term['id'] ?? ''),
 		] + (array)($extended['notice'] ?? []);
 	}//end extendDeadline()
+
+	/**
+	 * Refuse an extension without a reason.
+	 *
+	 * @param string $reason The reason given.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the reason is empty.
+	 */
+	private function refuseWithoutReason(string $reason): void {
+		if (trim($reason) === '') {
+			throw new RefusedException(
+				rule: 'woo-extension-reason-missing',
+				sentence: 'A reason is required to extend the term of a Woo request.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end refuseWithoutReason()
+
+	/**
+	 * The days the Woo term may be extended by, refused when none is declared or there is no term engine.
+	 *
+	 * @param array<string, mixed> $definition The Woo term definition.
+	 *
+	 * @return int
+	 *
+	 * @throws RefusedException When the term cannot be extended.
+	 */
+	private function extensionPeriod(array $definition): int {
+		$period = (int)($definition['extensionCapacity'] ?? 0);
+		if ($period <= 0 || $this->extensions === null) {
+			throw new RefusedException(
+				rule: 'woo-extension-unavailable',
+				sentence: 'The Woo term cannot be extended: no extension is declared, or the term engine is not available.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $period;
+	}//end extensionPeriod()
+
+	/**
+	 * The day an extension runs from: the term's original end, as counted and unrolled.
+	 *
+	 * @param array<string, mixed> $definition The Woo term definition.
+	 *
+	 * @return \Closure(array): string
+	 */
+	private function countedEndOf(array $definition): \Closure {
+		return fn (array $term): string => $this->dates->formatCalendarDate(
+			$this->definitions->countedEndDateFor(
+				start: $this->dates->parse((string)($term['startDate'] ?? ''), 'startDate'),
+				days: (int)($definition['standardDurationDays'] ?? 0),
+				definitie: $definition
+			)
+		);
+	}//end countedEndOf()
 
 	/**
 	 * Check case deadline and emit T-7 warning notifications.

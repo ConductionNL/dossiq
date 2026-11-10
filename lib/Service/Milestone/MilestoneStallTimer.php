@@ -43,6 +43,8 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
+use OCA\OpenRegister\Kernel\Contracts\TimerChange;
+use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -232,7 +234,10 @@ class MilestoneStallTimer {
 		}
 
 		try {
-			$engine->cancelForSubject(subjectType: 'object', subjectUuid: $caseId.self::SUBJECT_SUFFIX, reason: $reason, actor: null);
+			$engine->cancelForSubject(
+				subject: new TimerSubjectRef(type: 'object', uuid: $caseId.self::SUBJECT_SUFFIX),
+				change: new TimerChange(reason: $reason, actor: null)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq milestone: the engine refused to cancel the stall timer', ['case' => $caseId, 'error' => $e->getMessage()]);
 			return self::UNAVAILABLE;

@@ -101,46 +101,82 @@ class DerivedStatusTimelineListener implements IEventListener {
 			return;
 		}
 
-		$caseId = (string)($payload['id'] ?? ($payload['@self']['id'] ?? ''));
+		$caseId = $this->caseIdOf(payload: $payload);
 		if ($caseId === '') {
 			return;
 		}
 
-		$staged = $this->journal->take(caseId: $caseId);
+		$staged = $this->landedMove(payload: $payload, caseId: $caseId);
 		if ($staged === null) {
 			return;
 		}
 
-		// The save can have settled on something other than what the
-		// derivation asked for: a later listener, a refusal, a merge. A move
-		// that did not land is not a move to record.
+		$this->recordMove(caseId: $caseId, staged: $staged);
+	}//end handle()
+
+	/**
+	 * The case id of the saved payload, '' when it has none.
+	 *
+	 * @param array<string, mixed> $payload The saved case.
+	 *
+	 * @return string
+	 */
+	private function caseIdOf(array $payload): string {
+		return (string)($payload['id'] ?? ($payload['@self']['id'] ?? ''));
+	}//end caseIdOf()
+
+	/**
+	 * The move the derivation staged for this case, when the save landed on it.
+	 *
+	 * @param array<string, mixed> $payload The saved case.
+	 * @param string               $caseId  The case.
+	 *
+	 * @return array<string, string>|null The staged move, or null when none was staged or it did not land.
+	 */
+	private function landedMove(array $payload, string $caseId): ?array {
+		$staged = $this->journal->take(caseId: $caseId);
+		if ($staged === null || $this->landed(payload: $payload, staged: $staged) === false) {
+			return null;
+		}
+
+		return $staged;
+	}//end landedMove()
+
+	/**
+	 * Whether the save landed where the derivation asked.
+	 *
+	 * The save can have settled on something other than what the
+	 * derivation asked for: a later listener, a refusal, a merge. A move
+	 * that did not land is not a move to record.
+	 *
+	 * @param array<string, mixed>  $payload The saved case.
+	 * @param array<string, string> $staged  The staged move: `from` and `to`.
+	 *
+	 * @return bool
+	 */
+	private function landed(array $payload, array $staged): bool {
 		$landed = (string)($payload['status'] ?? '');
-		if ($landed !== $staged['to']) {
-			$this->logger->debug(
-				'Dossiq timeline: a derived move was staged but the case landed elsewhere, so nothing was recorded',
-				['case' => $caseId, 'staged' => $staged['to'], 'landed' => $landed]
-			);
-			return;
+		if ($landed === $staged['to']) {
+			return true;
 		}
 
-		$to = $this->statusName(statusTypeId: $staged['to']);
-		$from = $this->statusName(statusTypeId: $staged['from']);
+		$this->logger->debug(
+			'Dossiq timeline: a derived move was staged but the case landed elsewhere, so nothing was recorded',
+			['case' => $this->caseIdOf(payload: $payload), 'staged' => $staged['to'], 'landed' => $landed]
+		);
+		return false;
+	}//end landed()
 
-		$message = 'Status werd ' . $to . ' omdat de zaak daaraan voldoet';
-		if ($from !== '') {
-			$message = 'Status ging van ' . $from . ' naar ' . $to . ' omdat de zaak daaraan voldoet';
-		}
-
-		// A derived move announces itself exactly as a made one does: in the
-		// public words the status carries, and only when it carries some. The
-		// reason it was derived is the workflow's business, so it does not
-		// travel with the public sentence.
-		$publicLabel = $this->publicLabel(statusTypeId: $staged['to']);
-		$visibility = CaseTimeline::INTERNAL;
-		if ($publicLabel !== '') {
-			$message = 'Status: ' . $publicLabel;
-			$visibility = CaseTimeline::PUBLIC_ENTRY;
-		}
+	/**
+	 * Record the derived move on the case timeline.
+	 *
+	 * @param string                $caseId The case.
+	 * @param array<string, string> $staged The staged move: `from` and `to`.
+	 *
+	 * @return void
+	 */
+	private function recordMove(string $caseId, array $staged): void {
+		[$message, $visibility] = $this->announcement(staged: $staged);
 
 		$this->timeline->record(
 			caseId: $caseId,
@@ -156,7 +192,36 @@ class DerivedStatusTimelineListener implements IEventListener {
 			],
 			visibility: $visibility,
 		);
-	}//end handle()
+	}//end recordMove()
+
+	/**
+	 * The sentence a derived move is recorded with, and who may read it.
+	 *
+	 * A derived move announces itself exactly as a made one does: in the
+	 * public words the status carries, and only when it carries some. The
+	 * reason it was derived is the workflow's business, so it does not
+	 * travel with the public sentence.
+	 *
+	 * @param array<string, string> $staged The staged move: `from` and `to`.
+	 *
+	 * @return array{0: string, 1: string} The message and the timeline visibility.
+	 */
+	private function announcement(array $staged): array {
+		$to = $this->statusName(statusTypeId: $staged['to']);
+		$from = $this->statusName(statusTypeId: $staged['from']);
+
+		$message = 'Status werd ' . $to . ' omdat de zaak daaraan voldoet';
+		if ($from !== '') {
+			$message = 'Status ging van ' . $from . ' naar ' . $to . ' omdat de zaak daaraan voldoet';
+		}
+
+		$publicLabel = $this->publicLabel(statusTypeId: $staged['to']);
+		if ($publicLabel !== '') {
+			return ['Status: ' . $publicLabel, CaseTimeline::PUBLIC_ENTRY];
+		}
+
+		return [$message, CaseTimeline::INTERNAL];
+	}//end announcement()
 
 	/**
 	 * The words this status is announced to the applicant in, if any.
