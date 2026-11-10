@@ -76,10 +76,32 @@ function requiredIn(status) {
 export function fieldRightsMatrix({ rules = [], statuses = [], properties = [], roleNames = {} } = {}) {
 	const statusOrder = statuses.map((status) => idOf(status)).filter((id) => id !== '')
 	const statusName = new Map(statuses.map((status) => [idOf(status), resolveTranslatable(status?.name ?? '').text]))
+	const fieldLabels = labelsOf(properties)
+	const declared = declaredRoleRules(rules)
+	const columns = roleColumns(declared, { statusOrder, statusName, roleNames })
+	const requiredBy = requiredByStatus({ statuses, properties, statusOrder })
+
+	const matrix = { statusOrder, declared, requiredBy }
+	const rows = matrixFields(fieldLabels, matrix).map((field) => ({
+		field,
+		label: fieldLabels.labels.get(field) || field,
+		cells: columns.map((column) => ({ state: cellState(matrix, { field, column }) })),
+	}))
+
+	return { columns, rows }
+}
+
+/**
+ * The label of each declared field, and the order they are declared in.
+ *
+ * @param {Array<object>} properties The property definitions.
+ * @return {{labels: Map<string, string>, order: Array<string>}} The labels and the order.
+ */
+function labelsOf(properties) {
 	const labels = new Map()
 	const order = []
 	for (const property of properties) {
-		const name = typeof property?.name === 'string' ? property.name.trim() : ''
+		const name = propertyName(property)
 		if (name !== '' && !labels.has(name)) {
 			// A field's title is translatable, so the store answers a language map.
 			const title = resolveTranslatable(property.title ?? '').text
@@ -87,12 +109,41 @@ export function fieldRightsMatrix({ rules = [], statuses = [], properties = [], 
 			order.push(name)
 		}
 	}
+	return { labels, order }
+}
 
-	const declared = (Array.isArray(rules) ? rules : [])
+/**
+ * A property's trimmed name, or '' when it has none.
+ *
+ * @param {object} property A property definition.
+ * @return {string} The name.
+ */
+function propertyName(property) {
+	return typeof property?.name === 'string' ? property.name.trim() : ''
+}
+
+/**
+ * The hidden and read-only role rules that name a field and a role.
+ *
+ * @param {unknown} rules The fieldRoleRules.
+ * @return {Array<{field: string, state: string, roles: Array<string>, statuses: Array<string>}>} The rules.
+ */
+function declaredRoleRules(rules) {
+	return (Array.isArray(rules) ? rules : [])
 		.filter((rule) => rule && ROLE_STATES[rule.rule] && typeof rule.field === 'string' && rule.field.trim() !== '')
 		.map((rule) => ({ field: rule.field.trim(), state: ROLE_STATES[rule.rule], roles: names(rule.groups), statuses: names(rule.statuses) }))
 		.filter((rule) => rule.roles.length > 0)
+}
 
+/**
+ * One column per role the rules name, with the statuses its rules are
+ * limited to, in status order.
+ *
+ * @param {Array<object>} declared The declared role rules.
+ * @param {{statusOrder: Array<string>, statusName: Map<string, string>, roleNames: object}} statusContext The status order and names, and the role names per group.
+ * @return {Array<{id: string, label: string, statuses: Array<string>}>} The columns.
+ */
+function roleColumns(declared, statusContext) {
 	const roleStatuses = new Map()
 	for (const rule of declared) {
 		for (const role of rule.roles) {
@@ -101,46 +152,79 @@ export function fieldRightsMatrix({ rules = [], statuses = [], properties = [], 
 			roleStatuses.set(role, limit)
 		}
 	}
-	const columns = [...roleStatuses].map(([role, limit]) => {
-		const limited = statusOrder.filter((id) => limit.has(id))
-		const words = limited.map((id) => statusName.get(id)).filter(Boolean).map((name) => name.charAt(0).toLowerCase() + name.slice(1))
-		const named = Array.isArray(roleNames?.[role]) && roleNames[role].length > 0 ? roleNames[role].join(' / ') : role
-		return { id: role, label: words.length > 0 ? `${named}, ${words.join(', ')}` : named, statuses: limited }
-	})
+	return [...roleStatuses].map((entry) => roleColumn(entry, statusContext))
+}
 
-	const requiredBy = new Map(statusOrder.map((id) => [id, new Set()]))
-	statuses.forEach((status) => {
+/**
+ * The column of one role, labelled with its name and its statuses
+ * ("Intaker, ontvangen").
+ *
+ * @param {Array} entry The role and the set of statuses it is limited to.
+ * @param {{statusOrder: Array<string>, statusName: Map<string, string>, roleNames: object}} statusContext The status order and names, and the role names per group.
+ * @return {{id: string, label: string, statuses: Array<string>}} The column.
+ */
+function roleColumn(entry, statusContext) {
+	const [role, limit] = entry
+	const { statusOrder, statusName, roleNames } = statusContext
+	const limited = statusOrder.filter((id) => limit.has(id))
+	const words = limited.map((id) => statusName.get(id)).filter(Boolean).map((name) => name.charAt(0).toLowerCase() + name.slice(1))
+	const named = Array.isArray(roleNames?.[role]) && roleNames[role].length > 0 ? roleNames[role].join(' / ') : role
+	return { id: role, label: words.length > 0 ? `${named}, ${words.join(', ')}` : named, statuses: limited }
+}
+
+/**
+ * Per status, the fields it requires: from its field rules and from each
+ * property's requiredAtStatus.
+ *
+ * @param {{statuses: Array<object>, properties: Array<object>, statusOrder: Array<string>}} parts The case type's statuses and properties, and the status order.
+ * @return {Map<string, Set<string>>} The required fields per status id.
+ */
+function requiredByStatus(parts) {
+	const requiredBy = new Map(parts.statusOrder.map((id) => [id, new Set()]))
+	parts.statuses.forEach((status) => {
 		const id = idOf(status)
 		requiredIn(status).forEach((field) => requiredBy.get(id)?.add(field))
 	})
-	properties.forEach((property) => {
+	parts.properties.forEach((property) => {
 		const at = idOf(property?.requiredAtStatus)
 		if (at !== '' && requiredBy.has(at) && typeof property?.name === 'string') {
 			requiredBy.get(at).add(property.name.trim())
 		}
 	})
+	return requiredBy
+}
 
-	const named = new Set(declared.map((rule) => rule.field))
-	requiredBy.forEach((fields) => fields.forEach((field) => named.add(field)))
-	const fields = [...order.filter((field) => named.has(field)), ...[...named].filter((field) => !labels.has(field))]
+/**
+ * The fields the matrix has a row for: those a role rule names or a status
+ * requires, declared ones first in declaration order.
+ *
+ * @param {{labels: Map<string, string>, order: Array<string>}} fieldLabels The declared fields.
+ * @param {{declared: Array<object>, requiredBy: Map<string, Set<string>>}} matrix The rules and requirements.
+ * @return {Array<string>} The fields.
+ */
+function matrixFields(fieldLabels, matrix) {
+	const named = new Set(matrix.declared.map((rule) => rule.field))
+	matrix.requiredBy.forEach((fields) => fields.forEach((field) => named.add(field)))
+	return [...fieldLabels.order.filter((field) => named.has(field)), ...[...named].filter((field) => !fieldLabels.labels.has(field))]
+}
 
-	const stateOf = (field, column) => {
-		const own = declared.filter((rule) => rule.field === field && rule.roles.includes(column.id))
-		if (own.some((rule) => rule.state === 'hidden')) {
-			return 'hidden'
-		}
-		if (own.some((rule) => rule.state === 'readOnly')) {
-			return 'readOnly'
-		}
-		const scope = column.statuses.length > 0 ? column.statuses : statusOrder
-		return scope.some((id) => requiredBy.get(id)?.has(field)) ? 'required' : 'edit'
+/**
+ * What one field is for one role column: hidden or read-only when a rule
+ * of that role says so, else required when one of the column's statuses
+ * (every status, for a role without a limit) requires it, else edit.
+ *
+ * @param {{statusOrder: Array<string>, declared: Array<object>, requiredBy: Map<string, Set<string>>}} matrix The rules and requirements.
+ * @param {{field: string, column: object}} cell The field and the column.
+ * @return {string} The state.
+ */
+function cellState(matrix, cell) {
+	const own = matrix.declared.filter((rule) => rule.field === cell.field && rule.roles.includes(cell.column.id))
+	if (own.some((rule) => rule.state === 'hidden')) {
+		return 'hidden'
 	}
-
-	const rows = fields.map((field) => ({
-		field,
-		label: labels.get(field) || field,
-		cells: columns.map((column) => ({ state: stateOf(field, column) })),
-	}))
-
-	return { columns, rows }
+	if (own.some((rule) => rule.state === 'readOnly')) {
+		return 'readOnly'
+	}
+	const scope = cell.column.statuses.length > 0 ? cell.column.statuses : matrix.statusOrder
+	return scope.some((id) => matrix.requiredBy.get(id)?.has(cell.field)) ? 'required' : 'edit'
 }

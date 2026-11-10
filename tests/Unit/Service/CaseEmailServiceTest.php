@@ -317,6 +317,50 @@ class CaseEmailServiceTest extends TestCase {
 	}//end testSendEmailAllowsRecipientOnConfiguredAllowlist()
 
 	/**
+	 * A malformed recipient is refused before the allow-list is read, and nothing leaves.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedRecipientIsRefusedAndNothingIsSent(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '*',
+		);
+
+		$this->mailer->expects($this->never())->method('sendMessage');
+
+		try {
+			$service->sendEmail(caseId: 'case-1', to: 'geen-adres', subject: 'Hallo', body: 'Tekst');
+			$this->fail('A malformed recipient must be refused.');
+		} catch (\RuntimeException $e) {
+			$this->assertSame('Ongeldig e-mailadres opgegeven.', $e->getMessage());
+		}
+
+		$this->assertSame(0, $this->sentRecords);
+	}//end testAMalformedRecipientIsRefusedAndNothingIsSent()
+
+	/**
+	 * A sent mail answers its whole result: the stored id, both addresses, the subject and the state.
+	 *
+	 * @return void
+	 */
+	public function testASentMailAnswersItsWholeResult(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '@gemeente.nl',
+		);
+
+		$result = $service->sendEmail(caseId: 'case-1', to: 'burger@gemeente.nl', subject: 'Hallo', body: 'Tekst');
+
+		$this->assertSame(['messageId', 'to', 'from', 'subject', 'state', 'sentAt'], array_keys($result));
+		$this->assertSame('msg-test', $result['messageId']);
+		$this->assertSame('burger@gemeente.nl', $result['to']);
+		$this->assertSame('zaken@gemeente.nl', $result['from']);
+		$this->assertSame('Hallo', $result['subject']);
+		$this->assertSame(1, $this->sentRecords);
+	}//end testASentMailAnswersItsWholeResult()
+
+	/**
 	 * A sent mail puts a PUBLIC line on the case's timeline, carrying the
 	 * recipient, the subject and the id of the document it was recorded as.
 	 *
