@@ -179,7 +179,7 @@ class CaseDefinitionImportService {
 	 */
 	private function importOrReport(PackageImport $import, mixed $component): array {
 		try {
-			return $this->importComponent(zip: $import->zip, component: $component, strategy: $import->strategy);
+			return $this->importComponent(import: $import, component: $component);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Failed to import component {component}: {error}',
@@ -189,10 +189,7 @@ class CaseDefinitionImportService {
 				]
 			);
 
-			return [
-				'status' => 'error',
-				'message' => $e->getMessage(),
-			];
+			return $this->componentResult(status: 'error', message: $e->getMessage());
 		}
 	}//end importOrReport()
 
@@ -268,54 +265,74 @@ class CaseDefinitionImportService {
 	 * case type — statuses without the case type they belong to, roles
 	 * pointing at nothing — is a state nobody can read and nobody asked for.
 	 *
-	 * @param \ZipArchive $zip The opened ZIP archive.
-	 * @param string $component The component name.
-	 * @param string $strategy The conflict resolution strategy.
+	 * @param PackageImport $import    The opened package and its strategy.
+	 * @param string        $component The component name.
 	 *
 	 * @return array{status: string, message: string, created?: array<int, string>, replaced?: array<int, string>}
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function importComponent(
-		\ZipArchive $zip,
-		string $component,
-		string $strategy,
-	): array {
+	private function importComponent(PackageImport $import, string $component): array {
 		if ($component === 'workflows') {
-			return $this->workflows->deploy(zip: $zip, strategy: $strategy);
+			return $this->workflows->deploy(zip: $import->zip, strategy: $import->strategy);
 		}
 
-		$content = $zip->getFromName($component . '.json');
-		if ($content === false) {
-			return [
-				'status' => 'skipped',
-				'message' => "Component file {$component}.json not found in archive",
-			];
-		}
-
-		$data = json_decode($content, true);
-		if (is_array($data) === false) {
-			return [
-				'status' => 'error',
-				'message' => "Invalid JSON in {$component}.json",
-			];
-		}
-
-		$collections = (self::COMPONENT_COLLECTIONS[$component] ?? []);
-		if ($collections === []) {
-			return [
-				'status' => 'error',
-				'message' => "Component '{$component}' names no collection this import knows how to write.",
-			];
+		$content = $import->zip->getFromName($component . '.json');
+		$refusal = $this->unusableComponent(component: $component, content: $content);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return $this->writer->writeCollections(
 			component: $component,
-			data: $data,
-			collections: $collections,
-			strategy: $strategy
+			data: json_decode((string)$content, true),
+			collections: self::COMPONENT_COLLECTIONS[$component],
+			strategy: $import->strategy
 		);
 	}//end importComponent()
+
+	/**
+	 * Why a component cannot be written, or null when it can: its file is
+	 * missing, it is not JSON, or it names no collection this import knows.
+	 *
+	 * @param string       $component The component name.
+	 * @param string|false $content   The component file's content, or false when absent.
+	 *
+	 * @return array{status: string, message: string}|null
+	 */
+	private function unusableComponent(string $component, string|false $content): ?array {
+		if ($content === false) {
+			return $this->componentResult(status: 'skipped', message: "Component file {$component}.json not found in archive");
+		}
+
+		if (is_array(json_decode($content, true)) === false) {
+			return $this->componentResult(status: 'error', message: "Invalid JSON in {$component}.json");
+		}
+
+		if ((self::COMPONENT_COLLECTIONS[$component] ?? []) === []) {
+			return $this->componentResult(
+				status: 'error',
+				message: "Component '{$component}' names no collection this import knows how to write."
+			);
+		}
+
+		return null;
+	}//end unusableComponent()
+
+	/**
+	 * One component's result.
+	 *
+	 * @param string $status  `skipped` or `error`.
+	 * @param string $message What happened.
+	 *
+	 * @return array{status: string, message: string}
+	 */
+	private function componentResult(string $status, string $message): array {
+		return [
+			'status' => $status,
+			'message' => $message,
+		];
+	}//end componentResult()
 
 
 
