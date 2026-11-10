@@ -190,11 +190,6 @@ class PublicCaseSurvivorController extends Controller {
 
 			$rendered = $objectService->renderEntity(
 				entity: $entity,
-				_extend: [],
-				depth: 0,
-				filter: [],
-				fields: [],
-				unset: [],
 				_rbac: true,
 				_multitenancy: true
 			);
