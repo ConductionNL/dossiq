@@ -39,6 +39,8 @@ use RuntimeException;
  * One run of the availability refresh.
  *
  * @covers \OCA\Dossiq\BackgroundJob\SpecialistBeschikbaarheidRefreshJob
+ * @covers \OCA\Dossiq\BackgroundJob\AvailabilityRun
+ * @covers \OCA\Dossiq\BackgroundJob\OpenRegisterObjects
  */
 class SpecialistBeschikbaarheidRefreshJobWorkTest extends TestCase {
 	use MakesBackgroundServiceAccount;
