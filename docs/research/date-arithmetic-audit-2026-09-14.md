@@ -126,6 +126,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/DemoCaseloadReport.php` | 86 | neither | | a three day horizon in a demo report |
 | `lib/Service/DemoCaseloadSeedDataService.php` | 343 | neither | | demo seed data |
 | `lib/Service/Doorlooptijd/CaseEnricher.php` | 233 | business | engine calendar | the dashboard's derived expected end; it mirrors a statutory term, so it rolls with it or it contradicts it on screen |
+| `lib/Service/Doorlooptijd/ClosedCaseTally.php` | 102 | neither | | the twelve-month cutoff and the window start of the throughput summary; moved out of `DeadlineComplianceCalculator::computeSummary` |
 | `lib/Service/Doorlooptijd/CaseTypeThroughputCalculator.php` | 202 | neither | | month buckets for the processing-time download |
 | `lib/Service/Doorlooptijd/DeadlineComplianceCalculator.php` | 168 | neither | | month buckets for a compliance trend |
 | `lib/Service/DsoCaseService.php` | 310 | statutory | `WorkingDayCalculator` | the Omgevingswet term; the day walk is already the calculator's |
