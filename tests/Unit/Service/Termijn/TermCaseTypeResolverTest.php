@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -58,9 +59,11 @@ class TermCaseTypeResolverTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$registerSlug = (string)$target->register;
+				$schemaSlug = (string)$target->schema;
 				$this->searches++;
-				return parent::searchObjectsBySlug(registerSlug: $registerSlug, schemaSlug: $schemaSlug, filters: $filters);
+				return parent::searchObjectsBySlug(target: new RegisterSchemaRef(register: $registerSlug, schema: $schemaSlug), filters: $filters);
 			}
 		};
 

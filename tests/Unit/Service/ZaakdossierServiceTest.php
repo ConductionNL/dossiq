@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -57,7 +58,7 @@ interface DossierObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters): array;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array;
 
 	/**
 	 * Search by numeric @self.

@@ -17,6 +17,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Repair\RemoveDocumentRecordTwins;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -50,7 +51,7 @@ class RemoveDocumentRecordTwinsTest extends TestCase {
 			 * @param array<string, mixed> $filters The filters.
 			 * @return array<int, array<string, mixed>> One page of records.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
 				if ((int)($filters['_page'] ?? 1) > 1) {
 					return [];
 				}

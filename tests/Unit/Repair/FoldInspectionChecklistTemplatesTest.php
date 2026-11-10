@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\FoldInspectionChecklistTemplates;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -142,7 +143,8 @@ final class FoldInspectionChecklistTemplatesTest extends TestCase {
 			 *
 			 * @SuppressWarnings(PHPMD.UnusedFormalParameter) OpenRegister's signature.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$schema = (string)$target->schema;
 				return ($this->rows[$schema] ?? []);
 			}
 

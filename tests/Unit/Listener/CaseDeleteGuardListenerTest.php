@@ -31,6 +31,7 @@ use OCA\Dossiq\Listener\CaseDeleteGuardListener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -417,7 +418,8 @@ class CaseDeleteGuardListenerTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$schema = (string)$target->schema;
 				$this->queried[$schema] = $filters;
 
 				return ($this->rows[$schema] ?? []);

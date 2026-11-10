@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Team;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Team\CaseTeamMigration;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
@@ -288,7 +289,8 @@ class CaseTeamMigrationTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The page.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$schema = (string)$target->schema;
 				$all = array_values($this->rows[$schema] ?? []);
 
 				return array_slice($all, (int)($filters['_offset'] ?? 0), (int)($filters['_limit'] ?? 100));

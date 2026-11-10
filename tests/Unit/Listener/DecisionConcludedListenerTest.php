@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Support\FlowDecisionSubject;
 use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
 use OCA\OpenRegister\Db\FlowRun;
 use OCA\OpenRegister\Db\FlowRunMapper;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -56,7 +57,7 @@ interface ConcludedObjectServiceStub {
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters): array;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array;
 }//end interface
 
 /**

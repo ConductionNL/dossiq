@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Custody\ConsentRefusal;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -113,7 +114,9 @@ class CaseTransferConsentGateGoldenTest extends TestCase {
 			 *
 			 * @return mixed The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): mixed {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): mixed {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				$this->calls[] = ['searchObjectsBySlug', $register, $schema, $filters];
 				if (($this->world['consents'] ?? null) === 'throw') {
 					throw new RuntimeException('search down');

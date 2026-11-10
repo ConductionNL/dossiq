@@ -29,6 +29,7 @@ use OCA\Dossiq\Tests\Support\RecordingAuditTrailMapper;
 use OCA\Dossiq\Woo\WooReportReadLog;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCA\Dossiq\Woo\WooThroughputReport;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
@@ -143,8 +144,10 @@ class WooReportControllerTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
-				return $this->store->searchObjectsBySlug(register: $register, schema: $schema, filters: $filters);
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
+				return $this->store->searchObjectsBySlug(target: new RegisterSchemaRef(register: $register, schema: $schema), filters: $filters);
 			}
 
 			/**

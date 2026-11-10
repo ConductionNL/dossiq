@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -102,7 +103,8 @@ class RebindCasesOffTheBasisFlowTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The matching rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$schema = (string)$target->schema;
 				$rows = array_values($this->test->rows[$schema] ?? []);
 				if (isset($filters['caseType']) === true) {
 					$rows = array_values(array_filter($rows, static fn (array $row): bool => ($row['caseType'] ?? '') === $filters['caseType']));

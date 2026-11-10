@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\LhsLookupService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryDecisionTableStore;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -235,7 +236,8 @@ class LhsLookupAnswersTheGridTest extends TestCase {
 				 *
 				 * @return list<array<string, mixed>> The matching cells.
 				 */
-				public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+				public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+					$schema = (string)$target->schema;
 					if ($schema !== 'lhsMatrixCell') {
 						return [];
 					}

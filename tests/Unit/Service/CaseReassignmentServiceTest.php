@@ -28,6 +28,7 @@ use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
 use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Notification\IManager;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
@@ -194,7 +195,8 @@ class CaseReassignmentServiceTest extends TestCase {
 		$os = $this->objectServiceMock();
 		$os->expects($this->never())->method('updateObject');
 		$os->method('searchObjectsBySlug')->willReturnCallback(
-			function (string $reg, string $schema, array $filters) {
+			function (RegisterSchemaRef $target, array $filters) {
+				$schema = (string)$target->schema;
 				if ($schema === 'statusType') {
 					return [['id' => 'st-final', 'isFinal' => true]];
 				}
@@ -231,7 +233,8 @@ class CaseReassignmentServiceTest extends TestCase {
 	public function testFilteredPreview(): void {
 		$os = $this->objectServiceMock();
 		$os->method('searchObjectsBySlug')->willReturnCallback(
-			function (string $reg, string $schema, array $filters) {
+			function (RegisterSchemaRef $target, array $filters) {
+				$schema = (string)$target->schema;
 				if ($schema === 'statusType') {
 					return [];
 				}
@@ -275,7 +278,8 @@ class CaseReassignmentServiceTest extends TestCase {
 	public function testReleaseHandsTheCasesToTheJobWithTheReason(): void {
 		$os = $this->objectServiceMock();
 		$os->method('searchObjectsBySlug')->willReturnCallback(
-			static function (string $reg, string $schema, array $filters) {
+			static function (RegisterSchemaRef $target, array $filters) {
+				$schema = (string)$target->schema;
 				if ($schema === 'case') {
 					return [
 						['id' => 'c1', 'title' => 'Case 1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth'],
@@ -332,7 +336,8 @@ class CaseReassignmentServiceTest extends TestCase {
 	public function testAReleaseWritesNoCaseItself(): void {
 		$os = $this->objectServiceMock();
 		$os->method('searchObjectsBySlug')->willReturnCallback(
-			static function (string $reg, string $schema, array $filters) {
+			static function (RegisterSchemaRef $target, array $filters) {
+				$schema = (string)$target->schema;
 				if ($schema === 'case') {
 					return [['id' => 'c1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth']];
 				}

@@ -12,6 +12,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 use OCA\Dossiq\Service\People\CaseRoleVocabulary;
 use OCA\Dossiq\Service\People\PartyVocabulary;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IL10N;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -102,12 +103,12 @@ class CaseRoleVocabularyTest extends TestCase {
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
 			public function searchObjectsBySlug(
-				string $register,
-				string $schema,
+				RegisterSchemaRef $target,
 				array $filters,
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$schema = (string)$target->schema;
 				$this->reads[] = ['filters' => $filters, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 				$offset = (int)($filters['_offset'] ?? 0);
 				if ($this->ignoresOffset === true) {

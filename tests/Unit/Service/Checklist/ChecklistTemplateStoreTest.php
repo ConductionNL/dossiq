@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Checklist;
 
 use OCA\Dossiq\Service\Checklist\ChecklistTemplateStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -138,7 +139,9 @@ class ChecklistTemplateStoreTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The template.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				$this->asked = [$register, $schema, $filters];
 
 				return [['@self' => ['id' => 't-1'], 'name' => 'Fundering', 'status' => 'active', 'sections' => [['items' => [['id' => 'q1', 'label' => 'Wapening', 'responseType' => 'yes_no_na']]]]]];

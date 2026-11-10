@@ -17,6 +17,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\PartnerMigrationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -36,7 +37,7 @@ interface PartnerMigrationObjectServiceStub {
 	 *
 	 * @return array<int,mixed>|int The rows.
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array|int;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array|int;
 
 }//end interface
 

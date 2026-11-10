@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -114,7 +115,9 @@ class CaseSplitExecutorGoldenTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				$this->calls[] = ['search', ['register' => $register, 'schema' => $schema, 'filters' => $filters]];
 				if (in_array($schema, ($this->knobs['searchThrows'] ?? []), true) === true) {
 					throw new RuntimeException('search failed on ' . $schema);

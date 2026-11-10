@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 /**
@@ -184,12 +185,12 @@ class InMemoryRegister {
 	 * @return array<int, array<string, mixed>> The matching rows.
 	 */
 	public function searchObjectsBySlug(
-		string $register,
-		string $schema,
+		RegisterSchemaRef $target,
 		array $filters = [],
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$schema = (string)$target->schema;
 		if (in_array($schema, $this->missingSchemas, true) === true) {
 			throw new DoesNotExistException('No schema '.$schema.' in this register');
 		}

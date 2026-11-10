@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\DeadlineReportingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Money\PayoutReader;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
@@ -178,7 +179,8 @@ class DeadlineReportingServiceTest extends TestCase {
 			 * @return mixed
 			 */
 			public function __call(string $name, array $arguments): mixed {
-				$schema = (string)($arguments['schema'] ?? ($arguments[1] ?? ''));
+				$target = ($arguments['target'] ?? ($arguments[0] ?? null));
+				$schema = (string)($arguments['schema'] ?? ($target instanceof RegisterSchemaRef ? $target->schema : ($arguments[1] ?? '')));
 				if ($schema === 'penaltyPaymentCalculation') {
 					throw new \RuntimeException('register unreachable');
 				}

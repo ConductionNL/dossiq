@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use RuntimeException;
 
 /**
@@ -83,12 +84,13 @@ class RefusalGroundStore {
 	 * @throws RuntimeException When told to fail.
 	 */
 	public function searchObjectsBySlug(
-		string $registerSlug,
-		string $schemaSlug,
+		RegisterSchemaRef $target,
 		array $filters = [],
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array|int {
+		$registerSlug = (string)$target->register;
+		$schemaSlug = (string)$target->schema;
 		$this->reads[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 		if ($this->fails === true) {
 			throw new RuntimeException('database gone');

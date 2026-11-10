@@ -18,6 +18,7 @@ use OCA\Dossiq\Repair\MoveDocumentsIntoCaseFolders;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Files\Folder;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -60,7 +61,7 @@ class MoveDocumentsIntoCaseFoldersTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> One page of records.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
 				if ((int)($filters['_page'] ?? 1) > 1) {
 					return [];
 				}

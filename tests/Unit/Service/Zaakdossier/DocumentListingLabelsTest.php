@@ -15,6 +15,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -46,7 +47,9 @@ class DocumentListingLabelsTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The type rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				$this->searches[] = ['register' => $register, 'schema' => $schema, 'filters' => $filters];
 				return [
 					['@self' => ['id' => '11111111-2222-4333-8444-555555555555', 'slug' => 'iot-aanvraag'], 'description' => 'Aanvraag'],

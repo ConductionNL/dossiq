@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 
 use OCA\Dossiq\Service\People\CaseRoleHolder;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -65,7 +66,8 @@ class CaseRoleHolderTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$schema = (string)$target->schema;
 				if ($schema === 'roleType') {
 					return $this->roleTypes;
 				}

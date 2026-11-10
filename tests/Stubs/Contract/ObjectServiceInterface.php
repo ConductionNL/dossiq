@@ -28,6 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\Contract;
 
+use OCA\OpenRegister\Kernel\Contracts\ObjectSelection;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
+use OCA\OpenRegister\Kernel\Contracts\SearchOptions;
 use OCP\IUser;
 
 /**
@@ -252,9 +255,7 @@ interface ObjectServiceInterface {
 	 * @param array $query The search query.
 	 * @param bool $_rbac Apply register RBAC.
 	 * @param bool $_multitenancy Apply organisation scoping.
-	 * @param ?array $ids Restrict the search to these ids.
-	 * @param ?string $uses Restrict to objects used by this one.
-	 * @param ?array $views Restrict the search to these views.
+	 * @param SearchOptions $options The id and uses selection, the views and whether to include deleted objects.
 	 *
 	 * @return array|int Results, or a count when the query asks for one.
 	 */
@@ -262,9 +263,7 @@ interface ObjectServiceInterface {
 		array $query = [],
 		bool $_rbac = true,
 		bool $_multitenancy = true,
-		?array $ids = null,
-		?string $uses = null,
-		?array $views = null,
+		SearchOptions $options = new SearchOptions(),
 	): array|int;
 
 	/**
@@ -298,10 +297,7 @@ interface ObjectServiceInterface {
 	 * @param array $query The search query.
 	 * @param bool $_rbac Apply register RBAC.
 	 * @param bool $_multitenancy Apply organisation scoping.
-	 * @param bool $deleted Include soft-deleted objects.
-	 * @param ?array $ids Restrict the search to these ids.
-	 * @param ?string $uses Restrict to objects used by this one.
-	 * @param ?array $views Restrict the search to these views.
+	 * @param SearchOptions $options The id and uses selection, the views and whether to include deleted objects.
 	 *
 	 * @return array Results plus pagination metadata.
 	 */
@@ -309,10 +305,7 @@ interface ObjectServiceInterface {
 		array $query = [],
 		bool $_rbac = true,
 		bool $_multitenancy = true,
-		bool $deleted = false,
-		?array $ids = null,
-		?string $uses = null,
-		?array $views = null,
+		SearchOptions $options = new SearchOptions(),
 	): array;
 
 	/**
@@ -322,8 +315,7 @@ interface ObjectServiceInterface {
 	 * NUMERIC ids and return nothing for a slug, silently -- which is why this
 	 * method exists and why it is on the contract.
 	 *
-	 * @param string $registerSlug The register slug.
-	 * @param string $schemaSlug The schema slug.
+	 * @param RegisterSchemaRef $target The register and schema, by slug or id.
 	 * @param array $filters Equality filters.
 	 * @param bool $_rbac Apply register RBAC.
 	 * @param bool $_multitenancy Apply organisation scoping.
@@ -331,8 +323,7 @@ interface ObjectServiceInterface {
 	 * @return array|int The matching objects, or a count.
 	 */
 	public function searchObjectsBySlug(
-		string $registerSlug,
-		string $schemaSlug,
+		RegisterSchemaRef $target,
 		array $filters = [],
 		bool $_rbac = true,
 		bool $_multitenancy = true,
@@ -637,8 +628,7 @@ interface ObjectServiceInterface {
 	 * @param array $query The search query.
 	 * @param bool $_rbac Apply register RBAC.
 	 * @param bool $_multitenancy Apply organisation scoping.
-	 * @param ?array $ids Restrict the search to these ids.
-	 * @param ?string $uses Restrict to objects used by this one.
+	 * @param ObjectSelection $selection The id and uses selection.
 	 *
 	 * @return int The number of matching objects.
 	 */
@@ -646,8 +636,7 @@ interface ObjectServiceInterface {
 		array $query = [],
 		bool $_rbac = true,
 		bool $_multitenancy = true,
-		?array $ids = null,
-		?string $uses = null,
+		ObjectSelection $selection = new ObjectSelection(),
 	): int;
 
 	/**

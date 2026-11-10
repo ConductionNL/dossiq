@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCA\Dossiq\Service\Email\MailMessageSource;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCA\OpenRegister\Service\EmailMessageRef;
 use OCA\OpenRegister\Service\LinkTarget;
 use OCP\Config\IUserConfig;
@@ -329,7 +330,9 @@ class CaseEmailMatchServiceTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				return $this->searchObjects($filters + ['_slug' => $register . '/' . $schema]);
 			}
 

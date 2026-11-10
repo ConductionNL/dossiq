@@ -19,6 +19,7 @@ use OCA\Dossiq\Listener\PortalContactDetailsChangedListener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -70,7 +71,7 @@ class PortalContactDetailsChangedListenerTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The matching cases.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters, bool $_rbac = true, bool $_multitenancy = true): array {
 				if ($this->broken === true) {
 					throw new RuntimeException('register gone');
 				}

@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -89,7 +90,8 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 			) {
 			}//end __construct()
 
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$schema = (string)$target->schema;
 				$key = $schema;
 				if (isset($filters['isFinal']) === true) {
 					$key .= ':final';

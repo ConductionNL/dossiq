@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -113,7 +114,7 @@ class WorkQueueServiceTest extends TestCase {
 			 */
 			public function openForAssignee(string $actor, int $limit = 200): array {
 				$open = [];
-				$rows = $this->objects->searchObjectsBySlug('dossiq', 'caseTask', ['assignee' => $actor]);
+				$rows = $this->objects->searchObjectsBySlug(new RegisterSchemaRef(register: 'dossiq', schema: 'caseTask'), ['assignee' => $actor]);
 				foreach ($rows as $task) {
 					// The ENGINE makes this split; the double mirrors it so
 					// the test exercises what the service actually receives.
@@ -1201,7 +1202,8 @@ class FakeWorkQueueStore {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+		$schemaSlug = (string)$target->schema;
 		$this->searches[$schemaSlug][] = $filters;
 		$rows = array_values($this->store[$schemaSlug] ?? []);
 
@@ -1274,11 +1276,13 @@ class FailingWorkQueueStore extends FakeWorkQueueStore {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+		$registerSlug = (string)$target->register;
+		$schemaSlug = (string)$target->schema;
 		if (in_array($schemaSlug, $this->failOn, true) === true) {
 			throw new \RuntimeException('down');
 		}
 
-		return parent::searchObjectsBySlug($registerSlug, $schemaSlug, $filters);
+		return parent::searchObjectsBySlug(new RegisterSchemaRef(register: $registerSlug, schema: $schemaSlug), $filters);
 	}//end searchObjectsBySlug()
 }//end class

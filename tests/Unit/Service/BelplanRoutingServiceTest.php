@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BelplanRoutingService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -62,7 +63,8 @@ class FakeBelplanObjectService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+		$schema = (string)$target->schema;
 		if ($schema === 'belplan-schema') {
 			return $this->belplannen;
 		}

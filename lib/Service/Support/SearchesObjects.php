@@ -8,7 +8,7 @@
  * `findObjects()` method — the correct entry points are
  * `searchObjects(array $query)` (numeric register/schema IDs in the
  * `@self` block, object-field filters at the top level) and
- * `searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters)`
+ * `searchObjectsBySlug(RegisterSchemaRef $target, array $filters)`
  * (slug-aware bridge that resolves the slugs and merges `@self` itself).
  *
  * Every dossiq service/controller/job that previously called the
@@ -40,6 +40,7 @@
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IUserSession;
 use RuntimeException;
 
@@ -151,8 +152,7 @@ trait SearchesObjects {
 		if ($registerIsNumeric === false || $schemaIsNumeric === false) {
 			return $this->normaliseObjectRows(
 				rows: $objectService->searchObjectsBySlug(
-					(string)$register,
-					(string)$schema,
+					new RegisterSchemaRef(register: (string)$register, schema: (string)$schema),
 					$filters,
 					// Passed only when asked, so a service without these
 					// parameters still accepts the call.

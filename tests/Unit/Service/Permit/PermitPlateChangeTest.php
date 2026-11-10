@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\Permit\PermitChangeRefused;
 use OCA\Dossiq\Service\Permit\PermitPlateChange;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 
@@ -76,7 +77,8 @@ class PermitPlateChangeTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The matching objects.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters, bool $_rbac = true, bool $_multitenancy = true): array {
+				$schema = (string)$target->schema;
 				return array_values(
 					array_filter(
 						($this->store[$schema] ?? []),

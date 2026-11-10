@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Substitution\SubstitutionValidator;
 use OCA\Dossiq\Service\SubstitutionService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -51,7 +52,7 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
 		public function searchObjects(array $query = []): array|int;
 
 		/** @param string $r @param string $s @param array<string,mixed> $f @return array<int,mixed>|int */
-		public function searchObjectsBySlug(string $r, string $s, array $f = []): array|int;
+		public function searchObjectsBySlug(RegisterSchemaRef $target, array $f = []): array|int;
 
 		/** @param mixed ...$args @return mixed */
 		public function saveObject(...$args): mixed;
@@ -170,7 +171,8 @@ class SubstitutionServiceTest extends TestCase {
 
 		$objectService = $this->createMock(originalClassName: SubstitutionObjectServiceStub::class);
 		$objectService->method('searchObjectsBySlug')->willReturnCallback(
-			static function (string $register, string $schema, array $filters = []) use ($employees, $leave): array {
+			static function (RegisterSchemaRef $target, array $filters = []) use ($employees, $leave): array {
+				$schema = (string)$target->schema;
 				if ($schema === 'Employee') {
 					return $employees;
 				}
@@ -591,7 +593,8 @@ class SubstitutionServiceTest extends TestCase {
 
 		$os = $this->objectServiceMock();
 		$os->method('searchObjectsBySlug')->willReturnCallback(
-			function (string $reg, string $schema, array $filters) use ($sub) {
+			function (RegisterSchemaRef $target, array $filters) use ($sub) {
+				$schema = (string)$target->schema;
 				if ($schema === 'substitution') {
 					return [$sub];
 				}
@@ -637,7 +640,8 @@ class SubstitutionServiceTest extends TestCase {
 
 		$os = $this->objectServiceMock();
 		$os->method('searchObjectsBySlug')->willReturnCallback(
-			static function (string $reg, string $schema, array $filters) use ($sub) {
+			static function (RegisterSchemaRef $target, array $filters) use ($sub) {
+				$schema = (string)$target->schema;
 				return ($schema === 'substitution') ? [$sub] : [];
 			}
 		);
@@ -667,7 +671,8 @@ class SubstitutionServiceTest extends TestCase {
 
 		$os = $this->objectServiceMock();
 		$os->method('searchObjectsBySlug')->willReturnCallback(
-			static function (string $reg, string $schema, array $filters) use ($sub) {
+			static function (RegisterSchemaRef $target, array $filters) use ($sub) {
+				$schema = (string)$target->schema;
 				return ($schema === 'substitution') ? [$sub] : [];
 			}
 		);

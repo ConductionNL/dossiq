@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use Closure;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use RuntimeException;
 
 /**
@@ -181,12 +182,12 @@ class AnonymousRefusingRegister {
 	 * @return array<int, array<string, mixed>> The matches.
 	 */
 	public function searchObjectsBySlug(
-		string $registerSlug,
-		string $schemaSlug,
+		RegisterSchemaRef $target,
 		array $filters = [],
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$schemaSlug = (string)$target->schema;
 		return $this->matching(schema: $schemaSlug, filters: $filters);
 	}//end searchObjectsBySlug()
 

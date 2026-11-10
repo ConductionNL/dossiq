@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Import\RecordCaseMapping;
 use OCA\Dossiq\Service\Import\RecordImportStore;
 use OCA\Dossiq\Service\Term\TermCarryOver;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -512,17 +513,18 @@ class CaseRecordImportTest extends TestCase {
 			 * @return array<int, array<string, mixed>>
 			 */
 			public function searchObjectsBySlug(
-				string $register,
-				string $schema,
+				RegisterSchemaRef $target,
 				array $filters = [],
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				if ($schema === 'case') {
 					throw new RuntimeException('the case table is locked');
 				}
 
-				return parent::searchObjectsBySlug($register, $schema, $filters, $_rbac, $_multitenancy);
+				return parent::searchObjectsBySlug(new RegisterSchemaRef(register: $register, schema: $schema), $filters, $_rbac, $_multitenancy);
 			}
 		};
 		$store->rows = $this->store->rows;

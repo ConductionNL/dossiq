@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\SociaalDomein;
 
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
+
 /**
  * A store of rows, keyed by schema slug then by uuid.
  */
@@ -104,7 +106,8 @@ class FakeSociaalDomeinObjects {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+		$schemaSlug = (string)$target->schema;
 		$this->scopes[] = ['schema' => $schemaSlug, 'rbac' => $_rbac];
 		if ($this->broken === true || in_array($schemaSlug, $this->brokenSchemas, true) === true) {
 			throw new \RuntimeException('the store is unreachable');

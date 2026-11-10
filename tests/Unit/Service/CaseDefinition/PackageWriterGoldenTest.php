@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -145,12 +146,13 @@ final class GoldenPackageObjects {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function searchObjectsBySlug(
-		string $register,
-		string $schema,
+		RegisterSchemaRef $target,
 		array $filters = [],
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$register = (string)$target->register;
+		$schema = (string)$target->schema;
 		$this->log[] = ['searchObjectsBySlug' => compact('register', 'schema', 'filters', '_rbac', '_multitenancy')];
 		$found = [];
 		foreach (($this->behaviour['search'][$schema] ?? []) as $row) {

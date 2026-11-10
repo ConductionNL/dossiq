@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\SubstitutionAuditService;
 use OCA\Dossiq\Service\SubstitutionService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -40,7 +41,7 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
 		public function searchObjects(array $query = []): array|int;
 
 		/** @param string $r @param string $s @param array<string,mixed> $f @return array<int,mixed>|int */
-		public function searchObjectsBySlug(string $r, string $s, array $f = []): array|int;
+		public function searchObjectsBySlug(RegisterSchemaRef $target, array $f = []): array|int;
 
 		/** @param mixed ...$args @return mixed */
 		public function saveObject(...$args): mixed;

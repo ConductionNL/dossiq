@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -78,7 +79,7 @@ class SubstitutionControllerLimitTest extends TestCase {
 			 *
 			 * @return array
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 				$this->captured = $filters;
 				return [];
 			}//end searchObjectsBySlug()

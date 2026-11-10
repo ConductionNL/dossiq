@@ -24,6 +24,7 @@ use OCA\Dossiq\Repair\NormaliseCommunicationChannelValues;
 use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -69,7 +70,7 @@ class NormaliseCommunicationChannelValuesTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> One page.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
 				return ((int)($filters['_page'] ?? 1) > 1) ? [] : $this->cases;
 			}
 

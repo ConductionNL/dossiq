@@ -16,6 +16,7 @@ namespace OCA\Dossiq\Tests\Unit\Integration;
 
 use OCA\Dossiq\Integration\CaseLeafProvider;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
@@ -63,7 +64,8 @@ class CaseLeafProviderTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$schema = (string)$target->schema;
 				$this->reads[] = [$schema, $filters];
 				return array_values(
 					array_filter(

@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Queue;
 
 use OCA\Dossiq\Service\Queue\Source\AssignedCasesSource;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
@@ -64,7 +65,7 @@ final class OpenCaseFilterTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 				$this->asked = $filters;
 				foreach ($filters as $value) {
 					if (is_bool($value) === true) {

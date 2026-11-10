@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -99,7 +100,8 @@ class FakeObjectService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+		$schema = (string)$target->schema;
 		$rows = array_values($this->store[$schema] ?? []);
 
 		return array_values(
@@ -616,7 +618,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertNotEmpty($afterSend['objectionTermEndDate']);
 
 		// A BezwaarTrigger was created with a 6-week termijn. [V08]
-		$triggers = $this->objects->searchObjectsBySlug('dossiq', 'bezwaarTrigger', ['decisionId' => $id]);
+		$triggers = $this->objects->searchObjectsBySlug(new RegisterSchemaRef(register: 'dossiq', schema: 'bezwaarTrigger'), ['decisionId' => $id]);
 		$this->assertCount(1, $triggers);
 		$this->assertTrue($triggers[0]['archiveTriggerActive']);
 
@@ -626,7 +628,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertNotEmpty($afterArchive['archive']['destructionDate']);
 
 		// Every transition was logged. [V05 logging]
-		$logs = $this->objects->searchObjectsBySlug('dossiq', 'stateMachineLog', ['decisionId' => $id]);
+		$logs = $this->objects->searchObjectsBySlug(new RegisterSchemaRef(register: 'dossiq', schema: 'stateMachineLog'), ['decisionId' => $id]);
 		$this->assertGreaterThanOrEqual(4, count($logs));
 	}//end testFullLifecycle()
 
@@ -698,7 +700,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertNotNull($refused, 'verzend() must refuse when no transport took the beschikking');
 		$this->assertSame('beschikking-no-address', $refused->getRule());
 		$this->assertSame('signed', ($this->service->find($id)['currentStatus'] ?? null), 'it stays not-sent');
-		$this->assertSame([], $this->objects->searchObjectsBySlug('dossiq', 'bezwaarTrigger', ['decisionId' => $id]), 'no objection clock starts');
+		$this->assertSame([], $this->objects->searchObjectsBySlug(new RegisterSchemaRef(register: 'dossiq', schema: 'bezwaarTrigger'), ['decisionId' => $id]), 'no objection clock starts');
 
 		$public = array_filter($this->entries, static fn (array $entry): bool => $entry['visibility'] === 'public');
 		$this->assertSame([], array_values($public), 'nothing public says it was sent');

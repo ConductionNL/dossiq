@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\DeelzaakService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -151,7 +152,7 @@ class DeelzaakUnlinkSubCasesTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> Matching rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 				$limit = (int)($filters['_limit'] ?? $this->pageSize);
 				$limit = min($limit, $this->pageSize);
 				$matches = [];

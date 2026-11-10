@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantMigrationService;
 use OCA\OpenRegister\Db\Organisation;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -62,7 +63,8 @@ class TenantMigrationServiceTest extends TestCase {
 			}
 
 			// phpcs:ignore
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$schema = (string)$target->schema;
 				if (array_key_exists($schema, $this->bySchema) === true) {
 					return $this->bySchema[$schema];
 				}
@@ -871,7 +873,7 @@ class TenantMigrationServiceTest extends TestCase {
 	public function testAnAbsentLegacyTenantSchemaIsAnEmptyRunAndNotAFailure(): void {
 		$objectService = new class {
 			// phpcs:ignore
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 				throw new RuntimeException('no such schema');
 			}
 		};

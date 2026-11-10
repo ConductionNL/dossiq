@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Queue;
 use OCA\Dossiq\Service\Queue\Source\ApprovalSource;
 use OCA\Dossiq\Service\Queue\Source\ConsultationSource;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
@@ -51,7 +52,8 @@ class AdviceQueueRowsTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$schema = (string)$target->schema;
 				return ($this->rows[$schema] ?? []);
 			}
 		};

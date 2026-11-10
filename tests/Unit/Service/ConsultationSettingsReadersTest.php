@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -70,7 +71,7 @@ class SettingsReadersObjectStore {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
 		return array_values(array_filter($this->rows, static fn (array $row): bool => isset($filters['status']) === false || ($row['status'] ?? '') === $filters['status']));
 	}//end searchObjectsBySlug()
 

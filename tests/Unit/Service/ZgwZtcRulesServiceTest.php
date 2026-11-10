@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\FieldValidator;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwZtcRulesService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -78,7 +79,9 @@ class ZgwZtcRulesServiceTest extends TestCase {
 			) {
 			}
 
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				// Real OpenRegister contract: a top-level `id`/`uuid` filter
 				// addresses a schema property no schema declares and matches
 				// ZERO rows. Only declared-property filters resolve.
@@ -247,7 +250,9 @@ class ZgwZtcRulesServiceTest extends TestCase {
 			) {
 			}
 
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				return ($this->search)($register, $schema, $filters);
 			}
 

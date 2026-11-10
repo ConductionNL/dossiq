@@ -15,6 +15,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Cases;
 
 use OCA\Dossiq\Service\Cases\CaseNextStatus;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
@@ -45,7 +46,8 @@ class CaseNextStatusTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$schema = (string)$target->schema;
 				if (isset($this->rows['fail']) === true) {
 					throw new \RuntimeException('register unreachable');
 				}

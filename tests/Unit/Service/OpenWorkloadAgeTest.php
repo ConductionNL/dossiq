@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\OpenWorkloadAgeService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -73,7 +74,7 @@ class OpenWorkloadAgeTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $query = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $query = []): array {
 				return $this->test->answer(query: $query);
 			}
 

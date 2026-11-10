@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Integriq\Event\IntakeMessageRoutedEvent;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -79,7 +80,7 @@ interface ChannelIntakeObjectServiceStub {
 	 *
 	 * @return mixed The rows.
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters): mixed;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): mixed;
 
 	/**
 	 * Run a callable as the system principal.
@@ -199,7 +200,7 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		);
 
 		$service->method('searchObjectsBySlug')->willReturnCallback(
-			function (string $register, string $schema, array $filters): array {
+			function (RegisterSchemaRef $target, array $filters): array {
 				$matches = [];
 				foreach ($this->logRows as $row) {
 					$isMatch = true;

@@ -17,6 +17,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 use OCA\Dossiq\Service\People\PersonReachability;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\TrustedRevealRead;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
@@ -56,7 +57,8 @@ class PersonReachabilityTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$schema = (string)$target->schema;
 				return $this->rows[$schema] ?? [];
 			}
 		};

@@ -18,6 +18,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\LinkedDocumentsReader;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Files\Folder;
 use OCP\Files\Node;
 use OCP\IURLGenerator;
@@ -55,7 +56,7 @@ class LinkedDocumentsReaderTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The joins.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
 				return $this->joins;
 			}
 		};

@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Dmn;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryDecisionTableStore;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -80,7 +81,9 @@ class StoredDecisionTablesTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				if ($_rbac !== false || $_multitenancy !== false) {
 					throw new RuntimeException('dossiq must read these registers unscoped');
 				}

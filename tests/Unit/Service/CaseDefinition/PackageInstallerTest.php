@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Starter\ShippedFingerprint;
 use OCA\Dossiq\Service\Starter\ShippedSets;
 use OCA\Dossiq\Service\Starter\StarterStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -119,7 +120,7 @@ final class PackageTestRegister extends InMemoryRegister {
 	public function searchObjects(array $query, bool $_rbac = true, bool $_multitenancy = true): array {
 		$schema = (string)($query['@self']['schema'] ?? '');
 
-		return $this->searchObjectsBySlug((string)($query['@self']['register'] ?? ''), $schema, $query);
+		return $this->searchObjectsBySlug(new RegisterSchemaRef(register: (string)($query['@self']['register'] ?? ''), schema: $schema), $query);
 	}//end searchObjects()
 
 	/**

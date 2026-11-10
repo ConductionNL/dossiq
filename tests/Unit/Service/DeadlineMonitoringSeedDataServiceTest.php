@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DeadlineMonitoringSeedDataService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -253,7 +254,9 @@ class FakeTermijnObjectService {
 	 * @param array<string, mixed> $filters Filters.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+		$registerSlug = (string)$target->register;
+		$schemaSlug = (string)$target->schema;
 		return $this->findObjects($registerSlug, $schemaSlug, $filters);
 	}
 

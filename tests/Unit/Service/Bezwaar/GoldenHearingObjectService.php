@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
 
@@ -125,7 +126,9 @@ class GoldenHearingObjectService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters, mixed ...$scope): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters, mixed ...$scope): array {
+		$register = (string)$target->register;
+		$schema = (string)$target->schema;
 		$this->note(call: ['searchObjectsBySlug' => compact('register', 'schema', 'filters', 'scope')]);
 		$mode = ($this->behaviour['search'] ?? 'none');
 		if ($mode === 'throw') {

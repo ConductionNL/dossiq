@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -377,7 +378,7 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 			 *
 			 * @return array The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters, mixed ...$scope): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters, mixed ...$scope): array {
 				$this->test->record(method: 'searchObjectsBySlug', scope: $scope);
 				unset($filters['_limit']);
 				return array_values(array_filter($this->test->cases, static fn (array $case): bool => array_intersect_assoc($filters, $case) === $filters));
