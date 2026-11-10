@@ -212,44 +212,116 @@ function appDefaultPerChannel(entry, channelIds) {
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID, channelIds = [] } = {}) {
-	const groupValues = {}
-	const personalValues = {}
-	const forcedValues = {}
-	const refusals = {}
-
-	for (const entry of entries) {
-		const id = keyFor(entry)
-		const source = String(entry?.source ?? '')
-
-		const on = channelIds.length > 0
-			? perChannel(channelIds, (channel) => channelsOnFor(entry).includes(channel))
-			: { [channelId]: entry?.enabled === true }
-		if (source === SOURCE_PERSONAL) {
-			personalValues[id] = on
-		} else if (source === SOURCE_GROUP) {
-			groupValues[id] = on
-		}
-
-		const forced = entry?.forced
-		if (forced !== undefined && forced !== null) {
-			// FORCED CAN FORCE A CHANNEL OFF. Reading a forced row as "on"
-			// would switch on a channel an administrator forbade, so the
-			// value is taken from the row and never assumed.
-			const cell = {
-				value: forced?.value === true,
-				by: String(forced?.by ?? ''),
-				reason: String(forced?.reason ?? ''),
-			}
-			forcedValues[id] = perChannel(channelIds.length > 0 ? channelIds : [channelId], () => ({ ...cell }))
-		}
-
-		const refused = entry?.refused
-		if (refused !== undefined && refused !== null) {
-			refusals[id] = perChannel(channelIds.length > 0 ? channelIds : [channelId], () => ({ reason: String(refused?.reason ?? '') }))
-		}
+	const run = {
+		channelId,
+		channelIds,
+		columns: channelIds.length > 0 ? channelIds : [channelId],
+		values: { groupValues: {}, personalValues: {}, forcedValues: {}, refusals: {} },
 	}
 
-	return { groupValues, personalValues, forcedValues, refusals }
+	for (const entry of entries) {
+		readEntry(run, entry)
+	}
+
+	return run.values
+}
+
+/**
+ * Which of the values a row's source is kept in.
+ */
+const VALUES_BY_SOURCE = new Map([
+	[SOURCE_PERSONAL, 'personalValues'],
+	[SOURCE_GROUP, 'groupValues'],
+])
+
+/**
+ * Keep what one entry says: its on/off per column under its source, and
+ * whether it is forced or refused.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {object} entry One entry.
+ */
+function readEntry(run, entry) {
+	const row = { id: keyFor(entry), entry }
+	keepOn(run, row)
+	keepForced(run, row)
+	keepRefused(run, row)
+}
+
+/**
+ * Keep an entry's on/off per column under its source, when its source is
+ * a group or a personal value.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {{id: string, entry: object}} row The entry and its id.
+ */
+function keepOn(run, row) {
+	const source = String(row.entry?.source ?? '')
+
+	const on = onPerColumn(run, row.entry)
+	const kept = VALUES_BY_SOURCE.get(source)
+	if (kept !== undefined) {
+		run.values[kept][row.id] = on
+	}
+}
+
+/**
+ * Keep an entry's forced value per column, when it carries one.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {{id: string, entry: object}} row The entry and its id.
+ */
+function keepForced(run, row) {
+	const forced = row.entry?.forced
+	if (forced !== undefined && forced !== null) {
+		run.values.forcedValues[row.id] = forcedPerColumn(run, forced)
+	}
+}
+
+/**
+ * Keep an entry's refusal per column, when it carries one.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {{id: string, entry: object}} row The entry and its id.
+ */
+function keepRefused(run, row) {
+	const refused = row.entry?.refused
+	if (refused !== undefined && refused !== null) {
+		run.values.refusals[row.id] = perChannel(run.columns, () => ({ reason: String(refused?.reason ?? '') }))
+	}
+}
+
+/**
+ * Whether one entry is on, per column: per named channel, or in the one column.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {object} entry One entry.
+ * @return {object} `{ [channelId]: boolean }`.
+ */
+function onPerColumn(run, entry) {
+	return run.channelIds.length > 0
+		? perChannel(run.channelIds, (channel) => channelsOnFor(entry).includes(channel))
+		: { [run.channelId]: entry?.enabled === true }
+}
+
+/**
+ * A forced row's cell, per column.
+ *
+ * FORCED CAN FORCE A CHANNEL OFF. Reading a forced row as "on" would switch
+ * on a channel an administrator forbade, so the value is taken from the row
+ * and never assumed.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {object} forced The row's forced value.
+ * @return {object} `{ [channelId]: { value, by, reason } }`.
+ */
+function forcedPerColumn(run, forced) {
+	const cell = {
+		value: forced?.value === true,
+		by: String(forced?.by ?? ''),
+		reason: String(forced?.reason ?? ''),
+	}
+	return perChannel(run.columns, () => ({ ...cell }))
 }
 
 /**
