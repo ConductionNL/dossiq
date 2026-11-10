@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\FieldValidator;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwZtcRulesService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -103,10 +104,7 @@ class ZgwZtcRulesServiceTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				?array $_extend = [],
-				bool $files = false,
-				string|int|null $register = null,
-				string|int|null $schema = null,
+				?ObjectFindOptions $options = null,
 			): object {
 				foreach ($this->map as $rows) {
 					foreach ($rows as $row) {
@@ -251,7 +249,7 @@ class ZgwZtcRulesServiceTest extends TestCase {
 				return ($this->search)($register, $schema, $filters);
 			}
 
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): mixed {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): mixed {
 				if ($this->find === null) {
 					throw new \OCP\AppFramework\Db\DoesNotExistException('gone');
 				}

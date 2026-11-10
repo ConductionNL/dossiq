@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Cases\CaseMergeRule;
 use OCA\Dossiq\Service\Cases\CaseMergeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -340,11 +341,9 @@ final class FakeMergeObjectService {
 	 */
 	public function find(
 		int|string $id,
-		?array $_extend = null,
-		bool $files = false,
-		int|string|null $register = null,
-		int|string|null $schema = null,
+		?ObjectFindOptions $options = null,
 	): ?array {
+		$schema = ($options?->schema ?? null);
 		return ($this->rows[(string)$schema][(string)$id] ?? null);
 	}//end find()
 

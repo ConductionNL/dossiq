@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 use OCA\Dossiq\Flow\DossiqEnsureCommitteeNode;
 use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -103,7 +104,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
 				if ($this->readThrows === true) {
 					throw new RuntimeException('register unavailable');
 				}

@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
@@ -507,7 +508,7 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, int|string $register = '', int|string $schema = ''): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				return $this->test->row(id: $id);
 			}
 

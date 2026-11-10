@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCA\Dossiq\Service\Email\MailMessageSource;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Service\EmailMessageRef;
 use OCA\OpenRegister\Service\LinkTarget;
 use OCP\Config\IUserConfig;
@@ -349,10 +350,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				?array $_extend = null,
-				bool $files = false,
-				int|string|null $register = null,
-				int|string|null $schema = null,
+				?ObjectFindOptions $options = null,
 			): array {
 				return ($this->merged[(string)$id] ?? ['id' => (string)$id]);
 			}

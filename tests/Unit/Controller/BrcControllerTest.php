@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -95,7 +96,9 @@ final class BrcStore {
 		}
 	}//end record()
 
-	public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->record('find', [$id, $register, $schema]);
 		if (array_key_exists($id, $this->objects) === false) {
 			throw new \OCP\AppFramework\Db\DoesNotExistException('not found');

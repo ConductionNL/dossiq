@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -127,7 +128,7 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 			 *
 			 * @return ObjectEntity The stored entity.
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, ?string $register = null, ?string $schema = null): ObjectEntity {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): ObjectEntity {
 				return $this->entity();
 			}
 

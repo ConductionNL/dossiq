@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -86,7 +87,8 @@ class FakeObjectService {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, string $register = '', string $schema = ''): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+		$schema = ($options?->schema ?? '');
 		return ($this->store[$schema][$id] ?? null);
 	}//end find()
 

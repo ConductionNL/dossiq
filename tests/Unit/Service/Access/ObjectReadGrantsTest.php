@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Access;
 
 use OCA\Dossiq\Service\Access\ObjectReadGrants;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -144,7 +145,7 @@ class ObjectReadGrantsTest extends TestCase {
 			 */
 			public array $reads = [];
 
-			public function find(string $id, mixed $_extend = null, bool $files = false, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?object {
 				$this->reads[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 				if ($_rbac === true) {
 					// The caller manages the grants and may not read the record (decision 234).

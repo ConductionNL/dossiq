@@ -12,6 +12,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 use OCA\Dossiq\Service\People\CaseRoleProjection;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -99,7 +100,8 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				$schema = ($options?->schema ?? null);
 				if (isset($this->rows[$id]) === false) {
 					throw new RuntimeException('not found: ' . $id);
 				}
@@ -428,7 +430,9 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				return $this->inner->find($id, $register, $schema);
 			}
 

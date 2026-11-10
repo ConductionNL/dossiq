@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Queue;
 use OCA\Dossiq\Service\Queue\EndOfDayRowMeta;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
@@ -61,7 +62,7 @@ class EndOfDayRowMetaTest extends TestCase {
 			 *
 			 * @return object The object.
 			 */
-			public function find(string $id, string $register, string $schema): object {
+			public function find(string $id, ?ObjectFindOptions $options = null): object {
 				if (isset($this->objects[$id]) === false) {
 					throw new DoesNotExistException('not found');
 				}

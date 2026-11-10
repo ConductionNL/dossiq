@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -138,7 +139,9 @@ class AcknowledgementServiceGoldenTest extends TestCase {
 			 *
 			 * @return mixed The stored row.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				$this->test->note(call: ['ObjectService::find', ['id' => $id, 'register' => $register, 'schema' => $schema]]);
 				$found = ($this->world['find'] ?? 'missing');
 				if ($found === 'missing') {

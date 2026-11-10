@@ -26,6 +26,7 @@ use OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -234,7 +235,9 @@ class RebindCasesOffTheBasisFlowGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, ?array $extend = null, bool $files = false, ?string $register = null, ?string $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				$this->test->log[] = ['find' => ['id' => $id, 'register' => $register, 'schema' => $schema]];
 				if (in_array('find:' . $id, $this->fails, true) === true) {
 					throw new RuntimeException('find ' . $id . ' failed');

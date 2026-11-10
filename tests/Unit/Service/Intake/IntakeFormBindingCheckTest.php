@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Intake;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
 use OCA\Dossiq\Service\Intake\IntakeFormBindingCheck;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -76,7 +77,7 @@ class IntakeFormBindingCheckTest extends TestCase {
 		};
 
 		$mapper ??= new class() {
-			public function find(string|int $id, ?array $_extend = [], bool $_rbac = true, bool $_multitenancy = true): object {
+			public function find(string|int $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
 				return (object)['id' => $id, 'rbac' => $_rbac, 'properties' => ['title', 'description', 'caseType', 'communicationChannel']];
 			}//end find()
 		};
@@ -238,7 +239,7 @@ class IntakeFormBindingCheckTest extends TestCase {
 		self::assertSame([], $this->check(hasValidator: false)->findingsFor(caseType: self::boundType('onderwerp')));
 
 		$failing = new class() {
-			public function find(string|int $id, ?array $_extend = [], bool $_rbac = true, bool $_multitenancy = true): object {
+			public function find(string|int $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
 				throw new RuntimeException('no such schema');
 			}//end find()
 		};

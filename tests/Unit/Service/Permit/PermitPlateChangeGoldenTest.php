@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Permit\PermitChangeRefused;
 use OCA\Dossiq\Service\Permit\PermitPlateChange;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -129,7 +130,9 @@ class PermitPlateChangeGoldenTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException When there is none.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				$this->trace->append(['find', $register, $schema, $id]);
 				if (($this->config['readThrows'] ?? '') === $schema) {
 					throw new RuntimeException('database gone');

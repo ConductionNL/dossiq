@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\DecisionDocument;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -81,10 +82,7 @@ class DecisionRecordComposerTest extends TestCase {
 		$register = new class extends InMemoryRegister {
 			public function find(
 				int|string $id,
-				mixed $_extend = null,
-				bool $files = false,
-				int|string $register = '',
-				int|string $schema = '',
+				?ObjectFindOptions $options = null,
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): ?array {

@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Relation\CaseRelationLabels;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 use OCA\Dossiq\Service\Relation\SubjectLinkRule;
 use OCA\Dossiq\Service\Notice\CaseActNotices;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IL10N;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -133,7 +134,7 @@ class CaseRelationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				return ($this->store[$id] ?? null);
 			}//end find()
 

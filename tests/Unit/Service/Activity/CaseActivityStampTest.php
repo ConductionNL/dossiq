@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Activity;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Activity\CaseActivityStamp;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -96,7 +97,7 @@ class CaseActivityStampTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				if ($id !== 'case-1') {
 					throw new DoesNotExistException('no such object');
 				}

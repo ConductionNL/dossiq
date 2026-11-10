@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseFieldWriter;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -88,7 +89,7 @@ class CaseFieldWriterTest extends TestCase {
 				'besluitDocument' => 'Besluit op de aanvraag',
 			];
 
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, ?string $register = null, ?string $schema = null): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): array {
 				return $this->stored;
 			}
 
@@ -216,7 +217,7 @@ class CaseFieldWriterTest extends TestCase {
 	 */
 	public function testAnUnreadableStoredCaseIsRefusedOnTheFallback(): void {
 		$objectService = new class {
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, ?string $register = null, ?string $schema = null): ?array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): ?array {
 				return null;
 			}
 

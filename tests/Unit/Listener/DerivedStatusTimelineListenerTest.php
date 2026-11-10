@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -129,7 +130,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				return ([
 					'st-open' => ['id' => 'st-open', 'name' => 'In behandeling'],
 					'st-compleet' => ['id' => 'st-compleet', 'name' => 'Compleet'],

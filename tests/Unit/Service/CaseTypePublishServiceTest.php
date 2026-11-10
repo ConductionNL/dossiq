@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCA\Dossiq\Service\Email\SenderIdentity;
 use PHPUnit\Framework\TestCase;
@@ -141,7 +142,7 @@ class CaseTypePublishServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				return ($this->caseTypes[$id] ?? []);
 			}
 

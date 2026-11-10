@@ -20,6 +20,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Vth\LhsDecisionTableLookup;
 use OCA\Dossiq\Service\Vth\LhsRecommendationService;
 use OCA\Dossiq\Service\Vth\LhsRecommendationStore;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -82,7 +83,7 @@ class LhsOverrideAuthorizationTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				return ($this->rows[$id] ?? null);
 			}
 

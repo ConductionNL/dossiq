@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -96,7 +97,9 @@ class IntakeLogGoldenTest extends TestCase {
 				return $this->answer('patchObject', ['objectId' => $objectId, 'data' => $data, 'register' => $register, 'schema' => $schema]);
 			}
 
-			public function find(string $id, string $register = '', string $schema = ''): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				return $this->answer('find', ['id' => $id, 'register' => $register, 'schema' => $schema]);
 			}
 

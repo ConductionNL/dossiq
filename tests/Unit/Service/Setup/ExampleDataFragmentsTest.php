@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Setup;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Setup\ExampleDataFragments;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -261,7 +262,9 @@ class ExampleDataFragmentsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function find(string $id, mixed $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? '');
 				if (isset($this->stored[$schema . ':' . $id]) === false) {
 					throw new DoesNotExistException('not stored');
 				}

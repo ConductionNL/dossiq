@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Intake;
 use OCA\Dossiq\Service\Intake\SystemCaseStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -84,7 +85,7 @@ class SystemCaseStoreTest extends TestCase {
 	 */
 	public function testAFailedReadIsLoggedAndReadsAsAbsent(): void {
 		$broken = new class {
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac, bool $_multitenancy): array {
 				throw new RuntimeException('down');
 			}
 		};

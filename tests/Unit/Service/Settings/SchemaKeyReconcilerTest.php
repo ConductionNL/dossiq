@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Settings;
 
 use OCA\Dossiq\Service\Settings\SchemaKeyReconciler;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -225,7 +226,7 @@ final class SchemaKeyReconcilerTest extends TestCase {
 			 *
 			 * @throws \RuntimeException When the slug is unknown.
 			 */
-			public function find(string $id, array $extend = [], bool $rbac = true, bool $multitenancy = true): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $rbac = true, bool $multitenancy = true): object {
 				if (isset($this->global[$id]) === false) {
 					throw new \RuntimeException('no such schema: ' . $id);
 				}

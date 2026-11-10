@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -59,7 +60,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * over as the strings app-config stores.
  */
 interface RouteSeamObjectServiceStub {
-	public function find(string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null): mixed;
 
 	public function searchObjects(array $query): array;
 

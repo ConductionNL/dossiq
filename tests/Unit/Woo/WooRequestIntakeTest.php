@@ -27,6 +27,7 @@ use OCA\Dossiq\Woo\WooRequestRefused;
 use OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob;
 use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\IURLGenerator;
@@ -213,13 +214,12 @@ class WooRequestIntakeTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				mixed $_extend = null,
-				bool $files = false,
-				int|string $register = '',
-				int|string $schema = '',
+				?ObjectFindOptions $options = null,
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): ?array {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				if ($_rbac === true || $_multitenancy === true) {
 					return null;
 				}

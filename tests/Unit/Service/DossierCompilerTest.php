@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DossierCompiler;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -142,7 +143,7 @@ class DossierCompilerTest extends TestCase {
 			/**
 			 * Entity-shaped find, mirroring the real ObjectService contract.
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): FakeStoredObject {
 				return new FakeStoredObject($this->case);
 			}
 
@@ -196,7 +197,7 @@ class DossierCompilerTest extends TestCase {
 			/**
 			 * Entity-shaped find, mirroring the real ObjectService contract.
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): FakeStoredObject {
 				return new FakeStoredObject(['relatedCases' => []]);
 			}
 

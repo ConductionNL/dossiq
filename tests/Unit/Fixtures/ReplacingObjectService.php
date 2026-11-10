@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Fixtures;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
 
@@ -74,7 +75,7 @@ class ReplacingObjectService {
 	 *
 	 * @throws DoesNotExistException When nothing is stored under the id.
 	 */
-	public function find(string $id, string|int|null $register = null, string|int|null $schema = null): object {
+	public function find(string $id, ?ObjectFindOptions $options = null): object {
 		if (isset($this->stored[$id]) === false) {
 			throw new DoesNotExistException('not found: ' . $id);
 		}

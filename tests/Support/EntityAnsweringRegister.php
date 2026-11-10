@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 class EntityAnsweringRegister {
@@ -59,13 +60,12 @@ class EntityAnsweringRegister {
 	 */
 	public function find(
 		int|string $id,
-		mixed $_extend = null,
-		bool $files = false,
-		int|string $register = '',
-		int|string $schema = '',
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): ObjectEntity {
+		$register = ($options?->register ?? '');
+		$schema = ($options?->schema ?? '');
 		$row = $this->register->find(id: $id, register: $register, schema: $schema);
 		if ($row === null) {
 			throw new DoesNotExistException('no such object');

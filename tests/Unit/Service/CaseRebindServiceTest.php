@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Termijn\TermRearm;
 use OCA\Dossiq\Tests\Unit\Service\Cases\BuildsRebindConverter;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IGroupManager;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
@@ -321,7 +322,8 @@ class CaseRebindServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$schema = ($options?->schema ?? null);
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null || ($schema !== null && $entry['__schema'] !== $schema)) {
 					return null;

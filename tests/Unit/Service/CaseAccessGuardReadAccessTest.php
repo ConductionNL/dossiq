@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IGroupManager;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
@@ -108,7 +109,7 @@ class CaseAccessGuardReadAccessTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The object.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				return $this->case;
 			}
 		};
@@ -239,7 +240,7 @@ class CaseAccessGuardReadAccessTest extends TestCase {
 			 *
 			 * @throws \RuntimeException Always.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				throw new \RuntimeException('backend down');
 			}
 		};
@@ -318,7 +319,8 @@ class CaseAccessGuardReadAccessTest extends TestCase {
 			 * @param mixed $schema The schema.
 			 * @return array<string, mixed>|null The object.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$schema = ($options?->schema ?? null);
 				if ($schema === 'case') {
 					return ['id' => $id, 'assignee' => null, 'assignedGroup' => 'elsewhere', 'caseType' => 'type-1'];
 				}

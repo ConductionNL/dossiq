@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -79,7 +80,7 @@ interface StatusStoreObjectServiceStub {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function find(string $id, mixed $register = null, mixed $schema = null): array;
+	public function find(string $id, ?ObjectFindOptions $options = null): array;
 }//end interface
 
 /**

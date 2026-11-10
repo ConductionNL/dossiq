@@ -49,6 +49,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IGroupManager;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
@@ -133,7 +134,7 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The object, or null when absent.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				return ($this->cases[$id] ?? null);
 			}
 		};
@@ -376,7 +377,7 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 				 *
 				 * @return array<string, mixed> The object.
 				 */
-				public function find(string $id, mixed $register = null, mixed $schema = null): array {
+				public function find(string $id, ?ObjectFindOptions $options = null): array {
 					return ['id' => $id, 'assignee' => 'carol'];
 				}
 			}
@@ -412,7 +413,7 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 				 *
 				 * @return array<string, mixed>|null The object.
 				 */
-				public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+				public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 					return null;
 				}
 			}

@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zgw\LookupNotCompleted;
 use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
 use OCA\OpenRegister\Exception\NotAuthorizedException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 
@@ -70,7 +71,9 @@ final class ZgwRuleLookupsTest extends TestCase {
 				return ($this->search)($query);
 			}//end searchObjectsPaginated()
 
-			public function find(string $id, string $register, string $schema): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				$this->calls[] = ['find', $id, $register, $schema];
 				return ($this->find)($id);
 			}//end find()

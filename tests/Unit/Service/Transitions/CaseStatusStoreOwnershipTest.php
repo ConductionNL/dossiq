@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -137,7 +138,7 @@ class CaseStatusStoreOwnershipTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				if (isset($this->objects[$id]) === false) {
 					throw new RuntimeException('not found');
 				}

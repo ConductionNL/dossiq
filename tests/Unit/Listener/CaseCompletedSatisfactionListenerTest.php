@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -113,7 +114,7 @@ class CaseCompletedSatisfactionListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				return match ($id) {
 					'st-afgehandeld' => ['id' => $id, 'name' => 'Afgehandeld', 'isFinal' => true],
 					'st-in-behandeling' => ['id' => $id, 'name' => 'In behandeling', 'isFinal' => false],

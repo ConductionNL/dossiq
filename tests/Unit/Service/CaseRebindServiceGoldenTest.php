@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use ReflectionMethod;
@@ -70,7 +71,7 @@ final class GoldenRebindObjects {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, int|string $register = '', int|string $schema = ''): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null): mixed {
 		$this->log[] = ['objects.find' => compact('id', 'register', 'schema')];
 		if (($this->behaviour['findThrows'] ?? false) === true) {
 			throw new RuntimeException('find failed');

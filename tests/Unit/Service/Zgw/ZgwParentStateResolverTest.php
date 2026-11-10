@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
 use OCA\Dossiq\Service\Zgw\ZgwParentStateResolver;
 use OCA\Dossiq\Service\ZgwMappingService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -31,7 +32,7 @@ use Psr\Log\LoggerInterface;
  * The ObjectService shape the resolver calls.
  */
 interface ParentStateObjectServiceStub {
-	public function find(mixed $id, string $register, string $schema): mixed;
+	public function find(mixed $id, ?ObjectFindOptions $options = null): mixed;
 }//end interface
 
 /**

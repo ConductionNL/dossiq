@@ -20,6 +20,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 use OCA\Dossiq\Service\Zgw\ZrcUsageRights;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -56,7 +57,8 @@ class ZrcUsageRightsTest extends TestCase {
 			public function __construct(private ZrcUsageRightsTest $test) {
 			}
 
-			public function find(mixed $id, mixed $register=null, mixed $schema=null): mixed {
+			public function find(mixed $id, ?ObjectFindOptions $options = null): mixed {
+				$schema = ($options?->schema ?? null);
 				return $this->test->rowsOf((string)$schema)[(string)$id] ?? null;
 			}
 

@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Workflow;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -84,7 +85,7 @@ class WorkflowDefinitionRepositoryUpdateTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function find(string $id, ?string $register = null, ?string $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				if ($this->stored === null) {
 					throw new \RuntimeException('Object not found: ' . $id);
 				}

@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Archival;
 use OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -59,7 +60,8 @@ class FakeObjectService {
 	 *
 	 * @return array<string, mixed>|null The row, or null when absent.
 	 */
-	public function find(string $id, string $register = '', string $schema = ''): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+		$schema = ($options?->schema ?? '');
 		return ($this->store[$schema][$id] ?? null);
 	}//end find()
 

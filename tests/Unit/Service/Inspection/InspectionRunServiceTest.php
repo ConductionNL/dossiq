@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Inspection;
 use OCA\Dossiq\Service\Inspection\InspectionRunService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineInboxQuery;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -201,7 +202,9 @@ final class InspectionRunServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The template.
 			 */
-			public function find(string $id, int|string $register, int|string $schema): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				unset($register, $schema);
 
 				return ($this->templates[$id] ?? null);

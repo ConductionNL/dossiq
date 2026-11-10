@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\TenantService;
 use OCA\Dossiq\Tests\Support\EntityAnsweringRegister;
 use OCA\Dossiq\Tests\Support\MakesTenantMigration;
 use OCA\Dossiq\Tests\Support\RefusableRegister;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
@@ -108,7 +109,9 @@ class MigrateTenantsToOrganisationsTest extends TestCase {
 				return $this->store->findAll(config: $config);
 			}
 
-			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = '', bool $_rbac = true, bool $_multitenancy = true): object {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				return $this->entities->find(id: $id, register: $register, schema: $schema);
 			}
 

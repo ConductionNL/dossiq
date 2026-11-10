@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\CaseRouter;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -69,7 +70,7 @@ interface RoutingControllerContractObjectService {
 	 *
 	 * @return mixed The object.
 	 */
-	public function find(int|string $id, string $register = '', string $schema = ''): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null): mixed;
 }//end interface
 
 /**

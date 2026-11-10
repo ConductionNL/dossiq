@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 
@@ -222,7 +223,9 @@ class GoldenCopyObjectService {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, $register = null, $schema = null): ?array {
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->calls[] = ['find' => ['id' => $id, 'register' => $register, 'schema' => $schema]];
 		if (($this->behaviour['findThrows'] ?? false) === true) {
 			throw new \RuntimeException('find failed');

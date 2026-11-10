@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Advice\AdviceRepository;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\AdviceService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -68,7 +69,7 @@ interface AdviceObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null): mixed;
 
 	/**
 	 * Save or update an object.

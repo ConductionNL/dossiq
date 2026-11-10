@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCA\Dossiq\Tests\Support\MakesTenantAnchors;
 use PHPUnit\Framework\TestCase;
@@ -72,7 +73,9 @@ class TenantAuditTrailServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): object {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				return (object)['uuid' => $id, 'register' => $register, 'schema' => $schema];
 			}
 		};

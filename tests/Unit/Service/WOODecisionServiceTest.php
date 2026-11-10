@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Review\PagesSeen;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -443,7 +444,9 @@ class WOODecisionServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = ''): ?array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): ?array {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				return $this->store->find(id: $id, register: $register, schema: $schema);
 			}
 

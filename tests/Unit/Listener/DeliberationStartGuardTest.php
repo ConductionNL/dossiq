@@ -37,6 +37,7 @@ use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\OpenRegister\Exception\HookStoppedException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
@@ -548,13 +549,14 @@ class DeliberationStartGuardTest extends TestCase {
 			 */
 			public function find(
 				int|string $id,
-				mixed $_extend = null,
-				bool $files = false,
-				int|string $register = '',
-				int|string $schema = '',
+				?ObjectFindOptions $options = null,
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): ?array {
+				$_extend = ($options?->extend ?? null);
+				$files = ($options?->files ?? false);
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				$uuid = ['bacadvicerequest-req-1' => 'req-1'][(string) $id] ?? $id;
 
 				return parent::find(

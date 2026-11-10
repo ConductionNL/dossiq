@@ -28,13 +28,14 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 use OCA\Dossiq\Service\Zgw\ZtcCrossReferenceEnricher;
 use OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 
 /**
  * The ObjectService shape the ZTC classes call.
  */
 interface ZtcCrossRefObjectServiceStub {
-	public function find(mixed $id, string $register, string $schema): mixed;
+	public function find(mixed $id, ?ObjectFindOptions $options = null): mixed;
 
 	public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
 

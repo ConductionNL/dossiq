@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+
 /**
  * Records every read, write and delete, and fails the methods it is told to.
  */
@@ -79,7 +81,9 @@ final class RecordsBrcStoreCalls {
 		}
 	}//end record()
 
-	public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+	public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->record('find', [$id, $register, $schema]);
 		if (array_key_exists($id, $this->objects) === false) {
 			throw new \OCP\AppFramework\Db\DoesNotExistException('not found');

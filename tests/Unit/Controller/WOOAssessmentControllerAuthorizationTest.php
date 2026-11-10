@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
@@ -71,7 +72,7 @@ interface WooCaseObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null): mixed;
 }//end interface
 
 /**
@@ -303,7 +304,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function find(int|string $id, mixed $register = null, mixed $schema = null): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): array {
 				return ['id' => 'case-1', 'assignee' => 'alice'];
 			}
 

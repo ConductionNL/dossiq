@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -120,7 +121,8 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$schema = ($options?->schema ?? null);
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null) {
 					return null;
@@ -574,7 +576,7 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null) {
 					return null;
@@ -637,7 +639,7 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				$entry = ($this->store[$id] ?? null);
 				if ($entry === null) {
 					return null;

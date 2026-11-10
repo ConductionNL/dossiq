@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -121,7 +122,7 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): FakeStoredObject {
 				if ($id === 'decision-1') {
 					return new FakeStoredObject(['case' => 'primair-1']);
 				}
@@ -192,7 +193,7 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): FakeStoredObject {
 				return new FakeStoredObject(['case' => 'primair-1']);
 			}
 
@@ -238,7 +239,7 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): FakeStoredObject {
 				return new FakeStoredObject(['case' => '']);
 			}
 
@@ -284,7 +285,7 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @throws DoesNotExistException Always.
 			 */
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): FakeStoredObject {
 				throw new DoesNotExistException('Object ' . $id . ' does not exist');
 			}
 

@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
 use OCA\Dossiq\Tests\Unit\Service\Publication\FakeWithheldDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Container\ContainerInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -69,7 +70,7 @@ interface WooPublicationObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, ?array $extend = null, bool $files = false, ?string $register = null, ?string $schema = null);
+	public function find(string $id, ?ObjectFindOptions $options = null);
 
 	/**
 	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).

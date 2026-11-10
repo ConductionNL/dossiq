@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -93,7 +94,9 @@ class ZgwServiceWriteGoldenTest extends TestCase {
 			 *
 			 * @return mixed The object.
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				$this->trace->append(['find', $id, $register, $schema]);
 				$existing = (array_key_exists('existing', $this->world) === true ? $this->world['existing'] : ['id' => $id, 'name' => 'Oud', 'kept' => 'ja']);
 				if ($existing === 'missing') {

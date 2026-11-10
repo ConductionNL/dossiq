@@ -34,6 +34,7 @@ use OCA\Dossiq\Portal\ApplicantPortalActs;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\Notification\IManager as INotificationManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -68,7 +69,9 @@ class FakePortalCaseStore {
 	 *
 	 * @return object|null The entity, or null.
 	 */
-	public function find(string $id, mixed $register = null, mixed $schema = null): ?object {
+	public function find(string $id, ?ObjectFindOptions $options = null): ?object {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->askedIn = [$register, $schema];
 
 		if (isset($this->cases[$id]) === false) {

@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use Closure;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use RuntimeException;
 
 /**
@@ -135,13 +136,11 @@ class AnonymousRefusingRegister {
 	 */
 	public function find(
 		int|string $id,
-		?array $_extend = [],
-		bool $files = false,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): ?array {
+		$schema = ($options?->schema ?? null);
 		if ($schema === null || $schema === '') {
 			foreach ($this->rows as $rows) {
 				if (isset($rows[(string)$id]) === true) {

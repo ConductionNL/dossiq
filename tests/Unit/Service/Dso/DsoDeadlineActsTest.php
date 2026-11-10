@@ -33,6 +33,7 @@ use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IUserSession;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
@@ -94,7 +95,7 @@ class DsoDeadlineActsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
 				return $this->stored[$id] ?? null;
 			}
 

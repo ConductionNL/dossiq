@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCA\Integriq\Event\DeliveryConcludedEvent;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -108,7 +109,9 @@ class DeliveryConcludedListenerGoldenTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null): mixed {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				$this->trace->append(['find', $id, $register, $schema]);
 				if ($this->case === 'throw') {
 					throw new RuntimeException('store down');

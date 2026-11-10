@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\Relation\CaseRelationLabels;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 use OCA\Dossiq\Service\Relation\SubjectLinkRule;
 use OCA\Dossiq\Service\Notice\CaseActNotices;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IL10N;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
@@ -110,7 +111,9 @@ class CaseRelationServiceGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The case.
 			 */
-			public function find(string $id, $register = null, $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+				$register = ($options?->register ?? null);
+				$schema = ($options?->schema ?? null);
 				$this->calls[] = ['find', $id, $register, $schema];
 				if (in_array($id, ($this->knobs['findThrows'] ?? []), true) === true) {
 					throw new RuntimeException('find failed on ' . $id);

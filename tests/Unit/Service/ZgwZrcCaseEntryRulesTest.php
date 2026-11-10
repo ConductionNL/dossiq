@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\FieldValidator;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwZrcRulesService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -32,7 +33,7 @@ use Psr\Log\LoggerInterface;
  * The ObjectService shape the entry rules call with named arguments.
  */
 interface CaseEntryObjectServiceStub {
-	public function find(string $id, string $register, string $schema): mixed;
+	public function find(string $id, ?ObjectFindOptions $options = null): mixed;
 }//end interface
 
 /**

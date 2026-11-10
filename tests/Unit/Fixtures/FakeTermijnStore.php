@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 // Idempotence guard. Checked against FakeStoredObject, NOT FakeTermijnStore:
@@ -159,11 +160,9 @@ class FakeTermijnStore {
 	 */
 	public function find(
 		int|string $id,
-		?array $_extend = [],
-		bool $files = false,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		?ObjectFindOptions $options = null,
 	): FakeStoredObject {
+		$schema = ($options?->schema ?? null);
 		$id = (string)$id;
 		$schemas = array_keys($this->store);
 		if ($schema !== null) {

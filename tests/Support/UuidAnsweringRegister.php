@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+
 /**
  * Delegates to InMemoryRegister; a save on the named schemas answers an entity with a uuid.
  */
@@ -57,13 +59,12 @@ class UuidAnsweringRegister {
 	 */
 	public function find(
 		int|string $id,
-		mixed $_extend = null,
-		bool $files = false,
-		int|string $register = '',
-		int|string $schema = '',
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): ?array {
+		$register = ($options?->register ?? '');
+		$schema = ($options?->schema ?? '');
 		return $this->store->find(id: $id, register: $register, schema: $schema);
 	}//end find()
 

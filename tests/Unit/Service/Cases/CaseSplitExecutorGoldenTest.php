@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -96,7 +97,9 @@ class CaseSplitExecutorGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The row.
 			 */
-			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = ''): ?array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null): ?array {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				$this->calls[] = ['find', ['id' => $id, 'register' => $register, 'schema' => $schema]];
 				if (in_array($schema, ($this->knobs['findThrows'] ?? []), true) === true) {
 					throw new RuntimeException('find failed on ' . $schema);

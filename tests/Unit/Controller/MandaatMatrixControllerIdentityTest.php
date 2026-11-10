@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\MandaatEscalatieService;
 use OCA\Dossiq\Service\MandaatGebruikService;
 use OCA\Dossiq\Service\MandaatImportService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IRequest;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -61,7 +62,7 @@ interface MandaatCaseObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null): mixed;
 }//end interface
 
 /**

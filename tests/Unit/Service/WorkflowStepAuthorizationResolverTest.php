@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkflowStepAuthorizationResolver;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,7 @@ interface AuthResolverObjectServiceStub {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(string $id, string $register, string $schema): ?array;
+	public function find(string $id, ?ObjectFindOptions $options = null): ?array;
 }//end interface
 
 /**

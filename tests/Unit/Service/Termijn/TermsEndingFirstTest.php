@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\TermDeclarationReader;
 use OCA\Dossiq\Service\Termijn\TermsEndingFirst;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -149,7 +150,7 @@ class TermsEndingFirstTest extends TestCase {
 			 * @param int|string $schema   The schema.
 			 * @return array<string, mixed>
 			 */
-			public function find(string $id, int|string $register, int|string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null): array {
 				return ($this->cases[$id] ?? []);
 			}
 		};

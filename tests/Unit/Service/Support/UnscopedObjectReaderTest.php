@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
 use JsonSerializable;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 
@@ -48,7 +49,9 @@ class UnscopedObjectReaderTest extends TestCase {
 				return $operation();
 			}
 
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac, bool $_multitenancy): array {
+				$register = ($options?->register ?? '');
+				$schema = ($options?->schema ?? '');
 				$this->calls[] = ['id' => $id, 'register' => $register, 'schema' => $schema, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 				return ['id' => $id, 'title' => 'Found'];
 			}
@@ -68,7 +71,7 @@ class UnscopedObjectReaderTest extends TestCase {
 	 */
 	public function testAnEntityIsAnsweredAsItsArray(): void {
 		$service = new class {
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): JsonSerializable {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac, bool $_multitenancy): JsonSerializable {
 				return new class implements JsonSerializable {
 					public function jsonSerialize(): array {
 						return ['id' => 'uuid-2'];
@@ -87,12 +90,12 @@ class UnscopedObjectReaderTest extends TestCase {
 	 */
 	public function testAMissingRowReadsAsNull(): void {
 		$missing = new class {
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac, bool $_multitenancy): array {
 				throw new DoesNotExistException('gone');
 			}
 		};
 		$nothing = new class {
-			public function find(int|string $id, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): ?string {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac, bool $_multitenancy): ?string {
 				return null;
 			}
 		};
