@@ -2,6 +2,26 @@
 // Copyright (C) 2026 Conduction B.V.
 
 /**
+ * One answered property of the case, by the name of its definition. The case
+ * stores them as a list of `{ name, value }` entries.
+ *
+ * @param {object} caseObject The case.
+ * @param {string} name The property's name.
+ *
+ * @return {*} The stored value, or undefined.
+ *
+ * @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
+ */
+function propertyOf(caseObject, name) {
+	const stored = caseObject?.properties
+	if (Array.isArray(stored)) {
+		return stored.find((entry) => entry?.name === name)?.value
+	}
+
+	return stored?.[name]
+}
+
+/**
  * The value of one row: its `field`, read from the case's properties and then
  * from the case, else its fixed `value`.
  *
@@ -13,7 +33,7 @@
  * @spec openspec/changes/overview-sections-per-case-type/specs/case-page/spec.md#requirement-a-case-type-declares-its-overview-cards
  */
 function rowValue(row, caseObject) {
-	const read = row.field ? (caseObject.properties?.[row.field] ?? caseObject[row.field]) : row.value
+	const read = row.field ? (propertyOf(caseObject, row.field) ?? caseObject[row.field]) : row.value
 	const scalar = typeof read === 'string' || typeof read === 'number'
 
 	return scalar && read !== '' ? String(read) : '—'
@@ -38,7 +58,7 @@ export function resolveOverviewSections(declared, caseObject) {
 		.filter((section) => section?.id && section.title)
 		.map((section) => ({
 			...section,
-			pill: section.pillField ? (caseObject.properties?.[section.pillField] ?? '') : '',
+			pill: section.pillField ? (propertyOf(caseObject, section.pillField) ?? '') : '',
 			rows: (section.rows || []).map((row) => ({ label: row.label, value: rowValue(row, caseObject) })),
 		}))
 }
