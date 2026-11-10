@@ -265,6 +265,37 @@ class CaseNumberServiceTest extends TestCase {
 	}//end testAnUnreachableRegisterLeavesTheCaseStanding()
 
 	/**
+	 * A case without an id, or a register or case schema that is not set,
+	 * gets no number and nothing is read; a failed write logs its exact line.
+	 *
+	 * @return void
+	 */
+	public function testEveryWayToGiveNoNumber(): void {
+		$objectService = $this->createMock(CaseNumberObjectServiceStub::class);
+		$objectService->expects($this->never())->method('searchObjectsBySlug');
+		$objectService->expects($this->never())->method('saveObject');
+		foreach ([['register' => '', 'case_schema' => 'case'], ['register' => 'dossiq', 'case_schema' => '']] as $values) {
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('getObjectService')->willReturn($objectService);
+			$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($values[$key] ?? ''));
+			$service = new CaseNumberService(settingsService: $settings, logger: $this->createMock(LoggerInterface::class));
+			$this->assertSame('', $service->assign(case: ['id' => 'c1']));
+		}
+
+		$this->assertSame('', $this->service->assign(case: ['title' => 'no id']));
+
+		$failing = $this->createMock(CaseNumberObjectServiceStub::class);
+		$failing->method('searchObjectsBySlug')->willReturn([]);
+		$failing->method('saveObject')->willThrowException(new \RuntimeException('nope'));
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($failing);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with('Dossiq: could not give case c2 a number: nope', ['case' => 'c2', 'year' => '2026']);
+		(new CaseNumberService(settingsService: $settings, logger: $logger))->assign(case: ['uuid' => 'c2', 'startDate' => '2026-01-01']);
+	}//end testEveryWayToGiveNoNumber()
+
+	/**
 	 * A failing write is logged and swallowed, never rethrown at case creation.
 	 *
 	 * @return void
