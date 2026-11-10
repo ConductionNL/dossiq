@@ -31,10 +31,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Command;
 
 use OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator;
+use OCP\IUser;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -76,17 +76,9 @@ class MigrateLhsToDecisionTablesCommand extends Command {
 				. 'from its own axis is SKIPPED rather than projected, because the rule would be '
 				. 'as unreachable in the table as the cell is in the matrix. The tables arrive '
 				. 'DISABLED: the matrix still drives recommendations. Use --dry-run first.'
-			)
-			->addOption(
-				name: 'user',
-				mode: InputOption::VALUE_REQUIRED,
-				description: 'UID the created flows belong to; also supplies the active organisation.'
-			)
-			->addOption(
-				name: 'dry-run',
-				mode: InputOption::VALUE_NONE,
-				description: 'Report what would be created or updated, and write nothing.'
 			);
+
+		(new MigrationConsole())->addOptions(command: $this);
 	}//end configure()
 
 	/**
@@ -100,60 +92,16 @@ class MigrateLhsToDecisionTablesCommand extends Command {
 	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		$uid = (string)($input->getOption('user') ?? '');
-		if ($uid === '') {
-			$output->writeln('<error>--user is required: a flow needs an owner and an organisation.</error>');
-			return Command::INVALID;
-		}
+		$console = new MigrationConsole();
+		$console->userManager = $this->userManager;
+		$console->output = $output;
+		$console->command = 'dossiq:lhs:migrate-to-decision-tables';
+		$console->dryRunNote = ' (dry run, nothing was written)';
+		$console->rowSeparator = ': ';
 
-		$user = $this->userManager->get($uid);
-		if ($user === null) {
-			$output->writeln('<error>No such user: ' . $uid . '</error>');
-			return Command::INVALID;
-		}
-
-		$dryRun = (bool)$input->getOption('dry-run');
-		$summary = $this->migrator->migrate(user: $user, dryRun: $dryRun);
-
-		return $this->report(summary: $summary, dryRun: $dryRun, output: $output);
+		return $console->run(
+			input: $input,
+			migrate: fn (IUser $user, bool $dryRun): array => $this->migrator->migrate(user: $user, dryRun: $dryRun)
+		);
 	}//end execute()
-
-	/**
-	 * Print the summary, and decide the exit code from it.
-	 *
-	 * A failed row exits non-zero. Reporting success over a partial migration is
-	 * how a caller ends up believing data moved that did not.
-	 *
-	 * @param array<string, mixed> $summary The migrator's summary.
-	 * @param bool $dryRun Whether this was a dry run.
-	 * @param OutputInterface $output Console output.
-	 *
-	 * @return int Symfony command exit code.
-	 */
-	private function report(array $summary, bool $dryRun, OutputInterface $output): int {
-		if (isset($summary['note']) === true && $summary['note'] !== '') {
-			$output->writeln('<comment>' . (string)$summary['note'] . '</comment>');
-			return Command::SUCCESS;
-		}
-
-		$prefix = 'dossiq:lhs:migrate-to-decision-tables';
-		if ($dryRun === true) {
-			$prefix .= ' (dry run, nothing was written)';
-		}
-
-		$output->writeln('<info>' . $prefix . '</info>');
-		foreach (['total', 'created', 'updated', 'skipped', 'failed'] as $key) {
-			$output->writeln('  ' . str_pad($key, 8) . ' = ' . (string)$summary[$key]);
-		}
-
-		foreach ($summary['rows'] as $row) {
-			$output->writeln('  [' . $row['outcome'] . '] ' . $row['marker'] . ': ' . $row['detail']);
-		}
-
-		if ($summary['failed'] > 0) {
-			return Command::FAILURE;
-		}
-
-		return Command::SUCCESS;
-	}//end report()
 }//end class
