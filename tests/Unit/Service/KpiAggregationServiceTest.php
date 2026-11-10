@@ -799,4 +799,19 @@ final class KpiAggregationServiceTest extends TestCase {
 			}
 		};
 	}
+	/**
+	 * The KPI contract answers every key in one order: the queue figures first.
+	 *
+	 * @return void
+	 */
+	public function testTheKpisAnswerEveryKeyInOrder(): void {
+		$keys = array_keys($this->service()->computeKpis('admin'));
+		$tail = [
+			'queueOldestNote', 'openCount', 'newToday', 'overdueCount', 'completedCount',
+			'myCompletedCount', 'myCompletedLastMonth', 'thisMonthName', 'lastMonthName',
+			'taskCount', 'tasksDueToday', 'statusBreakdown', 'typeBreakdown', 'avgProcessingDays', 'slaCompliance',
+		];
+		$this->assertSame($tail, array_slice($keys, -count($tail)));
+		$this->assertContains('queueOldestType', array_slice($keys, 0, -count($tail)));
+	}
 }
