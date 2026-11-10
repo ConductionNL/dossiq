@@ -171,7 +171,17 @@ export function lastRunTime(report) {
 		return null
 	}
 
-	return nonEmptyTime(report.finishedAt || report.startedAt || '')
+	return nonEmptyTime(reportStamp(report))
+}
+
+/**
+ * The time a report is known by: when the run finished, else when it started.
+ *
+ * @param {object} report The run report.
+ * @return {unknown} The time, or ''.
+ */
+function reportStamp(report) {
+	return report.finishedAt || report.startedAt || ''
 }
 
 /**
