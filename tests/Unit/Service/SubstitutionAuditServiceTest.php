@@ -242,4 +242,21 @@ class SubstitutionAuditServiceTest extends TestCase {
 		$this->assertNull($service->stampIfSubstituted('case-1', '', 'edit'));
 		$this->assertNull($service->stampIfSubstituted('case-1', 'marieke', 'edit'), 'a failed write stamps nothing');
 	}//end testTheWholeStampAndEveryRefusal()
+	/**
+	 * Own work and an unassigned case never ask for a capacity at all.
+	 *
+	 * @return void
+	 */
+	public function testOwnWorkNeverAsksForACapacity(): void {
+		$os = $this->objectServiceMock();
+		$os->method('find')->willReturnCallback(
+			static fn (...$args): array => ['id' => (string)($args['id'] ?? $args[0]), 'assignee' => (($args['id'] ?? $args[0]) === 'case-own' ? 'marieke' : '')]
+		);
+		$this->settingsService->method('getObjectService')->willReturn($os);
+		$this->substitutionService->expects($this->never())->method('resolveActingCapacity');
+
+		$service = new SubstitutionAuditService($this->settingsService, $this->substitutionService, $this->logger);
+		$this->assertNull($service->stampIfSubstituted('case-own', 'marieke', 'edit'));
+		$this->assertNull($service->stampIfSubstituted('case-free', 'marieke', 'edit'));
+	}//end testOwnWorkNeverAsksForACapacity()
 }//end class
