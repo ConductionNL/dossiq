@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Mandaat;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -196,18 +197,42 @@ class MandaatRepository {
 			return null;
 		}
 
-		foreach ($rows as $row) {
-			if ($excludeId !== null && (string)($row['id'] ?? '') === $excludeId) {
-				continue;
-			}
+		return $this->firstDetermined(rows: $rows, excludeId: $excludeId);
+	}//end findPriorDecision()
 
-			if (($row['status'] ?? '') === 'determined') {
+	/**
+	 * The first adopted decision among the rows, skipping the excluded id.
+	 *
+	 * @param array<int, array<string, mixed>> $rows      The decisions with one decision number.
+	 * @param string|null                      $excludeId Optional id to skip.
+	 *
+	 * @return array<string, mixed>|null The adopted decision, or null.
+	 */
+	private function firstDetermined(array $rows, ?string $excludeId): ?array {
+		foreach ($rows as $row) {
+			if ($this->isAdoptedOutside(row: $row, excludeId: $excludeId) === true) {
 				return $row;
 			}
 		}
 
 		return null;
-	}//end findPriorDecision()
+	}//end firstDetermined()
+
+	/**
+	 * Whether the decision is adopted and not the excluded one.
+	 *
+	 * @param array<string, mixed> $row       One stored decision.
+	 * @param string|null          $excludeId Optional id to skip.
+	 *
+	 * @return bool
+	 */
+	private function isAdoptedOutside(array $row, ?string $excludeId): bool {
+		if ($excludeId !== null && (string)($row['id'] ?? '') === $excludeId) {
+			return false;
+		}
+
+		return ($row['status'] ?? '') === 'determined';
+	}//end isAdoptedOutside()
 
 	/**
 	 * Find the mandaten linked to a besluit.
@@ -250,28 +275,13 @@ class MandaatRepository {
 	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function save(string $schemaConfigKey, array $object): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($objectService === null || $register === '' || $schema === '') {
-			return $object;
-		}
+		$writer = new ConfiguredSchemaWriter(
+			settingsService: $this->settingsService,
+			onFailure: function (\Throwable $e) use ($schemaConfigKey): void {
+				$this->logger->error('Mandaat import persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
+			}
+		);
 
-		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $object
-			);
-			return ($saved ?? $object);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Mandaat import persist failed',
-				['key' => $schemaConfigKey, 'error' => $e->getMessage()]
-			);
-
-			return $object;
-		}
+		return $writer->save(schemaConfigKey: $schemaConfigKey, object: $object);
 	}//end save()
 }//end class

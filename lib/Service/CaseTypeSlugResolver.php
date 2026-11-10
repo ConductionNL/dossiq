@@ -139,28 +139,13 @@ class CaseTypeSlugResolver {
 	 * @return string The slug, or an empty string.
 	 */
 	private function readSlug(string $caseTypeId): string {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return '';
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($register === '' || $schema === '') {
+		$scope = $this->caseTypeScope();
+		if ($scope === null) {
 			return '';
 		}
 
 		try {
-			$caseType = $this->asSystemWithoutUser(
-				objectService: $objectService,
-				userSession: $this->userSession,
-				operation: fn (): ?array => $this->findObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: $caseTypeId,
-				),
-			);
+			$caseType = $this->readCaseTypeAsSystem(scope: $scope, caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not read the case type behind a case, so its statutory term cannot be resolved',
@@ -174,21 +159,88 @@ class CaseTypeSlugResolver {
 			return '';
 		}
 
+		return $this->slugOf(caseType: $caseType);
+	}//end readSlug()
+
+	/**
+	 * The object service, register and case type schema, or null when
+	 * OpenRegister or either setting is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function caseTypeScope(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_type_schema');
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseTypeScope()
+
+	/**
+	 * Read the case type, as the system when nobody is signed in.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $scope      The object service, register and schema.
+	 * @param string                                 $caseTypeId The caseType uuid.
+	 *
+	 * @return array<string, mixed>|null The case type, or null when there is none.
+	 */
+	private function readCaseTypeAsSystem(array $scope, string $caseTypeId): ?array {
+		return $this->asSystemWithoutUser(
+			objectService: $scope[0],
+			userSession: $this->userSession,
+			operation: fn (): ?array => $this->findObjectAsArray(
+				objectService: $scope[0],
+				register: $scope[1],
+				schema: $scope[2],
+				id: $caseTypeId,
+			),
+		);
+	}//end readCaseTypeAsSystem()
+
+	/**
+	 * The slug of a stored case type: its identifier, else its metadata slug,
+	 * else its body slug.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return string
+	 */
+	private function slugOf(array $caseType): string {
 		$identifier = trim((string)($caseType['identifier'] ?? ''));
 		if ($identifier !== '') {
 			return $identifier;
 		}
 
-		$self = ($caseType['@self'] ?? null);
-		if (is_array($self) === true) {
-			$metadataSlug = trim((string)($self['slug'] ?? ''));
-			if ($metadataSlug !== '') {
-				return $metadataSlug;
-			}
+		$metadataSlug = $this->metadataSlug(caseType: $caseType);
+		if ($metadataSlug !== '') {
+			return $metadataSlug;
 		}
 
 		return trim((string)($caseType['slug'] ?? ''));
-	}//end readSlug()
+	}//end slugOf()
+
+	/**
+	 * The slug OpenRegister keeps as object metadata, under `@self`.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return string The slug, or ''.
+	 */
+	private function metadataSlug(array $caseType): string {
+		$self = ($caseType['@self'] ?? null);
+		if (is_array($self) === false) {
+			return '';
+		}
+
+		return trim((string)($self['slug'] ?? ''));
+	}//end metadataSlug()
 
 	/**
 	 * Whether a value has the shape of a uuid.

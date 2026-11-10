@@ -102,15 +102,14 @@ export class CaseLiveSubscription {
 	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
 	 */
 	async sync(caseId) {
-		const store = this.store
-		if (typeof store?.subscribe !== 'function') {
+		if (typeof this.store?.subscribe !== 'function') {
 			// An older library, or a store built without the plugin. Doing
 			// nothing is right: the page keeps working, it simply does not
 			// refresh on its own.
 			return
 		}
 
-		if (!caseId || !store.objectTypeRegistry?.case) {
+		if (!caseId || !this.store.objectTypeRegistry?.case) {
 			// `case` unregistered means the settings read has not landed or
 			// this instance has no case schema configured. Subscribing anyway
 			// throws inside the plugin, so release and wait to be called again.
@@ -118,40 +117,84 @@ export class CaseLiveSubscription {
 			return
 		}
 
-		if (
-			(this.handle !== null && this.key === caseId)
-			|| this.pendingKey === caseId
-		) {
+		if (this.holdsOrAwaits(caseId)) {
 			return
 		}
 
 		this.release()
+		await this.subscribeTo(caseId)
+	}
+
+	/**
+	 * Whether this case is already held, or its subscribe is in flight.
+	 *
+	 * @param {string} caseId The case.
+	 * @return {boolean} True when there is nothing to do.
+	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 */
+	holdsOrAwaits(caseId) {
+		return (this.handle !== null && this.key === caseId)
+			|| this.pendingKey === caseId
+	}
+
+	/**
+	 * Subscribe to one case, and keep the handle only when nothing released
+	 * the subscription while it was being asked for.
+	 *
+	 * @param {string} caseId The case.
+	 * @return {Promise<void>}
+	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 */
+	async subscribeTo(caseId) {
 		const epoch = this.epoch
 		this.pendingKey = caseId
 		this.key = caseId
 
 		try {
-			const handle = await store.subscribe('case', caseId)
-			if (this.epoch !== epoch) {
-				// Released while awaiting: another case was opened, or the
-				// reader left the page. Drop the handle rather than storing it.
-				store.unsubscribe(handle)
-				return
-			}
-			this.handle = handle
+			const handle = await this.store.subscribe('case', caseId)
+			this.keepHandle({ handle, epoch })
 		} catch (err) {
-			this.handle = null
-			this.key = ''
-			// Recorded rather than printed, and never rethrown. A failed
-			// subscription must not break the page: the case still renders,
-			// it simply does not refresh on its own, and a navigation calls
-			// sync() again so a transport that comes back is picked up.
-			this.lastError = String(err?.message ?? err)
+			this.forgetFailedSubscribe(err)
 		} finally {
 			if (this.pendingKey === caseId) {
 				this.pendingKey = ''
 			}
 		}
+	}
+
+	/**
+	 * Forget a subscribe that failed, so the next sync tries again.
+	 *
+	 * Recorded rather than printed, and never rethrown. A failed
+	 * subscription must not break the page: the case still renders,
+	 * it simply does not refresh on its own, and a navigation calls
+	 * sync() again so a transport that comes back is picked up.
+	 *
+	 * @param {unknown} err What the subscribe threw.
+	 * @return {void}
+	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 */
+	forgetFailedSubscribe(err) {
+		this.handle = null
+		this.key = ''
+		this.lastError = String(err?.message ?? err)
+	}
+
+	/**
+	 * Keep a handle the store answered, or drop it when the subscription was
+	 * released while awaiting: another case was opened, or the reader left
+	 * the page.
+	 *
+	 * @param {{handle: object, epoch: number}} answered The handle and the epoch it was asked in.
+	 * @return {void}
+	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
+	 */
+	keepHandle(answered) {
+		if (this.epoch !== answered.epoch) {
+			this.store.unsubscribe(answered.handle)
+			return
+		}
+		this.handle = answered.handle
 	}
 
 	/**

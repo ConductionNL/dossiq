@@ -237,17 +237,7 @@ class BewijsstukService {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('bewijsstuk_schema');
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('Bewijsstuk-schema is niet geconfigureerd');
-		}
-
-		return [$objectService, $register, $schema];
+		$lookup = new SubsidieSchemaLookup(settingsService: $this->settingsService);
+		return $lookup->resolve(schemaConfigKey: 'bewijsstuk_schema', unconfiguredMessage: 'Bewijsstuk-schema is niet geconfigureerd');
 	}//end resolve()
 }//end class

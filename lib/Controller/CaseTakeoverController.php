@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -44,7 +45,6 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -93,9 +93,9 @@ class CaseTakeoverController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function ask(string $caseId): JSONResponse {
-		$user = $this->readerOf(caseId: $caseId);
+		$user = $this->caller()->reader(caseId: $caseId);
 		if ($user === null) {
-			return $this->notYours();
+			return $this->caller()->notYours();
 		}
 
 		$reason = trim((string)$this->request->getParam('reason', ''));
@@ -127,9 +127,9 @@ class CaseTakeoverController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function accept(string $caseId, string $takeoverId): JSONResponse {
-		$user = $this->writerOf(caseId: $caseId);
+		$user = $this->caller()->writer(caseId: $caseId);
 		if ($user === null) {
-			return $this->notYours();
+			return $this->caller()->notYours();
 		}
 
 		try {
@@ -153,9 +153,9 @@ class CaseTakeoverController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $caseId, string $takeoverId): JSONResponse {
-		$user = $this->writerOf(caseId: $caseId);
+		$user = $this->caller()->writer(caseId: $caseId);
 		if ($user === null) {
-			return $this->notYours();
+			return $this->caller()->notYours();
 		}
 
 		$reason = trim((string)$this->request->getParam('reason', ''));
@@ -186,8 +186,8 @@ class CaseTakeoverController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function onCase(string $caseId): JSONResponse {
-		if ($this->readerOf(caseId: $caseId) === null) {
-			return $this->notYours();
+		if ($this->caller()->reader(caseId: $caseId) === null) {
+			return $this->caller()->notYours();
 		}
 
 		$requests = $this->takeovers->onCase(caseId: $caseId);
@@ -196,54 +196,11 @@ class CaseTakeoverController extends Controller {
 	}//end onCase()
 
 	/**
-	 * The caller, when they may read this case.
+	 * Who may read or write on the case, and the refusal when they may not.
 	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null.
+	 * @return CaseCaller
 	 */
-	private function readerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
-	}//end readerOf()
-
-	/**
-	 * The caller, when they may move this case.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return IUser|null The caller, or null.
-	 */
-	private function writerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
-	}//end writerOf()
-
-	/**
-	 * One answer for "this case is not yours", so none of the four differ.
-	 *
-	 * @return JSONResponse The refusal.
-	 */
-	private function notYours(): JSONResponse {
-		return new JSONResponse(
-			['message' => 'You cannot do that on this case.', 'error' => 'case-access-denied'],
-			Http::STATUS_FORBIDDEN,
-		);
-	}//end notYours()
+	private function caller(): CaseCaller {
+		return new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard);
+	}//end caller()
 }//end class

@@ -32,7 +32,6 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -83,19 +82,19 @@ class CaseCustodyQuery {
 	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function holderOn(string $caseId, string $asOf): ?array {
-		$moment = $this->instant(value: $asOf);
+		$moment = (new StoredInstant())->parse(value: $asOf);
 		if ($moment === null) {
 			return null;
 		}
 
 		$found = null;
 		foreach ($this->chain->holdings(caseId: $caseId) as $holding) {
-			$from = $this->instant(value: (string)($holding['from'] ?? ''));
+			$from = (new StoredInstant())->parse(value: (string)($holding['from'] ?? ''));
 			if ($from === null || $from > $moment) {
 				continue;
 			}
 
-			$until = $this->instant(value: (string)($holding['until'] ?? ''));
+			$until = (new StoredInstant())->parse(value: (string)($holding['until'] ?? ''));
 			if ($until !== null && $until <= $moment) {
 				continue;
 			}
@@ -123,18 +122,18 @@ class CaseCustodyQuery {
 	 */
 	public function heldBy(string $organisationUnit, string $from, string $to): array {
 		$organisationUnit = trim($organisationUnit);
-		$windowStart = $this->instant(value: $from);
-		$windowEnd = $this->instant(value: $to);
+		$windowStart = (new StoredInstant())->parse(value: $from);
+		$windowEnd = (new StoredInstant())->parse(value: $to);
 		if ($organisationUnit === '' || $windowStart === null || $windowEnd === null) {
 			return [];
 		}
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 			$rows = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_custody_schema'),
+				schema: $this->dossierRegister()->schema(key: 'case_custody_schema'),
 				filters: ['organisationUnit' => $organisationUnit, '_limit' => self::PAGE_SIZE],
 			);
 		} catch (Throwable $e) {
@@ -178,72 +177,21 @@ class CaseCustodyQuery {
 	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	private function overlaps(array $holding, DateTimeImmutable $windowStart, DateTimeImmutable $windowEnd): bool {
-		$holdingStart = $this->instant(value: (string)($holding['from'] ?? ''));
+		$holdingStart = (new StoredInstant())->parse(value: (string)($holding['from'] ?? ''));
 		if ($holdingStart === null || $holdingStart > $windowEnd) {
 			return false;
 		}
 
-		$holdingEnd = $this->instant(value: (string)($holding['until'] ?? ''));
+		$holdingEnd = (new StoredInstant())->parse(value: (string)($holding['until'] ?? ''));
 
 		return ($holdingEnd === null || $holdingEnd >= $windowStart);
 	}//end overlaps()
-
 	/**
-	 * A moment, or null when the value is empty or unreadable.
+	 * The dossier register and its configured schemas.
 	 *
-	 * @param string $value The candidate.
-	 *
-	 * @return DateTimeImmutable|null The moment.
+	 * @return DossierRegister The register reader.
 	 */
-	private function instant(string $value): ?DateTimeImmutable {
-		$value = trim($value);
-		if ($value === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end instant()
-
-	/**
-	 * The object service and the register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
+	private function dossierRegister(): DossierRegister {
+		return new DossierRegister(settingsService: $this->settingsService);
+	}//end dossierRegister()
 }//end class
