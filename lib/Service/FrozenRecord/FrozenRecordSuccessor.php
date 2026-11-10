@@ -182,14 +182,6 @@ class FrozenRecordSuccessor {
 	 * @spec openspec/specs/frozen-record/spec.md
 	 */
 	public function predecessorFields(FreezeDefinition $definition, string $successorId): array {
-		if ($definition->successor === null) {
-			throw new RefusedException(
-				rule: 'record-has-no-successor',
-				sentence: 'This kind of record cannot be replaced by a successor.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return [$definition->successor['supersededByField'] => $successorId];
+		return [self::successorOf(definition: $definition)['supersededByField'] => $successorId];
 	}//end predecessorFields()
 }//end class
