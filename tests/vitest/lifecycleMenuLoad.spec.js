@@ -34,13 +34,13 @@ const LIFECYCLE = {
  */
 function instance(act = '') {
 	return {
+		...methods,
 		targetCaseId: 'case 1',
 		act,
 		actDialogs: {},
 		loading: true,
 		entries: null,
 		choose: vi.fn(),
-		withOwnDialogs: methods.withOwnDialogs,
 	}
 }
 
