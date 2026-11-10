@@ -29,6 +29,8 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 
 /**
  * Settles and checks indicatieGebruiksrecht on a zaak's documents.
@@ -179,10 +181,11 @@ class ZrcUsageRights {
 			$docData['usageRightsIndication'] = $hasGr;
 			$docData['id'] = $docUuid;
 			$this->zgwService->getObjectService()->saveObject(
-				register: $docConfig['sourceRegister'],
-				schema: $docConfig['sourceSchema'],
 				object: $docData,
-				uuid: $docUuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $docConfig['sourceRegister'], schema: $docConfig['sourceSchema']),
+					uuid: $docUuid
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->debug(

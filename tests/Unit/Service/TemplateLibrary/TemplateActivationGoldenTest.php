@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\TemplateLibrary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TemplateLibraryService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -76,7 +77,9 @@ class TemplateActivationGoldenTest extends TestCase {
 			 *
 			 * @return object The saved object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): object {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saves[] = ['object' => $object, 'register' => $register, 'schema' => $schema];
 				$uuid = 'uuid-' . count($this->saves);
 

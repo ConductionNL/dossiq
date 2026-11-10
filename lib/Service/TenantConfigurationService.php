@@ -28,6 +28,8 @@ use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -311,9 +313,10 @@ class TenantConfigurationService {
 
 			return $objectService->saveObject(
 				object: $next,
-				register: Application::REGISTER_SLUG,
-				schema: 'tenantConfiguration',
-				uuid: $uuidArg
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: Application::REGISTER_SLUG, schema: 'tenantConfiguration'),
+					uuid: $uuidArg
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: tenantConfiguration save failed', ['exception' => $e->getMessage()]);

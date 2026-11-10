@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -146,8 +148,9 @@ class CaseCopyService {
 			$created = $this->toArray(
 				value: $context['objectService']->saveObject(
 					object: $payload,
-					register: $context['register'],
-					schema: $context['caseSchema'],
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $context['register'], schema: $context['caseSchema'])
+					)
 				)
 			);
 		} catch (\Throwable $e) {
@@ -358,8 +361,9 @@ class CaseCopyService {
 						'description' => (string)($link['description'] ?? ''),
 						'registrationDate' => date('Y-m-d'),
 					],
-					register: $register,
-					schema: $schema,
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					),
 				);
 				$linked++;
 			} catch (\Throwable $e) {

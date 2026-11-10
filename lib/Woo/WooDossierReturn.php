@@ -41,6 +41,8 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -233,9 +235,10 @@ class WooDossierReturn {
 
 		return $objectService->saveObject(
 			object: $data,
-			register: $target['register'],
-			schema: $target['schema'],
-			uuid: $target['id'],
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $target['register'], schema: $target['schema']),
+				uuid: $target['id']
+			),
 			_rbac: false,
 			_multitenancy: false,
 		);

@@ -43,6 +43,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -206,19 +208,21 @@ class IntakeSourceSeeder {
 
 				if ($existing === null) {
 					$objectService->saveObject(
-						register: $register,
-						schema: self::SCHEMA_SLUG,
-						object: $this->newRow(source: $source)
+						object: $this->newRow(source: $source),
+						options: new ObjectSaveOptions(
+							target: new ObjectFindTarget(register: $register, schema: self::SCHEMA_SLUG)
+						)
 					);
 					$created++;
 					continue;
 				}
 
 				$objectService->saveObject(
-					register: $register,
-					schema: self::SCHEMA_SLUG,
 					object: $this->refreshedRow(existing: $this->dataOf(object: $existing), source: $source),
-					uuid: $this->uuidOf(object: $existing)
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $register, schema: self::SCHEMA_SLUG),
+						uuid: $this->uuidOf(object: $existing)
+					)
 				);
 				$updated++;
 			} catch (Throwable $e) {

@@ -62,6 +62,8 @@ use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\TranslatedText;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -344,7 +346,13 @@ class LeaverHandoverService {
 
 			$case['handoverRecord'] = $record;
 			unset($case['@self'], $case['id'], $case['uuid']);
-			$objectService->saveObject(object: $case, register: $register, schema: $schema, uuid: $caseId);
+			$objectService->saveObject(
+				object: $case,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema),
+					uuid: $caseId
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq leaver handover: the record could not be written onto a case',

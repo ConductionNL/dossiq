@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use RuntimeException;
 
 final class RecordingTransferObjects {
@@ -82,7 +83,9 @@ final class RecordingTransferObjects {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, int $register, int $schema) {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->log[] = ['objects.saveObject' => ['object' => $object, 'register' => $register, 'schema' => $schema]];
 		$idKey = ($this->behaviour['idKey'] ?? 'id');
 		if ($idKey !== 'none' && isset($object['id']) === false && isset($object['uuid']) === false) {

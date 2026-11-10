@@ -31,6 +31,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -222,7 +224,12 @@ class MilestoneService {
 			'trigger' => $trigger,
 		];
 
-		$record = $objectService->saveObject(object: $recordData, register: $register, schema: $schema);
+		$record = $objectService->saveObject(
+			object: $recordData,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			)
+		);
 
 		$this->logger->info(
 			'Milestone marked: ' . $definitionId . ' on case ' . $caseId,

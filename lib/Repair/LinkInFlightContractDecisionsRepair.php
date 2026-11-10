@@ -36,6 +36,8 @@ use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -248,9 +250,10 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 					updates: ['decisionRef' => $newDecisionRef],
 					schemaSlug: 'case',
 				),
-				register: Application::REGISTER_SLUG,
-				schema: 'case',
-				uuid: $caseUuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: Application::REGISTER_SLUG, schema: 'case'),
+					uuid: $caseUuid
+				),
 			);
 			$output->info('Linked case ' . $caseUuid . ' → decidesk Decision ' . $newDecisionRef);
 		} catch (RuntimeException $e) {

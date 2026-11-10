@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\LoadDefaultZgwMappings;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwMappingService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -485,7 +486,7 @@ class LoadDefaultZgwMappingsRunTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(string $register, string $schema, array $object): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				if (in_array($object['name'], $this->refused, true) === true) {
 					throw new RuntimeException('refused');
 				}

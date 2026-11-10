@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\MigrateCommitteesToDecidiq;
 use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -94,7 +95,7 @@ class MigrateCommitteesToDecidiqTest extends TestCase {
 				 *
 				 * @return array<string, mixed> The stored row.
 				 */
-				public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+				public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 					$this->saved[] = $object;
 
 					return $object;
@@ -138,7 +139,7 @@ class MigrateCommitteesToDecidiqTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->saved[] = $object;
 
 				return $object;
@@ -416,7 +417,7 @@ class MigrateCommitteesToDecidiqTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->saved[] = $object;
 
 				return $object;
@@ -478,7 +479,7 @@ class MigrateCommitteesToDecidiqTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				throw new RuntimeException('local write refused');
 			}
 		};

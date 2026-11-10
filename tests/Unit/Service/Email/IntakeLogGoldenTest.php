@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -88,7 +89,10 @@ class IntakeLogGoldenTest extends TestCase {
 				return $answer;
 			}
 
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): mixed {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
 				return $this->answer('saveObject', ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]);
 			}
 

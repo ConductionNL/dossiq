@@ -44,6 +44,8 @@ namespace OCA\Dossiq\Service\Deelzaak;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -213,8 +215,9 @@ class SubCaseDeriver {
 	private function save(SubCaseStore $store, mixed $childData): array {
 		$created = $store->objectService->saveObject(
 			object: $childData,
-			register: $store->register,
-			schema: $store->schema
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $store->register, schema: $store->schema)
+			)
 		);
 
 		return ['created' => $created];

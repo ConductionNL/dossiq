@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -183,12 +184,13 @@ final class GoldenPackageObjects {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): mixed {
+		$register = ($options->target->register ?? '');
+		$schema = ($options->target->schema ?? '');
+		$uuid = $options->uuid;
 		$this->log[] = ['saveObject' => compact('object', 'register', 'schema', 'uuid', '_rbac', '_multitenancy')];
 		$this->saves += 1;
 		$id = ($uuid ?? ('new-' . $this->saves));

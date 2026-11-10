@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -104,7 +105,9 @@ final class BrcStore {
 		return $this->objects[$id];
 	}//end find()
 
-	public function saveObject(mixed $register, mixed $schema, array $object): mixed {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->record('saveObject', [$register, $schema, $object]);
 		return $this->saved;
 	}//end saveObject()

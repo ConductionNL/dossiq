@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\OrganisationQuotaLimits;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\TenantQuotaService;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -66,7 +67,7 @@ interface ResetMonthlyQuotasObjectServiceStub {
 	 *
 	 * @return array<string, mixed> The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }
 
 /**
@@ -120,7 +121,8 @@ class ResetMonthlyQuotasJobTest extends TestCase {
 		$objectService = $this->createMock(ResetMonthlyQuotasObjectServiceStub::class);
 		$objectService->method('findAll')->willReturn($rows);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$uuid = $options->uuid;
 				$this->saves[] = ['object' => $object, 'uuid' => $uuid];
 
 				return $object;

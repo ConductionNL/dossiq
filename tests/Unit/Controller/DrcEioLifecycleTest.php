@@ -30,6 +30,7 @@ use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -49,7 +50,7 @@ interface DrcLifecycleObjectServiceStub {
 
 	public function deleteObject(string $uuid): mixed;
 
-	public function saveObject(mixed $register, mixed $schema, array $object, ?string $uuid=null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 }//end interface
 
 /**
@@ -121,7 +122,7 @@ class DrcEioLifecycleTest extends TestCase {
 			return true;
 		});
 		$objects->method('saveObject')->willReturnCallback(
-			function (mixed $register, mixed $schema, array $object, ?string $uuid=null): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->seen['saved'][] = $object;
 				return array_merge(['id' => self::UUID], $object);
 			}

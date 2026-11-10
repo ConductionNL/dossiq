@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Advice\AdviceRepository;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\AdviceService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -80,7 +81,7 @@ interface AdviceObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }//end interface
 
 /**

@@ -45,6 +45,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -80,7 +81,7 @@ interface DrcContractObjectServiceStub {
 	 *
 	 * @return mixed The saved object row.
 	 */
-	public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 
 	/**
 	 * Release OpenRegister's own lock on an object.
@@ -367,10 +368,8 @@ class DrcControllerContractTest extends TestCase {
 			->willReturn(['id' => 'doc-1']);
 		$objectService->method('saveObject')->willReturnCallback(
 			static function (
-				string $register,
-				string $schema,
 				array $object,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 			) use (&$saved): array {
 				$saved = $object;
 				return $object;

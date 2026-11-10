@@ -11,6 +11,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 
 use OCA\Dossiq\Service\People\GemachtigdeRoleTypeSeeder;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -86,7 +87,8 @@ class GemachtigdeRoleTypeSeederTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$uuid = $options->uuid;
 				$this->writes[] = ['object' => $object, 'uuid' => $uuid];
 				return $object;
 			}

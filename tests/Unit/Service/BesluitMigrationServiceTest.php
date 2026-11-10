@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BesluitMigrationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
@@ -55,7 +56,7 @@ interface BesluitMigrationObjectServiceStub {
 	 *
 	 * @return array<string, mixed> The stored object.
 	 */
-	public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }
 
 /**
@@ -133,7 +134,7 @@ final class BesluitMigrationServiceTest extends TestCase {
 			}
 		);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, int|string $register, int|string $schema, ?string $uuid = null): array {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->written[] = $object;
 				return $object;
 			}

@@ -31,6 +31,8 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -145,9 +147,9 @@ class TenantQuotaService {
 			try {
 				$row = $objectService->saveObject(
 					object: $object,
-					register: Application::REGISTER_SLUG,
-					schema: 'tenantQuota',
-					uuid: null,
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: Application::REGISTER_SLUG, schema: 'tenantQuota')
+					),
 				);
 				if (is_array($row) === true) {
 					$rows[] = $row;
@@ -444,9 +446,10 @@ class TenantQuotaService {
 
 			$objectService->saveObject(
 				object: $quota,
-				register: Application::REGISTER_SLUG,
-				schema: 'tenantQuota',
-				uuid: $uuidArg
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: Application::REGISTER_SLUG, schema: 'tenantQuota'),
+					uuid: $uuidArg
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: persistQuota failed', ['exception' => $e->getMessage()]);

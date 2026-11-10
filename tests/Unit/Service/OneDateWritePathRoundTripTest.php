@@ -52,6 +52,7 @@ use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\PhpInputStream;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
@@ -85,7 +86,7 @@ interface RoundTripObjectStoreStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }//end interface
 
 /**
@@ -356,7 +357,8 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		$store = $this->createMock(originalClassName: RoundTripObjectStoreStub::class);
 		$store->method('find')->willReturn(['id' => 'case-1']);
 		$store->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+				$schema = $options->target->schema;
 				if ($schema === 'adviesAanvraag') {
 					$captured = $object;
 				}
@@ -439,7 +441,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		$captured = [];
 		$store = $this->createMock(originalClassName: RoundTripObjectStoreStub::class);
 		$store->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
 				$captured = $object;
 				return $object;
 			}

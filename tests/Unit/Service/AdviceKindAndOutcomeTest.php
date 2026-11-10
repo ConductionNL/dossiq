@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\AdviceService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -46,7 +47,7 @@ interface AdviceKindObjectStoreStub {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }//end interface
 
 /**
@@ -84,7 +85,8 @@ class AdviceKindAndOutcomeTest extends TestCase {
 	private function service(): AdviceService {
 		$store = $this->createMock(AdviceKindObjectStoreStub::class);
 		$store->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
 				$this->saved[] = ['schema' => $schema, 'object' => $object];
 
 				return $object + ['id' => 'advice-1'];

@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -99,7 +101,12 @@ class DoorverbindingService {
 		];
 
 		try {
-			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
+			$created = $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to initiate doorverbinding: ' . $e->getMessage(),

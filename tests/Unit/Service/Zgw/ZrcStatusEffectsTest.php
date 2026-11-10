@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\Dossiq\Service\Zgw\ZrcUsageRights;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -92,7 +93,9 @@ class ZrcEffectsObjectStore {
 		return ['results' => $hits, 'total' => count($hits)];
 	}
 
-	public function saveObject(mixed $register=null, mixed $schema=null, array $object=[], ?string $uuid=null): array {
+	public function saveObject(array $object=[], ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$this->saved[] = ['schema' => (string)$schema, 'uuid' => (string)$uuid, 'object' => $object];
 		$this->rows[(string)$schema][(string)$uuid] = $object;
 		return $object;

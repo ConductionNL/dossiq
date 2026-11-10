@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use RuntimeException;
 
 class RefusableRegister extends InMemoryRegister {
@@ -57,17 +58,18 @@ class RefusableRegister extends InMemoryRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$register = ($options->target->register ?? '');
+		$schema = ($options->target->schema ?? '');
+		$uuid = $options->uuid;
 		if ($this->refuseSaves === true) {
 			throw new RuntimeException('object store refused the save');
 		}
 
-		return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac, _multitenancy: $_multitenancy);
+		return parent::saveObject(object: $object, options: $options, _rbac: $_rbac, _multitenancy: $_multitenancy);
 	}//end saveObject()
 
 	/**

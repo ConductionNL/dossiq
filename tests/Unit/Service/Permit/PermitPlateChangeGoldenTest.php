@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Permit\PermitChangeRefused;
 use OCA\Dossiq\Service\Permit\PermitPlateChange;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -169,7 +170,10 @@ class PermitPlateChangeGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>|null The stored object.
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null): ?array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): ?array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if (($object['startDate'] ?? null) === date('Y-m-d')) {
 					$object['startDate'] = '<today>';
 				}

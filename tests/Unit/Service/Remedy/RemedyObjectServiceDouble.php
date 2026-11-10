@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Remedy;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+
 /**
  * An object service double: search answers decisions, save opens a case, delete is recorded.
  */
@@ -80,7 +82,8 @@ class RemedyObjectServiceDouble {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, mixed $register = null, mixed $schema = null, mixed $uuid = null): array {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+		$schema = $options->target->schema;
 		$this->saved[] = [(string)$schema, $object];
 		return $object + ['id' => 'bezwaar-1', 'plannedEndDate' => '2027-01-26'];
 	}//end saveObject()

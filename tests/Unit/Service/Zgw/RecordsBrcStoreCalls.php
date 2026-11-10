@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+
 /**
  * Records every read, write and delete, and fails the methods it is told to.
  */
@@ -88,7 +90,9 @@ final class RecordsBrcStoreCalls {
 		return $this->objects[$id];
 	}//end find()
 
-	public function saveObject(mixed $register, mixed $schema, array $object): mixed {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->record('saveObject', [$register, $schema, $object]);
 		return $this->saved;
 	}//end saveObject()

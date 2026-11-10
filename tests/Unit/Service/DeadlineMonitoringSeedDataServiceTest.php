@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DeadlineMonitoringSeedDataService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -220,11 +221,10 @@ class FakeTermijnObjectService {
 	 */
 	public function saveObject(
 		array $object,
-		?array $extend = [],
-		string|int|null $register = null,
-		string|int|null $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 	): array {
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$schema = (string)$schema;
 		$id = (string)($uuid ?? $object['id'] ?? ('row-' . count($this->store[$schema] ?? [])));
 		$object['id'] = $id;
@@ -283,10 +283,7 @@ class RefusingTermijnObjectService extends FakeTermijnObjectService {
 	 */
 	public function saveObject(
 		array $object,
-		?array $extend = [],
-		string|int|null $register = null,
-		string|int|null $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 	): array {
 		throw new \RuntimeException("User 'Anonymous' does not have permission to 'create'");
 	}

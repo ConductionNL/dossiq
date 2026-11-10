@@ -45,6 +45,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -296,8 +298,9 @@ class FormsIntakeService {
 
 		return $objectService->saveObject(
 			object: $object,
-			register: $destination['register'],
-			schema: $destination['schema'],
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $destination['register'], schema: $destination['schema'])
+			),
 		);
 	}//end write()
 

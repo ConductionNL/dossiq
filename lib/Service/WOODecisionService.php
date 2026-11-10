@@ -34,6 +34,8 @@ use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -171,7 +173,12 @@ class WOODecisionService {
 			array_diff_key($decisionData, ['id' => true, 'uuid' => true, '@self' => true]),
 		);
 
-		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
+		$decision = $objectService->saveObject(
+			object: $besluitData,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $decisionSchema)
+			)
+		);
 
 		$this->readiness->markCaseReady(
 			objectService: $objectService,

@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use RuntimeException;
 
 final class RecordingShareObjects {
@@ -79,7 +80,9 @@ final class RecordingShareObjects {
 	 *
 	 * @return RecordedShare
 	 */
-	public function saveObject(array $object, int $register, int $schema) {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->log[] = ['objects.saveObject' => ['object' => $object, 'register' => $register, 'schema' => $schema]];
 		$object['id'] = ($object['id'] ?? ('share-' . (count($this->saved) + 1)));
 		$this->saved[] = $object;

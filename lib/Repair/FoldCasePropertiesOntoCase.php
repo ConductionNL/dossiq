@@ -39,6 +39,8 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -251,7 +253,13 @@ class FoldCasePropertiesOntoCase implements IRepairStep {
 			}
 
 			$case['properties'] = $entries;
-			$objectService->saveObject($caseSchema, $case, ['_rbac' => false, '_multitenancy' => false]);
+			$objectService->saveObject(
+				$caseSchema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: ['_rbac' => false, '_multitenancy' => false]),
+					extend: $case
+				)
+			);
 			return 'written';
 		} catch (Throwable $e) {
 			$this->logger->warning(

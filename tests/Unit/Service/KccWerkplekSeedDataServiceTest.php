@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\KccWerkplekSeedDataService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -200,7 +201,8 @@ class FakeKccSeedObjectService {
 	 * @param array<string, mixed> $object Object.
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(string $register, string $schema, array $object): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+		$schema = $options->target->schema;
 		$id = (string)($object['id'] ?? ('row-' . count($this->store[$schema] ?? [])));
 		$object['id'] = $id;
 		$this->store[$schema][$id] = $object;
@@ -259,7 +261,8 @@ class RefusingKccSeedObjectService {
 	 *
 	 * @throws \RuntimeException Always.
 	 */
-	public function saveObject(array $object, string $register, string $schema): array {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+		$schema = $options->target->schema;
 		throw new \RuntimeException(
 			sprintf("User 'Anonymous' does not have permission to 'create' objects in schema '%s'", $schema)
 		);

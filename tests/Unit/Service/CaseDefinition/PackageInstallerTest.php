@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Starter\ShippedFingerprint;
 use OCA\Dossiq\Service\Starter\ShippedSets;
 use OCA\Dossiq\Service\Starter\StarterStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -90,18 +91,19 @@ final class PackageTestRegister extends InMemoryRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$register = ($options->target->register ?? '');
+		$schema = ($options->target->schema ?? '');
+		$uuid = $options->uuid;
 		if (in_array(($object['name'] ?? $object['title'] ?? ''), $this->refuse, true) === true) {
 			throw new RuntimeException('the store refused the write');
 		}
 
 		$object += ($this->fills[(string)$schema] ?? []);
-		$stored = parent::saveObject($object, $register, $schema, $uuid, $_rbac, $_multitenancy);
+		$stored = parent::saveObject(object: $object, options: $options, _rbac: $_rbac, _multitenancy: $_multitenancy);
 		$this->savedIn[(string)$stored['id']] = (string)$register;
 
 		return $stored;

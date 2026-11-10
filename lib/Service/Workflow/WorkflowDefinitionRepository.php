@@ -41,6 +41,8 @@ namespace OCA\Dossiq\Service\Workflow;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -338,8 +340,9 @@ class WorkflowDefinitionRepository {
 				return $this->normalize(
 					row: $context['objectService']->saveObject(
 						object: $payload,
-						register: $context['register'],
-						schema: $context['schema'],
+						options: new ObjectSaveOptions(
+							target: new ObjectFindTarget(register: $context['register'], schema: $context['schema'])
+						)
 					)
 				);
 			}
@@ -356,9 +359,10 @@ class WorkflowDefinitionRepository {
 
 			$written = $context['objectService']->saveObject(
 				object: $merged,
-				register: $context['register'],
-				schema: $context['schema'],
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $context['register'], schema: $context['schema']),
+					uuid: $uuid
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -467,9 +471,10 @@ class WorkflowDefinitionRepository {
 		try {
 			$context['objectService']->saveObject(
 				object: $merged,
-				register: $context['register'],
-				schema: $context['schema'],
-				uuid: $caseTypeId,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $context['register'], schema: $context['schema']),
+					uuid: $caseTypeId
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(

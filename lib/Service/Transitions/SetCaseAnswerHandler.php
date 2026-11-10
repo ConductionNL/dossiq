@@ -24,6 +24,8 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -84,8 +86,12 @@ class SetCaseAnswerHandler implements ActionHandlerInterface {
 			);
 			$objects->saveObject(
 				object: $stored,
-				register: $this->settings->getConfigValue(key: 'register'),
-				schema: $this->settings->getConfigValue(key: 'case_schema')
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+						register: $this->settings->getConfigValue(key: 'register'),
+						schema: $this->settings->getConfigValue(key: 'case_schema')
+					)
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('SetCaseAnswerHandler: the answer was not written', ['case' => $caseId, 'exception' => $e->getMessage()]);

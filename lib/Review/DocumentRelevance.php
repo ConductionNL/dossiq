@@ -28,6 +28,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -337,9 +339,13 @@ class DocumentRelevance {
 		try {
 			$saved = $this->settingsService->getObjectService()->saveObject(
 				object: $review,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+						register: $this->settingsService->getConfigValue('register'),
+						schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY)
+					),
+					uuid: $uuid
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

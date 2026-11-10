@@ -28,6 +28,8 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\OpenRegister\Db\Mapping;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -1159,9 +1161,10 @@ class ZgwService {
 
 			// `_directFields` reach the payload unmapped, so a create drops the keys that name a stored object.
 			$object = $this->objectService->saveObject(
-				register: $write->mapping['sourceRegister'],
-				schema: $write->mapping['sourceSchema'],
-				object: array_diff_key($englishData, CallerIdentity::KEYS)
+				object: array_diff_key($englishData, CallerIdentity::KEYS),
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $write->mapping['sourceRegister'], schema: $write->mapping['sourceSchema'])
+				)
 			);
 
 			$outbound = $this->outboundFor(write: $write, object: $object);
@@ -1338,10 +1341,11 @@ class ZgwService {
 			}
 
 			$object = $this->objectService->saveObject(
-				register: $write->mapping['sourceRegister'],
-				schema: $write->mapping['sourceSchema'],
 				object: $this->updatedData(write: $write, ruleResult: $ruleResult + ['patch' => $flags->isPatch()]),
-				uuid: $route->uuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $write->mapping['sourceRegister'], schema: $write->mapping['sourceSchema']),
+					uuid: $route->uuid
+				)
 			);
 
 			$outbound = $this->outboundFor(write: $write, object: $object);

@@ -32,6 +32,8 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -133,7 +135,12 @@ class QuickActionService {
 		];
 
 		try {
-			$created = $this->toArray(result: $objectService->saveObject(object: $record, register: $register, schema: $caseSchema));
+			$created = $this->toArray(result: $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $caseSchema)
+				)
+			));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to create case via quick-action: ' . $e->getMessage(),
@@ -184,7 +191,12 @@ class QuickActionService {
 		];
 
 		try {
-			$created = $this->toArray(result: $objectService->saveObject(object: $record, register: $register, schema: $caseSchema));
+			$created = $this->toArray(result: $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $caseSchema)
+				)
+			));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to register klacht: ' . $e->getMessage(),

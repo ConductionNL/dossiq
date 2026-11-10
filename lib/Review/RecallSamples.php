@@ -26,6 +26,8 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -368,9 +370,10 @@ class RecallSamples {
 		try {
 			$saved = $objectService->saveObject(
 				object: $sample,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $schema,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $this->settingsService->getConfigValue('register'), schema: $schema),
+					uuid: $uuid
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: a Recall sample could not be stored', ['exception' => $e->getMessage()]);

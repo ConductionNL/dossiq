@@ -39,6 +39,8 @@ use OCA\Dossiq\Service\CaseType\CaseTypeDerivation;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -364,8 +366,9 @@ class CaseTypeCopyService {
 		try {
 			$created = $target->objectService->saveObject(
 				object: $payload,
-				register: $target->register,
-				schema: $target->schema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $target->register, schema: $target->schema)
+				),
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -477,8 +480,9 @@ class CaseTypeCopyService {
 
 		return $copy->target->objectService->saveObject(
 			object: $payload,
-			register: $copy->target->register,
-			schema: $copy->target->schema,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $copy->target->register, schema: $copy->target->schema)
+			),
 		);
 	}//end saveChild()
 

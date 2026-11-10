@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\TenantService;
 use OCA\Dossiq\Tests\Support\EntityAnsweringRegister;
 use OCA\Dossiq\Tests\Support\MakesTenantMigration;
 use OCA\Dossiq\Tests\Support\RefusableRegister;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
@@ -112,8 +113,11 @@ class MigrateTenantsToOrganisationsTest extends TestCase {
 				return $this->entities->find(id: $id, register: $register, schema: $schema);
 			}
 
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
-				return $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
+				return $this->store->saveObject(object: $object, options: $options);
 			}
 		};
 	}

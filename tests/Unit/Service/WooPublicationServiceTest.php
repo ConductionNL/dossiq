@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
 use OCA\Dossiq\Tests\Unit\Service\Publication\FakeWithheldDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Container\ContainerInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -56,7 +57,7 @@ interface WooPublicationObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null);
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions());
 
 	/**
 	 * Single-object fetch (real ObjectService::find()).
@@ -418,7 +419,9 @@ class WooPublicationServiceTest extends TestCase {
 		$objectService->method('searchObjectsBySlug')->willReturn($assessments);
 		$saves = [];
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) use (&$saves) {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saves) {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$saves[] = [$schema, $uuid, $object];
 				return ['id' => $uuid];
 			}
@@ -602,7 +605,9 @@ class WooPublicationServiceTest extends TestCase {
 		$saves = [];
 		$objectService->expects($this->exactly(2))
 			->method('saveObject')
-			->willReturnCallback(function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) use (&$saves) {
+			->willReturnCallback(function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$saves) {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$saves[] = [$schema, $uuid, $object];
 				return ['id' => $uuid];
 			});
@@ -683,10 +688,9 @@ class WooPublicationServiceTest extends TestCase {
 				$this->callback(function (array $object) {
 					return $object['wooPublication']['status'] === 'withdrawn';
 				}),
-				[],
-				'dossiq',
-				'decision',
-				'decision-001'
+				$this->callback(static fn (ObjectSaveOptions $options): bool => $options->target->register === 'dossiq'
+					&& $options->target->schema === 'decision'
+					&& $options->uuid === 'decision-001')
 			)
 			->willReturn(['id' => 'decision-001']);
 
@@ -751,7 +755,9 @@ class WooPublicationServiceTest extends TestCase {
 		$objectService->method('searchObjectsBySlug')->willReturn($assessments);
 		$this->saves = [];
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = [$schema, $object];
 				return ['id' => $uuid];
 			}

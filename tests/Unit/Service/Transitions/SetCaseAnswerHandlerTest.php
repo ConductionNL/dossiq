@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SetCaseAnswerHandler;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -52,7 +53,9 @@ class SetCaseAnswerHandlerTest extends TestCase {
 			 * @param array<string, mixed> $object The case.
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->saved[] = [$object, $register, $schema];
 				return $object;
 			}

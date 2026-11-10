@@ -34,6 +34,8 @@ use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Unit\Service\FakeObjectService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -101,12 +103,11 @@ class BezwaarArchiveTriggerTest extends TestCase {
 	 */
 	private function stored(array $fields = []): array {
 		return $this->objects->saveObject(
-			'dossiq',
-			'bezwaarTrigger',
-			array_merge(
+			object: array_merge(
 				['id' => 'trig-1', 'decisionId' => 'besch-1', 'objectionReceived' => false, 'archiveTriggerActive' => true, 'archiveDate' => '2026-10-01'],
 				$fields
-			)
+			),
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bezwaarTrigger'))
 		);
 	}//end stored()
 

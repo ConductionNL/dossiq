@@ -35,6 +35,7 @@ use OCA\Dossiq\Controller\BelplanController;
 use OCA\Dossiq\Service\BelplanRoutingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -256,7 +257,7 @@ class BelplanControllerContractTest extends TestCase {
 			 *
 			 * @return array Never returns.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				throw new OpenRegisterValidationException(
 					message: "Property 'priority' should be of type integer but string given"
 				);
@@ -290,7 +291,7 @@ class BelplanControllerContractTest extends TestCase {
 			 *
 			 * @return array Never returns.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				throw new \TypeError('Argument #1 must be of type array, null given');
 			}
 		};

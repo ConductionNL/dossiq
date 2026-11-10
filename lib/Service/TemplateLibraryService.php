@@ -30,6 +30,8 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateActivation;
 use OCA\Dossiq\Service\TemplateLibrary\TemplateRows;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -246,8 +248,9 @@ class TemplateLibraryService {
 		$caseTypeData = $template['caseType'];
 		$caseType = $objectService->saveObject(
 			object: $caseTypeData,
-			register: $register,
-			schema: $caseTypeSchema,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $caseTypeSchema)
+			),
 		);
 		$caseTypeId = $caseType->getUuid();
 
@@ -339,8 +342,9 @@ class TemplateLibraryService {
 			$row['caseType'] = $activation->caseTypeId;
 			$uuids[] = $activation->objectService->saveObject(
 				object: $row,
-				register: $activation->register,
-				schema: $schema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $activation->register, schema: $schema)
+				),
 			)->getUuid();
 		}
 
@@ -408,8 +412,12 @@ class TemplateLibraryService {
 
 		return $activation->objectService->saveObject(
 			object: $workflow,
-			register: $activation->register,
-			schema: $this->settingsService->getConfigValue('workflow_template_schema'),
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+					register: $activation->register,
+					schema: $this->settingsService->getConfigValue('workflow_template_schema')
+				)
+			),
 		)->getUuid();
 	}//end createWorkflowTemplate()
 

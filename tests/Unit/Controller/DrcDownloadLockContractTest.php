@@ -49,6 +49,7 @@ use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -88,7 +89,7 @@ interface DrcDownloadLockObjectServiceStub {
 	 *
 	 * @return mixed The saved object row.
 	 */
-	public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 
 	/**
 	 * Take OpenRegister's own lock on an object.
@@ -371,11 +372,10 @@ class DrcDownloadLockContractTest extends TestCase {
 			->method('saveObject')
 			->willReturnCallback(
 				static function (
-					string $register,
-					string $schema,
 					array $object,
-					?string $uuid = null,
+					ObjectSaveOptions $options = new ObjectSaveOptions(),
 				) use (&$saved): array {
+					$uuid = $options->uuid;
 					$saved = ['object' => $object, 'uuid' => $uuid];
 					return $object;
 				}

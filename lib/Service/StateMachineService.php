@@ -35,6 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -212,7 +214,12 @@ class StateMachineService {
 		];
 
 		try {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
+			$saved = $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $logSchema)
+				)
+			);
 			return $this->toArray(value: $saved);
 		} catch (\Throwable $e) {
 			$this->logger->error(

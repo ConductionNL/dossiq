@@ -33,6 +33,8 @@ namespace OCA\Dossiq\Service\Intake;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -192,7 +194,14 @@ class CollectionCaseLinks {
 			try {
 				$this->runAsSystemIfAvailable(
 					objectService: $objectService,
-					operation: fn (): mixed => $objectService->saveObject(object: $object, register: $register, schema: $schema, _rbac: false, _multitenancy: false)
+					operation: fn (): mixed => $objectService->saveObject(
+						object: $object,
+						options: new ObjectSaveOptions(
+							target: new ObjectFindTarget(register: $register, schema: $schema)
+						),
+						_rbac: false,
+						_multitenancy: false
+					)
 				);
 			} catch (Throwable $e) {
 				$this->logger->error(
@@ -266,9 +275,13 @@ class CollectionCaseLinks {
 				objectService: $objectService,
 				operation: fn (): mixed => $objectService->saveObject(
 					object: $data,
-					register: $this->settingsService->getWooPublicationConfigValue('woo_collection_register'),
-					schema: $this->settingsService->getWooPublicationConfigValue('woo_collection_schema'),
-					uuid: $collectionId,
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(
+							register: $this->settingsService->getWooPublicationConfigValue('woo_collection_register'),
+							schema: $this->settingsService->getWooPublicationConfigValue('woo_collection_schema')
+						),
+						uuid: $collectionId
+					),
 					_rbac: false,
 					_multitenancy: false,
 				)

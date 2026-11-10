@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 
@@ -277,7 +278,9 @@ class GoldenCopyObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, $register = null, $schema = null): array {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
 		$this->calls[] = ['saveObject' => ['object' => $object, 'register' => $register, 'schema' => $schema]];
 		if (in_array($schema, ($this->behaviour['saveThrows'] ?? []), true) === true) {
 			throw new \RuntimeException('write failed for ' . $schema);

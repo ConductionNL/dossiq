@@ -48,6 +48,8 @@ use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -133,7 +135,8 @@ class FakeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(string $register, string $schema, array $object): array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+		$schema = $options->target->schema;
 		if (empty($object['id']) === true) {
 			$this->seq++;
 			$object['id'] = $schema . '-' . $this->seq;
@@ -326,16 +329,15 @@ class BeschikkingServiceTest extends TestCase {
 
 		// Seed a WMO mandaatregeling covering the afdelingsmanager level.
 		$this->objects->saveObject(
-			'dossiq',
-			'mandaatRegeling',
-			[
+			object: [
 				'id' => 'mr-2024-007-wmo',
 				'name' => 'Mandaatregeling WMO',
 				'mandateGroups' => [
 					['level' => 'consulent', 'to_amount' => 5000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning']],
 					['level' => 'afdelingsmanager', 'to_amount' => 25000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning', 'rejection']],
 				],
-			]
+			],
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'mandaatRegeling'))
 		);
 	}//end setUp()
 

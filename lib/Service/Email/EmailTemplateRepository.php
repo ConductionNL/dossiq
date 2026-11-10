@@ -37,6 +37,8 @@ namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use RuntimeException;
 
 /**
@@ -126,8 +128,9 @@ class EmailTemplateRepository {
 
 		$saved = $objectService->saveObject(
 			object: $payload,
-			register: $register,
-			schema: $schema,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			),
 		);
 
 		$saved = $this->toArrayOrNull(value: $saved);

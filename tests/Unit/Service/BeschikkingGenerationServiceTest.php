@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BeschikkingGenerationService;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -243,7 +244,7 @@ class BeschikkingGenerationServiceTest extends TestCase {
 			 *
 			 * @return array<string,mixed> The saved object.
 			 */
-			public function saveObject(string $register, string $schema, array $object): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->saved = $object;
 				return ['id' => 'bijlage-1'];
 			}
@@ -428,7 +429,7 @@ class BeschikkingGenerationServiceTest extends TestCase {
 			 *
 			 * @return ObjectEntity The saved object.
 			 */
-			public function saveObject(string $register, string $schema, array $object): ObjectEntity {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): ObjectEntity {
 				if ($this->saved === null) {
 					throw new \RuntimeException('save refused');
 				}

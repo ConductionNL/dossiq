@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 
 use OCA\Dossiq\Service\Kcc\CitizenLookupRecorder;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -76,7 +77,8 @@ class CitizenLookupRecorderTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
 				if ($this->refuses === true) {
 					throw new \RuntimeException('OpenRegister refused the audit row');
 				}

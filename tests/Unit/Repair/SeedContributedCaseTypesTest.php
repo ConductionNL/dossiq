@@ -47,6 +47,7 @@ use OCA\Dossiq\Contribution\CaseTypeContributionRegistry;
 use OCA\Dossiq\Repair\SeedContributedCaseTypes;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -223,17 +224,18 @@ class SeedContributedCaseTypesTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
 				if (($object['identifier'] ?? '') === 'broken-type') {
 					throw new RuntimeException('caseType/identifier: value is not allowed');
 				}
 
-				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				return parent::saveObject(object: $object, options: $options);
 			}
 		};
 

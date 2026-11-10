@@ -40,6 +40,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\DemoCaseloadGateway;
 use OCA\Dossiq\Service\DemoCaseloadSeedDataService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\App\IAppManager;
@@ -590,10 +591,9 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = [],
-				mixed $register = null,
-				mixed $schema = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 			): object {
+				$schema = $options->target->schema;
 				$this->saved[] = ['schema' => (string)$schema, 'data' => $object, 'system' => ($this->depth > 0)];
 				$this->sequence++;
 

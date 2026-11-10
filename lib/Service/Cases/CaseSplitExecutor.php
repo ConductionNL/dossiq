@@ -48,6 +48,8 @@ namespace OCA\Dossiq\Service\Cases;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -365,9 +367,10 @@ class CaseSplitExecutor {
 			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $this->store->schema(key: self::PART_SOURCES[$move['part']]['schema']),
-				uuid: $move['id'],
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $this->store->schema(key: self::PART_SOURCES[$move['part']]['schema'])),
+					uuid: $move['id']
+				),
 			);
 
 			return true;
@@ -401,8 +404,9 @@ class CaseSplitExecutor {
 			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $this->store->schema(key: self::PART_SOURCES['parties']['schema']),
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $this->store->schema(key: self::PART_SOURCES['parties']['schema']))
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -581,9 +585,10 @@ class CaseSplitExecutor {
 			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $this->store->schema(key: 'case_schema'),
-				uuid: $split['caseId'],
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $this->store->schema(key: 'case_schema')),
+					uuid: $split['caseId']
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

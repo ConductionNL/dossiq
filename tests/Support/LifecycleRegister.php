@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use RuntimeException;
 
 /**
@@ -102,12 +104,13 @@ class LifecycleRegister extends RefusableRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$register = ($options->target->register ?? '');
+		$schema = ($options->target->schema ?? '');
+		$uuid = $options->uuid;
 		$uuid ??= $this->payloadId(object: $object);
 		$stored  = [];
 		if ($uuid !== null) {
@@ -129,7 +132,16 @@ class LifecycleRegister extends RefusableRegister {
 			}
 		}
 
-		return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac, _multitenancy: $_multitenancy);
+		$options = new ObjectSaveOptions(
+			target: $options->target,
+			uuid: $uuid,
+			extend: $options->extend,
+			uploadedFiles: $options->uploadedFiles,
+			policy: $options->policy,
+			actor: $options->actor
+		);
+
+		return parent::saveObject(object: $object, options: $options, _rbac: $_rbac, _multitenancy: $_multitenancy);
 	}//end saveObject()
 
 	/**
@@ -160,7 +172,7 @@ class LifecycleRegister extends RefusableRegister {
 			throw new RuntimeException('No object ' . $objectId . ' to patch.');
 		}
 
-		return $this->saveObject(object: array_merge($stored, $data), register: (string)$register, schema: (string)$schema, uuid: $objectId, _rbac: $_rbac, _multitenancy: $_multitenancy);
+		return $this->saveObject(object: array_merge($stored, $data), options: new ObjectSaveOptions(target: new ObjectFindTarget(register: (string)$register, schema: (string)$schema), uuid: $objectId), _rbac: $_rbac, _multitenancy: $_multitenancy);
 	}//end patchObject()
 
 	/**

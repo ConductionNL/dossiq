@@ -32,6 +32,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -182,7 +184,12 @@ class KccWerkplekSeedDataService {
 				// $object/$extend/$register, which either threw a
 				// TypeError or silently wrote the wrong data. Named
 				// arguments make the mapping unambiguous.
-				$objectService->saveObject(object: $row, register: $register, schema: $schema);
+				$objectService->saveObject(
+					object: $row,
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					)
+				);
 				$counts[$counterKey]++;
 			} catch (Throwable $e) {
 				$counts['failed']++;

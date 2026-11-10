@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
 
@@ -77,7 +78,10 @@ class GoldenHearingObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): mixed {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$this->note(call: ['saveObject' => compact('object', 'register', 'schema', 'uuid')]);
 		$mode = ($this->behaviour['save'] ?? 'ok');
 		if ($mode === 'throw') {

@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -228,7 +229,9 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The payload, with an id.
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->writes->append(['save', $schema, $object]);
 				return array_merge($object, ['id' => ($uuid ?? 'new-template')]);
 			}//end saveObject()

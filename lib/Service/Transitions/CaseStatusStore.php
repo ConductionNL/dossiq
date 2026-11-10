@@ -41,6 +41,8 @@ namespace OCA\Dossiq\Service\Transitions;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -125,7 +127,12 @@ class CaseStatusStore {
 			throw new RuntimeException('case_schema_not_configured');
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $case, register: $register, schema: $caseSchema));
+		return $this->toArray(value: $objectService->saveObject(
+			object: $case,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $caseSchema)
+			)
+		));
 	}//end saveCase()
 
 	/**
@@ -194,7 +201,12 @@ class CaseStatusStore {
 			$payload['description'] = $comment;
 		}
 
-		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
+		$record = $this->toArray(value: $objectService->saveObject(
+			object: $payload,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $recordSchema)
+			)
+		));
 
 		$this->moveEntry?->record(
 			caseId: $caseId,
@@ -250,7 +262,12 @@ class CaseStatusStore {
 			return $record;
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $record, register: $register, schema: $recordSchema));
+		return $this->toArray(value: $objectService->saveObject(
+			object: $record,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $recordSchema)
+			)
+		));
 	}//end updateStatusRecord()
 
 	/**

@@ -37,6 +37,8 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use RuntimeException;
 
 /**
@@ -206,7 +208,12 @@ class WooCollection {
 		$row['case'] = $caseId;
 		$row['excludedAt'] = gmdate('Y-m-d\TH:i:s\Z');
 
-		$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema);
+		$saved = $objectService->saveObject(
+			object: $row,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			)
+		);
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			$saved = $saved->jsonSerialize();
 		}

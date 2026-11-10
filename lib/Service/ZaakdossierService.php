@@ -39,6 +39,8 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -203,11 +205,22 @@ class ZaakdossierService {
 		unset($existing['id'], $existing['@self']);
 		$record = array_merge($existing, $informatieobject);
 		if ($infoId !== '') {
-			$objectService->saveObject(object: $record, register: $register, schema: $infoSchema, uuid: $infoId);
+			$objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $infoSchema),
+					uuid: $infoId
+				)
+			);
 		}
 
 		if ($infoId === '') {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $infoSchema);
+			$saved = $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $infoSchema)
+				)
+			);
 			$infoId = $this->resolveSavedUuid(saved: $saved);
 		}
 
@@ -670,7 +683,12 @@ class ZaakdossierService {
 			'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 		];
 
-		$saved = $objectService->saveObject(object: $join, register: $register, schema: $joinSchema);
+		$saved = $objectService->saveObject(
+			object: $join,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $joinSchema)
+			)
+		);
 		$joinId = $this->resolveSavedUuid(saved: $saved);
 
 		return [

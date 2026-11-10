@@ -26,6 +26,7 @@ use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -51,7 +52,7 @@ interface DrcStampObjectServiceStub {
 	 *
 	 * @return mixed The saved object row.
 	 */
-	public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 }//end interface
 
 /**
@@ -177,7 +178,7 @@ class DrcFileIdStampContractTest extends TestCase {
 
 		$objectService = $this->createMock(DrcStampObjectServiceStub::class);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (string $register, string $schema, array $object, ?string $uuid = null) use ($stored): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use ($stored): array {
 				$this->saved[] = $object;
 				return $stored;
 			}

@@ -38,6 +38,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard;
 use OCA\Dossiq\Service\Advice\AdviceNotifier;
 use OCA\Dossiq\Service\Advice\AdviceRepository;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -468,9 +470,10 @@ class AdviceService {
 		];
 
 		$saved = $objectService->saveObject(
-			register: $register,
-			schema: $this->adviceSchema(),
-			object: $payload
+			object: $payload,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $this->adviceSchema())
+			)
 		);
 
 		$savedRecord = [];
@@ -562,9 +565,10 @@ class AdviceService {
 	private function storeDecisionRef(array $advice, string $decisionRef): void {
 		$advice['objectService']->saveObject(
 			object: array_merge($advice['saved'], ['decisionRef' => $decisionRef]),
-			register: $advice['register'],
-			schema: $this->adviceSchema(),
-			uuid: $advice['adviceId'],
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $advice['register'], schema: $this->adviceSchema()),
+				uuid: $advice['adviceId']
+			)
 		);
 	}//end storeDecisionRef()
 

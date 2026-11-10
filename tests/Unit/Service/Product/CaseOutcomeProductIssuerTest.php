@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Product;
 use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -120,7 +121,9 @@ class CaseOutcomeProductIssuerTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
 				$id = ($uuid ?? ('new-' . count($this->saved)));
 				$this->saved[] = ['schema' => $schema, 'id' => $uuid, 'object' => $object];
 				$this->store[$schema][$id] = array_merge($object, ['id' => $id]);

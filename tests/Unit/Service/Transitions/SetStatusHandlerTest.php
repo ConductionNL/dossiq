@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -69,7 +70,7 @@ class SetStatusHandlerTest extends TestCase {
 			public function __construct(private ?array &$sink) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): ObjectEntity {
 				$this->sink = $object;
 
 				return $this->entity();
@@ -193,7 +194,7 @@ class SetStatusHandlerTest extends TestCase {
 
 	public function testFailsWhenTheCaseSchemaIsNotConfigured(): void {
 		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				return $object;
 			}
 		};

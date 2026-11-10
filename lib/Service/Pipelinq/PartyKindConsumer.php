@@ -16,6 +16,8 @@ namespace OCA\Dossiq\Service\Pipelinq;
 use OCA\Dossiq\Service\People\PartyVocabulary;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -271,8 +273,9 @@ class PartyKindConsumer {
 			// the whole object, so a plain save is correct here.
 			$objectService->saveObject(
 				object: ['recordType' => $target, 'kinds' => $ordered],
-				register: self::PIPELINQ_REGISTER,
-				schema: self::ACCEPTANCE_SCHEMA,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::PIPELINQ_REGISTER, schema: self::ACCEPTANCE_SCHEMA)
+				),
 			);
 
 			return;

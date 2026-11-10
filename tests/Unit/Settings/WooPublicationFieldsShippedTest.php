@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -155,7 +156,9 @@ class WooPublicationFieldsShippedTest extends TestCase {
 		);
 		$store->method('searchObjectsBySlug')->willReturn([['documentRef' => 'doc-001', 'classification' => 'openbaar']]);
 		$store->method('saveObject')->willReturnCallback(
-			function (array|ObjectEntityInterface $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null) use ($declared): ObjectEntityInterface {
+			function (array|ObjectEntityInterface $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use ($declared): ObjectEntityInterface {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				// The magic table's rule: a key the schema does not declare has no
 				// column, and is gone.
 				$kept = array_intersect_key((array)$object, array_flip(array_merge($declared, ['id'])));

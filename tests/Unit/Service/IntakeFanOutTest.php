@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\IntakeFanOut;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -84,10 +85,9 @@ class FanOutCaseStore {
 	 */
 	public function saveObject(
 		array $object,
-		string $register = '',
-		string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 	): array {
+		$uuid = $options->uuid;
 		if ((string)($object['caseType'] ?? '') === $this->retiredCaseType && $this->retiredCaseType !== '') {
 			throw new RuntimeException('The case type has been retired.');
 		}

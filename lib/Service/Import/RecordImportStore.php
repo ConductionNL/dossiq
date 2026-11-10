@@ -30,6 +30,8 @@ namespace OCA\Dossiq\Service\Import;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -106,8 +108,9 @@ class RecordImportStore {
 		try {
 			$saved = $objectService->saveObject(
 				object: $mapped['case'],
-				register: $register,
-				schema: $this->settingsService->getConfigValue('case_schema'),
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $this->settingsService->getConfigValue('case_schema'))
+				),
 				_rbac: false,
 				_multitenancy: false,
 			);
@@ -146,8 +149,9 @@ class RecordImportStore {
 		try {
 			$objectService->saveObject(
 				object: ['case' => $caseId, 'resultType' => $resultType],
-				register: $register,
-				schema: $this->settingsService->getConfigValue('result_schema'),
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $this->settingsService->getConfigValue('result_schema'))
+				),
 				_rbac: false,
 				_multitenancy: false,
 			);

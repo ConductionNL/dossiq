@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\CaseCollaborationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -59,7 +60,8 @@ final class CcaFakeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, int $register, int $schema, ?string $uuid = null) {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) {
+		$uuid = $options->uuid;
 		$id = $object['id'] ?? $uuid ?? ('activity-' . $this->autoId++);
 		$object['id'] = $id;
 		$this->store[(string)$id] = $object;

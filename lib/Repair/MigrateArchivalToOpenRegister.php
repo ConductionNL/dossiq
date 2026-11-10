@@ -46,6 +46,8 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -349,8 +351,9 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			try {
 				$objectService->saveObject(
 					object: $payload,
-					register: $register,
-					schema: $docSchema
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $register, schema: $docSchema)
+					)
 				);
 				$exported++;
 			} catch (\Throwable $e) {

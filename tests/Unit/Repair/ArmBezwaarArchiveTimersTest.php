@@ -32,6 +32,8 @@ use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTimer;
 use OCA\Dossiq\Service\Beschikking\BezwaarArchiveTrigger;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Unit\Service\FakeObjectService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -72,9 +74,9 @@ class ArmBezwaarArchiveTimersTest extends TestCase {
 	 */
 	public function testActiveTriggersAreSyncedAndDueOnesHandled(): void {
 		$objects = new FakeObjectService();
-		$objects->saveObject('dossiq', 'bezwaarTrigger', ['id' => 'trig-1', 'archiveTriggerActive' => true]);
-		$objects->saveObject('dossiq', 'bezwaarTrigger', ['id' => 'trig-2', 'archiveTriggerActive' => true]);
-		$objects->saveObject('dossiq', 'bezwaarTrigger', ['id' => 'trig-3', 'archiveTriggerActive' => false]);
+		$objects->saveObject(object: ['id' => 'trig-1', 'archiveTriggerActive' => true], options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bezwaarTrigger')));
+		$objects->saveObject(object: ['id' => 'trig-2', 'archiveTriggerActive' => true], options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bezwaarTrigger')));
+		$objects->saveObject(object: ['id' => 'trig-3', 'archiveTriggerActive' => false], options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bezwaarTrigger')));
 
 		$timer = $this->createMock(BezwaarArchiveTimer::class);
 		$timer->expects($this->exactly(2))->method('sync')->willReturnCallback(

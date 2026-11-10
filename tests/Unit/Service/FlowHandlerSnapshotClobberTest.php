@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -94,7 +95,7 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 			 *
 			 * @return ObjectEntity The saved entity.
 			 */
-			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): ObjectEntity {
 				$this->stored = $object;
 
 				return $this->entity();

@@ -34,6 +34,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Sharing;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -224,7 +226,12 @@ class CaseLinkShares {
 			}
 
 			$share['lastCollectedNote'] = $noteId;
-			$objectService->saveObject(object: $share, register: (int)$register, schema: (int)$shareSchema);
+			$objectService->saveObject(
+				object: $share,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: (int)$register, schema: (int)$shareSchema)
+				)
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CaseLinkShares: could not record the collected comment on the share',
@@ -297,8 +304,9 @@ class CaseLinkShares {
 					documents: $documents,
 					extra: $extra
 				),
-				register: (int)$register,
-				schema: (int)$schema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema)
+				),
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(

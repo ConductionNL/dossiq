@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Fixtures;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 /**
@@ -40,11 +42,6 @@ class PatchingObjectService extends ReplacingObjectService {
 			throw new DoesNotExistException('not found: ' . $objectId);
 		}
 
-		return $this->saveObject(
-			object: array_merge($this->stored[$objectId], $data),
-			register: $register,
-			schema: $schema,
-			uuid: $objectId
-		);
+		return $this->saveObject(object: array_merge($this->stored[$objectId], $data), options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $objectId));
 	}
 }//end class

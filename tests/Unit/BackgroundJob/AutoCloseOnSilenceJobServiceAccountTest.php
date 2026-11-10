@@ -45,6 +45,8 @@ use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IGroupManager;
@@ -278,7 +280,7 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 			static fn (string $caseId): ?array => ($register->rows['case'][$caseId] ?? null)
 		);
 		$store->method('saveCase')->willReturnCallback(
-			static fn (array $case): array => $register->saveObject(object: $case, schema: 'case', uuid: (string)$case['id'])
+			static fn (array $case): array => $register->saveObject(object: $case, options: new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'), uuid: (string)$case['id']))
 		);
 
 		$endings = $this->createMock(CaseEndingActs::class);
@@ -288,7 +290,7 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 				$gate->require(act: 'abort', case: $case);
 				$this->aborted[] = $this->actingUid().':'.$caseId;
 				$case['isFinalStatus'] = true;
-				$register->saveObject(object: $case, schema: 'case', uuid: $caseId);
+				$register->saveObject(object: $case, options: new ObjectSaveOptions(target: new ObjectFindTarget(schema: 'case'), uuid: $caseId));
 
 				return ['caseId' => $caseId];
 			}

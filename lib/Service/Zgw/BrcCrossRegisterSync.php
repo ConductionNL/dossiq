@@ -33,6 +33,8 @@ namespace OCA\Dossiq\Service\Zgw;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 
 /**
  * The cross-register side effects of the Besluiten API.
@@ -106,9 +108,10 @@ class BrcCrossRegisterSync {
 			];
 
 			$objectService->saveObject(
-				register: $register,
-				schema: $zbSchema,
-				object: $zbData
+				object: $zbData,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $zbSchema)
+				)
 			);
 
 			$this->zgwService->getLogger()->info(
@@ -151,9 +154,10 @@ class BrcCrossRegisterSync {
 			];
 
 			$objectService->saveObject(
-				register: $oioMappingConfig['sourceRegister'],
-				schema: $oioMappingConfig['sourceSchema'],
-				object: $oioData
+				object: $oioData,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $oioMappingConfig['sourceRegister'], schema: $oioMappingConfig['sourceSchema'])
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(

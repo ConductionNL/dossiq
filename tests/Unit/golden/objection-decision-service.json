@@ -42,8 +42,26 @@
                         "bezwaar": "obj-1",
                         "status": "draft"
                     },
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ]
         ],
@@ -98,8 +116,26 @@
                         "status": "draft",
                         "note": "n"
                     },
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ]
         ],
@@ -147,8 +183,26 @@
                         "bezwaar": "obj-1",
                         "status": "draft"
                     },
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ]
         ],
@@ -196,8 +250,26 @@
                         "bezwaar": "obj-1",
                         "status": "draft"
                     },
-                    "register": "reg",
-                    "schema": "dec"
+                    "options": {
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ]
         ],

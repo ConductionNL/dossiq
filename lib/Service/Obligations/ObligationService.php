@@ -39,6 +39,8 @@ namespace OCA\Dossiq\Service\Obligations;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -377,7 +379,12 @@ class ObligationService {
 
 		$saved = null;
 		try {
-			$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
+			$saved = $objectService->saveObject(
+				object: $payload,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq obligations: the obligation could not be written',

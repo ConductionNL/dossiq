@@ -35,6 +35,8 @@ use OCA\Dossiq\Service\AppointmentBackend\AppointmentBackendInterface;
 use OCA\Dossiq\Service\AppointmentBackend\JccBackend;
 use OCA\Dossiq\Service\AppointmentBackend\QmaticBackend;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use Psr\Container\ContainerInterface;
@@ -123,8 +125,9 @@ class AppointmentService {
 
 		$result = $objectService->saveObject(
 			object: $appointmentData,
-			register: (int)$register,
-			schema: (int)$schema,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema)
+			),
 		);
 
 		$this->logger->info(
@@ -188,7 +191,12 @@ class AppointmentService {
 		}
 
 		$data['status'] = 'cancelled';
-		$result = $objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema)
+			)
+		);
 
 		return $result->jsonSerialize();
 	}//end cancelAppointment()
@@ -215,7 +223,12 @@ class AppointmentService {
 		$data = $appointment->jsonSerialize();
 		$data['status'] = 'no_show';
 
-		$result = $objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: (int)$register, schema: (int)$schema)
+			)
+		);
 		return $result->jsonSerialize();
 	}//end markNoShow()
 

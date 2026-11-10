@@ -28,6 +28,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -203,7 +205,12 @@ class CaseCollaborationService {
 		$activity['entries'] = $entries;
 		$activity['lastActivityAt'] = $entry['createdAt'];
 
-		$result = $objectService->saveObject(object: $activity, register: (int)$register, schema: (int)$activitySchema);
+		$result = $objectService->saveObject(
+			object: $activity,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: (int)$register, schema: (int)$activitySchema)
+			)
+		);
 		$resultData = $this->asArray(value: $result);
 
 		$this->tenantAuditTrail->emit(

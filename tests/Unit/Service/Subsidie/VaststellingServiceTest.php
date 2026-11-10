@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Subsidie\TerugvorderingService;
 use OCA\Dossiq\Service\Subsidie\VaststellingService;
 use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -87,7 +88,9 @@ class VaststellingFakeObjectService {
 	 *
 	 * @return FakeStoredObject The merged row.
 	 */
-	public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): FakeStoredObject {
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$schema = (string)$schema;
 		$uuid = ($uuid ?? ('generated-' . count($this->store[$schema] ?? [])));
 		$existing = ($this->store[$schema][$uuid] ?? []);

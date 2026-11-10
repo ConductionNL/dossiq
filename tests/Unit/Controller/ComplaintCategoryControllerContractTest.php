@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\ComplaintCategoryController;
 use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
@@ -70,7 +71,7 @@ interface ComplaintCategoryControllerObjectServiceStub {
 	 *
 	 * @return mixed The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): mixed;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 }//end interface
 
 /**
@@ -252,7 +253,10 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+				static function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$captured = [
 						'object' => $object,
 						'register' => $register,
@@ -294,7 +298,7 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+				static function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
 					$captured = $object;
 
 					return ['id' => 'cat-new', 'name' => $object['name']];
@@ -397,7 +401,10 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+				static function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$captured = [
 						'object' => $object,
 						'register' => $register,

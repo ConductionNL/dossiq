@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BeschikkingGenerationService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -111,7 +112,9 @@ class BeschikkingGenerationServiceGoldenTest extends TestCase {
 			 *
 			 * @return mixed The saved object.
 			 */
-			public function saveObject(mixed $register, mixed $schema, mixed $object): mixed {
+			public function saveObject(mixed $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->test->calls[] = ['ObjectService::saveObject', ['register' => $register, 'schema' => $schema, 'object' => $object]];
 				$answer = ($this->saves[$this->count] ?? null);
 				$this->count++;

@@ -12,6 +12,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 use OCA\Dossiq\Service\People\CaseRoleProjection;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -152,7 +153,9 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$uuid = ($uuid ?? ('new-' . count($this->saves)));
 				$this->saves[] = ['schema' => $schema, 'uuid' => $uuid, 'object' => $object];
 				$this->rows[$uuid] = ($object + ['id' => $uuid, '@schema' => $schema]);
@@ -455,8 +458,11 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return object The saved entity.
 			 */
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): object {
-				$this->inner->saveObject($object, $register, $schema, $uuid);
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): object {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				$this->inner->saveObject(object: $object, options: $options);
 
 				return new class {
 					/**

@@ -26,6 +26,8 @@ namespace OCA\Dossiq\Service\Starter;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -206,10 +208,11 @@ class StarterStore {
 				return $this->asArray(
 					object: $context['service']->saveObject(
 						object: $payload,
-						register: $context['register'],
-						schema: $context['schema'],
-						uuid: $id,
-						_rbac: false,
+						options: new ObjectSaveOptions(
+							target: new ObjectFindTarget(register: $context['register'], schema: $context['schema']),
+							uuid: $id
+						),
+						_rbac: false
 					)
 				);
 			}

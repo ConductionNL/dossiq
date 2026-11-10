@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\TermInstanceStore;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -90,7 +91,7 @@ class TermInstanceStoreSystemWriteTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				if ($this->inSystem === false) {
 					throw new RuntimeException("User 'Anonymous' does not have permission to 'create' objects in schema 'Term instance'");
 				}

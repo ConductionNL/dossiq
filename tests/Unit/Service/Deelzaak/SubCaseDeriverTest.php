@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Deelzaak;
 
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -174,7 +175,7 @@ class SubCaseDeriverTest extends TestCase {
 				 *
 				 * @return object
 				 */
-				public function saveObject(array $object, $register = null, $schema = null): object {
+				public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): object {
 					$this->saved = $object;
 
 					return new class($object) {

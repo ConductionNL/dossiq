@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -79,7 +80,7 @@ interface ComplaintObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }//end interface
 
 /**
@@ -263,7 +264,7 @@ class ComplaintServiceTest extends TestCase {
 		$objectServiceMock
 			->method('saveObject')
 			->willReturnCallback(
-				function (array $data, string $reg, string $sch, ?string $id = null) {
+				function (array $data, ObjectSaveOptions $options = new ObjectSaveOptions()) {
 					$this->assertFalse($data['postponementPossible']);
 					$this->assertSame('2026-05-10', $data['afhandelDeadline']);
 					return $data;
@@ -587,7 +588,7 @@ class ComplaintServiceTest extends TestCase {
 
 		$objectService = $this->createMock(ComplaintObjectServiceStub::class);
 		$objectService->method('saveObject')->willReturnCallback(
-			static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$sent): array {
+			static function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$sent): array {
 				$sent = $object;
 
 				return array_merge($object, ['id' => 'uuid-1', 'complaintNumber' => 'KL-2026-0042']);

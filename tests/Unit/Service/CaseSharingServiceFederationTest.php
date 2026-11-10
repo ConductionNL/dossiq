@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
@@ -70,7 +71,8 @@ final class CsfFakeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, int $register, int $schema, ?string $uuid = null) {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) {
+		$uuid = $options->uuid;
 		$id = $object['id'] ?? $uuid ?? ('fake-' . $this->autoId++);
 		$object['id'] = $id;
 		$this->objects[(string)$id] = $object;

@@ -27,6 +27,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -93,7 +95,12 @@ class CreateSubCaseHandler implements ActionHandlerInterface {
 			// this handler inside `ObjectService::runAs()` as the run's acting
 			// identity (openregister#3332); on the interactive path the ambient
 			// session user answers the permission checks. No local wrap needed.
-			$created = $objectService->saveObject(object: $subCase, register: $register, schema: $caseSchema);
+			$created = $objectService->saveObject(
+				object: $subCase,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $caseSchema)
+				)
+			);
 			$subId = '';
 			if (is_array($created) === true) {
 				$subId = (string)($created['id'] ?? '');

@@ -15,6 +15,8 @@ namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -183,10 +185,21 @@ class CaseRoleProjection {
 		unset($record['id']);
 
 		if ($uuid === '') {
-			return $this->uuidOf(saved: $objectService->saveObject(object: $record, register: $register, schema: $schema));
+			return $this->uuidOf(saved: $objectService->saveObject(
+				object: $record,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				)
+			));
 		}
 
-		return $this->uuidOf(saved: $objectService->saveObject(object: $record, register: $register, schema: $schema, uuid: $uuid));
+		return $this->uuidOf(saved: $objectService->saveObject(
+			object: $record,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema),
+				uuid: $uuid
+			)
+		));
 	}//end saveRole()
 
 	/**
@@ -251,9 +264,10 @@ class CaseRoleProjection {
 		[$objectService, $register] = $this->requireRegister();
 		$objectService->saveObject(
 			object: $case,
-			register: $register,
-			schema: $this->schema(key: 'case_schema'),
-			uuid: $uuid,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'case_schema')),
+				uuid: $uuid
+			),
 		);
 	}//end saveCase()
 

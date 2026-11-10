@@ -42,6 +42,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use Psr\Log\LoggerInterface;
@@ -141,8 +143,9 @@ class WooDecisionNotice {
 				objectService: $objectService,
 				operation: fn (): mixed => $objectService->saveObject(
 					object: $message,
-					register: self::PORTAL_MESSAGE_REGISTER,
-					schema: self::PORTAL_MESSAGE_SCHEMA,
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: self::PORTAL_MESSAGE_REGISTER, schema: self::PORTAL_MESSAGE_SCHEMA)
+					),
 					_rbac: false,
 					_multitenancy: false,
 				)

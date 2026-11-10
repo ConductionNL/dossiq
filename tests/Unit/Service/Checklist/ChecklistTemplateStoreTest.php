@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Checklist;
 
 use OCA\Dossiq\Service\Checklist\ChecklistTemplateStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -182,7 +183,9 @@ class ChecklistTemplateStoreTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = [$object, $schema, $uuid];
 
 				return $object;

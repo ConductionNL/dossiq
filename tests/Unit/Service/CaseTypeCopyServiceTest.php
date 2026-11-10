@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -175,7 +176,8 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): object {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): object {
+				$schema = $options->target->schema;
 				$id = ($object['id'] ?? null);
 				if ($id === null) {
 					$id = 'generated-' . (count($this->store) + 1);
@@ -590,7 +592,7 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): object {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): object {
 				throw new \RuntimeException('unwritable');
 			}//end saveObject()
 		};
@@ -679,7 +681,8 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
 				if (($schema === 'documentType') === true) {
 					throw new \RuntimeException('unwritable child');
 				}

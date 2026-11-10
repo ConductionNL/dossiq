@@ -36,6 +36,8 @@ use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 
 /**
  * The zaak-level effects of creating a status or a resultaat.
@@ -362,10 +364,11 @@ class ZrcStatusEffects {
 	private function saveCase(string $caseUuid, array $caseData, array $caseConfig): void {
 		$caseData['id'] = $caseUuid;
 		$this->zgwService->getObjectService()->saveObject(
-			register: $caseConfig['sourceRegister'],
-			schema: $caseConfig['sourceSchema'],
 			object: $caseData,
-			uuid: $caseUuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $caseConfig['sourceRegister'], schema: $caseConfig['sourceSchema']),
+				uuid: $caseUuid
+			)
 		);
 	}//end saveCase()
 

@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service\Kcc;
 
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 
@@ -117,7 +119,12 @@ class ContactMomentService {
 
 		[$objectService, $register, $schema] = $this->resolve();
 
-		$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
+		$saved = $objectService->saveObject(
+			object: $payload,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			)
+		);
 
 		$this->logger->info(
 			'Dossiq KCC: contact moment created',
@@ -159,7 +166,13 @@ class ContactMomentService {
 
 		$update = $this->payload->merged(existing: $existing, data: $data);
 
-		$saved = $objectService->saveObject(object: $update, register: $register, schema: $schema, uuid: (string)$id);
+		$saved = $objectService->saveObject(
+			object: $update,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema),
+				uuid: (string)$id
+			)
+		);
 
 		return $this->toArray(value: $saved);
 	}//end update()

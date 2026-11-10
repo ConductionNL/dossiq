@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CreateSubCaseHandler;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -63,7 +64,7 @@ class CreateSubCaseHandlerTest extends TestCase {
 	 */
 	public function testFailsWhenCaseSchemaNotConfigured(): void {
 		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				return ['id' => 'unreachable'];
 			}
 		};
@@ -97,7 +98,7 @@ class CreateSubCaseHandlerTest extends TestCase {
 				$this->recorded = &$recorded;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->recorded = $object;
 				return ['id' => 'sub-uuid'];
 			}
@@ -134,7 +135,7 @@ class CreateSubCaseHandlerTest extends TestCase {
 	 */
 	public function testCatchesExceptionFromObjectService(): void {
 		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				throw new RuntimeException('boom');
 			}
 		};

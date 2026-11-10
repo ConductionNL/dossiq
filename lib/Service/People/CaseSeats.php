@@ -45,6 +45,8 @@ namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -200,7 +202,12 @@ class CaseSeats {
 		if ($uuid === '') {
 			return $this->idOf(
 				row: $this->asArray(
-					saved: $objectService->saveObject(object: $record, register: $register, schema: $schema)
+					saved: $objectService->saveObject(
+						object: $record,
+						options: new ObjectSaveOptions(
+							target: new ObjectFindTarget(register: $register, schema: $schema)
+						)
+					)
 				)
 			);
 		}

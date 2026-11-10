@@ -40,6 +40,8 @@ use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -356,9 +358,10 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 					updates: ['decisionRef' => $newRef],
 					schemaSlug: $schemaSlug,
 				),
-				register: Application::REGISTER_SLUG,
-				schema: $schemaSlug,
-				uuid: $objUuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: Application::REGISTER_SLUG, schema: $schemaSlug),
+					uuid: $objUuid
+				),
 			);
 			$output->info('Linked ' . $schemaSlug . ' ' . $objUuid . ' → decidesk Decision ' . $newRef);
 			return 'linked';

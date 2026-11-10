@@ -37,6 +37,8 @@ use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\OpenRegister\Exception\HookStoppedException;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
@@ -582,17 +584,18 @@ class DeliberationStartGuardTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
 				if ($this->beforeSave !== null) {
 					($this->beforeSave)($this->row(schema: (string) $schema, uuid: (string) $uuid), $object);
 				}
 
-				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac, _multitenancy: $_multitenancy);
+				return parent::saveObject(object: $object, options: $options, _rbac: $_rbac, _multitenancy: $_multitenancy);
 			}
 		};
 		$this->store = $guarded;
@@ -829,7 +832,7 @@ class DeliberationStartGuardTest extends TestCase {
 			);
 		}
 
-		$this->store->saveObject(object: $row, register: 'dossiq', schema: 'bacAdviceRequest', uuid: 'req-1');
+		$this->store->saveObject(object: $row, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bacAdviceRequest'), uuid: 'req-1'));
 		return null;
 	}//end saveUnlessRefused()
 

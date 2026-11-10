@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Review\PagesSeen;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,7 @@ interface WOODecisionObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null);
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions());
 
 	/**
 	 * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
@@ -466,8 +467,11 @@ class WOODecisionServiceTest extends TestCase {
 			 *
 			 * @return mixed
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): mixed {
-				$row = $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
+				$row = $this->store->saveObject(object: $object, options: $options);
 				if ($schema !== 'decision') {
 					return $row;
 				}

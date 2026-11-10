@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -113,15 +114,14 @@ class MigrateSubsidieRegelingToCaseTypeTest extends TestCase {
 			}
 
 			/**
-			 * @param array<string, mixed> $payload  The object.
-			 * @param array<string, mixed> $extend   Unused.
-			 * @param string               $register Register id.
-			 * @param string               $schema   Schema id.
+			 * @param array<string, mixed> $object  The object.
+			 * @param ObjectSaveOptions    $options Where it goes.
 			 *
 			 * @return array<string, mixed> The stored object.
 			 */
-			public function saveObject(array $payload, array $extend, string $register, string $schema): array {
-				$this->test->record(payload: $payload, schema: $schema);
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$payload = $object;
+				$this->test->record(payload: $payload, schema: (string)$options->target->schema);
 
 				return ($payload + ['id' => 'new-' . count($payload)]);
 			}

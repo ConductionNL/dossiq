@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -103,7 +104,8 @@ class PatchObjectAsArrayTest extends TestCase {
 				];
 			}
 
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				$this->savedUuid = $uuid;
 

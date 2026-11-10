@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseCopyService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -164,7 +165,8 @@ class CaseCopyServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The written object.
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
 				$object['id'] = 'new-' . (count($this->writes) + 1);
 				$this->writes[] = ['schema' => (string)$schema, 'object' => $object];
 

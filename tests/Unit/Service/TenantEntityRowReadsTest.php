@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
 use OCA\Dossiq\Service\TenantBillingService;
 use OCA\Dossiq\Service\TenantConfigurationService;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -74,7 +75,7 @@ interface TenantEntityRowObjectServiceStub {
 	 *
 	 * @return ObjectEntity The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): ObjectEntity;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): ObjectEntity;
 }
 
 /**
@@ -132,7 +133,9 @@ class TenantEntityRowReadsTest extends TestCase {
 			}
 		);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): ObjectEntity {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): ObjectEntity {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['object' => $object, 'schema' => $schema, 'uuid' => $uuid];
 
 				return $this->entity(object: $object, uuid: ($uuid ?? 'created'));

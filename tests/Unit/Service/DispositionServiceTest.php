@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DispositionService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -42,7 +43,7 @@ interface DispositionObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null);
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions());
 
 	/**
 	 * Find objects matching a filter.
@@ -176,7 +177,7 @@ class DispositionServiceTest extends TestCase {
 		$objectServiceMock
 			->method('saveObject')
 			->willReturnCallback(
-				function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) {
+				function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) {
 					$this->assertSame('awaiting_approval', $object['approvalStatus']);
 					return $object;
 				}

@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ZtcPublishController;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -78,7 +79,7 @@ interface ZtcContractObjectServiceStub {
 	 *
 	 * @return mixed The saved object row.
 	 */
-	public function saveObject(string $register, string $schema, array $object, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 }//end interface
 
 /**
@@ -264,11 +265,12 @@ class ZtcPublishControllerContractTest extends TestCase {
 			->method('saveObject')
 			->willReturnCallback(
 				static function (
-					string $register,
-					string $schema,
 					array $object,
-					?string $uuid = null,
+					ObjectSaveOptions $options = new ObjectSaveOptions(),
 				) use (&$saved): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$saved = [
 						'register' => $register,
 						'schema' => $schema,
@@ -321,10 +323,8 @@ class ZtcPublishControllerContractTest extends TestCase {
 		);
 		$objectService->method('saveObject')->willReturnCallback(
 			static function (
-				string $register,
-				string $schema,
 				array $object,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 			) use (&$saved): array {
 				$saved = $object;
 				return $object;
