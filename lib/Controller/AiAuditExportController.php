@@ -270,23 +270,7 @@ class AiAuditExportController extends Controller {
 		fputcsv($handle, self::CSV_COLUMNS);
 
 		foreach ($entries as $entry) {
-			$row = [];
-			foreach (self::CSV_COLUMNS as $column) {
-				$value = ($entry[$column] ?? '');
-				if (is_array($value) === true) {
-					$value = (string)json_encode($value);
-				} elseif (is_bool($value) === true) {
-					$isTrue = ($value === true);
-					$value = '0';
-					if ($isTrue === true) {
-						$value = '1';
-					}
-				}
-
-				$row[] = (string)$value;
-			}
-
-			fputcsv($handle, $row);
+			fputcsv($handle, $this->csvRow(entry: $entry));
 		}
 
 		rewind($handle);
@@ -295,4 +279,43 @@ class AiAuditExportController extends Controller {
 
 		return $csv;
 	}//end buildCsv()
+
+	/**
+	 * One entry as its CSV cells, in column order.
+	 *
+	 * @param array<string, mixed> $entry The audit entry.
+	 *
+	 * @return array<int, string>
+	 */
+	private function csvRow(array $entry): array {
+		$row = [];
+		foreach (self::CSV_COLUMNS as $column) {
+			$row[] = $this->csvCell(value: ($entry[$column] ?? ''));
+		}
+
+		return $row;
+	}//end csvRow()
+
+	/**
+	 * One value as a CSV cell: an array as JSON, a boolean as 1 or 0.
+	 *
+	 * @param mixed $value The field's value.
+	 *
+	 * @return string
+	 */
+	private function csvCell(mixed $value): string {
+		if (is_array($value) === true) {
+			return (string)json_encode($value);
+		}
+
+		if (is_bool($value) === true && $value === true) {
+			return '1';
+		}
+
+		if (is_bool($value) === true) {
+			return '0';
+		}
+
+		return (string)$value;
+	}//end csvCell()
 }//end class
