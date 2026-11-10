@@ -114,7 +114,20 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true, details: ['require' => $require, 'nothingFound' => true]);
 		}
 
-		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));
+		return $this->verdictFor(require: $require, caseId: self::caseIdOf(case: $case));
+	}//end evaluate()
+
+	/**
+	 * The verdict for a recognised requirement on one case.
+	 *
+	 * @param string $require The requirement: gathered, assessed or redacted.
+	 * @param string $caseId  The case, or '' when it was not recognised.
+	 *
+	 * @return GuardResult
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
+	 */
+	private function verdictFor(string $require, string $caseId): GuardResult {
 		if ($caseId === '') {
 			return new GuardResult(passed: false, failureMessage: $this->l10n->t('Case not recognised for the document check'));
 		}
@@ -123,26 +136,62 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 			return $this->redacted(caseId: $caseId);
 		}
 
+		return $this->assessmentVerdict(require: $require, caseId: $caseId);
+	}//end verdictFor()
+
+	/**
+	 * Whether the case's documents are collected, and for `assessed` all assessed.
+	 *
+	 * @param string $require The requirement: gathered or assessed.
+	 * @param string $caseId  The case.
+	 *
+	 * @return GuardResult
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
+	 */
+	private function assessmentVerdict(string $require, string $caseId): GuardResult {
 		try {
-			$underReview = $this->assessments->getDocumentsUnderReview(caseId: $caseId);
-			$outstanding = ['count' => 0];
-			if ($require === self::REQUIRE_ASSESSED) {
-				$outstanding = $this->assessments->getOutstanding(caseId: $caseId);
-			}
+			$counts = $this->countsFor(require: $require, caseId: $caseId);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the document assessment guard could not read the documents of a case',
 				['caseId' => $caseId, 'exception' => $e->getMessage()]
 			);
 
-			return new GuardResult(
-				passed: false,
-				failureMessage: $this->l10n->t('The documents of this case could not be read'),
-				details: ['require' => $require, 'unreadable' => true],
-			);
+			return $this->unreadable(require: $require);
 		}
 
-		if ($underReview === []) {
+		return $this->countVerdict(require: $require, counts: $counts);
+	}//end assessmentVerdict()
+
+	/**
+	 * How many documents are under review, and for `assessed` how many wait for an assessment.
+	 *
+	 * @param string $require The requirement: gathered or assessed.
+	 * @param string $caseId  The case.
+	 *
+	 * @return array{documents: int, outstanding: int} The counts.
+	 */
+	private function countsFor(string $require, string $caseId): array {
+		$underReview = $this->assessments->getDocumentsUnderReview(caseId: $caseId);
+		$outstanding = ['count' => 0];
+		if ($require === self::REQUIRE_ASSESSED) {
+			$outstanding = $this->assessments->getOutstanding(caseId: $caseId);
+		}
+
+		return ['documents' => count($underReview), 'outstanding' => (int)($outstanding['count'] ?? 0)];
+	}//end countsFor()
+
+	/**
+	 * The verdict from the counts: no documents, documents still waiting, or done.
+	 *
+	 * @param string                                  $require The requirement.
+	 * @param array{documents: int, outstanding: int} $counts  The counts.
+	 *
+	 * @return GuardResult
+	 */
+	private function countVerdict(string $require, array $counts): GuardResult {
+		if ($counts['documents'] === 0) {
 			return new GuardResult(
 				passed: false,
 				failureMessage: $this->l10n->t('No documents have been collected yet. Found nothing? Record that with an explanation'),
@@ -150,20 +199,60 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 			);
 		}
 
-		$waiting = (int)($outstanding['count'] ?? 0);
-		if ($waiting > 0) {
-			return new GuardResult(
-				passed: false,
-				failureMessage: $this->l10n->t('%1$s of %2$s documents are still waiting for an assessment', [(string)$waiting, (string)count($underReview)]),
-				details: ['require' => $require, 'documents' => count($underReview), 'outstanding' => $waiting],
-			);
+		if ($counts['outstanding'] > 0) {
+			return $this->stillWaiting(require: $require, counts: $counts);
 		}
 
 		return new GuardResult(
 			passed: true,
-			details: ['require' => $require, 'documents' => count($underReview)],
+			details: ['require' => $require, 'documents' => $counts['documents']],
 		);
-	}//end evaluate()
+	}//end countVerdict()
+
+	/**
+	 * The refusal while documents still wait for an assessment.
+	 *
+	 * @param string                                  $require The requirement.
+	 * @param array{documents: int, outstanding: int} $counts  The counts.
+	 *
+	 * @return GuardResult
+	 */
+	private function stillWaiting(string $require, array $counts): GuardResult {
+		return new GuardResult(
+			passed: false,
+			failureMessage: $this->l10n->t(
+				'%1$s of %2$s documents are still waiting for an assessment',
+				[(string)$counts['outstanding'], (string)$counts['documents']]
+			),
+			details: ['require' => $require, 'documents' => $counts['documents'], 'outstanding' => $counts['outstanding']],
+		);
+	}//end stillWaiting()
+
+	/**
+	 * The refusal when the documents of the case could not be read.
+	 *
+	 * @param string $require The requirement.
+	 *
+	 * @return GuardResult
+	 */
+	private function unreadable(string $require): GuardResult {
+		return new GuardResult(
+			passed: false,
+			failureMessage: $this->l10n->t('The documents of this case could not be read'),
+			details: ['require' => $require, 'unreadable' => true],
+		);
+	}//end unreadable()
+
+	/**
+	 * The case's id: its `id`, else its `uuid`, else its `@self.id`.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private static function caseIdOf(array $case): string {
+		return (string)($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));
+	}//end caseIdOf()
 
 	/**
 	 * Whether every partly public document of the case has a redacted copy.
@@ -183,11 +272,7 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 				['caseId' => $caseId, 'exception' => $e->getMessage()]
 			);
 
-			return new GuardResult(
-				passed: false,
-				failureMessage: $this->l10n->t('The documents of this case could not be read'),
-				details: ['require' => self::REQUIRE_REDACTED, 'unreadable' => true],
-			);
+			return $this->unreadable(require: self::REQUIRE_REDACTED);
 		}
 
 		$waiting = count($copies['waiting']);
