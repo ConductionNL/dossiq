@@ -199,21 +199,20 @@ class ContractDecisionDelegationService {
 		array $subject,
 		array $mandateContext,
 	): string {
-		return $this->dispatchDecisionRequest(
-			decisionType: $decisionType,
-			externalReference: $caseRef,
-			subject: [
-				'subjectRegister' => (string)($subject['subjectRegister'] ?? ''),
-				'subjectSchema' => (string)($subject['subjectSchema'] ?? ''),
-				'subjectId' => (string)($subject['subjectId'] ?? $contractRef),
-				'subjectLabel' => (string)($subject['subjectLabel'] ?? ''),
-			],
-			actorId: (string)($mandateContext['requestedBy'] ?? ''),
-			payload: [
-				'title' => (string)($subject['subjectLabel'] ?? ''),
-				'context' => $mandateContext,
-			],
-		);
+		$request = new DelegatedDecisionRequest(decisionType: $decisionType, externalReference: $caseRef);
+		$request->subject = [
+			'subjectRegister' => (string)($subject['subjectRegister'] ?? ''),
+			'subjectSchema' => (string)($subject['subjectSchema'] ?? ''),
+			'subjectId' => (string)($subject['subjectId'] ?? $contractRef),
+			'subjectLabel' => (string)($subject['subjectLabel'] ?? ''),
+		];
+		$request->actorId = (string)($mandateContext['requestedBy'] ?? '');
+		$request->payload = [
+			'title' => (string)($subject['subjectLabel'] ?? ''),
+			'context' => $mandateContext,
+		];
+
+		return $this->dispatchDecisionRequest(request: $request);
 	}//end raiseContractDecision()
 
 	/**
@@ -243,21 +242,20 @@ class ContractDecisionDelegationService {
 		array $subject,
 		array $context = [],
 	): string {
-		return $this->dispatchDecisionRequest(
-			decisionType: $decisionType,
-			externalReference: $externalReference,
-			subject: [
-				'subjectRegister' => (string)($subject['subjectRegister'] ?? ''),
-				'subjectSchema' => (string)($subject['subjectSchema'] ?? ''),
-				'subjectId' => (string)($subject['subjectId'] ?? ''),
-				'subjectLabel' => (string)($subject['subjectLabel'] ?? ''),
-			],
-			actorId: (string)($context['actorId'] ?? ''),
-			payload: [
-				'title' => (string)($subject['subjectLabel'] ?? ''),
-				'context' => $context,
-			],
-		);
+		$request = new DelegatedDecisionRequest(decisionType: $decisionType, externalReference: $externalReference);
+		$request->subject = [
+			'subjectRegister' => (string)($subject['subjectRegister'] ?? ''),
+			'subjectSchema' => (string)($subject['subjectSchema'] ?? ''),
+			'subjectId' => (string)($subject['subjectId'] ?? ''),
+			'subjectLabel' => (string)($subject['subjectLabel'] ?? ''),
+		];
+		$request->actorId = (string)($context['actorId'] ?? '');
+		$request->payload = [
+			'title' => (string)($subject['subjectLabel'] ?? ''),
+			'context' => $context,
+		];
+
+		return $this->dispatchDecisionRequest(request: $request);
 	}//end raiseDecision()
 
 	/**
@@ -293,27 +291,50 @@ class ContractDecisionDelegationService {
 	 * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md#requirement-a-consumer-can-read-back-a-decision-it-raised
 	 */
 	public function readDecisionState(string $decisionId, string $actorId): array {
-		$decisionId = trim($decisionId);
-		$actorId = trim($actorId);
-
+		$read = new DecisionStateRead(decisionId: trim($decisionId), actorId: trim($actorId));
 		$eventClass = $this->firstExistingClass(candidates: self::DECISION_STATE_EVENTS);
-		if ($eventClass === null || $decisionId === '' || $actorId === '') {
-			$reason = 'no decision id or no actor';
-			if ($eventClass === null) {
-				$reason = 'the read seam is not installed';
-			}
-
-			$this->logger->warning(
-				'ContractDecisionDelegationService: cannot read a decision state',
-				['decisionRef' => $decisionId, 'hasActor' => ($actorId !== ''), 'reason' => $reason]
-			);
-
-			return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
+		$read->eventClass = $eventClass;
+		if ($eventClass === null || $read->decisionId === '' || $read->actorId === '') {
+			return $this->unreadableRequest(read: $read);
 		}
 
+		return $this->dispatchStateRead(read: $read, eventClass: $eventClass);
+	}//end readDecisionState()
+
+	/**
+	 * A read that is not dispatched at all: the seam is absent, or it names no
+	 * decision or no actor. Logged with the reason, answered unreadable.
+	 *
+	 * @param DecisionStateRead $read The read.
+	 *
+	 * @return array{state: string, status: string, envelope: array<string, mixed>}
+	 */
+	private function unreadableRequest(DecisionStateRead $read): array {
+		$reason = 'no decision id or no actor';
+		if ($read->eventClass === null) {
+			$reason = 'the read seam is not installed';
+		}
+
+		$this->logger->warning(
+			'ContractDecisionDelegationService: cannot read a decision state',
+			['decisionRef' => $read->decisionId, 'hasActor' => ($read->actorId !== ''), 'reason' => $reason]
+		);
+
+		return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
+	}//end unreadableRequest()
+
+	/**
+	 * Dispatch the read and answer from what decidiq wrote back.
+	 *
+	 * @param DecisionStateRead $read       The read.
+	 * @param string            $eventClass The installed read event class.
+	 *
+	 * @return array{state: string, status: string, envelope: array<string, mixed>}
+	 */
+	private function dispatchStateRead(DecisionStateRead $read, string $eventClass): array {
 		try {
 			// Positional ctor args (decidiq contract): sourceApp, decisionId, actorId.
-			$event = new $eventClass(self::SOURCE_APP, $decisionId, $actorId);
+			$event = new $eventClass(self::SOURCE_APP, $read->decisionId, $read->actorId);
 
 			$this->eventDispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
@@ -322,15 +343,28 @@ class ContractDecisionDelegationService {
 			// would strand a run whose decision is already taken.
 			$this->logger->error(
 				'ContractDecisionDelegationService: DecisionStateRequestedEvent dispatch failed',
-				['decisionRef' => $decisionId, 'error' => $e->getMessage()]
+				['decisionRef' => $read->decisionId, 'error' => $e->getMessage()]
 			);
 
 			return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
 		}//end try
 
-		// Unhandled is decidiq's own way of saying "ask me again": its listener
-		// leaves the event unhandled when the lookup could not be RESOLVED, and
-		// marks it handled for every fact it can actually report.
+		return $this->stateOfReadEvent(event: $event, decisionId: $read->decisionId);
+	}//end dispatchStateRead()
+
+	/**
+	 * The answer a dispatched read carries.
+	 *
+	 * Unhandled is decidiq's own way of saying "ask me again": its listener
+	 * leaves the event unhandled when the lookup could not be RESOLVED, and
+	 * marks it handled for every fact it can actually report.
+	 *
+	 * @param object $event      The dispatched read event.
+	 * @param string $decisionId The decision read.
+	 *
+	 * @return array{state: string, status: string, envelope: array<string, mixed>}
+	 */
+	private function stateOfReadEvent(object $event, string $decisionId): array {
 		if ((bool)$event->isHandled() === false) {
 			return $this->stateAnswer(state: self::DECISION_STATE_UNREADABLE);
 		}
@@ -344,7 +378,7 @@ class ContractDecisionDelegationService {
 		}
 
 		return $this->stateFromEnvelope(envelope: (array)($event->getEnvelope() ?? []), decisionId: $decisionId);
-	}//end readDecisionState()
+	}//end stateOfReadEvent()
 
 	/**
 	 * Read the outcome envelope decidiq answered with as one of the states.
@@ -409,32 +443,37 @@ class ContractDecisionDelegationService {
 	 * `isHandled()` / `getDecisionId()` onto the event synchronously; when the
 	 * event is not handled or carries no decisionId the method fails closed.
 	 *
-	 * @param string $decisionType The decision type slug.
-	 * @param string $externalReference The ZGW case/subject reference.
-	 * @param array<string,mixed> $subject Subject fields (subjectRegister/Schema/Id/Label).
-	 * @param string $actorId The requesting actor id (may be empty).
-	 * @param array<string,mixed> $payload Decision body payload (title/text/decisionDate/outcome/context).
+	 * @param DelegatedDecisionRequest $request The decision to raise.
 	 *
 	 * @return string The decidesk decisionId.
 	 *
 	 * @throws RuntimeException When decidesk is unavailable or did not handle the request.
 	 */
-	private function dispatchDecisionRequest(
-		string $decisionType,
-		string $externalReference,
-		array $subject,
-		string $actorId,
-		array $payload,
-	): string {
-		$eventClass = $this->resolveRequestEventClass();
+	private function dispatchDecisionRequest(DelegatedDecisionRequest $request): string {
+		$eventClass = $this->installedRequestEventClass(request: $request);
+		$event = $this->dispatchRequestEvent(request: $request, eventClass: $eventClass);
 
-		// REQ-PDCD-002: fail closed when the decision app is not installed.
+		return $this->raisedDecisionId(request: $request, event: $event);
+	}//end dispatchDecisionRequest()
+
+	/**
+	 * The decision-request event class; REQ-PDCD-002: fail closed when the
+	 * decision app is not installed.
+	 *
+	 * @param DelegatedDecisionRequest $request The decision to raise.
+	 *
+	 * @return string The event class.
+	 *
+	 * @throws RuntimeException When no known event class exists.
+	 */
+	private function installedRequestEventClass(DelegatedDecisionRequest $request): string {
+		$eventClass = $this->resolveRequestEventClass();
 		if ($eventClass === null) {
 			$this->logger->error(
 				'ContractDecisionDelegationService: the decision app is not installed (DecisionRequestedEvent missing under any known namespace); failing closed',
 				[
-					'externalReference' => $externalReference,
-					'decisionType' => $decisionType,
+					'externalReference' => $request->externalReference,
+					'decisionType' => $request->decisionType,
 					'tried' => self::DECISION_REQUESTED_EVENTS,
 				]
 			);
@@ -443,6 +482,21 @@ class ContractDecisionDelegationService {
 			);
 		}
 
+		return $eventClass;
+	}//end installedRequestEventClass()
+
+	/**
+	 * Build and dispatch the decision-request event; a failure re-throws to
+	 * fail closed (REQ-PDCD-002), so the caller must not proceed.
+	 *
+	 * @param DelegatedDecisionRequest $request    The decision to raise.
+	 * @param string                   $eventClass The event class.
+	 *
+	 * @return object The dispatched event.
+	 *
+	 * @throws RuntimeException When building or dispatching it fails.
+	 */
+	private function dispatchRequestEvent(DelegatedDecisionRequest $request, string $eventClass): object {
 		try {
 			// Positional ctor args (decidesk contract): sourceApp, subjectRegister,
 			// subjectSchema, subjectId, subjectLabel, decisionType, actorId,
@@ -453,46 +507,58 @@ class ContractDecisionDelegationService {
 			// from.
 			$event = new $eventClass(
 				self::SOURCE_APP,
-				(string)$subject['subjectRegister'],
-				(string)$subject['subjectSchema'],
-				(string)$subject['subjectId'],
-				(string)$subject['subjectLabel'],
-				$decisionType,
-				$actorId,
-				$payload,
-				$externalReference,
-				$externalReference
+				(string)$request->subject['subjectRegister'],
+				(string)$request->subject['subjectSchema'],
+				(string)$request->subject['subjectId'],
+				(string)$request->subject['subjectLabel'],
+				$request->decisionType,
+				$request->actorId,
+				$request->payload,
+				$request->externalReference,
+				$request->externalReference
 			);
 
 			$this->eventDispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'ContractDecisionDelegationService: DecisionRequestedEvent dispatch failed',
-				['externalReference' => $externalReference, 'error' => $e->getMessage()]
+				['externalReference' => $request->externalReference, 'error' => $e->getMessage()]
 			);
-			// REQ-PDCD-002: re-throw to fail closed; caller must not proceed.
 			throw new RuntimeException('Decision service error: ' . $e->getMessage(), 0, $e);
 		}//end try
 
-		// REQ-PDCD-002: the decidesk listener writes isHandled()/getDecisionId()
-		// back onto the event synchronously. Anything else fails closed.
+		return $event;
+	}//end dispatchRequestEvent()
+
+	/**
+	 * The decision id the decidesk listener wrote back onto the event
+	 * synchronously (REQ-PDCD-002). Anything else fails closed.
+	 *
+	 * @param DelegatedDecisionRequest $request The decision raised.
+	 * @param object                   $event   The dispatched event.
+	 *
+	 * @return string The decidesk decisionId.
+	 *
+	 * @throws RuntimeException When the event was not handled or carries no id.
+	 */
+	private function raisedDecisionId(DelegatedDecisionRequest $request, object $event): string {
 		$handled = (bool)$event->isHandled();
 		$decisionId = $event->getDecisionId();
 		if ($handled === false || $decisionId === null || $decisionId === '') {
 			$this->logger->error(
 				'ContractDecisionDelegationService: decidesk did not handle the decision request; failing closed',
-				['externalReference' => $externalReference, 'decisionType' => $decisionType, 'handled' => $handled]
+				['externalReference' => $request->externalReference, 'decisionType' => $request->decisionType, 'handled' => $handled]
 			);
 			throw new RuntimeException('Decision service unavailable: decidesk did not handle the decision request. Decision cannot proceed.');
 		}
 
 		$this->logger->info(
 			'ContractDecisionDelegationService: decidesk Decision raised via event',
-			['externalReference' => $externalReference, 'decisionType' => $decisionType, 'decisionRef' => (string)$decisionId]
+			['externalReference' => $request->externalReference, 'decisionType' => $request->decisionType, 'decisionRef' => (string)$decisionId]
 		);
 
 		return (string)$decisionId;
-	}//end dispatchDecisionRequest()
+	}//end raisedDecisionId()
 	/**
 	 * The first decision-request event class that actually exists.
 	 *

@@ -165,53 +165,22 @@ class HumaniqLeaveReader {
 	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
 	 */
 	private function readLeave(string $userId, string $day): ?array {
-		if ($this->appManager->isInstalled(self::HUMANIQ_APP_ID) === false) {
-			if ($this->absenceLogged === false) {
-				$this->absenceLogged = true;
-				$this->logger->info(
-					'Dossiq: humaniq is not installed, so a substitution keeps its typed dates',
-					['app' => self::HUMANIQ_APP_ID]
-				);
-			}
-
+		if ($this->humaniqAbsent() === true) {
 			return null;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = (string)$this->settingsService->getConfigValue(
-			self::REGISTER_KEY,
-			self::REGISTER_DEFAULT
-		);
-		if ($register === '') {
+		$location = $this->humaniqLocation();
+		if ($location === null) {
 			return null;
 		}
 
 		try {
-			$employees = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: self::EMPLOYEE_SCHEMA,
-				filters: ['nextcloudUserId' => $userId, '_limit' => 1]
-			);
-			$employeeId = (string)($employees[0]['id'] ?? ($employees[0]['uuid'] ?? ''));
+			$employeeId = $this->employeeIdOf(location: $location, userId: $userId);
 			if ($employeeId === '') {
 				return null;
 			}
 
-			$requests = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: self::LEAVE_SCHEMA,
-				filters: [
-					'employeeId' => $employeeId,
-					'status' => 'approved',
-					'_limit' => self::LEAVE_LIMIT,
-				]
-			);
+			$requests = $this->approvedRequestsOf(location: $location, employeeId: $employeeId);
 		} catch (\Throwable $e) {
 			// The HR app answering badly is not this app's failure to report to
 			// a case handler; it is a reason to fall back to the typed dates.
@@ -225,6 +194,89 @@ class HumaniqLeaveReader {
 
 		return $this->covering(requests: $requests, day: $day);
 	}//end readLeave()
+
+	/**
+	 * Whether humaniq is not installed; said once in the log.
+	 *
+	 * @return bool
+	 */
+	private function humaniqAbsent(): bool {
+		if ($this->appManager->isInstalled(self::HUMANIQ_APP_ID) === true) {
+			return false;
+		}
+
+		if ($this->absenceLogged === false) {
+			$this->absenceLogged = true;
+			$this->logger->info(
+				'Dossiq: humaniq is not installed, so a substitution keeps its typed dates',
+				['app' => self::HUMANIQ_APP_ID]
+			);
+		}
+
+		return true;
+	}//end humaniqAbsent()
+
+	/**
+	 * The object service and humaniq's register, or null when either is missing.
+	 *
+	 * @return array{0: object, 1: string}|null
+	 */
+	private function humaniqLocation(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = (string)$this->settingsService->getConfigValue(
+			self::REGISTER_KEY,
+			self::REGISTER_DEFAULT
+		);
+		if ($register === '') {
+			return null;
+		}
+
+		return [$objectService, $register];
+	}//end humaniqLocation()
+
+	/**
+	 * The humaniq employee id of a Nextcloud user, or ''.
+	 *
+	 * @param array{0: object, 1: string} $location The object service and humaniq's register.
+	 * @param string                      $userId   The Nextcloud user.
+	 *
+	 * @return string
+	 */
+	private function employeeIdOf(array $location, string $userId): string {
+		$employees = $this->searchObjectsAsArrays(
+			objectService: $location[0],
+			register: $location[1],
+			schema: self::EMPLOYEE_SCHEMA,
+			filters: ['nextcloudUserId' => $userId, '_limit' => 1]
+		);
+
+		return (string)($employees[0]['id'] ?? ($employees[0]['uuid'] ?? ''));
+	}//end employeeIdOf()
+
+	/**
+	 * The employee's approved leave requests.
+	 *
+	 * @param array{0: object, 1: string} $location   The object service and humaniq's register.
+	 * @param string                      $employeeId The humaniq employee id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function approvedRequestsOf(array $location, string $employeeId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $location[0],
+			register: $location[1],
+			schema: self::LEAVE_SCHEMA,
+			filters: [
+				'employeeId' => $employeeId,
+				'status' => 'approved',
+				'_limit' => self::LEAVE_LIMIT,
+			]
+		);
+	}//end approvedRequestsOf()
 
 	/**
 	 * The first read request whose period contains the day.
