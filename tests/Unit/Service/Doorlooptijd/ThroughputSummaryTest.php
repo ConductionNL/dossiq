@@ -152,6 +152,25 @@ class ThroughputSummaryTest extends TestCase {
 	}//end testSummaryGroupsTheWindowPerYear()
 
 	/**
+	 * An unknown grouping falls back to per month, and a closed case without
+	 * a day count or without an end date is left out of every figure.
+	 *
+	 * @return void
+	 */
+	public function testSummaryFallsBackToMonthAndSkipsIncompleteCases(): void {
+		$incomplete = $this->closed('woo', '2026-09-10', null, null);
+		$noEnd = ['caseType' => 'woo', '_isOpen' => false, '_endDate' => null, '_throughputDays' => 7, '_deadline' => null];
+		$cases = [$this->closed('woo', '2026-10-01', 4, null), $incomplete, $noEnd];
+
+		$summary = (new DeadlineComplianceCalculator())->computeSummary($cases, 'bogus', new DateTimeImmutable('2026-10-16'), 'decade');
+
+		self::assertSame('month', $summary['granularity']);
+		self::assertSame(4, $summary['avgDays']);
+		self::assertSame(1, $summary['closedThisYear']);
+		self::assertSame([null, 4], array_slice($summary['monthlyAvgDays']['values'], -2));
+	}//end testSummaryFallsBackToMonthAndSkipsIncompleteCases()
+
+	/**
 	 * The share within the norm is counted per case type, by its title.
 	 *
 	 * @return void

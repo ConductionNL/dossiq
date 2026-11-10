@@ -93,6 +93,18 @@ class SchemaAnnotationReconciler {
 			return 0;
 		}
 
+		return $this->reconcileEach(schemaMapper: $schemaMapper, schemas: $schemas);
+	}//end reconcile()
+
+	/**
+	 * Reconcile every declared schema and log how many were written.
+	 *
+	 * @param object                 $schemaMapper The OpenRegister SchemaMapper.
+	 * @param array<array-key, mixed> $schemas      The declared schema definitions.
+	 *
+	 * @return int The number of schemas whose configuration was (re)written.
+	 */
+	private function reconcileEach(object $schemaMapper, array $schemas): int {
 		$written = 0;
 		foreach ($schemas as $key => $schemaDef) {
 			$written += $this->reconcileSchemaAnnotationBlocks(
@@ -108,7 +120,7 @@ class SchemaAnnotationReconciler {
 		);
 
 		return $written;
-	}//end reconcile()
+	}//end reconcileEach()
 
 	/**
 	 * Load the fragment-merged schema definitions from the register JSON.
@@ -117,13 +129,8 @@ class SchemaAnnotationReconciler {
 	 *                                      the register JSON is missing or invalid.
 	 */
 	private function loadDeclarativeRegisterSchemas(): ?array {
-		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
-		if (file_exists($configPath) === false) {
-			return null;
-		}
-
-		$configData = json_decode((string)file_get_contents($configPath), true);
-		if (json_last_error() !== JSON_ERROR_NONE || is_array($configData) === false) {
+		$configData = self::readRegisterJson();
+		if ($configData === null) {
 			return null;
 		}
 
@@ -143,6 +150,25 @@ class SchemaAnnotationReconciler {
 	}//end loadDeclarativeRegisterSchemas()
 
 	/**
+	 * Read and decode the shipped register JSON.
+	 *
+	 * @return array<array-key, mixed>|null The register JSON, or null when missing or invalid.
+	 */
+	private static function readRegisterJson(): ?array {
+		$configPath = __DIR__ . '/../../Settings/dossiq_register.json';
+		if (file_exists($configPath) === false) {
+			return null;
+		}
+
+		$configData = json_decode((string)file_get_contents($configPath), true);
+		if (json_last_error() !== JSON_ERROR_NONE || is_array($configData) === false) {
+			return null;
+		}
+
+		return $configData;
+	}//end readRegisterJson()
+
+	/**
 	 * Reconcile the declarative annotation blocks of one schema definition.
 	 *
 	 * @param object $schemaMapper The OpenRegister SchemaMapper.
@@ -156,25 +182,13 @@ class SchemaAnnotationReconciler {
 			return 0;
 		}
 
-		$fallbackSlug = '';
-		if (is_string($key) === true) {
-			$fallbackSlug = $key;
-		}
-
-		$slug = ($schemaDef['slug'] ?? $fallbackSlug);
+		$slug = self::slugOf(key: $key, schemaDef: $schemaDef);
 		$declaredCfg = ($schemaDef['configuration'] ?? []);
 		if ($slug === '' || is_array($declaredCfg) === false) {
 			return 0;
 		}
 
-		// Collect only the declarative annotation blocks we own.
-		$annotations = [];
-		foreach (SchemaSlugMap::SCHEMA_ANNOTATION_KEYS as $annotationKey) {
-			if (array_key_exists($annotationKey, $declaredCfg) === true) {
-				$annotations[$annotationKey] = $declaredCfg[$annotationKey];
-			}
-		}
-
+		$annotations = self::ownedAnnotations(declaredCfg: $declaredCfg);
 		if ($annotations === []) {
 			return 0;
 		}
@@ -185,6 +199,41 @@ class SchemaAnnotationReconciler {
 			annotations: $annotations
 		);
 	}//end reconcileSchemaAnnotationBlocks()
+
+	/**
+	 * The slug a schema definition declares, or its register key when it declares none.
+	 *
+	 * @param int|string           $key       The schema key in the register JSON.
+	 * @param array<string, mixed> $schemaDef The schema definition.
+	 *
+	 * @return mixed The slug as declared, '' when there is none.
+	 */
+	private static function slugOf(int|string $key, array $schemaDef): mixed {
+		$fallbackSlug = '';
+		if (is_string($key) === true) {
+			$fallbackSlug = $key;
+		}
+
+		return ($schemaDef['slug'] ?? $fallbackSlug);
+	}//end slugOf()
+
+	/**
+	 * Collect only the declarative annotation blocks we own.
+	 *
+	 * @param array<string, mixed> $declaredCfg The declared schema configuration.
+	 *
+	 * @return array<string, mixed> The owned annotation blocks, by key.
+	 */
+	private static function ownedAnnotations(array $declaredCfg): array {
+		$annotations = [];
+		foreach (SchemaSlugMap::SCHEMA_ANNOTATION_KEYS as $annotationKey) {
+			if (array_key_exists($annotationKey, $declaredCfg) === true) {
+				$annotations[$annotationKey] = $declaredCfg[$annotationKey];
+			}
+		}
+
+		return $annotations;
+	}//end ownedAnnotations()
 
 	/**
 	 * Merge one schema's declarative annotation blocks onto its live
@@ -207,13 +256,6 @@ class SchemaAnnotationReconciler {
 	 *
 	 * @return int 1 when the configuration was (re)written, 0 otherwise.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) `carryForwardStates()` reads one
-	 *   annotation block and returns another, with no state of its own to hold.
-	 *   It is static because it lives with the class that OWNS the key rather
-	 *   than with the one that happens to copy it, and injecting a whole
-	 *   projector here for one pure function would make the reconciler depend
-	 *   on a case-type store it never reads.
-	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function mergeOntoLiveSchema(object $schemaMapper, string $slug, array $annotations): int {
@@ -228,13 +270,62 @@ class SchemaAnnotationReconciler {
 			return 0;
 		}
 
+		$merged = self::mergedConfiguration(schema: $schema, annotations: $annotations);
+		if ($merged === null) {
+			return 0;
+		}
+
+		$write = function () use ($schema, $schemaMapper, $merged): void {
+			$schema->setConfiguration($merged);
+			$schemaMapper->update($schema);
+		};
+
+		return $this->writeElevated(write: $write, slug: $slug);
+	}//end mergeOntoLiveSchema()
+
+	/**
+	 * The live configuration with the declared annotation blocks merged in, or null when nothing changes.
+	 *
+	 * @param object               $schema      The live OpenRegister schema.
+	 * @param array<string, mixed> $annotations The annotation blocks to merge.
+	 *
+	 * @return array<string, mixed>|null The merged configuration, or null when every block already matches.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private static function mergedConfiguration(object $schema, array $annotations): ?array {
 		$current = ($schema->getConfiguration() ?? []);
 		if (is_array($current) === false) {
 			$current = [];
 		}
 
-		$merged = $current;
-		$changed = false;
+		$changed = self::changedBlocks(current: $current, annotations: $annotations);
+		if ($changed === []) {
+			return null;
+		}
+
+		return array_replace($current, $changed);
+	}//end mergedConfiguration()
+
+	/**
+	 * The declared annotation blocks whose value differs from the live one.
+	 *
+	 * @param array<string, mixed> $current     The live configuration.
+	 * @param array<string, mixed> $annotations The annotation blocks to merge.
+	 *
+	 * @return array<string, mixed> The blocks to write, by key.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) `carryForwardStates()` reads one
+	 *   annotation block and returns another, with no state of its own to hold.
+	 *   It is static because it lives with the class that OWNS the key rather
+	 *   than with the one that happens to copy it, and injecting a whole
+	 *   projector here for one pure function would make the reconciler depend
+	 *   on a case-type store it never reads.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private static function changedBlocks(array $current, array $annotations): array {
+		$changed = [];
 		foreach ($annotations as $annotationKey => $annotationValue) {
 			$annotationValue = CaseStateFieldRuleProjector::carryForwardStates(
 				annotationKey: $annotationKey,
@@ -243,22 +334,25 @@ class SchemaAnnotationReconciler {
 			);
 
 			if (($current[$annotationKey] ?? null) !== $annotationValue) {
-				$merged[$annotationKey] = $annotationValue;
-				$changed = true;
+				$changed[$annotationKey] = $annotationValue;
 			}
 		}
 
-		if ($changed === false) {
-			return 0;
-		}
+		return $changed;
+	}//end changedBlocks()
 
-		// OpenRegister trusts a null user under CLI or a SystemOperationContext;
-		// the web updater is neither, so an unelevated write is denied in silence.
-		$write = function () use ($schema, $schemaMapper, $merged): void {
-			$schema->setConfiguration($merged);
-			$schemaMapper->update($schema);
-		};
-
+	/**
+	 * Run a schema write elevated where OpenRegister offers it, logging a failure.
+	 *
+	 * OpenRegister trusts a null user under CLI or a SystemOperationContext;
+	 * the web updater is neither, so an unelevated write is denied in silence.
+	 *
+	 * @param callable $write The write.
+	 * @param string   $slug  The schema slug, for the failure log.
+	 *
+	 * @return int 1 when written, 0 when the write failed.
+	 */
+	private function writeElevated(callable $write, string $slug): int {
 		try {
 			if (class_exists(\OCA\OpenRegister\Service\SystemOperationContext::class) === false) {
 				$write();
@@ -275,5 +369,5 @@ class SchemaAnnotationReconciler {
 		}
 
 		return 1;
-	}//end mergeOntoLiveSchema()
+	}//end writeElevated()
 }//end class
