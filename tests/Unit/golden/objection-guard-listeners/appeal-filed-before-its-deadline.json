@@ -1,0 +1,28 @@
+[
+    {
+        "getConfigValue": "beroep_schema"
+    },
+    {
+        "getConfigValue": "register"
+    },
+    {
+        "getConfigValue": "bezwaar_schema"
+    },
+    {
+        "find": {
+            "id": "b-1",
+            "register": "reg",
+            "schema": "objection"
+        }
+    },
+    {
+        "patchObject": {
+            "objectId": "b-1",
+            "data": {
+                "dwingendStatus": true
+            },
+            "register": "reg",
+            "schema": "objection"
+        }
+    }
+]

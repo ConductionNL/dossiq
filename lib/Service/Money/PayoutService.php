@@ -129,51 +129,110 @@ class PayoutService {
 	): array {
 		$this->assertPaymentInput(iban: $iban, accountHolderName: $accountHolderName);
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$bSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
-		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
-			throw new RuntimeException('The accruing amount and payout schemas are not configured');
-		}
+		[$objectService, $register, $bSchema, $uSchema] = $this->configuredStore(
+			schemaKeys: [MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA, MoneyConfigKeys::PAYOUT_SCHEMA]
+		);
 
-		$final = $this->resolvePayableAmount(
+		$request = new PayoutRequest();
+		$request->calculationId = $calculationId;
+		$request->accountHolderName = $accountHolderName;
+		$request->iban = $iban;
+		$request->amount = $this->resolvePayableAmount(
 			objectService: $objectService,
 			register: $register,
 			schema: $bSchema,
 			calculationId: $calculationId
 		);
+		$request->paymentDateLatest = $this->paymentDeadline(receiptDate: $receiptDate);
 
-		$receiptDate = ($receiptDate ?? $this->dates->now());
-		// Awb 4:17: the day the payment is late after, so it rolls (Awt art. 1).
-		$raw = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days');
-		$uiterlijk = $this->dates->formatCalendarDate(
-			moment: ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)
+		return $this->storedUnlessInFinance(
+			row: $this->raiseRowInFinance(row: $this->payoutRow(request: $request)),
+			store: [$objectService, $register, $uSchema]
 		);
+	}//end preparePayout()
 
-		$row = [
-			'penaltyPaymentCalculation' => $calculationId,
-			'amount' => $final,
-			'accountHolderName' => $accountHolderName,
-			'iban' => strtoupper(str_replace(' ', '', $iban)),
-			'reference' => $this->buildReference(calculationId: $calculationId),
-			'legalBasis' => 'AWB 4:17',
-			'paymentDateLatest' => $uiterlijk,
-			'status' => 'voorbereid',
-		];
-		$row = $this->raiseRowInFinance(row: $row);
-		// Finance holds the payout now; dossiq keeps no copy of it (REQ-DQM-004).
+	/**
+	 * The raised row, stored here only when finance did not take it.
+	 *
+	 * Finance holds the payout once it has a payable id; dossiq keeps no copy
+	 * of it then (REQ-DQM-004).
+	 *
+	 * @param array<string, mixed>                   $row   The row as finance answered it.
+	 * @param array{0: object, 1: string, 2: string} $store The object service, the register and the payout schema.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function storedUnlessInFinance(array $row, array $store): array {
 		if ((string)($row['payableId'] ?? '') !== '') {
 			return $row;
 		}
 
 		return $this->persistDisbursement(
-			objectService: $objectService,
-			register: $register,
-			schema: $uSchema,
+			objectService: $store[0],
+			register: $store[1],
+			schema: $store[2],
 			row: $row
 		);
-	}//end preparePayout()
+	}//end storedUnlessInFinance()
+
+	/**
+	 * The object service, the register and the schemas the keys name; a refusal when any is missing.
+	 *
+	 * @param array<int, string> $schemaKeys The config keys of the schemas, in order.
+	 *
+	 * @return array<int, mixed> The object service, the register, then one schema per key.
+	 *
+	 * @throws RuntimeException When the store or a schema is not configured.
+	 */
+	private function configuredStore(array $schemaKeys): array {
+		$objectService = $this->settingsService->getObjectService();
+		$store = [$objectService, (string)$this->settingsService->getConfigValue('register')];
+		foreach ($schemaKeys as $key) {
+			$store[] = (string)$this->settingsService->getConfigValue($key);
+		}
+
+		if ($objectService === null || in_array('', array_slice($store, 1), true) === true) {
+			throw new RuntimeException('The accruing amount and payout schemas are not configured');
+		}
+
+		return $store;
+	}//end configuredStore()
+
+	/**
+	 * The latest day of payment: the Awb 4:17 offset after receipt, rolled by the Awt (art. 1).
+	 *
+	 * @param DateTimeImmutable|null $receiptDate The receipt, or null for now.
+	 *
+	 * @return string The day (Y-m-d).
+	 */
+	private function paymentDeadline(?DateTimeImmutable $receiptDate): string {
+		$receiptDate = ($receiptDate ?? $this->dates->now());
+		$raw = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days');
+
+		return $this->dates->formatCalendarDate(
+			moment: ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)
+		);
+	}//end paymentDeadline()
+
+	/**
+	 * The payout row as it is raised in finance.
+	 *
+	 * @param PayoutRequest $request The payout to prepare.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function payoutRow(PayoutRequest $request): array {
+		return [
+			'penaltyPaymentCalculation' => $request->calculationId,
+			'amount' => $request->amount,
+			'accountHolderName' => $request->accountHolderName,
+			'iban' => strtoupper(str_replace(' ', '', $request->iban)),
+			'reference' => $this->buildReference(calculationId: $request->calculationId),
+			'legalBasis' => 'AWB 4:17',
+			'paymentDateLatest' => $request->paymentDateLatest,
+			'status' => 'voorbereid',
+		];
+	}//end payoutRow()
 
 	/**
 	 * Prepare a payout from request input: accountHolderName, iban and
@@ -429,12 +488,7 @@ class PayoutService {
 		?DateTimeImmutable $paymentDate,
 		string $betalingsreferentie = '',
 	): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		if ($objectService === null || $register === '' || $uSchema === '') {
-			throw new RuntimeException('The accruing amount and payout schemas are not configured');
-		}
+		[$objectService, $register, $uSchema] = $this->configuredStore(schemaKeys: [MoneyConfigKeys::PAYOUT_SCHEMA]);
 
 		$row = $this->findDisbursementByReference(
 			objectService: $objectService,
