@@ -92,33 +92,44 @@ export function getCaseTypeUnusableReason(caseType) {
 		)
 	}
 
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
+	return validityReason(caseType)
+}
 
-	if (caseType.validFrom) {
-		const validFrom = new Date(caseType.validFrom)
-		validFrom.setHours(0, 0, 0, 0)
-		if (validFrom > today) {
-			const dateStr = caseType.validFrom.split('T')[0]
-			return t(
-				'dossiq',
-				'Cannot create a case with a case type that is not yet valid. The case type is valid from {date}.',
-				{ date: dateStr },
-			)
-		}
+/**
+ * A date at the start of its day, in place.
+ *
+ * @param {Date} date The date.
+ * @return {Date} The same date, at midnight.
+ */
+function startOfDay(date) {
+	date.setHours(0, 0, 0, 0)
+	return date
+}
+
+/**
+ * Why a published, current case type cannot be used today: not yet valid,
+ * or expired.
+ *
+ * @param {object} caseType Case type object
+ * @return {string|null} The reason, or null when it is valid today
+ */
+function validityReason(caseType) {
+	const today = startOfDay(new Date())
+
+	if (caseType.validFrom && startOfDay(new Date(caseType.validFrom)) > today) {
+		return t(
+			'dossiq',
+			'Cannot create a case with a case type that is not yet valid. The case type is valid from {date}.',
+			{ date: caseType.validFrom.split('T')[0] },
+		)
 	}
 
-	if (caseType.validUntil) {
-		const validUntil = new Date(caseType.validUntil)
-		validUntil.setHours(0, 0, 0, 0)
-		if (validUntil < today) {
-			const dateStr = caseType.validUntil.split('T')[0]
-			return t(
-				'dossiq',
-				'Cannot create a case with an expired case type. The case type was valid until {date}.',
-				{ date: dateStr },
-			)
-		}
+	if (caseType.validUntil && startOfDay(new Date(caseType.validUntil)) < today) {
+		return t(
+			'dossiq',
+			'Cannot create a case with an expired case type. The case type was valid until {date}.',
+			{ date: caseType.validUntil.split('T')[0] },
+		)
 	}
 
 	return null
