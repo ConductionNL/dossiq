@@ -96,24 +96,13 @@ class CaseVoorbladService {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if ($register === '' || $caseSchema === '') {
+		$scope = $this->caseSearchScope();
+		if ($scope === null) {
 			return [];
 		}
 
 		try {
-			$results = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['initiator' => $burgerId, '_limit' => 50],
-			);
+			$results = $this->searchCasesOf(scope: $scope, burgerId: $burgerId);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to fetch zaken for voorblad: ' . $e->getMessage(),
@@ -122,21 +111,61 @@ class CaseVoorbladService {
 			return [];
 		}
 
-		$cases = [];
-		foreach ((array)$results as $result) {
-			$case = $this->toArray(result: $result);
-			$status = strtolower((string)($case['status'] ?? ''));
-			if (in_array($status, ['handled', 'gesloten', 'closed'], true) === true) {
-				continue;
-			}
+		return $this->openCaseSummaries(results: (array)$results);
+	}//end fetchOpenZaken()
 
-			$cases[] = [
-				'id' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
-				'title' => (string)($case['title'] ?? ($case['titel'] ?? '')),
-				'status' => (string)($case['status'] ?? ''),
-				'laatsteActie' => (string)($case['lastActionDate'] ?? ($case['updated'] ?? '')),
-				'caseType' => (string)($case['caseType'] ?? ''),
-			];
+	/**
+	 * The object service, register and case schema to search, or null when
+	 * OpenRegister or either setting is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function caseSearchScope(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		if ($register === '' || $caseSchema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $caseSchema];
+	}//end caseSearchScope()
+
+	/**
+	 * The cases a burger initiated, at most fifty.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $scope    The object service, register and case schema.
+	 * @param string                                 $burgerId The burger reference.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function searchCasesOf(array $scope, string $burgerId): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $scope[0],
+			register: $scope[1],
+			schema: $scope[2],
+			filters: ['initiator' => $burgerId, '_limit' => 50],
+		);
+	}//end searchCasesOf()
+
+	/**
+	 * The open cases among the results, summarised, newest action first.
+	 *
+	 * @param array<int, mixed> $results The search results.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function openCaseSummaries(array $results): array {
+		$cases = [];
+		foreach ($results as $result) {
+			$case = $this->toArray(result: $result);
+			if ($this->isClosed(case: $case) === false) {
+				$cases[] = $this->caseSummary(case: $case);
+			}
 		}
 
 		usort(
@@ -147,7 +176,37 @@ class CaseVoorbladService {
 		);
 
 		return $cases;
-	}//end fetchOpenZaken()
+	}//end openCaseSummaries()
+
+	/**
+	 * Whether a case is handled or closed.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return bool
+	 */
+	private function isClosed(array $case): bool {
+		$status = strtolower((string)($case['status'] ?? ''));
+
+		return in_array($status, ['handled', 'gesloten', 'closed'], true);
+	}//end isClosed()
+
+	/**
+	 * One open case as the cover sheet shows it.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<string, string>
+	 */
+	private function caseSummary(array $case): array {
+		return [
+			'id' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
+			'title' => (string)($case['title'] ?? ($case['titel'] ?? '')),
+			'status' => (string)($case['status'] ?? ''),
+			'laatsteActie' => (string)($case['lastActionDate'] ?? ($case['updated'] ?? '')),
+			'caseType' => (string)($case['caseType'] ?? ''),
+		];
+	}//end caseSummary()
 
 	/**
 	 * Suggest a likely dialogue topic from the most recent open case.

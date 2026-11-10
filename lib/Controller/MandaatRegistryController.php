@@ -43,7 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\RegistryObjectWrite;
 use OCA\Dossiq\Service\Mandaat\MandaatRegistryService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -52,8 +52,6 @@ use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
-use Throwable;
 
 /**
  * Admin CRUD for the mandate decision registries.
@@ -110,11 +108,7 @@ class MandaatRegistryController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function mandatenCreate(): JSONResponse {
-		return $this->persist(
-			schemaConfigKey: MandaatRegistryService::SCHEMA_MANDAAT,
-			id: null,
-			statusCode: Http::STATUS_CREATED
-		);
+		return $this->writes()->create(schemaConfigKey: MandaatRegistryService::SCHEMA_MANDAAT);
 	}//end mandatenCreate()
 
 	/**
@@ -130,45 +124,21 @@ class MandaatRegistryController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function mandatenUpdate(string $id): JSONResponse {
-		return $this->persist(
-			schemaConfigKey: MandaatRegistryService::SCHEMA_MANDAAT,
-			id: $id,
-			statusCode: Http::STATUS_OK
-		);
+		return $this->writes()->update(schemaConfigKey: MandaatRegistryService::SCHEMA_MANDAAT, id: $id);
 	}//end mandatenUpdate()
 
 	/**
-	 * Save a registry object from the request body.
+	 * Writes registry objects from this request's body.
 	 *
-	 * @param string $schemaConfigKey Config key naming the schema.
-	 * @param string|null $id Existing id, or null to create.
-	 * @param int $statusCode Status to return on success.
-	 *
-	 * @return JSONResponse The saved object, or an error.
+	 * @return RegistryObjectWrite
 	 *
 	 * @spec openspec/specs/mandaat-matrix/spec.md
 	 */
-	private function persist(string $schemaConfigKey, ?string $id, int $statusCode): JSONResponse {
-		$data = $this->request->getParams();
-		unset($data['_route'], $data['id'], $data['uuid'], $data['@self']);
-
-		try {
-			$saved = $this->registry->save(schemaConfigKey: $schemaConfigKey, data: $data, id: $id);
-			return new JSONResponse(data: $saved, statusCode: $statusCode);
-		} catch (RuntimeException $e) {
-			return new JSONResponse(
-				['message' => $e->getMessage()],
-				Http::STATUS_UNPROCESSABLE_ENTITY
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Failed to save mandate registry object (' . $schemaConfigKey . '): ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return new JSONResponse(
-				['message' => 'Failed to save: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end persist()
+	private function writes(): RegistryObjectWrite {
+		$writes = new RegistryObjectWrite();
+		$writes->registry = $this->registry;
+		$writes->request = $this->request;
+		$writes->logger = $this->logger;
+		return $writes;
+	}//end writes()
 }//end class
