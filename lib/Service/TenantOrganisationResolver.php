@@ -191,12 +191,7 @@ class TenantOrganisationResolver {
 			return null;
 		}
 
-		try {
-			return $mapper->findByUuid($uuid);
-		} catch (Throwable $e) {
-			// DoesNotExistException, and any other lookup failure, reads as absent.
-			return null;
-		}
+		return OrganisationLookup::byUuid(mapper: $mapper, uuid: $uuid);
 	}//end findOrganisation()
 
 	/**
@@ -205,19 +200,7 @@ class TenantOrganisationResolver {
 	 * @return object|null The mapper, or null when OpenRegister is unavailable.
 	 */
 	private function getOrganisationMapper(): ?object {
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not resolve OrganisationMapper for tenant resolution',
-				['exception' => $e->getMessage()],
-			);
-			return null;
-		}
+		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container, logger: $this->logger);
+		return $lookup->mapper(failureMessage: 'Dossiq: could not resolve OrganisationMapper for tenant resolution');
 	}//end getOrganisationMapper()
 }//end class

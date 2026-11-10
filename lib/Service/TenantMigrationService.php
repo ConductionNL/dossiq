@@ -498,7 +498,7 @@ class TenantMigrationService {
 		//
 		// The uuid is exact: it is what the satellites already reference
 		// and what this migration preserves onto the Organisation.
-		$existing = $this->findOrganisationByUuid(mapper: $run->mapper, uuid: $tenant->uuid);
+		$existing = OrganisationLookup::byUuid(mapper: $run->mapper, uuid: $tenant->uuid);
 		if ($existing !== null) {
 			$tenant->organisation = $existing;
 			return $this->keepExisting(run: $run, tenant: $tenant);
@@ -620,22 +620,6 @@ class TenantMigrationService {
 		];
 	}//end refuseCollision()
 
-	/**
-	 * Find an Organisation by uuid, returning null when absent.
-	 *
-	 * @param object $mapper OR OrganisationMapper.
-	 * @param string $uuid   Uuid to look up.
-	 *
-	 * @return object|null The Organisation, or null when none matches.
-	 */
-	private function findOrganisationByUuid(object $mapper, string $uuid): ?object {
-		try {
-			return $mapper->findByUuid($uuid);
-		} catch (Throwable $e) {
-			// DoesNotExistException, and any other lookup failure, reads as absent.
-			return null;
-		}
-	}//end findOrganisationByUuid()
 
 	/**
 	 * Repair an Organisation this migration previously wrote a superseded status onto.
@@ -896,18 +880,7 @@ class TenantMigrationService {
 	 * @return object|null The OrganisationMapper, or null when OR is unavailable.
 	 */
 	private function getOrganisationMapper(): ?object {
-		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not get OrganisationMapper for tenant migration',
-				['exception' => $e->getMessage()],
-			);
-			return null;
-		}
+		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container, logger: $this->logger);
+		return $lookup->mapper(failureMessage: 'Dossiq: Could not get OrganisationMapper for tenant migration');
 	}//end getOrganisationMapper()
 }//end class

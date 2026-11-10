@@ -1,8 +1,9 @@
 {
-  "ceiling": 250,
+  "ceiling": 244,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-10, shared organisation lookup: the tenant and partner migrations, the satellite orphan scan and the tenant resolver now resolve OpenRegister's OrganisationMapper and read an Organisation by uuid through `OrganisationLookup::mapper` and `OrganisationLookup::byUuid`. Eight sites became two. The ceiling went 250 to 244.",
     "2026-11-04, decision document failure answers (#5063): a bijlage that could not be saved now answers null instead of an invented id, through one site, `BeschikkingGenerationService::storeBijlage`. The ceiling went 249 to 250, after the hearing split freed one.",
     "2026-11-04, HearingService split (#4983): the existing-session lookup moved into `mayHaveSession()`, which answers true when the lookup fails, so a failed read still seeds nothing but no longer answers null. The ceiling went 250 to 249.",
     "2026-10-14, Q-dossiq-L11-3 (decision 224, guards refuse when unsure): three sites left. `Zgw/ZgwRuleLookups::findObjectByField`, `findAllObjectsByField` and `findBySchemaKey` throw `LookupNotCompleted` when the store cannot be read, and `ZgwBusinessRulesService::validate` refuses the request with 503 `check-not-completed`. An object the store does not hold, or does not show the caller, still reads as none. The ceiling went 254 to 251.",
@@ -327,6 +328,20 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`all()` answers `return []` when the read fails; the catch logs at warning (\"Failed to list checklist templates\"), so a failed read and an absent record are the same answer."
+    },
+    {
+      "file": "lib/Service/OrganisationLookup.php",
+      "method": "byUuid",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`byUuid()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+    },
+    {
+      "file": "lib/Service/OrganisationLookup.php",
+      "method": "mapper",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`mapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (the caller's own message) and the caller carries on without it."
     },
     {
       "file": "lib/Service/Transfer/FederatedIdempotency.php",
@@ -834,20 +849,6 @@
     },
     {
       "file": "lib/Service/PartnerMigrationService.php",
-      "method": "findOrganisationByUuid",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findOrganisationByUuid()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/PartnerMigrationService.php",
-      "method": "getOrganisationMapper",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not get OrganisationMapper for partner migration\") and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/PartnerMigrationService.php",
       "method": "migrateOne",
       "occurrence": 1,
       "class": "read-miss",
@@ -964,20 +965,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`relationRows()` answers `return []` when OpenRegister's `/uses` or `/used` throws; the catch logs at warning naming the case and the direction (\"OpenRegister could not answer the relation rows for a case\"), and the Related cases tab renders without its typed groups. Throwing would take down a case page over a panel on it, and answering a refusal would claim the case has no relations, which is a different and worse sentence than \"we could not ask\"."
-    },
-    {
-      "file": "lib/Service/SatelliteOrphanScanner.php",
-      "method": "findOrganisationByUuid",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findOrganisationByUuid()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/SatelliteOrphanScanner.php",
-      "method": "getOrganisationMapper",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not resolve OrganisationMapper for the satellite orphan scan\") and the caller carries on without it."
     },
     {
       "file": "lib/Service/SatelliteOrphanScanner.php",
@@ -1296,20 +1283,6 @@
     },
     {
       "file": "lib/Service/TenantMigrationService.php",
-      "method": "findOrganisationByUuid",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findOrganisationByUuid()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/TenantMigrationService.php",
-      "method": "getOrganisationMapper",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not get OrganisationMapper for tenant migration\") and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/TenantMigrationService.php",
       "method": "migrateOne",
       "occurrence": 1,
       "class": "read-miss",
@@ -1328,20 +1301,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`legacyRows()` answers `return []` when the legacy `tenantOnboardingTask` rows cannot be read; the catch logs at warning naming the tenant (\"could not read the legacy onboarding rows\"). Nothing is carried onto the engine that run; the carry runs again on the next read, because the tenant still has no engine steps."
-    },
-    {
-      "file": "lib/Service/TenantOrganisationResolver.php",
-      "method": "findOrganisation",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findOrganisation()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/TenantOrganisationResolver.php",
-      "method": "getOrganisationMapper",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not resolve OrganisationMapper for tenant resolution\") and the caller carries on without it."
     },
     {
       "file": "lib/Service/TenantOrganisationResolver.php",

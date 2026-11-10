@@ -214,7 +214,7 @@ class PartnerMigrationService {
 		$slug = trim((string)($row['slug'] ?? ''));
 
 		try {
-			$existing = $this->findOrganisationByUuid(mapper: $mapper, uuid: $partnerUuid);
+			$existing = OrganisationLookup::byUuid(mapper: $mapper, uuid: $partnerUuid);
 			if ($existing !== null) {
 				return [
 					'created' => false,
@@ -372,22 +372,6 @@ class PartnerMigrationService {
 		return [];
 	}//end toRow()
 
-	/**
-	 * Find an Organisation by uuid, returning null when absent.
-	 *
-	 * @param object $mapper OR OrganisationMapper.
-	 * @param string $uuid   Uuid to look up.
-	 *
-	 * @return object|null The Organisation, or null when none matches.
-	 */
-	private function findOrganisationByUuid(object $mapper, string $uuid): ?object {
-		try {
-			return $mapper->findByUuid($uuid);
-		} catch (Throwable $e) {
-			// DoesNotExistException (and any other lookup failure) → absent.
-			return null;
-		}
-	}//end findOrganisationByUuid()
 
 	/**
 	 * Resolve OR's OrganisationMapper from the DI container.
@@ -395,18 +379,7 @@ class PartnerMigrationService {
 	 * @return object|null The OrganisationMapper, or null when OR is unavailable.
 	 */
 	private function getOrganisationMapper(): ?object {
-		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not get OrganisationMapper for partner migration',
-				['exception' => $e->getMessage()],
-			);
-			return null;
-		}
+		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container, logger: $this->logger);
+		return $lookup->mapper(failureMessage: 'Dossiq: could not get OrganisationMapper for partner migration');
 	}//end getOrganisationMapper()
 }//end class
