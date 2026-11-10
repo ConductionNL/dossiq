@@ -463,4 +463,110 @@ class BezwaarDecisionListenerTest extends TestCase {
 		$this->assertNull($this->capturedFindAllConfig, 'the guard probed on an unrelated status');
 		$this->assertNull($this->capturedSave);
 	}//end testIgnoresTransitionsIntoOtherStatuses()
+
+	/**
+	 * Without an object service the guard fails open and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testFailsOpenWithoutAnObjectService(): void {
+		$this->settings->method('getObjectService')->willReturn(null);
+		$listener = new BezwaarDecisionListener($this->settings, $this->logger);
+
+		$listener->handle($this->event($this->objectionOnProtectedStatus(), ['status' => 'In handling']));
+
+		$this->assertNull($this->capturedFindAllConfig);
+		$this->assertNull($this->capturedSave);
+	}//end testFailsOpenWithoutAnObjectService()
+
+	/**
+	 * An objection without an id fails open: nothing is probed or reverted.
+	 *
+	 * @return void
+	 */
+	public function testFailsOpenForAnObjectionWithoutAnId(): void {
+		$listener = $this->listener($this->objectService([]));
+		$objection = $this->objectionOnProtectedStatus();
+		unset($objection['id']);
+
+		$listener->handle($this->event($objection, ['status' => 'In handling']));
+
+		$this->assertNull($this->capturedFindAllConfig);
+		$this->assertNull($this->capturedSave);
+	}//end testFailsOpenForAnObjectionWithoutAnId()
+
+	/**
+	 * A failing probe is logged at debug level and allows the transition.
+	 *
+	 * @return void
+	 */
+	public function testAFailingProbeAllowsTheTransition(): void {
+		$objects = new class {
+			/**
+			 * @param array<string, mixed> $config The config.
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function findAll(array $config = []): array {
+				throw new \RuntimeException('store down');
+			}
+		};
+		$this->logger->expects($this->once())->method('debug')
+			->with('Dossiq bezwaar-decision: lookup failed — allowing transition by default: store down');
+
+		$this->listener($objects)->handle($this->event($this->objectionOnProtectedStatus(), ['status' => 'In handling']));
+
+		$this->assertNull($this->capturedSave);
+	}//end testAFailingProbeAllowsTheTransition()
+
+	/**
+	 * A revert names what it blocked; without a previous status nothing is reverted.
+	 *
+	 * @return void
+	 */
+	public function testTheRevertIsLoggedAndNeedsAPreviousStatus(): void {
+		$this->logger->expects($this->once())->method('warning')->with(
+			'Dossiq bezwaar-decision: blocked transition into "' . self::PROTECTED_STATUS . '" — no published bezwaarDecision; reverted to "In handling"',
+			['bezwaarId' => 'bezwaar-1']
+		);
+		$this->listener($this->objectService([]))->handle($this->event($this->objectionOnProtectedStatus(), ['status' => 'In handling']));
+		$this->assertSame(['status' => 'In handling'], $this->capturedSave['object']);
+
+		$this->capturedSave = null;
+		$this->listener($this->objectService([]))->handle($this->event($this->objectionOnProtectedStatus(), ['status' => '']));
+		$this->assertNull($this->capturedSave);
+	}//end testTheRevertIsLoggedAndNeedsAPreviousStatus()
+
+	/**
+	 * A failing revert is logged as an error.
+	 *
+	 * @return void
+	 */
+	public function testAFailingRevertIsLogged(): void {
+		$objects = new class {
+			/**
+			 * @param array<string, mixed> $config The config.
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function findAll(array $config = []): array {
+				return [];
+			}
+
+			/**
+			 * @param string               $objectId The id.
+			 * @param array<string, mixed> $data     The changes.
+			 * @param string               $register The register.
+			 * @param string               $schema   The schema.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+				throw new \RuntimeException('locked');
+			}
+		};
+		$this->logger->expects($this->once())->method('error')->with('Dossiq bezwaar-decision: revert failed: locked');
+
+		$this->listener($objects)->handle($this->event($this->objectionOnProtectedStatus(), ['status' => 'In handling']));
+	}//end testAFailingRevertIsLogged()
 }//end class
