@@ -123,6 +123,7 @@ final class GoldenPackageObjects {
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): ?array {
+		$register = ($options?->register ?? null);
 		$schema = ($options?->schema ?? '');
 		$this->log[] = ['find' => compact('id', 'register', 'schema', '_rbac', '_multitenancy')];
 		if (in_array((string)$id, ($this->behaviour['findThrows'] ?? []), true) === true) {

@@ -33,7 +33,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Settings;
 
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -166,7 +165,7 @@ final class SchemaSlugResolverTest extends TestCase {
 			 *
 			 * @throws \RuntimeException When the slug is unknown, as the real mapper does.
 			 */
-			public function find(string $id, ?ObjectFindOptions $options = null, bool $rbac = true, bool $multitenancy = true): object {
+			public function find(string $id, array $extend = [], bool $rbac = true, bool $multitenancy = true): object {
 				if (isset($this->global[$id]) === false) {
 					throw new \RuntimeException('no such schema: ' . $id);
 				}

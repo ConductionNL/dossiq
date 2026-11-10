@@ -157,7 +157,7 @@ class ZgwZrcRulesServiceTest extends TestCase {
 		// Zaaktype lookup returns a valid (published) zaaktype; hoofdzaak lookup returns null.
 		$objectService = $this->createMock(ObjectServiceStub::class);
 		$objectService->method('find')->willReturnCallback(
-			static function (string $id, string $register, string $schema) use ($zaaktypeUuid): ?array {
+			static function (string $id, ?ObjectFindOptions $options = null) use ($zaaktypeUuid): ?array {
 				if ($id === $zaaktypeUuid) {
 					return [
 						'id' => $zaaktypeUuid,

@@ -43,8 +43,7 @@ interface AuthResolverObjectServiceStub {
 	 * Load a single object by id within a register/schema.
 	 *
 	 * @param string $id Object UUID.
-	 * @param string $register Register id.
-	 * @param string $schema Schema id.
+	 * @param ObjectFindOptions|null $options Register and schema.
 	 *
 	 * @return array<string, mixed>|null
 	 */
@@ -88,7 +87,7 @@ final class WorkflowStepAuthorizationResolverTest extends TestCase {
 
 		$objectService = $this->createMock(AuthResolverObjectServiceStub::class);
 		$objectService->method('find')->willReturnCallback(
-			fn (string $id, string $register, string $schema): ?array => ($this->roleTypes[$id] ?? null)
+			fn (string $id, ?ObjectFindOptions $options = null): ?array => ($this->roleTypes[$id] ?? null)
 		);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);

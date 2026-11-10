@@ -63,6 +63,8 @@ final class GoldenAppealObjects {
 	 * @return array<string, mixed>|null
 	 */
 	public function find(string $id, ?ObjectFindOptions $options = null): ?array {
+		$register = ($options?->register ?? null);
+		$schema = ($options?->schema ?? null);
 		$this->log[] = ['find' => compact('id', 'register', 'schema')];
 		return ($this->behaviour['find'][$id] ?? null);
 	}//end find()

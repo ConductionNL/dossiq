@@ -96,7 +96,8 @@ class ZtcCrossReferenceTest extends TestCase {
 	private function objects(array $finds, array $searches=[]): ZtcCrossRefObjectServiceStub {
 		$service = $this->createMock(ZtcCrossRefObjectServiceStub::class);
 		$service->method('find')->willReturnCallback(
-			static function (mixed $id, string $register, string $schema) use ($finds): mixed {
+			static function (mixed $id, ?ObjectFindOptions $options = null) use ($finds): mixed {
+				$schema = (string)$options?->schema;
 				$found = $finds[$schema.':'.$id] ?? null;
 				if ($found instanceof \Throwable) {
 					throw $found;

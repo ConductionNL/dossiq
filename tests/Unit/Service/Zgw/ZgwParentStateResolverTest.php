@@ -84,7 +84,7 @@ class ZgwParentStateResolverTest extends TestCase {
 	private function objects(array $objects, bool $throws=false): ParentStateObjectServiceStub {
 		$service = $this->createMock(ParentStateObjectServiceStub::class);
 		$service->method('find')->willReturnCallback(
-			function (mixed $id, string $register, string $schema) use ($objects, $throws): mixed {
+			function (mixed $id, ?ObjectFindOptions $options = null) use ($objects, $throws): mixed {
 				$this->asked[] = $id;
 				if ($throws === true) {
 					throw new \RuntimeException('register down');

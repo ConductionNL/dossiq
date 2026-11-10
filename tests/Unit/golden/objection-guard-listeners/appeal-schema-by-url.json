@@ -11,8 +11,14 @@
     {
         "find": {
             "id": "b-1",
-            "register": "reg",
-            "schema": "objection"
+            "options": {
+                "register": "reg",
+                "schema": "objection",
+                "extend": [],
+                "files": false,
+                "render": true,
+                "audit": true
+            }
         }
     },
     {
