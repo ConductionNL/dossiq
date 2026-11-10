@@ -97,13 +97,7 @@ trait SavedObjectPayload {
 	 * @return bool
 	 */
 	private function inSchema(array $object, string $configured): bool {
-		if ($configured === '') {
-			return false;
-		}
-
-		$candidate = (string) ($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && ($candidate === $configured || str_ends_with($candidate, '/'.$configured));
+		return SchemaMembership::belongsTo(object: $object, expected: $configured);
 	}//end inSchema()
 
 	/**
