@@ -351,6 +351,107 @@ class RepairDemoDataSchemaForkTest extends TestCase {
 	}
 
 	/**
+	 * The retirement reports what went and what stayed: one info line with
+	 * the counts, one warning per spared schema with its reason, and one log
+	 * line with all of it. A deletion that fails spares the schema with the
+	 * failure as its reason.
+	 *
+	 * @return void
+	 */
+	public function testTheRetirementReportsWhatWentAndWhatStayed(): void {
+		$deletion = new class {
+			/** @var array<int, string> */
+			public array $deleted = [];
+
+			/**
+			 * @param object $schema The schema to tear down.
+			 *
+			 * @return array<string, mixed> The cascade result.
+			 */
+			public function cascadeDeleteSchema(object $schema): array {
+				if ($schema->getSlug() === 'besluit') {
+					throw new \RuntimeException('locked');
+				}
+
+				$this->deleted[] = $schema->getSlug();
+				return ['deletedCount' => 3];
+			}
+		};
+		$this->wire(
+			schemaMapper: $this->schemaMapper(
+				forked: [$this->schema(id: 229, slug: 'case'), $this->schema(id: 230, slug: 'zaak'), $this->schema(id: 231, slug: 'besluit'), $this->schema(id: 232, slug: 'task')],
+				twins: ['case' => 1, 'besluit' => 1, 'task' => 1]
+			),
+			registerMapper: $this->registerMapper(linkedSchemaIds: [88]),
+			deletion: $deletion
+		);
+		$lines = [];
+		$output = $this->createMock(IOutput::class);
+		foreach (['info', 'warning'] as $level) {
+			$output->method($level)->willReturnCallback(
+				static function (string $line) use (&$lines, $level): void {
+					if (str_contains($line, 'schema') === true || str_contains($line, 'dossiq.demo/') === true) {
+						$lines[] = [$level, $line];
+					}
+				}
+			);
+		}
+
+		$logged = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$logged): void {
+				if ($message === 'Dossiq: retired the dossiq.demo schema fork') {
+					$logged[] = $context;
+				}
+			}
+		);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+
+		(new RepairDemoDataSchemaFork($this->appManager, $this->container, $settings, $logger))->run($output);
+
+		self::assertSame(['case', 'task'], $deletion->deleted);
+		self::assertSame(
+			[
+				['info', 'Demo-fork repair: retired 2 forked schema(s) and the 6 demo object(s) bound to them, spared 2.'],
+				['warning', 'Demo-fork repair: kept `dossiq.demo/zaak`, no schema of that slug exists under `dossiq`, so this may be the only copy.'],
+				['warning', 'Demo-fork repair: kept `dossiq.demo/besluit`, deletion failed: locked.'],
+			],
+			array_values(array_filter($lines, static fn (array $line): bool => str_starts_with($line[1], 'Demo-fork repair: retired') || str_starts_with($line[1], 'Demo-fork repair: kept')))
+		);
+		self::assertSame(
+			[['app' => 'dossiq', 'retired' => 2, 'objects' => 6, 'spared' => ['zaak' => 'no schema of that slug exists under `dossiq`, so this may be the only copy', 'besluit' => 'deletion failed: locked']]],
+			$logged
+		);
+	}
+
+	/**
+	 * Without forked schemas the retirement says so and deletes nothing.
+	 *
+	 * @return void
+	 */
+	public function testWithoutForkedSchemasNothingIsRetired(): void {
+		$deletion = $this->deletionSpy();
+		$this->wire(
+			schemaMapper: $this->schemaMapper(forked: [], twins: []),
+			registerMapper: $this->registerMapper(linkedSchemaIds: []),
+			deletion: $deletion
+		);
+		$lines = [];
+		$this->output->method('info')->willReturnCallback(
+			static function (string $line) use (&$lines): void {
+				$lines[] = $line;
+			}
+		);
+
+		$this->step()->run($this->output);
+
+		self::assertContains('Demo-fork repair: no `dossiq.demo` schemas; nothing to retire.', $lines);
+		self::assertSame([], $deletion->deleted);
+	}
+
+	/**
 	 * The whole point: a proven fork goes, and its objects go with it.
 	 *
 	 * @return void
