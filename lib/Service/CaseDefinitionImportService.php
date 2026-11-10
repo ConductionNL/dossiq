@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\CaseDefinition\PackageImport;
 use OCA\Dossiq\Service\CaseDefinition\PackageValidator;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
 use OCA\Dossiq\Service\CaseDefinition\WorkflowDeployer;
@@ -120,66 +121,136 @@ class CaseDefinitionImportService {
 		string $zipPath,
 		string $strategy = 'skip',
 	): array {
-		// First validate.
 		$validation = $this->validator->validatePackage(zipPath: $zipPath);
 		if ($validation['valid'] === false) {
-			return [
-				'success' => false,
-				'message' => 'Package validation failed: ' . implode('; ', $validation['errors']),
-				'components' => [],
-			];
+			return $this->validationFailure(validation: $validation);
 		}
-
-		$manifest = $validation['manifest'];
-		$components = $manifest['components'] ?? [];
-		$results = [];
 
 		$zip = new ZipArchive();
 		$zip->open($zipPath, ZipArchive::RDONLY);
-
-		foreach ($components as $component) {
-			try {
-				$results[$component] = $this->importComponent(zip: $zip, component: $component, strategy: $strategy);
-			} catch (\Throwable $e) {
-				$results[$component] = [
-					'status' => 'error',
-					'message' => $e->getMessage(),
-				];
-				$this->logger->error(
-					'Failed to import component {component}: {error}',
-					[
-						'component' => $component,
-						'error' => $e->getMessage(),
-					]
-				);
-			}
-		}
-
+		$results = $this->importComponents(
+			import: new PackageImport(zip: $zip, strategy: $strategy),
+			components: ($validation['manifest']['components'] ?? [])
+		);
 		$zip->close();
 
-		$allSuccess = in_array('error', array_column($results, 'status'), true) === false;
+		return $this->importSummary(results: $results);
+	}//end importCaseDefinition()
 
+	/**
+	 * The answer for a package that did not validate.
+	 *
+	 * @param array<string, mixed> $validation The validator's answer.
+	 *
+	 * @return array{success: bool, message: string, components: array<string, array{status: string, message: string}>}
+	 */
+	private function validationFailure(array $validation): array {
+		return [
+			'success' => false,
+			'message' => 'Package validation failed: ' . implode('; ', $validation['errors']),
+			'components' => [],
+		];
+	}//end validationFailure()
+
+	/**
+	 * Import every component the manifest names, in order.
+	 *
+	 * @param PackageImport     $import     The opened package and its strategy.
+	 * @param array<int, mixed> $components The manifest's component names.
+	 *
+	 * @return array<string, array{status: string, message: string}> The result per component.
+	 */
+	private function importComponents(PackageImport $import, array $components): array {
+		$results = [];
+		foreach ($components as $component) {
+			$results[$component] = $this->importOrReport(import: $import, component: $component);
+		}
+
+		return $results;
+	}//end importComponents()
+
+	/**
+	 * Import one component; a failure becomes its error result and is logged.
+	 *
+	 * @param PackageImport $import    The opened package and its strategy.
+	 * @param mixed         $component The component name.
+	 *
+	 * @return array{status: string, message: string}
+	 */
+	private function importOrReport(PackageImport $import, mixed $component): array {
+		try {
+			return $this->importComponent(zip: $import->zip, component: $component, strategy: $import->strategy);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Failed to import component {component}: {error}',
+				[
+					'component' => $component,
+					'error' => $e->getMessage(),
+				]
+			);
+
+			return [
+				'status' => 'error',
+				'message' => $e->getMessage(),
+			];
+		}
+	}//end importOrReport()
+
+	/**
+	 * Answer the import, after logging how it ended.
+	 *
+	 * @param array<string, array{status: string, message: string}> $results The result per component.
+	 *
+	 * @return array{success: bool, message: string, components: array<string, array{status: string, message: string}>}
+	 */
+	private function importSummary(array $results): array {
+		$allSuccess = in_array('error', array_column($results, 'status'), true) === false;
+		$this->logImportOutcome(allSuccess: $allSuccess, count: count($results));
+
+		return [
+			'success' => $allSuccess,
+			'message' => $this->importMessage(allSuccess: $allSuccess),
+			'components' => $results,
+		];
+	}//end importSummary()
+
+	/**
+	 * Log how the import ended.
+	 *
+	 * @param bool $allSuccess Whether every component was imported.
+	 * @param int  $count      How many components were attempted.
+	 *
+	 * @return void
+	 */
+	private function logImportOutcome(bool $allSuccess, int $count): void {
 		$successLabel = 'false';
-		$message = 'Import completed with errors';
 		if ($allSuccess === true) {
 			$successLabel = 'true';
-			$message = 'Import completed successfully';
 		}
 
 		$this->logger->info(
 			'Case definition import completed: {success}, components: {count}',
 			[
 				'success' => $successLabel,
-				'count' => count($results),
+				'count' => $count,
 			]
 		);
+	}//end logImportOutcome()
 
-		return [
-			'success' => $allSuccess,
-			'message' => $message,
-			'components' => $results,
-		];
-	}//end importCaseDefinition()
+	/**
+	 * The sentence the import answers with.
+	 *
+	 * @param bool $allSuccess Whether every component was imported.
+	 *
+	 * @return string
+	 */
+	private function importMessage(bool $allSuccess): string {
+		if ($allSuccess === true) {
+			return 'Import completed successfully';
+		}
+
+		return 'Import completed with errors';
+	}//end importMessage()
 
 	/**
 	 * Import a single component from the ZIP archive.
