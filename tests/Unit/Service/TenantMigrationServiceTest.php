@@ -620,6 +620,37 @@ class TenantMigrationServiceTest extends TestCase {
 	}
 
 	/**
+	 * A repair out of `archived` clears a deprovisionedAt left behind there.
+	 *
+	 * The purge measures its window from that column, so a stale value would
+	 * delete the organisation the moment anything returned it to `archived`.
+	 *
+	 * @return void
+	 */
+	public function testRepairOutOfArchivedClearsALeftoverDeprovisionDate(): void {
+		$damaged = new Organisation();
+		$damaged->setUuid('tenant-term');
+		$damaged->setSlug('gemeente-stopgezet');
+		$damaged->setStatus('archived');
+		$damaged->setDeprovisionedAt(new \DateTime('2024-02-02 10:00:00'));
+
+		$mapper = $this->mapperWith(['gemeente-stopgezet' => $damaged]);
+		$service = $this->makeService(
+			$this->objectServiceWithRows(
+				[['id' => 'tenant-term', 'slug' => 'gemeente-stopgezet', 'status' => 'terminated']]
+			),
+			$mapper,
+		);
+
+		$summary = $service->migrate();
+
+		$this->assertSame(1, $summary['repaired']);
+		$this->assertSame('retained', $damaged->getStatus());
+		$this->assertNull($damaged->getDeprovisionedAt(), 'a repaired organisation must carry no deletion date');
+		$this->assertNotNull($damaged->getRetainedAt(), 'and its retention must be dated');
+	}
+
+	/**
 	 * A tenant the June mapping left in `provisioning` is repaired to `active`.
 	 *
 	 * @return void
