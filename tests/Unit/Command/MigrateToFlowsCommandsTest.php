@@ -43,6 +43,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @covers \OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand
  * @covers \OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand
  * @covers \OCA\Dossiq\Command\MigrateLhsToDecisionTablesCommand
+ * @covers \OCA\Dossiq\Command\MigrationConsole
  */
 class MigrateToFlowsCommandsTest extends TestCase {
 
