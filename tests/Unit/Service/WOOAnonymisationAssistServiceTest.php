@@ -404,6 +404,25 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 	}//end testReviewProposalThrowsWhenNoPendingProposal()
 
 	/**
+	 * A proposal already reviewed is not reviewed again: nothing is saved, and the refusal names the document.
+	 *
+	 * @return void
+	 */
+	public function testAReviewedProposalIsNotReviewedAgain(): void {
+		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
+		$this->assessmentService->method('findAssessment')->willReturn([
+			'id' => 'assessment-1',
+			'redactionProposal' => ['status' => 'approved', 'spans' => []],
+		]);
+		$this->assessmentService->expects($this->never())->method('saveRedactionProposal');
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('No pending redaction proposal found for document doc-1 in case case-1');
+
+		$this->service()->reviewProposal(caseId: 'case-1', documentRef: 'doc-1', decision: 'reject', reviewerId: 'bob');
+	}//end testAReviewedProposalIsNotReviewedAgain()
+
+	/**
 	 * On approve, the reviewed spans are recorded on the proposal; the
 	 * assist never writes a redacted copy itself.
 	 *

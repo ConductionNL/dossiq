@@ -31,9 +31,64 @@ namespace OCA\Dossiq\Tests\Unit\Service\Notification;
 
 use OCA\Dossiq\Service\Notification\NotificationRouting;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\NotificationPreferencesInterface;
+use OCA\OpenRegister\Kernel\Contracts\PreferenceAddress;
+use OCA\OpenRegister\Kernel\Contracts\PreferenceWrite;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+
+/**
+ * The preference calls a double does not exercise, so each double states only what its test reads or writes.
+ */
+abstract class PreferencesDouble implements NotificationPreferencesInterface {
+
+	/**
+	 * @param string            $userId The person.
+	 * @param array<int,string> $scopes The scopes asked for.
+	 *
+	 * @return array<int, array<string, mixed>> Nothing.
+	 */
+	public function getEffectiveForUser(string $userId, array $scopes = []): array {
+		return [];
+	}//end getEffectiveForUser()
+
+	/**
+	 * @param string            $groupId The group.
+	 * @param PreferenceAddress $address The rule and its scope.
+	 *
+	 * @return array<string, mixed>|null Nothing.
+	 */
+	public function groupDefaultAt(string $groupId, PreferenceAddress $address): ?array {
+		return null;
+	}//end groupDefaultAt()
+
+	/**
+	 * @param string            $userId  The person.
+	 * @param PreferenceAddress $address The rule and its scope.
+	 *
+	 * @return array<string, mixed>|null Nothing.
+	 */
+	public function overrideAt(string $userId, PreferenceAddress $address): ?array {
+		return null;
+	}//end overrideAt()
+
+	/**
+	 * @param PreferenceWrite $write The group default.
+	 *
+	 * @return void
+	 */
+	public function storeGroupDefault(PreferenceWrite $write): void {
+	}//end storeGroupDefault()
+
+	/**
+	 * @param PreferenceWrite $write The override.
+	 *
+	 * @return void
+	 */
+	public function storeOverride(PreferenceWrite $write): void {
+	}//end storeOverride()
+}//end class
 
 /**
  * The seam onto OpenRegister's layered preference read.
@@ -68,7 +123,7 @@ class NotificationRoutingTest extends TestCase {
 	 * @return object The double.
 	 */
 	private function platform(array $entries): object {
-		return new class($entries) {
+		return new class($entries) extends PreferencesDouble {
 			/**
 			 * Every write this double received.
 			 *
@@ -108,21 +163,16 @@ class NotificationRoutingTest extends TestCase {
 			/**
 			 * Record one override.
 			 *
-			 * @param string            $userId          The person.
-			 * @param string            $schemaSlug      The schema.
-			 * @param string            $notificationKey The rule.
-			 * @param array|null        $override        The value.
-			 * @param string|null       $scope           The scope.
+			 * @param PreferenceWrite $write The person, the rule and its scope, and the value.
 			 *
 			 * @return void
 			 */
-			public function setOverride(
-				string $userId,
-				string $schemaSlug,
-				string $notificationKey,
-				?array $override,
-				?string $scope = null
-			): void {
+			public function storeOverride(PreferenceWrite $write): void {
+				$userId = $write->party;
+				$schemaSlug = $write->address->schemaSlug;
+				$notificationKey = $write->address->notificationKey;
+				$override = $write->value;
+				$scope = $write->address->scope;
 				$this->writes[] = [
 					'userId' => $userId,
 					'schema' => $schemaSlug,
@@ -327,7 +377,7 @@ class NotificationRoutingTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
 	 */
 	public function testAThrowingReadPropagatesRatherThanReadingAsUnrouted(): void {
-		$angry = new class {
+		$angry = new class extends PreferencesDouble {
 			/**
 			 * Always throws.
 			 *
@@ -343,21 +393,16 @@ class NotificationRoutingTest extends TestCase {
 			/**
 			 * Always throws.
 			 *
-			 * @param string      $userId          The person.
-			 * @param string      $schemaSlug      The schema.
-			 * @param string      $notificationKey The rule.
-			 * @param array|null  $override        The value.
-			 * @param string|null $scope           The scope.
+			 * @param PreferenceWrite $write The person, the rule and its scope, and the value.
 			 *
 			 * @return void
 			 */
-			public function setOverride(
-				string $userId,
-				string $schemaSlug,
-				string $notificationKey,
-				?array $override,
-				?string $scope = null
-			): void {
+			public function storeOverride(PreferenceWrite $write): void {
+				$userId = $write->party;
+				$schemaSlug = $write->address->schemaSlug;
+				$notificationKey = $write->address->notificationKey;
+				$override = $write->value;
+				$scope = $write->address->scope;
 				throw new \RuntimeException('the register is down');
 			}
 		};
@@ -379,7 +424,7 @@ class NotificationRoutingTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
 	 */
 	public function testAThrowingWriteIsReportedAsNotRouted(): void {
-		$angry = new class {
+		$angry = new class extends PreferencesDouble {
 			/**
 			 * Answers, so the seam reads as available.
 			 *
@@ -395,21 +440,16 @@ class NotificationRoutingTest extends TestCase {
 			/**
 			 * Always throws.
 			 *
-			 * @param string      $userId          The person.
-			 * @param string      $schemaSlug      The schema.
-			 * @param string      $notificationKey The rule.
-			 * @param array|null  $override        The value.
-			 * @param string|null $scope           The scope.
+			 * @param PreferenceWrite $write The person, the rule and its scope, and the value.
 			 *
 			 * @return void
 			 */
-			public function setOverride(
-				string $userId,
-				string $schemaSlug,
-				string $notificationKey,
-				?array $override,
-				?string $scope = null
-			): void {
+			public function storeOverride(PreferenceWrite $write): void {
+				$userId = $write->party;
+				$schemaSlug = $write->address->schemaSlug;
+				$notificationKey = $write->address->notificationKey;
+				$override = $write->value;
+				$scope = $write->address->scope;
 				throw new \RuntimeException('the register is down');
 			}
 		};
