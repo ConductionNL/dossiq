@@ -42,6 +42,8 @@ use OCA\Dossiq\Service\Term\ThresholdShares;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermEndRoll;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use OCA\OpenRegister\Kernel\Contracts\TimerChange;
+use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -579,7 +581,10 @@ class TermijnTimerService {
 		}
 
 		try {
-			return (int)$engine->cancelForSubject(subjectType: 'object', subjectUuid: $instanceId, reason: $reason, actor: null);
+			return (int)$engine->cancelForSubject(
+				subject: new TimerSubjectRef(type: 'object', uuid: $instanceId),
+				change: new TimerChange(reason: $reason, actor: null)
+			);
 		} catch (\Throwable $e) {
 			$this->logFailure(operation: 'cancel', timerId: $instanceId, error: $e);
 			return 0;

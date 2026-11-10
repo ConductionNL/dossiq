@@ -83,43 +83,17 @@ class ProcessingTimeRows {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function atRisk(array $open, array $types, float $threshold, DateTimeImmutable $today): array {
+		$scan = new AtRiskScan(types: $types, threshold: $threshold);
 		// Counted between calendar dates in one zone, so a reference day at
 		// the tenant's midnight does not lose a day against a UTC start date.
-		$today = new DateTimeImmutable($today->format('Y-m-d'));
-		$rows  = [];
+		$scan->today = new DateTimeImmutable($today->format('Y-m-d'));
+		$rows = [];
 		foreach ($open as $record) {
-			$typeId = (string)($record['caseType'] ?? '');
-			$target = ($types[$typeId]['targetDays'] ?? null);
-			$start  = ($record['startDate'] ?? null);
-			if ($target === null || is_string($start) === false) {
-				continue;
+			$measure = $this->measure(scan: $scan, record: $record);
+			if ($measure !== null && self::isAtRisk(scan: $scan, measure: $measure) === true) {
+				$rows[] = $this->riskRow(scan: $scan, measure: $measure);
 			}
-
-			$elapsed     = $this->days->signed(from: new DateTimeImmutable($start), to: $today);
-			$term        = $this->runningTerm(record: $record, start: $start, target: (int)$target);
-			$remaining   = ($term - $elapsed);
-			$percentUsed = ($elapsed / max(1, $term));
-			if ($remaining >= 0 && (1 - $percentUsed) > $threshold) {
-				continue;
-			}
-
-			$shownUsed = min($percentUsed, self::PERCENT_USED_CAP);
-			$rows[]    = [
-				'id'                 => (string)($record['id'] ?? ''),
-				'title'              => (string)($record['title'] ?? ''),
-				'identifier'         => (string)($record['identifier'] ?? ''),
-				'caseType'           => $typeId,
-				'caseTypeName'       => (string)($types[$typeId]['name'] ?? ''),
-				'deadline'           => ($record['deadline'] ?? null),
-				'targetDays'         => $target,
-				'elapsedDays'        => $elapsed,
-				'remainingDays'      => $remaining,
-				'percentUsed'        => $shownUsed,
-				'percentUsedDisplay' => (int)round($shownUsed * 100),
-				'isOverdue'          => ($remaining < 0),
-				'severity'           => $this->severity(remaining: $remaining, percentUsed: $percentUsed, threshold: $threshold),
-			];
-		}//end foreach
+		}
 
 		usort(
 			$rows,
@@ -128,6 +102,75 @@ class ProcessingTimeRows {
 
 		return $rows;
 	}//end atRisk()
+
+	/**
+	 * Measure an open record against its type's target, or null when it has no target or start.
+	 *
+	 * @param AtRiskScan           $scan   The scan.
+	 * @param array<string, mixed> $record The open record.
+	 *
+	 * @return RiskMeasure|null The measure.
+	 */
+	private function measure(AtRiskScan $scan, array $record): ?RiskMeasure {
+		$typeId = (string)($record['caseType'] ?? '');
+		$target = ($scan->types[$typeId]['targetDays'] ?? null);
+		$start  = ($record['startDate'] ?? null);
+		if ($target === null || is_string($start) === false) {
+			return null;
+		}
+
+		$measure          = new RiskMeasure();
+		$measure->record  = $record;
+		$measure->typeId  = $typeId;
+		$measure->target  = $target;
+		$measure->elapsed = $this->days->signed(from: new DateTimeImmutable($start), to: $scan->today);
+		$term = $this->runningTerm(record: $record, start: $start, target: (int)$target);
+		$measure->remaining   = ($term - $measure->elapsed);
+		$measure->percentUsed = ($measure->elapsed / max(1, $term));
+
+		return $measure;
+	}//end measure()
+
+	/**
+	 * Whether a measured record ran past its term or has no more than the threshold left.
+	 *
+	 * @param AtRiskScan  $scan    The scan.
+	 * @param RiskMeasure $measure The measure.
+	 *
+	 * @return bool True when the record is listed.
+	 */
+	private static function isAtRisk(AtRiskScan $scan, RiskMeasure $measure): bool {
+		return ($measure->remaining < 0 || (1 - $measure->percentUsed) <= $scan->threshold);
+	}//end isAtRisk()
+
+	/**
+	 * The at-risk row of a measured record.
+	 *
+	 * @param AtRiskScan  $scan    The scan.
+	 * @param RiskMeasure $measure The measure.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function riskRow(AtRiskScan $scan, RiskMeasure $measure): array {
+		$record    = $measure->record;
+		$shownUsed = min($measure->percentUsed, self::PERCENT_USED_CAP);
+
+		return [
+			'id'                 => (string)($record['id'] ?? ''),
+			'title'              => (string)($record['title'] ?? ''),
+			'identifier'         => (string)($record['identifier'] ?? ''),
+			'caseType'           => $measure->typeId,
+			'caseTypeName'       => (string)($scan->types[$measure->typeId]['name'] ?? ''),
+			'deadline'           => ($record['deadline'] ?? null),
+			'targetDays'         => $measure->target,
+			'elapsedDays'        => $measure->elapsed,
+			'remainingDays'      => $measure->remaining,
+			'percentUsed'        => $shownUsed,
+			'percentUsedDisplay' => (int)round($shownUsed * 100),
+			'isOverdue'          => ($measure->remaining < 0),
+			'severity'           => $this->severity(remaining: $measure->remaining, percentUsed: $measure->percentUsed, threshold: $scan->threshold),
+		];
+	}//end riskRow()
 
 	/**
 	 * Per-type performance rows, including types without completed records.
