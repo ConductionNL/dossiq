@@ -123,6 +123,29 @@ class AanvullingsverzoekAnswerFlowTest extends TestCase {
 	}//end testTheRefusalsCarryTheirSentences()
 
 	/**
+	 * Marking skips rows that are not items, trims the text, matches without
+	 * case and keeps every other field of a row.
+	 *
+	 * @return void
+	 */
+	public function testMarkingNormalisesAndKeepsTheRows(): void {
+		$marked = $this->service()->markReceived(
+			items: ['not a row', ['item' => '  '], ['item' => ' Bankafschrift ', 'note' => 'x'], ['item' => 'Huurcontract', 'received' => 'yes'], ['item' => 'Paspoort']],
+			received: ['  BANKAFSCHRIFT', '', 'huurcontract'],
+			moment: new DateTimeImmutable('2026-09-10T10:00:00+00:00')
+		);
+
+		self::assertSame(
+			[
+				['item' => 'Bankafschrift', 'note' => 'x', 'received' => true, 'receivedAt' => '2026-09-10T10:00:00+00:00'],
+				['item' => 'Huurcontract', 'received' => true, 'receivedAt' => '2026-09-10T10:00:00+00:00'],
+				['item' => 'Paspoort', 'received' => false],
+			],
+			$marked
+		);
+	}//end testMarkingNormalisesAndKeepsTheRows()
+
+	/**
 	 * The service over doubles that write down every call.
 	 *
 	 * @return AanvullingsverzoekResolutionService
