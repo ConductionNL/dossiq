@@ -37,6 +37,7 @@ use ReflectionClass;
  * Every subject's wording, exactly.
  *
  * @covers \OCA\Dossiq\Notification\Notifier
+ * @covers \OCA\Dossiq\Notification\NotificationText
  * @uses \OCA\Dossiq\Service\QuotaLimitLabel
  */
 class NotifierWordingGoldenTest extends TestCase {
