@@ -396,4 +396,29 @@ class AccrualNoticeServiceTest extends TestCase {
 		self::assertSame('J. de Vries', $row['sender']);
 		self::assertSame('J. de Vries', $this->objects->store['noticeOfDefault'][(string)$row['id']]['sender'] ?? null);
 	}
+	/**
+	 * A first valid notice stores the whole notice and calculation rows, and both events in order.
+	 *
+	 * @return void
+	 */
+	public function testAFirstValidNoticeStoresTheWholeRowsAndBothEvents(): void {
+		$row = $this->service->registerNotice('ti-1', new DateTimeImmutable('2026-03-15'), 'email', 'doc:1');
+		$calculation = $row['penaltyPaymentCalculation'];
+		unset($row['penaltyPaymentCalculation']);
+
+		self::assertSame(
+			['deadlineInstance' => 'ti-1', 'receiptDate' => '2026-03-15', 'notificationChannel' => 'email', 'gevalideerd' => true, 'documentLink' => 'doc:1', 'validityStatus' => 'valid', 'id' => $row['id']],
+			$row
+		);
+		unset($calculation['id']);
+		self::assertSame(
+			['noticeOfDefault' => $row['id'], 'deadlineInstance' => 'ti-1', 'startDate' => '2026-03-29', 'plafondCalculated' => 144200, 'status' => 'lopend', 'regime' => 'awb-default', 'rateBands' => []],
+			array_intersect_key($calculation, array_flip(['noticeOfDefault', 'deadlineInstance', 'startDate', 'plafondCalculated', 'status', 'regime', 'rateBands']))
+		);
+
+		$events = array_values($this->objects->store['termijnGebeurtenis'] ?? []);
+		self::assertSame(['ingebrekestelling-received', 'penaltypayment-gestart'], array_column($events, 'type'));
+		self::assertSame('Ingebrekestelling ontvangen via email', $events[0]['rationale']);
+		self::assertSame('Dwangsom-berekening gestart na grace period', $events[1]['rationale']);
+	}
 }

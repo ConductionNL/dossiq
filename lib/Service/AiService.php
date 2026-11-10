@@ -35,6 +35,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Ai\AiAuditLog;
 use OCA\Dossiq\Service\Ai\AiEndpointGuard;
 use OCA\Dossiq\Service\Ai\AiModelIdentity;
+use OCA\Dossiq\Service\Ai\AiModelRequest;
 use OCA\Dossiq\Service\Ai\AiPiiRedactor;
 use OCA\Dossiq\Service\Ai\AiPromptFactory;
 use OCA\Dossiq\Service\Ai\AiRequest;
@@ -519,53 +520,14 @@ class AiService {
 	 * @spec openspec/specs/ai-assistance/spec.md
 	 */
 	protected function callAiModel(string $prompt): array {
-		$modelUrl = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_model_url',
-			''
-		);
-
-		if (empty($modelUrl) === true) {
-			throw new RuntimeException('AI model URL is not configured');
-		}
-
-		$modelName = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_model_name',
-			'llama3.1'
-		);
-
-		$modelType = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_model_type',
-			'local'
-		);
-
-		// Build the request payload for Ollama-compatible API.
-		$payload = json_encode(
-			[
-				'model' => $modelName,
-				'prompt' => $prompt,
-				'stream' => false,
-				'format' => 'json',
-			]
-		);
-
+		$request = new AiModelRequest(appConfig: $this->appConfig, endpointGuard: $this->endpointGuard);
+		$modelUrl = $request->configuredModelUrl();
+		$modelName = $request->setting(key: 'ai_model_name', default: 'llama3.1');
+		$modelType = $request->setting(key: 'ai_model_type', default: 'local');
+		$payload = $request->generateRequestBody(modelName: $modelName, prompt: $prompt);
 		$endpoint = rtrim($modelUrl, '/') . '/api/generate';
-
-		// SSRF guard: resolve the configured model URL to the ONE address it may
-		// be connected to, before making any outbound request.
-		$pinnedAddress = $this->endpointGuard->resolveSafeAddress(url: $modelUrl, modelType: $modelType);
-		if ($pinnedAddress === null) {
-			throw new RuntimeException('AI model URL failed SSRF security check');
-		}
-
-		$ch = curl_init($endpoint);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_POST, true);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+		$pinnedAddress = $request->pinnedModelAddress(url: $modelUrl, modelType: $modelType);
+		$ch = $request->openGenerateRequest(endpoint: $endpoint, payload: $payload);
 
 		// Connect to the address the guard INSPECTED, not to whatever the name
 		// resolves to now. Without this, the guard's answer and curl's own
@@ -573,70 +535,11 @@ class AiService {
 		// second one carries the request — which is the whole of a DNS
 		// rebinding attack. The Host header and TLS SNI still carry the
 		// configured name, so certificate validation is unaffected.
-		curl_setopt($ch, CURLOPT_RESOLVE, [$this->pinnedResolveEntry(url: $modelUrl, address: $pinnedAddress)]);
+		curl_setopt($ch, CURLOPT_RESOLVE, [$request->pinnedResolveEntry(url: $modelUrl, address: $pinnedAddress)]);
+		$request->sendCloudApiKey(ch: $ch, modelType: $modelType);
 
-		// Add API key for cloud models.
-		if ($modelType === 'cloud') {
-			$apiKey = $this->appConfig->getValueString(
-				Application::APP_ID,
-				'ai_api_key',
-				''
-			);
-			if (empty($apiKey) === false) {
-				curl_setopt(
-					$ch,
-					CURLOPT_HTTPHEADER,
-					[
-						'Content-Type: application/json',
-						'Authorization: Bearer ' . $apiKey,
-					]
-				);
-			}
-		}
-
-		$response = curl_exec($ch);
-		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		$error = curl_error($ch);
-		curl_close($ch);
-
-		if ($response === false || empty($error) === false) {
-			throw new RuntimeException('AI model connection failed: ' . $error);
-		}
-
-		if ($httpCode < 200 || $httpCode >= 300) {
-			throw new RuntimeException('AI model returned HTTP ' . $httpCode);
-		}
-
-		return $this->decodeAiModelResponse(response: $response);
+		return $this->decodeAiModelResponse(response: $request->modelAnswer(ch: $ch));
 	}//end callAiModel()
-
-	/**
-	 * Build the `CURLOPT_RESOLVE` entry that pins one host:port to one address.
-	 *
-	 * The port has to be stated explicitly because `CURLOPT_RESOLVE` matches on
-	 * `host:port`, and an entry naming the wrong port is simply ignored — the
-	 * pin would silently do nothing and curl would resolve the name itself.
-	 * A URL without a port takes the scheme's default.
-	 *
-	 * @param string $url The configured model URL.
-	 * @param string $address The address the guard approved.
-	 *
-	 * @return string The `host:port:address` entry.
-	 */
-	private function pinnedResolveEntry(string $url, string $address): string {
-		$parsed = parse_url($url);
-		$host = strtolower(trim(($parsed['host'] ?? ''), '[]'));
-
-		$port = ($parsed['port'] ?? null);
-		if ($port === null) {
-			$port = 80;
-			if (strtolower($parsed['scheme'] ?? '') === 'https') {
-				$port = 443;
-			}
-		}
-
-		return $host . ':' . $port . ':' . $address;
-	}//end pinnedResolveEntry()
 
 	/**
 	 * Decode the raw AI model HTTP body into the suggestion array.
