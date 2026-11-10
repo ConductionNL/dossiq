@@ -355,6 +355,72 @@ import { parseJsonList, parseStepConfig } from './workflowConfigParsing.js'
 
 let nextCheckId = 1
 
+/**
+ * The parts of an edited step config worth saving, or undefined when none is.
+ *
+ * @param {object} localConfig The edited config, as parseStepConfig shaped it.
+ * @param {boolean} escalationEnabled Whether escalation is switched on.
+ * @return {object|undefined} The config to save.
+ */
+function stepConfigPayload(localConfig, escalationEnabled) {
+	const out = Object.fromEntries([
+		['sla', slaPayload(localConfig.sla)],
+		['requiredFields', filledFields(localConfig.requiredFields)],
+		['autoActions', isNonEmptyList(localConfig.autoActions) ? localConfig.autoActions : undefined],
+		['escalationRule', escalationEnabled ? { ...localConfig.escalationRule } : undefined],
+	].filter((part) => part[1] !== undefined))
+	return Object.keys(out).length > 0 ? out : undefined
+}
+
+/**
+ * The service level to save, when it has both a value and a unit.
+ *
+ * @param {{value: number|null, unit: string}} sla The edited service level.
+ * @return {{value: number, unit: string}|undefined} The service level.
+ */
+function slaPayload(sla) {
+	if (!hasSla(sla)) {
+		return undefined
+	}
+	return {
+		value: sla.value,
+		unit: sla.unit,
+	}
+}
+
+/**
+ * Whether a service level has both a value and a unit.
+ *
+ * @param {{value: number|null, unit: string}} sla The edited service level.
+ * @return {boolean} True when both are set.
+ */
+function hasSla(sla) {
+	return sla.value != null && sla.unit !== ''
+}
+
+/**
+ * The required fields that name something, undefined when none does.
+ *
+ * @param {Array} fields The edited field names.
+ * @return {Array<string>|undefined} The non-blank names.
+ */
+function filledFields(fields) {
+	const filled = fields.filter(
+		(f) => typeof f === 'string' && f.trim() !== '',
+	)
+	return filled.length > 0 ? filled : undefined
+}
+
+/**
+ * Whether a value is a list with at least one entry.
+ *
+ * @param {unknown} list The value.
+ * @return {boolean} True for a non-empty array.
+ */
+function isNonEmptyList(list) {
+	return Array.isArray(list) && list.length > 0
+}
+
 export default {
 	name: 'StepConfigPanel',
 	components: {
@@ -431,32 +497,7 @@ export default {
 
 		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
 		buildConfigPayload() {
-			const out = {}
-			if (
-				this.localConfig.sla.value != null
-				&& this.localConfig.sla.unit !== ''
-			) {
-				out.sla = {
-					value: this.localConfig.sla.value,
-					unit: this.localConfig.sla.unit,
-				}
-			}
-			const fields = this.localConfig.requiredFields.filter(
-				(f) => typeof f === 'string' && f.trim() !== '',
-			)
-			if (fields.length > 0) {
-				out.requiredFields = fields
-			}
-			if (
-				Array.isArray(this.localConfig.autoActions)
-				&& this.localConfig.autoActions.length > 0
-			) {
-				out.autoActions = this.localConfig.autoActions
-			}
-			if (this.escalationEnabled) {
-				out.escalationRule = { ...this.localConfig.escalationRule }
-			}
-			return Object.keys(out).length > 0 ? out : undefined
+			return stepConfigPayload(this.localConfig, this.escalationEnabled)
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
