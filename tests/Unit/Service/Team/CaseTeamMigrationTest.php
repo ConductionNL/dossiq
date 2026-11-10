@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Team;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Team\CaseTeamMigration;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
@@ -306,7 +307,10 @@ class CaseTeamMigrationTest extends TestCase {
 			 *
 			 * @throws RuntimeException When the id is on the fail list.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$schema = $patch->target->schema;
 				if (in_array($objectId, $this->failOn, true) === true) {
 					throw new RuntimeException('refused');
 				}

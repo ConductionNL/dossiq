@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseAssignmentService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
@@ -62,7 +63,9 @@ class CaseAssignmentServiceTest extends TestCase {
 				return ($this->cases[$id] ?? null);
 			}
 
-			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->patches[] = $data;
 				$this->cases[$objectId] = array_merge($this->cases[$objectId], $data);
 

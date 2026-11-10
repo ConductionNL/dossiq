@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use Closure;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use RuntimeException;
 
 /**
@@ -263,13 +264,13 @@ class AnonymousRefusingRegister {
 	 * @return array<string, mixed> The stored row.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		ObjectPatch $patch,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$schema = $patch->target->schema;
 		$schema = (string)$schema;
 		$this->admit(action: 'update', schema: $schema, rbac: $_rbac);
 		if (isset($this->rows[$schema][$objectId]) === false) {

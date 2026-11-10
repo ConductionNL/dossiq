@@ -55,6 +55,7 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -580,7 +581,8 @@ class IntakeTermStartListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The fields.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$data = $patch->data;
 				$this->saves->append($data);
 				return $data;
 			}//end patchObject()

@@ -26,12 +26,17 @@
     },
     {
         "patchObject": {
-            "objectId": "b-1",
-            "data": {
-                "status": "Hearing held"
-            },
-            "register": "reg",
-            "schema": "objection"
+            "patch": {
+                "objectId": "b-1",
+                "data": {
+                    "status": "Hearing held"
+                },
+                "target": {
+                    "register": "reg",
+                    "schema": "objection"
+                },
+                "currentUser": null
+            }
         }
     },
     {

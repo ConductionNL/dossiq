@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
 
@@ -101,7 +102,11 @@ class GoldenHearingObjectService {
 	 *
 	 * @return mixed
 	 */
-	public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): mixed {
+	public function patchObject(ObjectPatch $patch): mixed {
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
+		$objectId = $patch->objectId;
+		$data = $patch->data;
 		$this->note(call: ['patchObject' => compact('objectId', 'data', 'register', 'schema')]);
 		$mode = ($this->behaviour['patch'] ?? 'ok');
 		if ($mode === 'throw') {

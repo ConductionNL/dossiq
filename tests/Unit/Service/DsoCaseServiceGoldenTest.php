@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -151,7 +152,7 @@ class DsoCaseServiceGoldenTest extends TestCase {
 				},
 				'searchObjectsBySlug' => ($objects['search'] ?? []),
 				'saveObject' => ($objects['save'] ?? null) === 'throw' ? 'throw' : static fn (array $object, mixed ...$rest): mixed => $entity(($objects['save'] ?? null) ?? ($object + ['id' => 'saved-1'])),
-				'patchObject' => ($objects['patch'] ?? null) === 'throw' ? 'throw' : static fn (string $objectId, array $data, mixed ...$rest): mixed => $entity(($objects['patch'] ?? null) ?? (['id' => $objectId] + $data)),
+				'patchObject' => ($objects['patch'] ?? null) === 'throw' ? 'throw' : static fn (ObjectPatch $patch, mixed ...$rest): mixed => $entity(($objects['patch'] ?? null) ?? (['id' => $patch->objectId] + $patch->data)),
 			]
 		);
 

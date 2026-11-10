@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\MapLegacyArchivalActions;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -102,7 +103,9 @@ class MapLegacyArchivalActionsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->identities[] = ($this->asSystem === true) ? 'system' : 'user';
 				if (in_array($objectId, $this->refuse, true) === true) {
 					throw new RuntimeException('refused');

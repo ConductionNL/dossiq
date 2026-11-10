@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\BackfillCaseLastActivity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -97,7 +98,9 @@ final class BackfillCaseLastActivityTest extends TestCase {
 			 *
 			 * @throws RuntimeException When the case is one that refuses.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				if (in_array($objectId, $this->refuse, true) === true) {
 					throw new RuntimeException('refused');
 				}

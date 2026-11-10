@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DispositionService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -65,7 +66,7 @@ interface DispositionObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null);
+	public function patchObject(ObjectPatch $patch);
 }//end interface
 
 /**
@@ -209,7 +210,9 @@ class DispositionServiceTest extends TestCase {
 			->expects($this->once())
 			->method('patchObject')
 			->willReturnCallback(
-				function (string $objectId, array $data) {
+				function (ObjectPatch $patch) {
+					$objectId = $patch->objectId;
+					$data = $patch->data;
 					$this->assertSame('disposition-uuid', $objectId);
 					$this->assertSame(['approvalStatus' => 'approved', 'goedkeurder' => 'coordinator-uid'], $data);
 					return array_merge(['complaint' => 'complaint-uuid', 'opinion' => 'dismissed'], $data);

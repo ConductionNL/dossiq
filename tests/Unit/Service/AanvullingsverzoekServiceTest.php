@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Woo\WooRequestIntake;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -496,7 +497,9 @@ class AanvullingsverzoekServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				return array_merge(['id' => $objectId, 'portalTask' => 'task-1', 'state' => 'open'], $data);
 			}
 		};

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Fixtures;
 
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 /**
@@ -31,11 +32,12 @@ class PatchingObjectService extends ReplacingObjectService {
 	 * @return object The stored object.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		ObjectPatch $patch,
 	): object {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		if (isset($this->stored[$objectId]) === false) {
 			throw new DoesNotExistException('not found: ' . $objectId);
 		}

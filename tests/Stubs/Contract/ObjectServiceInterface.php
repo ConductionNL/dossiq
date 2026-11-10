@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\Contract;
 
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IUser;
 
 /**
@@ -527,13 +528,9 @@ interface ObjectServiceInterface {
 	 * The merged result goes through the same save path as `saveObject()`, so
 	 * schema validation, the audit trail and event dispatch all still apply.
 	 *
-	 * @param string $objectId Object id, UUID or slug.
-	 * @param array $data The partial data to merge. Omitted keys are PRESERVED.
-	 * @param string|int|null $register Register id, UUID or slug.
-	 * @param string|int|null $schema Schema id, UUID or slug.
+	 * @param ObjectPatch $patch The object, the partial data to merge (omitted keys are PRESERVED), its register and schema and the acting user.
 	 * @param bool $_rbac Apply register RBAC.
 	 * @param bool $_multitenancy Apply organisation scoping.
-	 * @param ?IUser $currentUser Explicit acting user; null uses the session.
 	 *                            Non-HTTP callers (cron, flow runs, imports)
 	 *                            should pass one to avoid a default-deny.
 	 *
@@ -555,13 +552,9 @@ interface ObjectServiceInterface {
 	 * three doubles before the release, or pin.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		ObjectPatch $patch,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
-		?IUser $currentUser = null,
 	): ObjectEntityInterface;
 
 	/**

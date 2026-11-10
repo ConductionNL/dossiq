@@ -19,6 +19,7 @@ use OCA\Dossiq\Listener\PortalContactDetailsChangedListener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -92,7 +93,9 @@ class PortalContactDetailsChangedListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				if ($this->asSystem === false) {
 					$this->wroteAsCaller = true;
 				}

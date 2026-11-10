@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\CasePlanDrain;
 use OCA\Dossiq\Service\CasePlanDrain\CasePlanMigrationService;
 use OCA\Dossiq\Service\CasePlanProjectionService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use UnexpectedValueException;
@@ -364,7 +365,11 @@ final class CasePlanMigrationServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case after the write.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				unset($register, $schema);
 				$this->cases[$objectId] = array_merge($this->cases[$objectId], $data);
 

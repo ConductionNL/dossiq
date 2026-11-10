@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
 use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
@@ -143,7 +144,11 @@ class AdvisoryCommitteeServiceGoldenTest extends TestCase {
 				return $this->answer('saveObject', ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]);
 			}
 
-			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): mixed {
+			public function patchObject(ObjectPatch $patch): mixed {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				return $this->answer('patchObject', ['objectId' => $objectId, 'data' => $data, 'register' => $register, 'schema' => $schema]);
 			}
 		};

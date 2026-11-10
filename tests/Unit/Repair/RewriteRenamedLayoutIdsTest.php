@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\RewriteRenamedLayoutIds;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -164,7 +165,9 @@ final class RewriteRenamedLayoutIdsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored arrangement.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				foreach ($this->rows as $index => $row) {
 					if ($row['@self']['id'] === $objectId) {
 						$this->rows[$index] = array_merge($row, $data);

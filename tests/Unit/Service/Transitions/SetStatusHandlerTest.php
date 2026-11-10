@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -75,7 +76,8 @@ class SetStatusHandlerTest extends TestCase {
 				return $this->entity();
 			}
 
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): ObjectEntity {
+			public function patchObject(ObjectPatch $patch): ObjectEntity {
+				$data = $patch->data;
 				$this->sink = array_merge(($this->sink ?? []), $data);
 
 				return $this->entity();

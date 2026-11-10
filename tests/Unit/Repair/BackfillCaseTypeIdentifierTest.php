@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\BackfillCaseTypeIdentifier;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -110,7 +111,10 @@ final class BackfillCaseTypeIdentifierTest extends TestCase {
 			 *
 			 * @throws RuntimeException When the write changes the readOnly field.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$schema = $patch->target->schema;
 				$stored = $this->rows[(string)$schema][$objectId];
 				if (array_key_exists('caseTypeIdentifier', $data) === true
 					&& $data['caseTypeIdentifier'] !== ($stored['caseTypeIdentifier'] ?? null)

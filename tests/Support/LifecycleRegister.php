@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use RuntimeException;
 
 /**
@@ -147,13 +148,14 @@ class LifecycleRegister extends RefusableRegister {
 	 * @throws RuntimeException When there is no such object, or the save is refused.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		int|string|null $register = null,
-		int|string|null $schema = null,
+		ObjectPatch $patch,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
 		$this->patches += 1;
 		$stored = $this->row(schema: (string)$schema, uuid: $objectId);
 		if ($stored === []) {

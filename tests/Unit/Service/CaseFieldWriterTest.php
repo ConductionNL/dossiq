@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseFieldWriter;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -47,7 +48,9 @@ class CaseFieldWriterTest extends TestCase {
 			/** @var string */
 			public string $patchedId = '';
 
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->patchedId = $objectId;
 				$this->patched = $data;
 
@@ -121,7 +124,7 @@ class CaseFieldWriterTest extends TestCase {
 	 */
 	public function testEmptyChangesTouchNothing(): void {
 		$objectService = new class {
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch): array {
 				throw new RuntimeException('no write may happen for empty changes');
 			}
 		};
@@ -144,7 +147,8 @@ class CaseFieldWriterTest extends TestCase {
 	 */
 	public function testASnapshotWithoutAnIdIsRefused(): void {
 		$objectService = new class {
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$data = $patch->data;
 				return $data;
 			}
 		};
@@ -169,7 +173,9 @@ class CaseFieldWriterTest extends TestCase {
 			/** @var string */
 			public string $patchedId = '';
 
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->patchedId = $objectId;
 
 				return $data;

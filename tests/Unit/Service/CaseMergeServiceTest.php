@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Cases\CaseMergeRule;
 use OCA\Dossiq\Service\Cases\CaseMergeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -359,11 +360,11 @@ final class FakeMergeObjectService {
 	 * @return array<string, mixed>|null The stored row.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		int|string|null $register = null,
-		int|string|null $schema = null,
+		ObjectPatch $patch,
 	): ?array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
+		$schema = $patch->target->schema;
 		$key = (string)$schema;
 		if (isset($this->rows[$key][$objectId]) === false) {
 			return null;

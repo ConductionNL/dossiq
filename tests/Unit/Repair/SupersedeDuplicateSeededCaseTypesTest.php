@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\SupersedeDuplicateSeededCaseTypes;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -69,7 +70,9 @@ class FakeDuplicateCaseTypeObjectService {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+	public function patchObject(ObjectPatch $patch): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
 		$this->patches[] = [$objectId, $data];
 		return array_merge(['id' => $objectId], $data);
 	}//end patchObject()

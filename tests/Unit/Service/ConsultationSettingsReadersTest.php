@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -99,7 +100,9 @@ class SettingsReadersObjectStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+	public function patchObject(ObjectPatch $patch): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
 		return $data + ['id' => $objectId];
 	}//end patchObject()
 }//end class

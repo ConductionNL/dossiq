@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -243,7 +244,9 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The fields.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$data = $patch->data;
+				$schema = $patch->target->schema;
 				$this->writes->append(['patch', $schema, $data]);
 				return $data;
 			}//end patchObject()

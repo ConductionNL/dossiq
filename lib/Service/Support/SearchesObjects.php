@@ -40,6 +40,8 @@
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IUserSession;
 use RuntimeException;
 
@@ -310,10 +312,11 @@ trait SearchesObjects {
 		if (method_exists($objectService, 'patchObject') === true) {
 			return $this->objectToArrayOrNull(
 				value: $objectService->patchObject(
-					objectId: $id,
-					data: $changes,
-					register: $register,
-					schema: $schema
+					patch: new ObjectPatch(
+						objectId: $id,
+						data: $changes,
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					)
 				)
 			);
 		}

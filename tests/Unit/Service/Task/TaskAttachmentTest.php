@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -74,7 +75,8 @@ class TaskAttachmentTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored case.
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$data = $patch->data;
 				$this->case = array_merge($this->case, $data);
 
 				return $this->case;

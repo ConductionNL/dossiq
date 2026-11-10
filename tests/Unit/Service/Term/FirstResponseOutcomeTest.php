@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -222,11 +223,10 @@ final class FakeOutcomeObjectService {
 	 * @return array<string, mixed>|null The stored case.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		int|string|null $register = null,
-		int|string|null $schema = null,
+		ObjectPatch $patch,
 	): ?array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
 		if (isset($this->cases[$objectId]) === false) {
 			return null;
 		}

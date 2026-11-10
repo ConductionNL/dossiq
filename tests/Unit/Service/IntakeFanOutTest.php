@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\IntakeFanOut;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -109,7 +110,9 @@ class FanOutCaseStore {
 	 *
 	 * @return array<string, mixed> The case as stored.
 	 */
-	public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+	public function patchObject(ObjectPatch $patch): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
 		$this->cases[$objectId] = array_merge($this->cases[$objectId] ?? [], $data);
 
 		return $this->cases[$objectId];
