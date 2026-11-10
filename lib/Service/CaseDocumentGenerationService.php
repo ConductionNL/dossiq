@@ -147,8 +147,27 @@ class CaseDocumentGenerationService {
 	 * @return ActionResult|null The refusal.
 	 */
 	private function prepareDocument(GeneratedDocumentRun $run, array $template): ?ActionResult {
-		$body = (string)($template['body'] ?? '');
-		$missing = $this->missingFields(template: $body, case: $run->case);
+		$refusal = $this->fieldRefusal(run: $run, template: $template);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$run->name = $this->documentName(run: $run, template: $template);
+
+		return $this->convertTemplate(run: $run, body: (string)($template['body'] ?? ''));
+	}//end prepareDocument()
+
+	/**
+	 * A placeholder the case cannot answer, or a template without a document
+	 * type, refuses; otherwise the type is set and null returned.
+	 *
+	 * @param GeneratedDocumentRun $run      The document being made.
+	 * @param array<string, mixed> $template The library template.
+	 *
+	 * @return ActionResult|null The refusal.
+	 */
+	private function fieldRefusal(GeneratedDocumentRun $run, array $template): ?ActionResult {
+		$missing = $this->missingFields(template: (string)($template['body'] ?? ''), case: $run->case);
 		if ($missing !== []) {
 			return new ActionResult(succeeded: false, error: 'missing_template_field:' . $missing[0]);
 		}
@@ -158,7 +177,18 @@ class CaseDocumentGenerationService {
 			return new ActionResult(succeeded: false, error: 'missing_document_type');
 		}
 
-		$run->name = $this->documentName(run: $run, template: $template);
+		return null;
+	}//end fieldRefusal()
+
+	/**
+	 * Put the template into Filinq's syntax, or refuse one it cannot carry.
+	 *
+	 * @param GeneratedDocumentRun $run  The document being made.
+	 * @param string               $body The template body.
+	 *
+	 * @return ActionResult|null The refusal.
+	 */
+	private function convertTemplate(GeneratedDocumentRun $run, string $body): ?ActionResult {
 		try {
 			$run->text = $this->templating->syntax->forDocument(template: $body, what: 'template');
 		} catch (UnmappableStep $e) {
@@ -166,7 +196,7 @@ class CaseDocumentGenerationService {
 		}
 
 		return null;
-	}//end prepareDocument()
+	}//end convertTemplate()
 
 	/**
 	 * The document's name: the template's title, or its id when it has none.
@@ -254,6 +284,17 @@ class CaseDocumentGenerationService {
 			return new ActionResult(succeeded: false, error: 'document_generation_failed: ' . $error);
 		}
 
+		return $this->resultRefusal(event: $event);
+	}//end generationRefusal()
+
+	/**
+	 * No Filinq answered, or it stored no file: the refusal; null otherwise.
+	 *
+	 * @param DocumentGenerationRequestedEvent $event The answered request.
+	 *
+	 * @return ActionResult|null The refusal.
+	 */
+	private function resultRefusal(DocumentGenerationRequestedEvent $event): ?ActionResult {
 		$result = $event->getResult();
 		if ($event->isHandled() === false || $result === null) {
 			return $this->filinqRequired();
@@ -264,7 +305,7 @@ class CaseDocumentGenerationService {
 		}
 
 		return null;
-	}//end generationRefusal()
+	}//end resultRefusal()
 
 	/**
 	 * File the file Filinq stored on the case.
