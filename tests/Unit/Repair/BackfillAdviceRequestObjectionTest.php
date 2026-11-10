@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\BackfillAdviceRequestObjection;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -91,7 +92,9 @@ class BackfillAdviceRequestObjectionTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->saves[] = ['uuid' => $objectId, 'object' => $data];
 
 				return $data;

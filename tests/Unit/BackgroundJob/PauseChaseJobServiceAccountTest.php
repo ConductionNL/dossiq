@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
@@ -534,8 +535,10 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed ...$rest): array {
-				return $this->test->write(schema: (string)($rest['schema'] ?? ''), object: array_merge(['id' => $objectId], $data));
+			public function patchObject(ObjectPatch $patch, mixed ...$rest): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				return $this->test->write(schema: (string)$patch->target->schema, object: array_merge(['id' => $objectId], $data));
 			}
 		};
 	}//end objectService()

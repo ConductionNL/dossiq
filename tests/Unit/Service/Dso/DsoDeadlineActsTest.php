@@ -33,6 +33,7 @@ use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IUserSession;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
@@ -108,7 +109,9 @@ class DsoDeadlineActsTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->patches[] = ['id' => $objectId] + $data;
 				return $data;
 			}

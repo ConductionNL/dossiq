@@ -45,6 +45,7 @@ use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\OpenRegister\Service\Form\FormDependent;
 use OCA\OpenRegister\Service\Form\FormDependentsCheck;
 use OCA\OpenRegister\Service\Form\FormDestinationValidator;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -159,7 +160,10 @@ class BoundFormsRegistrationTest extends TestCase {
 				return ['results' => $this->caseTypes];
 			}//end searchObjects()
 
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$schema = $patch->target->schema;
 				$this->patches[] = ['id' => $objectId, 'data' => $data, 'schema' => $schema];
 
 				return array_merge(['id' => $objectId], $data);

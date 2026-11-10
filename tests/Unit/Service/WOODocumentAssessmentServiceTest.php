@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -73,7 +74,7 @@ interface RedactionProposalObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array;
+	public function patchObject(ObjectPatch $patch): array;
 }//end interface
 
 /**
@@ -453,7 +454,8 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 
 		$capturedObject = null;
 		$objectServiceMock->method('patchObject')->willReturnCallback(
-			function (string $objectId, array $data) use (&$capturedObject, $existing) {
+			function (ObjectPatch $patch) use (&$capturedObject, $existing) {
+				$data = $patch->data;
 				$capturedObject = array_merge($existing, $data);
 				return $capturedObject;
 			}

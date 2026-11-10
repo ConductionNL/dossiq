@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\HearingCalendarService;
 use OCA\Dossiq\Service\HearingService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -81,7 +82,7 @@ interface HearingObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null);
+	public function patchObject(ObjectPatch $patch);
 }//end interface
 
 /**
@@ -249,9 +250,9 @@ class HearingServiceTest extends TestCase {
 		$objectServiceMock
 			->expects($this->once())
 			->method('patchObject')
-			->with('hearing-uuid', $this->anything())
+			->with($this->callback(static fn (ObjectPatch $patch): bool => $patch->objectId === 'hearing-uuid'))
 			->willReturnCallback(
-				static fn (string $objectId, array $data): array => array_merge(['complaint' => 'c-1', 'type' => 'oral'], $data)
+				static fn (ObjectPatch $patch): array => array_merge(['complaint' => 'c-1', 'type' => 'oral'], $patch->data)
 			);
 
 		$result = $this->service->recordOutcome('hearing-uuid', $outcome);

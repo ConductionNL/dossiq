@@ -408,20 +408,25 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": [
-                            "actor:jurist-1",
-                            "bezwaarmaker:piet",
-                            "gemachtigde:advocaat",
-                            "primair-beslisser:team-a",
-                            "bac-secretaris:bac-1"
-                        ]
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": [
+                                "actor:jurist-1",
+                                "bezwaarmaker:piet",
+                                "gemachtigde:advocaat",
+                                "primair-beslisser:team-a",
+                                "bac-secretaris:bac-1"
+                            ]
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -534,25 +539,30 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": [
-                            "actor:jurist-1",
-                            "bezwaarmaker:piet",
-                            "gemachtigde:advocaat",
-                            "primair-beslisser:team-a",
-                            "bac-secretaris:bac-1"
-                        ],
-                        "legalCostsCompensation": {
-                            "awarded": true,
-                            "awardedPoints": 2,
-                            "totalAmount": 1250.0
-                        }
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": [
+                                "actor:jurist-1",
+                                "bezwaarmaker:piet",
+                                "gemachtigde:advocaat",
+                                "primair-beslisser:team-a",
+                                "bac-secretaris:bac-1"
+                            ],
+                            "legalCostsCompensation": {
+                                "awarded": true,
+                                "awardedPoints": 2,
+                                "totalAmount": 1250.0
+                            }
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -655,23 +665,28 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": [
-                            "actor:jurist-1",
-                            "bezwaarmaker:piet",
-                            "gemachtigde:advocaat",
-                            "primair-beslisser:team-a",
-                            "bac-secretaris:bac-1"
-                        ],
-                        "legalCostsCompensation": {
-                            "totalAmount": 0.0
-                        }
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": [
+                                "actor:jurist-1",
+                                "bezwaarmaker:piet",
+                                "gemachtigde:advocaat",
+                                "primair-beslisser:team-a",
+                                "bac-secretaris:bac-1"
+                            ],
+                            "legalCostsCompensation": {
+                                "totalAmount": 0.0
+                            }
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -777,24 +792,29 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": [
-                            "actor:jurist-1",
-                            "bezwaarmaker:piet",
-                            "gemachtigde:advocaat",
-                            "primair-beslisser:team-a",
-                            "bac-secretaris:bac-1"
-                        ],
-                        "legalCostsCompensation": {
-                            "0": "x",
-                            "totalAmount": 5.5
-                        }
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": [
+                                "actor:jurist-1",
+                                "bezwaarmaker:piet",
+                                "gemachtigde:advocaat",
+                                "primair-beslisser:team-a",
+                                "bac-secretaris:bac-1"
+                            ],
+                            "legalCostsCompensation": {
+                                "0": "x",
+                                "totalAmount": 5.5
+                            }
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -892,20 +912,25 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": [
-                            "actor:jurist-1",
-                            "bezwaarmaker:piet",
-                            "gemachtigde:advocaat",
-                            "primair-beslisser:team-a",
-                            "bac-secretaris:bac-1"
-                        ]
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": [
+                                "actor:jurist-1",
+                                "bezwaarmaker:piet",
+                                "gemachtigde:advocaat",
+                                "primair-beslisser:team-a",
+                                "bac-secretaris:bac-1"
+                            ]
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -983,16 +1008,21 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": [
-                            "actor:jurist-1"
-                        ]
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": [
+                                "actor:jurist-1"
+                            ]
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -1066,14 +1096,19 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": []
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": []
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -1157,18 +1192,23 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": [
-                            "actor:x",
-                            "bezwaarmaker:x",
-                            "gemachtigde:x"
-                        ]
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": [
+                                "actor:x",
+                                "bezwaarmaker:x",
+                                "gemachtigde:x"
+                            ]
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -1563,20 +1603,25 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": [
-                            "actor:jurist-1",
-                            "bezwaarmaker:piet",
-                            "gemachtigde:advocaat",
-                            "primair-beslisser:team-a",
-                            "bac-secretaris:bac-1"
-                        ]
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": [
+                                "actor:jurist-1",
+                                "bezwaarmaker:piet",
+                                "gemachtigde:advocaat",
+                                "primair-beslisser:team-a",
+                                "bac-secretaris:bac-1"
+                            ]
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -1694,23 +1739,28 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "dec-1",
-                    "data": {
-                        "decisionRef": "decision-ref-1",
-                        "status": "awaiting-decidesk",
-                        "notifiedRecipients": [
-                            "actor:jurist-1",
-                            "bezwaarmaker:piet",
-                            "gemachtigde:advocaat",
-                            "primair-beslisser:team-a",
-                            "bac-secretaris:bac-1"
-                        ],
-                        "legalCostsCompensation": {
-                            "totalAmount": 3.0
-                        }
-                    },
-                    "register": "reg",
-                    "schema": "dec"
+                    "patch": {
+                        "objectId": "dec-1",
+                        "data": {
+                            "decisionRef": "decision-ref-1",
+                            "status": "awaiting-decidesk",
+                            "notifiedRecipients": [
+                                "actor:jurist-1",
+                                "bezwaarmaker:piet",
+                                "gemachtigde:advocaat",
+                                "primair-beslisser:team-a",
+                                "bac-secretaris:bac-1"
+                            ],
+                            "legalCostsCompensation": {
+                                "totalAmount": 3.0
+                            }
+                        },
+                        "target": {
+                            "register": "reg",
+                            "schema": "dec"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],

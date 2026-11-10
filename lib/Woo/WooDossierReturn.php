@@ -41,6 +41,8 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -218,10 +220,11 @@ class WooDossierReturn {
 	private function writeItems(object $objectService, array $target, array $collection, array $items): mixed {
 		if (method_exists($objectService, 'patchObject') === true) {
 			return $objectService->patchObject(
-				objectId: $target['id'],
-				data: ['items' => $items],
-				register: $target['register'],
-				schema: $target['schema'],
+				patch: new ObjectPatch(
+					objectId: $target['id'],
+					data: ['items' => $items],
+					target: new ObjectFindTarget(register: $target['register'], schema: $target['schema'])
+				),
 				_rbac: false,
 				_multitenancy: false,
 			);

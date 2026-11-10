@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\RecolourShippedStatusTypes;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTypePalette;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -86,7 +87,9 @@ class RecolourShippedStatusTypesTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				if (in_array($objectId, $this->refuse, true) === true) {
 					throw new RuntimeException('refused');
 				}

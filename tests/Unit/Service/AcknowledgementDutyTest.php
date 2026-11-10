@@ -51,6 +51,7 @@ use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooRequestForm;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -95,11 +96,10 @@ class AcknowledgementCaseStore {
 	 * @return array<string, mixed> The case as it now stands.
 	 */
 	public function patchObject(
-		string $objectId,
-		array $data,
-		string $register = '',
-		string $schema = '',
+		ObjectPatch $patch,
 	): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
 		$this->cases[$objectId] = array_merge(($this->cases[$objectId] ?? []), $data);
 
 		return $this->cases[$objectId];

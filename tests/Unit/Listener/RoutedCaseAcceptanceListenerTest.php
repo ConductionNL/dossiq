@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\Routing\TakeBackWindow;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -59,7 +60,9 @@ class AcceptanceCaseStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function patchObject(string $objectId, array $data, string $register = '', string $schema = ''): array {
+	public function patchObject(ObjectPatch $patch): array {
+		$objectId = $patch->objectId;
+		$data = $patch->data;
 		$this->patches[] = ['id' => $objectId, 'data' => $data];
 		return $data;
 	}//end patchObject()

@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IUserSession;
@@ -164,7 +165,9 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 			}
 		);
 		$this->objectService->method('patchObject')->willReturnCallback(
-			function (string $objectId, array $data): ObjectEntityInterface {
+			function (ObjectPatch $patch): ObjectEntityInterface {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->writes[] = ['method' => 'patchObject', 'data' => $data];
 				return $this->entity(row: (['id' => $objectId] + $data));
 			}

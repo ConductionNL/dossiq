@@ -17,12 +17,17 @@
     },
     {
         "patchObject": {
-            "objectId": "b-1",
-            "data": {
-                "dwingendStatus": true
-            },
-            "register": "reg",
-            "schema": "objection"
+            "patch": {
+                "objectId": "b-1",
+                "data": {
+                    "dwingendStatus": true
+                },
+                "target": {
+                    "register": "reg",
+                    "schema": "objection"
+                },
+                "currentUser": null
+            }
         }
     }
 ]

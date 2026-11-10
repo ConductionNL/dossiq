@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -133,7 +134,7 @@ class DecisionServiceGoldenTest extends TestCase {
 			[
 				'find' => ($objects['find'] ?? null) === 'throw' ? 'throw' : static fn (int|string $id, mixed ...$rest): mixed => $entity(($objects['find'] ?? [])[$id] ?? null),
 				'saveObject' => ($objects['save'] ?? null) === 'throw' ? 'throw' : static fn (array $object, mixed ...$rest): mixed => $entity(($objects['save'] ?? null) ?? ($object + ['id' => 'dec-new'])),
-				'patchObject' => ($objects['patch'] ?? null) === 'throw' ? 'throw' : static fn (string $objectId, array $data, mixed ...$rest): mixed => $entity(($objects['patch'] ?? null) ?? (['id' => $objectId, 'patched' => true] + $data)),
+				'patchObject' => ($objects['patch'] ?? null) === 'throw' ? 'throw' : static fn (ObjectPatch $patch, mixed ...$rest): mixed => $entity(($objects['patch'] ?? null) ?? (['id' => $patch->objectId, 'patched' => true] + $patch->data)),
 			]
 		);
 		$settings = $this->double(

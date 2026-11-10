@@ -33,15 +33,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -118,13 +123,18 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -201,14 +211,19 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -285,14 +300,19 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -371,15 +391,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -458,15 +483,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"created\",\"at\":\"x\",\"by\":\"y\"},{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"created\",\"at\":\"x\",\"by\":\"y\"},{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -545,15 +575,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -632,15 +667,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -691,15 +731,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -765,15 +810,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -831,15 +881,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -1017,15 +1072,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ]
         ],
@@ -1059,15 +1119,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [
@@ -1146,15 +1211,20 @@
             [
                 "ObjectServiceInterface::patchObject",
                 {
-                    "objectId": "case-1",
-                    "data": {
-                        "dsoStatus": "verleend",
-                        "besluitdatum": "2026-02-03",
-                        "dsoNotes": "Besloten",
-                        "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
-                    },
-                    "register": "",
-                    "schema": ""
+                    "patch": {
+                        "objectId": "case-1",
+                        "data": {
+                            "dsoStatus": "verleend",
+                            "besluitdatum": "2026-02-03",
+                            "dsoNotes": "Besloten",
+                            "activity": "[{\"type\":\"dsoStatusChanged\",\"userId\":\"anna\",\"oldStatus\":\"in_behandeling\",\"newStatus\":\"verleend\",\"note\":\"Besloten\",\"at\":\"<now>\",\"by\":\"handler-1\"}]"
+                        },
+                        "target": {
+                            "register": "",
+                            "schema": ""
+                        },
+                        "currentUser": null
+                    }
                 }
             ],
             [

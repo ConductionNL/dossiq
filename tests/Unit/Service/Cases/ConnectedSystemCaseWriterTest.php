@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -412,7 +413,9 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 			 *
 			 * @return array The stored object.
 			 */
-			public function patchObject(string $objectId, array $data, ?string $register=null, ?string $schema=null, mixed ...$scope): array {
+			public function patchObject(ObjectPatch $patch, mixed ...$scope): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->test->record(method: 'patchObject', scope: $scope, changes: $data);
 				$this->test->cases[$objectId] = ($data + $this->test->cases[$objectId]);
 				return $this->test->cases[$objectId];

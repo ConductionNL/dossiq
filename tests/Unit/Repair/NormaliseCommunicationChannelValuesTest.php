@@ -24,6 +24,7 @@ use OCA\Dossiq\Repair\NormaliseCommunicationChannelValues;
 use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -81,7 +82,9 @@ class NormaliseCommunicationChannelValuesTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				if (in_array($objectId, $this->refuse, true) === true) {
 					throw new RuntimeException('refused');
 				}

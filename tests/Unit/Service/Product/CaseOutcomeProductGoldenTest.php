@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Product;
 use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -270,7 +271,11 @@ class CaseOutcomeProductGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, string $register = '', string $schema = ''): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = ($patch->target->register ?? '');
+				$schema = ($patch->target->schema ?? '');
 				$this->log(call: 'patch', args: ['id' => $objectId, 'data' => $data, 'register' => $register, 'schema' => $schema]);
 				$this->world[$schema][$objectId] = array_merge($this->world[$schema][$objectId], $data);
 				return $this->world[$schema][$objectId];

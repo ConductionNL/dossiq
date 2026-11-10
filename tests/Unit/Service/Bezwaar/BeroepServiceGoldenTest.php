@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Bezwaar\BeroepService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -91,7 +92,11 @@ final class GoldenAppealObjects {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): ?array {
+	public function patchObject(ObjectPatch $patch): ?array {
+		$register = $patch->target->register;
+		$schema = $patch->target->schema;
+		$objectId = $patch->objectId;
+		$data = $patch->data;
 		$this->log[] = ['patchObject' => compact('objectId', 'data', 'register', 'schema')];
 		return $this->answer(key: 'patch', fields: $data + ['id' => $objectId, 'patched' => true]);
 	}//end patchObject()

@@ -29,6 +29,7 @@ use OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep;
 use OCA\Dossiq\Repair\CaseFlowSeedIndex;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -86,7 +87,10 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The written fields with the id.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$schema = $patch->target->schema;
 				$this->saved[] = ['schema' => $schema, 'object' => $data + ['id' => $objectId], 'patch' => true];
 
 				return $data + ['id' => $objectId];

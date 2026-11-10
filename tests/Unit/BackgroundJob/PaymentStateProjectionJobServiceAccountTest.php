@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\Money\CasePaymentState;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -180,23 +181,21 @@ class PaymentStateProjectionJobServiceAccountTest extends TestCase {
 			 * @return array<string, mixed> The stored row.
 			 */
 			public function patchObject(
-				string $objectId,
-				array $data,
-				string|int|null $register = null,
-				string|int|null $schema = null,
+				ObjectPatch $patch,
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				if ($this->system === 0 && array_intersect(array_keys($data), ['paymentState', 'paymentStateCheckedAt']) !== []) {
 					$this->refusals[] = 'Cannot modify readOnly property: paymentState';
 					throw new \RuntimeException('Cannot modify readOnly property: paymentState');
 				}
 
 				return parent::patchObject(
-					objectId: $objectId,
-					data: $data,
-					register: $register,
-					schema: $schema,
+					patch: $patch,
 					_rbac: $_rbac,
 					_multitenancy: $_multitenancy
 				);

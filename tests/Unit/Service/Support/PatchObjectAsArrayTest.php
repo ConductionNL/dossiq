@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -60,7 +61,11 @@ class PatchObjectAsArrayTest extends TestCase {
 			/** @var array<string, mixed> */
 			public array $call = [];
 
-			public function patchObject(string $objectId, array $data, string|int|null $register = null, string|int|null $schema = null): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->call = ['id' => $objectId, 'data' => $data, 'register' => $register, 'schema' => $schema];
 
 				return ['id' => $objectId, 'status' => 'closed', 'title' => 'kept'];

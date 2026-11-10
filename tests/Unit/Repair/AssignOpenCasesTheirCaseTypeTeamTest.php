@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\AssignOpenCasesTheirCaseTypeTeam;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -107,7 +108,10 @@ class AssignOpenCasesTheirCaseTypeTeamTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved row.
 			 */
-			public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$schema = $patch->target->schema;
 				$this->test->rows[(string)$schema][$objectId] = array_merge($this->test->rows[(string)$schema][$objectId], $data);
 				$this->test->patches[] = [(string)$schema, $objectId, $data];
 

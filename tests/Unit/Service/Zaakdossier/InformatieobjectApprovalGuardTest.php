@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -71,7 +72,9 @@ class InformatieobjectApprovalGuardTest extends TestCase {
 		$objects->method('find')->willReturn($entity);
 		$objects->method('searchObjects')->willReturn([$document]);
 		$objects->method('patchObject')->willReturnCallback(
-			function (string $objectId, array $data, ...$rest): ObjectEntityInterface {
+			function (ObjectPatch $patch, ...$rest): ObjectEntityInterface {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->written[] = $data;
 				$stored = $this->createMock(ObjectEntityInterface::class);
 				$stored->method('getUuid')->willReturn($objectId);

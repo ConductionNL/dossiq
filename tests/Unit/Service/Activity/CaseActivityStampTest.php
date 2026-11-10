@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Activity;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Activity\CaseActivityStamp;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -114,7 +115,11 @@ class CaseActivityStampTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The patched object.
 			 */
-			public function patchObject(string $objectId, array $data, mixed $register = null, mixed $schema = null): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
+				$objectId = $patch->objectId;
+				$data = $patch->data;
 				$this->test->patches[] = compact('objectId', 'data', 'register', 'schema');
 				return array_merge(['id' => $objectId], $data);
 			}

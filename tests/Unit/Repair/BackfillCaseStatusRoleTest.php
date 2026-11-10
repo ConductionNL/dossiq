@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\BackfillCaseStatusRole;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectPatch;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -119,7 +120,10 @@ final class BackfillCaseStatusRoleTest extends TestCase {
 			 *
 			 * @throws RuntimeException When told to fail on this row, or when the write changes the readOnly field.
 			 */
-			public function patchObject(string $objectId, array $data, int|string $register, int|string $schema): array {
+			public function patchObject(ObjectPatch $patch): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$schema = $patch->target->schema;
 				if (in_array($objectId, $this->failOn, true) === true) {
 					throw new RuntimeException('store refused');
 				}
