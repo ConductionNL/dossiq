@@ -93,36 +93,11 @@ class MigrateCasePlansCommand extends Command {
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$dryRun = ($input->getOption('dry-run') === true);
-		$cases = $input->getArgument('case');
-		if (is_array($cases) === false) {
-			$cases = [];
-		}
-
-		$reports = [];
-		foreach ($cases as $caseId) {
-			$reports[] = $this->migration->migrateCaseById(caseId: (string)$caseId, dryRun: $dryRun);
-		}
-
-		if ($cases === []) {
-			$reports = $this->migration->migrateAll(dryRun: $dryRun);
-		}
+		$reports = $this->reportsFor(cases: $this->requestedCases(input: $input), dryRun: $dryRun);
 
 		$unmappable = 0;
 		foreach ($reports as $report) {
-			if ($report['outcome'] === CasePlanMigrationService::UNMAPPABLE) {
-				$unmappable++;
-			}
-
-			$output->writeln(
-				sprintf(
-					'%s %s (created %d, existing %d): %s',
-					$report['outcome'],
-					$report['caseId'],
-					$report['created'] ?? 0,
-					$report['existing'] ?? 0,
-					$report['reason']
-				)
-			);
+			$unmappable += (int)$this->printReport(output: $output, report: $report);
 		}
 
 		$output->writeln(sprintf('%d case(s) reported, %d unmappable.', count($reports), $unmappable));
@@ -132,4 +107,64 @@ class MigrateCasePlansCommand extends Command {
 
 		return 0;
 	}//end execute()
+
+	/**
+	 * The cases named on the command line.
+	 *
+	 * @param InputInterface $input The console input.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function requestedCases(InputInterface $input): array {
+		$cases = $input->getArgument('case');
+		if (is_array($cases) === false) {
+			return [];
+		}
+
+		return $cases;
+	}//end requestedCases()
+
+	/**
+	 * Migrate the named cases one by one, or every case when none is named.
+	 *
+	 * @param array<int, mixed> $cases  The named cases.
+	 * @param bool              $dryRun Whether nothing may be written.
+	 *
+	 * @return array<int, array<string, mixed>> One report per case.
+	 */
+	private function reportsFor(array $cases, bool $dryRun): array {
+		$reports = [];
+		foreach ($cases as $caseId) {
+			$reports[] = $this->migration->migrateCaseById(caseId: (string)$caseId, dryRun: $dryRun);
+		}
+
+		if ($cases === []) {
+			$reports = $this->migration->migrateAll(dryRun: $dryRun);
+		}
+
+		return $reports;
+	}//end reportsFor()
+
+	/**
+	 * Print one case's report line, and say whether it was unmappable.
+	 *
+	 * @param OutputInterface      $output The console.
+	 * @param array<string, mixed> $report The case's report.
+	 *
+	 * @return bool True for an unmappable case.
+	 */
+	private function printReport(OutputInterface $output, array $report): bool {
+		$output->writeln(
+			sprintf(
+				'%s %s (created %d, existing %d): %s',
+				$report['outcome'],
+				$report['caseId'],
+				$report['created'] ?? 0,
+				$report['existing'] ?? 0,
+				$report['reason']
+			)
+		);
+
+		return $report['outcome'] === CasePlanMigrationService::UNMAPPABLE;
+	}//end printReport()
 }//end class
