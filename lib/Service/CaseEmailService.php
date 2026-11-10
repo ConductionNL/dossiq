@@ -29,7 +29,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Email\OutboundMailRules;
-use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
@@ -98,6 +97,9 @@ class CaseEmailService {
 	 * @param array<string> $attachments File paths to attach
 	 * @param string $category What the mail is: `case-update` (default), `besluit` or `statutory`
 	 *
+	 * A category a case mail cannot carry is refused first, by
+	 * CaseMailOptOut::assertCaseMailCategory() (`invalid-category`).
+	 *
 	 * OutboundCaseMail's refusals (sender-not-held, mail-account-unavailable,
 	 * mail-transport-unavailable) pass through to the controller unchanged.
 	 *
@@ -106,7 +108,6 @@ class CaseEmailService {
 	 *
 	 * @throws \RuntimeException If the case cannot be read or the recipient is not allowed
 	 * @throws RecipientOptedOutException If integriq says this person may not be sent it
-	 * @throws InvalidArgumentException If the category is not one a case mail can carry
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
@@ -120,9 +121,7 @@ class CaseEmailService {
 		array $attachments = [],
 		string $category = CaseMailOptOut::CATEGORY_CASE_UPDATE,
 	): array {
-		if (in_array($category, CaseMailOptOut::CASE_MAIL_CATEGORIES, true) === false) {
-			throw new InvalidArgumentException('invalid-category');
-		}
+		$this->sending->optOut->assertCaseMailCategory(category: $category);
 
 		$send = new CaseMailSend(caseId: $caseId, recipient: $to);
 		$send->subject = $subject;
