@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
@@ -157,19 +158,7 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	 * @return bool
 	 */
 	private function isChecklistRunSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('inspection_checklist_run_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)(
-			$object['@self']['schema'] ?? ($object['schema'] ?? '')
-		);
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('inspection_checklist_run_schema'));
 	}//end isChecklistRunSchema()
 
 	/**

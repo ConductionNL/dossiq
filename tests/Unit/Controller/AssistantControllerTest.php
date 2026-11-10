@@ -234,6 +234,25 @@ class AssistantControllerTest extends TestCase {
 	}//end testCaseNotFoundReturns404()
 
 	/**
+	 * A failure whose code is no HTTP error status is a 500.
+	 *
+	 * @return void
+	 */
+	public function testAFailureWithoutAnErrorStatusIsA500(): void {
+		$this->stubParams(['caseId' => 'case-1', 'message' => 'hello']);
+
+		foreach ([0, 302, 600] as $code) {
+			$service = $this->createMock(CaseAssistantService::class);
+			$service->method('converse')->willThrowException(new Exception('broken', $code));
+			$this->caseAssistantService = $service;
+
+			$response = $this->controller()->converse();
+
+			$this->assertSame(500, $response->getStatus(), 'code ' . $code);
+		}
+	}//end testAFailureWithoutAnErrorStatusIsA500()
+
+	/**
 	 * A HermiqAssistantException's status AND errorCode are both relayed.
 	 *
 	 * @return void
