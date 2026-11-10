@@ -318,38 +318,13 @@ class AanvullingsverzoekResolutionService {
 	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
 	 */
 	public function markReceived(array $items, array $received, DateTimeImmutable $moment): array {
-		$arrived = [];
-		foreach ($received as $one) {
-			$text = mb_strtolower(trim((string)$one));
-			if ($text !== '') {
-				$arrived[] = $text;
-			}
-		}
-
+		$marker = new ItemArrivalMarker(received: $received, moment: $moment);
 		$marked = [];
 		foreach ($items as $item) {
-			if (is_array($item) === false) {
-				continue;
+			if (is_array($item) === true && trim((string)($item['item'] ?? '')) !== '') {
+				$marked[] = $marker->mark(item: $item);
 			}
-
-			$text = trim((string)($item['item'] ?? ''));
-			if ($text === '') {
-				continue;
-			}
-
-			$already = (($item['received'] ?? false) === true);
-			$nowHere = in_array(mb_strtolower($text), $arrived, true);
-
-			$row = $item;
-			$row['item'] = $text;
-			$row['received'] = ($already || $nowHere);
-
-			if ($already === false && $nowHere === true) {
-				$row['receivedAt'] = $moment->format('c');
-			}
-
-			$marked[] = $row;
-		}//end foreach
+		}
 
 		return $marked;
 	}//end markReceived()
