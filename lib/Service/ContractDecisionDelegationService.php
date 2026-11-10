@@ -292,12 +292,13 @@ class ContractDecisionDelegationService {
 	 */
 	public function readDecisionState(string $decisionId, string $actorId): array {
 		$read = new DecisionStateRead(decisionId: trim($decisionId), actorId: trim($actorId));
-		$read->eventClass = $this->firstExistingClass(candidates: self::DECISION_STATE_EVENTS);
-		if ($read->eventClass === null || $read->decisionId === '' || $read->actorId === '') {
+		$eventClass = $this->firstExistingClass(candidates: self::DECISION_STATE_EVENTS);
+		$read->eventClass = $eventClass;
+		if ($eventClass === null || $read->decisionId === '' || $read->actorId === '') {
 			return $this->unreadableRequest(read: $read);
 		}
 
-		return $this->dispatchStateRead(read: $read);
+		return $this->dispatchStateRead(read: $read, eventClass: $eventClass);
 	}//end readDecisionState()
 
 	/**
@@ -325,14 +326,15 @@ class ContractDecisionDelegationService {
 	/**
 	 * Dispatch the read and answer from what decidiq wrote back.
 	 *
-	 * @param DecisionStateRead $read The read, with an installed event class.
+	 * @param DecisionStateRead $read       The read.
+	 * @param string            $eventClass The installed read event class.
 	 *
 	 * @return array{state: string, status: string, envelope: array<string, mixed>}
 	 */
-	private function dispatchStateRead(DecisionStateRead $read): array {
+	private function dispatchStateRead(DecisionStateRead $read, string $eventClass): array {
 		try {
 			// Positional ctor args (decidiq contract): sourceApp, decisionId, actorId.
-			$event = new $read->eventClass(self::SOURCE_APP, $read->decisionId, $read->actorId);
+			$event = new $eventClass(self::SOURCE_APP, $read->decisionId, $read->actorId);
 
 			$this->eventDispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
