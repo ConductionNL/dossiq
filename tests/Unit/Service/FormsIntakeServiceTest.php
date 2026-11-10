@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\FormsIntakeService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Form\FormSubmission;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -273,8 +274,10 @@ class FormsIntakeServiceTest extends TestCase {
 			 */
 			public array $calls = [];
 
-			public function submit(array $destination, ?array $mapping, array $payload, mixed $subject = null, ?string $idempotencyKey = null, string $scope = ''): array {
-				$this->calls[] = ['destination' => $destination, 'mapping' => $mapping, 'payload' => $payload, 'scope' => $scope];
+			public function submit(FormSubmission $submission, ?string $idempotencyKey = null): array {
+				$destination = $submission->writes[0];
+				unset($destination['mapping']);
+				$this->calls[] = ['destination' => $destination, 'mapping' => $submission->writes[0]['mapping'], 'payload' => $submission->payload, 'scope' => $submission->scope];
 
 				return ['id' => 'case-submitted', 'reference' => 'Z-2026-000123'];
 			}//end submit()
@@ -307,7 +310,7 @@ class FormsIntakeServiceTest extends TestCase {
 	 */
 	public function testARefusedSubmitOpensNothing(): void {
 		$submitter = new class() {
-			public function submit(array $destination, ?array $mapping, array $payload, mixed $subject = null, ?string $idempotencyKey = null, string $scope = ''): array {
+			public function submit(FormSubmission $submission, ?string $idempotencyKey = null): array {
 				throw new class('refused') extends \RuntimeException {
 					public function getFindings(): array {
 						return [['property' => 'title', 'code' => 'required-unmapped', 'message' => 'x']];
