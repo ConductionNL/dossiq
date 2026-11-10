@@ -126,61 +126,126 @@ class ApplicantMessage {
 			return $this->outcome(sent: false, reason: 'moment-not-declared');
 		}
 
-		$recipient = $this->recipientOn(case: $case);
-		if ($recipient === '') {
-			$this->logger->warning(
-				'Dossiq applicant message: the case carries no address, so nothing was sent',
-				['moment' => $moment, 'template' => $template],
-			);
-
-			return $this->outcome(sent: false, reason: 'no-address');
+		$notice = new ApplicantNotice();
+		$notice->case = $case;
+		$notice->moment = $moment;
+		$notice->template = $template;
+		$notice->context = $context;
+		$notice->recipient = $this->recipientOn(case: $case);
+		if ($notice->recipient === '') {
+			return $this->noAddress(notice: $notice);
 		}
 
-		$caseId = trim((string)($case['id'] ?? ($case['uuid'] ?? '')));
-		$term = $this->terms->getTermijnInstanceForZaak(caseId: $caseId);
-		$sentAt = (new DateTimeImmutable())->format('c');
+		$this->placeOnTerm(notice: $notice);
+		if ($this->deliver(notice: $notice) === false) {
+			return $this->outcome(sent: false, reason: 'send-failed', recipient: $notice->recipient);
+		}
 
-		try {
-			$this->notifications->sendTermijnNotification(
-				$template,
-				(string)($term['id'] ?? ($term['uuid'] ?? '')),
-				$recipient,
-				array_merge(['case' => (string)($case['identifier'] ?? $caseId)], $context),
-				// The case row, so the sender also offers the portal inbox and
-				// digital post, and records the result on the case (REQ-WRN-002).
-				$case,
-			);
-		} catch (Throwable $e) {
-			// Reported, never thrown. The act that asked for this message has
-			// already happened, and failing it now would leave a case half
-			// ended with nothing saying which half.
-			$this->logger->error(
-				'Dossiq applicant message: the message could not be sent',
-				['moment' => $moment, 'template' => $template, 'error' => $e->getMessage()],
-			);
+		$this->recordSent(notice: $notice);
 
-			return $this->outcome(sent: false, reason: 'send-failed', recipient: $recipient);
-		}//end try
+		return $this->sentOutcome(notice: $notice);
+	}//end send()
 
-		// PUBLIC, because this is a message the applicant has received. A
-		// timeline the portal reads that says nothing about a letter somebody
-		// is holding is worse than no timeline.
-		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::PORTAL_MESSAGE,
-			message: 'Bericht aan de aanvrager verzonden',
-			fields: ['moment' => $moment, 'template' => $template, 'sentAt' => $sentAt],
-			visibility: CaseTimeline::PUBLIC_ENTRY,
-		);
+	/**
+	 * Name the case and the term instance the message goes under, and the moment it is sent.
+	 *
+	 * @param ApplicantNotice $notice The message.
+	 *
+	 * @return void
+	 */
+	private function placeOnTerm(ApplicantNotice $notice): void {
+		$notice->caseId = trim((string)($notice->case['id'] ?? ($notice->case['uuid'] ?? '')));
+		$term = $this->terms->getTermijnInstanceForZaak(caseId: $notice->caseId);
+		$notice->termId = (string)($term['id'] ?? ($term['uuid'] ?? ''));
+		$notice->sentAt = (new DateTimeImmutable())->format('c');
+	}//end placeOnTerm()
 
+	/**
+	 * The outcome of a message that was sent.
+	 *
+	 * @param ApplicantNotice $notice The sent message.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function sentOutcome(ApplicantNotice $notice): array {
 		return $this->outcome(
 			sent: true,
 			reason: '',
-			recipient: $recipient,
-			template: $template,
-			sentAt: $sentAt,
+			recipient: $notice->recipient,
+			template: $notice->template,
+			sentAt: $notice->sentAt,
 		);
-	}//end send()
+	}//end sentOutcome()
+
+	/**
+	 * The outcome, logged, of a message to a case that carries no address.
+	 *
+	 * @param ApplicantNotice $notice The message.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function noAddress(ApplicantNotice $notice): array {
+		$this->logger->warning(
+			'Dossiq applicant message: the case carries no address, so nothing was sent',
+			['moment' => $notice->moment, 'template' => $notice->template],
+		);
+
+		return $this->outcome(sent: false, reason: 'no-address');
+	}//end noAddress()
+
+	/**
+	 * Send the message; a send that fails is reported, never thrown.
+	 *
+	 * The act that asked for this message has already happened, and failing
+	 * it now would leave a case half ended with nothing saying which half.
+	 *
+	 * @param ApplicantNotice $notice The message, with its recipient and term.
+	 *
+	 * @return bool Whether it was sent.
+	 */
+	private function deliver(ApplicantNotice $notice): bool {
+		try {
+			$this->notifications->sendTermijnNotification(
+				$notice->template,
+				$notice->termId,
+				$notice->recipient,
+				array_merge(['case' => (string)($notice->case['identifier'] ?? $notice->caseId)], $notice->context),
+				// The case row, so the sender also offers the portal inbox and
+				// digital post, and records the result on the case (REQ-WRN-002).
+				$notice->case,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq applicant message: the message could not be sent',
+				['moment' => $notice->moment, 'template' => $notice->template, 'error' => $e->getMessage()],
+			);
+
+			return false;
+		}//end try
+
+		return true;
+	}//end deliver()
+
+	/**
+	 * Record the sent message on the case's public timeline.
+	 *
+	 * PUBLIC, because this is a message the applicant has received. A
+	 * timeline the portal reads that says nothing about a letter somebody
+	 * is holding is worse than no timeline.
+	 *
+	 * @param ApplicantNotice $notice The sent message.
+	 *
+	 * @return void
+	 */
+	private function recordSent(ApplicantNotice $notice): void {
+		$this->timeline->record(
+			caseId: $notice->caseId,
+			kind: TimelineKinds::PORTAL_MESSAGE,
+			message: 'Bericht aan de aanvrager verzonden',
+			fields: ['moment' => $notice->moment, 'template' => $notice->template, 'sentAt' => $notice->sentAt],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
+		);
+	}//end recordSent()
 
 	/**
 	 * The first address on the case, or ''.
