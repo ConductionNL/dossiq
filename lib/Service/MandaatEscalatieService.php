@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -354,24 +355,13 @@ class MandaatEscalatieService {
 	 * @return array<string, mixed>
 	 */
 	private function save(string $schemaConfigKey, array $object): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($objectService === null || $register === '' || $schema === '') {
-			return $object;
-		}
+		$writer = new ConfiguredSchemaWriter(
+			settingsService: $this->settingsService,
+			onFailure: function (\Throwable $e) use ($schemaConfigKey): void {
+				$this->logger->error('Mandaat persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
+			}
+		);
 
-		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $object
-			);
-			return ($saved ?? $object);
-		} catch (\Throwable $e) {
-			$this->logger->error('Mandaat persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
-			return $object;
-		}
+		return $writer->save(schemaConfigKey: $schemaConfigKey, object: $object);
 	}//end save()
 }//end class

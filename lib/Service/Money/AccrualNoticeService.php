@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -383,27 +384,13 @@ class AccrualNoticeService {
 	 * @return array<string, mixed>
 	 */
 	private function saveSchema(string $schemaConfigKey, array $object): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($objectService === null || $register === '' || $schema === '') {
-			return $object;
-		}
+		$writer = new ConfiguredSchemaWriter(
+			settingsService: $this->settingsService,
+			onFailure: function (\Throwable $e) use ($schemaConfigKey): void {
+				$this->logger->error('AccrualNoticeService persist failed', ['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]);
+			}
+		);
 
-		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $object
-			);
-			return ($saved ?? $object);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'AccrualNoticeService persist failed',
-				['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]
-			);
-			return $object;
-		}
+		return $writer->save(schemaConfigKey: $schemaConfigKey, object: $object);
 	}//end saveSchema()
 }//end class
