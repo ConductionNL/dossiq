@@ -201,7 +201,7 @@ class DecisionConcludedListener implements IEventListener {
 		// REQ-PDCD-003: only project events this app raised, or that
 		// Decidiq's flow step raised about one of this app's cases.
 		$flowCase = ($this->flowDecisions?->caseIdOf(event: $event) ?? '');
-		if ($flowCase === '' && (string)$event->getSourceApp() !== self::SOURCE_APP) {
+		if ($flowCase === '' && $this->readString(event: $event, getter: 'getSourceApp') !== self::SOURCE_APP) {
 			return null;
 		}
 
