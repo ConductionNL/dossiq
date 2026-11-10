@@ -288,6 +288,29 @@ class WOODeadlineServiceTest extends TestCase {
 	}//end testExtendDeadlineThrowsForEmptyReason()
 
 	/**
+	 * Without a term engine the extension is refused as unavailable, before anything is extended.
+	 *
+	 * @return void
+	 */
+	public function testExtendDeadlineWithoutATermEngineIsUnavailable(): void {
+		$service = new WOODeadlineService(
+			settingsService: $this->settingsService,
+			notificationManager: $this->notificationManager,
+			logger: $this->logger,
+			dates: $this->caseDates(),
+			definitions: $this->definitions,
+		);
+
+		try {
+			$service->extendDeadline('case-uuid-001', 'More time needed');
+			self::fail('An extension without a term engine must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('woo-extension-unavailable', $e->getRule());
+			self::assertSame(422, $e->getStatus());
+		}
+	}//end testExtendDeadlineWithoutATermEngineIsUnavailable()
+
+	/**
 	 * CheckAndWarn returns warned=false when OpenRegister is unavailable.
 	 *
 	 * @return void

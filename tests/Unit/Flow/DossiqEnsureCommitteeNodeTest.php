@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 use OCA\Dossiq\Flow\DossiqEnsureCommitteeNode;
 use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -222,7 +223,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$delegation = $this->createMock(CommitteeDelegationService::class);
 		$delegation->expects($this->once())->method('ensureGovernanceBody')->willReturn('gb-9');
 
-		$out = $this->node($delegation)->execute($this->items('cmte-1'), [], []);
+		$out = $this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
 
 		$this->assertSame('gb-9', $out[0]['json']['governanceBodyId']);
 		$this->assertSame('gb-9', $this->saved['governanceBodyId'], 'the mapping is recorded locally');
@@ -242,7 +243,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$delegation = $this->createMock(CommitteeDelegationService::class);
 		$delegation->expects($this->never())->method('ensureGovernanceBody');
 
-		$out = $this->node($delegation)->execute($this->items('cmte-1'), [], []);
+		$out = $this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
 
 		$this->assertSame('gb-existing', $out[0]['json']['governanceBodyId']);
 
@@ -263,7 +264,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 
 		$this->expectException(RuntimeException::class);
 
-		$this->node($delegation)->execute($this->items('cmte-1'), [], []);
+		$this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
 
 	}//end testItFailsClosedWhenTheCommitteeCannotBeRaised()
 
@@ -276,7 +277,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$delegation = $this->createMock(CommitteeDelegationService::class);
 		$delegation->expects($this->never())->method('ensureGovernanceBody');
 
-		$out = $this->node($delegation)->execute($this->items(''), [], []);
+		$out = $this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items(''), config: [], context: []));
 
 		$this->assertArrayNotHasKey('governanceBodyId', $out[0]['json']);
 
@@ -296,7 +297,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$delegation = $this->createMock(CommitteeDelegationService::class);
 		$delegation->expects($this->once())->method('ensureGovernanceBody')->willReturn('gb-9');
 
-		$out = $this->node($delegation)->execute($this->items(['id' => 'cmte-1', 'name' => 'X']), [], []);
+		$out = $this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items(['id' => 'cmte-1', 'name' => 'X']), config: [], context: []));
 
 		$this->assertSame('gb-9', $out[0]['json']['governanceBodyId']);
 
@@ -311,7 +312,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Committee not found/');
 
-		$this->node()->execute($this->items('no-such-committee'), [], []);
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items('no-such-committee'), config: [], context: []));
 
 	}//end testAnUnknownCommitteeFails()
 
@@ -324,7 +325,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/OpenRegister is not available/');
 
-		$this->node(null, withStore: false)->execute($this->items('cmte-1'), [], []);
+		$this->node(null, withStore: false)->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
 
 	}//end testItFailsWithoutOpenRegister()
 
@@ -336,7 +337,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 	public function testTheOutputKeyIsConfigurable(): void {
 		$this->seed(mappedTo: 'gb-existing');
 
-		$out = $this->node()->execute($this->items('cmte-1'), ['outputKey' => 'bodyRef'], []);
+		$out = $this->node()->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: ['outputKey' => 'bodyRef'], context: []));
 
 		$this->assertSame('gb-existing', $out[0]['json']['bodyRef']);
 
@@ -348,7 +349,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 	 * @return void
 	 */
 	public function testANonArrayItemPassesThrough(): void {
-		$out = $this->node()->execute(['not-an-array'], [], []);
+		$out = $this->node()->execute(call: new FlowNodeCall(items: ['not-an-array'], config: [], context: []));
 
 		$this->assertSame(['not-an-array'], $out);
 
@@ -387,7 +388,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 			}
 		};
 
-		$out = $this->node()->execute($this->items('cmte-1'), [], []);
+		$out = $this->node()->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
 
 		$this->assertSame('gb-entity', $out[0]['json']['governanceBodyId']);
 
@@ -404,7 +405,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Could not read committee/');
 
-		$this->node()->execute($this->items('cmte-1'), [], []);
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
 
 	}//end testAFailingReadIsReported()
 
@@ -420,7 +421,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$delegation = $this->createMock(CommitteeDelegationService::class);
 		$delegation->method('ensureGovernanceBody')->willReturn('gb-9');
 
-		$out = $this->node($delegation)->execute($this->items('cmte-1'), [], []);
+		$out = $this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items('cmte-1'), config: [], context: []));
 
 		$this->assertSame('gb-9', $out[0]['json']['governanceBodyId'], 'the id is still handed on');
 
@@ -435,7 +436,7 @@ class DossiqEnsureCommitteeNodeTest extends TestCase {
 		$delegation = $this->createMock(CommitteeDelegationService::class);
 		$delegation->expects($this->never())->method('ensureGovernanceBody');
 
-		$out = $this->node($delegation)->execute($this->items(new \stdClass()), [], []);
+		$out = $this->node($delegation)->execute(call: new FlowNodeCall(items: $this->items(new \stdClass()), config: [], context: []));
 
 		$this->assertArrayNotHasKey('governanceBodyId', $out[0]['json']);
 

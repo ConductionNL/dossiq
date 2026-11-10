@@ -68,39 +68,68 @@ class TransitionMatrixBuilder {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeTransitionMatrix(array $recordsByCase, array $statusTypeIndex): array {
-		$matrix = [];
-		$totalCount = 0;
-		$reworkSum = 0;
-
+		$tally = new TransitionTally();
 		foreach ($recordsByCase as $records) {
-			$transitions = $this->computeCaseTransitions(sortedRecords: $records);
-			foreach ($transitions as $transition) {
-				$key = ($transition['from'] . '::' . $transition['to']);
-				if (isset($matrix[$key]) === false) {
-					$matrix[$key] = [
-						'from' => $transition['from'],
-						'to' => $transition['to'],
-						'count' => 0,
-						'reworkCount' => 0,
-					];
-				}
-
-				$matrix[$key]['count']++;
-				$totalCount++;
-				if ($transition['isRework'] === true) {
-					$matrix[$key]['reworkCount']++;
-					$reworkSum++;
-				}
+			foreach ($this->computeCaseTransitions(sortedRecords: $records) as $transition) {
+				$this->countTransition(tally: $tally, transition: $transition);
 			}
-		}//end foreach
+		}
 
+		$reworkPercent = 0.0;
+		if ($tally->totalCount !== 0) {
+			$reworkPercent = round((($tally->reworkSum / $tally->totalCount) * 100), 1);
+		}
+
+		return [
+			'matrix' => $this->matrixRows(matrix: $tally->matrix, labels: new StatusLabels(text: $this->text, statusTypeIndex: $statusTypeIndex)),
+			'reworkPercent' => $reworkPercent,
+			'totalCount' => $tally->totalCount,
+		];
+	}//end computeTransitionMatrix()
+
+	/**
+	 * Count one transition on its from-to row.
+	 *
+	 * @param TransitionTally                                   $tally      The count so far.
+	 * @param array{from: string, to: string, isRework: bool} $transition One transition.
+	 *
+	 * @return void
+	 */
+	private function countTransition(TransitionTally $tally, array $transition): void {
+		$key = ($transition['from'] . '::' . $transition['to']);
+		if (isset($tally->matrix[$key]) === false) {
+			$tally->matrix[$key] = [
+				'from' => $transition['from'],
+				'to' => $transition['to'],
+				'count' => 0,
+				'reworkCount' => 0,
+			];
+		}
+
+		$tally->matrix[$key]['count']++;
+		$tally->totalCount++;
+		if ($transition['isRework'] === true) {
+			$tally->matrix[$key]['reworkCount']++;
+			$tally->reworkSum++;
+		}
+	}//end countTransition()
+
+	/**
+	 * The matrix rows with their status labels, most frequent first.
+	 *
+	 * @param array<string, array{from: string, to: string, count: int, reworkCount: int}> $matrix The counted rows.
+	 * @param StatusLabels                                                                  $labels The status labels.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function matrixRows(array $matrix, StatusLabels $labels): array {
 		$out = [];
 		foreach ($matrix as $row) {
 			$out[] = [
 				'from' => $row['from'],
-				'fromName' => $this->statusLabel(statusId: $row['from'], statusTypeIndex: $statusTypeIndex),
+				'fromName' => $labels->labelOf(statusId: $row['from']),
 				'to' => $row['to'],
-				'toName' => $this->statusLabel(statusId: $row['to'], statusTypeIndex: $statusTypeIndex),
+				'toName' => $labels->labelOf(statusId: $row['to']),
 				'count' => $row['count'],
 				'reworkCount' => $row['reworkCount'],
 			];
@@ -111,17 +140,8 @@ class TransitionMatrixBuilder {
 			static fn (array $left, array $right): int => ($right['count'] <=> $left['count'])
 		);
 
-		$reworkPercent = 0.0;
-		if ($totalCount !== 0) {
-			$reworkPercent = round((($reworkSum / $totalCount) * 100), 1);
-		}
-
-		return [
-			'matrix' => $out,
-			'reworkPercent' => $reworkPercent,
-			'totalCount' => $totalCount,
-		];
-	}//end computeTransitionMatrix()
+		return $out;
+	}//end matrixRows()
 
 	/**
 	 * Walk one case's chronologically sorted statusRecords into
@@ -165,30 +185,4 @@ class TransitionMatrixBuilder {
 
 		return $transitions;
 	}//end computeCaseTransitions()
-
-	/**
-	 * Resolve a statusType id to its human-readable label.
-	 *
-	 * @param string $statusId StatusType UUID.
-	 * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
-	 */
-	private function statusLabel(string $statusId, array $statusTypeIndex): string {
-		if (isset($statusTypeIndex[$statusId]) === false) {
-			return $statusId;
-		}
-
-		$entry = $statusTypeIndex[$statusId];
-
-		// A status name is translatable, so the row carries a language map.
-		$name = $this->text->forReader(value: ($entry['name'] ?? ($entry['title'] ?? '')));
-		if ($name === '') {
-			return $statusId;
-		}
-
-		return $name;
-	}//end statusLabel()
 }//end class
