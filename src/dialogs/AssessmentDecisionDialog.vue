@@ -252,6 +252,61 @@ function sentenceOf(failure, fallback) {
 	return String(data?.message || data?.error || fallback)
 }
 
+/**
+ * Read the documents of a case with their assessments.
+ *
+ * @param {{register: string, schema: string, caseField?: string}} source Where the assessments live.
+ * @param {string} caseId The case.
+ * @return {Promise<Array<object>>} The documents.
+ */
+async function readAssessedDocuments(source, caseId) {
+	const { data } = await axios.get(
+		generateUrl(
+			`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`,
+		),
+		{
+			params: {
+				[source.caseField || 'case']: caseId,
+				_limit: 500,
+			},
+		},
+	)
+	return data?.results || []
+}
+
+/**
+ * How many documents carry each assessment, and each refusal ground.
+ *
+ * @param {Array<object>} rows The documents.
+ * @param {string} field The field holding a document's assessment.
+ * @return {{tally: object, grounds: object}} The counts per value and per ground code.
+ */
+function assessmentCounts(rows, field) {
+	const tally = {}
+	const grounds = {}
+	for (const row of rows) {
+		const value = String(row?.[field] ?? '')
+		tally[value] = (tally[value] ?? 0) + 1
+		countGrounds(grounds, row?.weigeringsgronden)
+	}
+	return { tally, grounds }
+}
+
+/**
+ * Add one document's refusal grounds to the count per ground code.
+ *
+ * @param {object} grounds The count per ground code.
+ * @param {unknown} weigeringsgronden The document's grounds: codes or `{code}` rows.
+ */
+function countGrounds(grounds, weigeringsgronden) {
+	for (const ground of Array.isArray(weigeringsgronden) ? weigeringsgronden : []) {
+		const code = String(ground?.code ?? ground ?? '')
+		if (code !== '') {
+			grounds[code] = (grounds[code] ?? 0) + 1
+		}
+	}
+}
+
 export default {
 	name: 'AssessmentDecisionDialog',
 
@@ -633,33 +688,11 @@ export default {
 				return
 			}
 
-			const field = source.classificationField || 'classification'
 			try {
-				const { data } = await axios.get(
-					generateUrl(
-						`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`,
-					),
-					{
-						params: {
-							[source.caseField || 'case']: this.targetCaseId,
-							_limit: 500,
-						},
-					},
-				)
-				const tally = {}
-				const grounds = {}
-				for (const row of data?.results || []) {
-					const value = String(row?.[field] ?? '')
-					tally[value] = (tally[value] ?? 0) + 1
-					for (const ground of Array.isArray(row?.weigeringsgronden) ? row.weigeringsgronden : []) {
-						const code = String(ground?.code ?? ground ?? '')
-						if (code !== '') {
-							grounds[code] = (grounds[code] ?? 0) + 1
-						}
-					}
-				}
-				this.tally = tally
-				this.groundTally = grounds
+				const rows = await readAssessedDocuments(source, this.targetCaseId)
+				const counts = assessmentCounts(rows, source.classificationField || 'classification')
+				this.tally = counts.tally
+				this.groundTally = counts.grounds
 			} catch {
 				this.countsError = t(
 					'dossiq',
