@@ -37,6 +37,9 @@ use RuntimeException;
  * The resident's documents of a case, allowed and refused, as exact entries.
  *
  * @covers \OCA\Dossiq\Portal\PortalCaseDocuments
+ * @covers \OCA\Dossiq\Portal\PortalCaseReads
+ * @covers \OCA\Dossiq\Portal\PortalCaseRead
+ * @covers \OCA\Dossiq\Portal\PortalDocumentsRun
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses \OCA\Dossiq\Service\Zaakdossier\AccessExceptionValue
  */
