@@ -39,6 +39,19 @@ use Psr\Log\LoggerInterface;
 class ProgrammeConsumer {
 
 	/**
+	 * The figure when pipelinq cannot answer for a programme's progress.
+	 *
+	 * @var array{available: bool, computable: bool, progress: null, mode: string, sentence: string}
+	 */
+	private const UNREADABLE_PROGRESS = [
+		'available' => false,
+		'computable' => false,
+		'progress' => null,
+		'mode' => '',
+		'sentence' => 'Progress cannot be read on this instance.',
+	];
+
+	/**
 	 * How a dossiq case names itself as a piece of work.
 	 *
 	 * `<app>:<schema>`, per pipelinq's work item contract.
@@ -54,19 +67,6 @@ class ProgrammeConsumer {
 	 * pipelinq's config key for the work items that hold a case by reference.
 	 */
 	public const WORK_ITEM_SCHEMA_KEY = 'programmeWorkItem_schema';
-
-	/**
-	 * The figure when pipelinq cannot answer for a programme's progress.
-	 *
-	 * @var array{available: bool, computable: bool, progress: null, mode: string, sentence: string}
-	 */
-	private const UNREADABLE_PROGRESS = [
-		'available' => false,
-		'computable' => false,
-		'progress' => null,
-		'mode' => '',
-		'sentence' => 'Progress cannot be read on this instance.',
-	];
 
 	/**
 	 * @param PipelinqGateway $gateway The only seam that names pipelinq.
