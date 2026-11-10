@@ -111,6 +111,8 @@ final class ClosedCaseTally {
 	 * @param int $months The window's length in months.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function openWindow(int $months): void {
 		$this->buckets = $this->grouping->emptyBuckets(
@@ -127,6 +129,8 @@ final class ClosedCaseTally {
 	 * @param array<string, mixed> $caseData An enriched case.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function add(array $caseData): void {
 		$end = $caseData['_endDate'];
@@ -165,6 +169,8 @@ final class ClosedCaseTally {
 	 * The day counts per group, oldest group first.
 	 *
 	 * @return array<string, array<int, int>>
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function buckets(): array {
 		return $this->buckets;
@@ -174,6 +180,8 @@ final class ClosedCaseTally {
 	 * The day counts of the cases closed in the last twelve months.
 	 *
 	 * @return array<int, int>
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function recentDays(): array {
 		return $this->recent;
@@ -183,6 +191,8 @@ final class ClosedCaseTally {
 	 * How many cases closed this calendar year.
 	 *
 	 * @return int
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function closedThisYear(): int {
 		return $this->closedThisYear;
@@ -192,6 +202,8 @@ final class ClosedCaseTally {
 	 * The grouping the tally uses.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function granularity(): string {
 		return $this->granularity;
