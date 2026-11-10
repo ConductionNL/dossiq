@@ -44,10 +44,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\CreatedCaseRecord;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
@@ -96,23 +96,12 @@ class ContactMomentTimelineListener implements IEventListener {
 	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $this->payload(event: $event);
+		$payload = (new CreatedCaseRecord(slugResolver: $this->slugResolver, schema: self::SCHEMA))->of(event: $event);
 		if ($payload === null) {
 			return;
 		}
 
-		if ($this->slugResolver->resolveFromPayload(payload: $payload) !== self::SCHEMA) {
-			return;
-		}
-
-		$caseId = trim((string)($payload['case'] ?? ''));
-		if ($caseId === '') {
-			return;
-		}
+		$caseId = trim((string)$payload['case']);
 
 		$this->timeline->record(
 			caseId: $caseId,
@@ -216,32 +205,4 @@ class ContactMomentTimelineListener implements IEventListener {
 
 		return $related;
 	}//end relatedCaseIds()
-
-	/**
-	 * The created object as a plain array.
-	 *
-	 * @param Event $event The dispatched event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null when it cannot be read.
-	 */
-	private function payload(Event $event): ?array {
-		$object = null;
-
-		if (method_exists($event, 'getObject') === true) {
-			$object = $event->getObject();
-		}
-
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end payload()
 }//end class
