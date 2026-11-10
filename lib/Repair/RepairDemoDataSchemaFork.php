@@ -213,52 +213,16 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 	 */
 	private function restoreRegisterIdentity(IOutput $output): void {
 		$registerMapper = $this->container->get('OCA\OpenRegister\Db\RegisterMapper');
-
-		try {
-			$register = $registerMapper->find(
-				id: Application::APP_ID,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$output->info('Demo-fork repair: no `dossiq` register on this instance.');
-			return;
-		}
-
-		if ($register->getApplication() !== self::FORKED_APPLICATION) {
-			$output->info('Demo-fork repair: the register still carries its own application id; left alone.');
+		$register = $this->forkedRegister(registerMapper: $registerMapper, output: $output);
+		if ($register === null) {
 			return;
 		}
 
 		$register->setApplication(Application::APP_ID);
-
-		$shipped = $this->shippedIdentity();
-		$restoredTitle = false;
-		// No `?? ''`: shippedIdentity() always returns all three keys, so the
-		// coalesce was dead and phpstan said so. The emptiness check is the
-		// real one and stays.
-		if ($shipped['title'] !== '' && $register->getTitle() === self::DEFACED_TITLE) {
-			$register->setTitle($shipped['title']);
-			if ($shipped['description'] !== '') {
-				$register->setDescription($shipped['description']);
-			}
-
-			if ($shipped['version'] !== '') {
-				$register->setVersion($shipped['version']);
-			}
-
-			$restoredTitle = true;
-		}
-
+		$restoredTitle = $this->restoreShippedTitle(register: $register);
 		$registerMapper->update($register);
 
-		$note = 'Demo-fork repair: register `dossiq` moved back to application `dossiq`.';
-		if ($restoredTitle === true) {
-			$note = 'Demo-fork repair: register `dossiq` moved back to application `dossiq` and retitled "'
-				. $register->getTitle() . '".';
-		}
-
-		$output->info($note);
+		$output->info($this->restoredNote(register: $register, restoredTitle: $restoredTitle));
 		$this->logger->warning(
 			'Dossiq: restored the register identity a demo import overwrote',
 			[
@@ -268,6 +232,81 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 			]
 		);
 	}//end restoreRegisterIdentity()
+
+	/**
+	 * The `dossiq` register when the demo import forked it; null (with a note)
+	 * when there is none or it still carries its own application id.
+	 *
+	 * @param object  $registerMapper OpenRegister's register mapper.
+	 * @param IOutput $output         Repair output.
+	 *
+	 * @return object|null The forked register.
+	 */
+	private function forkedRegister(object $registerMapper, IOutput $output): ?object {
+		try {
+			$register = $registerMapper->find(
+				id: Application::APP_ID,
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			$output->info('Demo-fork repair: no `dossiq` register on this instance.');
+			return null;
+		}
+
+		if ($register->getApplication() !== self::FORKED_APPLICATION) {
+			$output->info('Demo-fork repair: the register still carries its own application id; left alone.');
+			return null;
+		}
+
+		return $register;
+	}//end forkedRegister()
+
+	/**
+	 * Put the shipped title, description and version back, but only while the
+	 * title still reads what the import made it read.
+	 *
+	 * @param object $register The forked register.
+	 *
+	 * @return bool Whether the title was restored.
+	 */
+	private function restoreShippedTitle(object $register): bool {
+		$shipped = $this->shippedIdentity();
+		// No `?? ''`: shippedIdentity() always returns all three keys, so the
+		// coalesce was dead and phpstan said so. The emptiness check is the
+		// real one and stays.
+		if ($shipped['title'] === '' || $register->getTitle() !== self::DEFACED_TITLE) {
+			return false;
+		}
+
+		$register->setTitle($shipped['title']);
+		if ($shipped['description'] !== '') {
+			$register->setDescription($shipped['description']);
+		}
+
+		if ($shipped['version'] !== '') {
+			$register->setVersion($shipped['version']);
+		}
+
+		return true;
+	}//end restoreShippedTitle()
+
+	/**
+	 * The line the repair prints for a restored register.
+	 *
+	 * @param object $register      The restored register.
+	 * @param bool   $restoredTitle Whether its title was restored too.
+	 *
+	 * @return string
+	 */
+	private function restoredNote(object $register, bool $restoredTitle): string {
+		if ($restoredTitle === true) {
+			return 'Demo-fork repair: register `dossiq` moved back to application `dossiq` and retitled "'
+				. $register->getTitle() . '".';
+		}
+
+		return 'Demo-fork repair: register `dossiq` moved back to application `dossiq`.';
+	}//end restoredNote()
 
 	/**
 	 * Retire every schema that is provably part of the fork.
