@@ -315,4 +315,29 @@ class TermijnNotificationServiceTest extends TestCase {
 
 		return $sender;
 	}//end sender()
+	/**
+	 * Queueing: nothing without a job list, an unknown template refused, a case type that does
+	 * not send it skipped, and otherwise one dispatch job with the whole payload.
+	 *
+	 * @return void
+	 */
+	public function testQueueingANotification(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$notices = new TermNoticeSources(termService: $this->createMock(TermijnService::class), sender: $this->sender());
+		self::assertFalse((new TermijnNotificationService(notices: $notices, logger: $logger))->queueTermijnNotification('ontvangstbevestiging', 'ti-1', 'u'));
+
+		$jobs = $this->createMock(\OCP\BackgroundJob\IJobList::class);
+		$jobs->expects(self::once())->method('add')->with(
+			\OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob::class,
+			['type' => 'ontvangstbevestiging', 'termijnInstanceId' => 'ti-1', 'recipientUserId' => 'u', 'context' => ['a' => 1]]
+		);
+		$service = new TermijnNotificationService(notices: $notices, logger: $logger, jobList: $jobs);
+
+		self::assertFalse($service->queueTermijnNotification('ontvangstbevestiging', 'ti-1', 'u', [], ['handling' => ['automaticMessages' => []]]));
+		self::assertTrue($service->queueTermijnNotification('ontvangstbevestiging', 'ti-1', 'u', ['a' => 1]));
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->expectExceptionMessage('Unknown template: nope');
+		$service->queueTermijnNotification('nope', 'ti-1', 'u');
+	}
 }
