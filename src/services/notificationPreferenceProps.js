@@ -387,6 +387,33 @@ export function propsFor({
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function writeFor({ eventId, scope = '', value, channelId = SINGLE_CHANNEL_ID, current = null } = {}) {
+	const write = notificationWrite(eventId, value)
+	if (write === null) {
+		return null
+	}
+
+	// One cell of several channels: the write is the row's whole channel set
+	// with this one switched, and the row is on while any channel is.
+	if (channelId !== SINGLE_CHANNEL_ID && Array.isArray(current) === true) {
+		Object.assign(write, switchedChannels({ channelId, current }, value))
+	}
+
+	if (scope !== '') {
+		write.scope = `domain:${scope}`
+	}
+
+	return write
+}
+
+/**
+ * The write for one notification id switched on or off, null for an id
+ * this file did not produce.
+ *
+ * @param {string} eventId The `schema-notification` id.
+ * @param {boolean} value Whether the switch is on.
+ * @return {object|null} `{ schema, notification, enabled }`.
+ */
+function notificationWrite(eventId, value) {
 	const at = String(eventId ?? '').indexOf('-')
 	if (at < 1) {
 		// Not an id this file produced. Returning null rather than writing a
@@ -395,23 +422,22 @@ export function writeFor({ eventId, scope = '', value, channelId = SINGLE_CHANNE
 		return null
 	}
 
-	const write = {
+	return {
 		schema: String(eventId).slice(0, at),
 		notification: String(eventId).slice(at + 1),
 		enabled: value === true,
 	}
+}
 
-	// One cell of several channels: the write is the row's whole channel set
-	// with this one switched, and the row is on while any channel is.
-	if (channelId !== SINGLE_CHANNEL_ID && Array.isArray(current) === true) {
-		const others = current.filter((id) => id !== channelId)
-		write.channels = value === true ? [...others, channelId] : others
-		write.enabled = write.channels.length > 0
-	}
-
-	if (scope !== '') {
-		write.scope = `domain:${scope}`
-	}
-
-	return write
+/**
+ * The row's channel set with one channel switched, and whether any is on.
+ *
+ * @param {{channelId: string, current: Array<string>}} cell The channel and the row's current set.
+ * @param {boolean} value Whether the channel is switched on.
+ * @return {{channels: Array<string>, enabled: boolean}} The channel fields of the write.
+ */
+function switchedChannels(cell, value) {
+	const others = cell.current.filter((id) => id !== cell.channelId)
+	const channels = value === true ? [...others, cell.channelId] : others
+	return { channels, enabled: channels.length > 0 }
 }
