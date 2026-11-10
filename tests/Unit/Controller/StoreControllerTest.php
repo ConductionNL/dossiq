@@ -669,4 +669,39 @@ class StoreControllerTest extends TestCase {
 
 		$this->assertSame('a-new-token', $written['registry_token']);
 	}//end testASuppliedTokenIsWritten()
+
+	/**
+	 * A configuration component without an object is refused, with every report field, and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testAComponentWithoutAnObjectIsRefused(): void {
+		$this->storeService->method('resolve')->willReturn(
+			[
+				'slug' => 'empty-item',
+				'components' => [
+					['schema' => 'caseType'],
+					['schema' => 'case', 'object' => ['title' => 'x']],
+				],
+			]
+		);
+		$this->registry->expects($this->never())->method('save');
+
+		$data = $this->controller->install(slug: 'empty-item')->getData();
+
+		$this->assertSame(
+			[
+				'success' => false,
+				'components' => [
+					['schema' => 'caseType', 'status' => 'refused', 'message' => 'The component declares no object to install.'],
+					[
+						'schema' => 'case',
+						'status' => 'refused',
+						'message' => 'Only case configuration installs from the store; this component names a record schema.',
+					],
+				],
+			],
+			$data
+		);
+	}//end testAComponentWithoutAnObjectIsRefused()
 }//end class
