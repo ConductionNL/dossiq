@@ -113,16 +113,15 @@ class PortalCaseDocuments {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function forCase(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		if ($caseId === '' || $objectService === null || $register === '') {
+		$read = (new PortalCaseReads(settingsService: $this->settingsService))->open(caseId: $caseId);
+		if ($read === null) {
 			return [];
 		}
 
 		try {
 			return (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->entries(objectService: $objectService, register: $register, caseId: $caseId)
+				objectService: $read->objectService,
+				operation: fn (): array => $this->entries(read: $read)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the portal documents of a case could not be read', ['reason' => $e->getMessage()]);
@@ -161,15 +160,13 @@ class PortalCaseDocuments {
 	/**
 	 * The entries, read inside the system context.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register.
-	 * @param string $caseId        The case.
+	 * @param PortalCaseRead $read The case being read.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
-	private function entries(object $objectService, string $register, string $caseId): array {
+	private function entries(PortalCaseRead $read): array {
 		$caseSchema = $this->settingsService->getConfigValue('case_schema');
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
 		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
@@ -177,70 +174,122 @@ class PortalCaseDocuments {
 			return [];
 		}
 
-		$decisionDates = $this->decisionDocuments(objectService: $objectService, register: $register, caseId: $caseId);
+		$run = new PortalDocumentsRun();
+		$run->read = $read;
+		$run->infoSchema = $infoSchema;
+		$run->file = ['register' => $read->register, 'schema' => $caseSchema, 'id' => $read->caseId];
+		$run->decisionDates = $this->decisionDocuments(read: $read);
+
 		$joins = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
+			objectService: $read->objectService,
+			register: $read->register,
 			schema: $joinSchema,
-			filters: ['case' => $caseId, '_limit' => 500]
+			filters: ['case' => $read->caseId, '_limit' => 500]
 		);
 
+		return $this->entriesOf(run: $run, joins: $joins);
+	}//end entries()
+
+	/**
+	 * One entry per document the joins of this case link, once each, in join order.
+	 *
+	 * A join of another case is never trusted.
+	 *
+	 * @param PortalDocumentsRun               $run   The listing.
+	 * @param array<int, array<string, mixed>> $joins The zaakinformatieobject rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function entriesOf(PortalDocumentsRun $run, array $joins): array {
 		$entries = [];
 		foreach ($joins as $join) {
 			$infoId = (string)($join['informatieobject'] ?? '');
-			if ($infoId === '' || ($join['case'] ?? '') !== $caseId) {
+			if ($infoId === '' || ($join['case'] ?? '') !== $run->read->caseId) {
 				continue;
 			}
 
-			$document = $this->reader->find(objectService: $objectService, register: $register, schema: $infoSchema, id: $infoId);
-			$entry = $this->entry(
-				document: (array)$document,
-				infoId: $infoId,
-				decisionDate: ($decisionDates[$infoId] ?? null),
-				file: ['register' => $register, 'schema' => $caseSchema, 'id' => $caseId]
-			);
+			$entry = $this->entry(run: $run, infoId: $infoId);
 			if ($entry !== null) {
 				$entries[$infoId] = $entry;
 			}
 		}
 
 		return array_values($entries);
-	}//end entries()
+	}//end entriesOf()
 
 	/**
 	 * One entry, or null when the document may not reach the resident.
 	 *
-	 * @param array<string, mixed>  $document     The informatieobject.
-	 * @param string                $infoId       Its uuid.
-	 * @param string|null           $decisionDate The decision's date when a decision links it, else null.
-	 * @param array<string, string> $file         The case object the file lives on.
+	 * @param PortalDocumentsRun $run    The listing.
+	 * @param string             $infoId The informatieobject's uuid.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function entry(array $document, string $infoId, ?string $decisionDate, array $file): ?array {
-		$isDecision = ($decisionDate !== null);
+	private function entry(PortalDocumentsRun $run, string $infoId): ?array {
+		$document = (array)$this->reader->find(
+			objectService: $run->read->objectService,
+			register: $run->read->register,
+			schema: $run->infoSchema,
+			id: $infoId
+		);
+		$decisionDate = ($run->decisionDates[$infoId] ?? null);
 		$fileId = (int)($document['fileId'] ?? 0);
 		$title = trim((string)($document['title'] ?? ''));
-		if ($fileId <= 0 || $title === '' || $this->isPublished(document: $document, isDecision: $isDecision) === false) {
+		if ($fileId <= 0 || $title === '' || $this->isPublished(document: $document, isDecision: $decisionDate !== null) === false) {
 			return null;
-		}
-
-		$kind = 'document';
-		$date = (string)($document['creatiedatum'] ?? '');
-		if ($isDecision === true) {
-			$kind = 'decision';
-			if ($decisionDate !== '') {
-				$date = $decisionDate;
-			}
 		}
 
 		$entry = [
 			'id' => $infoId,
 			'title' => $title,
-			'kind' => $kind,
-			'date' => $date,
-			'file' => $file + ['fileId' => (string)$fileId],
+			'kind' => $this->kindOf(decisionDate: $decisionDate),
+			'date' => $this->dateOf(document: $document, decisionDate: $decisionDate),
+			'file' => $run->file + ['fileId' => (string)$fileId],
 		];
+
+		return $this->withFileDetails(entry: $entry, document: $document);
+	}//end entry()
+
+	/**
+	 * A document a decision links is a decision; anything else is a document.
+	 *
+	 * @param string|null $decisionDate The decision's date when a decision links it, else null.
+	 *
+	 * @return string `decision` or `document`.
+	 */
+	private function kindOf(?string $decisionDate): string {
+		if ($decisionDate === null) {
+			return 'document';
+		}
+
+		return 'decision';
+	}//end kindOf()
+
+	/**
+	 * The decision's date for a decision that has one, else the document's creation date.
+	 *
+	 * @param array<string, mixed> $document     The informatieobject.
+	 * @param string|null          $decisionDate The decision's date when a decision links it, else null.
+	 *
+	 * @return string
+	 */
+	private function dateOf(array $document, ?string $decisionDate): string {
+		if ($decisionDate === null || $decisionDate === '') {
+			return (string)($document['creatiedatum'] ?? '');
+		}
+
+		return $decisionDate;
+	}//end dateOf()
+
+	/**
+	 * Add the file's mime type and size when the document carries them.
+	 *
+	 * @param array<string, mixed> $entry    The entry.
+	 * @param array<string, mixed> $document The informatieobject.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withFileDetails(array $entry, array $document): array {
 		if (is_string(($document['format'] ?? null)) === true && $document['format'] !== '') {
 			$entry['mimeType'] = $document['format'];
 		}
@@ -250,7 +299,7 @@ class PortalCaseDocuments {
 		}
 
 		return $entry;
-	}//end entry()
+	}//end withFileDetails()
 
 	/**
 	 * The documents the decisions on this case link, keyed by document uuid, with the decision's date.
@@ -258,13 +307,11 @@ class PortalCaseDocuments {
 	 * `decisionDocument.document` is a uri; its last path segment is the
 	 * informatieobject's uuid.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register.
-	 * @param string $caseId        The case.
+	 * @param PortalCaseRead $read The case being read.
 	 *
 	 * @return array<string, string>
 	 */
-	private function decisionDocuments(object $objectService, string $register, string $caseId): array {
+	private function decisionDocuments(PortalCaseRead $read): array {
 		$decisionSchema = $this->settingsService->getConfigValue('decision_schema');
 		$linkSchema = $this->settingsService->getConfigValue('decision_document_schema');
 		if ($decisionSchema === '' || $linkSchema === '') {
@@ -272,32 +319,71 @@ class PortalCaseDocuments {
 		}
 
 		$dates = [];
-		$decisions = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $decisionSchema,
-			filters: ['case' => $caseId, '_limit' => 100]
-		);
-		foreach ($decisions as $decision) {
-			$decisionId = (string)($decision['id'] ?? ($decision['@self']['id'] ?? ''));
-			if ($decisionId === '' || ($decision['case'] ?? '') !== $caseId) {
-				continue;
-			}
-
-			$links = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $linkSchema,
-				filters: ['decision' => $decisionId, '_limit' => 100]
-			);
-			foreach ($links as $link) {
-				$uuid = basename(rtrim((string)($link['document'] ?? ''), '/'));
-				if ($uuid !== '' && ($link['decision'] ?? '') === $decisionId) {
-					$dates[$uuid] = (string)($decision['decisionDate'] ?? '');
-				}
+		foreach ($this->decisionsOnCase(read: $read, decisionSchema: $decisionSchema) as $decision) {
+			foreach ($this->linkedDocuments(read: $read, decisionId: $decision['id']) as $uuid) {
+				$dates[$uuid] = $decision['date'];
 			}
 		}
 
 		return $dates;
 	}//end decisionDocuments()
+
+	/**
+	 * The decisions on this case, in read order, each with its id and date.
+	 *
+	 * A decision of another case is never trusted.
+	 *
+	 * @param PortalCaseRead $read           The case being read.
+	 * @param string         $decisionSchema The decision schema.
+	 *
+	 * @return array<int, array{id: string, date: string}>
+	 */
+	private function decisionsOnCase(PortalCaseRead $read, string $decisionSchema): array {
+		$decisions = $this->searchObjectsAsArraysUnscoped(
+			objectService: $read->objectService,
+			register: $read->register,
+			schema: $decisionSchema,
+			filters: ['case' => $read->caseId, '_limit' => 100]
+		);
+
+		$found = [];
+		foreach ($decisions as $decision) {
+			$decisionId = (string)($decision['id'] ?? ($decision['@self']['id'] ?? ''));
+			if ($decisionId !== '' && ($decision['case'] ?? '') === $read->caseId) {
+				$found[] = ['id' => $decisionId, 'date' => (string)($decision['decisionDate'] ?? '')];
+			}
+		}
+
+		return $found;
+	}//end decisionsOnCase()
+
+	/**
+	 * The uuids of the documents one decision links.
+	 *
+	 * `decisionDocument.document` is a uri; its last path segment is the
+	 * informatieobject's uuid. A link of another decision is never trusted.
+	 *
+	 * @param PortalCaseRead $read       The case being read.
+	 * @param string         $decisionId The decision.
+	 *
+	 * @return array<int, string>
+	 */
+	private function linkedDocuments(PortalCaseRead $read, string $decisionId): array {
+		$links = $this->searchObjectsAsArraysUnscoped(
+			objectService: $read->objectService,
+			register: $read->register,
+			schema: $this->settingsService->getConfigValue('decision_document_schema'),
+			filters: ['decision' => $decisionId, '_limit' => 100]
+		);
+
+		$uuids = [];
+		foreach ($links as $link) {
+			$uuid = basename(rtrim((string)($link['document'] ?? ''), '/'));
+			if ($uuid !== '' && ($link['decision'] ?? '') === $decisionId) {
+				$uuids[] = $uuid;
+			}
+		}
+
+		return $uuids;
+	}//end linkedDocuments()
 }//end class

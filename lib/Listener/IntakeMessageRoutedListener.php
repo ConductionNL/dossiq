@@ -49,6 +49,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\EventGetters;
 use OCA\Dossiq\Service\Intake\ChannelIntake;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
@@ -134,10 +135,11 @@ class IntakeMessageRoutedListener implements IEventListener {
 				return;
 			}
 
+			$getters = new EventGetters();
 			$caseId = $this->intake->caseFor(
-				message: $this->arrayFrom(event: $event, method: 'getMessage'),
-				targetPayload: $this->arrayFrom(event: $event, method: 'getTargetPayload'),
-				ruleName: $this->stringFrom(event: $event, method: 'getRuleName'),
+				message: $getters->arrayFrom(event: $event, method: 'getMessage'),
+				targetPayload: $getters->arrayFrom(event: $event, method: 'getTargetPayload'),
+				ruleName: $getters->stringFrom(event: $event, method: 'getRuleName'),
 			);
 
 			if ($caseId === '' || method_exists($event, 'setCreatedRef') === false) {
@@ -156,48 +158,4 @@ class IntakeMessageRoutedListener implements IEventListener {
 			);
 		}
 	}//end answer()
-
-	/**
-	 * Read an array off the event, whatever it answers.
-	 *
-	 * @param Event  $event  The event.
-	 * @param string $method The getter.
-	 *
-	 * @return array<string, mixed> The value, or an empty array.
-	 */
-	private function arrayFrom(Event $event, string $method): array {
-		if (method_exists($event, $method) === false) {
-			return [];
-		}
-
-		$value = $event->$method();
-
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return [];
-	}//end arrayFrom()
-
-	/**
-	 * Read a string off the event, whatever it answers.
-	 *
-	 * @param Event  $event  The event.
-	 * @param string $method The getter.
-	 *
-	 * @return string The value, or ''.
-	 */
-	private function stringFrom(Event $event, string $method): string {
-		if (method_exists($event, $method) === false) {
-			return '';
-		}
-
-		$value = $event->$method();
-
-		if (is_scalar($value) === true) {
-			return trim((string)$value);
-		}
-
-		return '';
-	}//end stringFrom()
 }//end class
