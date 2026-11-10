@@ -452,6 +452,89 @@ class RepairDemoDataSchemaForkTest extends TestCase {
 	}
 
 	/**
+	 * What restoring the register identity says and logs, for every way it ends.
+	 *
+	 * @return void
+	 */
+	public function testTheIdentityRestoreReportsHowItEnded(): void {
+		$cases = [
+			'defaced title' => [
+				$this->registerMapper(linkedSchemaIds: [], application: 'dossiq.demo', title: 'Dossiq (demo)'),
+				'Demo-fork repair: register `dossiq` moved back to application `dossiq` and retitled "Dossiq Case Management Register".',
+				[['app' => 'dossiq', 'title' => 'Dossiq Case Management Register', 'titleRestored' => true]],
+			],
+			'operator title' => [
+				$this->registerMapper(linkedSchemaIds: [], application: 'dossiq.demo', title: 'Onze zaken'),
+				'Demo-fork repair: register `dossiq` moved back to application `dossiq`.',
+				[['app' => 'dossiq', 'title' => 'Onze zaken', 'titleRestored' => false]],
+			],
+			'never forked' => [
+				$this->registerMapper(linkedSchemaIds: []),
+				'Demo-fork repair: the register still carries its own application id; left alone.',
+				[],
+			],
+			'no register' => [
+				new class {
+					/**
+					 * @param string $id            The register.
+					 * @param bool   $_rbac         Ignored.
+					 * @param bool   $_multitenancy Ignored.
+					 *
+					 * @return object Never.
+					 */
+					public function find(string $id, bool $_rbac = true, bool $_multitenancy = true): object {
+						throw new \RuntimeException('not found');
+					}
+
+					/**
+					 * @return array<int, object> None.
+					 */
+					public function findAll(): array {
+						return [];
+					}
+				},
+				'Demo-fork repair: no `dossiq` register on this instance.',
+				[],
+			],
+		];
+
+		foreach ($cases as $label => [$registerMapper, $line, $logs]) {
+			$container = $this->createMock(ContainerInterface::class);
+			$schemaMapper = $this->schemaMapper(forked: [], twins: []);
+			$container->method('get')->willReturnCallback(
+				static fn (string $id): object => match ($id) {
+					'OCA\OpenRegister\Db\SchemaMapper' => $schemaMapper,
+					'OCA\OpenRegister\Db\RegisterMapper' => $registerMapper,
+					default => throw new \RuntimeException('unexpected lookup ' . $id),
+				}
+			);
+			$lines = [];
+			$output = $this->createMock(IOutput::class);
+			$output->method('info')->willReturnCallback(
+				static function (string $info) use (&$lines): void {
+					$lines[] = $info;
+				}
+			);
+			$logged = [];
+			$logger = $this->createMock(LoggerInterface::class);
+			$logger->method('warning')->willReturnCallback(
+				static function (string $message, array $context = []) use (&$logged): void {
+					if ($message === 'Dossiq: restored the register identity a demo import overwrote') {
+						$logged[] = $context;
+					}
+				}
+			);
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('getObjectService')->willReturn(null);
+
+			(new RepairDemoDataSchemaFork($this->appManager, $container, $settings, $logger))->run($output);
+
+			self::assertSame($line, $lines[0] ?? null, $label);
+			self::assertSame($logs, $logged, $label);
+		}
+	}
+
+	/**
 	 * The whole point: a proven fork goes, and its objects go with it.
 	 *
 	 * @return void
