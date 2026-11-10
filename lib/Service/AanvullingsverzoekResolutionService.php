@@ -105,8 +105,36 @@ class AanvullingsverzoekResolutionService {
 		?DateTimeImmutable $when = null,
 	): array {
 		$moment = ($when ?? new DateTimeImmutable());
-		$request = $this->requests->openFor(caseId: $caseId);
+		$run = new AanvullingAnswerRun(caseId: $caseId, request: $this->openRequestFor(caseId: $caseId));
+		$run->moment = $moment;
+		$run->received = $received;
+		$run->userId = $userId;
+		$run->items = $this->markReceived(
+			items: (array)($run->request['missingItems'] ?? []),
+			received: $received,
+			moment: $moment
+		);
+		$run->outstanding = $this->outstanding(items: $run->items);
+		$this->refuseClosingWhileOutstanding(run: $run, complete: $complete);
 
+		if ($complete === false) {
+			return $this->recordPartialAnswer(run: $run);
+		}
+
+		return $this->recordFullAnswer(run: $run);
+	}//end recordAnswer()
+
+	/**
+	 * The case's open request.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RefusedException When nothing is open.
+	 */
+	private function openRequestFor(string $caseId): array {
+		$request = $this->requests->openFor(caseId: $caseId);
 		if ($request === null) {
 			throw new RefusedException(
 				rule: 'aanvullingsverzoek-none-open',
@@ -115,68 +143,84 @@ class AanvullingsverzoekResolutionService {
 			);
 		}
 
-		$items = $this->markReceived(
-			items: (array)($request['missingItems'] ?? []),
-			received: $received,
-			moment: $moment
-		);
-		$outstanding = $this->outstanding(items: $items);
+		return $request;
+	}//end openRequestFor()
 
-		if ($complete === true && $outstanding !== []) {
+	/**
+	 * Refuse a claimed completion while items are still outstanding.
+	 *
+	 * @param AanvullingAnswerRun $run      The answer being recorded.
+	 * @param boolean             $complete Whether the handler says it is complete.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When completion is claimed with items outstanding.
+	 */
+	private function refuseClosingWhileOutstanding(AanvullingAnswerRun $run, bool $complete): void {
+		if ($complete === true && $run->outstanding !== []) {
 			throw new RefusedException(
 				rule: 'aanvullingsverzoek-still-outstanding',
 				sentence: sprintf(
 					'This cannot be closed yet. Still missing: %s.',
-					implode(', ', $outstanding)
+					implode(', ', $run->outstanding)
 				),
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end refuseClosingWhileOutstanding()
 
-		$changes = ['missingItems' => $items];
-
-		if ($complete === false) {
-			// A PARTIAL ANSWER CHANGES THE RECORD AND NOT THE CLOCK. The term
-			// stays suspended, because the applicant has not supplied what was
-			// asked and the case still cannot be decided.
-			$this->requests->write(request: $changes, id: $this->idOf(request: $request));
-			$this->logger->info(
-				'Dossiq: part of an aanvullingsverzoek arrived; the term stays suspended',
-				[
-					'app' => Application::APP_ID,
-					'case' => $caseId,
-					'outstanding' => count($outstanding),
-				]
-			);
-
-			return array_merge($request, $changes);
-		}
-
-		// THE ACT FIRST, again. `receive()` resumes the clock through the
-		// credit path that already exists, and a request marked answered over
-		// a term that did not resume would be the visible half of a broken
-		// pair.
-		$this->act->receive(caseId: $caseId, items: $received, when: $moment);
-
-		$changes = array_merge(
-			$changes,
+	/**
+	 * A PARTIAL ANSWER CHANGES THE RECORD AND NOT THE CLOCK. The term stays
+	 * suspended, because the applicant has not supplied what was asked and the
+	 * case still cannot be decided.
+	 *
+	 * @param AanvullingAnswerRun $run The answer being recorded.
+	 *
+	 * @return array<string, mixed> The request as it now stands.
+	 */
+	private function recordPartialAnswer(AanvullingAnswerRun $run): array {
+		$changes = ['missingItems' => $run->items];
+		$this->requests->write(request: $changes, id: $this->idOf(request: $run->request));
+		$this->logger->info(
+			'Dossiq: part of an aanvullingsverzoek arrived; the term stays suspended',
 			[
-				'state' => 'answered',
-				'answeredAt' => $moment->format('c'),
-				'answeredBy' => $userId,
+				'app' => Application::APP_ID,
+				'case' => $run->caseId,
+				'outstanding' => count($run->outstanding),
 			]
 		);
 
-		$this->requests->write(request: $changes, id: $this->idOf(request: $request));
-		$this->requests->markCaseWaiting(caseId: $caseId, since: null);
+		return array_merge($run->request, $changes);
+	}//end recordPartialAnswer()
+
+	/**
+	 * THE ACT FIRST, again. `receive()` resumes the clock through the credit
+	 * path that already exists, and a request marked answered over a term that
+	 * did not resume would be the visible half of a broken pair.
+	 *
+	 * @param AanvullingAnswerRun $run The answer being recorded.
+	 *
+	 * @return array<string, mixed> The request as it now stands.
+	 */
+	private function recordFullAnswer(AanvullingAnswerRun $run): array {
+		$this->act->receive(caseId: $run->caseId, items: $run->received, when: $run->moment);
+
+		$changes = [
+			'missingItems' => $run->items,
+			'state' => 'answered',
+			'answeredAt' => $run->moment->format('c'),
+			'answeredBy' => $run->userId,
+		];
+		$this->requests->write(request: $changes, id: $this->idOf(request: $run->request));
+		$this->requests->markCaseWaiting(caseId: $run->caseId, since: null);
 
 		$this->logger->info(
 			'Dossiq: an aanvullingsverzoek was answered in full and the term resumed',
-			['app' => Application::APP_ID, 'case' => $caseId]
+			['app' => Application::APP_ID, 'case' => $run->caseId]
 		);
 
-		return array_merge($request, $changes);
-	}//end recordAnswer()
+		return array_merge($run->request, $changes);
+	}//end recordFullAnswer()
 
 	/**
 	 * Whether a request's hersteltermijn has passed without an answer.
@@ -274,38 +318,13 @@ class AanvullingsverzoekResolutionService {
 	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
 	 */
 	public function markReceived(array $items, array $received, DateTimeImmutable $moment): array {
-		$arrived = [];
-		foreach ($received as $one) {
-			$text = mb_strtolower(trim((string)$one));
-			if ($text !== '') {
-				$arrived[] = $text;
-			}
-		}
-
+		$marker = new ItemArrivalMarker(received: $received, moment: $moment);
 		$marked = [];
 		foreach ($items as $item) {
-			if (is_array($item) === false) {
-				continue;
+			if (is_array($item) === true && trim((string)($item['item'] ?? '')) !== '') {
+				$marked[] = $marker->mark(item: $item);
 			}
-
-			$text = trim((string)($item['item'] ?? ''));
-			if ($text === '') {
-				continue;
-			}
-
-			$already = (($item['received'] ?? false) === true);
-			$nowHere = in_array(mb_strtolower($text), $arrived, true);
-
-			$row = $item;
-			$row['item'] = $text;
-			$row['received'] = ($already || $nowHere);
-
-			if ($already === false && $nowHere === true) {
-				$row['receivedAt'] = $moment->format('c');
-			}
-
-			$marked[] = $row;
-		}//end foreach
+		}
 
 		return $marked;
 	}//end markReceived()

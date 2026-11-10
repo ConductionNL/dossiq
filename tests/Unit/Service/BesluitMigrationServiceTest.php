@@ -256,6 +256,27 @@ final class BesluitMigrationServiceTest extends TestCase {
 	}//end besluit()
 
 	/**
+	 * The whole summary of a blocked run, and of a dry run that meets a row
+	 * without an id.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryKeepsItsWholeShape(): void {
+		$blocked = $this->service('', [$this->besluit('a')])->migrate(commit: true);
+		$this->assertSame(['status', 'total', 'migrated', 'skipped', 'failed', 'detached', 'message'], array_keys($blocked));
+		$this->assertSame(['blocked', 0, 0, 0, 0, false], array_slice(array_values($blocked), 0, 6));
+		$this->assertNotSame('', $blocked['message']);
+
+		$noId = $this->besluit('a');
+		unset($noId['id']);
+		$dry = $this->service('166', [$noId, $this->besluit('b')])->migrate(commit: false);
+		$this->assertSame(
+			['status' => 'ok', 'total' => 2, 'migrated' => 1, 'skipped' => 0, 'failed' => 1, 'detached' => false, 'message' => ''],
+			$dry
+		);
+	}//end testTheSummaryKeepsItsWholeShape()
+
+	/**
 	 * Without decidiq there is nothing to migrate onto, and the run must say so
 	 * rather than report a successful migration of zero rows.
 	 *
