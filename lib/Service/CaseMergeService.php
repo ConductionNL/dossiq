@@ -46,6 +46,8 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Service\Cases\CaseMergeRelink;
 use OCA\Dossiq\Service\Cases\CaseMergeRule;
 use OCA\Dossiq\Service\Cases\CaseMergeStore;
+use OCA\OpenRegister\Kernel\Contracts\MergeInstruction;
+use OCA\OpenRegister\Kernel\Contracts\ObjectMergerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -235,7 +237,9 @@ class CaseMergeService {
 		}
 
 		try {
-			$operation = $merger->executeMerge($mergedId, $survivorId, $reason, $actor);
+			$operation = $merger->merge(
+				instruction: new MergeInstruction(from: $mergedId, into: $survivorId, reason: $reason, mergedBy: $actor)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: OpenRegister refused the merge of "' . $mergedId . '": ' . $e->getMessage()
@@ -288,24 +292,23 @@ class CaseMergeService {
 	}//end mergeRefusal()
 
 	/**
-	 * Whether OpenRegister's merge service is here and answers to `executeMerge`.
+	 * Whether OpenRegister's merge service is here and is the platform's object merger.
 	 *
-	 * A duck-typed lookup against a class that is not installed answers null,
-	 * and one against a class that moved answers an object without the method.
-	 * Both are the platform being unavailable, and neither is an error here.
+	 * A lookup against a class that is not installed answers null, and one
+	 * against a class that moved answers something that is not the merger
+	 * contract. Both are the platform being unavailable, and neither is an
+	 * error here.
 	 *
 	 * @param mixed $merger Whatever the class lookup answered.
 	 *
 	 * @return bool True when the merge can be handed over.
 	 *
+	 * @psalm-assert-if-true ObjectMergerInterface $merger
+	 *
 	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	private function canExecuteMerge(mixed $merger): bool {
-		if ($merger === null) {
-			return false;
-		}
-
-		return method_exists($merger, 'executeMerge');
+		return ($merger instanceof ObjectMergerInterface);
 	}//end canExecuteMerge()
 
 	/**
