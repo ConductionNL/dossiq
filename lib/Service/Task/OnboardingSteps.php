@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Task\TaskAnswer;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -223,7 +224,7 @@ class OnboardingSteps {
 
 		try {
 			$completion = $this->container->get(self::COMPLETION_SERVICE);
-			$completion->complete($taskId, 'done', null, null, [], $actor);
+			$completion->complete(uuid: $taskId, answer: new TaskAnswer(outcome: 'done'), data: [], actor: $actor);
 		} catch (Throwable $e) {
 			$this->lastError = $e->getMessage();
 			$this->logger->warning('Dossiq: the engine refused to complete an onboarding step', ['task' => $taskId, 'exception' => $e->getMessage()]);

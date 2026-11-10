@@ -40,6 +40,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Service\Task\TaskAnswer;
+use OCA\OpenRegister\Service\Task\TaskFormCompletion;
 use Psr\Container\ContainerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -602,4 +604,25 @@ class EngineTaskGatewayTest extends TestCase {
 		$this->assertSame(expected: 'Only the requester may cancel this task.', actual: $gateway->lastError());
 		$this->assertFalse($this->gatewayWith(service: null)->cancel(taskId: 'task-1', reason: null, actor: 'anouk'));
 	}//end testCancelAsksTheEngineAndKeepsItsRefusal()
+
+	/**
+	 * complete() hands OpenRegister's form completion a TaskAnswer carrying the outcome.
+	 *
+	 * @return void
+	 */
+	public function testCompleteHandsTheEngineATaskAnswer(): void {
+		$completion = $this->getMockBuilder(TaskFormCompletion::class)->onlyMethods(['complete'])->getMock();
+		$completion->expects($this->once())
+			->method('complete')
+			->with(
+				'task-1',
+				$this->callback(static fn (TaskAnswer $answer): bool => $answer->outcome === 'approved'),
+				['verslag' => 'klaar'],
+				'behandelaar'
+			)
+			->willReturn(new \stdClass());
+		$gateway = new EngineTaskGateway($this->settings('1'), $this->container($completion), new NullLogger());
+
+		$this->assertTrue($gateway->complete(taskId: 'task-1', data: ['verslag' => 'klaar'], outcome: 'approved', actor: 'behandelaar'));
+	}//end testCompleteHandsTheEngineATaskAnswer()
 }//end class
