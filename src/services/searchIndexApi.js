@@ -47,7 +47,7 @@ export async function searchIndexStatus() {
 		generateUrl('/apps/openregister/api/settings/search-index'),
 	)
 
-	if (data === null || typeof data !== 'object' || data.error !== undefined) {
+	if (isRefusedStatus(data)) {
 		throw new Error(
 			String(data?.error ?? 'The search index status could not be read.'),
 		)
@@ -55,15 +55,45 @@ export async function searchIndexStatus() {
 
 	return {
 		concurrentRebuildSupported: data.concurrentRebuildSupported === true,
-		tables: data.tables && typeof data.tables === 'object' ? data.tables : {},
+		tables: tablesOf(data.tables),
 		tableCount: Number(data.tableCount ?? 0),
 		indexCount: Number(data.indexCount ?? 0),
 		lastRun: lastRunTime(data.lastRun),
 		lastRunSeconds: lastRunSeconds(data.lastRun),
 		rowsInTables: countOrNull(data.rowsInTables),
 		rowsInIndex: countOrNull(data.rowsInIndex),
-		indexed: data.indexed && typeof data.indexed === 'object' && !Array.isArray(data.indexed) ? data.indexed : null,
+		indexed: indexedOf(data.indexed),
 	}
+}
+
+/**
+ * Whether openregister answered something other than a status.
+ *
+ * @param {unknown} data The answer.
+ * @return {boolean} True for no object, or an object carrying an error.
+ */
+function isRefusedStatus(data) {
+	return data === null || typeof data !== 'object' || data.error !== undefined
+}
+
+/**
+ * The tables of a status, or none when the answer is not an object.
+ *
+ * @param {unknown} tables What openregister answered as `tables`.
+ * @return {object} The tables.
+ */
+function tablesOf(tables) {
+	return tables && typeof tables === 'object' ? tables : {}
+}
+
+/**
+ * The indexed counts of a status, or null when the answer is not a plain object.
+ *
+ * @param {unknown} indexed What openregister answered as `indexed`.
+ * @return {object|null} The counts.
+ */
+function indexedOf(indexed) {
+	return indexed && typeof indexed === 'object' && !Array.isArray(indexed) ? indexed : null
 }
 
 /**
