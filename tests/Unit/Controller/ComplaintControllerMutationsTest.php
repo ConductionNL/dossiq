@@ -44,6 +44,7 @@ use RuntimeException;
  * Update and transition, allowed and refused.
  *
  * @covers \OCA\Dossiq\Controller\ComplaintController
+ * @covers \OCA\Dossiq\Controller\Support\ComplaintMutationGate
  * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
  */
 class ComplaintControllerMutationsTest extends TestCase {
