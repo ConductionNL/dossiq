@@ -16,6 +16,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Gdpr;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Gdpr\PlatformDataSubjectRights;
 use OCA\OpenRegister\Service\Gdpr\Erasure\ErasureRefusedException;
+use OCA\OpenRegister\Service\Gdpr\SubjectQuery;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -70,14 +71,13 @@ class PlatformDataSubjectRightsTest extends TestCase {
 			}
 
 			/**
-			 * @param string      $subjectId The subject.
-			 * @param string|null $type      The kind.
-			 * @param string      $eraseMode The mode.
+			 * @param SubjectQuery $subject   The subject and its kind.
+			 * @param string       $eraseMode The mode.
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function preview(string $subjectId, ?string $type, string $eraseMode): array {
-				$this->calls[] = ['subjectId' => $subjectId, 'type' => $type, 'eraseMode' => $eraseMode];
+			public function preview(SubjectQuery $subject, string $eraseMode = 'pseudonymise'): array {
+				$this->calls[] = ['subjectId' => $subject->subjectId, 'type' => $subject->type, 'eraseMode' => $eraseMode];
 
 				return $this->report;
 			}
