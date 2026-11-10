@@ -143,6 +143,42 @@ class MigrateRegisterApplicationIdTest extends TestCase {
 	}//end testRefusalNamesTheCollidingSlugs()
 
 	/**
+	 * Every answer prints its own line, word for word.
+	 *
+	 * @return void
+	 */
+	public function testEveryAnswerPrintsItsOwnLine(): void {
+		$lines = [];
+		$output = $this->createMock(IOutput::class);
+		foreach (['info', 'warning'] as $level) {
+			$output->method($level)->willReturnCallback(
+				static function (string $line) use (&$lines, $level): void {
+					$lines[] = [$level, $line];
+				}
+			);
+		}
+
+		SchemaApplicationMigrator::$outcome = ['ok' => false, 'reason' => 'locked'];
+		$this->step()->run($output);
+		SchemaApplicationMigrator::$outcome = ['ok' => false];
+		$this->step()->run($output);
+		SchemaApplicationMigrator::$outcome = ['ok' => false, 'reason' => 'collisions', 'collisions' => ['case']];
+		$this->step()->run($output);
+		SchemaApplicationMigrator::$outcome = ['ok' => true, 'schemas' => 2];
+		$this->step()->run($output);
+
+		$this->assertSame(
+			[
+				['warning', 'Register application migration did not run: locked'],
+				['warning', 'Register application migration did not run: unknown'],
+				['warning', 'Refused: these schema slugs already exist under "dossiq": case. An import has already forked them; run occ openregister:schemas:dedup, then re-run the upgrade.'],
+				['info', 'Moved 2 schema(s) and 0 register(s) from "procest" to "dossiq".'],
+			],
+			$lines
+		);
+	}//end testEveryAnswerPrintsItsOwnLine()
+
+	/**
 	 * A throwing migrator warns instead of aborting the upgrade.
 	 *
 	 * Letting this bubble would fail the whole app upgrade over a migration
