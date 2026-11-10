@@ -425,6 +425,37 @@ class CaseDefinitionPortabilityTest extends TestCase {
 	}//end testTheImportAnswersAndLogsItsOutcome()
 
 	/**
+	 * A component this import does not know answers its own error. (A missing
+	 * or unreadable component file never gets this far: the validator refuses
+	 * the package first.)
+	 *
+	 * @return void
+	 */
+	public function testEachUnusableComponentAnswersItsOwnResult(): void {
+		$path = tempnam(sys_get_temp_dir(), 'dossiq_parts_');
+		$zip = new ZipArchive();
+		$zip->open((string)$path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+		$zip->addFromString('manifest.json', json_encode([
+			'version' => '1.0',
+			'exportDate' => '2026-09-18T00:00:00+00:00',
+			'caseType' => ['id' => 'ct-1', 'slug' => 'x'],
+			'components' => ['mystery'],
+		]));
+		$zip->addFromString('mystery.json', '{}');
+		$zip->close();
+
+		$result = $this->importer()->importCaseDefinition((string)$path);
+		unlink((string)$path);
+
+		self::assertSame(
+			[
+				'mystery' => ['status' => 'error', 'message' => "Component 'mystery' names no collection this import knows how to write."],
+			],
+			$result['components']
+		);
+	}//end testEachUnusableComponentAnswersItsOwnResult()
+
+	/**
 	 * A component that writes nothing is not a success.
 	 *
 	 * @return void
