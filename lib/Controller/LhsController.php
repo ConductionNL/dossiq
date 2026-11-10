@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\LhsLookupService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\Vth\LhsRecommendationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -63,6 +64,7 @@ class LhsController extends Controller {
 	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param OwningCaseResolver $owningCaseResolver Resolves a recommendation's stored case
 	 */
 	public function __construct(
 		string $appName,
@@ -73,6 +75,7 @@ class LhsController extends Controller {
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly OwningCaseResolver $owningCaseResolver,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -250,6 +253,24 @@ class LhsController extends Controller {
 			return new JSONResponse(
 				['error' => 'recommendationId, intervention en justification zijn verplicht'],
 				Http::STATUS_BAD_REQUEST,
+			);
+		}
+
+		// Per-case guard. The case is read from the STORED recommendation
+		// (`case` is required on lhsRecommendation), never from the request,
+		// and an unresolvable recommendation or case denies. Without this any
+		// signed-in account could de-escalate any enforcement recommendation.
+		$caseId = $this->owningCaseResolver->resolve(
+			objectId: trim($recommendationId),
+			schemaKey: 'lhs_recommendation_schema',
+			caseField: 'case'
+		);
+		if ($caseId === null
+			|| $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false
+		) {
+			return new JSONResponse(
+				['error' => 'Not authorized'],
+				Http::STATUS_FORBIDDEN,
 			);
 		}
 
