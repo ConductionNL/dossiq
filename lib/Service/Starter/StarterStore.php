@@ -26,6 +26,8 @@ namespace OCA\Dossiq\Service\Starter;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -248,9 +250,10 @@ class StarterStore {
 
 		try {
 			return ($context['service']->deleteObject(
-				uuid: $id,
-				register: $context['register'],
-				schema: $context['schema'],
+				deletion: new ObjectDeletion(
+					uuid: $id,
+					target: new ObjectFindTarget(register: $context['register'], schema: $context['schema'])
+				),
 			) === true);
 		} catch (Throwable $e) {
 			$this->logger->error(

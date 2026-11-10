@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
@@ -199,7 +201,12 @@ class CaseTypeDeleteGuard implements IEventListener {
 			foreach ($rows as $row) {
 				$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
 				if ($id !== '') {
-					$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
+					$objectService->deleteObject(
+						deletion: new ObjectDeletion(
+							uuid: $id,
+							target: new ObjectFindTarget(register: $register, schema: $schema)
+						)
+					);
 				}
 			}
 		} catch (Throwable $e) {

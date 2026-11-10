@@ -30,6 +30,8 @@ use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -185,9 +187,13 @@ class TriageRules {
 		$this->ruleOf(rows: $this->rows(caseId: $caseId), ruleId: $ruleId);
 		try {
 			$this->settingsService->getObjectService()->deleteObject(
-				uuid: $ruleId,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+				deletion: new ObjectDeletion(
+					uuid: $ruleId,
+					target: new ObjectFindTarget(
+						register: $this->settingsService->getConfigValue('register'),
+						schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY)
+					)
+				),
 			);
 		} catch (Throwable $e) {
 			throw $this->unavailable(previous: $e);

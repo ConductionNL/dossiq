@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync;
 use OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -501,7 +502,7 @@ class BrcController extends ZgwController {
 			$this->sync->deleteOiosForDecision(decisionUrl: $decisionUrl);
 
 			// Delete the besluit itself.
-			$objectService->deleteObject(uuid: $uuid);
+			$objectService->deleteObject(deletion: new ObjectDeletion(uuid: $uuid));
 		} catch (\Throwable $e) {
 			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
 		}//end try

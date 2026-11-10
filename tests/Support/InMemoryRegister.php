@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 /**
@@ -257,7 +258,9 @@ class InMemoryRegister {
 	 *
 	 * @return bool True when a row was removed.
 	 */
-	public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+	public function deleteObject(ObjectDeletion $deletion): bool {
+		$schema = ($deletion->target->schema ?? '');
+		$uuid = ($deletion->uuid ?? '');
 		if (isset($this->rows[(string)$schema][$uuid]) === false) {
 			return false;
 		}

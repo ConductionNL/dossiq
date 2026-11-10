@@ -32,6 +32,8 @@ namespace OCA\Dossiq\Woo;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -346,7 +348,7 @@ class WooDeliveredSetWriter {
 	 */
 	public function discard(string $setId): void {
 		[$objectService, $register, $schema] = $this->store();
-		$objectService->deleteObject(register: $register, schema: $schema, uuid: $setId);
+		$objectService->deleteObject(deletion: new ObjectDeletion(uuid: $setId, target: new ObjectFindTarget(register: $register, schema: $schema)));
 	}//end discard()
 
 	/**

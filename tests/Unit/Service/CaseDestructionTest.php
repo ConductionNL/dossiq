@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Recycle\CaseDestructionService;
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
 use OCA\Dossiq\Service\Recycle\RetentionClocks;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -137,7 +138,8 @@ class CaseDestructionTest extends TestCase {
 			 *
 			 * @return bool Always true.
 			 */
-			public function deleteObject(string $uuid, string $register, string $schema, bool $permanent = false): bool {
+			public function deleteObject(ObjectDeletion $deletion): bool {
+				$permanent = ($deletion->permanent ?? false);
 				$this->purged = $permanent;
 				return true;
 			}

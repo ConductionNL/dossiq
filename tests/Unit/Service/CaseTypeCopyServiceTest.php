@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -209,7 +210,8 @@ class CaseTypeCopyServiceTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(string $uuid, $register = null, $schema = null): bool {
+			public function deleteObject(ObjectDeletion $deletion): bool {
+				$uuid = $deletion->uuid;
 				if (isset($this->store[$uuid]) === false) {
 					return false;
 				}

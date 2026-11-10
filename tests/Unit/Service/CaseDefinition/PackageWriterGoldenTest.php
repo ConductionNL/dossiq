@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -211,12 +212,13 @@ final class GoldenPackageObjects {
 	/**
 	 * Delete one object.
 	 *
-	 * @param string     $uuid     The uuid.
-	 * @param int|string $register The register.
+	 * @param ObjectDeletion $deletion The uuid and the register.
 	 *
 	 * @return bool
 	 */
-	public function deleteObject(string $uuid, int|string $register = ''): bool {
+	public function deleteObject(ObjectDeletion $deletion): bool {
+		$uuid = $deletion->uuid;
+		$register = $deletion->target->register;
 		$this->log[] = ['deleteObject' => compact('uuid', 'register')];
 		if (in_array($uuid, ($this->behaviour['deleteThrows'] ?? []), true) === true) {
 			throw new RuntimeException('delete refused for ' . $uuid);

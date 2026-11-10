@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\OpenRegister\Exception\NotAuthorizedException;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -99,7 +100,8 @@ final class ZgwServiceStoreFailureTest extends TestCase {
 				return ($this->find)($id);
 			}//end find()
 
-			public function deleteObject(string $uuid): bool {
+			public function deleteObject(ObjectDeletion $deletion): bool {
+				$uuid = $deletion->uuid;
 				if ($this->delete !== null) {
 					($this->delete)($uuid);
 				}

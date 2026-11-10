@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -290,7 +291,7 @@ class BrcDocumentLinkHandler {
 			$ioUrl = $bioData['document'] ?? '';
 
 			// Delete the BIO.
-			$objectService->deleteObject(uuid: $uuid);
+			$objectService->deleteObject(deletion: new ObjectDeletion(uuid: $uuid));
 		} catch (\Throwable $e) {
 			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete BIO', object: $object);
 		}//end try

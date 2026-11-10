@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Starter\ShippedFingerprint;
 use OCA\Dossiq\Service\Starter\ShippedSets;
 use OCA\Dossiq\Service\Starter\StarterStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -131,7 +132,10 @@ final class PackageTestRegister extends InMemoryRegister {
 	 *
 	 * @return boolean True when a row went.
 	 */
-	public function deleteObject(int|string $uuid = '', int|string $register = '', int|string $schema = ''): bool {
+	public function deleteObject(ObjectDeletion $deletion): bool {
+		$uuid = ($deletion->uuid ?? '');
+		$register = ($deletion->target->register ?? '');
+		$schema = ($deletion->target->schema ?? '');
 		$this->deletedFrom[(string)$uuid] = (string)$register;
 		foreach (array_keys($this->rows) as $slug) {
 			if (($schema === '' || $schema === $slug) && isset($this->rows[$slug][(string)$uuid]) === true) {

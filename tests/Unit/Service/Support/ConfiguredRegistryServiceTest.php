@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Support;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -167,7 +168,10 @@ class ConfiguredRegistryServiceTest extends TestCase {
 			 *
 			 * @return bool Always true.
 			 */
-			public function deleteObject(string $uuid, string $register = '', string $schema = ''): bool {
+			public function deleteObject(ObjectDeletion $deletion): bool {
+				$uuid = $deletion->uuid;
+				$register = ($deletion->target->register ?? '');
+				$schema = ($deletion->target->schema ?? '');
 				$this->calls[] = ['delete', $uuid, $register, $schema];
 				return true;
 			}//end deleteObject()

@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service\Zgw;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 
 /**
  * The cross-register side effects of the Besluiten API.
@@ -212,7 +213,9 @@ class BrcCrossRegisterSync {
 				$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
 				if ($oioUuid !== '') {
 					$objectService->deleteObject(
-						uuid: $oioUuid,
+						deletion: new ObjectDeletion(
+							uuid: $oioUuid
+						),
 						_rbac: false,
 						_multitenancy: false
 					);
@@ -276,7 +279,9 @@ class BrcCrossRegisterSync {
 				$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
 				if ($oioUuid !== '') {
 					$objectService->deleteObject(
-						uuid: $oioUuid,
+						deletion: new ObjectDeletion(
+							uuid: $oioUuid
+						),
 						_rbac: false,
 						_multitenancy: false
 					);

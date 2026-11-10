@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+
 /**
  * Records every read, write and delete, and fails the methods it is told to.
  */
@@ -93,7 +95,8 @@ final class RecordsBrcStoreCalls {
 		return $this->saved;
 	}//end saveObject()
 
-	public function deleteObject(string $uuid, bool $_rbac = true, bool $_multitenancy = true): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true): bool {
+		$uuid = $deletion->uuid;
 		$this->record('deleteObject', [$uuid, $_rbac, $_multitenancy]);
 		return true;
 	}//end deleteObject()

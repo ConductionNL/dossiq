@@ -40,6 +40,8 @@ namespace OCA\Dossiq\Service\Support;
 
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -207,9 +209,10 @@ class ConfiguredRegistryService {
 		}
 
 		$context['objectService']->deleteObject(
-			uuid: $id,
-			register: $context['register'],
-			schema: $context['schema']
+			deletion: new ObjectDeletion(
+				uuid: $id,
+				target: new ObjectFindTarget(register: $context['register'], schema: $context['schema'])
+			)
 		);
 	}//end delete()
 

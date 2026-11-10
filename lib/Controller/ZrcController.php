@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\OpenRegister\Exception\HookStoppedException;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -1490,7 +1491,7 @@ class ZrcController extends ZgwController {
 	 */
 	private function deleteCaseObject(object $objectService, string $uuid): ?JSONResponse {
 		try {
-			$objectService->deleteObject(uuid: $uuid);
+			$objectService->deleteObject(deletion: new ObjectDeletion(uuid: $uuid));
 			return null;
 		} catch (HookStoppedException $stopped) {
 			$held = CaseHeldException::fromHookErrors(errors: $stopped->getErrors());
@@ -1934,7 +1935,7 @@ class ZrcController extends ZgwController {
 
 				$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
 				if ($oioUuid !== '') {
-					$this->zgwService->getObjectService()->deleteObject(uuid: $oioUuid);
+					$this->zgwService->getObjectService()->deleteObject(deletion: new ObjectDeletion(uuid: $oioUuid));
 					$this->zgwService->getLogger()->info(
 						'zrc-005b: Deleted ObjectInformatieObject ' . $oioUuid
 					);

@@ -45,6 +45,8 @@ namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -241,9 +243,10 @@ class CaseSeats {
 		try {
 			[$objectService, $register] = $this->context();
 			$objectService->deleteObject(
-				register: $register,
-				schema: $this->schema(key: 'role_schema'),
-				uuid: $uuid,
+				deletion: new ObjectDeletion(
+					uuid: $uuid,
+					target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'role_schema'))
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
