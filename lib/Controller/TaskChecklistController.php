@@ -155,14 +155,35 @@ class TaskChecklistController extends Controller {
 				actor: $user->getUID()
 			);
 			return new JSONResponse(data: $result, statusCode: Http::STATUS_CREATED);
-		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
+		} catch (Throwable $e) {
+			return $this->submitFailed(caseId: $id, exception: $e);
+		}
+	}//end submit()
+
+	/**
+	 * The answer to a checklist run the store did not take.
+	 *
+	 * OpenRegister's validation refusal is the caller's fault (400, logged at
+	 * info); this app's own refusal is a 422; anything else is a logged 500.
+	 *
+	 * @param string    $caseId    The case.
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	private function submitFailed(string $caseId, Throwable $exception): JSONResponse {
+		if ($exception instanceof OpenRegisterValidationException
+			|| $exception instanceof OpenRegisterCustomValidationException
+		) {
 			// A REJECTED PAYLOAD IS THE CALLER'S FAULT, NOT THE SERVER'S.
 			//
 			// OpenRegister validates every write against the schema and throws
 			// its own ValidationException with a message that already names the
 			// offending property -- `Property 'checklist' should match format
 			// 'uuid' but 'e2e-checklist' does not`. Without this arm that
-			// exception fell through to the `Throwable` catch below and came
+			// exception fell through to the `Throwable` arm below and came
 			// back as a 500, so a caller sending a bad payload was told the
 			// server had broken and every such submission read as an outage.
 			// It stayed invisible because the e2e citation covering this
@@ -181,29 +202,31 @@ class TaskChecklistController extends Controller {
 			// genuine fault must still be a 500 and must still be logged as an
 			// error, and it is, immediately below.
 			$this->logger->info(
-				'Rejected checklist run for case ' . $id . ': ' . $e->getMessage(),
+				'Rejected checklist run for case ' . $caseId . ': ' . $exception->getMessage(),
 				['app' => $this->appName]
 			);
 			return new JSONResponse(
-				['message' => $e->getMessage()],
+				['message' => $exception->getMessage()],
 				Http::STATUS_BAD_REQUEST
 			);
-		} catch (RuntimeException $e) {
+		}
+
+		if ($exception instanceof RuntimeException) {
 			return new JSONResponse(
-				['message' => $e->getMessage()],
+				['message' => $exception->getMessage()],
 				Http::STATUS_UNPROCESSABLE_ENTITY
 			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Failed to submit a checklist run for case ' . $id . ': ' . $e->getMessage(),
-				['app' => $this->appName]
-			);
-			return new JSONResponse(
-				['message' => 'Submission failed: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end submit()
+		}
+
+		$this->logger->error(
+			'Failed to submit a checklist run for case ' . $caseId . ': ' . $exception->getMessage(),
+			['app' => $this->appName]
+		);
+		return new JSONResponse(
+			['message' => 'Submission failed: ' . $exception->getMessage()],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end submitFailed()
 
 	/**
 	 * Every checklist run of a case.
