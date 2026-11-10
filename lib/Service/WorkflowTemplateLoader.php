@@ -152,43 +152,21 @@ class WorkflowTemplateLoader {
 		}
 
 		if (isset($this->cache[$caseTypeId]) === true) {
-			if ($this->cache[$caseTypeId] === false) {
-				return null;
-			}
-
-			return $this->cache[$caseTypeId];
+			return $this->cachedTemplate(caseTypeId: $caseTypeId);
 		}
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			$this->cache[$caseTypeId] = false;
-			return null;
+			return $this->noTemplate(caseTypeId: $caseTypeId);
 		}
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$templateSchema = $this->settingsService->getConfigValue(key: 'workflow_template_schema');
-		if ($register === '' || $templateSchema === '') {
-			$this->cache[$caseTypeId] = false;
-			return null;
+		$query = $this->activeTemplateQuery(caseTypeId: $caseTypeId);
+		if ($query === null) {
+			return $this->noTemplate(caseTypeId: $caseTypeId);
 		}
 
 		try {
-			// OpenRegister's ObjectService exposes `searchObjects($query)` —
-			// there is NO `findObjects()` method (its absence is what previously
-			// broke the engine: the call threw and every lookup returned empty).
-			// The register/schema context lives under the `@self` block; object
-			// field filters (caseType, isActive) sit at the top level and are
-			// applied as server-side equality matches.
-			$found = $objectService->searchObjects(
-				[
-					'@self' => [
-						'register' => (int)$register,
-						'schema' => (int)$templateSchema,
-					],
-					'caseType' => $caseTypeId,
-					'isActive' => true,
-				],
-			);
+			$found = $objectService->searchObjects($query);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'WorkflowTemplateLoader: searchObjects failed',
@@ -198,12 +176,82 @@ class WorkflowTemplateLoader {
 			return null;
 		}//end try
 
-		// The normalise() helper already coerces any non-array result (e.g. the
-		// int that searchObjects() returns in count mode) to an empty list.
+		return $this->rememberedTemplate(caseTypeId: $caseTypeId, found: $found);
+	}//end getActiveTemplate()
+
+	/**
+	 * The cached answer for a case type: its template, or null when it had none.
+	 *
+	 * @param string $caseTypeId The case type UUID, cached.
+	 *
+	 * @return array|null
+	 */
+	private function cachedTemplate(string $caseTypeId): ?array {
+		if ($this->cache[$caseTypeId] === false) {
+			return null;
+		}
+
+		return $this->cache[$caseTypeId];
+	}//end cachedTemplate()
+
+	/**
+	 * Remember that the case type has no template, and answer so.
+	 *
+	 * @param string $caseTypeId The case type UUID.
+	 *
+	 * @return null
+	 */
+	private function noTemplate(string $caseTypeId): null {
+		$this->cache[$caseTypeId] = false;
+		return null;
+	}//end noTemplate()
+
+	/**
+	 * The search for the case type's active templates, or null when the register is not configured.
+	 *
+	 * OpenRegister's ObjectService exposes `searchObjects($query)` — there is
+	 * NO `findObjects()` method (its absence is what previously broke the
+	 * engine: the call threw and every lookup returned empty). The
+	 * register/schema context lives under the `@self` block; object field
+	 * filters (caseType, isActive) sit at the top level and are applied as
+	 * server-side equality matches.
+	 *
+	 * @param string $caseTypeId The case type UUID.
+	 *
+	 * @return array|null
+	 */
+	private function activeTemplateQuery(string $caseTypeId): ?array {
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$templateSchema = $this->settingsService->getConfigValue(key: 'workflow_template_schema');
+		if ($register === '' || $templateSchema === '') {
+			return null;
+		}
+
+		return [
+			'@self' => [
+				'register' => (int)$register,
+				'schema' => (int)$templateSchema,
+			],
+			'caseType' => $caseTypeId,
+			'isActive' => true,
+		];
+	}//end activeTemplateQuery()
+
+	/**
+	 * The default among the active templates found, decoded and cached; none caches the miss.
+	 *
+	 * The normalise() helper already coerces any non-array result (e.g. the
+	 * int that searchObjects() returns in count mode) to an empty list.
+	 *
+	 * @param string $caseTypeId The case type UUID.
+	 * @param mixed  $found      What the search answered.
+	 *
+	 * @return array|null
+	 */
+	private function rememberedTemplate(string $caseTypeId, mixed $found): ?array {
 		$templates = $this->normalise(value: $found);
 		if (count($templates) === 0) {
-			$this->cache[$caseTypeId] = false;
-			return null;
+			return $this->noTemplate(caseTypeId: $caseTypeId);
 		}
 
 		$template = $this->decoded(
@@ -212,7 +260,7 @@ class WorkflowTemplateLoader {
 
 		$this->cache[$caseTypeId] = $template;
 		return $template;
-	}//end getActiveTemplate()
+	}//end rememberedTemplate()
 
 	/**
 	 * Convenience: get a single transition from a caseType's default route.

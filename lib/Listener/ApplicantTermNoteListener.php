@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\ApplicantTermNote;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
@@ -84,24 +85,90 @@ class ApplicantTermNoteListener implements IEventListener {
 			return;
 		}
 
+		$payload = $this->casePayload(event: $event);
+		if ($payload === null) {
+			return;
+		}
+
+		$this->writeNote(event: $event, payload: $payload);
+	}//end handle()
+
+	/**
+	 * The payload being saved, when it is a case.
+	 *
+	 * @param ObjectUpdatingEvent $event The update.
+	 *
+	 * @return array<string, mixed>|null The payload, or null when it is unreadable or not a case.
+	 */
+	private function casePayload(ObjectUpdatingEvent $event): ?array {
 		try {
 			$payload = $event->getNewObject()->jsonSerialize();
 		} catch (Throwable $e) {
 			$this->logger->debug('Dossiq: the applicant term note listener could not read the payload: ' . $e->getMessage());
-			return;
+			return null;
 		}
 
 		if (is_array($payload) === false || $this->isCaseSchema(object: $payload) === false) {
-			return;
+			return null;
 		}
 
+		return $payload;
+	}//end casePayload()
+
+	/**
+	 * Write the note fields that changed into the save.
+	 *
+	 * @param ObjectUpdatingEvent  $event   The update.
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return void
+	 */
+	private function writeNote(ObjectUpdatingEvent $event, array $payload): void {
 		// What the save will hold: the payload with what earlier listeners
 		// (the calculation, the statutory term's deadline) already changed.
 		$modified = $event->getModifiedData();
-		$case = array_merge($payload, $modified);
+		$changes = $this->noteChanges(case: array_merge($payload, $modified));
+		if ($changes === []) {
+			return;
+		}
 
+		$event->setModifiedData(array_merge($modified, $changes));
+	}//end writeNote()
+
+	/**
+	 * The note fields whose value differs from what the case holds.
+	 *
+	 * @param array<string, mixed> $case What the save will hold.
+	 *
+	 * @return array<string, mixed> The changed fields; none when the note cannot be worked out.
+	 */
+	private function noteChanges(array $case): array {
+		$fields = $this->noteFields(case: $case);
+		if ($fields === null) {
+			return [];
+		}
+
+		$changes = [];
+		foreach ($fields as $field => $value) {
+			$stored = ($case[$field] ?? null);
+			if ((string)($stored ?? '') !== (string)($value ?? '')) {
+				$changes[$field] = $value;
+			}
+		}
+
+		return $changes;
+	}//end noteChanges()
+
+	/**
+	 * The note and the date for the case, or null when they cannot be worked out.
+	 *
+	 * @param array<string, mixed> $case What the save will hold.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function noteFields(array $case): ?array {
 		try {
-			$fields = $this->note->fieldsFor(
+			return $this->note->fieldsFor(
 				case: $case,
 				deadline: (string)($case['deadline'] ?? ''),
 				extensionPeriod: fn (string $caseTypeId): string => $this->caseTypes->read(caseTypeId: $caseTypeId)['extensionPeriod'],
@@ -113,23 +180,9 @@ class ApplicantTermNoteListener implements IEventListener {
 				'Dossiq termijn: the applicant term note could not be worked out, so it was left as the save carried it',
 				['error' => $e->getMessage()]
 			);
-			return;
+			return null;
 		}
-
-		$changes = [];
-		foreach ($fields as $field => $value) {
-			$stored = ($case[$field] ?? null);
-			if ((string)($stored ?? '') !== (string)($value ?? '')) {
-				$changes[$field] = $value;
-			}
-		}
-
-		if ($changes === []) {
-			return;
-		}
-
-		$event->setModifiedData(array_merge($modified, $changes));
-	}//end handle()
+	}//end noteFields()
 
 	/**
 	 * Whether the supplied payload belongs to the `case` schema.
@@ -139,16 +192,6 @@ class ApplicantTermNoteListener implements IEventListener {
 	 * @return bool True when this is a case.
 	 */
 	private function isCaseSchema(array $object): bool {
-		$expected = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: (string)$this->settingsService->getConfigValue('case_schema'));
 	}//end isCaseSchema()
 }//end class
