@@ -193,7 +193,33 @@ class MajorCaseDeclaration {
 			return ['ok' => true, 'closed' => false];
 		}
 
-		$closedAt = $this->cases->now();
+		$channel['closedAt'] = $this->cases->now();
+
+		// Filed BEFORE the room is closed: a room Talk has deleted can no
+		// longer be read, so a write that failed after the delete would lose
+		// what was said rather than merely fail.
+		$this->cases->write(
+			caseId: $caseId,
+			changes: [
+				'majorChannel' => $channel,
+				'conversations' => $this->conversationsClosing(case: $case, channel: $channel),
+			],
+		);
+
+		$this->broker->closeRoom(roomId: (string)$channel['roomId']);
+
+		return ['ok' => true, 'closed' => true];
+	}//end closeMajorChannel()
+
+	/**
+	 * The case's conversations with the closing channel filed after them.
+	 *
+	 * @param array<string, mixed> $case    The case.
+	 * @param array<string, mixed> $channel The channel, with its `closedAt`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function conversationsClosing(array $case, array $channel): array {
 		$conversations = $this->cases->conversationsOf(case: $case);
 		$conversations[] = [
 			'kind' => 'majorChannel',
@@ -204,26 +230,11 @@ class MajorCaseDeclaration {
 			'startedBy' => (string)($case['majorDeclaredBy'] ?? ''),
 			'participants' => array_values((array)($case['majorResponders'] ?? [])),
 			'durationSeconds' => 0,
-			'endedAt' => $closedAt,
+			'endedAt' => $channel['closedAt'],
 		];
 
-		$channel['closedAt'] = $closedAt;
-
-		// Filed BEFORE the room is closed: a room Talk has deleted can no
-		// longer be read, so a write that failed after the delete would lose
-		// what was said rather than merely fail.
-		$this->cases->write(
-			caseId: $caseId,
-			changes: [
-				'majorChannel' => $channel,
-				'conversations' => $conversations,
-			],
-		);
-
-		$this->broker->closeRoom(roomId: (string)$channel['roomId']);
-
-		return ['ok' => true, 'closed' => true];
-	}//end closeMajorChannel()
+		return $conversations;
+	}//end conversationsClosing()
 
 	/**
 	 * The channel this case already has, when it has one that is still open.
