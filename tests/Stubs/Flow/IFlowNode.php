@@ -76,12 +76,10 @@ interface IFlowNode {
 	/**
 	 * Run the node over a batch of items.
 	 *
-	 * @param array<int, array<string, mixed>> $items The items.
-	 * @param array<string, mixed> $config The step config.
-	 * @param array<string, mixed> $context The run context.
+	 * @param FlowNodeCall $call The items, the step config and the run context.
 	 *
 	 * @return array<int, array<string, mixed>> The resulting items.
 	 */
-	public function execute(array $items, array $config, array $context): array;
+	public function execute(FlowNodeCall $call): array;
 
 }//end interface
