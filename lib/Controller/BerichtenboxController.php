@@ -90,13 +90,54 @@ class BerichtenboxController extends Controller {
 		}
 
 		$caseId = $this->request->getParam('caseId');
-		$bsn = $this->request->getParam('bsn', '');
-		$subject = $this->request->getParam('subject', '');
-		$body = $this->request->getParam('body', '');
-		$typeCode = $this->request->getParam('berichtTypeCode', '');
-		$attachmentFileId = $this->request->getParam('attachmentFileId');
 		$category = (string)$this->request->getParam('category', 'case-update');
+		$refusal = ($this->sendRefusal(caseId: $caseId, user: $user) ?? $this->categoryRefusal(category: $category));
+		if ($refusal !== null) {
+			return $refusal;
+		}
 
+		return $this->dispatch(caseId: $caseId, category: $category);
+	}//end send()
+
+	/**
+	 * Hand the message to the service and answer with what it recorded.
+	 *
+	 * @param mixed  $caseId   The case the message is about.
+	 * @param string $category The message category.
+	 *
+	 * @return JSONResponse The 200 with the message record, or the 400 the service's refusal answers with.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function dispatch(mixed $caseId, string $category): JSONResponse {
+		$result = $this->berichtenboxService->sendMessage(
+			$caseId,
+			$this->request->getParam('bsn', ''),
+			$this->request->getParam('subject', ''),
+			$this->request->getParam('body', ''),
+			$this->request->getParam('berichtTypeCode', ''),
+			$this->request->getParam('attachmentFileId'),
+			$category
+		);
+
+		if (isset($result['error']) === true) {
+			return $this->notSent(result: $result);
+		}
+
+		return new JSONResponse(['success' => true, 'message' => $result]);
+	}//end dispatch()
+
+	/**
+	 * Refuse a send without a case, or by a caller who may not change it.
+	 *
+	 * @param mixed      $caseId The case the message is about.
+	 * @param \OCP\IUser $user   The caller.
+	 *
+	 * @return JSONResponse|null The 400 or 403, or null when the send may go ahead.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function sendRefusal(mixed $caseId, \OCP\IUser $user): ?JSONResponse {
 		if (empty($caseId) === true) {
 			return new JSONResponse(['success' => false, 'error' => 'caseId is required'], 400);
 		}
@@ -111,8 +152,22 @@ class BerichtenboxController extends Controller {
 			);
 		}
 
-		// The category decides, not the channel: a besluit by Berichtenbox is
-		// always delivered, a case update respects the citizen's opt-out.
+		return null;
+	}//end sendRefusal()
+
+	/**
+	 * Refuse a message category this app does not know.
+	 *
+	 * The category decides, not the channel: a besluit by Berichtenbox is
+	 * always delivered, a case update respects the citizen's opt-out.
+	 *
+	 * @param string $category The category.
+	 *
+	 * @return JSONResponse|null The 400, or null for a known category.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function categoryRefusal(string $category): ?JSONResponse {
 		if (in_array($category, self::CATEGORIES, true) === false) {
 			return new JSONResponse(
 				['success' => false, 'code' => 'invalid-category', 'error' => 'Unknown message category.'],
@@ -120,33 +175,34 @@ class BerichtenboxController extends Controller {
 			);
 		}
 
-		$result = $this->berichtenboxService->sendMessage(
-			$caseId,
-			$bsn,
-			$subject,
-			$body,
-			$typeCode,
-			$attachmentFileId,
-			$category
-		);
+		return null;
+	}//end categoryRefusal()
 
-		if (isset($result['error']) === true) {
-			// The message is still recorded as not sent, with this reason (BerichtenboxService::storedSend()).
-			$answer = ['success' => false, 'error' => $result['error']];
-			if (isset($result['code']) === true) {
-				$answer['code'] = $result['code'];
-			}
-
-			if (in_array(($result['code'] ?? ''), self::PROVIDER_MISSING_CODES, true) === true) {
-				$answer['code']  = 'provider-not-configured';
-				$answer['cause'] = $result['code'];
-			}
-
-			return new JSONResponse($answer, 400);
+	/**
+	 * The 400 a message the service did not send answers with.
+	 *
+	 * The message is still recorded as not sent, with this reason
+	 * (BerichtenboxService::storedSend()). A missing provider is named as such.
+	 *
+	 * @param array<string, mixed> $result The service's answer, carrying `error` and maybe `code`.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function notSent(array $result): JSONResponse {
+		$answer = ['success' => false, 'error' => $result['error']];
+		if (isset($result['code']) === true) {
+			$answer['code'] = $result['code'];
 		}
 
-		return new JSONResponse(['success' => true, 'message' => $result]);
-	}//end send()
+		if (in_array(($result['code'] ?? ''), self::PROVIDER_MISSING_CODES, true) === true) {
+			$answer['code']  = 'provider-not-configured';
+			$answer['cause'] = $result['code'];
+		}
+
+		return new JSONResponse($answer, 400);
+	}//end notSent()
 
 	/**
 	 * List Berichtenbox messages linked to a case.
