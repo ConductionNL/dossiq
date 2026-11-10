@@ -140,19 +140,6 @@ class StatusTransitionController extends Controller {
 
 		$body = $this->readJsonBody();
 		$transitionId = (string)($body['transitionId'] ?? '');
-		$comment = null;
-		if (isset($body['comment']) === true) {
-			$comment = (string)$body['comment'];
-		}
-
-		// REQ-STE-12: the result the case closes with, when the target status
-		// is final. The engine decides whether it is needed; the controller
-		// only carries it.
-		$resultTypeId = null;
-		if (isset($body['resultTypeId']) === true) {
-			$resultTypeId = (string)$body['resultTypeId'];
-		}
-
 		if ($transitionId === '') {
 			return new JSONResponse(
 				['error' => 'transitionId is required'],
@@ -160,47 +147,123 @@ class StatusTransitionController extends Controller {
 			);
 		}
 
+		return $this->executeTransition(caseId: $caseId, body: $body);
+	}//end execute()
+
+	/**
+	 * Hand the transition to the engine and answer with its result or its refusal.
+	 *
+	 * @param string               $caseId The case UUID.
+	 * @param array<string, mixed> $body   The request body, carrying a transitionId.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function executeTransition(string $caseId, array $body): JSONResponse {
+		$transitionId = (string)($body['transitionId'] ?? '');
+
 		try {
+			// REQ-STE-12: the result the case closes with, when the target status
+			// is final. The engine decides whether it is needed; the controller
+			// only carries it.
 			$result = $this->transitionEngine->execute(
 				caseId: $caseId,
 				transitionId: $transitionId,
-				comment: $comment,
-				resultTypeId: $resultTypeId,
+				comment: $this->optionalString(body: $body, key: 'comment'),
+				resultTypeId: $this->optionalString(body: $body, key: 'resultTypeId'),
 			);
 			return new JSONResponse($result);
 		} catch (GuardFailedException $e) {
-			return new JSONResponse(
-				[
-					'message' => 'This move is blocked by a rule on the case.',
-					'error' => 'transition-guard-failed',
-					'code' => $e->getMessage(),
-					'failedGuards' => $e->getFailedGuards(),
-				],
-				Http::STATUS_CONFLICT,
-			);
+			return $this->guardFailed(e: $e);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'execute', e: $e);
 		} catch (RuntimeException $e) {
-			$code = $e->getMessage();
-			$status = match ($code) {
-				'case_not_found', 'transition_not_found' => Http::STATUS_NOT_FOUND,
-				'forbidden_admin_only' => Http::STATUS_FORBIDDEN,
-				default => Http::STATUS_BAD_REQUEST,
-			};
-
-			$this->logger->info('StatusTransitionController: execute rejected', ['code' => $code]);
-			return new JSONResponse(['error' => 'Could not execute transition'], $status);
+			return $this->executeRejected(e: $e);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StatusTransitionController: execute failed',
 				['exception' => $e->getMessage(), 'caseId' => $caseId, 'transitionId' => $transitionId],
 			);
-			return new JSONResponse(
-				['error' => 'Could not execute transition'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
+			return $this->serverError(error: 'Could not execute transition');
 		}//end try
-	}//end execute()
+	}//end executeTransition()
+
+	/**
+	 * A body field as a string, or null when the body does not carry it.
+	 *
+	 * @param array<string, mixed> $body The request body.
+	 * @param string               $key  The field.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function optionalString(array $body, string $key): ?string {
+		if (isset($body[$key]) === true) {
+			return (string)$body[$key];
+		}
+
+		return null;
+	}//end optionalString()
+
+	/**
+	 * The 409 a move blocked by a rule on the case answers with.
+	 *
+	 * @param GuardFailedException $e The failed guards.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function guardFailed(GuardFailedException $e): JSONResponse {
+		return new JSONResponse(
+			[
+				'message' => 'This move is blocked by a rule on the case.',
+				'error' => 'transition-guard-failed',
+				'code' => $e->getMessage(),
+				'failedGuards' => $e->getFailedGuards(),
+			],
+			Http::STATUS_CONFLICT,
+		);
+	}//end guardFailed()
+
+	/**
+	 * The answer to a guarded transition the engine rejected with a code.
+	 *
+	 * @param RuntimeException $e The engine's rejection.
+	 *
+	 * @return JSONResponse 404 for an unknown case or transition, 403 for an admin-only move, else 400.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function executeRejected(RuntimeException $e): JSONResponse {
+		$code = $e->getMessage();
+		$status = match ($code) {
+			'case_not_found', 'transition_not_found' => Http::STATUS_NOT_FOUND,
+			'forbidden_admin_only' => Http::STATUS_FORBIDDEN,
+			default => Http::STATUS_BAD_REQUEST,
+		};
+
+		$this->logger->info('StatusTransitionController: execute rejected', ['code' => $code]);
+		return new JSONResponse(['error' => 'Could not execute transition'], $status);
+	}//end executeRejected()
+
+	/**
+	 * A 500 with the endpoint's error.
+	 *
+	 * @param string $error The error the endpoint answers with.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function serverError(string $error): JSONResponse {
+		return new JSONResponse(
+			['error' => $error],
+			Http::STATUS_INTERNAL_SERVER_ERROR,
+		);
+	}//end serverError()
 
 	/**
 	 * Execute an admin-only free-form transition.
@@ -230,11 +293,6 @@ class StatusTransitionController extends Controller {
 
 		$body = $this->readJsonBody();
 		$toStatusId = (string)($body['toStatusId'] ?? '');
-		$comment = null;
-		if (isset($body['comment']) === true) {
-			$comment = (string)$body['comment'];
-		}
-
 		if ($toStatusId === '') {
 			return new JSONResponse(
 				['error' => 'toStatusId is required'],
@@ -242,36 +300,62 @@ class StatusTransitionController extends Controller {
 			);
 		}
 
+		return $this->executeFreeForm(caseId: $caseId, body: $body);
+	}//end freeform()
+
+	/**
+	 * Hand the free-form move to the engine and answer with its result or its refusal.
+	 *
+	 * @param string               $caseId The case UUID.
+	 * @param array<string, mixed> $body   The request body, carrying a toStatusId.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 */
+	private function executeFreeForm(string $caseId, array $body): JSONResponse {
+		$toStatusId = (string)($body['toStatusId'] ?? '');
+
 		try {
 			$result = $this->transitionEngine->executeFreeForm(
 				caseId: $caseId,
 				toStatusId: $toStatusId,
-				comment: $comment,
+				comment: $this->optionalString(body: $body, key: 'comment'),
 			);
 			return new JSONResponse($result);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'freeform', e: $e);
 		} catch (RuntimeException $e) {
-			$code = $e->getMessage();
-			$status = match ($code) {
-				'forbidden_admin_only' => Http::STATUS_FORBIDDEN,
-				'case_not_found', 'case_type_not_found' => Http::STATUS_NOT_FOUND,
-				default => Http::STATUS_BAD_REQUEST,
-			};
-
-			$this->logger->info('StatusTransitionController: freeform rejected', ['code' => $code]);
-			return new JSONResponse(['error' => 'Could not execute free-form transition'], $status);
+			return $this->freeformRejected(e: $e);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StatusTransitionController: freeform failed',
 				['exception' => $e->getMessage(), 'caseId' => $caseId],
 			);
-			return new JSONResponse(
-				['error' => 'Could not execute free-form transition'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
+			return $this->serverError(error: 'Could not execute free-form transition');
 		}//end try
-	}//end freeform()
+	}//end executeFreeForm()
+
+	/**
+	 * The answer to a free-form transition the engine rejected with a code.
+	 *
+	 * @param RuntimeException $e The engine's rejection.
+	 *
+	 * @return JSONResponse 403 for a caller who is not an admin, 404 for an unknown case or case type, else 400.
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 */
+	private function freeformRejected(RuntimeException $e): JSONResponse {
+		$code = $e->getMessage();
+		$status = match ($code) {
+			'forbidden_admin_only' => Http::STATUS_FORBIDDEN,
+			'case_not_found', 'case_type_not_found' => Http::STATUS_NOT_FOUND,
+			default => Http::STATUS_BAD_REQUEST,
+		};
+
+		$this->logger->info('StatusTransitionController: freeform rejected', ['code' => $code]);
+		return new JSONResponse(['error' => 'Could not execute free-form transition'], $status);
+	}//end freeformRejected()
 
 	/**
 	 * Return the chronological transition history of a case.
