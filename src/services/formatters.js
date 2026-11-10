@@ -135,39 +135,90 @@ function lookupRelatedName(type, uuid) {
 	} catch {
 		return uuid
 	}
-	const collection = store.collections[type]
+	const label = collectionLabel(store.collections[type], uuid)
+		|| (relatedLabels[type] && relatedLabels[type][uuid])
+	if (label) {
+		return label
+	}
+	if (!relatedFetchStarted[type] && canLookUp(store, type)) {
+		startRelatedLookup(store, type)
+	}
+	return uuid
+}
+
+/**
+ * The title or name of the row the shared collection holds for a uuid.
+ *
+ * @param {Array<object>|undefined} collection The store's collection for the type.
+ * @param {string} uuid The related object's UUID.
+ * @return {string|undefined} The label, when the row has one.
+ */
+function collectionLabel(collection, uuid) {
 	const hit = (collection || []).find(
 		(o) => o.id === uuid || (o['@self'] && o['@self'].id === uuid),
 	)
-	if (hit && (hit.title || hit.name)) {
-		return hit.title || hit.name
-	}
-	const known = relatedLabels[type] && relatedLabels[type][uuid]
-	if (known) {
-		return known
-	}
-	if (!relatedFetchStarted[type] && typeof store.fetchCollectionForOptions === 'function' && store.objectTypeRegistry && store.objectTypeRegistry[type]) {
-		relatedFetchStarted[type] = true
-		Promise.resolve(store.fetchCollectionForOptions(type, { _limit: 500 }))
-			.then((rows) => {
-				const labels = {}
-				for (const row of Array.isArray(rows) ? rows : []) {
-					const id = row && (row.id || (row['@self'] && row['@self'].id))
-					const label = row && (row.title || row.name)
-					if (id && label) {
-						labels[id] = label
-					}
-				}
-				relatedLabels[type] = labels
-				if (Object.keys(labels).length === 0) {
-					relatedFetchStarted[type] = false
-				}
-			})
-			.catch(() => {
+	return hit && (hit.title || hit.name) ? hit.title || hit.name : undefined
+}
+
+/**
+ * Whether the store can look up the labels of a type.
+ *
+ * @param {object} store The object store.
+ * @param {string} type Registered object type.
+ * @return {boolean} True when it has the lookup and knows the type.
+ */
+function canLookUp(store, type) {
+	return typeof store.fetchCollectionForOptions === 'function' && Boolean(store.objectTypeRegistry && store.objectTypeRegistry[type])
+}
+
+/**
+ * Look up every label of a type once, into the module's own label map. A
+ * lookup that answers nothing, or fails, may run again.
+ *
+ * @param {object} store The object store.
+ * @param {string} type Registered object type.
+ */
+function startRelatedLookup(store, type) {
+	relatedFetchStarted[type] = true
+	Promise.resolve(store.fetchCollectionForOptions(type, { _limit: 500 }))
+		.then((rows) => {
+			const labels = labelsById(rows)
+			relatedLabels[type] = labels
+			if (Object.keys(labels).length === 0) {
 				relatedFetchStarted[type] = false
-			})
+			}
+		})
+		.catch(() => {
+			relatedFetchStarted[type] = false
+		})
+}
+
+/**
+ * The label of each row, by its id; rows without either are skipped.
+ *
+ * @param {unknown} rows The looked-up rows.
+ * @return {Object<string, string>} The labels.
+ */
+function labelsById(rows) {
+	const labels = {}
+	for (const row of Array.isArray(rows) ? rows : []) {
+		const id = lookedUpId(row)
+		const label = row && (row.title || row.name)
+		if (id && label) {
+			labels[id] = label
+		}
 	}
-	return uuid
+	return labels
+}
+
+/**
+ * The id of a looked-up row, from the row or its `@self`.
+ *
+ * @param {object|null} row A looked-up row.
+ * @return {string|undefined} The id.
+ */
+function lookedUpId(row) {
+	return row && (row.id || (row['@self'] && row['@self'].id))
 }
 
 /**

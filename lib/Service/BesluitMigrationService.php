@@ -185,79 +185,83 @@ class BesluitMigrationService {
 	 * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-besluiten-move-onto-decidiq-only-when-asked-req-brc-021
 	 */
 	public function migrate(bool $commit): array {
-		$summary = [
+		$blocked = $this->precondition();
+		if ($blocked !== null) {
+			return $this->blockedSummary(message: $blocked);
+		}
+
+		$sourceSchema = $this->localSchemaId();
+		$targetSchema = $this->targetSchemaId();
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null || $sourceSchema === '' || $targetSchema === '') {
+			return $this->blockedSummary(message: 'OpenRegister is unavailable, or one of the two decision schemas could not be resolved.');
+		}
+
+		$run = new BesluitMigrationRun(objectService: $objectService, targetSchema: $targetSchema);
+		$run->commit = $commit;
+
+		return $this->migrateFrom(run: $run, sourceSchema: $sourceSchema);
+	}//end migrate()
+
+	/**
+	 * The summary of a run that did not start.
+	 *
+	 * @param string $message Why.
+	 *
+	 * @return array{status: string, total: int, migrated: int, skipped: int, failed: int, detached: bool, message: string}
+	 */
+	private function blockedSummary(string $message): array {
+		return [
 			'status' => 'blocked',
 			'total' => 0,
 			'migrated' => 0,
 			'skipped' => 0,
 			'failed' => 0,
 			'detached' => false,
-			'message' => '',
+			'message' => $message,
 		];
+	}//end blockedSummary()
 
-		$blocked = $this->precondition();
-		if ($blocked !== null) {
-			$summary['message'] = $blocked;
-			return $summary;
-		}
-
-		$sourceSchema = $this->localSchemaId();
-		$targetSchema = $this->targetSchemaId();
-		$objectService = $this->settingsService->getObjectService();
-
-		if ($objectService === null || $sourceSchema === '' || $targetSchema === '') {
-			$summary['message'] = 'OpenRegister is unavailable, or one of the two decision schemas could not be resolved.';
-			return $summary;
-		}
-
+	/**
+	 * Read the local rows and the ones already moved, migrate the rest, detach
+	 * the local schema after a clean commit, and log the summary.
+	 *
+	 * @param BesluitMigrationRun $run          The run.
+	 * @param string              $sourceSchema The local decision schema id.
+	 *
+	 * @return array{status: string, total: int, migrated: int, skipped: int, failed: int, detached: bool, message: string}
+	 */
+	private function migrateFrom(BesluitMigrationRun $run, string $sourceSchema): array {
 		try {
-			$sources = $this->rows(objectService: $objectService, register: self::SOURCE_REGISTER, schema: $sourceSchema);
-			$alreadyThere = $this->migratedSourceIds(objectService: $objectService, schema: $targetSchema);
+			$sources = $this->rows(objectService: $run->objectService, register: self::SOURCE_REGISTER, schema: $sourceSchema);
+			$run->alreadyThere = $this->migratedSourceIds(objectService: $run->objectService, schema: $run->targetSchema);
 		} catch (Throwable $e) {
-			$summary['message'] = 'Could not read the decision rows: ' . $e->getMessage();
-			return $summary;
+			return $this->blockedSummary(message: 'Could not read the decision rows: ' . $e->getMessage());
 		}
 
-		$summary['status'] = 'ok';
-		$summary['total'] = count($sources);
 		$summary = array_merge(
-			$summary,
-			$this->migrateRows(
-				objectService: $objectService,
-				targetSchema: $targetSchema,
-				sources: $sources,
-				alreadyThere: $alreadyThere,
-				commit: $commit,
-			)
+			$this->blockedSummary(message: ''),
+			['status' => 'ok', 'total' => count($sources)],
+			$this->migrateRows(run: $run, sources: $sources)
 		);
-
-		if ($commit === true) {
+		if ($run->commit === true) {
 			$summary['detached'] = $this->detachLocalSchema(summary: $summary);
 		}
 
 		$this->logger->info('Dossiq: besluit migration finished', $summary);
 
 		return $summary;
-	}//end migrate()
+	}//end migrateFrom()
 
 	/**
 	 * Walk the source rows, counting and (when committing) writing each.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $targetSchema The target schema id.
+	 * @param BesluitMigrationRun              $run     The run.
 	 * @param array<int, array<string, mixed>> $sources The source rows.
-	 * @param array<string, true> $alreadyThere Source ids already migrated.
-	 * @param bool $commit False to count only, true to write.
 	 *
 	 * @return array{migrated:int, skipped:int, failed:int} The counts.
 	 */
-	private function migrateRows(
-		object $objectService,
-		string $targetSchema,
-		array $sources,
-		array $alreadyThere,
-		bool $commit,
-	): array {
+	private function migrateRows(BesluitMigrationRun $run, array $sources): array {
 		$counts = [
 			'migrated' => 0,
 			'skipped' => 0,
@@ -265,39 +269,46 @@ class BesluitMigrationService {
 		];
 
 		foreach ($sources as $row) {
-			$sourceId = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
-			if ($sourceId === '') {
-				// No stable identity means no idempotency key, so a re-run would
-				// duplicate it. Reported rather than guessed at.
-				$counts['failed']++;
-				continue;
-			}
-
-			if (isset($alreadyThere[$sourceId]) === true) {
-				$counts['skipped']++;
-				continue;
-			}
-
-			$written = ($commit === false);
-			if ($commit === true) {
-				$written = $this->write(
-					objectService: $objectService,
-					schema: $targetSchema,
-					row: $row,
-					sourceId: $sourceId,
-				);
-			}
-
-			if ($written === false) {
-				$counts['failed']++;
-				continue;
-			}
-
-			$counts['migrated']++;
-		}//end foreach
+			$counts[$this->migrateRow(run: $run, row: $row)]++;
+		}
 
 		return $counts;
 	}//end migrateRows()
+
+	/**
+	 * Migrate one row: `failed` without an id or when the write fails,
+	 * `skipped` when it is already there, `migrated` otherwise (a dry run
+	 * counts what it would have written).
+	 *
+	 * @param BesluitMigrationRun  $run The run.
+	 * @param array<string, mixed> $row A local decision row.
+	 *
+	 * @return string `migrated`, `skipped` or `failed`.
+	 */
+	private function migrateRow(BesluitMigrationRun $run, array $row): string {
+		$sourceId = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
+		if ($sourceId === '') {
+			// No stable identity means no idempotency key, so a re-run would
+			// duplicate it. Reported rather than guessed at.
+			return 'failed';
+		}
+
+		if (isset($run->alreadyThere[$sourceId]) === true) {
+			return 'skipped';
+		}
+
+		$written = ($run->commit === false || $this->write(
+			objectService: $run->objectService,
+			schema: $run->targetSchema,
+			row: $row,
+			sourceId: $sourceId,
+		) === true);
+		if ($written === false) {
+			return 'failed';
+		}
+
+		return 'migrated';
+	}//end migrateRow()
 
 	/**
 	 * Reasons the migration cannot run at all.

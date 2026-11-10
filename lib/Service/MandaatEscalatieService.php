@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaWriter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -41,6 +42,13 @@ use RuntimeException;
  */
 class MandaatEscalatieService {
 	use SearchesObjects;
+
+	/**
+	 * The answer when no escalation path exists.
+	 *
+	 * @var array{mandaatId:string, userId:string}
+	 */
+	private const NO_PATH = ['mandaatId' => '', 'userId' => ''];
 
 	/**
 	 * Constructor.
@@ -111,70 +119,22 @@ class MandaatEscalatieService {
 	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function resolveEscalatiePath(string $decisionType, string $escalationReason = ''): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$mSchema = (string)$this->settingsService->getConfigValue('mandaat_schema');
-		$assignSchema = (string)$this->settingsService->getConfigValue('medewerker_rol_toewijzing_schema');
-		$hasBlank = in_array('', [$register, $mSchema, $assignSchema], true);
-		if ($objectService === null || $hasBlank === true) {
-			return ['mandaatId' => '', 'userId' => ''];
+		$search = $this->escalationSearch();
+		if ($search === null) {
+			return self::NO_PATH;
 		}
 
-		try {
-			$mandaten = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $mSchema,
-				filters: ['status' => 'active']
-			);
-		} catch (\Throwable $e) {
-			return ['mandaatId' => '', 'userId' => ''];
+		$mandaten = $this->activeMandaten(search: $search);
+		if ($mandaten === null) {
+			return self::NO_PATH;
 		}
 
-		$matching = $this->rankMandatenForDecisionType(
-			mandaten: $mandaten,
-			decisionType: $decisionType,
-		);
-
-		foreach ($matching as $m) {
-			$roleId = (string)($m['mandateeRole'] ?? '');
-			if ($roleId === '') {
-				continue;
+		foreach ($this->rankMandatenForDecisionType(mandaten: $mandaten, decisionType: $decisionType) as $m) {
+			$path = $this->holderPath(search: $search, mandate: $m);
+			if ($path !== null) {
+				return $path;
 			}
-
-			try {
-				$assigns = $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: $assignSchema,
-					filters: ['roleId' => $roleId]
-				);
-			} catch (\Throwable $e) {
-				continue;
-			}
-
-			// Prefer primair toewijzing.
-			usort(
-				$assigns,
-				static function (array $a, array $b): int {
-					$rank = static fn (array $r): int => match ((string)($r['allocationType'] ?? 'primair')) {
-						'primair' => 0,
-						'observer' => 1,
-						'tijdelijk' => 2,
-						default => 99,
-					};
-
-					return $rank($a) <=> $rank($b);
-				}
-			);
-
-			foreach ($assigns as $a) {
-				$userId = (string)($a['userId'] ?? '');
-				if ($userId !== '') {
-					return ['mandaatId' => (string)($m['id'] ?? ''), 'userId' => $userId];
-				}
-			}
-		}//end foreach
+		}
 
 		// No higher mandate holder exists for this decision type — surface it
 		// with the reason so an escalation that silently lands nowhere is
@@ -184,8 +144,114 @@ class MandaatEscalatieService {
 			['decisionType' => $decisionType, 'reason' => $escalationReason]
 		);
 
-		return ['mandaatId' => '', 'userId' => ''];
+		return self::NO_PATH;
 	}//end resolveEscalatiePath()
+
+	/**
+	 * Where the path is looked up, or null when the store is not configured.
+	 *
+	 * @return EscalationSearch|null
+	 */
+	private function escalationSearch(): ?EscalationSearch {
+		$objectService = $this->settingsService->getObjectService();
+		$search = new EscalationSearch();
+		$search->register = (string)$this->settingsService->getConfigValue('register');
+		$search->mandateSchema = (string)$this->settingsService->getConfigValue('mandaat_schema');
+		$search->assignmentSchema = (string)$this->settingsService->getConfigValue('medewerker_rol_toewijzing_schema');
+		$hasBlank = in_array('', [$search->register, $search->mandateSchema, $search->assignmentSchema], true);
+		if ($objectService === null || $hasBlank === true) {
+			return null;
+		}
+
+		$search->objectService = $objectService;
+
+		return $search;
+	}//end escalationSearch()
+
+	/**
+	 * The active mandates, or null when they could not be read.
+	 *
+	 * @param EscalationSearch $search Where to look.
+	 *
+	 * @return array<int, array<string, mixed>>|null
+	 */
+	private function activeMandaten(EscalationSearch $search): ?array {
+		try {
+			$mandaten = $this->searchObjectsAsArrays(
+				objectService: $search->objectService,
+				register: $search->register,
+				schema: $search->mandateSchema,
+				filters: ['status' => 'active']
+			);
+		} catch (\Throwable $e) {
+			$mandaten = null;
+		}
+
+		return $mandaten;
+	}//end activeMandaten()
+
+	/**
+	 * The path to the first holder of the mandate's role, primair first, or null.
+	 *
+	 * @param EscalationSearch     $search  Where to look.
+	 * @param array<string, mixed> $mandate One applicable mandate.
+	 *
+	 * @return array{mandaatId:string, userId:string}|null
+	 */
+	private function holderPath(EscalationSearch $search, array $mandate): ?array {
+		$assigns = $this->roleAssignments(search: $search, roleId: (string)($mandate['mandateeRole'] ?? ''));
+		foreach ($assigns as $a) {
+			$userId = (string)($a['userId'] ?? '');
+			if ($userId !== '') {
+				return ['mandaatId' => (string)($mandate['id'] ?? ''), 'userId' => $userId];
+			}
+		}
+
+		return null;
+	}//end holderPath()
+
+	/**
+	 * The assignments of one role, primair first; none for no role or a failed read.
+	 *
+	 * @param EscalationSearch $search Where to look.
+	 * @param string           $roleId The role.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function roleAssignments(EscalationSearch $search, string $roleId): array {
+		$assigns = [];
+		if ($roleId === '') {
+			return $assigns;
+		}
+
+		try {
+			$assigns = $this->searchObjectsAsArrays(
+				objectService: $search->objectService,
+				register: $search->register,
+				schema: $search->assignmentSchema,
+				filters: ['roleId' => $roleId]
+			);
+		} catch (\Throwable $e) {
+			$assigns = [];
+		}
+
+		// Prefer primair toewijzing.
+		usort(
+			$assigns,
+			static function (array $a, array $b): int {
+				$rank = static fn (array $r): int => match ((string)($r['allocationType'] ?? 'primair')) {
+					'primair' => 0,
+					'observer' => 1,
+					'tijdelijk' => 2,
+					default => 99,
+				};
+
+				return $rank($a) <=> $rank($b);
+			}
+		);
+
+		return $assigns;
+	}//end roleAssignments()
 
 	/**
 	 * Keep the mandaten that apply to a decision type, highest plafond first.
@@ -354,24 +420,13 @@ class MandaatEscalatieService {
 	 * @return array<string, mixed>
 	 */
 	private function save(string $schemaConfigKey, array $object): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($objectService === null || $register === '' || $schema === '') {
-			return $object;
-		}
+		$writer = new ConfiguredSchemaWriter(
+			settingsService: $this->settingsService,
+			onFailure: function (\Throwable $e) use ($schemaConfigKey): void {
+				$this->logger->error('Mandaat persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
+			}
+		);
 
-		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $object
-			);
-			return ($saved ?? $object);
-		} catch (\Throwable $e) {
-			$this->logger->error('Mandaat persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
-			return $object;
-		}
+		return $writer->save(schemaConfigKey: $schemaConfigKey, object: $object);
 	}//end save()
 }//end class
