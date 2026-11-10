@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Portal\CitizenManifest;
 use OCA\Dossiq\Portal\PortalAssertionVerifier;
 use OCA\Dossiq\Portal\PortalWooAnswer;
+use OCA\Dossiq\Portal\WooAnswerSubmission;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -116,12 +117,13 @@ class PortalWooAnswerController extends Controller {
 			);
 		}
 
-		$result = $this->answers->answer(
-			subjectRef: (string)($claims['sub'] ?? ''),
-			requestId: $this->stringParam(key: 'requestId'),
-			answer: $this->stringParam(key: 'antwoord'),
-			attachments: $attachments,
-		);
+		$submission = new WooAnswerSubmission();
+		$submission->subjectRef = (string)($claims['sub'] ?? '');
+		$submission->requestId = $this->stringParam(key: 'requestId');
+		$submission->answer = $this->stringParam(key: 'antwoord');
+		$submission->attachments = $attachments;
+
+		$result = $this->answers->submit(submission: $submission);
 
 		return new JSONResponse($result['body'], $result['status']);
 	}//end answer()

@@ -348,11 +348,11 @@ class CaseTransferConsentGate {
 			throw new RuntimeException('No case id');
 		}
 
-		[$objectService, $register] = $this->context();
+		[$objectService, $register] = $this->dossierRegister()->context();
 		$case = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
-			schema: $this->schema(key: 'case_schema'),
+			schema: $this->dossierRegister()->schema(key: 'case_schema'),
 			id: $caseId,
 		);
 		if ($case === null) {
@@ -367,7 +367,7 @@ class CaseTransferConsentGate {
 		$caseType = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
-			schema: $this->schema(key: 'case_type_schema'),
+			schema: $this->dossierRegister()->schema(key: 'case_type_schema'),
 			id: $caseTypeId,
 		);
 		if ($caseType === null) {
@@ -392,11 +392,11 @@ class CaseTransferConsentGate {
 		}
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 			$rows = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'consent_schema'),
+				schema: $this->dossierRegister()->schema(key: 'consent_schema'),
 				filters: ['caseId' => $caseId, '_limit' => self::PAGE_SIZE],
 			);
 		} catch (Throwable $e) {
@@ -465,43 +465,12 @@ class CaseTransferConsentGate {
 
 		return $date;
 	}//end instant()
-
 	/**
-	 * The object service and the register, or an exception.
+	 * The dossier register and its configured schemas.
 	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
+	 * @return DossierRegister The register reader.
 	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
+	private function dossierRegister(): DossierRegister {
+		return new DossierRegister(settingsService: $this->settingsService);
+	}//end dossierRegister()
 }//end class

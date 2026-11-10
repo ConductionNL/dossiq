@@ -40,6 +40,8 @@ namespace OCA\Dossiq\Service\Routing;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\TimerChange;
+use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -241,7 +243,10 @@ class TakeBackWindow {
 		}
 
 		try {
-			$engine->cancelForSubject(subjectType: 'object', subjectUuid: $caseId.self::SUBJECT_SUFFIX, reason: $reason, actor: null);
+			$engine->cancelForSubject(
+				subject: new TimerSubjectRef(type: 'object', uuid: $caseId.self::SUBJECT_SUFFIX),
+				change: new TimerChange(reason: $reason, actor: null)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq routing: the engine refused to cancel the take-back timer', ['case' => $caseId, 'error' => $e->getMessage()]);
 			return self::UNAVAILABLE;

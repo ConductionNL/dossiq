@@ -284,53 +284,48 @@ class DeadlineComplianceCalculator {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function computeSummary(array $cases, string $period, ?DateTimeImmutable $today = null, string $granularity = 'month'): array {
-		$today = ($today ?? new DateTimeImmutable());
-		$cutoff = $today->modify('-12 months')->format('Y-m-d');
-		$year = $today->format('Y');
-		$months = $this->parseMonths(period: $period);
-		if (in_array($granularity, self::GRANULARITIES, true) === false) {
-			$granularity = 'month';
+		$tally = new ClosedCaseTally(today: ($today ?? new DateTimeImmutable()), granularity: $this->knownGranularity(granularity: $granularity));
+		$tally->openWindow(months: $this->parseMonths(period: $period));
+		foreach ($cases as $caseData) {
+			$tally->add(caseData: $caseData);
 		}
 
-		$grouping = new ThroughputBuckets();
-		$buckets = $grouping->emptyBuckets(
-			start: $today->modify('first day of this month')->modify('-' . ($months - 1) . ' month'),
-			today: $today,
-			granularity: $granularity
-		);
+		return $this->summaryOf(tally: $tally);
+	}//end computeSummary()
 
-		$recent = [];
-		$closedThisYear = 0;
-		foreach ($cases as $caseData) {
-			$end = $caseData['_endDate'];
-			$days = $caseData['_throughputDays'];
-			if ($caseData['_isOpen'] === true || $end === null || $days === null) {
-				continue;
-			}
+	/**
+	 * The grouping asked for when it is a known one, per month otherwise.
+	 *
+	 * @param string $granularity The grouping asked for.
+	 *
+	 * @return string
+	 */
+	private function knownGranularity(string $granularity): string {
+		if (in_array($granularity, self::GRANULARITIES, true) === false) {
+			return 'month';
+		}
 
-			if (str_starts_with($end, $year) === true) {
-				$closedThisYear++;
-			}
+		return $granularity;
+	}//end knownGranularity()
 
-			if ($end >= $cutoff) {
-				$recent[] = $days;
-			}
-
-			$bucket = $grouping->bucketOf(day: new DateTimeImmutable(substr($end, 0, 10)), granularity: $granularity);
-			if (isset($buckets[$bucket]) === true) {
-				$buckets[$bucket][] = $days;
-			}
-		}//end foreach
-
+	/**
+	 * The summary figures of a finished tally.
+	 *
+	 * @param ClosedCaseTally $tally The tallied closed cases.
+	 *
+	 * @return array<string, mixed> `avgDays`, `closedThisYear`, `granularity` and `monthlyAvgDays` (`labels`, `values`).
+	 */
+	private function summaryOf(ClosedCaseTally $tally): array {
+		$buckets = $tally->buckets();
 		$values = array_map(fn (array $list): ?int => $this->average(values: $list), array_values($buckets));
 
 		return [
-			'avgDays' => $this->average(values: $recent),
-			'closedThisYear' => $closedThisYear,
-			'granularity' => $granularity,
+			'avgDays' => $this->average(values: $tally->recentDays()),
+			'closedThisYear' => $tally->closedThisYear(),
+			'granularity' => $tally->granularity(),
 			'monthlyAvgDays' => ['labels' => array_map('strval', array_keys($buckets)), 'values' => $values],
 		];
-	}//end computeSummary()
+	}//end summaryOf()
 
 	/**
 	 * The rounded average of a list of day counts, or null for an empty list.
