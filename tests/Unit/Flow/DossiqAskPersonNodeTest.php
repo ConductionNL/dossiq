@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
@@ -225,7 +226,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$resume = self::resumeSlot('ask-indiener');
 
 		try {
-			$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 			self::fail('The node must suspend while the task is outstanding.');
 		} catch (FlowSuspension $suspension) {
 			self::assertStringContainsString('Vul uw aanvraag aan', $suspension->getMessage());
@@ -252,7 +253,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$resume = self::resumeSlot('ask-indiener');
 
 		try {
-			$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 			self::fail('The node must suspend while the task is outstanding.');
 		} catch (FlowSuspension $suspension) {
 			// Suspended, not stopped: the save result was understood.
@@ -284,7 +285,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$config = array_merge($this->config(), ['assignee' => '{{ case.assignee }}']);
 
 		try {
-			$this->node()->execute($items, $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $items, config: $config, context: $this->context($resume)));
 		} catch (FlowSuspension $e) {
 			// expected: the task is outstanding
 		}
@@ -308,7 +309,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		try {
 			// The case names no assignee, so the placeholder resolves empty.
-			$this->node()->execute($this->items(), $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $config, context: $this->context($resume)));
 		} finally {
 			self::assertSame([], $this->written, 'No task may be created for an assignee that resolved to nobody.');
 		}
@@ -339,7 +340,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		try {
 			// The case names no assignee: exactly the New case dialog's shape.
-			$this->node()->execute($this->items(), $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $config, context: $this->context($resume)));
 		} catch (FlowSuspension $e) {
 			// expected: the task is outstanding
 		}
@@ -371,7 +372,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		);
 
 		try {
-			$this->node()->execute($items, $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $items, config: $config, context: $this->context($resume)));
 		} catch (FlowSuspension $e) {
 			// expected: the task is outstanding
 		}
@@ -399,7 +400,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 
 		try {
-			$this->node()->execute($this->items(), $config, $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $config, context: $this->context($resume)));
 		} finally {
 			self::assertSame([], $this->written, 'No task may be created when neither value names a principal.');
 		}
@@ -412,7 +413,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$resume = self::resumeSlot('ask-indiener');
 
 		try {
-			$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+			$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 		} catch (FlowSuspension $e) {
 			// expected
 		}
@@ -430,7 +431,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		foreach ([1, 2, 3] as $ignored) {
 			try {
-				$node->execute($this->items(), $this->config(), $this->context($resume));
+				$node->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 			} catch (FlowSuspension $e) {
 				// expected on every pass while unanswered
 			}
@@ -451,7 +452,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 			['signal' => ['decision' => 'completed', 'completedBy' => 'alice']]
 		);
 
-		$out = $this->node()->execute($this->items(), array_merge($this->config(), ['signalKey' => 'aanvulling']), $context);
+		$out = $this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: array_merge($this->config(), ['signalKey' => 'aanvulling']), context: $context));
 
 		self::assertCount(1, $out);
 		self::assertSame('completed', $out[0]['json']['aanvulling']['decision']);
@@ -474,9 +475,11 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$this->stored['task-1'] = ['status' => 'completed', 'case' => 'case-1', 'completedDate' => '2026-09-03T10:00:00+00:00'];
 
 		$out = $this->node()->execute(
-			$this->items(),
-			array_merge($this->config(), ['signalKey' => 'aanvulling']),
-			$this->context($resume)
+			call: new FlowNodeCall(
+				items: $this->items(),
+				config: array_merge($this->config(), ['signalKey' => 'aanvulling']),
+				context: $this->context($resume)
+			)
 		);
 
 		self::assertSame('completed', $out[0]['json']['aanvulling']['decision']);
@@ -499,7 +502,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$context = array_merge($this->context($resume), ['signal' => ['decision' => 'completed']]);
 
 		$this->expectException(FlowSuspension::class);
-		$this->node()->execute($this->items(), $this->config(), $context);
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $context));
 	}//end testASignalCannotAnswerForATaskThatIsStillOpen()
 
 	/**
@@ -514,7 +517,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/never be answered/');
-		$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 	}//end testATerminatedTaskFailsTheStepRatherThanInventingAnAnswer()
 
 	/**
@@ -525,7 +528,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/no longer exists/');
-		$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 	}//end testATaskThatNoLongerExistsFailsTheStep()
 
 	/**
@@ -539,7 +542,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$this->readsFail = true;
 
 		$this->expectException(FlowSuspension::class);
-		$this->node()->execute($this->items(), $this->config(), $this->context($resume));
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context($resume)));
 	}//end testAnUnreadableStoreParksAgainInsteadOfFailing()
 
 	/**
@@ -565,13 +568,13 @@ class DossiqAskPersonNodeTest extends TestCase {
 	public function testWithoutAResumeSlotItRefuses(): void {
 		$this->expectException(RuntimeException::class);
 
-		$this->node()->execute($this->items(), $this->config(), [FlowRunContext::CONTEXT_RUN => 'run-abc']);
+		$this->node()->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: [FlowRunContext::CONTEXT_RUN => 'run-abc']));
 	}//end testWithoutAResumeSlotItRefuses()
 
 	public function testWithNoCaseItRefuses(): void {
 		$this->expectException(RuntimeException::class);
 
-		$this->node()->execute([['json' => []]], $this->config(), $this->context(self::resumeSlot('n')));
+		$this->node()->execute(call: new FlowNodeCall(items: [['json' => []]], config: $this->config(), context: $this->context(self::resumeSlot('n'))));
 	}//end testWithNoCaseItRefuses()
 
 	/**
@@ -633,7 +636,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		// pass with the guard disabled. Measured: mutating the guard to
 		// `if (false)` left it green.
 		$this->expectExceptionMessage('could not identify the task it created');
-		$node->execute($this->items(), $this->config(), $this->context(self::resumeSlot('ask-indiener')));
+		$node->execute(call: new FlowNodeCall(items: $this->items(), config: $this->config(), context: $this->context(self::resumeSlot('ask-indiener'))));
 	}//end testATaskTheEngineCannotIdentifyIsRefused()
 
 	public function testItAnnouncesItsIdentity(): void {
