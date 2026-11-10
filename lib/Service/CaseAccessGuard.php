@@ -52,6 +52,8 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Rbac\GrantLookup;
+use OCA\OpenRegister\Service\Rbac\ObjectGrantResolverInterface;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -371,12 +373,12 @@ class CaseAccessGuard {
 	 */
 	private function holdsPlatformGrant(string $caseId, string $uid): bool {
 		$resolver = $this->settingsService->getObjectGrantResolver();
-		if ($resolver === null || method_exists($resolver, 'isGranted') === false) {
+		if ($resolver instanceof ObjectGrantResolverInterface === false) {
 			return false;
 		}
 
 		try {
-			return ($resolver->isGranted($uid, $caseId, 'read') === true);
+			return ($resolver->isGranted(lookup: new GrantLookup(userId: $uid, objectUuid: $caseId), action: 'read') === true);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq CaseAccessGuard: the platform grant lookup failed, treating the caller as holding none: '
