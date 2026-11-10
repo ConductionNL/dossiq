@@ -236,21 +236,10 @@ class MenuCaseTypesService {
 	 * @spec openspec/specs/case-type-navigation/spec.md
 	 */
 	private function currentCaseTypes(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || empty($register) === true || empty($schema) === true) {
+		$rows = $this->caseTypeRows();
+		if ($rows === null) {
 			return [];
 		}
-
-		$rows = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['_limit' => 500]
-		);
-
-		$handling = new CaseTypeHandling();
 
 		$caseTypes = [];
 		$this->supersededBy = [];
@@ -265,34 +254,78 @@ class MenuCaseTypesService {
 				continue;
 			}
 
-			// The title is declared translatable, so a row carries it as a
-			// language map. A (string) cast of that map is "Array", which is
-			// what every case type in the picker, the chosen list and the
-			// menu was called (finding B2, 10 Oct).
-			$title = $this->text->forReader(value: ($row['title'] ?? ''));
-			if ($title === '') {
-				$title = $uuid;
-			}
-
-			$caseTypes[$uuid] = [
-				'id' => $uuid,
-				'title' => $title,
-				'identifier' => (string)($row['identifier'] ?? ''),
-				'icon' => $this->iconOf(row: $row),
-				'teams' => $handling->teams(caseType: $row),
-			];
+			$caseTypes[$uuid] = $this->menuEntry(row: $row, uuid: $uuid);
 		}
 
-		$list = array_values($caseTypes);
+		return $this->byTitle(caseTypes: array_values($caseTypes));
+	}//end currentCaseTypes()
+
+	/**
+	 * The stored case type rows, or null when the register is not configured.
+	 *
+	 * @return array<int, array<string, mixed>>|null
+	 */
+	private function caseTypeRows(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_type_schema');
+		if ($objectService === null || empty($register) === true || empty($schema) === true) {
+			return null;
+		}
+
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['_limit' => 500]
+		);
+	}//end caseTypeRows()
+
+	/**
+	 * One case type as the menu lists it.
+	 *
+	 * The title is declared translatable, so a row carries it as a language
+	 * map. A (string) cast of that map is "Array", which is what every case
+	 * type in the picker, the chosen list and the menu was called (finding
+	 * B2, 10 Oct).
+	 *
+	 * @param array<string, mixed> $row  The case type row.
+	 * @param string               $uuid Its uuid.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function menuEntry(array $row, string $uuid): array {
+		$title = $this->text->forReader(value: ($row['title'] ?? ''));
+		if ($title === '') {
+			$title = $uuid;
+		}
+
+		return [
+			'id' => $uuid,
+			'title' => $title,
+			'identifier' => (string)($row['identifier'] ?? ''),
+			'icon' => $this->iconOf(row: $row),
+			'teams' => (new CaseTypeHandling())->teams(caseType: $row),
+		];
+	}//end menuEntry()
+
+	/**
+	 * The case types in title order, case-insensitively.
+	 *
+	 * @param array<int, array<string, mixed>> $caseTypes The case types.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function byTitle(array $caseTypes): array {
 		usort(
-			$list,
+			$caseTypes,
 			static function (array $left, array $right): int {
 				return strcasecmp($left['title'], $right['title']);
 			}
 		);
 
-		return $list;
-	}//end currentCaseTypes()
+		return $caseTypes;
+	}//end byTitle()
 
 	/**
 	 * The user's chosen case types, in their order, limited to what they may see.

@@ -98,13 +98,9 @@ class CaseDocumentGenerationService {
 	 */
 	public function generate(string $caseId, string $templateId): ActionResult {
 		$template = $this->templating->templates->loadTemplate($templateId);
-		if ($template === null) {
-			return new ActionResult(succeeded: false, error: 'template_not_found');
-		}
-
-		$body = (string)($template['body'] ?? '');
-		if (trim($body) === '') {
-			return new ActionResult(succeeded: false, error: 'template_has_no_body');
+		$refusal = $this->templateRefusal(template: $template);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$case = $this->cases->loadCase(caseId: $caseId);
@@ -112,98 +108,221 @@ class CaseDocumentGenerationService {
 			return new ActionResult(succeeded: false, error: 'case_not_found');
 		}
 
-		// A case read through a projection that drops its id would otherwise
-		// file the document nowhere.
-		$case['id'] = ($case['id'] ?? $caseId);
+		$run = new GeneratedDocumentRun(caseId: $caseId, case: $case);
+		$run->templateId = $templateId;
+		$refusal = $this->prepareDocument(run: $run, template: $template);
+		if ($refusal !== null) {
+			return $refusal;
+		}
 
-		$missing = $this->missingFields(template: $body, case: $case);
+		return $this->requestAndFile(run: $run);
+	}//end generate()
+
+	/**
+	 * Why a template cannot be generated from, or null when it can.
+	 *
+	 * @param array<string, mixed>|null $template The library template, or null when unknown.
+	 *
+	 * @return ActionResult|null The refusal.
+	 */
+	private function templateRefusal(?array $template): ?ActionResult {
+		if ($template === null) {
+			return new ActionResult(succeeded: false, error: 'template_not_found');
+		}
+
+		if (trim((string)($template['body'] ?? '')) === '') {
+			return new ActionResult(succeeded: false, error: 'template_has_no_body');
+		}
+
+		return null;
+	}//end templateRefusal()
+
+	/**
+	 * Check the template against the case and set the document's type, name
+	 * and text; the refusal when it cannot be made, null when it can.
+	 *
+	 * @param GeneratedDocumentRun $run      The document being made.
+	 * @param array<string, mixed> $template The library template.
+	 *
+	 * @return ActionResult|null The refusal.
+	 */
+	private function prepareDocument(GeneratedDocumentRun $run, array $template): ?ActionResult {
+		$refusal = $this->fieldRefusal(run: $run, template: $template);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$run->name = $this->documentName(run: $run, template: $template);
+
+		return $this->convertTemplate(run: $run, body: (string)($template['body'] ?? ''));
+	}//end prepareDocument()
+
+	/**
+	 * A placeholder the case cannot answer, or a template without a document
+	 * type, refuses; otherwise the type is set and null returned.
+	 *
+	 * @param GeneratedDocumentRun $run      The document being made.
+	 * @param array<string, mixed> $template The library template.
+	 *
+	 * @return ActionResult|null The refusal.
+	 */
+	private function fieldRefusal(GeneratedDocumentRun $run, array $template): ?ActionResult {
+		$missing = $this->missingFields(template: (string)($template['body'] ?? ''), case: $run->case);
 		if ($missing !== []) {
 			return new ActionResult(succeeded: false, error: 'missing_template_field:' . $missing[0]);
 		}
 
-		$documentType = trim((string)($template['documentType'] ?? ''));
-		if ($documentType === '') {
+		$run->documentType = trim((string)($template['documentType'] ?? ''));
+		if ($run->documentType === '') {
 			return new ActionResult(succeeded: false, error: 'missing_document_type');
 		}
 
-		$name = trim((string)($template['title'] ?? ''));
-		if ($name === '') {
-			$name = $templateId;
-		}
+		return null;
+	}//end fieldRefusal()
 
+	/**
+	 * Put the template into Filinq's syntax, or refuse one it cannot carry.
+	 *
+	 * @param GeneratedDocumentRun $run  The document being made.
+	 * @param string               $body The template body.
+	 *
+	 * @return ActionResult|null The refusal.
+	 */
+	private function convertTemplate(GeneratedDocumentRun $run, string $body): ?ActionResult {
 		try {
-			$text = $this->templating->syntax->forDocument(template: $body, what: 'template');
+			$run->text = $this->templating->syntax->forDocument(template: $body, what: 'template');
 		} catch (UnmappableStep $e) {
 			return new ActionResult(succeeded: false, error: 'template_not_supported: ' . $e->getMessage());
 		}
 
-		return $this->requestAndFile(caseId: $caseId, case: $case, text: $text, name: $name, documentType: $documentType);
-	}//end generate()
+		return null;
+	}//end convertTemplate()
+
+	/**
+	 * The document's name: the template's title, or its id when it has none.
+	 *
+	 * @param GeneratedDocumentRun $run      The document being made.
+	 * @param array<string, mixed> $template The library template.
+	 *
+	 * @return string
+	 */
+	private function documentName(GeneratedDocumentRun $run, array $template): string {
+		$name = trim((string)($template['title'] ?? ''));
+		if ($name === '') {
+			return $run->templateId;
+		}
+
+		return $name;
+	}//end documentName()
 
 	/**
 	 * Ask Filinq for the document, then file what it made.
 	 *
-	 * @param string               $caseId       The case.
-	 * @param array<string, mixed> $case         The case, as the render context.
-	 * @param string               $text         The template, in Filinq's syntax.
-	 * @param string               $name         The document's name.
-	 * @param string               $documentType The document type it is filed under.
+	 * @param GeneratedDocumentRun $run The document being made.
 	 *
 	 * @return ActionResult The outcome.
 	 */
-	private function requestAndFile(string $caseId, array $case, string $text, string $name, string $documentType): ActionResult {
+	private function requestAndFile(GeneratedDocumentRun $run): ActionResult {
 		if (class_exists(self::REQUEST_EVENT) === false) {
 			return $this->filinqRequired();
 		}
 
-		$metadata = [
-			GeneratedDocumentFiler::TYPE => $documentType,
+		$run->metadata = [
+			GeneratedDocumentFiler::TYPE => $run->documentType,
 			'direction' => 'outgoing',
 			'addressees' => 'case',
 			GeneratedDocumentFiler::FILED_BY_CALLER => true,
 		];
+		$event = $this->generationRequest(run: $run);
+		$this->events->dispatchTyped($event);
 
-		$event = new DocumentGenerationRequestedEvent(
+		$refusal = $this->generationRefusal(event: $event);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->fileGenerated(run: $run, result: (array)$event->getResult());
+	}//end requestAndFile()
+
+	/**
+	 * The generation request Filinq is asked to answer.
+	 *
+	 * @param GeneratedDocumentRun $run The document being made.
+	 *
+	 * @return DocumentGenerationRequestedEvent
+	 */
+	private function generationRequest(GeneratedDocumentRun $run): DocumentGenerationRequestedEvent {
+		return new DocumentGenerationRequestedEvent(
 			request: [
-				'template' => $text,
-				'templateName' => $name,
-				'filename' => $name,
+				'template' => $run->text,
+				'templateName' => $run->name,
+				'filename' => $run->name,
 				'format' => 'pdf',
 				'storeFile' => true,
-				'data' => $case,
+				'data' => $run->case,
 				'object' => [
 					'register' => $this->settingsService->getConfigValue(key: 'register'),
 					'schema' => $this->settingsService->getConfigValue(key: 'case_schema'),
-					'id' => $caseId,
+					'id' => $run->caseId,
 				],
-				'metadata' => $metadata,
+				'metadata' => $run->metadata,
 			],
 			requestingApp: Application::APP_ID
 		);
-		$this->events->dispatchTyped($event);
+	}//end generationRequest()
 
+	/**
+	 * Filinq's refusal, or null when it stored a file.
+	 *
+	 * @param DocumentGenerationRequestedEvent $event The answered request.
+	 *
+	 * @return ActionResult|null The refusal.
+	 */
+	private function generationRefusal(DocumentGenerationRequestedEvent $event): ?ActionResult {
 		$error = $event->getError();
 		if ($error !== null && $error !== '') {
 			return new ActionResult(succeeded: false, error: 'document_generation_failed: ' . $error);
 		}
 
+		return $this->resultRefusal(event: $event);
+	}//end generationRefusal()
+
+	/**
+	 * No Filinq answered, or it stored no file: the refusal; null otherwise.
+	 *
+	 * @param DocumentGenerationRequestedEvent $event The answered request.
+	 *
+	 * @return ActionResult|null The refusal.
+	 */
+	private function resultRefusal(DocumentGenerationRequestedEvent $event): ?ActionResult {
 		$result = $event->getResult();
 		if ($event->isHandled() === false || $result === null) {
 			return $this->filinqRequired();
 		}
 
-		$fileId = (int)($result['fileId'] ?? 0);
-		if ($fileId <= 0) {
+		if ((int)($result['fileId'] ?? 0) <= 0) {
 			return new ActionResult(succeeded: false, error: 'document_generation_failed: Filinq stored no file');
 		}
 
+		return null;
+	}//end resultRefusal()
+
+	/**
+	 * File the file Filinq stored on the case.
+	 *
+	 * @param GeneratedDocumentRun $run    The document being made.
+	 * @param array<string, mixed> $result Filinq's result.
+	 *
+	 * @return ActionResult The outcome.
+	 */
+	private function fileGenerated(GeneratedDocumentRun $run, array $result): ActionResult {
 		try {
 			$created = $this->templating->filer->file(
-				caseId: $caseId,
-				fileId: $fileId,
-				title: $name,
+				caseId: $run->caseId,
+				fileId: (int)($result['fileId'] ?? 0),
+				title: $run->name,
 				mime: (string)($result['mime'] ?? 'application/pdf'),
-				metadata: $metadata
+				metadata: $run->metadata
 			);
 		} catch (Throwable $e) {
 			return new ActionResult(succeeded: false, error: 'document_not_filed: ' . $e->getMessage());
@@ -211,9 +330,9 @@ class CaseDocumentGenerationService {
 
 		return new ActionResult(
 			succeeded: true,
-			data: ['informatieobject' => (string)($created['id'] ?? ''), 'case' => $caseId]
+			data: ['informatieobject' => (string)($created['id'] ?? ''), 'case' => $run->caseId]
 		);
-	}//end requestAndFile()
+	}//end fileGenerated()
 
 	/**
 	 * The refusal when no Filinq answers.
