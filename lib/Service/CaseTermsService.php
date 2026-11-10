@@ -121,53 +121,65 @@ class CaseTermsService {
 			return [];
 		}
 
-		$from = ($start ?? new DateTimeImmutable());
-		$declared = $this->sources->declarations->forCaseType(caseTypeId: $caseTypeId);
+		$binding = new CaseTermBinding(caseId: $caseId, start: ($start ?? new DateTimeImmutable()));
+		$binding->declared = $this->sources->declarations->forCaseType(caseTypeId: $caseTypeId);
+		$binding->plannedStart = $plannedStart;
+		$binding->plannedDefinition = $plannedDefinition;
 
-		$bound = [];
+		$bound = [
+			$this->bindStatutory(caseId: $caseId, declared: $binding->declared, start: $binding->start),
+			$this->bindPlanned(binding: $binding),
+			$this->bindInternalTarget(binding: $binding),
+		];
 
-		$statutory = $this->bindStatutory(caseId: $caseId, declared: $declared, start: $from);
-		if ($statutory !== null) {
-			$bound[] = $statutory;
-		}
+		return array_values(array_filter($bound, static fn (?array $instance): bool => $instance !== null));
+	}//end bindForCase()
 
+	/**
+	 * Bind the planned end: the case type's own lead time, else the service norm a planned definition declares.
+	 *
+	 * @param CaseTermBinding $binding The case's clocks.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when neither declares one.
+	 */
+	private function bindPlanned(CaseTermBinding $binding): ?array {
 		$plannedExtra = [];
-		if ($plannedStart !== '') {
-			$plannedExtra = ['plannedStartDate' => $plannedStart];
+		if ($binding->plannedStart !== '') {
+			$plannedExtra = ['plannedStartDate' => $binding->plannedStart];
 		}
 
-		// The case type's own lead time, else the service norm a planned
-		// definition declares; TermDefinitions::plannedClock() says which wins.
+		// TermDefinitions::plannedClock() says which of the two wins.
 		$plannedClock = TermDefinitions::plannedClock(
-			declaredDays: $declared['plannedLeadTimeDays'],
-			definition: $plannedDefinition
+			declaredDays: $binding->declared['plannedLeadTimeDays'],
+			definition: $binding->plannedDefinition
 		);
 
-		$planned = $this->bindLeadTime(
-			caseId: $caseId,
+		return $this->bindLeadTime(
+			caseId: $binding->caseId,
 			kind: TermKind::PLANNED,
 			days: $plannedClock['days'],
-			start: $from,
+			start: $binding->start,
 			extra: array_merge($plannedExtra, $plannedClock['extra']),
 			mode: $plannedClock['mode'],
 		);
-		if ($planned !== null) {
-			$bound[] = $planned;
-		}
+	}//end bindPlanned()
 
-		$internal = $this->bindLeadTime(
-			caseId: $caseId,
+	/**
+	 * Bind the internal target, in working days.
+	 *
+	 * @param CaseTermBinding $binding The case's clocks.
+	 *
+	 * @return array<string, mixed>|null The instance, or null when none is declared.
+	 */
+	private function bindInternalTarget(CaseTermBinding $binding): ?array {
+		return $this->bindLeadTime(
+			caseId: $binding->caseId,
 			kind: TermKind::INTERNAL,
-			days: $declared['internalTargetDays'],
-			start: $from,
+			days: $binding->declared['internalTargetDays'],
+			start: $binding->start,
 			mode: WorkingDayRoll::MODE_WORKING_DAYS,
 		);
-		if ($internal !== null) {
-			$bound[] = $internal;
-		}
-
-		return $bound;
-	}//end bindForCase()
+	}//end bindInternalTarget()
 
 	/**
 	 * Put the statutory term on the case type's fixed closing date (REQ-TERM-064).
