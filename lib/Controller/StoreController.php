@@ -53,6 +53,7 @@ use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\AppHost\Service\GenericStoreService;
 use OCA\OpenRegister\AppHost\Service\StoreDescriptor;
+use OCA\OpenRegister\AppHost\Service\StoreListing;
 use OCA\OpenRegister\AppHost\Store\StoreActionAuthorizer;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -147,18 +148,20 @@ class StoreController extends Controller {
 	 */
 	private function descriptor(): StoreDescriptor {
 		return new StoreDescriptor(
-			appId: Application::APP_ID,
-			schema: 'case-type-template',
-			defaultRegister: 'dossiq',
-			cardFields: [
-				'slug' => 'slug',
-				'title' => 'title',
-				'description' => 'description',
-				'kind' => 'kind',
-				'category' => 'category',
-				'version' => 'version',
-				'publisher' => 'publisher',
-			]
+			listing: new StoreListing(
+				appId: Application::APP_ID,
+				schema: 'case-type-template',
+				defaultRegister: 'dossiq',
+				cardFields: [
+					'slug' => 'slug',
+					'title' => 'title',
+					'description' => 'description',
+					'kind' => 'kind',
+					'category' => 'category',
+					'version' => 'version',
+					'publisher' => 'publisher',
+				]
+			)
 		);
 	}//end descriptor()
 
