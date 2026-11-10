@@ -40,6 +40,8 @@ namespace OCA\Dossiq\Service\Status;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\OpenRegister\Kernel\Contracts\TimerChange;
+use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -203,10 +205,8 @@ class StatusDwellTimer {
 
 		try {
 			return (int)$engine->cancelForSubject(
-				subjectType: 'object',
-				subjectUuid: $caseId,
-				reason: $reason,
-				actor: null,
+				subject: new TimerSubjectRef(type: 'object', uuid: $caseId),
+				change: new TimerChange(reason: $reason, actor: null)
 			);
 		} catch (Throwable $e) {
 			$this->degraded(operation: 'cancel', caseId: $caseId, error: $e);

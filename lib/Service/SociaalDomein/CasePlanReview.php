@@ -119,6 +119,34 @@ class CasePlanReview {
 			$onDate = (new DateTimeImmutable())->format('Y-m-d');
 		}
 
+		$plan = $this->planToReview(planId: $planId);
+		$this->refuseWithoutReviewer(reviewedBy: $reviewedBy);
+		$written = $this->writtenChanges(changes: $changes);
+
+		return $this->store->write(
+			schema: self::SCHEMA,
+			object: $this->withReview(
+				plan: $plan,
+				review: [
+					'reviewedBy' => trim($reviewedBy),
+					'reviewDate' => $onDate,
+					'changes' => $written,
+					'nextReviewDate' => $nextReviewDate,
+				]
+			)
+		);
+	}//end record()
+
+	/**
+	 * The family plan under review, or a refusal when it is not there.
+	 *
+	 * @param string $planId The plan id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RefusedException When the plan cannot be found.
+	 */
+	private function planToReview(string $planId): array {
 		$plan = $this->store->read(schema: self::SCHEMA, id: $planId);
 		if ($plan === null) {
 			throw new RefusedException(
@@ -128,6 +156,19 @@ class CasePlanReview {
 			);
 		}
 
+		return $plan;
+	}//end planToReview()
+
+	/**
+	 * Refuse a review that does not say who did it.
+	 *
+	 * @param string $reviewedBy Who reviewed.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When nobody is named.
+	 */
+	private function refuseWithoutReviewer(string $reviewedBy): void {
 		if (trim($reviewedBy) === '') {
 			throw new RefusedException(
 				rule: 'review-needs-a-reviewer',
@@ -135,7 +176,18 @@ class CasePlanReview {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end refuseWithoutReviewer()
 
+	/**
+	 * The changes written down, trimmed; a review that names none is refused.
+	 *
+	 * @param array<int, mixed> $changes The changes as given.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @throws RefusedException When no change is written down.
+	 */
+	private function writtenChanges(array $changes): array {
 		$written = [];
 		foreach ($changes as $change) {
 			$change = trim((string)$change);
@@ -153,21 +205,28 @@ class CasePlanReview {
 			);
 		}
 
+		return $written;
+	}//end writtenChanges()
+
+	/**
+	 * The plan with the review appended, and its next review date when one is set.
+	 *
+	 * @param array<string, mixed> $plan   The plan.
+	 * @param array<string, mixed> $review The review.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withReview(array $plan, array $review): array {
 		$reviews = $this->reviewsOf(plan: $plan);
-		$reviews[] = [
-			'reviewedBy' => trim($reviewedBy),
-			'reviewDate' => $onDate,
-			'changes' => $written,
-			'nextReviewDate' => $nextReviewDate,
-		];
+		$reviews[] = $review;
 
 		$plan['reviews'] = $reviews;
-		if (trim($nextReviewDate) !== '') {
-			$plan['reviewDate'] = $nextReviewDate;
+		if (trim($review['nextReviewDate']) !== '') {
+			$plan['reviewDate'] = $review['nextReviewDate'];
 		}
 
-		return $this->store->write(schema: self::SCHEMA, object: $plan);
-	}//end record()
+		return $plan;
+	}//end withReview()
 
 	/**
 	 * The reviews a plan already carries.

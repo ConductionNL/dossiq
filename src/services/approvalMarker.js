@@ -38,11 +38,29 @@ export function approvalMarkerLabel(marker) {
 		return t('dossiq', 'Approved')
 	}
 
+	return pendingLabel(waitingStage(marker), Number(marker.stepCount || 0))
+}
+
+/**
+ * The approval step a document waits on: the first one it waits on.
+ *
+ * @param {object} marker The entry for one document.
+ * @return {number} The step, or 0 when none is named.
+ */
+function waitingStage(marker) {
 	const waiting = Array.isArray(marker.waitingOn) ? marker.waitingOn : []
 	const first = waiting[0] || {}
-	const step = Number(first.stage || 0)
-	const total = Number(marker.stepCount || 0)
+	return Number(first.stage || 0)
+}
 
+/**
+ * The marker text for a document still in approval.
+ *
+ * @param {number} step The step it waits on, or 0.
+ * @param {number} total The number of steps, or 0.
+ * @return {string} The text.
+ */
+function pendingLabel(step, total) {
 	if (step > 0 && total > 0) {
 		return t('dossiq', 'In approval, step {step} of {total}', { step, total })
 	}
