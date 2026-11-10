@@ -27,6 +27,7 @@ use DateTimeInterface;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -107,13 +108,13 @@ class WooReportReadLog {
 		foreach ($caseIds as $caseId) {
 			try {
 				$case = $objectService->find($caseId, register: $register, schema: $schema);
-				$mapper->createAuditTrailEntry(
+				$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
 					object: $case,
 					action: self::ACTION_THROUGHPUT,
 					context: $context,
 					actorId: $readerId,
 					actorName: $readerId,
-				);
+				));
 			} catch (Throwable $e) {
 				$this->logger->error(
 					'Dossiq: a Woo throughput read could not be recorded, so it is refused',

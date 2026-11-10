@@ -45,6 +45,8 @@ namespace OCA\Dossiq\Service\Recycle;
 use DateTime;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
+use OCA\OpenRegister\Db\AuditTrailMapper;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -390,7 +392,7 @@ class CaseDestructionService {
 	 */
 	private function fallbackRecord(object $entity, array $context, string $actor): void {
 		$mapper = $this->settingsService->getOpenRegisterClass(class: CaseRecycleService::AUDIT_MAPPER);
-		if ($mapper === null || method_exists($mapper, 'createAuditTrailEntry') === false) {
+		if ($mapper instanceof AuditTrailMapper === false) {
 			$this->logger->error(
 				'Dossiq: a case was destroyed with no record, because no audit trail is available',
 				['uuid' => (string)$entity->getUuid()]
@@ -399,13 +401,13 @@ class CaseDestructionService {
 		}
 
 		try {
-			$mapper->createAuditTrailEntry(
+			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
 				object: $entity,
 				action: self::DESTROY_ACTION,
 				context: $context,
 				actorId: $actor,
 				actorName: ($this->userSession->getUser()?->getDisplayName() ?? 'System')
-			);
+			));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: could not record the destruction: ' . $e->getMessage());
 		}

@@ -6,7 +6,7 @@
  * The single writer of the bezwaar procedure's Awb and AVG entries. Every
  * entry is one row on OpenRegister's hash-chained audit trail of the record
  * it describes, a `hearingSession` or a `bacAdviceRequest`, written through
- * `AuditTrailMapper::createAuditTrailEntry()`. It used to be appended to an
+ * `AuditTrailMapper::recordObjectEvent()`. It used to be appended to an
  * `auditTrail` array on that same record, which anyone who could write the
  * record could edit, and which was not part of the hash chain (gate 23 rule 2).
  *
@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -227,7 +228,9 @@ class BezwaarAuditTrail {
 
 		try {
 			$this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper')
-				->createAuditTrailEntry(object: $object, action: $action, context: $context, actorId: $actorId, actorName: $actorId);
+				->recordObjectEvent(
+					event: ObjectAuditEvents::of(object: $object, action: $action, context: $context, actorId: $actorId, actorName: $actorId)
+				);
 		} catch (Throwable $e) {
 			throw new BezwaarEntryNotWrittenException(
 				action: $action,

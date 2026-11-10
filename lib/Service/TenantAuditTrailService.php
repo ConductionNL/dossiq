@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -146,7 +147,7 @@ class TenantAuditTrailService {
 				return false;
 			}
 
-			$mapper->createAuditTrailEntry(
+			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
 				object: $object,
 				// FROZEN PREFIX — still `procest.`, deliberately. Written into
 				// OpenRegister's append-only audit trail; every existing tenant
@@ -155,7 +156,7 @@ class TenantAuditTrailService {
 				// it were complete.
 				action: 'procest.tenant.' . $entry['action'],
 				context: $entry,
-			);
+			));
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -334,7 +335,7 @@ class TenantAuditTrailService {
 			[
 				'key' => 'audit_logged_mutations',
 				'description' => 'Mandate decisions and tenant status changes, provisioning included, each write a hash-chained OpenRegister audit row',
-				'evidence' => 'TenantAuditTrailService::emit -> AuditTrailMapper::createAuditTrailEntry '
+				'evidence' => 'TenantAuditTrailService::emit -> AuditTrailMapper::recordObjectEvent '
 					. '(probed live); MandateValidationMiddleware::logDecision; '
 					. 'OrganisationStatusChangeListener on OpenRegister\'s OrganisationUpdatedEvent',
 				'status' => $auditStatus,

@@ -30,6 +30,9 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessPurposeService;
 use OCA\Dossiq\Service\People\CaseRoleHolder;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\AuditTrail;
+use OCA\OpenRegister\Db\AuditTrail\ObjectAuditEvent;
+use OCA\OpenRegister\Db\ObjectEntity;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -96,21 +99,11 @@ class CaseAccessPurposeServiceTest extends TestCase {
 				}
 
 				$data = $this->objects[$id];
-				return new class($id, $data) {
-					/**
-					 * @param string               $uuid The uuid.
-					 * @param array<string, mixed> $data The fields.
-					 */
-					public function __construct(public string $uuid, private array $data) {
-					}
+				$entity = new ObjectEntity();
+				$entity->setUuid($id);
+				$entity->setObject($data);
 
-					/**
-					 * @return array<string, mixed>
-					 */
-					public function getObject(): array {
-						return $this->data;
-					}
-				};
+				return $entity;
 			}
 		};
 
@@ -123,16 +116,14 @@ class CaseAccessPurposeServiceTest extends TestCase {
 			}
 
 			/**
-			 * @param object               $object    The case.
-			 * @param string               $action    The action.
-			 * @param array<string, mixed> $context   The context.
-			 * @param string|null          $actorId   The actor.
-			 * @param string|null          $actorName The actor's name.
+			 * @param ObjectAuditEvent $event The case, action, context and actor.
 			 *
-			 * @return void
+			 * @return AuditTrail The entry.
 			 */
-			public function createAuditTrailEntry(object $object, string $action, array $context, ?string $actorId=null, ?string $actorName=null): void {
-				$this->test->collect(object: $object, action: $action, context: $context, actorId: $actorId);
+			public function recordObjectEvent(ObjectAuditEvent $event): AuditTrail {
+				$this->test->collect(object: $event->object, action: $event->action, context: $event->context, actorId: $event->options->actor->id);
+
+				return new AuditTrail();
 			}
 		};
 
@@ -199,7 +190,7 @@ class CaseAccessPurposeServiceTest extends TestCase {
 		$this->assertSame(['recorded' => true, 'required' => true, 'roleAdded' => true], $result);
 		$this->assertCount(2, $this->written);
 		[$object, $action, $context, $actorId] = $this->written[0];
-		$this->assertSame('case-1', $object->uuid);
+		$this->assertSame('case-1', $object->getUuid());
 		$this->assertSame(CaseAccessPurposeService::ACTION, $action);
 		$this->assertSame('pieter', $actorId);
 		$this->assertSame('pieter', $context['reader']);

@@ -33,6 +33,7 @@ use DateTimeInterface;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\People\CaseRoleHolder;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -307,13 +308,13 @@ class CaseAccessPurposeService {
 	 */
 	private function write(object $mapper, object $case, string $readerId, string $action, array $context): void {
 		try {
-			$mapper->createAuditTrailEntry(
+			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
 				object: $case,
 				action: $action,
 				context: array_merge(['reader' => $readerId, 'at' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM)], $context),
 				actorId: $readerId,
 				actorName: $readerId,
-			);
+			));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: an access purpose could not be recorded, so the case stays closed',
