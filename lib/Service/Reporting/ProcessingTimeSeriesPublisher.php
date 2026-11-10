@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Reporting;
 
+use OCA\OpenRegister\Service\AnalyticsSeriesDraft;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -89,10 +90,10 @@ class ProcessingTimeSeriesPublisher {
 		try {
 			$service = $this->container->get(self::SERIES_SERVICE);
 			foreach ($series as $entry) {
-				$service->register(...$entry);
+				$service->registerSeries(draft: $this->draftOf(entry: $entry));
 				$legacy = (self::LEGACY_KEYS[$entry['seriesKey']] ?? null);
 				if ($legacy !== null) {
-					$service->register(...array_merge($entry, ['seriesKey' => $legacy]));
+					$service->registerSeries(draft: $this->draftOf(entry: array_merge($entry, ['seriesKey' => $legacy])));
 				}
 			}
 		} catch (Throwable $e) {
@@ -102,6 +103,21 @@ class ProcessingTimeSeriesPublisher {
 			);
 		}
 	}//end publish()
+
+	/**
+	 * The analytics draft for one series: its data, shown privately as its chart type.
+	 *
+	 * @param array{seriesKey: string, title: string, chartType?: string, labels: array, datasets: array} $entry The series.
+	 *
+	 * @return AnalyticsSeriesDraft The draft.
+	 *
+	 * @spec openspec/specs/sla-charts-via-analytics-leaf/spec.md
+	 */
+	private function draftOf(array $entry): AnalyticsSeriesDraft {
+		return (new AnalyticsSeriesDraft(seriesKey: $entry['seriesKey'], title: $entry['title']))
+			->withData(labels: $entry['labels'], datasets: $entry['datasets'])
+			->shownAs(chartType: ($entry['chartType'] ?? 'line'), visibility: 'private');
+	}//end draftOf()
 
 	/**
 	 * The series a report yields, as named arguments for the series service.

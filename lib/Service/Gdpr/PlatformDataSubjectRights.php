@@ -55,6 +55,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Gdpr;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\OpenRegister\Service\Gdpr\SubjectQuery;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -176,8 +177,7 @@ class PlatformDataSubjectRights {
 
 		return $this->guarded(call: function () use ($previewService, $store, $subject, $type, $eraseMode, $requestId) {
 			$preview = $previewService->preview(
-				subjectId: $subject,
-				type: $type,
+				subject: new SubjectQuery(subjectId: $subject, type: $type),
 				eraseMode: $this->knownMode(mode: $eraseMode),
 			);
 

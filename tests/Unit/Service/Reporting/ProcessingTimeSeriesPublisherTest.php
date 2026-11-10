@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Reporting;
 
 use OCA\Dossiq\Service\Reporting\ProcessingTimeSeriesPublisher;
+use OCA\OpenRegister\Service\AnalyticsSeriesDraft;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -128,17 +129,24 @@ class ProcessingTimeSeriesPublisherTest extends TestCase {
 			public array $keys = [];
 
 			/**
+			 * The visibility each series was registered with.
+			 *
+			 * @var string[]
+			 */
+			public array $visibility = [];
+
+			/**
 			 * Record a registration.
 			 *
-			 * @param string $seriesKey The key.
-			 * @param mixed  ...$rest   The other arguments.
+			 * @param AnalyticsSeriesDraft $draft The series.
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function register(string $seriesKey, mixed ...$rest): array {
-				$this->keys[] = $seriesKey;
-				return $rest;
-			}//end register()
+			public function registerSeries(AnalyticsSeriesDraft $draft): array {
+				$this->keys[] = $draft->seriesKey;
+				$this->visibility[] = $draft->visibility();
+				return ['seriesKey' => $draft->seriesKey];
+			}//end registerSeries()
 		};
 
 		$this->publisher(service: $service)->publish(report: $this->report());
@@ -157,6 +165,7 @@ class ProcessingTimeSeriesPublisherTest extends TestCase {
 			$service->keys,
 			'Each series is published under its new key and, for one release, its old one.'
 		);
+		$this->assertSame(['private'], array_values(array_unique($service->visibility)));
 	}//end testPublishRegistersEachSeries()
 
 	/**
