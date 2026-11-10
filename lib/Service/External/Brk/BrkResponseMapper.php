@@ -39,6 +39,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\External\Brk;
 
+use OCA\Dossiq\Service\External\RegisterValues;
+
 /**
  * Normalizes Kadaster BRK Bevragen v2 kadastraalOnroerendeZaak fragments
  * into the Dossiq-internal DTO shape.
@@ -84,14 +86,14 @@ final class BrkResponseMapper {
 		$gerechtigdenRaw = ($raw['zakelijkGerechtigdheid'] ?? $raw['zakelijkGerechtigden'] ?? []);
 
 		return [
-			'kadastraleGemeente' => $this->stringOrNull(value: $municipalityNameRaw),
-			'kadastraleGemeenteCode' => $this->stringOrNull(value: $municipalityCodeRaw),
-			'sectie' => $this->stringOrNull(value: $aanduidingRaw['sectie'] ?? $raw['sectie'] ?? null),
-			'perceelnummer' => $this->intOrNull(value: $aanduidingRaw['perceelnummer'] ?? $raw['perceelnummer'] ?? null),
-			'appartementsrechtVolgnummer' => $this->stringOrNull(value: $sequenceNumberRaw),
-			'kadastraleAanduiding' => $this->stringOrNull(value: $raw['kadastraleAanduidingVolledig'] ?? $raw['aanduiding'] ?? null),
-			'oppervlakte' => $this->intOrNull(value: $grootteRaw),
-			'soortCultuurBebouwd' => $this->toStringArray(value: $raw['soortCultuurBebouwd'] ?? []),
+			'kadastraleGemeente' => RegisterValues::stringOrNull(value: $municipalityNameRaw),
+			'kadastraleGemeenteCode' => RegisterValues::stringOrNull(value: $municipalityCodeRaw),
+			'sectie' => RegisterValues::stringOrNull(value: $aanduidingRaw['sectie'] ?? $raw['sectie'] ?? null),
+			'perceelnummer' => RegisterValues::intOrNull(value: $aanduidingRaw['perceelnummer'] ?? $raw['perceelnummer'] ?? null),
+			'appartementsrechtVolgnummer' => RegisterValues::stringOrNull(value: $sequenceNumberRaw),
+			'kadastraleAanduiding' => RegisterValues::stringOrNull(value: $raw['kadastraleAanduidingVolledig'] ?? $raw['aanduiding'] ?? null),
+			'oppervlakte' => RegisterValues::intOrNull(value: $grootteRaw),
+			'soortCultuurBebouwd' => RegisterValues::toStringArray(value: $raw['soortCultuurBebouwd'] ?? []),
 			'zakelijkGerechtigden' => $this->mapBusinessGerechtigden(raw: $gerechtigdenRaw),
 			'geo' => $this->extractGeo(raw: $raw),
 		];
@@ -109,14 +111,7 @@ final class BrkResponseMapper {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function mapMany(array $rawList): array {
-		$out = [];
-		foreach ($rawList as $item) {
-			if (is_array($item) === true) {
-				$out[] = $this->map(raw: $item);
-			}
-		}
-
-		return $out;
+		return RegisterValues::mapFragments(rawList: $rawList, map: fn (array $item): array => $this->map(raw: $item));
 	}//end mapMany()
 
 	/**
@@ -144,8 +139,8 @@ final class BrkResponseMapper {
 			}
 
 			$out[] = [
-				'identificatie' => $this->stringOrNull(value: $entry['identificatie'] ?? null),
-				'aardZakelijkRecht' => $this->stringOrNull(value: $entry['aardZakelijkRecht']['value'] ?? $entry['aardZakelijkRecht'] ?? null),
+				'identificatie' => RegisterValues::stringOrNull(value: $entry['identificatie'] ?? null),
+				'aardZakelijkRecht' => RegisterValues::stringOrNull(value: $entry['aardZakelijkRecht']['value'] ?? $entry['aardZakelijkRecht'] ?? null),
 			];
 		}
 
@@ -178,74 +173,4 @@ final class BrkResponseMapper {
 			'lat' => (float)$coordinates[1],
 		];
 	}//end extractGeo()
-
-	/**
-	 * Coerce a value to a non-empty string, or null.
-	 *
-	 * @param mixed $value Raw value.
-	 *
-	 * @return string|null
-	 */
-	private function stringOrNull(mixed $value): ?string {
-		if (is_string($value) === true && $value !== '') {
-			return $value;
-		}
-
-		if (is_int($value) === true || is_float($value) === true) {
-			return (string)$value;
-		}
-
-		return null;
-	}//end stringOrNull()
-
-	/**
-	 * Coerce a value to an int, or null when absent/non-numeric.
-	 *
-	 * @param mixed $value Raw value.
-	 *
-	 * @return int|null
-	 */
-	private function intOrNull(mixed $value): ?int {
-		if (is_int($value) === true) {
-			return $value;
-		}
-
-		if (is_float($value) === true) {
-			return (int)$value;
-		}
-
-		if (is_string($value) === true && $value !== '' && is_numeric($value) === true) {
-			return (int)$value;
-		}
-
-		return null;
-	}//end intOrNull()
-
-	/**
-	 * Coerce a value into a string array — a single string becomes a
-	 * one-element array, an array is filtered to strings, anything else
-	 * becomes an empty array.
-	 *
-	 * @param mixed $value Raw value.
-	 *
-	 * @return array<int,string>
-	 */
-	private function toStringArray(mixed $value): array {
-		if (is_string($value) === true && $value !== '') {
-			return [$value];
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$out = [];
-		foreach ($value as $item) {
-			if (is_string($item) === true && $item !== '') {
-				$out[] = $item;
-			}
-		}
-
-		return $out;
-	}//end toStringArray()
 }//end class
