@@ -47,25 +47,20 @@ export function isCurrentCaseTypeVersion(caseType) {
  */
 export function isCaseTypeUsable(caseType) {
 	if (!caseType) return false
-	if (caseType.isDraft === true || caseType.isDraft === 'true') return false
+	if (isDraftCaseType(caseType)) return false
 	if (!isCurrentCaseTypeVersion(caseType)) return false
 
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
+	return validityWindow(caseType) === ''
+}
 
-	if (caseType.validFrom) {
-		const validFrom = new Date(caseType.validFrom)
-		validFrom.setHours(0, 0, 0, 0)
-		if (validFrom > today) return false
-	}
-
-	if (caseType.validUntil) {
-		const validUntil = new Date(caseType.validUntil)
-		validUntil.setHours(0, 0, 0, 0)
-		if (validUntil < today) return false
-	}
-
-	return true
+/**
+ * Whether a case type is still a draft.
+ *
+ * @param {object} caseType Case type object
+ * @return {boolean} True for a draft
+ */
+function isDraftCaseType(caseType) {
+	return caseType.isDraft === true || caseType.isDraft === 'true'
 }
 
 /**
@@ -78,7 +73,7 @@ export function isCaseTypeUsable(caseType) {
 export function getCaseTypeUnusableReason(caseType) {
 	if (!caseType) return t('dossiq', 'Case type not found')
 
-	if (caseType.isDraft === true || caseType.isDraft === 'true') {
+	if (isDraftCaseType(caseType)) {
 		return t(
 			'dossiq',
 			'Cannot create a case with a draft case type. The case type must be published first.',
@@ -107,6 +102,26 @@ function startOfDay(date) {
 }
 
 /**
+ * Where today lies against a case type's validity window.
+ *
+ * @param {object} caseType Case type object
+ * @return {string} `not-yet-valid`, `expired`, or '' when it is valid today
+ */
+function validityWindow(caseType) {
+	const today = startOfDay(new Date())
+
+	if (caseType.validFrom && startOfDay(new Date(caseType.validFrom)) > today) {
+		return 'not-yet-valid'
+	}
+
+	if (caseType.validUntil && startOfDay(new Date(caseType.validUntil)) < today) {
+		return 'expired'
+	}
+
+	return ''
+}
+
+/**
  * Why a published, current case type cannot be used today: not yet valid,
  * or expired.
  *
@@ -114,9 +129,9 @@ function startOfDay(date) {
  * @return {string|null} The reason, or null when it is valid today
  */
 function validityReason(caseType) {
-	const today = startOfDay(new Date())
+	const window = validityWindow(caseType)
 
-	if (caseType.validFrom && startOfDay(new Date(caseType.validFrom)) > today) {
+	if (window === 'not-yet-valid') {
 		return t(
 			'dossiq',
 			'Cannot create a case with a case type that is not yet valid. The case type is valid from {date}.',
@@ -124,7 +139,7 @@ function validityReason(caseType) {
 		)
 	}
 
-	if (caseType.validUntil && startOfDay(new Date(caseType.validUntil)) < today) {
+	if (window === 'expired') {
 		return t(
 			'dossiq',
 			'Cannot create a case with an expired case type. The case type was valid until {date}.',
