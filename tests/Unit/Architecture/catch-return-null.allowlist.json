@@ -1,9 +1,9 @@
 {
-  "ceiling": 244,
+  "ceiling": 243,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
-    "2026-11-10, shared organisation lookup: the tenant and partner migrations, the satellite orphan scan and the tenant resolver now resolve OpenRegister's OrganisationMapper and read an Organisation by uuid through `OrganisationLookup::mapper` and `OrganisationLookup::byUuid`. Eight sites became two. The ceiling went 250 to 244.",
+    "2026-11-10, shared organisation lookup: the tenant and partner migrations, the satellite orphan scan, the tenant resolver and the quota limits now resolve OpenRegister's OrganisationMapper and read an Organisation by uuid through `OrganisationLookup::mapper` and `OrganisationLookup::byUuid`. Nine sites became two. The ceiling went 250 to 243.",
     "2026-11-04, decision document failure answers (#5063): a bijlage that could not be saved now answers null instead of an invented id, through one site, `BeschikkingGenerationService::storeBijlage`. The ceiling went 249 to 250, after the hearing split freed one.",
     "2026-11-04, HearingService split (#4983): the existing-session lookup moved into `mayHaveSession()`, which answers true when the lookup fails, so a failed read still seeds nothing but no longer answers null. The ceiling went 250 to 249.",
     "2026-10-14, Q-dossiq-L11-3 (decision 224, guards refuse when unsure): three sites left. `Zgw/ZgwRuleLookups::findObjectByField`, `findAllObjectsByField` and `findBySchemaKey` throw `LookupNotCompleted` when the store cannot be read, and `ZgwBusinessRulesService::validate` refuses the request with 503 `check-not-completed`. An object the store does not hold, or does not show the caller, still reads as none. The ceiling went 254 to 251.",
@@ -839,13 +839,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`parseCaseStart()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/OrganisationQuotaLimits.php",
-      "method": "getOrganisationMapper",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not resolve OrganisationMapper for a quota limit\") and the caller carries on without it."
     },
     {
       "file": "lib/Service/PartnerMigrationService.php",

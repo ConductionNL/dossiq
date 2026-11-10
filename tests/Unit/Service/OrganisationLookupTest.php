@@ -49,9 +49,9 @@ class OrganisationLookupTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->never())->method('error');
 
-		$lookup = new OrganisationLookup($appManager, $container, $logger);
+		$lookup = new OrganisationLookup($appManager, $container);
 
-		self::assertNull($lookup->mapper('unused'));
+		self::assertNull($lookup->mapper($logger, 'unused'));
 	}//end testMapperIsNullWhenOpenRegisterIsNotInstalled()
 
 	/**
@@ -68,9 +68,9 @@ class OrganisationLookupTest extends TestCase {
 			->with('OCA\\OpenRegister\\Db\\OrganisationMapper')
 			->willReturn($mapper);
 
-		$lookup = new OrganisationLookup($appManager, $container, $this->createMock(LoggerInterface::class));
+		$lookup = new OrganisationLookup($appManager, $container);
 
-		self::assertSame($mapper, $lookup->mapper('unused'));
+		self::assertSame($mapper, $lookup->mapper($this->createMock(LoggerInterface::class), 'unused'));
 	}//end testMapperComesFromTheContainer()
 
 	/**
@@ -87,9 +87,9 @@ class OrganisationLookupTest extends TestCase {
 		$logger->expects($this->once())->method('error')
 			->with('Dossiq: caller message', ['exception' => 'boom']);
 
-		$lookup = new OrganisationLookup($appManager, $container, $logger);
+		$lookup = new OrganisationLookup($appManager, $container);
 
-		self::assertNull($lookup->mapper('Dossiq: caller message'));
+		self::assertNull($lookup->mapper($logger, 'Dossiq: caller message'));
 	}//end testMapperFailureLogsTheCallersMessage()
 
 	/**

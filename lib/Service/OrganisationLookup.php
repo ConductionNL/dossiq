@@ -40,25 +40,24 @@ final class OrganisationLookup {
 	 *
 	 * @param IAppManager        $appManager Detects whether OpenRegister is installed.
 	 * @param ContainerInterface $container  DI container, resolves OpenRegister's OrganisationMapper.
-	 * @param LoggerInterface    $logger     Logger for a mapper that cannot be resolved.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
-		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
 	/**
 	 * Resolve OpenRegister's OrganisationMapper when the app is installed.
 	 *
-	 * @param string $failureMessage The error logged when the container cannot build the mapper.
+	 * @param LoggerInterface $logger         The caller's logger.
+	 * @param string          $failureMessage The error logged when the container cannot build the mapper.
 	 *
 	 * @return object|null The mapper, or null when OpenRegister is unavailable.
 	 *
 	 * @spec openspec/specs/tenant-organisation-boundary/spec.md#requirement-the-active-tenant-is-openregisters-active-organisation-req-tao-002
 	 */
-	public function mapper(string $failureMessage): ?object {
+	public function mapper(LoggerInterface $logger, string $failureMessage): ?object {
 		$installed = (array)$this->appManager->getInstalledApps();
 		if (in_array('openregister', $installed, true) === false) {
 			return null;
@@ -67,7 +66,7 @@ final class OrganisationLookup {
 		try {
 			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
 		} catch (Throwable $e) {
-			$this->logger->error(
+			$logger->error(
 				$failureMessage,
 				['exception' => $e->getMessage()],
 			);

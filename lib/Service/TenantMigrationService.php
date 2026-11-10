@@ -880,7 +880,7 @@ class TenantMigrationService {
 	 * @return object|null The OrganisationMapper, or null when OR is unavailable.
 	 */
 	private function getOrganisationMapper(): ?object {
-		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container, logger: $this->logger);
-		return $lookup->mapper(failureMessage: 'Dossiq: Could not get OrganisationMapper for tenant migration');
+		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container);
+		return $lookup->mapper(logger: $this->logger, failureMessage: 'Dossiq: Could not get OrganisationMapper for tenant migration');
 	}//end getOrganisationMapper()
 }//end class

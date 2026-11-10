@@ -379,7 +379,7 @@ class PartnerMigrationService {
 	 * @return object|null The OrganisationMapper, or null when OR is unavailable.
 	 */
 	private function getOrganisationMapper(): ?object {
-		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container, logger: $this->logger);
-		return $lookup->mapper(failureMessage: 'Dossiq: could not get OrganisationMapper for partner migration');
+		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container);
+		return $lookup->mapper(logger: $this->logger, failureMessage: 'Dossiq: could not get OrganisationMapper for partner migration');
 	}//end getOrganisationMapper()
 }//end class

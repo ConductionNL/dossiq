@@ -200,7 +200,7 @@ class TenantOrganisationResolver {
 	 * @return object|null The mapper, or null when OpenRegister is unavailable.
 	 */
 	private function getOrganisationMapper(): ?object {
-		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container, logger: $this->logger);
-		return $lookup->mapper(failureMessage: 'Dossiq: could not resolve OrganisationMapper for tenant resolution');
+		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container);
+		return $lookup->mapper(logger: $this->logger, failureMessage: 'Dossiq: could not resolve OrganisationMapper for tenant resolution');
 	}//end getOrganisationMapper()
 }//end class

@@ -214,19 +214,7 @@ class OrganisationQuotaLimits {
 	 * @return object|null The mapper, or null when unavailable.
 	 */
 	private function getOrganisationMapper(): ?object {
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\\OpenRegister\\Db\\OrganisationMapper');
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not resolve OrganisationMapper for a quota limit',
-				['exception' => $e->getMessage()],
-			);
-			return null;
-		}
+		$lookup = new OrganisationLookup(appManager: $this->appManager, container: $this->container);
+		return $lookup->mapper(logger: $this->logger, failureMessage: 'Dossiq: could not resolve OrganisationMapper for a quota limit');
 	}//end getOrganisationMapper()
 }//end class
