@@ -31,11 +31,9 @@ namespace OCA\Dossiq\Integration;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Read the cases of a party by its master entity.
@@ -46,8 +44,6 @@ use Throwable;
  * @spec openspec/specs/case-leaf/spec.md
  */
 class CaseLeafProvider {
-
-	use SearchesObjects;
 
 	/**
 	 * The party schemas a master entity can resolve to.
@@ -109,24 +105,42 @@ class CaseLeafProvider {
 			return ['status' => 200, 'cases' => []];
 		}
 
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$objectService = $this->settingsService->getObjectService();
-		if ($register === '' || $objectService === null) {
+		$reader = $this->reader();
+		if ($reader === null) {
 			return ['status' => 503, 'error' => 'The case surface is not configured.'];
 		}
 
-		$cases = [];
-		foreach ($this->partyIds(objectService: $objectService, register: $register, ref: $ref) as $partyId) {
-			foreach ($this->read(objectService: $objectService, register: $register, schema: 'case', filters: ['requester' => $partyId]) as $case) {
-				$id = (string)($case['id'] ?? '');
-				if ($id !== '' && $this->matches(case: $case, status: $status) === true) {
-					$cases[$id] = $case;
-				}
-			}
+		$cases = $reader->casesOf(partyIds: $reader->partyIds(ref: $ref), status: $status);
+
+		return ['status' => 200, 'cases' => $this->rows(cases: $cases, reader: $reader)];
+	}//end byMasterEntity()
+
+	/**
+	 * The reader over the configured register, or null when the surface is not configured.
+	 *
+	 * @return CaseLeafReader|null
+	 */
+	private function reader(): ?CaseLeafReader {
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$objectService = $this->settingsService->getObjectService();
+		if ($register === '' || $objectService === null) {
+			return null;
 		}
 
-		$types = $this->byId(objectService: $objectService, register: $register, schema: 'caseType', cases: $cases, field: 'caseType');
-		$statuses = $this->byId(objectService: $objectService, register: $register, schema: 'statusType', cases: $cases, field: 'status');
+		return new CaseLeafReader(objectService: $objectService, register: $register, logger: $this->logger);
+	}//end reader()
+
+	/**
+	 * The leaf rows of the cases: open first by deadline, then closed newest first.
+	 *
+	 * @param array<string, array<string, mixed>> $cases  The cases by id.
+	 * @param CaseLeafReader                      $reader The reader, for their types and statuses.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function rows(array $cases, CaseLeafReader $reader): array {
+		$types = $reader->linkedById(cases: $cases, field: 'caseType');
+		$statuses = $reader->linkedById(cases: $cases, field: 'status');
 
 		$rows = array_map(
 			fn (array $case): array => $this->present(
@@ -138,8 +152,8 @@ class CaseLeafProvider {
 		);
 		usort($rows, fn (array $left, array $right): int => $this->compare(left: $left, right: $right));
 
-		return ['status' => 200, 'cases' => $rows];
-	}//end byMasterEntity()
+		return $rows;
+	}//end rows()
 
 	/**
 	 * Order open cases first by deadline, then closed cases newest first.
@@ -175,77 +189,6 @@ class CaseLeafProvider {
 
 		return (string)$row['deadline'];
 	}//end dueKey()
-
-	/**
-	 * The ids of the parties that carry the master entity.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $ref           The master entity reference.
-	 *
-	 * @return array<int, string> The party ids.
-	 */
-	private function partyIds(object $objectService, string $register, string $ref): array {
-		$ids = [];
-		foreach (self::PARTY_SCHEMAS as $schema) {
-			foreach ($this->read(objectService: $objectService, register: $register, schema: $schema, filters: ['masterEntityRef' => $ref]) as $party) {
-				$id = (string)($party['id'] ?? '');
-				if ($id !== '' && (string)($party['masterEntityRef'] ?? '') === $ref) {
-					$ids[$id] = true;
-				}
-			}
-		}
-
-		return array_keys($ids);
-	}//end partyIds()
-
-	/**
-	 * Whether a case fits the asked status filter.
-	 *
-	 * @param array<string, mixed> $case   The stored case.
-	 * @param string               $status `open`, `closed` or `all`.
-	 *
-	 * @return bool True when it fits.
-	 */
-	private function matches(array $case, string $status): bool {
-		if ($status === 'all') {
-			return true;
-		}
-
-		return (($case['isFinalStatus'] ?? false) === true) === ($status === 'closed');
-	}//end matches()
-
-	/**
-	 * The objects the cases point at through one field, by id, read once.
-	 *
-	 * @param object                              $objectService OpenRegister's object service.
-	 * @param string                              $register      The register.
-	 * @param string                              $schema        The schema of the objects.
-	 * @param array<string, array<string, mixed>> $cases         The cases.
-	 * @param string                              $field         The field holding the id.
-	 *
-	 * @return array<string, array<string, mixed>> The objects by id.
-	 */
-	private function byId(object $objectService, string $register, string $schema, array $cases, string $field): array {
-		$ids = array_values(
-			array_unique(
-				array_filter(
-					array_map(static fn (array $case): string => (string)($case[$field] ?? ''), $cases),
-					static fn (string $id): bool => $id !== ''
-				)
-			)
-		);
-		if ($ids === []) {
-			return [];
-		}
-
-		$found = [];
-		foreach ($this->read(objectService: $objectService, register: $register, schema: $schema, filters: ['_ids' => $ids]) as $row) {
-			$found[(string)($row['id'] ?? '')] = $row;
-		}
-
-		return $found;
-	}//end byId()
 
 	/**
 	 * The fields of a case a host app shows.
@@ -299,30 +242,4 @@ class CaseLeafProvider {
 		return $name;
 	}//end nameOf()
 
-	/**
-	 * Read objects as the caller; a failed read is logged and reads as none.
-	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The schema slug.
-	 * @param array<string, mixed> $filters       The filters.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 */
-	private function read(object $objectService, string $register, string $schema, array $filters): array {
-		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: array_merge($filters, ['_limit' => self::MAX_ROWS])
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq case leaf: reading {schema} failed: {message}',
-				['schema' => $schema, 'message' => $e->getMessage()]
-			);
-			return [];
-		}
-	}//end read()
 }//end class
