@@ -42,6 +42,8 @@ namespace OCA\Dossiq\Service\Consultation;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -152,7 +154,12 @@ class ConsultationRepository {
 			throw new RuntimeException('Consultation schema not configured');
 		}
 
-		$objectService->deleteObject(uuid: (string)$consultationId, register: $register, schema: $schema);
+		$objectService->deleteObject(
+			deletion: new ObjectDeletion(
+				uuid: (string)$consultationId,
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			)
+		);
 
 		$this->logger->info(
 			'Consultation deleted: ' . $consultationId,

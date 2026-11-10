@@ -32,6 +32,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Kcc;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 
 /**
@@ -118,7 +120,7 @@ class RoutingRuleService {
 	 */
 	public function deleteRule(string $id): void {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-		$objectService->deleteObject(uuid: $id, register: $register, schema: $schema);
+		$objectService->deleteObject(deletion: new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)));
 	}//end deleteRule()
 
 	/**

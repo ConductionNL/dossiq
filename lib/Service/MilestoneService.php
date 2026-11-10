@@ -31,6 +31,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -282,7 +284,12 @@ class MilestoneService {
 		foreach ($records as $record) {
 			$recordId = $record['id'] ?? $record['uuid'] ?? '';
 			if ($recordId !== '') {
-				$objectService->deleteObject(uuid: $recordId, register: $register, schema: $schema);
+				$objectService->deleteObject(
+					deletion: new ObjectDeletion(
+						uuid: $recordId,
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					)
+				);
 			}
 		}
 

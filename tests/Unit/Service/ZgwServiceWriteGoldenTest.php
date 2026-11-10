@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -153,7 +154,8 @@ class ZgwServiceWriteGoldenTest extends TestCase {
 			 *
 			 * @return bool Whether it was deleted.
 			 */
-			public function deleteObject(string $uuid): bool {
+			public function deleteObject(ObjectDeletion $deletion): bool {
+				$uuid = $deletion->uuid;
 				$this->trace->append(['delete', $uuid]);
 				if (($this->world['delete'] ?? '') === 'throw') {
 					throw new RuntimeException('delete refused');

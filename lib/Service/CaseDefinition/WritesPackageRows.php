@@ -33,6 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -155,7 +157,7 @@ trait WritesPackageRows {
 			}
 
 			try {
-				$objectService->deleteObject($id, register: $register);
+				$objectService->deleteObject(deletion: new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register)));
 			} catch (\Throwable $e) {
 				$this->logger->error(
 					'Could not roll back imported object {id}: {error}',

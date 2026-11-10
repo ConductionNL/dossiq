@@ -16,6 +16,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -117,7 +118,8 @@ class DocumentRecordStoreTest extends TestCase {
 			 *
 			 * @return void
 			 */
-			public function deleteObject(string $uuid, string|int|null $register = null, string|int|null $schema = null): void {
+			public function deleteObject(ObjectDeletion $deletion): void {
+				$uuid = $deletion->uuid;
 				$this->deleted[] = $uuid;
 			}
 		};

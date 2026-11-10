@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use Closure;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use RuntimeException;
 
 /**
@@ -295,12 +296,12 @@ class AnonymousRefusingRegister {
 	 * @return bool True when it existed.
 	 */
 	public function deleteObject(
-		string $uuid,
-		string|int|null $register = null,
-		string|int|null $schema = null,
+		ObjectDeletion $deletion,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): bool {
+		$uuid = $deletion->uuid;
+		$schema = $deletion->target->schema;
 		$schema = (string)$schema;
 		$this->admit(action: 'delete', schema: $schema, rbac: $_rbac);
 		$found = isset($this->rows[$schema][$uuid]);

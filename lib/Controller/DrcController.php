@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -1371,7 +1372,7 @@ class DrcController extends ZgwController {
 
 				$grUuid = $grData['id'] ?? ($grData['@self']['id'] ?? '');
 				if ($grUuid !== '') {
-					$objectService->deleteObject(uuid: $grUuid);
+					$objectService->deleteObject(deletion: new ObjectDeletion(uuid: $grUuid));
 				}
 			}
 		} catch (\Throwable $e) {

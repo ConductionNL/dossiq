@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Remedy;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+
 /**
  * An object service double: search answers decisions, save opens a case, delete is recorded.
  */
@@ -94,7 +96,8 @@ class RemedyObjectServiceDouble {
 	 *
 	 * @return bool
 	 */
-	public function deleteObject(string $uuid, mixed $register = null, mixed $schema = null): bool {
+	public function deleteObject(ObjectDeletion $deletion): bool {
+		$uuid = $deletion->uuid;
 		$this->deleted[] = $uuid;
 		return true;
 	}//end deleteObject()

@@ -54,6 +54,8 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseLifecycleService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -262,7 +264,12 @@ class CaseLifecycleController extends Controller {
 		}
 
 		try {
-			$objectService->deleteObject(uuid: $caseId, register: $register, schema: $schema);
+			$objectService->deleteObject(
+				deletion: new ObjectDeletion(
+					uuid: $caseId,
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				)
+			);
 		} catch (\Throwable $e) {
 			if (is_a($e, 'OCA\\OpenRegister\\Exception\\HookStoppedException') === true) {
 				$this->logger->info(

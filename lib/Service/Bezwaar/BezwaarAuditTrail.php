@@ -43,6 +43,8 @@ namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -277,7 +279,12 @@ class BezwaarAuditTrail {
 				$notWritten->logContext()
 			);
 			try {
-				$objectService->deleteObject(register: $register, schema: $schema, uuid: $objectUuid);
+				$objectService->deleteObject(
+					deletion: new ObjectDeletion(
+						uuid: $objectUuid,
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					)
+				);
 			} catch (Throwable $e) {
 				$this->logger->error(
 					'Dossiq bezwaar: the record without an entry could not be deleted',

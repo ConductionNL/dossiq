@@ -30,6 +30,7 @@ use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -47,7 +48,7 @@ interface DrcLifecycleObjectServiceStub {
 
 	public function searchObjectsPaginated(array $query): array;
 
-	public function deleteObject(string $uuid): mixed;
+	public function deleteObject(ObjectDeletion $deletion): mixed;
 
 	public function saveObject(mixed $register, mixed $schema, array $object, ?string $uuid=null): mixed;
 }//end interface
@@ -116,8 +117,8 @@ class DrcEioLifecycleTest extends TestCase {
 				return ['results' => $answer];
 			}
 		);
-		$objects->method('deleteObject')->willReturnCallback(function (string $uuid): bool {
-			$this->seen['deleted'][] = $uuid;
+		$objects->method('deleteObject')->willReturnCallback(function (ObjectDeletion $deletion): bool {
+			$this->seen['deleted'][] = $deletion->uuid;
 			return true;
 		});
 		$objects->method('saveObject')->willReturnCallback(

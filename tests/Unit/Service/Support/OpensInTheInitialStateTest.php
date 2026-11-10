@@ -16,6 +16,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Support;
 use OCA\Dossiq\Service\Support\OpensInTheInitialState;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -165,7 +166,7 @@ class OpensInTheInitialStateTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = '', bool $_rbac = true, bool $_multitenancy = true): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true): bool {
 				throw new RuntimeException('delete refused');
 			}
 		};

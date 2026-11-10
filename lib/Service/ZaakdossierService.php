@@ -39,6 +39,8 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -362,7 +364,12 @@ class ZaakdossierService {
 				continue;
 			}
 
-			$objectService->deleteObject(uuid: $joinId, register: $register, schema: $joinSchema);
+			$objectService->deleteObject(
+				deletion: new ObjectDeletion(
+					uuid: $joinId,
+					target: new ObjectFindTarget(register: $register, schema: $joinSchema)
+				)
+			);
 			$removed = true;
 		}
 

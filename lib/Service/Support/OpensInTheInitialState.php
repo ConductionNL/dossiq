@@ -28,6 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use RuntimeException;
 use Throwable;
 
@@ -104,9 +106,10 @@ trait OpensInTheInitialState {
 	private function deleteAgain(object $objectService, array $created): string {
 		try {
 			$objectService->deleteObject(
-				register: (string)$created['register'],
-				schema: (string)$created['schema'],
-				uuid: (string)$created['uuid']
+				deletion: new ObjectDeletion(
+					uuid: (string)$created['uuid'],
+					target: new ObjectFindTarget(register: (string)$created['register'], schema: (string)$created['schema'])
+				)
 			);
 		} catch (Throwable $e) {
 			return ' The created record ' . (string)$created['uuid'] . ' could not be deleted again: ' . $e->getMessage();

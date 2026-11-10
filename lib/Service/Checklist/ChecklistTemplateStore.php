@@ -32,6 +32,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -171,9 +173,10 @@ class ChecklistTemplateStore {
 
 		try {
 			$objectService->deleteObject(
-				uuid: $id,
-				register: $register,
-				schema: InspectionTemplateMapper::SCHEMA
+				deletion: new ObjectDeletion(
+					uuid: $id,
+					target: new ObjectFindTarget(register: $register, schema: InspectionTemplateMapper::SCHEMA)
+				)
 			);
 			return true;
 		} catch (Throwable $e) {

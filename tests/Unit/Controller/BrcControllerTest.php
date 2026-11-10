@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -109,7 +110,8 @@ final class BrcStore {
 		return $this->saved;
 	}//end saveObject()
 
-	public function deleteObject(string $uuid, bool $_rbac = true, bool $_multitenancy = true): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true): bool {
+		$uuid = $deletion->uuid;
 		$this->record('deleteObject', [$uuid, $_rbac, $_multitenancy]);
 		return true;
 	}//end deleteObject()

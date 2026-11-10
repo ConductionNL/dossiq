@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\OpenRegister\Exception\HookStoppedException;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -63,7 +64,8 @@ final class ZrcDestroyStore {
 		return $this->found;
 	}
 
-	public function deleteObject(string $uuid): void {
+	public function deleteObject(ObjectDeletion $deletion): void {
+		$uuid = $deletion->uuid;
 		if ($this->deleteThrows !== null) {
 			throw $this->deleteThrows;
 		}

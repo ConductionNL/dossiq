@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -139,12 +140,15 @@ class CaseSplitStatusTest extends TestCase {
 			 *
 			 * @return bool True when a row was removed.
 			 */
-			public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = ''): bool {
+			public function deleteObject(ObjectDeletion $deletion): bool {
+				$register = ($deletion->target->register ?? '');
+				$schema = ($deletion->target->schema ?? '');
+				$uuid = ($deletion->uuid ?? '');
 				if ($schema === 'case' && $this->mayDeleteCases === false) {
 					throw new RuntimeException("User 'jan' does not have permission to 'delete' objects in schema 'case'");
 				}
 
-				return parent::deleteObject(register: $register, schema: $schema, uuid: $uuid);
+				return parent::deleteObject(deletion: $deletion);
 			}
 
 			/**

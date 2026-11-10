@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\OpenRegister\Db\Mapping;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -1583,7 +1584,7 @@ class ZgwService {
 				return $this->ruleRefusal(ruleResult: $ruleResult);
 			}
 
-			$this->objectService->deleteObject(uuid: $route->uuid);
+			$this->objectService->deleteObject(deletion: new ObjectDeletion(uuid: $route->uuid));
 		} catch (\Throwable $e) {
 			return $this->storeFailureResponse(error: $e, operation: 'ZGW delete', object: $route->objectLabel());
 		}//end try

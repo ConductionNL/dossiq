@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\AdvisoryBodyService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -91,7 +92,7 @@ interface AdvisoryObjectServiceStub {
 	// fake declared (register, schema, id), so it accepted the transposed
 	// positional call the service was making and no test could ever see the bug.
 	// A fake that agrees with the caller instead of with the callee cannot fail.
-	public function deleteObject(string $uuid, ?string $register = null, ?string $schema = null): void;
+	public function deleteObject(ObjectDeletion $deletion): void;
 }//end interface
 
 /**
@@ -224,8 +225,8 @@ class AdvisoryBodyServiceTest extends TestCase {
 
 		$objectService = $this->createMock(AdvisoryObjectServiceStub::class);
 		$objectService->method('deleteObject')->willReturnCallback(
-			function (string $uuid, ?string $register = null, ?string $schema = null) use (&$received): void {
-				$received = ['uuid' => $uuid, 'register' => $register, 'schema' => $schema];
+			function (ObjectDeletion $deletion) use (&$received): void {
+				$received = ['uuid' => $deletion->uuid, 'register' => $deletion->target->register, 'schema' => $deletion->target->schema];
 			}
 		);
 

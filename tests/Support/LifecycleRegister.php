@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use RuntimeException;
 
 /**
@@ -176,14 +177,17 @@ class LifecycleRegister extends RefusableRegister {
 	 *
 	 * @throws RuntimeException When the caller may not delete in the schema.
 	 */
-	public function deleteObject(int|string $register = '', int|string $schema = '', string $uuid = '', bool $_rbac = true, bool $_multitenancy = true): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true): bool {
+		$register = ($deletion->target->register ?? '');
+		$schema = ($deletion->target->schema ?? '');
+		$uuid = ($deletion->uuid ?? '');
 		if ($_rbac === true && in_array((string)$schema, $this->callerMayOnlyCreate, true) === true) {
 			throw new RuntimeException("The caller may not delete objects in schema '" . (string)$schema . "'.");
 		}
 
 		$this->deletes[] = (string)$schema . '/' . $uuid;
 
-		return parent::deleteObject(register: $register, schema: $schema, uuid: $uuid);
+		return parent::deleteObject(deletion: $deletion);
 	}//end deleteObject()
 
 	/**

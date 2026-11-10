@@ -16,6 +16,8 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\KeepsLookupsInSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use RuntimeException;
 use Throwable;
 
@@ -120,7 +122,12 @@ class DocumentRecordStore {
 	 */
 	public function deleteRecord(string $recordId): void {
 		[$objectService, $register] = $this->requireRegister();
-		$objectService->deleteObject(uuid: $recordId, register: $register, schema: $this->schema(key: 'dossier_informatieobject_schema'));
+		$objectService->deleteObject(
+			deletion: new ObjectDeletion(
+				uuid: $recordId,
+				target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'dossier_informatieobject_schema'))
+			)
+		);
 	}//end deleteRecord()
 
 	/**
@@ -207,7 +214,12 @@ class DocumentRecordStore {
 				continue;
 			}
 
-			$objectService->deleteObject(uuid: $joinId, register: $register, schema: $joinSchema);
+			$objectService->deleteObject(
+				deletion: new ObjectDeletion(
+					uuid: $joinId,
+					target: new ObjectFindTarget(register: $register, schema: $joinSchema)
+				)
+			);
 			$deleted++;
 		}
 

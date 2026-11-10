@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseLifecycleService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Exception\HookStoppedException;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -365,7 +366,7 @@ class CaseLifecycleControllerTest extends TestCase {
 				 *
 				 * @throws HookStoppedException Always.
 				 */
-				public function deleteObject(string $uuid, string $register, string $schema): bool {
+				public function deleteObject(ObjectDeletion $deletion): bool {
 					throw new HookStoppedException(
 						'You cannot delete this case yet.',
 						['blockedBy' => ['open-term']]
@@ -453,7 +454,10 @@ class CaseLifecycleControllerTest extends TestCase {
 			 *
 			 * @return bool Always true.
 			 */
-			public function deleteObject(string $uuid, string $register, string $schema): bool {
+			public function deleteObject(ObjectDeletion $deletion): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$this->seen = [$uuid, $register, $schema];
 				return true;
 			}

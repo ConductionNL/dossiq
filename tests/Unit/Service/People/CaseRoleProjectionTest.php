@@ -12,6 +12,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 use OCA\Dossiq\Service\People\CaseRoleProjection;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -169,7 +170,8 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return void
 			 */
-			public function deleteObject(string $uuid, string|int|null $register = null, string|int|null $schema = null): void {
+			public function deleteObject(ObjectDeletion $deletion): void {
+				$uuid = $deletion->uuid;
 				$this->deleted[] = $uuid;
 			}
 		};
@@ -479,7 +481,10 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return void
 			 */
-			public function deleteObject(string $uuid, string|int|null $register = null, string|int|null $schema = null): void {
+			public function deleteObject(ObjectDeletion $deletion): void {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$this->inner->deleteObject($uuid, $register, $schema);
 			}
 		};
