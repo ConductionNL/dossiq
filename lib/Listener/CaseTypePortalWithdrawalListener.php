@@ -121,7 +121,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
 		$payload = $this->payload(entity: $entity);
-		if ($payload === null || $this->isCaseTypeSchema(object: $payload) === false) {
+		if ($payload === null || (new CaseTypeSchema(settingsService: $this->settingsService))->contains(object: $payload) === false) {
 			return;
 		}
 
@@ -264,25 +264,4 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 			return null;
 		}
 	}//end payload()
-
-	/**
-	 * Whether the supplied payload belongs to the `caseType` schema.
-	 *
-	 * @param array<string, mixed> $object Object payload (incl. `@self`).
-	 *
-	 * @return boolean True when this is a case type.
-	 */
-	private function isCaseTypeSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('case_type_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
-	}//end isCaseTypeSchema()
 }//end class
