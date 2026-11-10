@@ -300,11 +300,21 @@ function assessmentCounts(rows, field) {
  */
 function countGrounds(grounds, weigeringsgronden) {
 	for (const ground of Array.isArray(weigeringsgronden) ? weigeringsgronden : []) {
-		const code = String(ground?.code ?? ground ?? '')
+		const code = groundCode(ground)
 		if (code !== '') {
 			grounds[code] = (grounds[code] ?? 0) + 1
 		}
 	}
+}
+
+/**
+ * The code of one refusal ground: a bare code or a `{code}` row.
+ *
+ * @param {unknown} ground The ground.
+ * @return {string} Its code, or '' when it has none.
+ */
+function groundCode(ground) {
+	return String(ground?.code ?? ground ?? '')
 }
 
 export default {
