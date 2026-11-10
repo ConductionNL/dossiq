@@ -66,6 +66,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
+use OCA\OpenRegister\Service\Flow\Timer\CalendarSpan;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -380,10 +381,8 @@ class WorkingDayRoll {
 		try {
 			return (int)round(
 				$this->calculator->measure(
-					from: $from,
-					to: $to,
-					unit: self::UNIT_BUSINESS_DAYS,
-					calendar: $this->calendar
+					span: new CalendarSpan(from: $from, to: $to, calendar: $this->calendar),
+					unit: self::UNIT_BUSINESS_DAYS
 				)
 			);
 		} catch (Throwable $e) {
