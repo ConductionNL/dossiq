@@ -156,37 +156,81 @@ class ShippedConfigurationService {
 		?array $shipped = null,
 		string $objectsKey = '',
 	): bool {
+		$stamp = new LedgerStamp();
+		$stamp->set = $set;
+		$stamp->targetObject = $targetObject;
+		$stamp->object = $object;
+		$stamp->shipped = $shipped;
+		$this->stampAsStored(stamp: $stamp, objectsKey: $objectsKey);
+
+		$stamp->targetSchema = $this->targets()->slugFor(targetSchema: $targetSchema);
+		$stamp->version = ($version ?? $this->sets->versionOf(set: $set));
+		if ($this->namesItsSet(stamp: $stamp) === false) {
+			return false;
+		}
+
+		return $this->writeStamp(stamp: $stamp);
+	}//end stamp()
+
+	/**
+	 * Stamp the row as this instance stores it, when the schema's config key is given and the row is there.
+	 *
+	 * @param LedgerStamp $stamp      The stamp; its object and shipped row are replaced.
+	 * @param string      $objectsKey The app config key naming the schema, or ''.
+	 *
+	 * @return void
+	 */
+	private function stampAsStored(LedgerStamp $stamp, string $objectsKey): void {
 		$stored = null;
 		if ($objectsKey !== '') {
-			$stored = $this->store->row(configKey: $objectsKey, id: $targetObject);
+			$stored = $this->store->row(configKey: $objectsKey, id: $stamp->targetObject);
 		}
 
 		if ($stored !== null) {
-			$shipped = ($shipped ?? $object);
-			$object = (new ShippedRowShape())->asWritten(object: $stored, objectsKey: $objectsKey);
+			$stamp->shipped = ($stamp->shipped ?? $stamp->object);
+			$stamp->object = (new ShippedRowShape())->asWritten(object: $stored, objectsKey: $objectsKey);
 		}
+	}//end stampAsStored()
 
-		$targetSchema = $this->targets()->slugFor(targetSchema: $targetSchema);
-		$version = ($version ?? $this->sets->versionOf(set: $set));
-		if ($version === '' || $targetObject === '' || $targetSchema === '') {
-			// ADR-102: a stamp that cannot name its set is worse than no stamp,
-			// because the screen would report the object as shipped and be
-			// unable to say from what.
+	/**
+	 * Whether the stamp names its set version, object and schema; a stamp that does not is refused.
+	 *
+	 * ADR-102: a stamp that cannot name its set is worse than no stamp,
+	 * because the screen would report the object as shipped and be unable
+	 * to say from what.
+	 *
+	 * @param LedgerStamp $stamp The stamp.
+	 *
+	 * @return bool
+	 */
+	private function namesItsSet(LedgerStamp $stamp): bool {
+		if ($stamp->version === '' || $stamp->targetObject === '' || $stamp->targetSchema === '') {
 			$this->logger->warning(
 				'Dossiq starter: refusing to stamp an object with no declared set',
-				['set' => $set, 'schema' => $targetSchema, 'object' => $targetObject]
+				['set' => $stamp->set, 'schema' => $stamp->targetSchema, 'object' => $stamp->targetObject]
 			);
 			return false;
 		}
 
-		$existing = $this->ledgerRow(targetSchema: $targetSchema, targetObject: $targetObject);
+		return true;
+	}//end namesItsSet()
+
+	/**
+	 * Write the stamp's ledger row, in place of the object's existing one.
+	 *
+	 * @param LedgerStamp $stamp The stamp.
+	 *
+	 * @return bool True when the stamp was written.
+	 */
+	private function writeStamp(LedgerStamp $stamp): bool {
+		$existing = $this->ledgerRow(targetSchema: $stamp->targetSchema, targetObject: $stamp->targetObject);
 		$payload = [
-			'set' => $set,
-			'setVersion' => $version,
-			'targetSchema' => $targetSchema,
-			'targetObject' => $targetObject,
-			'fingerprint' => $this->fingerprint->hashOf(object: $object),
-			'shippedFingerprint' => $this->fingerprint->hashOf(object: ($shipped ?? $object)),
+			'set' => $stamp->set,
+			'setVersion' => $stamp->version,
+			'targetSchema' => $stamp->targetSchema,
+			'targetObject' => $stamp->targetObject,
+			'fingerprint' => $this->fingerprint->hashOf(object: $stamp->object),
+			'shippedFingerprint' => $this->fingerprint->hashOf(object: ($stamp->shipped ?? $stamp->object)),
 			'seededAt' => gmdate('c'),
 		];
 
@@ -205,7 +249,7 @@ class ShippedConfigurationService {
 		);
 
 		return ($saved !== null);
-	}//end stamp()
+	}//end writeStamp()
 
 	/**
 	 * Record that a package is installed here at a version, whether or not it
@@ -347,48 +391,70 @@ class ShippedConfigurationService {
 
 		$overview = [];
 		foreach ($ledger as $row) {
-			$targetObject = (string)($row['targetObject'] ?? '');
-			$object = $this->store->row(configKey: $objectsKey, id: $targetObject);
-			if ($object === null) {
-				// The seeded row was deleted here. It is not "shipped and
-				// untouched" and it is not "ours", so it is reported as gone
-				// rather than quietly dropped off the screen.
-				$overview[] = [
-					'targetObject' => $targetObject,
-					'title' => '',
-					'state' => 'removed',
-					'set' => (string)($row['set'] ?? ''),
-					'setVersion' => (string)($row['setVersion'] ?? ''),
-					'latestVersion' => $this->sets->versionOf(set: (string)($row['set'] ?? '')),
-					'updateAvailable' => false,
-				];
-				continue;
-			}
-
-			$set = (string)($row['set'] ?? '');
-			$latest = $this->sets->versionOf(set: $set);
-			$seeded = (string)($row['setVersion'] ?? '');
-			$untouched = $this->untouchedSinceStamp(
-				row: $row,
-				object: (new ShippedRowShape())->asWritten(object: $object, objectsKey: $objectsKey),
-				shippedKeys: [],
-			);
-
-			$overview[] = [
-				'targetObject' => $targetObject,
-				'title' => $this->text->forReader(value: ($object['title'] ?? ($object['name'] ?? ''))),
-				'state' => $this->stateFor(untouched: $untouched),
-				'set' => $set,
-				'setVersion' => $seeded,
-				'latestVersion' => $latest,
-				// Only a later shipped version is an update; taking an older
-				// one would downgrade the object. An empty version sorts first.
-				'updateAvailable' => version_compare(version1: $latest, version2: $seeded, operator: '>'),
-			];
-		}//end foreach
+			$overview[] = $this->overviewEntry(row: $row, objectsKey: $objectsKey);
+		}
 
 		return $overview;
 	}//end overview()
+
+	/**
+	 * One overview entry: the seeded object's state against its stamp, or removed.
+	 *
+	 * @param array<string, mixed> $row        One ledger row.
+	 * @param string               $objectsKey The app config key naming the schema.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function overviewEntry(array $row, string $objectsKey): array {
+		$targetObject = (string)($row['targetObject'] ?? '');
+		$object = $this->store->row(configKey: $objectsKey, id: $targetObject);
+		if ($object === null) {
+			return $this->removedEntry(row: $row);
+		}
+
+		$set = (string)($row['set'] ?? '');
+		$latest = $this->sets->versionOf(set: $set);
+		$seeded = (string)($row['setVersion'] ?? '');
+		$untouched = $this->untouchedSinceStamp(
+			row: $row,
+			object: (new ShippedRowShape())->asWritten(object: $object, objectsKey: $objectsKey),
+			shippedKeys: [],
+		);
+
+		return [
+			'targetObject' => $targetObject,
+			'title' => $this->text->forReader(value: ($object['title'] ?? ($object['name'] ?? ''))),
+			'state' => $this->stateFor(untouched: $untouched),
+			'set' => $set,
+			'setVersion' => $seeded,
+			'latestVersion' => $latest,
+			// Only a later shipped version is an update; taking an older
+			// one would downgrade the object. An empty version sorts first.
+			'updateAvailable' => version_compare(version1: $latest, version2: $seeded, operator: '>'),
+		];
+	}//end overviewEntry()
+
+	/**
+	 * The entry of a seeded row that was deleted here.
+	 *
+	 * It is not "shipped and untouched" and it is not "ours", so it is
+	 * reported as gone rather than quietly dropped off the screen.
+	 *
+	 * @param array<string, mixed> $row One ledger row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function removedEntry(array $row): array {
+		return [
+			'targetObject' => (string)($row['targetObject'] ?? ''),
+			'title' => '',
+			'state' => 'removed',
+			'set' => (string)($row['set'] ?? ''),
+			'setVersion' => (string)($row['setVersion'] ?? ''),
+			'latestVersion' => $this->sets->versionOf(set: (string)($row['set'] ?? '')),
+			'updateAvailable' => false,
+		];
+	}//end removedEntry()
 
 	/**
 	 * Offer a newer shipped version of one object, and take it only when it is
@@ -459,13 +525,7 @@ class ShippedConfigurationService {
 
 			$rowId = (string)$row['id'];
 			$result = $this->adopter()->refresh(
-				row: [
-					'targetSchema' => (string)$row['schema'],
-					'objectsKey' => (string)$row['schemaKey'],
-					'targetObject' => $rowId,
-					'set' => $set,
-					'newShipped' => (array)$row['row'],
-				],
+				row: $this->refreshTarget(row: $row, set: $set),
 				how: ['overLocalChange' => $overLocalChanges, 'version' => $version, 'rows' => $system],
 			);
 
@@ -485,6 +545,24 @@ class ShippedConfigurationService {
 
 		return $refresh;
 	}//end refreshRows()
+
+	/**
+	 * What the adopter refreshes for one package row.
+	 *
+	 * @param array<string, mixed> $row One package row.
+	 * @param string               $set The package id.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function refreshTarget(array $row, string $set): array {
+		return [
+			'targetSchema' => (string)$row['schema'],
+			'objectsKey' => (string)$row['schemaKey'],
+			'targetObject' => (string)$row['id'],
+			'set' => $set,
+			'newShipped' => (array)$row['row'],
+		];
+	}//end refreshTarget()
 
 
 

@@ -82,85 +82,30 @@ class AmountObjectionService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function registerObjection(string $calculationId, string $basis, string $rationale): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$bSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
-		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		$objectService = $this->requireMoneyObjectService(
-			objectService: $objectService,
-			register: $register,
-			bSchema: $bSchema,
-			uSchema: $uSchema,
-		);
+		$run = $this->openCalculation(calculationId: $calculationId);
 
-		try {
-			$calculation = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $bSchema,
-				id: $calculationId
-			);
-		} catch (\Throwable $e) {
-			throw new RuntimeException('Accruing amount lookup failed: ' . $e->getMessage());
-		}
-
-		if ($calculation === null) {
-			throw new RuntimeException('Accruing amount not found: ' . $calculationId);
-		}
-
-		$calculation['status'] = 'objection-bevroren';
+		$run->calculation['status'] = 'objection-bevroren';
 		// The stored accrual reads stoppedOn: an objection freezes the amount.
-		if ((string)($calculation['stoppedOn'] ?? '') === '') {
-			$calculation['stoppedOn'] = (new DateTimeImmutable())->format('Y-m-d');
+		if ((string)($run->calculation['stoppedOn'] ?? '') === '') {
+			$run->calculation['stoppedOn'] = (new DateTimeImmutable())->format('Y-m-d');
 		}
 
-		try {
-			$calculation = ($this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $bSchema,
-				object: $calculation
-			) ?? $calculation);
-		} catch (\Throwable $e) {
-			throw new RuntimeException('Accruing amount could not be saved: ' . $e->getMessage());
-		}
+		$this->saveCalculation(run: $run);
 
 		// Move all linked uitbetalingen to on-hold-bezwaar.
-		$uitbetalingen = $this->findUitbetalingen(
-			objectService: $objectService,
-			register: $register,
-			uSchema: $uSchema,
-			calculationId: $calculationId,
-		);
-
+		$run->basis = $basis;
+		$run->rationale = $rationale;
+		$uitbetalingen = $this->findUitbetalingen(run: $run);
 		foreach ($uitbetalingen as $u) {
-			try {
-				// A payout finance already approved stays with finance: the
-				// refusal is logged below and the row keeps its status.
-				$u = ($this->payouts?->withdrawFromFinance(row: $u, reason: trim($basis . ' ' . $rationale)) ?? $u);
-				$u['status'] = 'on-hold-objection';
-				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $uSchema, object: $u);
-			} catch (\Throwable $e) {
-				$this->logger->warning('Bezwaar freeze on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
-			}
+			$this->holdPayout(run: $run, payout: $u);
 		}
 
-		$this->withdrawFinanceOnlyPayouts(calculationId: $calculationId, stored: $uitbetalingen, reason: trim($basis . ' ' . $rationale));
+		$this->withdrawFinanceOnlyPayouts(calculationId: $calculationId, stored: $uitbetalingen, reason: $run->reason());
 
-		// Record event on termijn.
-		$instanceId = (string)($calculation['deadlineInstance'] ?? '');
-		if ($instanceId !== '') {
-			$this->termService->recordEvent(
-				termInstanceId: $instanceId,
-				type: 'objection-submitted',
-				basis: $basis,
-				rationale: $rationale,
-				daysImpact: 0,
-			);
-		}
+		$this->recordTermEvent(run: $run, type: 'objection-submitted');
 
 		$this->logger->info('Objection registered against an accruing amount', ['berekening' => $calculationId]);
-		return $calculation;
+		return $run->calculation;
 	}//end registerObjection()
 
 	/**
@@ -181,84 +126,179 @@ class AmountObjectionService {
 			throw new RuntimeException('newBedragCents must be >= 0');
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$bSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
-		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		$objectService = $this->requireMoneyObjectService(
-			objectService: $objectService,
-			register: $register,
-			bSchema: $bSchema,
-			uSchema: $uSchema,
-		);
+		$run = $this->openCalculation(calculationId: $calculationId);
 
+		$run->calculation['definitiveAmount'] = $newAmountCents;
+		$run->calculation['status'] = 'completed';
+		$this->saveCalculation(run: $run);
+
+		$uitbetalingen = $this->findUitbetalingen(run: $run);
+		foreach ($uitbetalingen as $u) {
+			$u['amount'] = $newAmountCents;
+			$u['status'] = 'voorbereid';
+			$this->raisePayoutAgain(run: $run, payout: $u);
+		}
+
+		$this->raiseFinanceOnlyPayoutAgain(calculationId: $calculationId, newAmountCents: $newAmountCents, stored: $uitbetalingen);
+
+		$run->basis = $basis;
+		$run->rationale = 'Bezwaar opgelost; bedrag herzien';
+		$this->recordTermEvent(run: $run, type: 'objection-resolved');
+
+		$this->logger->info('Objection against an accruing amount resolved', ['berekening' => $calculationId, 'newBedrag' => $newAmountCents]);
+		return $run->calculation;
+	}//end resolveObjection()
+
+	/**
+	 * Read the configuration and the accruing amount the objection is about.
+	 *
+	 * @param string $calculationId Accruing amount id.
+	 *
+	 * @return ObjectionRun
+	 *
+	 * @throws RuntimeException When the store is not configured, or the amount cannot be read or is missing.
+	 */
+	private function openCalculation(string $calculationId): ObjectionRun {
+		$run = new ObjectionRun();
+		$objectService = $this->settingsService->getObjectService();
+		$run->register = (string)$this->settingsService->getConfigValue('register');
+		$run->amountSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA);
+		$run->payoutSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
+		$run->objectService = $this->requireMoneyObjectService(objectService: $objectService, run: $run);
+		$run->calculationId = $calculationId;
+		$run->calculation = $this->storedCalculation(run: $run);
+
+		return $run;
+	}//end openCalculation()
+
+	/**
+	 * The stored accruing amount.
+	 *
+	 * @param ObjectionRun $run The objection step.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When the amount cannot be read or is missing.
+	 */
+	private function storedCalculation(ObjectionRun $run): array {
 		try {
 			$calculation = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $bSchema,
-				id: $calculationId
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->amountSchema,
+				id: $run->calculationId
 			);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('Accruing amount lookup failed: ' . $e->getMessage());
 		}
 
 		if ($calculation === null) {
-			throw new RuntimeException('Accruing amount not found: ' . $calculationId);
+			throw new RuntimeException('Accruing amount not found: ' . $run->calculationId);
 		}
 
-		$calculation['definitiveAmount'] = $newAmountCents;
-		$calculation['status'] = 'completed';
+		return $calculation;
+	}//end storedCalculation()
+
+	/**
+	 * Save the accruing amount as it now stands; the run then holds what was stored.
+	 *
+	 * @param ObjectionRun $run The objection step.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the amount could not be saved.
+	 */
+	private function saveCalculation(ObjectionRun $run): void {
 		try {
-			$calculation = ($this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $bSchema,
-				object: $calculation
-			) ?? $calculation);
+			$run->calculation = ($this->saveObjectAsArray(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->amountSchema,
+				object: $run->calculation
+			) ?? $run->calculation);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('Accruing amount could not be saved: ' . $e->getMessage());
 		}
+	}//end saveCalculation()
 
-		$uitbetalingen = $this->findUitbetalingen(
-			objectService: $objectService,
-			register: $register,
-			uSchema: $uSchema,
-			calculationId: $calculationId,
+	/**
+	 * Put one stored payout on hold for the objection; a failure is logged.
+	 *
+	 * A payout finance already approved stays with finance: the refusal is
+	 * logged and the row keeps its status.
+	 *
+	 * @param ObjectionRun         $run    The objection step, with its basis and rationale.
+	 * @param array<string, mixed> $payout The payout row.
+	 *
+	 * @return void
+	 */
+	private function holdPayout(ObjectionRun $run, array $payout): void {
+		$u = $payout;
+		try {
+			$u = ($this->payouts?->withdrawFromFinance(row: $u, reason: $run->reason()) ?? $u);
+			$u['status'] = 'on-hold-objection';
+			$this->savePayout(run: $run, payout: $u);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Bezwaar freeze on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
+		}
+	}//end holdPayout()
+
+	/**
+	 * Offer one stored payout to finance again and store it; each failure is logged.
+	 *
+	 * @param ObjectionRun         $run    The objection step.
+	 * @param array<string, mixed> $payout The payout row with the decided amount.
+	 *
+	 * @return void
+	 */
+	private function raisePayoutAgain(ObjectionRun $run, array $payout): void {
+		try {
+			$payout = ($this->payouts?->raiseAgain(row: $payout) ?? $payout);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Bezwaar resolve: finance refused the payout again', ['id' => $payout['id'] ?? '', 'error' => $e->getMessage()]);
+		}
+
+		try {
+			$this->savePayout(run: $run, payout: $payout);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Bezwaar resolve on uitbetaling failed', ['id' => $payout['id'] ?? '', 'error' => $e->getMessage()]);
+		}
+	}//end raisePayoutAgain()
+
+	/**
+	 * Store one payout row.
+	 *
+	 * @param ObjectionRun         $run    The objection step.
+	 * @param array<string, mixed> $payout The payout row.
+	 *
+	 * @return void
+	 */
+	private function savePayout(ObjectionRun $run, array $payout): void {
+		$this->saveObjectAsArray(objectService: $run->objectService, register: $run->register, schema: $run->payoutSchema, object: $payout);
+	}//end savePayout()
+
+	/**
+	 * Record the objection event on the amount's deadline instance, when it has one.
+	 *
+	 * @param ObjectionRun $run  The objection step, with its basis and rationale.
+	 * @param string       $type The event type.
+	 *
+	 * @return void
+	 */
+	private function recordTermEvent(ObjectionRun $run, string $type): void {
+		$instanceId = (string)($run->calculation['deadlineInstance'] ?? '');
+		if ($instanceId === '') {
+			return;
+		}
+
+		$this->termService->recordEvent(
+			termInstanceId: $instanceId,
+			type: $type,
+			basis: $run->basis,
+			rationale: $run->rationale,
+			daysImpact: 0,
 		);
-
-		foreach ($uitbetalingen as $u) {
-			$u['amount'] = $newAmountCents;
-			$u['status'] = 'voorbereid';
-			try {
-				$u = ($this->payouts?->raiseAgain(row: $u) ?? $u);
-			} catch (\Throwable $e) {
-				$this->logger->warning('Bezwaar resolve: finance refused the payout again', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
-			}
-
-			try {
-				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $uSchema, object: $u);
-			} catch (\Throwable $e) {
-				$this->logger->warning('Bezwaar resolve on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
-			}
-		}
-
-		$this->raiseFinanceOnlyPayoutAgain(calculationId: $calculationId, newAmountCents: $newAmountCents, stored: $uitbetalingen);
-
-		$instanceId = (string)($calculation['deadlineInstance'] ?? '');
-		if ($instanceId !== '') {
-			$this->termService->recordEvent(
-				termInstanceId: $instanceId,
-				type: 'objection-resolved',
-				basis: $basis,
-				rationale: 'Bezwaar opgelost; bedrag herzien',
-				daysImpact: 0,
-			);
-		}
-
-		$this->logger->info('Objection against an accruing amount resolved', ['berekening' => $calculationId, 'newBedrag' => $newAmountCents]);
-		return $calculation;
-	}//end resolveObjection()
+	}//end recordTermEvent()
 
 	/**
 	 * Withdraw the live payouts only finance holds for this calculation.
@@ -322,22 +362,15 @@ class AmountObjectionService {
 	 * Assert the register and the money schemas are configured and OpenRegister is
 	 * available, narrowing the object service to a non-null value.
 	 *
-	 * @param object|null $objectService Resolved OpenRegister object service.
-	 * @param string $register Register identifier.
-	 * @param string $bSchema Accruing amount schema identifier.
-	 * @param string $uSchema Payout schema identifier.
+	 * @param object|null  $objectService Resolved OpenRegister object service.
+	 * @param ObjectionRun $run           The objection step, with its register and schemas read.
 	 *
 	 * @return object The available object service.
 	 *
 	 * @throws RuntimeException When any part of the configuration is missing.
 	 */
-	private function requireMoneyObjectService(
-		?object $objectService,
-		string $register,
-		string $bSchema,
-		string $uSchema,
-	): object {
-		if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
+	private function requireMoneyObjectService(?object $objectService, ObjectionRun $run): object {
+		if ($objectService === null || $run->register === '' || $run->amountSchema === '' || $run->payoutSchema === '') {
 			throw new RuntimeException('The accruing amount and payout schemas are not configured');
 		}
 
@@ -347,25 +380,17 @@ class AmountObjectionService {
 	/**
 	 * Load the uitbetalingen linked to a berekening, tolerating lookup failures.
 	 *
-	 * @param object $objectService OpenRegister object service.
-	 * @param string $register Register identifier.
-	 * @param string $uSchema Payout schema identifier.
-	 * @param string $calculationId Accruing amount id.
+	 * @param ObjectionRun $run The objection step.
 	 *
 	 * @return array<int, array<string, mixed>> The linked uitbetalingen.
 	 */
-	private function findUitbetalingen(
-		object $objectService,
-		string $register,
-		string $uSchema,
-		string $calculationId,
-	): array {
+	private function findUitbetalingen(ObjectionRun $run): array {
 		try {
 			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $uSchema,
-				filters: ['penaltyPaymentCalculation' => $calculationId]
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->payoutSchema,
+				filters: ['penaltyPaymentCalculation' => $run->calculationId]
 			);
 		} catch (\Throwable $e) {
 			// Lookup failures must not block the bezwaar transition.

@@ -79,16 +79,15 @@ class PortalCaseSteps {
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	public function forCase(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		if ($caseId === '' || $objectService === null || $register === '') {
+		$read = (new PortalCaseReads(settingsService: $this->settingsService))->open(caseId: $caseId);
+		if ($read === null) {
 			return [];
 		}
 
 		try {
 			return (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->steps(objectService: $objectService, register: $register, caseId: $caseId)
+				objectService: $read->objectService,
+				operation: fn (): array => $this->steps(read: $read)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -102,15 +101,13 @@ class PortalCaseSteps {
 	/**
 	 * Read the case and its case type's status types, then fold them.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param int|string $register The register.
-	 * @param string $caseId The case UUID.
+	 * @param PortalCaseRead $read The case being read.
 	 *
 	 * @return array<int, array<string, string>> The steps.
 	 *
 	 * @spec openspec/changes/mandated-case-steps-read-unscoped/specs/portal-contribution/spec.md#requirement-a-case-read-under-a-mandate-shows-its-steps-and-documents-req-portal-023
 	 */
-	private function steps(object $objectService, int|string $register, string $caseId): array {
+	private function steps(PortalCaseRead $read): array {
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
 		$statusSchema = (string)$this->settingsService->getConfigValue('status_type_schema');
 		if ($caseSchema === '' || $statusSchema === '') {
@@ -122,10 +119,10 @@ class PortalCaseSteps {
 		// under a mandate is signed in as themselves, not as the case's
 		// party. Portaliq proved the case is theirs to read before asking.
 		$case = $this->reader->find(
-			objectService: $objectService,
-			register: $register,
+			objectService: $read->objectService,
+			register: $read->register,
 			schema: $caseSchema,
-			id: $caseId
+			id: $read->caseId
 		);
 		if ($case === null) {
 			return [];
@@ -137,8 +134,8 @@ class PortalCaseSteps {
 		}
 
 		$statusTypes = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
+			objectService: $read->objectService,
+			register: $read->register,
 			schema: $statusSchema,
 			filters: ['caseType' => $caseType, '_limit' => 100]
 		);
