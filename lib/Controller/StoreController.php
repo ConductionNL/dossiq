@@ -190,15 +190,8 @@ class StoreController extends Controller {
 			);
 		}
 
-		$query = $this->request->getParam('q');
-		if (is_string($query) === false) {
-			$query = null;
-		}
-
-		$kind = $this->request->getParam('kind');
-		if (is_string($kind) === false) {
-			$kind = null;
-		}
+		$query = $this->stringParam(name: 'q');
+		$kind = $this->stringParam(name: 'kind');
 
 		try {
 			$result = $this->storeService->search(
@@ -221,6 +214,22 @@ class StoreController extends Controller {
 			statusCode: Http::STATUS_OK
 		);
 	}//end search()
+
+	/**
+	 * A request parameter when it is a string, else null.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return string|null
+	 */
+	private function stringParam(string $name): ?string {
+		$value = $this->request->getParam($name);
+		if (is_string($value) === false) {
+			return null;
+		}
+
+		return $value;
+	}//end stringParam()
 
 	/**
 	 * Install one store item into this instance.
@@ -309,62 +318,79 @@ class StoreController extends Controller {
 	 */
 	private function installComponents(array $components): array {
 		$report = [];
-		$failed = false;
-
 		foreach ($components as $component) {
-			$slug = (string)($component['schema'] ?? '');
-			$object = ($component['object'] ?? null);
-
-			if (in_array($slug, self::INSTALLABLE_SLUGS, true) === false) {
-				$failed = true;
-				$report[] = [
-					'schema' => $slug,
-					'status' => 'refused',
-					'message' => 'Only case configuration installs from the store; '
-						. 'this component names a record schema.',
-				];
-				continue;
-			}
-
-			if (is_array($object) === false) {
-				$failed = true;
-				$report[] = [
-					'schema' => $slug,
-					'status' => 'refused',
-					'message' => 'The component declares no object to install.',
-				];
-				continue;
-			}
-
-			// No null guard on the lookup, and none is needed: every entry in
-			// INSTALLABLE_SLUGS is a key of SLUG_TO_CONFIG_KEY, and phpstan
-			// PROVES it — a slug added to the allowlist with no mapping turns
-			// this back into a nullable read and fails analysis. A defensive
-			// `?? null` here was dead code that hid that guarantee.
-			$configKey = SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug];
-
-			try {
-				$this->registry->save(
-					schemaConfigKey: $configKey,
-					data: $this->asNewObject(object: $object)
-				);
-				$report[] = ['schema' => $slug, 'status' => 'installed', 'message' => ''];
-			} catch (Throwable $e) {
-				$failed = true;
-				$this->logger->error(
-					'Dossiq store: installing {schema} failed: {error}',
-					['schema' => $slug, 'error' => $e->getMessage()]
-				);
-				$report[] = [
-					'schema' => $slug,
-					'status' => 'error',
-					'message' => 'The component could not be written.',
-				];
-			}
+			$report[] = $this->installComponent(component: $component);
 		}
+
+		$failed = in_array(false, array_map(static fn (array $row): bool => $row['status'] === 'installed', $report), true);
 
 		return ['success' => ($failed === false && $report !== []), 'components' => $report];
 	}//end installComponents()
+
+	/**
+	 * Install one component, or say why not.
+	 *
+	 * @param array<string, mixed> $component One declared component.
+	 *
+	 * @return array{schema: string, status: string, message: string} Its report row.
+	 */
+	private function installComponent(array $component): array {
+		$slug = (string)($component['schema'] ?? '');
+		$object = ($component['object'] ?? null);
+
+		$refusal = $this->componentRefusal(slug: $slug, object: $object);
+		if ($refusal !== null) {
+			return ['schema' => $slug, 'status' => 'refused', 'message' => $refusal];
+		}
+
+		// No null guard on the lookup, and none is needed: every entry in
+		// INSTALLABLE_SLUGS is a key of SLUG_TO_CONFIG_KEY, and phpstan
+		// PROVES it — a slug added to the allowlist with no mapping turns
+		// this back into a nullable read and fails analysis. A defensive
+		// `?? null` here was dead code that hid that guarantee.
+		$configKey = SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug];
+
+		try {
+			$this->registry->save(
+				schemaConfigKey: $configKey,
+				data: $this->asNewObject(object: $object)
+			);
+			return ['schema' => $slug, 'status' => 'installed', 'message' => ''];
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq store: installing {schema} failed: {error}',
+				['schema' => $slug, 'error' => $e->getMessage()]
+			);
+			return [
+				'schema' => $slug,
+				'status' => 'error',
+				'message' => 'The component could not be written.',
+			];
+		}
+	}//end installComponent()
+
+	/**
+	 * Why a component may not install, or null when it may.
+	 *
+	 * Only case configuration installs; a component must declare its object.
+	 *
+	 * @param string $slug   The component's schema.
+	 * @param mixed  $object The object it declares.
+	 *
+	 * @return string|null The refusal message, or null.
+	 */
+	private function componentRefusal(string $slug, mixed $object): ?string {
+		if (in_array($slug, self::INSTALLABLE_SLUGS, true) === false) {
+			return 'Only case configuration installs from the store; '
+				. 'this component names a record schema.';
+		}
+
+		if (is_array($object) === false) {
+			return 'The component declares no object to install.';
+		}
+
+		return null;
+	}//end componentRefusal()
 
 	/**
 	 * Strip every identity the remote payload carries, so an install CREATES.
