@@ -42,6 +42,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Controller\MandaatRegistryController
  * @covers \OCA\Dossiq\Controller\OrganisatieRolController
+ * @covers \OCA\Dossiq\Controller\Support\RegistryObjectWrite
  */
 class MandaatRegistryWritesTest extends TestCase {
 
