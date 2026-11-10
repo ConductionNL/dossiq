@@ -270,22 +270,24 @@ class OpenCaseSweepJobsGoldenTest extends TestCase {
 			}
 
 			/**
-			 * Patch one object.
+			 * Patch one object, called with named fields or with one patch object.
 			 *
-			 * @param string          $objectId The id.
-			 * @param array           $data     The changes.
-			 * @param string|int|null $register The register.
-			 * @param string|int|null $schema   The schema.
+			 * @param mixed ...$args The arguments, by name.
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function patchObject(string $objectId, array $data, string|int|null $register = null, string|int|null $schema = null): array {
-				$this->test->log[] = ['patchObject' => [$objectId, $data, $register, $schema]];
-				if ($objectId === 'c-boom') {
+			public function patchObject(mixed ...$args): array {
+				$patch = ($args['patch'] ?? null);
+				if (is_object($patch) === true) {
+					$args = ['objectId' => $patch->objectId, 'data' => $patch->data, 'register' => $patch->target->register, 'schema' => $patch->target->schema];
+				}
+
+				$this->test->log[] = ['patchObject' => [$args['objectId'], $args['data'], ($args['register'] ?? null), ($args['schema'] ?? null)]];
+				if ($args['objectId'] === 'c-boom') {
 					throw new RuntimeException('locked');
 				}
 
-				return ['id' => $objectId];
+				return ['id' => $args['objectId']];
 			}
 		};
 	}//end store()
