@@ -30,6 +30,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\ApplicantPortalActs;
 use OCA\Dossiq\Portal\PortalWooAnswer;
+use OCA\Dossiq\Portal\WooAnswerSubmission;
 use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\SettingsService;
@@ -43,6 +44,8 @@ use RuntimeException;
  * Allowed and refused answers to a clarification request.
  *
  * @covers \OCA\Dossiq\Portal\PortalWooAnswer
+ * @covers \OCA\Dossiq\Portal\WooAnswerSubmission
+ * @covers \OCA\Dossiq\Portal\WooAnswerRun
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
@@ -245,13 +248,14 @@ class PortalWooAnswerOutcomesTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function answer(string $answer = ' Alle speeltuinen ', array $attachments = [], string $requestId = ' req-1 ', string $subjectRef = ' subject-anna '): array {
-		return $this->service()->answer(
-			subjectRef: $subjectRef,
-			requestId: $requestId,
-			answer: $answer,
-			now: new DateTimeImmutable('2026-10-08T10:00:00+02:00'),
-			attachments: $attachments
-		);
+		$submission = new WooAnswerSubmission();
+		$submission->subjectRef = $subjectRef;
+		$submission->requestId = $requestId;
+		$submission->answer = $answer;
+		$submission->now = new DateTimeImmutable('2026-10-08T10:00:00+02:00');
+		$submission->attachments = $attachments;
+
+		return $this->service()->submit($submission);
 	}//end answer()
 
 	/**
