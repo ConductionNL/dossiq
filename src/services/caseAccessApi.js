@@ -269,30 +269,35 @@ export async function fetchAccessHistory(caseId, at) {
  */
 export function constraintsOf(rule, principal) {
 	const none = { until: '', scopedTo: null }
-	if (rule === null || typeof rule !== 'object') {
+	if (!isObject(rule)) {
 		return none
 	}
 
-	let entry = rule
-	if (Array.isArray(rule)) {
-		entry = rule.find(
-			(candidate) =>
-				candidate === principal
-				|| (candidate !== null
-					&& typeof candidate === 'object'
-					&& [
-						candidate.principal,
-						candidate.group,
-						candidate.role,
-						candidate.user,
-					].includes(principal)),
-		)
-	}
-
-	if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
+	const entry = Array.isArray(rule) ? holderEntry(rule, principal) : rule
+	if (!isObject(entry) || Array.isArray(entry)) {
 		return none
 	}
 
+	return entryConstraints(entry)
+}
+
+/**
+ * Whether a value is a non-null object (an array included).
+ *
+ * @param {unknown} value The value.
+ * @return {boolean} True for an object.
+ */
+function isObject(value) {
+	return value !== null && typeof value === 'object'
+}
+
+/**
+ * The end date and area one grant entry carries.
+ *
+ * @param {object} entry The grant entry.
+ * @return {{until: string, scopedTo: object|null}} The end and the area.
+ */
+function entryConstraints(entry) {
 	return {
 		until: typeof entry.until === 'string' ? entry.until : '',
 		scopedTo: entry.scopedTo || null,
@@ -300,29 +305,72 @@ export function constraintsOf(rule, principal) {
 }
 
 /**
+ * The entry of a role grant's holder list that names this principal.
+ *
+ * @param {Array} holders The holder list.
+ * @param {string} principal The holder this row is about.
+ * @return {object|string|undefined} The entry, undefined when none names them.
+ */
+function holderEntry(holders, principal) {
+	return holders.find(
+		(candidate) =>
+			candidate === principal
+			|| namesPrincipal(candidate, principal),
+	)
+}
+
+/**
+ * Whether a holder entry object names the principal as its principal,
+ * group, role or user.
+ *
+ * @param {unknown} candidate One entry of the holder list.
+ * @param {string} principal The holder this row is about.
+ * @return {boolean} True when it names them.
+ */
+function namesPrincipal(candidate, principal) {
+	return isObject(candidate)
+		&& [
+			candidate.principal,
+			candidate.group,
+			candidate.role,
+			candidate.user,
+		].includes(principal)
+}
+
+/**
  * One rule OpenRegister reported, as a row to render.
  *
- * @param {object}  rule      The rule.
- * @param {boolean} refusing  Whether this rule takes a right away.
- * @param {boolean} enforcing Whether a refusal is in force on this instance.
+ * @param {object}      rule    The rule.
+ * @param {string|null} refusal For a rule that takes a right away, `deny`
+ *                              when the refusal is in force on this
+ *                              instance, else `staged-deny`; null for a grant.
  *
  * @return {object} The row.
  * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
  */
-function ruleRow(rule, refusing, enforcing) {
+function ruleRow(rule, refusal) {
 	const principal = rule?.principal || ''
 	const { until, scopedTo } = constraintsOf(rule?.rule ?? null, principal)
-
-	let source = rule?.level || 'object'
-	if (refusing === true) {
-		source = enforcing === true ? 'deny' : 'staged-deny'
-	}
 
 	return {
 		holder: principal,
 		right: rule?.action || '',
-		source,
+		source: refusal ?? (rule?.level || 'object'),
 		detail: rule?.role || '',
+		...ruleOrigin(rule),
+		until,
+		scopedTo,
+	}
+}
+
+/**
+ * Where a rule comes from and how it was written.
+ *
+ * @param {object|null} rule The rule.
+ * @return {{inheritedFrom: string, level: string, role: string, declared: boolean, conditional: boolean}} The fields.
+ */
+function ruleOrigin(rule) {
+	return {
 		// Which case handed this rule down, when OpenRegister says one did
 		// (row Q13.23). It is carried and never compared to anything: whether
 		// an inherited grant still answers is resolved in OpenRegister, on
@@ -332,9 +380,21 @@ function ruleRow(rule, refusing, enforcing) {
 		role: rule?.role || '',
 		declared: rule?.declared !== false,
 		conditional: rule?.conditional === true,
-		until,
-		scopedTo,
 	}
+}
+
+/**
+ * One row per rule of each holder, as grants.
+ *
+ * @param {Array|null|undefined} holders The holders and their rules.
+ * @return {Array<object>} The rows.
+ */
+function heldRuleRows(holders) {
+	const rows = []
+	for (const holder of holders || []) {
+		rows.push(...(holder?.rules || []).map((rule) => ruleRow(rule, null)))
+	}
+	return rows
 }
 
 /**
@@ -356,19 +416,12 @@ export function objectPermissionRows(set) {
 	}
 
 	const enforcing = set.denyEnforcement === 'enforcing'
+	const refusal = enforcing ? 'deny' : 'staged-deny'
 
-	const rows = []
-	for (const holder of set.holders || []) {
-		for (const rule of holder?.rules || []) {
-			rows.push(ruleRow(rule, false, enforcing))
-		}
-	}
-
-	for (const rule of set.denied || []) {
-		rows.push(ruleRow(rule, true, enforcing))
-	}
-
-	return rows
+	return [
+		...heldRuleRows(set.holders),
+		...(set.denied || []).map((rule) => ruleRow(rule, refusal)),
+	]
 }
 
 /**
@@ -386,32 +439,33 @@ export function objectPermissionRows(set) {
  * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
  */
 export function asOfRows(history) {
-	const unanswered = {
-		answered: false,
-		at: history?.at || '',
-		rows: [],
-		setBy: '',
-		changedAfterwardsBy: null,
-	}
-
 	const asOf = history?.asOf || null
 	if (asOf === null || typeof asOf !== 'object') {
-		return unanswered
-	}
-
-	const rows = []
-	for (const holder of asOf.holders || []) {
-		for (const rule of holder?.rules || []) {
-			rows.push(ruleRow(rule, false, false))
-		}
+		return unansweredAsOf(history)
 	}
 
 	return {
 		answered: true,
 		at: asOf.at || history?.at || '',
-		rows,
+		rows: heldRuleRows(asOf.holders),
 		setBy: asOf.setBy || '',
 		changedAfterwardsBy: asOf.changedAfterwardsBy || null,
+	}
+}
+
+/**
+ * The as-of answer when OpenRegister's trail does not reach the moment.
+ *
+ * @param {object|null} history The history, as `fetchAccessHistory` returned it.
+ * @return {{answered: boolean, at: string, rows: Array<object>, setBy: string, changedAfterwardsBy: null}} The unanswered set.
+ */
+function unansweredAsOf(history) {
+	return {
+		answered: false,
+		at: history?.at || '',
+		rows: [],
+		setBy: '',
+		changedAfterwardsBy: null,
 	}
 }
 
