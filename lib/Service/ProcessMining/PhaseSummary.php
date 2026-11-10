@@ -85,41 +85,57 @@ class PhaseSummary {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function matrix(array $caseTypes, string $measure='meanHours'): array {
-		$columns = [];
-		$sequences = [];
-		$rows = [];
-		foreach ($caseTypes as $report) {
-			$hours = [];
-			$firstOrder = [];
-			foreach ($this->columnsOf(stats: $this->namedStats(report: $report, key: 'dwellTimeCompleted')) as $column => $stats) {
-				$hours[$column] = array_sum(array_map(static fn (array $stat): float => (float)($stat[$measure] ?? 0), $stats));
-				$firstOrder[$column] = $this->firstOrder(stats: $stats);
-				if (in_array($column, $columns, true) === false) {
-					$columns[] = $column;
-				}
-			}
-
-			$sequences[] = $this->sequenceOf(firstOrder: $firstOrder);
-
-			if ($hours !== []) {
-				$byName = array_map(static fn (float $sum): int => (int)round($sum / self::HOURS_PER_DAY), $hours);
-				$rows[] = ['label' => (string)($report['title'] ?? ''), 'byName' => $byName];
-			}
-		}
-
-		$columns = $this->inFlowOrder(columns: $columns, sequences: $sequences);
+		$phases = array_map(fn (array $report): array => $this->phaseDays(report: $report, measure: $measure), $caseTypes);
+		$named = array_map(static fn (array $phase): array => array_keys($phase['byName']), $phases);
+		$columns = $this->inFlowOrder(
+			columns: array_values(array_unique(array_merge([], ...$named))),
+			sequences: array_map(fn (array $phase): array => $this->sequenceOf(firstOrder: $phase['firstOrder']), $phases),
+		);
+		$rows = array_filter($phases, static fn (array $phase): bool => $phase['byName'] !== []);
 
 		return [
 			'columns' => $columns,
-			'rows' => array_map(
-				static fn (array $row): array => [
-					'label' => $row['label'],
-					'values' => array_map(static fn (string $name): int|string => ($row['byName'][$name] ?? self::NONE), $columns),
-				],
-				$rows
-			),
+			'rows' => array_values(array_map(static fn (array $row): array => self::cellsOf(row: $row, columns: $columns), $rows)),
 		];
 	}//end matrix()
+
+	/**
+	 * One case type's days per named phase, its label, and each phase's first status order.
+	 *
+	 * @param array<string, mixed> $report  The case type's report.
+	 * @param string               $measure `meanHours` or `medianHours`.
+	 *
+	 * @return array{label: string, byName: array<string, int>, firstOrder: array<string, int|null>} The phases.
+	 */
+	private function phaseDays(array $report, string $measure): array {
+		$hours = [];
+		$firstOrder = [];
+		foreach ($this->columnsOf(stats: $this->namedStats(report: $report, key: 'dwellTimeCompleted')) as $column => $stats) {
+			$hours[$column] = array_sum(array_map(static fn (array $stat): float => (float)($stat[$measure] ?? 0), $stats));
+			$firstOrder[$column] = $this->firstOrder(stats: $stats);
+		}
+
+		return [
+			'label' => (string)($report['title'] ?? ''),
+			'byName' => array_map(static fn (float $sum): int => (int)round($sum / self::HOURS_PER_DAY), $hours),
+			'firstOrder' => $firstOrder,
+		];
+	}//end phaseDays()
+
+	/**
+	 * A matrix row: the label, and per column the days or the word `none`.
+	 *
+	 * @param array{label: string, byName: array<string, int>} $row     The case type's phases.
+	 * @param array<int, string>                               $columns The columns in order.
+	 *
+	 * @return array{label: string, values: array<int, int|string>} The row.
+	 */
+	private static function cellsOf(array $row, array $columns): array {
+		return [
+			'label' => $row['label'],
+			'values' => array_map(static fn (string $name): int|string => ($row['byName'][$name] ?? self::NONE), $columns),
+		];
+	}//end cellsOf()
 
 	/**
 	 * The lowest status order among a column's statistics, or null when none has one.
