@@ -46,6 +46,13 @@ class ProcessingTimeSeriesPublisher {
 	private const SERIES_SERVICE = 'OCA\OpenRegister\Service\AnalyticsSeriesService';
 
 	/**
+	 * The report blocks that publish a series, in publication order.
+	 *
+	 * @var list<'sla'|'distribution'|'trend'|'throughput'>
+	 */
+	private const SERIES_BLOCKS = ['sla', 'distribution', 'trend', 'throughput'];
+
+	/**
 	 * Each series key => the key it was published under before. Both are
 	 * published for one release.
 	 *
@@ -88,14 +95,7 @@ class ProcessingTimeSeriesPublisher {
 		}
 
 		try {
-			$service = $this->container->get(self::SERIES_SERVICE);
-			foreach ($series as $entry) {
-				$service->registerSeries(draft: $this->draftOf(entry: $entry));
-				$legacy = (self::LEGACY_KEYS[$entry['seriesKey']] ?? null);
-				if ($legacy !== null) {
-					$service->registerSeries(draft: $this->draftOf(entry: array_merge($entry, ['seriesKey' => $legacy])));
-				}
-			}
+			$this->registerEach(service: $this->container->get(self::SERIES_SERVICE), series: $series);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: processing-time series publication failed',
@@ -103,6 +103,24 @@ class ProcessingTimeSeriesPublisher {
 			);
 		}
 	}//end publish()
+
+	/**
+	 * Register every series, each also under the key it was published under before.
+	 *
+	 * @param object                          $service OpenRegister's series service.
+	 * @param array<int, array<string, mixed>> $series  The series.
+	 *
+	 * @return void
+	 */
+	private function registerEach(object $service, array $series): void {
+		foreach ($series as $entry) {
+			$service->registerSeries(draft: $this->draftOf(entry: $entry));
+			$legacy = (self::LEGACY_KEYS[$entry['seriesKey']] ?? null);
+			if ($legacy !== null) {
+				$service->registerSeries(draft: $this->draftOf(entry: array_merge($entry, ['seriesKey' => $legacy])));
+			}
+		}
+	}//end registerEach()
 
 	/**
 	 * The analytics draft for one series: its data, shown privately as its chart type.
@@ -130,51 +148,98 @@ class ProcessingTimeSeriesPublisher {
 	 */
 	public function seriesOf(array $report): array {
 		$series = [];
-
-		$sla = ($report['sla'] ?? []);
-		if ($sla !== []) {
-			$series[] = [
-				'seriesKey' => 'dossiq-sla-compliance-by-type',
-				'title'     => $this->l10n->t('Compliance by Case Type'),
-				'chartType' => 'doughnut',
-				'labels'    => array_column($sla, 'name'),
-				'datasets'  => array_column($sla, 'withinSla'),
-			];
-		}
-
-		$bins = ($report['distribution'] ?? []);
-		if ($bins !== []) {
-			$series[] = [
-				'seriesKey' => 'dossiq-sla-processing-time-distribution',
-				'title'     => $this->l10n->t('Processing Time Distribution'),
-				'chartType' => 'bar',
-				'labels'    => array_column($bins, 'label'),
-				'datasets'  => [['name' => $this->l10n->t('Cases'), 'data' => array_column($bins, 'count')]],
-			];
-		}
-
-		$trend = ($report['trend'] ?? []);
-		if ($trend !== []) {
-			$series[] = [
-				'seriesKey' => 'dossiq-sla-monthly-trend',
-				'title'     => $this->l10n->t('Monthly SLA Trend'),
-				'chartType' => 'line',
-				'labels'    => array_column($trend, 'month'),
-				'datasets'  => [['name' => $this->l10n->t('SLA Compliance %%'), 'data' => array_column($trend, 'rate')]],
-			];
-		}
-
-		$weeks = ($report['throughput'] ?? []);
-		if ($weeks !== []) {
-			$series[] = [
-				'seriesKey' => 'dossiq-sla-weekly-throughput',
-				'title'     => $this->l10n->t('Throughput (cases closed per week)'),
-				'chartType' => 'line',
-				'labels'    => array_column($weeks, 'weekLabel'),
-				'datasets'  => [['name' => $this->l10n->t('Cases closed'), 'data' => array_column($weeks, 'count')]],
-			];
+		foreach (self::SERIES_BLOCKS as $block) {
+			$rows = ($report[$block] ?? []);
+			if ($rows !== []) {
+				$series[] = $this->seriesFor(block: $block, rows: $rows);
+			}
 		}
 
 		return $series;
 	}//end seriesOf()
+
+	/**
+	 * The series one report block publishes as.
+	 *
+	 * @param 'sla'|'distribution'|'trend'|'throughput' $block One of SERIES_BLOCKS.
+	 * @param array<int, array<string, mixed>>        $rows  The block's rows.
+	 *
+	 * @return array<string, mixed> The series.
+	 */
+	private function seriesFor(string $block, array $rows): array {
+		return match ($block) {
+			'sla' => $this->complianceSeries(sla: $rows),
+			'distribution' => $this->distributionSeries(bins: $rows),
+			'trend' => $this->trendSeries(trend: $rows),
+			'throughput' => $this->throughputSeries(weeks: $rows),
+		};
+	}//end seriesFor()
+
+	/**
+	 * Compliance by case type, as a doughnut of the cases within the SLA.
+	 *
+	 * @param array<int, array<string, mixed>> $sla The SLA rows per case type.
+	 *
+	 * @return array<string, mixed> The series.
+	 */
+	private function complianceSeries(array $sla): array {
+		return [
+			'seriesKey' => 'dossiq-sla-compliance-by-type',
+			'title'     => $this->l10n->t('Compliance by Case Type'),
+			'chartType' => 'doughnut',
+			'labels'    => array_column($sla, 'name'),
+			'datasets'  => array_column($sla, 'withinSla'),
+		];
+	}//end complianceSeries()
+
+	/**
+	 * The processing time distribution, as a bar per bin.
+	 *
+	 * @param array<int, array<string, mixed>> $bins The distribution bins.
+	 *
+	 * @return array<string, mixed> The series.
+	 */
+	private function distributionSeries(array $bins): array {
+		return [
+			'seriesKey' => 'dossiq-sla-processing-time-distribution',
+			'title'     => $this->l10n->t('Processing Time Distribution'),
+			'chartType' => 'bar',
+			'labels'    => array_column($bins, 'label'),
+			'datasets'  => [['name' => $this->l10n->t('Cases'), 'data' => array_column($bins, 'count')]],
+		];
+	}//end distributionSeries()
+
+	/**
+	 * The monthly SLA trend, as a line of compliance rates.
+	 *
+	 * @param array<int, array<string, mixed>> $trend The months.
+	 *
+	 * @return array<string, mixed> The series.
+	 */
+	private function trendSeries(array $trend): array {
+		return [
+			'seriesKey' => 'dossiq-sla-monthly-trend',
+			'title'     => $this->l10n->t('Monthly SLA Trend'),
+			'chartType' => 'line',
+			'labels'    => array_column($trend, 'month'),
+			'datasets'  => [['name' => $this->l10n->t('SLA Compliance %%'), 'data' => array_column($trend, 'rate')]],
+		];
+	}//end trendSeries()
+
+	/**
+	 * The weekly throughput, as a line of cases closed.
+	 *
+	 * @param array<int, array<string, mixed>> $weeks The weeks.
+	 *
+	 * @return array<string, mixed> The series.
+	 */
+	private function throughputSeries(array $weeks): array {
+		return [
+			'seriesKey' => 'dossiq-sla-weekly-throughput',
+			'title'     => $this->l10n->t('Throughput (cases closed per week)'),
+			'chartType' => 'line',
+			'labels'    => array_column($weeks, 'weekLabel'),
+			'datasets'  => [['name' => $this->l10n->t('Cases closed'), 'data' => array_column($weeks, 'count')]],
+		];
+	}//end throughputSeries()
 }//end class
