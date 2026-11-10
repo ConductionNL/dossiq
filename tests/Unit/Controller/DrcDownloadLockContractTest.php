@@ -49,6 +49,7 @@ use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\LockRequest;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -97,7 +98,7 @@ interface DrcDownloadLockObjectServiceStub {
 	 *
 	 * @return mixed The locked object row.
 	 */
-	public function lockObject(string $identifier): mixed;
+	public function lockObject(LockRequest $request): mixed;
 }//end interface
 
 /**
@@ -363,8 +364,8 @@ class DrcDownloadLockContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('lockObject')
 			->willReturnCallback(
-				static function (string $identifier): array {
-					return ['id' => $identifier];
+				static function (LockRequest $request): array {
+					return ['id' => $request->identifier];
 				}
 			);
 		$objectService->expects($this->once())
