@@ -169,66 +169,129 @@ export function getRecentActivity(cases, limit = 10) {
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getMyWorkItems(cases, tasks, limit = 5) {
-	const items = []
+	const items = [
+		...cases.map(caseWorkItem),
+		...tasks.map(taskWorkItem),
+	]
 
-	for (const c of cases) {
-		const countdown = formatDeadlineCountdown(c, false)
-		items.push({
-			type: 'case',
-			id: c.id,
-			title: c.title || '—',
-			reference: c.identifier ? `#${c.identifier}` : '',
-			deadline: c.deadline || null,
-			daysText: countdown.text,
-			isOverdue: isCaseOverdue(c, false),
-			priority: c.priority || 'normal',
-		})
-	}
-
-	for (const task of tasks) {
-		const overdue =
-			!isTerminalStatus(task.status) && task.dueDate && isOverdue(task.dueDate)
-		const daysLeft = task.dueDate ? getDaysRemaining(task.dueDate) : null
-		let daysText = '—'
-		if (daysLeft !== null) {
-			if (daysLeft < 0) {
-				daysText =
-					Math.abs(daysLeft) === 1
-						? t('dossiq', '1 day overdue')
-						: t('dossiq', '{days} days overdue', {
-								days: Math.abs(daysLeft),
-							})
-			} else if (daysLeft === 0) {
-				daysText = t('dossiq', 'Due today')
-			} else {
-				daysText = t('dossiq', '{days} days', { days: daysLeft })
-			}
-		}
-
-		items.push({
-			type: 'task',
-			id: task.id,
-			title: task.title || '—',
-			reference: task.case ? `Case: ${task.case}` : '',
-			deadline: task.dueDate || null,
-			daysText,
-			isOverdue: overdue,
-			priority: task.priority || 'normal',
-		})
-	}
-
-	items.sort((a, b) => {
-		const pDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
-		if (pDiff !== 0) return pDiff
-
-		if (a.deadline && b.deadline)
-			return new Date(a.deadline) - new Date(b.deadline)
-		if (a.deadline) return -1
-		if (b.deadline) return 1
-		return 0
-	})
+	items.sort(byPriorityThenDeadline)
 
 	return items.slice(0, limit)
+}
+
+/**
+ * The fields every case work item carries.
+ *
+ * @param {object} c A case.
+ * @return {object} The work item.
+ */
+function caseWorkItem(c) {
+	const countdown = formatDeadlineCountdown(c, false)
+	return {
+		type: 'case',
+		id: c.id,
+		title: c.title || '—',
+		reference: c.identifier ? `#${c.identifier}` : '',
+		deadline: c.deadline || null,
+		daysText: countdown.text,
+		isOverdue: isCaseOverdue(c, false),
+		priority: c.priority || 'normal',
+	}
+}
+
+/**
+ * A task as a work item.
+ *
+ * @param {object} task A task.
+ * @return {object} The work item.
+ */
+function taskWorkItem(task) {
+	const overdue = taskIsOverdue(task)
+	const daysLeft = task.dueDate ? getDaysRemaining(task.dueDate) : null
+
+	return {
+		type: 'task',
+		id: task.id,
+		title: task.title || '—',
+		reference: task.case ? `Case: ${task.case}` : '',
+		deadline: task.dueDate || null,
+		daysText: daysLeftText(daysLeft),
+		isOverdue: overdue,
+		priority: task.priority || 'normal',
+	}
+}
+
+/**
+ * Whether an unfinished task is past its due date. Answers the due date's
+ * falsy value itself for a task without one, as the list always did.
+ *
+ * @param {object} task A task.
+ * @return {boolean|string|null|undefined} Truthy when overdue.
+ */
+function taskIsOverdue(task) {
+	return !isTerminalStatus(task.status) && task.dueDate && isOverdue(task.dueDate)
+}
+
+/**
+ * How many days a task has left, in words.
+ *
+ * @param {number|null} daysLeft The days left, negative when overdue, null without a due date.
+ * @return {string} The text.
+ */
+function daysLeftText(daysLeft) {
+	if (daysLeft === null) {
+		return '—'
+	}
+	if (daysLeft < 0) {
+		return overdueText(Math.abs(daysLeft))
+	}
+	if (daysLeft === 0) {
+		return t('dossiq', 'Due today')
+	}
+	return t('dossiq', '{days} days', { days: daysLeft })
+}
+
+/**
+ * How many days a task is overdue, in words.
+ *
+ * @param {number} days The days overdue, at least one.
+ * @return {string} The text.
+ */
+function overdueText(days) {
+	return days === 1
+		? t('dossiq', '1 day overdue')
+		: t('dossiq', '{days} days overdue', {
+				days,
+			})
+}
+
+/**
+ * Sort work items by priority first, then by deadline, undated last.
+ *
+ * @param {object} a A work item.
+ * @param {object} b Another work item.
+ * @return {number} The sort order.
+ */
+function byPriorityThenDeadline(a, b) {
+	const pDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
+	if (pDiff !== 0) return pDiff
+
+	return byDeadline(a, b)
+}
+
+/**
+ * Sort work items by deadline, earliest first, undated last.
+ *
+ * @param {object} a A work item.
+ * @param {object} b Another work item.
+ * @return {number} The sort order.
+ */
+function byDeadline(a, b) {
+	if (a.deadline && b.deadline)
+		return new Date(a.deadline) - new Date(b.deadline)
+	if (a.deadline) return -1
+	if (b.deadline) return 1
+	return 0
 }
 
 /**
@@ -259,80 +322,62 @@ function endOfWeek() {
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getGroupedMyWorkItems(cases, normalizedTasks) {
-	const items = []
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
 	const weekEnd = endOfWeek()
 
-	// Build case work items.
-	for (const c of cases) {
-		const countdown = formatDeadlineCountdown(c, false)
-		items.push({
-			type: 'case',
-			id: c.id,
-			title: c.title || '—',
-			reference: c.identifier ? `#${c.identifier}` : '',
-			deadline: c.deadline || null,
-			daysText: countdown.text,
-			isOverdue: isCaseOverdue(c, false),
-			isCompleted: false,
-			priority: c.priority || 'normal',
-			status: c.status || null,
-			caseType: c.caseType || null,
-		})
-	}
+	// Case work items, then the already-normalized task items.
+	const items = [
+		...cases.map(groupedCaseWorkItem),
+		...normalizedTasks,
+	]
 
-	// Add already-normalized task items.
-	for (const task of normalizedTasks) {
-		items.push(task)
-	}
-
-	// Classify into groups.
-	const overdue = []
-	const dueThisWeek = []
-	const upcoming = []
-	const noDeadline = []
-
+	// Classify into groups, then sort within each group: priority first, then deadline.
+	const groups = { overdue: [], dueThisWeek: [], upcoming: [], noDeadline: [] }
 	for (const item of items) {
-		if (!item.deadline) {
-			noDeadline.push(item)
-		} else {
-			const deadline = new Date(item.deadline)
-			deadline.setHours(0, 0, 0, 0)
-
-			if (item.isOverdue) {
-				overdue.push(item)
-			} else if (deadline <= weekEnd) {
-				dueThisWeek.push(item)
-			} else {
-				upcoming.push(item)
-			}
-		}
+		groups[urgencyGroup(item, weekEnd)].push(item)
+	}
+	for (const group of Object.values(groups)) {
+		group.sort(byPriorityThenDeadline)
 	}
 
-	// Sort within each group: priority first, then deadline.
-	const sortFn = (a, b) => {
-		const pDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
-		if (pDiff !== 0) return pDiff
-		if (a.deadline && b.deadline)
-			return new Date(a.deadline) - new Date(b.deadline)
-		if (a.deadline) return -1
-		if (b.deadline) return 1
-		return 0
-	}
+	return { ...groups, totalCount: items.length }
+}
 
-	overdue.sort(sortFn)
-	dueThisWeek.sort(sortFn)
-	upcoming.sort(sortFn)
-	noDeadline.sort(sortFn)
-
+/**
+ * A case as a grouped work item: the plain case item with its completion,
+ * status and case type.
+ *
+ * @param {object} c A case.
+ * @return {object} The work item.
+ */
+function groupedCaseWorkItem(c) {
+	const { priority, ...item } = caseWorkItem(c)
 	return {
-		overdue,
-		dueThisWeek,
-		upcoming,
-		noDeadline,
-		totalCount: items.length,
+		...item,
+		isCompleted: false,
+		priority,
+		status: c.status || null,
+		caseType: c.caseType || null,
 	}
+}
+
+/**
+ * Which urgency group a work item belongs in.
+ *
+ * @param {object} item A work item.
+ * @param {Date} weekEnd The end of this week.
+ * @return {string} `overdue`, `dueThisWeek`, `upcoming` or `noDeadline`.
+ */
+function urgencyGroup(item, weekEnd) {
+	if (!item.deadline) {
+		return 'noDeadline'
+	}
+	const deadline = new Date(item.deadline)
+	deadline.setHours(0, 0, 0, 0)
+
+	if (item.isOverdue) {
+		return 'overdue'
+	}
+	return deadline <= weekEnd ? 'dueThisWeek' : 'upcoming'
 }
 
 /**
