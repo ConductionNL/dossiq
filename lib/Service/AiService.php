@@ -519,53 +519,13 @@ class AiService {
 	 * @spec openspec/specs/ai-assistance/spec.md
 	 */
 	protected function callAiModel(string $prompt): array {
-		$modelUrl = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_model_url',
-			''
-		);
-
-		if (empty($modelUrl) === true) {
-			throw new RuntimeException('AI model URL is not configured');
-		}
-
-		$modelName = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_model_name',
-			'llama3.1'
-		);
-
-		$modelType = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_model_type',
-			'local'
-		);
-
-		// Build the request payload for Ollama-compatible API.
-		$payload = json_encode(
-			[
-				'model' => $modelName,
-				'prompt' => $prompt,
-				'stream' => false,
-				'format' => 'json',
-			]
-		);
-
+		$modelUrl = $this->configuredModelUrl();
+		$modelName = $this->aiSetting(key: 'ai_model_name', default: 'llama3.1');
+		$modelType = $this->aiSetting(key: 'ai_model_type', default: 'local');
+		$payload = $this->generateRequestBody(modelName: $modelName, prompt: $prompt);
 		$endpoint = rtrim($modelUrl, '/') . '/api/generate';
-
-		// SSRF guard: resolve the configured model URL to the ONE address it may
-		// be connected to, before making any outbound request.
-		$pinnedAddress = $this->endpointGuard->resolveSafeAddress(url: $modelUrl, modelType: $modelType);
-		if ($pinnedAddress === null) {
-			throw new RuntimeException('AI model URL failed SSRF security check');
-		}
-
-		$ch = curl_init($endpoint);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_POST, true);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+		$pinnedAddress = $this->pinnedModelAddress(url: $modelUrl, modelType: $modelType);
+		$ch = $this->openGenerateRequest(endpoint: $endpoint, payload: $payload);
 
 		// Connect to the address the guard INSPECTED, not to whatever the name
 		// resolves to now. Without this, the guard's answer and curl's own
@@ -574,26 +534,137 @@ class AiService {
 		// rebinding attack. The Host header and TLS SNI still carry the
 		// configured name, so certificate validation is unaffected.
 		curl_setopt($ch, CURLOPT_RESOLVE, [$this->pinnedResolveEntry(url: $modelUrl, address: $pinnedAddress)]);
+		$this->sendCloudApiKey(ch: $ch, modelType: $modelType);
 
-		// Add API key for cloud models.
-		if ($modelType === 'cloud') {
-			$apiKey = $this->appConfig->getValueString(
-				Application::APP_ID,
-				'ai_api_key',
-				''
-			);
-			if (empty($apiKey) === false) {
-				curl_setopt(
-					$ch,
-					CURLOPT_HTTPHEADER,
-					[
-						'Content-Type: application/json',
-						'Authorization: Bearer ' . $apiKey,
-					]
-				);
-			}
+		return $this->readModelAnswer(ch: $ch);
+	}//end callAiModel()
+
+	/**
+	 * One AI setting of this app, by key.
+	 *
+	 * @param string $key     The app config key.
+	 * @param string $default The value when it is not stored.
+	 *
+	 * @return string
+	 */
+	private function aiSetting(string $key, string $default): string {
+		return $this->appConfig->getValueString(
+			Application::APP_ID,
+			$key,
+			$default
+		);
+	}//end aiSetting()
+
+	/**
+	 * The configured model URL.
+	 *
+	 * @return string
+	 *
+	 * @throws \RuntimeException When no model URL is configured.
+	 */
+	private function configuredModelUrl(): string {
+		$modelUrl = $this->aiSetting(key: 'ai_model_url', default: '');
+		if (empty($modelUrl) === true) {
+			throw new RuntimeException('AI model URL is not configured');
 		}
 
+		return $modelUrl;
+	}//end configuredModelUrl()
+
+	/**
+	 * The request payload for the Ollama-compatible generate API.
+	 *
+	 * @param string $modelName The model to ask.
+	 * @param string $prompt    The prompt to send.
+	 *
+	 * @return string|false The JSON body.
+	 */
+	private function generateRequestBody(string $modelName, string $prompt): string|false {
+		return json_encode(
+			[
+				'model' => $modelName,
+				'prompt' => $prompt,
+				'stream' => false,
+				'format' => 'json',
+			]
+		);
+	}//end generateRequestBody()
+
+	/**
+	 * SSRF guard: resolve the configured model URL to the ONE address it may
+	 * be connected to, before making any outbound request.
+	 *
+	 * @param string $url       The configured model URL.
+	 * @param string $modelType `local` or `cloud`.
+	 *
+	 * @return string The address the request is pinned to.
+	 *
+	 * @throws \RuntimeException When the guard refuses the URL.
+	 */
+	private function pinnedModelAddress(string $url, string $modelType): string {
+		$pinnedAddress = $this->endpointGuard->resolveSafeAddress(url: $url, modelType: $modelType);
+		if ($pinnedAddress === null) {
+			throw new RuntimeException('AI model URL failed SSRF security check');
+		}
+
+		return $pinnedAddress;
+	}//end pinnedModelAddress()
+
+	/**
+	 * A JSON POST to the generate endpoint, not yet sent.
+	 *
+	 * @param string       $endpoint The generate endpoint.
+	 * @param string|false $payload  The JSON body.
+	 *
+	 * @return \CurlHandle
+	 */
+	private function openGenerateRequest(string $endpoint, string|false $payload): \CurlHandle {
+		$ch = curl_init($endpoint);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+
+		return $ch;
+	}//end openGenerateRequest()
+
+	/**
+	 * Add the API key for cloud models, when one is stored.
+	 *
+	 * @param \CurlHandle $ch        The request.
+	 * @param string      $modelType `local` or `cloud`.
+	 *
+	 * @return void
+	 */
+	private function sendCloudApiKey(\CurlHandle $ch, string $modelType): void {
+		if ($modelType !== 'cloud') {
+			return;
+		}
+
+		$apiKey = $this->aiSetting(key: 'ai_api_key', default: '');
+		if (empty($apiKey) === false) {
+			curl_setopt(
+				$ch,
+				CURLOPT_HTTPHEADER,
+				[
+					'Content-Type: application/json',
+					'Authorization: Bearer ' . $apiKey,
+				]
+			);
+		}
+	}//end sendCloudApiKey()
+
+	/**
+	 * Send the request and decode the model's answer.
+	 *
+	 * @param \CurlHandle $ch The prepared request.
+	 *
+	 * @return array The AI model response
+	 *
+	 * @throws \RuntimeException When the connection fails or the reply is not a 2xx.
+	 */
+	private function readModelAnswer(\CurlHandle $ch): array {
 		$response = curl_exec($ch);
 		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		$error = curl_error($ch);
@@ -608,7 +679,7 @@ class AiService {
 		}
 
 		return $this->decodeAiModelResponse(response: $response);
-	}//end callAiModel()
+	}//end readModelAnswer()
 
 	/**
 	 * Build the `CURLOPT_RESOLVE` entry that pins one host:port to one address.
