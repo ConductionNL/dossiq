@@ -290,6 +290,96 @@ class PipelinqSurfaceReadsTest extends TestCase {
 	}//end testAnUncomputableProgressIsNotZero()
 
 	/**
+	 * The first work item naming a programme decides it, and a programme the
+	 * list does not hold still answers, by id and with no name.
+	 *
+	 * @return void
+	 */
+	public function testAnUnlistedProgrammeAnswersByIdWithNoName(): void {
+		$portfolio = $this->portfolio(
+			workItems: [
+				['programme' => ' ', 'domainObjectType' => 'dossiq:case', 'domainObjectRef' => 'case-1'],
+				['programme' => 'p-9', 'domainObjectType' => 'dossiq:case', 'domainObjectRef' => 'case-1'],
+				['programme' => 'p-1', 'domainObjectType' => 'dossiq:case', 'domainObjectRef' => 'case-1'],
+			],
+			programmes: [['id' => 'p-1', 'name' => 'Lindelaan leefbaar 2026']],
+			tasks: [['status' => 'closed'], 'not a task', ['status' => 'open']],
+		);
+		$this->services[PipelinqGateway::PROGRAMMES] = $portfolio;
+
+		$consumer = new ProgrammeConsumer($this->gateway(), $this->createMock(LoggerInterface::class));
+		$answer = $consumer->programmeOf(caseId: ' case-1 ');
+
+		$this->assertSame(
+			[
+				'available' => true,
+				'programme' => [
+					'id' => 'p-9',
+					'name' => '',
+					'progress' => [
+						'available' => true,
+						'computable' => true,
+						'progress' => 50,
+						'mode' => 'fromTasks',
+						'sentence' => '50 per cent, derived from the tasks that are closed.',
+					],
+				],
+			],
+			$answer
+		);
+		$this->assertSame(['schemaKey' => 'programme_schema', 'filters' => []], $portfolio->reads[1]);
+	}//end testAnUnlistedProgrammeAnswersByIdWithNoName()
+
+	/**
+	 * A link pipelinq accepts, one it refuses (logged with the case and the
+	 * programme), and one it cannot answer.
+	 *
+	 * @return void
+	 */
+	public function testALinkIsAcceptedRefusedOrUnanswered(): void {
+		$this->services[PipelinqGateway::PROGRAMMES] = new class {
+			/** @var array<int, array<string, string>> */
+			public array $asked = [];
+
+			/**
+			 * @param string $programmeId The programme.
+			 * @param string $domainObjectType The work's type.
+			 * @param string $domainObjectRef The work's reference.
+			 * @param string $title Its title.
+			 *
+			 * @return array<string, mixed> The answer.
+			 */
+			public function linkWork(string $programmeId, string $domainObjectType, string $domainObjectRef, string $title = ''): array {
+				$this->asked[] = [$programmeId, $domainObjectType, $domainObjectRef, $title];
+				if ($programmeId === 'p-1') {
+					return ['status' => 201];
+				}
+
+				return ['status' => 409];
+			}
+		};
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('info')->with(
+			'Dossiq pipelinq: a case was not put under a programme, and the refusal names where it already is: pipelinq refused the link',
+			['case' => ' case-2 ', 'programme' => ' p-2 ']
+		);
+		$consumer = new ProgrammeConsumer($this->gateway(), $logger);
+
+		$this->assertSame(['linked' => true, 'reason' => ''], $consumer->linkCase(programmeId: ' p-1 ', caseId: ' case-1 ', title: ' Bezwaar '));
+		$this->assertSame(['linked' => false, 'reason' => 'pipelinq refused the link'], $consumer->linkCase(programmeId: ' p-2 ', caseId: ' case-2 '));
+		$this->assertSame(
+			[['p-1', 'dossiq:case', 'case-1', 'Bezwaar'], ['p-2', 'dossiq:case', 'case-2', '']],
+			$this->services[PipelinqGateway::PROGRAMMES]->asked
+		);
+
+		unset($this->services[PipelinqGateway::PROGRAMMES]);
+		$unanswered = (new ProgrammeConsumer($this->gateway(), $this->createMock(LoggerInterface::class)))
+			->linkCase(programmeId: 'p-1', caseId: 'case-1');
+		$this->assertFalse($unanswered['linked']);
+		$this->assertNotSame('', $unanswered['reason']);
+	}//end testALinkIsAcceptedRefusedOrUnanswered()
+
+	/**
 	 * A case under no programme is a real empty; no pipelinq is unavailable.
 	 *
 	 * @return void

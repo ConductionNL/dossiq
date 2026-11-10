@@ -36,7 +36,6 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -256,11 +255,11 @@ class CaseCustodyChain {
 		}
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 			$rows = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_custody_schema'),
+				schema: $this->dossierRegister()->schema(key: 'case_custody_schema'),
 				filters: ['caseId' => $caseId, '_limit' => self::PAGE_SIZE],
 			);
 		} catch (Throwable $e) {
@@ -331,11 +330,11 @@ class CaseCustodyChain {
 		unset($holding['@self'], $holding['id'], $holding['uuid']);
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->dossierRegister()->context();
 			$saved = $this->saveObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_custody_schema'),
+				schema: $this->dossierRegister()->schema(key: 'case_custody_schema'),
 				object: $holding,
 				uuid: $uuid,
 			);
@@ -384,43 +383,12 @@ class CaseCustodyChain {
 
 		return $this->dates->formatMoment($parsed);
 	}//end moment()
-
 	/**
-	 * The object service and the register, or an exception.
+	 * The dossier register and its configured schemas.
 	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
+	 * @return DossierRegister The register reader.
 	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
+	private function dossierRegister(): DossierRegister {
+		return new DossierRegister(settingsService: $this->settingsService);
+	}//end dossierRegister()
 }//end class
