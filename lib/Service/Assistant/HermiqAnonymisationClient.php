@@ -111,31 +111,32 @@ class HermiqAnonymisationClient {
 	public function detectPii(string $text, array $context): array {
 		$call = new HermiqServiceCall(logger: $this->logger, caller: 'HermiqAnonymisationClient');
 		$call->requireAvailable(available: $this->isAvailable());
-		$credentials = HermiqServiceCall::credentialsFrom(appConfig: $this->appConfig);
+		$credentials = $call->credentialsFrom(appConfig: $this->appConfig);
 		$call->requireCredentials(credentials: $credentials);
 
 		$url = rtrim($this->urlGenerator->getBaseUrl(), '/') . self::DETECT_PII_PATH;
 		$payload = ['text' => $text, 'context' => $context];
-		$post = new HermiqPost(url: $url, options: HermiqServiceCall::postOptions(credentials: $credentials, json: $payload));
+		$post = new HermiqPost(url: $url, options: $call->postOptions(credentials: $credentials, json: $payload));
 
-		return $this->decodeResponse(response: $call->send(clients: $this->clientService, post: $post));
+		return $this->decodeResponse(call: $call, response: $call->send(clients: $this->clientService, post: $post));
 	}//end detectPii()
 
 	/**
 	 * Decode a Hermiq response, translating a non-2xx status into a coded exception.
 	 *
+	 * @param HermiqServiceCall          $call     The call the response answers.
 	 * @param \OCP\Http\Client\IResponse $response The HTTP response.
 	 *
 	 * @return array{spans: array<int, array<string, mixed>>, usage: array<string, int|float>}
 	 *
 	 * @throws HermiqAssistantException On a non-2xx status or an undecodable body.
 	 */
-	private function decodeResponse(\OCP\Http\Client\IResponse $response): array {
-		$decoded = HermiqServiceCall::decoded(response: $response);
+	private function decodeResponse(HermiqServiceCall $call, \OCP\Http\Client\IResponse $response): array {
+		$decoded = $call->decoded(response: $response);
 
 		return [
-			'spans' => HermiqServiceCall::listOf(decoded: $decoded, key: 'spans'),
-			'usage' => HermiqServiceCall::listOf(decoded: $decoded, key: 'usage'),
+			'spans' => $call->listOf(decoded: $decoded, key: 'spans'),
+			'usage' => $call->listOf(decoded: $decoded, key: 'usage'),
 		];
 	}//end decodeResponse()
 }//end class

@@ -69,7 +69,7 @@ final class HermiqServiceCall {
 	 *
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
-	public static function credentialsFrom(IAppConfig $appConfig): array {
+	public function credentialsFrom(IAppConfig $appConfig): array {
 		$uid = $appConfig->getValueString(Application::APP_ID, 'hermiq_service_uid', '');
 		$pwd = $appConfig->getValueString(Application::APP_ID, 'hermiq_service_app_password', '');
 
@@ -86,7 +86,7 @@ final class HermiqServiceCall {
 	 *
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
-	public static function postOptions(array $credentials, array $json): array {
+	public function postOptions(array $credentials, array $json): array {
 		return [
 			'timeout' => self::TIMEOUT_SECONDS,
 			'auth' => [$credentials[0], $credentials[1]],
@@ -193,7 +193,7 @@ final class HermiqServiceCall {
 	 *
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
-	public static function decoded(IResponse $response): array {
+	public function decoded(IResponse $response): array {
 		$statusCode = $response->getStatusCode();
 		$decoded = json_decode((string)$response->getBody(), true);
 		if (is_array($decoded) === false) {
@@ -204,7 +204,7 @@ final class HermiqServiceCall {
 			throw new HermiqAssistantException(
 				message: (string)($decoded['message'] ?? $decoded['error'] ?? 'hermiq_api_error'),
 				statusCode: $statusCode,
-				errorCode: self::errorCodeOf(decoded: $decoded)
+				errorCode: $this->errorCodeOf(decoded: $decoded)
 			);
 		}
 
@@ -221,7 +221,7 @@ final class HermiqServiceCall {
 	 *
 	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
 	 */
-	public static function listOf(array $decoded, string $key): array {
+	public function listOf(array $decoded, string $key): array {
 		if (is_array($decoded[$key] ?? null) === true) {
 			return $decoded[$key];
 		}
@@ -236,7 +236,7 @@ final class HermiqServiceCall {
 	 *
 	 * @return string|null
 	 */
-	private static function errorCodeOf(array $decoded): ?string {
+	private function errorCodeOf(array $decoded): ?string {
 		if (isset($decoded['errorCode']) === true) {
 			return (string)$decoded['errorCode'];
 		}

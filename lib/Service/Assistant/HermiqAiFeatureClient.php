@@ -303,7 +303,7 @@ class HermiqAiFeatureClient {
 	private function send(string $path, ?array $payload): IResponse {
 		$call = new HermiqServiceCall(logger: $this->logger, caller: 'HermiqAiFeatureClient');
 		$call->requireAvailable(available: $this->isAvailable());
-		[$uid, $password] = HermiqServiceCall::credentialsFrom(appConfig: $this->appConfig);
+		[$uid, $password] = $call->credentialsFrom(appConfig: $this->appConfig);
 
 		if ($uid === '' || $password === '') {
 			throw new HermiqAssistantException(
