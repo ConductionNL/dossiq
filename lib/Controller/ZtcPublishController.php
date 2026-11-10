@@ -30,6 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -100,10 +102,11 @@ class ZtcPublishController extends ZgwController {
 			$existingData = $this->publishedCopy(existingData: $this->objectToArray(row: $existing));
 
 			$object = $this->zgwService->getObjectService()->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
 				object: $existingData,
-				uuid: $uuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']),
+					uuid: $uuid
+				)
 			);
 			$objectData = $this->objectToArray(row: $object);
 

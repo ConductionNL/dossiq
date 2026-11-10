@@ -20,6 +20,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -235,7 +237,12 @@ class LhsMatrixDecisionTableMigrator {
 		}
 
 		try {
-			$objectService->saveObject(object: $table, register: $register, schema: $tableSchema);
+			$objectService->saveObject(
+				object: $table,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $tableSchema)
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not project an LHS matrix onto a decision table',

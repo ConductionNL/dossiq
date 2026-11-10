@@ -33,6 +33,8 @@ use InvalidArgumentException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -244,8 +246,9 @@ class EmailArchivalService {
 		try {
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				),
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -313,8 +316,9 @@ class EmailArchivalService {
 		try {
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				),
 			);
 			return true;
 		} catch (\Throwable $e) {

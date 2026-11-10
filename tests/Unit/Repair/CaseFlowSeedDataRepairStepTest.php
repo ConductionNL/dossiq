@@ -29,6 +29,7 @@ use OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep;
 use OCA\Dossiq\Repair\CaseFlowSeedIndex;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -92,7 +93,8 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 				return $data + ['id' => $objectId];
 			}
 
-			public function saveObject(array $object, string $register, string $schema): mixed {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+				$schema = $options->target->schema;
 				if ($schema === $this->failsOnSchema) {
 					throw new RuntimeException('schema rejected the object');
 				}

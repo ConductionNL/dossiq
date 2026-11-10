@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -186,8 +187,9 @@ class CaseDefinitionPortabilityTest extends TestCase {
 	private function importer(bool $writesFail = false): CaseDefinitionImportService {
 		$objects = $this->createMock(ObjectServiceInterface::class);
 		$objects->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null, ...$rest) use ($writesFail): ObjectEntityInterface {
-				$key = (string)$schema;
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), ...$rest) use ($writesFail): ObjectEntityInterface {
+				$uuid = $options->uuid;
+				$key = (string)$options->target->schema;
 				$this->written[$key] ??= [];
 				if ($writesFail === true && ($object['name'] ?? '') === 'Afgehandeld') {
 					throw new RuntimeException('the store refused the write');

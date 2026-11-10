@@ -28,6 +28,8 @@ use Exception;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\EventDispatcher\GenericEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -133,9 +135,10 @@ class SamenwerkverzoekService {
 		// JsonSerializable), never an array — returning it straight out of a
 		// method declared `: array` is a TypeError.
 		$created = $objectService->saveObject(
-			register: $register,
-			schema: $requestSchema,
-			object: $samenwerkverzoek
+			object: $samenwerkverzoek,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $requestSchema)
+			)
 		)->jsonSerialize();
 
 		$event = new GenericEvent(
@@ -222,9 +225,10 @@ class SamenwerkverzoekService {
 		// See initiateSamenwerking() — saveObject() returns an entity, not an
 		// array.
 		$updated = $objectService->saveObject(
-			register: $register,
-			schema: $requestSchema,
-			object: $request
+			object: $request,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $requestSchema)
+			)
 		)->jsonSerialize();
 
 		$this->logger->info(

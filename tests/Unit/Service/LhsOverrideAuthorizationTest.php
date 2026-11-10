@@ -20,6 +20,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Vth\LhsDecisionTableLookup;
 use OCA\Dossiq\Service\Vth\LhsRecommendationService;
 use OCA\Dossiq\Service\Vth\LhsRecommendationStore;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -94,7 +95,7 @@ class LhsOverrideAuthorizationTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->saved = $object;
 
 				return $object;

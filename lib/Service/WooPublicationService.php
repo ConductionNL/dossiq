@@ -46,6 +46,8 @@ use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
 use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooDossierReturn;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -350,7 +352,13 @@ class WooPublicationService {
 			'publishedAt' => date('c'),
 		];
 
-		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
+		$objectService->saveObject(
+			object: $decision,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $decisionSchema),
+				uuid: $decisionId
+			)
+		);
 
 		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: $delivery['assessments']);
 		$this->caseLedger->writeCaseState(
@@ -510,7 +518,13 @@ class WooPublicationService {
 		// The set stays frozen and records the withdraw (REQ-WDS-002).
 		$this->caseLedger->markWithdrawn(caseId: (string)($decision['case'] ?? $caseId), publicationId: $publicationId);
 
-		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
+		$objectService->saveObject(
+			object: $decision,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $decisionSchema),
+				uuid: $decisionId
+			)
+		);
 
 		// A withdrawn publication withholds nothing any more: its list is cleared.
 		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: []);

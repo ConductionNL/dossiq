@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\OrganisationQuotaLimits;
 use OCA\Dossiq\Service\TenantQuotaService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Db\Organisation;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -79,7 +80,7 @@ interface TenantLookupObjectServiceStub {
 	 *
 	 * @return array<string, mixed> The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }
 
 /**
@@ -138,7 +139,9 @@ class TenantScopedLookupsTest extends TestCase {
 			}
 		);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['object' => $object, 'schema' => $schema, 'uuid' => $uuid];
 
 				return $object;

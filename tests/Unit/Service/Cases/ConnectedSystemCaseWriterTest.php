@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -394,7 +395,7 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 			 *
 			 * @return array The stored object.
 			 */
-			public function saveObject(array $object, ?string $register=null, ?string $schema=null, ?string $uuid=null, mixed ...$scope): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), mixed ...$scope): array {
 				$this->test->record(method: 'saveObject', scope: $scope);
 				$uuid = 'case-uuid-' . (count($this->test->cases) + 1);
 				$this->test->cases[$uuid] = ($object + ['id' => $uuid, 'identifier' => '2026-00' . (41 + count($this->test->cases) + 1)]);

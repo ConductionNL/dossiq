@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -83,7 +84,7 @@ class SettingsReadersObjectStore {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema): array {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 		$this->saved = $object;
 
 		return $object + ['id' => 'cn-new'];

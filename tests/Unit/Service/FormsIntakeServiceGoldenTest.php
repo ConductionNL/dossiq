@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\FormsIntakeService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -102,7 +103,9 @@ class FormsIntakeServiceGoldenTest extends TestCase {
 			 *
 			 * @return mixed The saved row.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = ''): mixed {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
 				$this->calls[] = ['saveObject', $object, $register, $schema];
 				if (($this->world['save'] ?? null) === 'throw') {
 					throw new RuntimeException('save failed');

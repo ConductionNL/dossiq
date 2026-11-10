@@ -33,6 +33,8 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Service\Publication\PublicationDateRule;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -130,7 +132,12 @@ class PublicationService {
 		$case['publications'] = $this->publicationsWith(case: $case, entry: $entry);
 		$case['publishedAt'] = $entry['publishedAt'];
 
-		$objectService->saveObject(object: $case, register: $entry['register'], schema: $entry['schema']);
+		$objectService->saveObject(
+			object: $case,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $entry['register'], schema: $entry['schema'])
+			)
+		);
 
 		return [
 			'caseId' => $caseId,

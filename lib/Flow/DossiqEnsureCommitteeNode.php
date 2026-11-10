@@ -19,6 +19,8 @@ namespace OCA\Dossiq\Flow;
 use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IL10N;
 use OCP\WorkflowEngine\IManager;
 use Psr\Log\LoggerInterface;
@@ -330,9 +332,10 @@ class DossiqEnsureCommitteeNode implements IFlowNode {
         try {
             $objectService->saveObject(
                 object: array_merge($committee, ['governanceBodyId' => $bodyId]),
-                register: $register,
-                schema: $schema,
-                uuid: $id,
+                options: new ObjectSaveOptions(
+                    target: new ObjectFindTarget(register: $register, schema: $schema),
+                    uuid: $id
+                ),
             );
         } catch (Throwable $e) {
             $this->logger->warning(

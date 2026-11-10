@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Bezwaar\BeroepService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -76,7 +77,10 @@ final class GoldenAppealObjects {
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): ?array {
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): ?array {
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$this->log[] = ['saveObject' => compact('object', 'register', 'schema', 'uuid')];
 		return $this->answer(key: 'save', fields: $object + ['id' => 'appeal-new']);
 	}//end saveObject()

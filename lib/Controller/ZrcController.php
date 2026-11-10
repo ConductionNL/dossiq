@@ -40,6 +40,8 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\OpenRegister\Exception\HookStoppedException;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -194,9 +196,10 @@ class ZrcController extends ZgwController {
 
 			$objectData = $this->objectToArray(
 				row: $this->zgwService->getObjectService()->saveObject(
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema'],
-					object: $englishData
+					object: $englishData,
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
+					)
 				)
 			);
 			$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
@@ -1825,9 +1828,10 @@ class ZrcController extends ZgwController {
 			}
 
 			$this->zgwService->getObjectService()->saveObject(
-				register: $oioConfig['sourceRegister'],
-				schema: $oioConfig['sourceSchema'],
-				object: $englishData
+				object: $englishData,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $oioConfig['sourceRegister'], schema: $oioConfig['sourceSchema'])
+				)
 			);
 
 			$this->zgwService->getLogger()->info(

@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -63,7 +64,7 @@ interface RouteSeamObjectServiceStub {
 
 	public function searchObjects(array $query): array;
 
-	public function saveObject(array $object, mixed $register = null, mixed $schema = null): mixed;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 }//end interface
 
 /**

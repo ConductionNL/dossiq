@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Dso\DsoObjectRepository;
 use OCA\Dossiq\Service\DsoCaseService;
 use OCA\Dossiq\Service\SamenwerkverzoekService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IRequest;
@@ -62,7 +63,7 @@ interface DsoControllerObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(string $register, string $schema, array $object): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }//end interface
 
 /**

@@ -40,6 +40,8 @@ namespace OCA\Dossiq\Service\Support;
 
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -168,9 +170,10 @@ class ConfiguredRegistryService {
 		}
 
 		$saved = $context['objectService']->saveObject(
-			register: $context['register'],
-			schema: $context['schema'],
-			object: $data
+			object: $data,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $context['register'], schema: $context['schema'])
+			)
 		);
 
 		return $this->toArray(value: $saved, fallback: $data);

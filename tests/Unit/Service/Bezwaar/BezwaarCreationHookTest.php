@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Unit\Service\FakeStoredObject;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -140,7 +141,8 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): FakeStoredObject {
+				$schema = $options->target->schema;
 				if ((string)$schema === '10') {
 					$this->savedCase = $object;
 				}
@@ -201,7 +203,8 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): FakeStoredObject {
+				$schema = $options->target->schema;
 				$this->savedSchemas[] = (string)$schema;
 				return new FakeStoredObject($object);
 			}//end saveObject()
@@ -253,7 +256,8 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): FakeStoredObject {
+				$schema = $options->target->schema;
 				if ((string)$schema === '10') {
 					$this->caseWrites++;
 				}
@@ -299,7 +303,7 @@ class BezwaarCreationHookTest extends TestCase {
 			 *
 			 * @return FakeStoredObject
 			 */
-			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): FakeStoredObject {
 				return new FakeStoredObject($object);
 			}//end saveObject()
 		};

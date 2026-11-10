@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Intake;
 use OCA\Dossiq\Service\Intake\SystemCaseStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -128,7 +129,7 @@ class SystemCaseStoreTest extends TestCase {
 	 */
 	public function testAFailedWriteIsLoggedAndAnswersNull(): void {
 		$broken = new class {
-			public function saveObject(array $object, int|string $register, int|string $schema, bool $_rbac, bool $_multitenancy): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac, bool $_multitenancy): array {
 				throw new RuntimeException('down');
 			}
 		};

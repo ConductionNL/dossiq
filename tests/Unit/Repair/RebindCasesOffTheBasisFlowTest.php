@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -133,7 +134,9 @@ class RebindCasesOffTheBasisFlowTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved row.
 			 */
-			public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->rows[(string)$schema][(string)$uuid] = ['id' => (string)$uuid] + $object;
 				$this->test->saves[] = [(string)$schema, (string)$uuid];
 

@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -68,7 +69,7 @@ interface StatusStoreObjectServiceStub {
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 
 	/**
 	 * Read one object.
@@ -493,7 +494,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	private function statusStore(string $actor, string $publicLabel = ''): CaseStatusStore {
 		$objectService = $this->createMock(StatusStoreObjectServiceStub::class);
 		$objectService->method('saveObject')->willReturnCallback(
-			static function (array $object, string $register, string $schema): array {
+			static function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				return array_merge($object, ['id' => 'record-1']);
 			}
 		);

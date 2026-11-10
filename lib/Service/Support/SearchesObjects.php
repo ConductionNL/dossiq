@@ -40,6 +40,8 @@
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUserSession;
 use RuntimeException;
 
@@ -250,9 +252,10 @@ trait SearchesObjects {
 	): ?array {
 		$saved = $objectService->saveObject(
 			object: $object,
-			register: $register,
-			schema: $schema,
-			uuid: $uuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema),
+				uuid: $uuid
+			)
 		);
 
 		if (is_array($saved) === true) {

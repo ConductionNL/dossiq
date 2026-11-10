@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\FormsIntakeService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -142,7 +143,8 @@ class FormsIntakeServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = ''): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = ($options->target->schema ?? '');
 				$this->writes[] = ['schema' => $schema, 'object' => $object];
 
 				return array_merge($object, ['id' => 'case-new']);

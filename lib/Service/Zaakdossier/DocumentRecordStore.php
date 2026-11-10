@@ -16,6 +16,8 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\KeepsLookupsInSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use RuntimeException;
 use Throwable;
 
@@ -101,10 +103,21 @@ class DocumentRecordStore {
 		$schema = $this->schema(key: 'dossier_informatieobject_schema');
 		$object = $this->withoutSelf(row: $record);
 		if ($uuid === '') {
-			return $this->resolveSavedUuid(saved: $objectService->saveObject(object: $object, register: $register, schema: $schema));
+			return $this->resolveSavedUuid(saved: $objectService->saveObject(
+				object: $object,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				)
+			));
 		}
 
-		$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		$saved = $objectService->saveObject(
+			object: $object,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema),
+				uuid: $uuid
+			)
+		);
 
 		return $this->resolveSavedUuid(saved: $saved);
 	}//end saveRecord()
@@ -180,8 +193,9 @@ class DocumentRecordStore {
 					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 				]
 			),
-			register: $register,
-			schema: $this->schema(key: 'dossier_zaakinformatieobject_schema'),
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'dossier_zaakinformatieobject_schema'))
+			),
 		);
 
 		return true;

@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -236,7 +237,9 @@ class CreateTaskHandlerTest extends TestCase {
 				$this->recorded = &$recorded;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->recorded = ['object' => $object, 'register' => $register, 'schema' => $schema];
 				return ['id' => 'task-uuid'];
 			}

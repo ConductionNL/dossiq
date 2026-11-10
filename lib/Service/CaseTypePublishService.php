@@ -44,6 +44,8 @@ use OCA\Dossiq\Service\CaseType\CaseTypeRuleProjector;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\CaseType\PublicationChecks;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -258,7 +260,12 @@ class CaseTypePublishService {
 		}
 
 		try {
-			$objectService->saveObject(object: $object, register: $register, schema: $schema);
+			$objectService->saveObject(
+				object: $object,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Case type publish: save failed',

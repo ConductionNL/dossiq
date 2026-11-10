@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\SamenwerkverzoekService;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -61,7 +62,7 @@ interface SamenwerkObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(string $register, string $schema, array $object, ?string $id = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), ?string $id = null): array;
 }//end interface
 
 /**

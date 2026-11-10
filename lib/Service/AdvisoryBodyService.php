@@ -29,6 +29,8 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -149,12 +151,15 @@ class AdvisoryBodyService {
 			throw new RuntimeException('Advisory body schema not configured');
 		}
 
-		$saveArgs = [$register, $schema, $data];
+		$uuid = null;
 		if ($id !== '') {
-			$saveArgs[] = $id;
+			$uuid = $id;
 		}
 
-		$result = $objectService->saveObject(...$saveArgs);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid)
+		);
 
 		$savedId = '';
 		if ($id !== '') {

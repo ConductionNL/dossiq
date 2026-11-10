@@ -37,6 +37,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeInterface;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
@@ -133,9 +135,10 @@ class TenantService {
 		try {
 			$objectService->saveObject(
 				object: $this->anchorFor(organisation: $organisation),
-				register: self::REGISTER,
-				schema: self::SCHEMA_TENANT,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA_TENANT),
+					uuid: $uuid
+				),
 				_rbac: false,
 				_multitenancy: false
 			);

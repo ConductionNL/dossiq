@@ -41,6 +41,8 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -402,7 +404,12 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 * @return string The new id, or '' when it could not be read back.
 	 */
 	private function saveCaseType(array $payload, string $register, string $schema): string {
-		$created = $this->settingsService->getObjectService()->saveObject($payload, [], $register, $schema);
+		$created = $this->settingsService->getObjectService()->saveObject(
+			$payload,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			)
+		);
 		if (is_object($created) === true && method_exists($created, 'jsonSerialize') === true) {
 			$created = $created->jsonSerialize();
 		}
@@ -457,7 +464,12 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 				$definition['enumValues'] = self::INTERIM_FREQUENCIES;
 			}
 
-			$objectService->saveObject($definition, [], $register, $propertySchema);
+			$objectService->saveObject(
+				$definition,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $propertySchema)
+				)
+			);
 		}
 	}
 }

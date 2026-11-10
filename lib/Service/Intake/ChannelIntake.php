@@ -61,6 +61,8 @@ use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -258,8 +260,9 @@ class ChannelIntake {
 				objectService: $objectService,
 				operation: fn (): mixed => $objectService->saveObject(
 					object: $object,
-					register: $register,
-					schema: $caseSchema,
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $register, schema: $caseSchema)
+					),
 				)
 			);
 		} catch (Throwable $e) {

@@ -27,6 +27,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -104,7 +106,12 @@ class HearingService {
 		// so the id the schema reserves is written with the hearing itself.
 		$data['calendarEventId'] = $this->calendarService->createEvent(data: $data);
 
-		$hearing = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		$hearing = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			)
+		);
 
 		$this->logger->info(
 			'Hearing scheduled for complaint ' . $complaintId . ' on ' . $data['date'],

@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DrcController;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -158,10 +159,9 @@ final class FakeOpenRegisterStore {
 	 */
 	public function saveObject(
 		array $object,
-		mixed $register = null,
-		mixed $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 	): array {
+		$uuid = $options->uuid;
 		$this->saves[] = ['uuid' => $uuid, 'object' => $object];
 
 		return $object;

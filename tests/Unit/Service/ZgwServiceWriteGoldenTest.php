@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -126,7 +127,10 @@ class ZgwServiceWriteGoldenTest extends TestCase {
 			 *
 			 * @return mixed The stored object.
 			 */
-			public function saveObject(mixed $register = null, mixed $schema = null, array $object = [], ?string $uuid = null): mixed {
+			public function saveObject(array $object = [], ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->trace->append(['save', $register, $schema, $object, $uuid]);
 				$answer = ($this->world['save'] ?? 'array');
 				if ($answer === 'throw') {

@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use RuntimeException;
@@ -141,7 +142,10 @@ class CaseSplitExecutorGoldenTest extends TestCase {
 			 *
 			 * @return mixed The stored row, or what the world answers.
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): mixed {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
 				$this->calls[] = ['save', ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]];
 				$key = $schema . '|' . ($uuid ?? 'new');
 				if (in_array($key, ($this->knobs['saveThrows'] ?? []), true) === true) {

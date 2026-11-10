@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -89,7 +90,7 @@ interface DossierObjectServiceStub {
 	 *
 	 * @return object
 	 */
-	public function saveObject(array $object, string $register, string $schema, string $uuid = ''): object;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): object;
 
 	/**
 	 * Delete an object.
@@ -326,7 +327,8 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$captured = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured) {
+				$schema = $options->target->schema;
 				$captured[$schema] = $object;
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
 			}
@@ -600,7 +602,8 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$captured = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured) {
+				$schema = $options->target->schema;
 				$captured[$schema] = $object;
 
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
@@ -702,7 +705,7 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$captured = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured) {
 				$captured = $object;
 
 				return $this->savedObject('inf-1');
@@ -734,7 +737,9 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$writes = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$writes) {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$writes) {
+				$schema = $options->target->schema;
+				$uuid = ($options->uuid ?? '');
 				$writes[] = ['schema' => $schema, 'uuid' => $uuid, 'object' => $object];
 
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
@@ -779,7 +784,8 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$schemas = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$schemas) {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$schemas) {
+				$schema = $options->target->schema;
 				$schemas[] = $schema;
 
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');

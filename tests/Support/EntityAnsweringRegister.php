@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 class EntityAnsweringRegister {
@@ -93,13 +94,14 @@ class EntityAnsweringRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
-		return $this->register->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		$register = ($options->target->register ?? '');
+		$schema = ($options->target->schema ?? '');
+		$uuid = $options->uuid;
+		return $this->register->saveObject(object: $object, options: $options);
 	}//end saveObject()
 
 	/**

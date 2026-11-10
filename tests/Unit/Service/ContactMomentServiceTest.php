@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -54,7 +55,7 @@ interface ContactMomentObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }//end interface
 
 /**
@@ -106,7 +107,7 @@ class ContactMomentServiceTest extends TestCase {
 
 		$objectService = $this->createMock(ContactMomentObjectServiceStub::class);
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->saved = $object;
 				return $object;
 			}

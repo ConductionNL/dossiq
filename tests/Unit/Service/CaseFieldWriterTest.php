@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseFieldWriter;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -54,7 +55,7 @@ class CaseFieldWriterTest extends TestCase {
 				return $data;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				throw new RuntimeException('saveObject must not be used while patchObject exists');
 			}
 		};
@@ -92,7 +93,7 @@ class CaseFieldWriterTest extends TestCase {
 				return $this->stored;
 			}
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->stored = $object;
 
 				return $object;
@@ -193,7 +194,7 @@ class CaseFieldWriterTest extends TestCase {
 	 */
 	public function testAServiceWithNoUsableSeamIsRefused(): void {
 		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				return $object;
 			}
 		};
@@ -220,7 +221,7 @@ class CaseFieldWriterTest extends TestCase {
 				return null;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				throw new RuntimeException('nothing may be saved when the read found nothing');
 			}
 		};

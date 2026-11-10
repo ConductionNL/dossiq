@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\PublicationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
 use OCA\Integriq\Event\DeliveryRequestedEvent;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -131,7 +132,9 @@ class PublicationServiceGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function saveObject(array $object, mixed $register, mixed $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['saveObject', $object, $register, $schema];
 				return $object;
 			}

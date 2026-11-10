@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -284,7 +285,7 @@ class CreatesIgnoreCallerIdentityTest extends TestCase {
 		$apps->method('getInstalledApps')->willReturn(['openregister']);
 		$objects = $this->createMock(ObjectServiceInterface::class);
 		$objects->method('saveObject')->willReturnCallback(
-			fn (array $object, mixed ...$rest): ObjectEntity => $this->store->saveObject($object, uuid: ($rest[3] ?? null))
+			fn (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): ObjectEntity => $this->store->saveObject($object, uuid: $options->uuid)
 		);
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($objects);

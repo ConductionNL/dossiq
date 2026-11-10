@@ -42,6 +42,8 @@ use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -356,8 +358,12 @@ class ReportGroupingConsumer {
 
 		$objectService->saveObject(
 			object: $case,
-			register: $this->settingsService->getConfigValue(key: 'register'),
-			schema: $this->settingsService->getConfigValue(key: 'case_schema')
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+					register: $this->settingsService->getConfigValue(key: 'register'),
+					schema: $this->settingsService->getConfigValue(key: 'case_schema')
+				)
+			)
 		);
 	}//end saveCase()
 

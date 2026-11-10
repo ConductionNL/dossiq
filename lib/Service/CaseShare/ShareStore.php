@@ -24,6 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseShare;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+
 /**
  * One OpenRegister object service bound to the configured share register and schema.
  *
@@ -86,6 +89,11 @@ final class ShareStore {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md
 	 */
 	public function save(array $share): mixed {
-		return $this->objectService->saveObject(object: $share, register: (int)$this->register, schema: (int)$this->schema);
+		return $this->objectService->saveObject(
+			object: $share,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: (int)$this->register, schema: (int)$this->schema)
+			)
+		);
 	}//end save()
 }//end class

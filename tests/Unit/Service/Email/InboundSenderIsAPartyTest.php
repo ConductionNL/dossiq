@@ -20,6 +20,7 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -57,7 +58,7 @@ class InboundSenderIsAPartyTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->saves[] = $object;
 				return ['id' => 'archival-' . count($this->saves)] + $object;
 			}

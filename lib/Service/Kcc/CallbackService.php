@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service\Kcc;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
 
@@ -126,7 +128,12 @@ class CallbackService {
 		$payload = $this->buildPayload(data: $data, agentId: $agentId);
 
 		[$objectService, $register, $schema] = $this->resolve();
-		$saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
+		$saved = $objectService->saveObject(
+			object: $payload,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			)
+		);
 
 		$this->logger->info('Dossiq KCC: callback scheduled', ['agent' => $agentId]);
 
@@ -202,7 +209,13 @@ class CallbackService {
 		$existing['status'] = 'cancelled';
 		$existing['nextAttemptAt'] = null;
 
-		$saved = $objectService->saveObject(object: $existing, register: $register, schema: $schema, uuid: (string)$id);
+		$saved = $objectService->saveObject(
+			object: $existing,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema),
+				uuid: (string)$id
+			)
+		);
 		return $this->toArray(value: $saved);
 	}//end cancel()
 
@@ -245,7 +258,13 @@ class CallbackService {
 	 */
 	public function persist(string $id, array $callback): array {
 		[$objectService, $register, $schema] = $this->resolve();
-		$saved = $objectService->saveObject(object: $callback, register: $register, schema: $schema, uuid: (string)$id);
+		$saved = $objectService->saveObject(
+			object: $callback,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema),
+				uuid: (string)$id
+			)
+		);
 		return $this->toArray(value: $saved);
 	}//end persist()
 

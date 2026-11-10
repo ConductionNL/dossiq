@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\AdvisoryBodyService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -69,14 +70,12 @@ interface AdvisoryObjectServiceStub {
 	/**
 	 * Save or update an object.
 	 *
-	 * @param string $register The register slug.
-	 * @param string $schema The schema slug.
-	 * @param array $data The object payload.
-	 * @param string $id Optional id for update.
+	 * @param array             $object  The object payload.
+	 * @param ObjectSaveOptions $options Where it goes and, for an update, its uuid.
 	 *
 	 * @return object
 	 */
-	public function saveObject(string $register, string $schema, array $data, string $id = ''): object;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): object;
 
 	/**
 	 * Delete an object by id.

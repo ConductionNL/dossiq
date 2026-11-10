@@ -33,6 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -96,9 +98,10 @@ class BesluitMaterialisationService {
 		try {
 			$saved = $objectService->saveObject(
 				object: $decision,
-				register: $register,
-				schema: $schema,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema),
+					uuid: $uuid
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

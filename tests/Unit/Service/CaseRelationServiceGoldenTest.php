@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\Relation\CaseRelationLabels;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 use OCA\Dossiq\Service\Relation\SubjectLinkRule;
 use OCA\Dossiq\Service\Notice\CaseActNotices;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IL10N;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
@@ -128,7 +129,9 @@ class CaseRelationServiceGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The case.
 			 */
-			public function saveObject(array $object, $register = null, $schema = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['save', $object, $register, $schema];
 				$id = (string)($object['id'] ?? '');
 				if (in_array($id, ($this->knobs['saveThrows'] ?? []), true) === true) {

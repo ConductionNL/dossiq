@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 
 use OCA\Dossiq\Service\People\CaseRoleHolder;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -81,7 +82,8 @@ class CaseRoleHolderTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid=null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
 				$this->test->saved[] = [$schema, $object];
 				return $object + ['id' => 'role-new'];
 			}

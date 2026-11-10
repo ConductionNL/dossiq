@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Review;
 
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -80,7 +81,8 @@ class DocumentRelevanceTest extends TestCase {
 				return $this->rows;
 			}
 
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$uuid = $options->uuid;
 				$this->saved[] = ['uuid' => $uuid, 'object' => $object];
 				return ($object + ['id' => ($uuid ?? 'new-1')]);
 			}

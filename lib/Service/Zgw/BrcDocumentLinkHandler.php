@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -191,9 +193,10 @@ class BrcDocumentLinkHandler {
 			}
 
 			$object = $objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $englishData
+				object: $englishData,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
+				)
 			);
 			$objectData = $this->objectToArray(row: $object);
 

@@ -20,6 +20,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 use OCA\Dossiq\Service\Zgw\ZrcUsageRights;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -71,7 +72,7 @@ class ZrcUsageRightsTest extends TestCase {
 				return ['results' => array_values(array_filter($this->test->rowsOf($query['schema']), static fn (array $r): bool => ($r[$key] ?? null) === $value))];
 			}
 
-			public function saveObject(mixed $register=null, mixed $schema=null, array $object=[], ?string $uuid=null): array {
+			public function saveObject(array $object=[], ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->test->record($object);
 				return $object;
 			}

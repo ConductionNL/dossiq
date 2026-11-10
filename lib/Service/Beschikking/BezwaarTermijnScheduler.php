@@ -40,6 +40,8 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -138,8 +140,6 @@ class BezwaarTermijnScheduler {
 
 		try {
 			$objectService->saveObject(
-				register: $register,
-				schema: $schema,
 				object: [
 					'decisionId' => $decisionId,
 					'announcementDate' => $bekendmaking,
@@ -149,6 +149,9 @@ class BezwaarTermijnScheduler {
 					'archiveTriggerActive' => true,
 					'archiveDate' => $archiveDate,
 				],
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				),
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(

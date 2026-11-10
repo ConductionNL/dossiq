@@ -24,6 +24,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooDecisionNotice;
 use OCA\Dossiq\Woo\WooDossierReturn;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -96,12 +97,15 @@ class WooDossierReturnTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
 				if ((string)$schema === 'collection' && ($_rbac === true || $_multitenancy === true)) {
 					throw new \RuntimeException('not permitted');
 				}
 
-				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				return parent::saveObject(object: $object, options: $options);
 			}
 		};
 		$this->store->seed(

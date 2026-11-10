@@ -36,6 +36,8 @@ use OCA\Dossiq\Listener\Support\ConcludedDelivery;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -200,8 +202,9 @@ class DeliveryConcludedListener implements IEventListener {
 		$case['publications'] = $applied;
 		$objectService->saveObject(
 			object: $case,
-			register: $register,
-			schema: $schema,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			),
 		);
 	}//end projectOntoCase()
 

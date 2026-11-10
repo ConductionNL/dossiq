@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -127,7 +128,9 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved row.
 			 */
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['schema' => $schema, 'object' => $object];
 				$uuid = ($uuid ?? ('new-' . count($this->saves)));
 				unset($object['@self'], $object['id']);

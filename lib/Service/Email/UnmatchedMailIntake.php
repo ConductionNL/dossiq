@@ -41,6 +41,8 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -208,8 +210,9 @@ class UnmatchedMailIntake {
 		try {
 			$created = $store['objectService']->saveObject(
 				object: $payload,
-				register: $store['register'],
-				schema: $store['schema'],
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $store['register'], schema: $store['schema'])
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

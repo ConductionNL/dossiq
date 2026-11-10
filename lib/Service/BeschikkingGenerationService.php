@@ -35,6 +35,8 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Support\FleetAppId;
 use OCA\Dossiq\Support\NormalisesObjectRows;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -400,9 +402,10 @@ class BeschikkingGenerationService {
 			);
 
 			$bijlage = $objectService->saveObject(
-				register: $register,
-				schema: 'beschikking_bijlage',
-				object: $object
+				object: $object,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: 'beschikking_bijlage')
+				)
 			);
 
 			return $this->savedId(saved: $bijlage, fallback: $fallback);

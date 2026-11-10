@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Service\Bezwaar\CommitteeDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -244,9 +246,10 @@ class MigrateCommitteesToDecidiq implements IRepairStep {
 		try {
 			$objectService->saveObject(
 				object: array_merge($committee, ['governanceBodyId' => $bodyId]),
-				register: $register,
-				schema: $schema,
-				uuid: $id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema),
+					uuid: $id
+				),
 			);
 		} catch (Throwable $e) {
 			// The body exists; only the local note failed. Counted as failed so

@@ -68,8 +68,26 @@
                         "activiteit": "bouwen",
                         "besluitdatum": "2026-02-03"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -150,8 +168,26 @@
                         "status": "verleend",
                         "activiteit": "bouwen"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -234,8 +270,26 @@
                         "status": "verleend",
                         "activiteit": "bouwen"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -319,8 +373,26 @@
                         "activiteit": "bouwen",
                         "besluitdatum": "2026-02-03"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -406,8 +478,26 @@
                         "activiteit": "bouwen",
                         "besluitdatum": "2026-02-03"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -493,8 +583,26 @@
                         "activiteit": "bouwen",
                         "besluitdatum": "2026-02-03"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -580,8 +688,26 @@
                         "activiteit": "bouwen",
                         "besluitdatum": "2026-02-03"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -866,8 +992,26 @@
                         "activiteit": "bouwen",
                         "besluitdatum": "2026-02-03"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -1094,8 +1238,26 @@
                         "activiteit": "bouwen",
                         "besluitdatum": "2026-02-03"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -1181,8 +1343,26 @@
                         "activiteit": "bouwen",
                         "besluitdatum": "2026-02-03"
                     },
-                    "register": "dso",
-                    "schema": "aanvraag"
+                    "options": {
+                        "target": {
+                            "register": "dso",
+                            "schema": "aanvraag"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ],
             [
@@ -1255,8 +1435,26 @@
                         "title": "Aanvraag",
                         "deadlineDate": "2026-03-02"
                     },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ]
         ],
@@ -1345,8 +1543,26 @@
                         "title": "Aanvraag",
                         "deadlineDate": "2026-03-02"
                     },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ]
         ],
@@ -1500,8 +1716,26 @@
                         "startDate": "2026-03-02",
                         "deadlineDate": "2026-09-08"
                     },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ]
         ],
@@ -1613,8 +1847,26 @@
                         "title": "Aanvraag",
                         "deadlineDate": "2026-03-02"
                     },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ]
         ],
@@ -1684,8 +1936,26 @@
                         "title": "Aanvraag",
                         "deadlineDate": "2026-03-02"
                     },
-                    "register": "dossiq",
-                    "schema": "case"
+                    "options": {
+                        "target": {
+                            "register": "dossiq",
+                            "schema": "case"
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    }
                 }
             ]
         ],

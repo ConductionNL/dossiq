@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\PublicationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Integriq\Event\DeliveryRequestedEvent;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -56,7 +57,7 @@ interface PublicationObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function saveObject(array $object, string $register, string $schema): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }//end interface
 
 /**

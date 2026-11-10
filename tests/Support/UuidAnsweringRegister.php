@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+
 /**
  * Delegates to InMemoryRegister; a save on the named schemas answers an entity with a uuid.
  */
@@ -102,20 +104,21 @@ class UuidAnsweringRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): mixed {
+		$register = ($options->target->register ?? '');
+		$schema = ($options->target->schema ?? '');
+		$uuid = $options->uuid;
 		if (in_array((string)$schema, $this->schemas, true) === false) {
-			return $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+			return $this->store->saveObject(object: $object, options: $options);
 		}
 
 		// A create on these schemas mints a uuid, as OpenRegister does, so a
 		// caller that writes the answered id into a uuid-typed property fits.
 		$uuid ??= sprintf('00000000-0000-4000-8000-%012d', ++$this->minted);
-		$row = $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+		$row = $this->store->saveObject(object: $object, options: new ObjectSaveOptions(target: $options->target, uuid: $uuid));
 
 		return new class((string)$row['id']) {
 			/**

@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -161,14 +162,15 @@ class CaseSplitStatusTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
 				if ($schema !== 'case') {
-					return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac);
+					return parent::saveObject(object: $object, options: $options, _rbac: $_rbac);
 				}
 
 				$this->rbac[] = $_rbac;
@@ -194,7 +196,15 @@ class CaseSplitStatusTest extends TestCase {
 					$object['status'] = $initial;
 				}
 
-				$saved = parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac);
+				$options = new ObjectSaveOptions(
+					target: $options->target,
+					uuid: $uuid,
+					extend: $options->extend,
+					uploadedFiles: $options->uploadedFiles,
+					policy: $options->policy,
+					actor: $options->actor
+				);
+				$saved = parent::saveObject(object: $object, options: $options, _rbac: $_rbac);
 				$this->states[(string)$saved['id']][] = (string)($saved['status'] ?? '');
 
 				return $saved;

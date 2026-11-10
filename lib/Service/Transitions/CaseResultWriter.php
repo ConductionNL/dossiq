@@ -35,6 +35,8 @@ use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use RuntimeException;
 
 /**
@@ -257,8 +259,9 @@ class CaseResultWriter {
 		return $this->toArray(
 			value: $context['objectService']->saveObject(
 				object: $payload,
-				register: $context['register'],
-				schema: $context['schema'],
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $context['register'], schema: $context['schema'])
+				)
 			),
 		);
 	}//end writeResult()

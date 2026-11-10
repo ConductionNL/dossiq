@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Custody\CaseCustodyChain;
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\Transfer\InternalHandover;
 use OCA\Dossiq\Service\Transfer\TransferShareBroker;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -92,7 +93,8 @@ final class CtfFakeObjectService {
 	 *
 	 * @return CtfFakeTransferObject
 	 */
-	public function saveObject(array $object, int $register, int $schema, ?string $uuid = null) {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()) {
+		$uuid = $options->uuid;
 		$id = $object['id'] ?? $uuid ?? ('transfer-' . $this->autoId++);
 		$object['id'] = $id;
 		$this->store[(string)$id] = $object;

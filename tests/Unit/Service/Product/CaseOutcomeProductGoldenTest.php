@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Product;
 use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -255,7 +256,10 @@ class CaseOutcomeProductGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
 				$this->log(call: 'save', args: ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]);
 				$id = ($uuid ?? 'new-' . count($this->world[$schema] ?? []));
 				$this->world[$schema][$id] = array_merge($object, ['id' => $id]);

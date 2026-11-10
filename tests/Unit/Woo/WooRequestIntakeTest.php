@@ -27,6 +27,7 @@ use OCA\Dossiq\Woo\WooRequestRefused;
 use OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob;
 use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\IURLGenerator;
@@ -243,17 +244,18 @@ class WooRequestIntakeTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
 				if ($_rbac === true || $_multitenancy === true) {
 					throw new RuntimeException("User 'Anonymous' does not have permission to 'create' objects");
 				}
 
-				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				return parent::saveObject(object: $object, options: $options);
 			}
 		};
 		$store->rows = $seeded->rows;
@@ -487,13 +489,14 @@ class WooRequestIntakeTest extends TestCase {
 		$stamping = new class extends InMemoryRegister {
 			public function saveObject(
 				array $object,
-				int|string $register = '',
-				int|string $schema = '',
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
-				$saved = parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				$register = ($options->target->register ?? '');
+				$schema = ($options->target->schema ?? '');
+				$uuid = $options->uuid;
+				$saved = parent::saveObject(object: $object, options: $options);
 				if ((string)$schema !== 'case') {
 					return $saved;
 				}

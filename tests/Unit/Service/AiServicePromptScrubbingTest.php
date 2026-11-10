@@ -56,6 +56,7 @@ use OCA\Dossiq\Service\Ai\AiModelIdentity;
 use OCA\Dossiq\Service\Ai\AiPiiRedactor;
 use OCA\Dossiq\Service\Ai\AiPromptFactory;
 use OCA\Dossiq\Service\AiService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -81,7 +82,7 @@ interface ScrubbingSaveObjectStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(string $register, string $schema, array $object): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 }//end interface
 
 /**
@@ -274,7 +275,7 @@ class AiServicePromptScrubbingTest extends TestCase {
 		$recorded = null;
 		$this->objectService->method('saveObject')
 			->willReturnCallback(
-				static function (string $register, string $schema, array $object) use (&$recorded): mixed {
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$recorded): mixed {
 					$recorded = $object;
 					return null;
 				}

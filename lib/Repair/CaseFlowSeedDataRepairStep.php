@@ -44,6 +44,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -317,8 +319,9 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 		if ($existing === null) {
 			$created = $objectService->saveObject(
 				object: $caseType,
-				register: $schemas['register'],
-				schema: $schemas['caseType']
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $schemas['register'], schema: $schemas['caseType'])
+				)
 			);
 			$caseTypeId = $this->idOf(value: $created);
 			$counts['caseTypes']++;
@@ -395,8 +398,9 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			$status['caseType'] = $caseTypeId;
 			$saved = $objectService->saveObject(
 				object: $status,
-				register: $schemas['register'],
-				schema: $schemas['statusType']
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $schemas['register'], schema: $schemas['statusType'])
+				)
 			);
 
 			if ($this->idOf(value: $saved) !== '') {
@@ -498,8 +502,9 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			try {
 				$objectService->saveObject(
 					object: $case,
-					register: $schemas['register'],
-					schema: $schemas['case']
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $schemas['register'], schema: $schemas['case'])
+					)
 				);
 				$created++;
 			} catch (Throwable $e) {

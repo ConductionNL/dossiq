@@ -32,6 +32,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -277,9 +279,10 @@ class DrcController extends ZgwController {
 			$bestandsomvang = (int)($body['bestandsomvang'] ?? 0);
 
 			$object = $this->zgwService->getObjectService()->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $englishData
+				object: $englishData,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
+				)
 			);
 			$objectData = $this->objectToArray(row: $object);
 
@@ -454,9 +457,10 @@ class DrcController extends ZgwController {
 			// informatieobject schema requires (#1960).
 			$objectData['uuid'] = $objectUuid;
 			$this->zgwService->getObjectService()->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $objectData
+				object: $objectData,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema'])
+				)
 			);
 		}
 
@@ -937,10 +941,11 @@ class DrcController extends ZgwController {
 			$existingData['lockId'] = $lockId;
 
 			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
 				object: $existingData,
-				uuid: $uuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']),
+					uuid: $uuid
+				)
 			);
 
 			return new JSONResponse(data: ['lock' => $lockId], statusCode: Http::STATUS_OK);
@@ -1102,10 +1107,11 @@ class DrcController extends ZgwController {
 			}
 
 			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
 				object: $existingData,
-				uuid: $uuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']),
+					uuid: $uuid
+				)
 			);
 
 			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
@@ -1505,10 +1511,11 @@ class DrcController extends ZgwController {
 
 						unset($eioData['@self'], $eioData['id'], $eioData['organisation']);
 						$objectService->saveObject(
-							register: $eioConfig['sourceRegister'],
-							schema: $eioConfig['sourceSchema'],
 							object: $eioData,
-							uuid: $eioUuid
+							options: new ObjectSaveOptions(
+								target: new ObjectFindTarget(register: $eioConfig['sourceRegister'], schema: $eioConfig['sourceSchema']),
+								uuid: $eioUuid
+							)
 						);
 					} catch (\Throwable $e) {
 						$this->zgwService->getLogger()->warning(
@@ -1560,10 +1567,11 @@ class DrcController extends ZgwController {
 
 			unset($eioData['@self'], $eioData['id'], $eioData['organisation']);
 			$objectService->saveObject(
-				register: $eioConfig['sourceRegister'],
-				schema: $eioConfig['sourceSchema'],
 				object: $eioData,
-				uuid: $ioMatches[1]
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $eioConfig['sourceRegister'], schema: $eioConfig['sourceSchema']),
+					uuid: $ioMatches[1]
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(
@@ -1715,10 +1723,11 @@ class DrcController extends ZgwController {
 		}
 
 		$this->zgwService->getObjectService()->saveObject(
-			register: $mappingConfig['sourceRegister'],
-			schema: $mappingConfig['sourceSchema'],
 			object: $objectData,
-			uuid: $uuid
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']),
+				uuid: $uuid
+			)
 		);
 
 		return $mergedSize;
@@ -2021,10 +2030,11 @@ class DrcController extends ZgwController {
 
 		return $this->objectToArray(
 			row: $objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
 				object: $englishData,
-				uuid: $uuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']),
+					uuid: $uuid
+				)
 			)
 		);
 	}//end saveEioKeepingItsLock()
@@ -2239,10 +2249,11 @@ class DrcController extends ZgwController {
 			$existingData['lockId'] = $lockId;
 
 			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
 				object: $existingData,
-				uuid: $uuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']),
+					uuid: $uuid
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(
@@ -2278,10 +2289,11 @@ class DrcController extends ZgwController {
 			$existingData['lockId'] = '';
 
 			$objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
 				object: $existingData,
-				uuid: $uuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $mappingConfig['sourceRegister'], schema: $mappingConfig['sourceSchema']),
+					uuid: $uuid
+				)
 			);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(

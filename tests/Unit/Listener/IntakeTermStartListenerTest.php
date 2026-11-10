@@ -55,6 +55,7 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -595,7 +596,7 @@ class IntakeTermStartListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The payload.
 			 */
-			public function saveObject(array $object, string $register, string $schema, string $uuid): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->saves->append(['WHOLE_OBJECT_SAVE' => $object]);
 				return $object;
 			}//end saveObject()

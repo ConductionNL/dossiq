@@ -28,6 +28,7 @@ use OCA\Dossiq\Listener\DeliveryConcludedListener;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Integriq\Event\DeliveryConcludedEvent;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -55,7 +56,7 @@ interface DeliveryObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function saveObject(array $object, string $register, string $schema): array;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array;
 }//end interface
 
 /**

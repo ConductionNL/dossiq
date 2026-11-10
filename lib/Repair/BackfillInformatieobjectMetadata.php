@@ -36,6 +36,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -251,7 +253,12 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			],
 		];
 
-		$saved = $objectService->saveObject(object: $informatieobject, register: $register, schema: $schema);
+		$saved = $objectService->saveObject(
+			object: $informatieobject,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			)
+		);
 		$infoId = '';
 		if (is_object($saved) === true) {
 			$infoId = $saved->getUuid();
@@ -266,8 +273,9 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 					'natureRelationshipDisplay' => 'Hoort at omgekeerd',
 					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 				],
-				register: $register,
-				schema: $joinSchema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $joinSchema)
+				),
 			);
 		}
 	}//end backfillFile()

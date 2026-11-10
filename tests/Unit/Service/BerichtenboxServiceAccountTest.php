@@ -37,6 +37,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -223,10 +225,8 @@ class BerichtenboxServiceAccountTest extends TestCase {
 			static fn (array $config = []): array => $register->findAll(config: $config)
 		);
 		$service->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], string|int|null $registerId = null, string|int|null $schema = null, ?string $uuid = null) use ($register): object {
-				// The mock hands the arguments on by position, in the
-				// contract's order: extend, register, schema, uuid.
-				$stored = $register->saveObject(object: $object, register: $registerId, schema: $schema, uuid: $uuid);
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use ($register): object {
+				$stored = $register->saveObject(object: $object, options: $options);
 				$entity = $this->createMock('OCA\\OpenRegister\\Contract\\ObjectEntityInterface');
 				$entity->method('jsonSerialize')->willReturn($stored);
 

@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\AdviceService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -49,7 +50,7 @@ interface AdviceGoldenSaveStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(mixed $object = null, mixed $register = null, mixed $schema = null, ?string $uuid = null): mixed;
+	public function saveObject(mixed $object = null,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 }//end interface
 
 /**
@@ -126,7 +127,10 @@ class AdviceServiceRequestGoldenTest extends TestCase {
 	private function service(mixed $saved, bool $refuses): AdviceService {
 		$objects = $this->createMock(originalClassName: AdviceGoldenSaveStub::class);
 		$objects->method('saveObject')->willReturnCallback(
-			function (mixed $object = null, mixed $register = null, mixed $schema = null, ?string $uuid = null) use ($saved): mixed {
+			function (mixed $object = null,ObjectSaveOptions $options = new ObjectSaveOptions()) use ($saved): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->log[] = ['saveObject' => ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]];
 				return $saved;
 			}

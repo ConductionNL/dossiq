@@ -32,6 +32,8 @@ use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -142,9 +144,10 @@ class PaymentScheduleRaiser {
 			$decision['paymentSchedule'] = $schedule;
 			$objectService->saveObject(
 				object: $decision,
-				register: Application::REGISTER_SLUG,
-				schema: self::DECISION_SCHEMA,
-				uuid: (string)($decision['id'] ?? $decision['uuid'] ?? '')
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: Application::REGISTER_SLUG, schema: self::DECISION_SCHEMA),
+					uuid: (string)($decision['id'] ?? $decision['uuid'] ?? '')
+				)
 			);
 		}
 

@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -93,7 +95,7 @@ class PartialSaveGuardTest extends TestCase {
 		<?php
 		class Sample {
 			public function literal($os) {
-				$os->saveObject(object: ['status' => 'x'], register: 'r', schema: 's', uuid: 'u');
+				$os->saveObject(object: ['status' => 'x'], options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'r', schema: 's'), uuid: 'u'));
 			}
 			public function built($os) {
 				$patch = ['status' => 'x'];
@@ -108,10 +110,10 @@ class PartialSaveGuardTest extends TestCase {
 			}
 			public function whole($os, array $stored) {
 				$merged = array_merge($stored, ['status' => 'x']);
-				$os->saveObject(object: $merged, register: 'r', schema: 's', uuid: 'u');
+				$os->saveObject(object: $merged, options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'r', schema: 's'), uuid: 'u'));
 			}
 			public function create($os) {
-				$os->saveObject(object: ['status' => 'x'], register: 'r', schema: 's');
+				$os->saveObject(object: ['status' => 'x'], options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'r', schema: 's')));
 			}
 		}
 		PHP;

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Fixtures;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
 
@@ -96,10 +97,9 @@ class ReplacingObjectService {
 	 */
 	public function saveObject(
 		array $object,
-		string|int|null $register = null,
-		string|int|null $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 	): object {
+		$uuid = $options->uuid;
 		$this->saves[] = $object;
 
 		$self = (array)($object['@self'] ?? []);

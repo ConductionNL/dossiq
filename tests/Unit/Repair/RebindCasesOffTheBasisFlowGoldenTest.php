@@ -26,6 +26,7 @@ use OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -254,7 +255,10 @@ class RebindCasesOffTheBasisFlowGoldenTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved row.
 			 */
-			public function saveObject(array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->log[] = ['save' => ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid]];
 				if (in_array('save:' . $uuid, $this->fails, true) === true) {
 					throw new RuntimeException('save ' . $uuid . ' failed');

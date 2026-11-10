@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\SociaalDomein;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+
 /**
  * A store of rows, keyed by schema slug then by uuid.
  */
@@ -161,7 +163,9 @@ class FakeSociaalDomeinObjects {
 	 *
 	 * @return array<string, mixed> The stored object.
 	 */
-	public function saveObject(array $object, $register = null, $schema = null, ?string $uuid = null): array {
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		if ($this->broken === true) {
 			throw new \RuntimeException('the store is unreachable');
 		}

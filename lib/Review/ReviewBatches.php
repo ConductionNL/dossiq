@@ -29,6 +29,8 @@ use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IL10N;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
@@ -469,9 +471,13 @@ class ReviewBatches {
 		try {
 			$saved = $this->settingsService->getObjectService()->saveObject(
 				object: $batch,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(
+						register: $this->settingsService->getConfigValue('register'),
+						schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY)
+					),
+					uuid: $uuid
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

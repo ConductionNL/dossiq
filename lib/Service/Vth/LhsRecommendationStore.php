@@ -17,6 +17,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Vth;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -133,9 +135,10 @@ class LhsRecommendationStore {
 			}
 
 			$saved = $objectService->saveObject(
-				register: $register,
-				schema: $schema,
 				object: $row,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

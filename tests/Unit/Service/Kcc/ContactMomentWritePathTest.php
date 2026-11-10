@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 use OCA\Dossiq\Service\Kcc\ContactMomentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -70,7 +71,10 @@ class ContactMomentWritePathTest extends TestCase {
 			public array $store = [];
 			public bool $findThrows = false;
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid];
 				return $object + ['id' => $uuid ?? 'new-1'];
 			}

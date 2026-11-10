@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Deelzaak;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -200,7 +201,9 @@ class SubCaseDeriverGoldenTest extends TestCase {
 			 *
 			 * @return mixed The saved object.
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null): mixed {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->test->calls[] = [
 					'saveObject',
 					['object' => SubCaseDeriverGoldenTest::shown(value: $object), 'register' => $register, 'schema' => $schema],

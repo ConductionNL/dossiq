@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Vth;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -117,7 +118,9 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->written[] = $object + ['@target' => $register . '/' . $schema];
 
 				return $object;

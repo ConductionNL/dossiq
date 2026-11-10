@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwMappingService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -39,7 +40,7 @@ final class ZrcWriteStore {
 	/** @var array<int, array<string, mixed>> */
 	public array $saved = [];
 
-	public function saveObject(mixed $register=null, mixed $schema=null, array $object=[], ?string $uuid=null): array {
+	public function saveObject(array $object=[], ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 		$object['id'] = 'new-' . (count($this->saved) + 1);
 		$this->saved[] = $object;
 		return $object;

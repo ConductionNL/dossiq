@@ -31,6 +31,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -497,7 +499,12 @@ class DsoCaseService {
 				$request['besluitdatum'] = $change['besluitdatum'];
 			}
 
-			$objectService->saveObject(register: 'dso', schema: $requestSchema, object: $request);
+			$objectService->saveObject(
+				object: $request,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: 'dso', schema: $requestSchema)
+				)
+			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq DsoCaseService: could not sync vergunningaanvraag status: ' . $e->getMessage(),

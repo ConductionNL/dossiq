@@ -27,6 +27,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Intake\CaseIntakeFiling;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -84,7 +85,9 @@ class CaseIntakeFilingTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				return $this->test->recordSave(object: $object, register: $register, schema: $schema);
 			}//end saveObject()
 		};

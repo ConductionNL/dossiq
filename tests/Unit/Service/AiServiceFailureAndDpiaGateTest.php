@@ -49,6 +49,7 @@ use OCA\Dossiq\Service\Ai\AiModelIdentity;
 use OCA\Dossiq\Service\Ai\AiPiiRedactor;
 use OCA\Dossiq\Service\Ai\AiPromptFactory;
 use OCA\Dossiq\Service\AiService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -69,7 +70,7 @@ interface FailureAuditSaveObjectStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(string $register, string $schema, array $object): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 }//end interface
 
 /**
@@ -146,7 +147,7 @@ class AiServiceFailureAndDpiaGateTest extends TestCase {
 		$objectService = $this->createMock(FailureAuditSaveObjectStub::class);
 		$objectService->method('saveObject')
 			->willReturnCallback(
-				function (string $register, string $schema, array $object): mixed {
+				function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
 					$this->recorded[] = $object;
 					return null;
 				}

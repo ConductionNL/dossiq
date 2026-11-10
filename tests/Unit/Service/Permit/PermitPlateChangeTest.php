@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\Permit\PermitChangeRefused;
 use OCA\Dossiq\Service\Permit\PermitPlateChange;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 
@@ -93,7 +94,8 @@ class PermitPlateChangeTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored object.
 			 */
-			public function saveObject(array $object, string $register = '', string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = ($options->target->schema ?? '');
 				$this->saved[] = ['schema' => $schema, 'object' => $object];
 				return array_merge($object, ['id' => 'case-new', 'identifier' => '2026-0042']);
 			}

@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
@@ -521,7 +522,8 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = ($options->target->schema ?? '');
 				return $this->test->write(schema: (string)$schema, object: $object);
 			}
 

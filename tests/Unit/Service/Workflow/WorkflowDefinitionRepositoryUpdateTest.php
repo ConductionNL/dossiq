@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Workflow;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -102,10 +103,9 @@ class WorkflowDefinitionRepositoryUpdateTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?string $register = null,
-				?string $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 			): array {
+				$uuid = $options->uuid;
 				$this->written[] = $object;
 
 				return array_merge($object, ['id' => ($uuid ?? 'created')]);

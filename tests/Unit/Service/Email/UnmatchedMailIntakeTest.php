@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Email;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Email\UnmatchedMailIntake;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -105,7 +106,8 @@ class UnmatchedMailIntakeTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
 				if ($this->saveFails === true) {
 					throw new RuntimeException('unwritable');
 				}

@@ -29,6 +29,8 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Term\TermResolution;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -190,7 +192,12 @@ class ComplaintService {
 		);
 		$data['afhandelDeadline'] = $this->addCalendarWeeks(startDate: $receiptDate, weeks: self::AWB_RESOLUTION_WEEKS);
 
-		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		$complaint = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema)
+			)
+		);
 
 		$saved = $complaint;
 		if (is_array($complaint) === false) {
@@ -291,7 +298,13 @@ class ComplaintService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('complaint_schema');
 
-		$result = $objectService->saveObject(object: $data, register: $register, schema: $schema, uuid: (string)$id);
+		$result = $objectService->saveObject(
+			object: $data,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: $register, schema: $schema),
+				uuid: (string)$id
+			)
+		);
 
 		if (is_array($result) === true) {
 			return $result;

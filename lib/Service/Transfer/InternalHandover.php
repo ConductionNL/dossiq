@@ -55,6 +55,8 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Routing\RoutingNote;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -551,9 +553,10 @@ class InternalHandover {
 			[$objectService, $register] = $this->context();
 			$objectService->saveObject(
 				object: $payload,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				uuid: $caseId,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $this->schema(key: 'case_schema')),
+					uuid: $caseId
+				),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

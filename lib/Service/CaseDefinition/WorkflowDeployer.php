@@ -32,6 +32,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseDefinition;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use ZipArchive;
 
@@ -210,9 +212,10 @@ class WorkflowDeployer {
 
 			$stored = $objectService->saveObject(
 				$this->withoutMetadata(row: $template),
-				register: $register,
-				schema: $schema,
-				uuid: $templateUuid
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema),
+					uuid: $templateUuid
+				)
 			);
 		} catch (\Throwable $e) {
 			return [

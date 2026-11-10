@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\FoldInspectionChecklistTemplates;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -156,7 +157,10 @@ final class FoldInspectionChecklistTemplatesTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				unset($register, $uuid);
 				$this->rows[(string)$schema][] = $object;
 

@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Email\UnmatchedMailIntake;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -122,7 +123,9 @@ class UnmatchedMailIntakeGoldenTest extends TestCase {
 			 *
 			 * @return mixed The saved object.
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null): mixed {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->test->calls[] = ['saveObject', ['object' => $object, 'register' => $register, 'schema' => $schema]];
 				if (($this->world['save'] ?? null) === 'throws') {
 					throw new RuntimeException('the store refused it');

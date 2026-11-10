@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use OCA\Dossiq\Tests\Unit\Service\Transitions\SourceL10n;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCA\Dossiq\Service\Email\SenderIdentity;
 use PHPUnit\Framework\TestCase;
@@ -180,7 +181,8 @@ class CaseTypePublishServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The object.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
 				if ($this->saveFails === true) {
 					throw new RuntimeException('unwritable');
 				}

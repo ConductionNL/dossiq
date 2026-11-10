@@ -36,6 +36,8 @@ use OCA\Dossiq\Review\DisclosureAssessmentValidator;
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\OutstandingDocuments;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -195,9 +197,10 @@ class WOODocumentAssessmentService {
 				$existingId = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
 				$saved[] = $objectService->saveObject(
 					object: $assessment,
-					register: $register,
-					schema: $assessmentSchema,
-					uuid: (string)$existingId,
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $register, schema: $assessmentSchema),
+						uuid: (string)$existingId
+					),
 				);
 				$judged[] = (string)$assessment['documentRef'];
 				continue;
@@ -205,8 +208,9 @@ class WOODocumentAssessmentService {
 
 			$saved[] = $objectService->saveObject(
 				object: $assessment,
-				register: $register,
-				schema: $assessmentSchema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $assessmentSchema)
+				),
 			);
 			$created++;
 			$judged[] = (string)$assessment['documentRef'];

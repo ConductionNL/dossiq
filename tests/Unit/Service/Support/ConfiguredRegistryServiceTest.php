@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Support;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -153,7 +154,9 @@ class ConfiguredRegistryServiceTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(string $register, string $schema, array $object): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				$this->calls[] = ['save', $register, $schema, $object];
 				return ($object + ['id' => 'generated']);
 			}//end saveObject()

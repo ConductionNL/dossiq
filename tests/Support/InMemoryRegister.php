@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 /**
@@ -226,12 +227,12 @@ class InMemoryRegister {
 	 */
 	public function saveObject(
 		array $object,
-		int|string $register = '',
-		int|string $schema = '',
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$schema = ($options->target->schema ?? '');
+		$uuid = $options->uuid;
 		if (in_array((string)$schema, $this->refusedSchemas, true) === true) {
 			throw new \RuntimeException('Save refused for ' . (string)$schema);
 		}

@@ -38,6 +38,8 @@ use OCA\Dossiq\Service\Workflow\BackfilledTemplateShape;
 use OCA\Dossiq\Service\Workflow\BackfillTarget;
 use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -216,8 +218,9 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		try {
 			$created = $target->objectService->saveObject(
 				object: $template,
-				register: $target->register,
-				schema: $target->schemas->template,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $target->register, schema: $target->schemas->template)
+				),
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -325,9 +328,10 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		try {
 			$target->objectService->saveObject(
 				object: $this->withPin(row: $caseType->row, pin: ['workflowDefinition' => $caseType->templateId]),
-				register: $target->register,
-				schema: $target->schemas->caseType,
-				uuid: $caseType->id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $target->register, schema: $target->schemas->caseType),
+					uuid: $caseType->id
+				),
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -436,9 +440,10 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 							'workflowVersion' => 1,
 						]
 					),
-					register: $target->register,
-					schema: $target->schemas->cases,
-					uuid: (string)$case['id'],
+					options: new ObjectSaveOptions(
+						target: new ObjectFindTarget(register: $target->register, schema: $target->schemas->cases),
+						uuid: (string)$case['id']
+					),
 				);
 			} catch (\Throwable $e) {
 				$this->logger->error(

@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Integriq\Event\IntakeMessageRoutedEvent;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -68,7 +69,7 @@ interface ChannelIntakeObjectServiceStub {
 	 *
 	 * @return mixed The stored object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): mixed;
+	public function saveObject(array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 
 	/**
 	 * Search objects by register and schema slug.
@@ -173,7 +174,8 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		);
 
 		$service->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+			function (array $object,ObjectSaveOptions $options = new ObjectSaveOptions()): array {
+				$schema = $options->target->schema;
 				if ($schema === 'case' && $this->elevated === false) {
 					throw new \RuntimeException('Anonymous callers may not create objects.');
 				}

@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Ai\AiModelIdentity;
 use OCA\Dossiq\Service\Ai\AiPiiRedactor;
 use OCA\Dossiq\Service\Ai\AiPromptFactory;
 use OCA\Dossiq\Service\AiService;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -59,7 +60,7 @@ interface AiServiceSaveObjectStub {
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(string $register, string $schema, array $object): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed;
 }//end interface
 
 /**
@@ -188,11 +189,10 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'dossiq',
-				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'classification'
 					&& $entry['action'] === 'suggestion'
-					&& $entry['userId'] === 'user-1')
+					&& $entry['userId'] === 'user-1'),
+				$this->callback(static fn (ObjectSaveOptions $options): bool => $options->target->register === 'dossiq' && $options->target->schema === 'aiAuditEntry')
 			);
 
 		$result = $this->service->classifyDocument('case-a', 'doc-1', 'user-1');
@@ -210,10 +210,9 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'dossiq',
-				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'extraction'
-					&& $entry['action'] === 'suggestion')
+					&& $entry['action'] === 'suggestion'),
+				$this->callback(static fn (ObjectSaveOptions $options): bool => $options->target->register === 'dossiq' && $options->target->schema === 'aiAuditEntry')
 			);
 
 		$result = $this->service->extractData('case-a', 'doc-1', 'user-1');
@@ -229,10 +228,9 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'dossiq',
-				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'qa'
-					&& $entry['action'] === 'suggestion')
+					&& $entry['action'] === 'suggestion'),
+				$this->callback(static fn (ObjectSaveOptions $options): bool => $options->target->register === 'dossiq' && $options->target->schema === 'aiAuditEntry')
 			);
 
 		$result = $this->service->askQuestion('case-a', 'Is dit compleet?', 'user-1');
@@ -248,10 +246,9 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'dossiq',
-				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'summary'
-					&& $entry['action'] === 'suggestion')
+					&& $entry['action'] === 'suggestion'),
+				$this->callback(static fn (ObjectSaveOptions $options): bool => $options->target->register === 'dossiq' && $options->target->schema === 'aiAuditEntry')
 			);
 
 		$result = $this->service->summarize('case-a', 'case', null, 'user-1');
@@ -269,10 +266,9 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'dossiq',
-				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'routing'
-					&& $entry['action'] === 'suggestion')
+					&& $entry['action'] === 'suggestion'),
+				$this->callback(static fn (ObjectSaveOptions $options): bool => $options->target->register === 'dossiq' && $options->target->schema === 'aiAuditEntry')
 			);
 
 		$result = $this->service->suggestRouting('case-a', 'user-1');
@@ -290,10 +286,9 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 		$this->objectService->expects($this->once())
 			->method('saveObject')
 			->with(
-				'dossiq',
-				'aiAuditEntry',
 				$this->callback(fn (array $entry) => $entry['type'] === 'decision_support'
-					&& $entry['action'] === 'suggestion')
+					&& $entry['action'] === 'suggestion'),
+				$this->callback(static fn (ObjectSaveOptions $options): bool => $options->target->register === 'dossiq' && $options->target->schema === 'aiAuditEntry')
 			);
 
 		$result = $this->service->suggestNextStep('case-a', 'user-1');

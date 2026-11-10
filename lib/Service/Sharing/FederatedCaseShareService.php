@@ -48,6 +48,8 @@ use DateTime;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -152,7 +154,12 @@ class FederatedCaseShareService {
 			'createdBy' => $createdBy,
 		];
 
-		$result = $objectService->saveObject(object: $shareData, register: (int)$register, schema: (int)$shareSchema);
+		$result = $objectService->saveObject(
+			object: $shareData,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: (int)$register, schema: (int)$shareSchema)
+			)
+		);
 		$resultData = $this->gateway->toArray(value: $result);
 
 		$shareUuid = (string)($resultData['id'] ?? $resultData['uuid'] ?? '');
@@ -171,7 +178,12 @@ class FederatedCaseShareService {
 
 		$resultData['federationShareId'] = $federatedShare->getId();
 		$resultData['status'] = 'active';
-		$activated = $objectService->saveObject(object: $resultData, register: (int)$register, schema: (int)$shareSchema);
+		$activated = $objectService->saveObject(
+			object: $resultData,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: (int)$register, schema: (int)$shareSchema)
+			)
+		);
 		$resultData = $this->gateway->toArray(value: $activated);
 
 		$this->auditTrailService->emit(
@@ -245,7 +257,12 @@ class FederatedCaseShareService {
 		$shareData['revokedBy'] = $userId;
 		$shareData['revokedAt'] = (new DateTime())->format('c');
 
-		$result = $objectService->saveObject(object: $shareData, register: (int)$register, schema: (int)$shareSchema);
+		$result = $objectService->saveObject(
+			object: $shareData,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: (int)$register, schema: (int)$shareSchema)
+			)
+		);
 
 		$this->auditTrailService->emit(
 			[

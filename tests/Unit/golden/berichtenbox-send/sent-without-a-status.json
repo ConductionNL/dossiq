@@ -31,17 +31,28 @@
                     "sentAt": "2026-11-02T11:00:00+01:00"
                 },
                 "named": [
-                    [],
-                    7,
-                    9,
-                    null,
+                    {
+                        "target": {
+                            "register": 7,
+                            "schema": 9
+                        },
+                        "uuid": null,
+                        "extend": [],
+                        "uploadedFiles": null,
+                        "policy": {
+                            "silent": false,
+                            "validation": true,
+                            "failIfExists": false,
+                            "dedupOverride": false
+                        },
+                        "actor": {
+                            "currentUser": null,
+                            "owner": null,
+                            "unowned": false
+                        }
+                    },
                     true,
-                    true,
-                    false,
-                    true,
-                    null,
-                    null,
-                    false
+                    true
                 ]
             }
         },

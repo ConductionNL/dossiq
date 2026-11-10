@@ -42,6 +42,8 @@ namespace OCA\Dossiq\Service\Email;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 
 /**
  * OpenRegister persistence and lookup for case-integrated email.
@@ -301,8 +303,9 @@ class CaseEmailRepository {
 					'messageId' => $messageId,
 					'sentAt' => date('Y-m-d\TH:i:s'),
 				],
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				),
 			);
 		}
 
@@ -354,8 +357,9 @@ class CaseEmailRepository {
 					'inReplyTo' => $inReplyTo,
 					'receivedAt' => date('Y-m-d\TH:i:s'),
 				],
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema)
+				),
 			);
 		}
 
