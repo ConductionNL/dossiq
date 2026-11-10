@@ -42,6 +42,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -98,6 +99,31 @@ class NotesController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function push(string $caseId): JSONResponse {
+		$refusal = $this->pushRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$data = $this->readJsonBody();
+		$note = $data['note'] ?? null;
+		if (is_array($note) === false || $note === []) {
+			return new JSONResponse(['error' => 'A note is required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return $this->pushNote(caseId: $caseId, note: $note);
+	}//end push()
+
+	/**
+	 * Refuse a push without a session (401), without a case id (400) or by a
+	 * caller who may not change the case (403).
+	 *
+	 * @param string $caseId The case the note is on.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the push may go ahead.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	private function pushRefusal(string $caseId): ?JSONResponse {
 		$actor = $this->userSession->getUser();
 		if ($actor === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -111,12 +137,20 @@ class NotesController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->readJsonBody();
-		$note = $data['note'] ?? null;
-		if (is_array($note) === false || $note === []) {
-			return new JSONResponse(['error' => 'A note is required'], Http::STATUS_BAD_REQUEST);
-		}
+		return null;
+	}//end pushRefusal()
 
+	/**
+	 * Push the note and answer with its outcome; a push that throws is a logged 500.
+	 *
+	 * @param string               $caseId The case the note is on.
+	 * @param array<string, mixed> $note   The note.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	private function pushNote(string $caseId, array $note): JSONResponse {
 		try {
 			$outcome = $this->notePush->push(caseId: $caseId, note: $note);
 		} catch (\Throwable $e) {
@@ -137,7 +171,7 @@ class NotesController extends Controller {
 		// push would be this app reporting its own success or failure rather
 		// than the note's.
 		return new JSONResponse($outcome);
-	}//end push()
+	}//end pushNote()
 
 	/**
 	 * Notify every user mentioned in a just-saved note.
@@ -204,14 +238,14 @@ class NotesController extends Controller {
 	/**
 	 * Notify the mentioned users who exist; a failed dispatch is a logged 500.
 	 *
-	 * @param \OCP\IUser          $actor The caller who mentioned them.
+	 * @param IUser                $actor The caller who mentioned them.
 	 * @param array<string, mixed> $data  The request body.
 	 *
 	 * @return JSONResponse How many were notified.
 	 *
 	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	 */
-	private function notifyMentioned($actor, array $data): JSONResponse {
+	private function notifyMentioned(IUser $actor, array $data): JSONResponse {
 		$mentionedUserIds = $this->existingUsers(userIds: $this->mentionedIds(data: $data));
 		if ($mentionedUserIds === []) {
 			return new JSONResponse(['notified' => 0], Http::STATUS_OK);
@@ -221,27 +255,53 @@ class NotesController extends Controller {
 			$notified = $this->mentionSvc->notifyMention(
 				actorUserId: $actor->getUID(),
 				actorDisplayName: $actor->getDisplayName(),
-				note: new MentionedNote(
-					objectId: (string)($data['objectId'] ?? ''),
-					register: (string)($data['register'] ?? ''),
-					schema: (string)($data['schema'] ?? ''),
-					noteId: (string)($data['noteId'] ?? '')
-				),
+				note: $this->mentionedNote(data: $data),
 				mentionedUserIds: $mentionedUserIds,
 			);
-
-			return new JSONResponse(['notified' => $notified], Http::STATUS_OK);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Failed to dispatch note mention notifications: ' . $e->getMessage(),
-				['app' => 'dossiq']
-			);
-			return new JSONResponse(
-				['error' => 'Could not dispatch mention notifications: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
-		}//end try
+			return $this->mentionFailed(exception: $e);
+		}
+
+		return new JSONResponse(['notified' => $notified], Http::STATUS_OK);
 	}//end notifyMentioned()
+
+	/**
+	 * The note the body names.
+	 *
+	 * @param array<string, mixed> $data The request body.
+	 *
+	 * @return MentionedNote
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function mentionedNote(array $data): MentionedNote {
+		return new MentionedNote(
+			objectId: (string)($data['objectId'] ?? ''),
+			register: (string)($data['register'] ?? ''),
+			schema: (string)($data['schema'] ?? ''),
+			noteId: (string)($data['noteId'] ?? '')
+		);
+	}//end mentionedNote()
+
+	/**
+	 * The logged 500 a failed mention dispatch answers with.
+	 *
+	 * @param \Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function mentionFailed(\Throwable $exception): JSONResponse {
+		$this->logger->error(
+			'Failed to dispatch note mention notifications: ' . $exception->getMessage(),
+			['app' => 'dossiq']
+		);
+		return new JSONResponse(
+			['error' => 'Could not dispatch mention notifications: ' . $exception->getMessage()],
+			Http::STATUS_INTERNAL_SERVER_ERROR,
+		);
+	}//end mentionFailed()
 
 	/**
 	 * The user ids that belong to an existing account, in their given order.
