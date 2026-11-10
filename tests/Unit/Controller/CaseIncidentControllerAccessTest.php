@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * Allowed and refused callers of every incident endpoint.
  *
  * @covers \OCA\Dossiq\Controller\CaseIncidentController
+ * @covers \OCA\Dossiq\Controller\Support\CaseCaller
  */
 class CaseIncidentControllerAccessTest extends TestCase {
 
