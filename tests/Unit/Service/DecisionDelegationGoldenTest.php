@@ -133,6 +133,43 @@ class DecisionDelegationGoldenTest extends TestCase {
 	}//end testEveryFailClosedPathKeepsItsShape()
 
 	/**
+	 * Reading a decision back: the refusal before the bus and the dispatch
+	 * failure are logged with these exact lines; a found decision is not logged.
+	 *
+	 * @return void
+	 */
+	public function testAStateReadLogsWhyItCouldNotRead(): void {
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (Event $event): void {
+				throw new RuntimeException('bus down');
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		foreach (['warning', 'error'] as $level) {
+			$logger->method($level)->willReturnCallback(
+				function (string $message, array $context = []) use ($level): void {
+					$this->logged[] = [$level, $message, $context];
+				}
+			);
+		}
+
+		$service = new ContractDecisionDelegationService($dispatcher, $logger);
+		$noActor = $service->readDecisionState(decisionId: ' d-1 ', actorId: ' ');
+		$thrown = $service->readDecisionState(decisionId: 'd-1', actorId: 'alice');
+
+		self::assertSame(['state' => ContractDecisionDelegationService::DECISION_STATE_UNREADABLE, 'status' => '', 'envelope' => []], $noActor);
+		self::assertSame($noActor, $thrown);
+		self::assertSame(
+			[
+				['warning', 'ContractDecisionDelegationService: cannot read a decision state', ['decisionRef' => 'd-1', 'hasActor' => false, 'reason' => 'no decision id or no actor']],
+				['error', 'ContractDecisionDelegationService: DecisionStateRequestedEvent dispatch failed', ['decisionRef' => 'd-1', 'error' => 'bus down']],
+			],
+			$this->logged
+		);
+	}//end testAStateReadLogsWhyItCouldNotRead()
+
+	/**
 	 * The raised event's fields, in constructor order.
 	 *
 	 * @return array<int, mixed>
