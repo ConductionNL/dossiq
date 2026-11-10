@@ -53,6 +53,16 @@ export async function searchIndexStatus() {
 		)
 	}
 
+	return statusOf(data)
+}
+
+/**
+ * The status fields of an answer openregister gave.
+ *
+ * @param {object} data The answer.
+ * @return {object} The status.
+ */
+function statusOf(data) {
 	return {
 		concurrentRebuildSupported: data.concurrentRebuildSupported === true,
 		tables: tablesOf(data.tables),
@@ -128,11 +138,11 @@ function countOrNull(value) {
  * @spec openspec/specs/admin-settings/spec.md
  */
 export function lastRunSeconds(report) {
-	if (report === null || typeof report !== 'object' || Array.isArray(report)) {
+	if (!isRunReport(report)) {
 		return null
 	}
-	const started = Date.parse(report.startedAt ?? '')
-	const finished = Date.parse(report.finishedAt ?? '')
+	const started = reportTime(report.startedAt)
+	const finished = reportTime(report.finishedAt)
 	if (Number.isNaN(started) || Number.isNaN(finished) || finished < started) {
 		return null
 	}
@@ -157,11 +167,39 @@ export function lastRunTime(report) {
 		return report === '' ? null : report
 	}
 
-	if (report === null || typeof report !== 'object' || Array.isArray(report)) {
+	if (!isRunReport(report)) {
 		return null
 	}
 
-	const time = report.finishedAt || report.startedAt || ''
+	return nonEmptyTime(report.finishedAt || report.startedAt || '')
+}
 
+/**
+ * Whether openregister answered a run report: an object, not a list.
+ *
+ * @param {unknown} report What openregister answered as `lastRun`.
+ * @return {boolean} True for a report.
+ */
+function isRunReport(report) {
+	return report !== null && typeof report === 'object' && !Array.isArray(report)
+}
+
+/**
+ * A report's time as milliseconds, NaN when it is missing or unreadable.
+ *
+ * @param {unknown} value The time.
+ * @return {number} The milliseconds.
+ */
+function reportTime(value) {
+	return Date.parse(value ?? '')
+}
+
+/**
+ * A time that is a non-empty string, else null.
+ *
+ * @param {unknown} time The time.
+ * @return {string|null} The time.
+ */
+function nonEmptyTime(time) {
 	return typeof time === 'string' && time !== '' ? time : null
 }
