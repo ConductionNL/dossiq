@@ -98,20 +98,8 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function handle(Event $event): void {
-		$this->preSave()->inspect(
-			event: $event,
-			inspect: fn (ObjectCreatingEvent|ObjectUpdatingEvent $saving, ObjectEntity $entity) => $this->inspect(event: $saving, entity: $entity)
-		);
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->inspect(...));
 	}//end handle()
-
-	/**
-	 * The pre-save plumbing: the object saved, and its payload.
-	 *
-	 * @return PreSaveCheck
-	 */
-	private function preSave(): PreSaveCheck {
-		return new PreSaveCheck(logger: $this->logger);
-	}//end preSave()
 
 	/**
 	 * Refuse the save when the incoming withdrawal cannot be written.
@@ -125,7 +113,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
-		$payload = $this->preSave()->read(entity: $entity, check: 'portal withdrawal check');
+		$payload = (new PreSaveCheck(logger: $this->logger))->read(entity: $entity, check: 'portal withdrawal check');
 		if ($payload === null || (new CaseTypeSchema(settingsService: $this->settingsService))->contains(object: $payload) === false) {
 			return;
 		}

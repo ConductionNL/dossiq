@@ -122,20 +122,8 @@ class MilestoneDependencyCycleListener implements IEventListener {
 	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/milestone-tracking/spec.md
 	 */
 	public function handle(Event $event): void {
-		$this->preSave()->inspect(
-			event: $event,
-			inspect: fn (ObjectCreatingEvent|ObjectUpdatingEvent $saving, ObjectEntity $entity) => $this->inspect(event: $saving, entity: $entity)
-		);
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->inspect(...));
 	}//end handle()
-
-	/**
-	 * The pre-save plumbing: the object saved, and its payload.
-	 *
-	 * @return PreSaveCheck
-	 */
-	private function preSave(): PreSaveCheck {
-		return new PreSaveCheck(logger: $this->logger);
-	}//end preSave()
 
 	/**
 	 * Refuse the save when the incoming declaration closes a loop.
@@ -152,7 +140,7 @@ class MilestoneDependencyCycleListener implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
-		$payload = $this->preSave()->read(entity: $entity, check: 'milestone cycle check');
+		$payload = (new PreSaveCheck(logger: $this->logger))->read(entity: $entity, check: 'milestone cycle check');
 		if ($payload === null || $this->isMilestoneSchema(object: $payload) === false) {
 			return;
 		}
