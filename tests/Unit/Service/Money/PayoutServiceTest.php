@@ -341,4 +341,31 @@ class PayoutServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$service->withdrawFromFinance(row: ['reference' => 'PROC-DWS-1', 'payableId' => 'p-1'], reason: 'Bezwaar');
 	}//end testAWithdrawalFinanceRefusesThrows()
+	/**
+	 * The whole stored payout row, and both entry points refuse an unconfigured store.
+	 *
+	 * @return void
+	 */
+	public function testTheWholePayoutRowAndTheUnconfiguredRefusal(): void {
+		$row = $this->service->preparePayout('b-stopped', 'J. Jansen', 'nl91 abna 0417 1643 00', new \DateTimeImmutable('2026-03-02'));
+		$this->assertSame(
+			['penaltyPaymentCalculation', 'amount', 'accountHolderName', 'iban', 'reference', 'legalBasis', 'paymentDateLatest', 'status'],
+			array_slice(array_keys($row), 0, 8)
+		);
+		$this->assertSame(['b-stopped', 35700, 'J. Jansen', 'NL91ABNA0417164300', 'AWB 4:17', 'voorbereid'], [$row['penaltyPaymentCalculation'], $row['amount'], $row['accountHolderName'], $row['iban'], $row['legalBasis'], $row['status']]);
+		$this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $row['paymentDateLatest']);
+
+		$bare = $this->createMock(SettingsService::class);
+		$bare->method('getObjectService')->willReturn($this->objects);
+		$bare->method('getConfigValue')->willReturn('');
+		$service = new PayoutService(settingsService: $bare, dates: $this->caseDates());
+		foreach ([fn () => $service->preparePayout('b-stopped', 'J. Jansen', 'NL91ABNA0417164300'), fn () => $service->handleCallback('ref', 'paid', null)] as $call) {
+			try {
+				$call();
+				$this->fail('refused');
+			} catch (RuntimeException $e) {
+				$this->assertSame('The accruing amount and payout schemas are not configured', $e->getMessage());
+			}
+		}
+	}
 }

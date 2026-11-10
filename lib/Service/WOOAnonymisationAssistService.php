@@ -140,20 +140,17 @@ class WOOAnonymisationAssistService {
 	public function proposeSpans(string $caseId, string $documentRef, string $text, string $userId): array {
 		$this->validateText(text: $text);
 
+		$request = new SpanProposalRequest();
+		$request->caseId = $caseId;
+		$request->documentRef = $documentRef;
+		$request->userId = $userId;
+
 		$startTime = microtime(true);
 		$ruleSpans = $this->aiService->detectDeterministicPiiSpans(text: $text);
-
-		$proposal = $this->buildProposal(
-			ruleSpans: $ruleSpans,
-			text: $text,
-			context: [
-				'app' => Application::APP_ID,
-				'objectType' => 'document',
-				'objectRef' => $documentRef,
-			]
-		);
-
-		$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
+		$proposal = $this->buildProposal(ruleSpans: $ruleSpans, text: $text, context: $this->documentContext(documentRef: $documentRef));
+		$request->responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
+		$request->textLength = strlen($text);
+		$request->ruleSpanCount = count($ruleSpans);
 
 		$proposal['proposedBy'] = $userId;
 		$proposal['proposedAt'] = date('c');
@@ -167,29 +164,54 @@ class WOOAnonymisationAssistService {
 			proposal: $proposal
 		);
 
-		$this->auditService->recordAssistantAuditEntry(
-			entry: [
-				'type' => 'anonymisation',
-				'action' => 'proposal',
-				'caseId' => $caseId,
-				'documentId' => $documentRef,
-				'model' => 'hermiq',
-				'prompt' => '[' . strlen($text) . ' chars of document text — not recorded verbatim]',
-				'suggestion' => [
-					'ruleSpanCount' => count($ruleSpans),
-					'mergedSpanCount' => count($proposal['spans']),
-					'source' => $proposal['source'],
-					'llmAvailable' => $proposal['llmAvailable'],
-				],
-				'confidence' => 0.0,
-				'userId' => $userId,
-				'timestamp' => date('c'),
-				'responseTimeMs' => $responseTimeMs,
-			]
-		);
+		$this->auditService->recordAssistantAuditEntry(entry: $this->proposalAuditEntry(request: $request, proposal: $proposal));
 
 		return ($saved['redactionProposal'] ?? $proposal);
 	}//end proposeSpans()
+
+	/**
+	 * The context the detection is asked in: this app, a document, and which one.
+	 *
+	 * @param string $documentRef The document.
+	 *
+	 * @return array<string, string>
+	 */
+	private function documentContext(string $documentRef): array {
+		return [
+			'app' => Application::APP_ID,
+			'objectType' => 'document',
+			'objectRef' => $documentRef,
+		];
+	}//end documentContext()
+
+	/**
+	 * The audit entry of a proposal: what was asked and what came back, without the text itself.
+	 *
+	 * @param SpanProposalRequest  $request  The request.
+	 * @param array<string, mixed> $proposal The proposal.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function proposalAuditEntry(SpanProposalRequest $request, array $proposal): array {
+		return [
+			'type' => 'anonymisation',
+			'action' => 'proposal',
+			'caseId' => $request->caseId,
+			'documentId' => $request->documentRef,
+			'model' => 'hermiq',
+			'prompt' => '[' . $request->textLength . ' chars of document text — not recorded verbatim]',
+			'suggestion' => [
+				'ruleSpanCount' => $request->ruleSpanCount,
+				'mergedSpanCount' => count($proposal['spans']),
+				'source' => $proposal['source'],
+				'llmAvailable' => $proposal['llmAvailable'],
+			],
+			'confidence' => 0.0,
+			'userId' => $request->userId,
+			'timestamp' => date('c'),
+			'responseTimeMs' => $request->responseTimeMs,
+		];
+	}//end proposalAuditEntry()
 
 	/**
 	 * Record a human reviewer's decision on a pending proposal.
@@ -227,51 +249,92 @@ class WOOAnonymisationAssistService {
 			);
 		}
 
-		$existing = $this->assessmentService->findAssessment(caseId: $caseId, documentRef: $documentRef);
+		$review = new ProposalReview();
+		$review->caseId = $caseId;
+		$review->documentRef = $documentRef;
+		$review->reviewerId = $reviewerId;
+		$review->proposal = $this->pendingProposal(review: $review);
+
+		if ($decision === 'reject') {
+			$review->proposal['status'] = 'rejected';
+			$review->proposal['reviewedBy'] = $reviewerId;
+			$review->proposal['reviewedAt'] = date('c');
+
+			return $this->settleReview(review: $review, userAction: 'rejected');
+		}
+
+		return $this->settleReview(review: $review, userAction: $this->approve(review: $review, editedSpans: $editedSpans));
+	}//end reviewProposal()
+
+	/**
+	 * The proposal pending review on the document, or a refusal when there is none.
+	 *
+	 * @param ProposalReview $review The review.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When no proposal is pending.
+	 */
+	private function pendingProposal(ProposalReview $review): array {
+		$existing = $this->assessmentService->findAssessment(caseId: $review->caseId, documentRef: $review->documentRef);
 		$proposal = ($existing['redactionProposal'] ?? null);
 		if (is_array($proposal) === false || ($proposal['status'] ?? null) !== 'pending_review') {
 			throw new RuntimeException(
-				'No pending redaction proposal found for document ' . $documentRef . ' in case ' . $caseId
+				'No pending redaction proposal found for document ' . $review->documentRef . ' in case ' . $review->caseId
 			);
 		}
 
-		if ($decision === 'reject') {
-			$proposal['status'] = 'rejected';
-			$proposal['reviewedBy'] = $reviewerId;
-			$proposal['reviewedAt'] = date('c');
+		return $proposal;
+	}//end pendingProposal()
 
-			$saved = $this->assessmentService->saveRedactionProposal(
-				caseId: $caseId,
-				documentRef: $documentRef,
-				proposal: $proposal
-			);
-
-			$this->reportDecision(caseId: $caseId, documentRef: $documentRef, proposal: $proposal, userAction: 'rejected', userId: $reviewerId);
-
-			return ($saved['redactionProposal'] ?? $proposal);
-		}
-
-		$approvedSpans = ($editedSpans ?? $proposal['spans']);
+	/**
+	 * Approve the proposal with the reviewer's spans, or its own; say whether they changed it.
+	 *
+	 * @param ProposalReview         $review      The review.
+	 * @param array<int, mixed>|null $editedSpans The reviewer's spans, or null to keep the proposal's.
+	 *
+	 * @return string 'accepted' or 'modified'.
+	 */
+	private function approve(ProposalReview $review, ?array $editedSpans): string {
+		$approvedSpans = ($editedSpans ?? $review->proposal['spans']);
 		$userAction = 'accepted';
-		if ($approvedSpans !== $proposal['spans']) {
+		if ($approvedSpans !== $review->proposal['spans']) {
 			$userAction = 'modified';
 		}
 
-		$proposal['status'] = 'approved';
-		$proposal['approvedSpans'] = $approvedSpans;
-		$proposal['reviewedBy'] = $reviewerId;
-		$proposal['reviewedAt'] = date('c');
+		$review->proposal['status'] = 'approved';
+		$review->proposal['approvedSpans'] = $approvedSpans;
+		$review->proposal['reviewedBy'] = $review->reviewerId;
+		$review->proposal['reviewedAt'] = date('c');
 
+		return $userAction;
+	}//end approve()
+
+	/**
+	 * Save the reviewed proposal and report the decision to oversight.
+	 *
+	 * @param ProposalReview $review     The review.
+	 * @param string         $userAction What the reviewer did.
+	 *
+	 * @return array<string, mixed> The proposal as saved.
+	 */
+	private function settleReview(ProposalReview $review, string $userAction): array {
 		$saved = $this->assessmentService->saveRedactionProposal(
-			caseId: $caseId,
-			documentRef: $documentRef,
-			proposal: $proposal
+			caseId: $review->caseId,
+			documentRef: $review->documentRef,
+			proposal: $review->proposal
 		);
 
-		$this->reportDecision(caseId: $caseId, documentRef: $documentRef, proposal: $proposal, userAction: $userAction, userId: $reviewerId);
+		$this->reportDecision(
+			caseId: $review->caseId,
+			documentRef: $review->documentRef,
+			proposal: $review->proposal,
+			userAction: $userAction,
+			userId: $review->reviewerId
+		);
 
-		return ($saved['redactionProposal'] ?? $proposal);
-	}//end reviewProposal()
+		return ($saved['redactionProposal'] ?? $review->proposal);
+	}//end settleReview()
 
 	/**
 	 * Report a person's decision on a proposal to the AI oversight trail.
@@ -401,13 +464,7 @@ class WOOAnonymisationAssistService {
 	 * @return array<string, mixed> `{spans, source, llmAvailable, llmError?}`.
 	 */
 	private function buildProposal(array $ruleSpans, string $text, array $context): array {
-		$taggedRuleSpans = array_map(
-			static function (array $span): array {
-				$span['source'] = 'rule';
-				return $span;
-			},
-			$ruleSpans
-		);
+		$taggedRuleSpans = $this->taggedAsRules(spans: $ruleSpans);
 
 		if ($this->hermiqClient->isAvailable() === false) {
 			return [
@@ -439,6 +496,23 @@ class WOOAnonymisationAssistService {
 			'llmAvailable' => true,
 		];
 	}//end buildProposal()
+
+	/**
+	 * The spans, each tagged as found by the rules.
+	 *
+	 * @param array<int, array<string, mixed>> $spans The rule spans.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function taggedAsRules(array $spans): array {
+		return array_map(
+			static function (array $span): array {
+				$span['source'] = 'rule';
+				return $span;
+			},
+			$spans
+		);
+	}//end taggedAsRules()
 
 	/**
 	 * Merge rule-detected spans with LLM-proposed spans by UNION.

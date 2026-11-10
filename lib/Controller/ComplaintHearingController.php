@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ComplaintMutationGate;
 use OCA\Dossiq\Service\Complaint\ComplaintAccessGuard;
 use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\HearingService;
@@ -102,17 +103,10 @@ class ComplaintHearingController extends Controller {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function scheduleHearing(string $id): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
-
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
 
 		try {
 			$data = $this->accessGuard->parseBody();
@@ -138,17 +132,10 @@ class ComplaintHearingController extends Controller {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function recordHearingOutcome(string $id, string $hearingId): JSONResponse {
-		$userId = $this->accessGuard->currentUid();
-		if ($userId === '') {
-			return $this->accessGuard->notAuthenticated();
+		$refusal = $this->mutationGate()->refusal(id: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
-
-		$complaint = $this->complaintService->getComplaint($id);
-		if ($complaint === null) {
-			return new JSONResponse(['error' => 'Complaint not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$this->accessGuard->authorizeMutation(complaint: $complaint, userId: $userId);
 
 		try {
 			$data = $this->accessGuard->parseBody();
@@ -160,4 +147,15 @@ class ComplaintHearingController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end recordHearingOutcome()
+
+	/**
+	 * Refuses a complaint write the caller may not make.
+	 *
+	 * @return ComplaintMutationGate
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	private function mutationGate(): ComplaintMutationGate {
+		return new ComplaintMutationGate(accessGuard: $this->accessGuard, complaintService: $this->complaintService);
+	}//end mutationGate()
 }//end class

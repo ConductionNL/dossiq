@@ -89,6 +89,19 @@ import {
 	optionsFor,
 } from '../utils/intakeRequirements.js'
 
+// The label per intake field, each a literal t() call; any other field is
+// shown as its name.
+const FIELD_LABELS = new Map([
+	['communicationChannel', () => t('dossiq', 'Communication channel')],
+	['confidentiality', () => t('dossiq', 'Confidentiality')],
+	['classification', () => t('dossiq', 'Classification')],
+	['sensitivity', () => t('dossiq', 'Sensitivity')],
+	['actionFacet', () => t('dossiq', 'Action facet')],
+	['insightLevel', () => t('dossiq', 'Insight level')],
+	['assignedGroup', () => t('dossiq', 'Team')],
+	['assignee', () => t('dossiq', 'Assignee')],
+])
+
 export default {
 	name: 'IntakeRequirementsModal',
 	components: {
@@ -160,31 +173,14 @@ export default {
 		 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
 		 */
 		labelFor(field) {
-			// 🔴 EIGHT LITERAL `t()` CALLS, NOT A MAP OF BARE STRINGS RUN THROUGH
-			// ONE `t()`. The extractor in tests/l10n/check-l10n.js reads literal
-			// call sites; a map would hand `t()` a variable, the keys would never
-			// be extracted, and every label would render English inside an
-			// otherwise Dutch form with nothing to say so.
-			switch (field) {
-				case 'communicationChannel':
-					return t('dossiq', 'Communication channel')
-				case 'confidentiality':
-					return t('dossiq', 'Confidentiality')
-				case 'classification':
-					return t('dossiq', 'Classification')
-				case 'sensitivity':
-					return t('dossiq', 'Sensitivity')
-				case 'actionFacet':
-					return t('dossiq', 'Action facet')
-				case 'insightLevel':
-					return t('dossiq', 'Insight level')
-				case 'assignedGroup':
-					return t('dossiq', 'Team')
-				case 'assignee':
-					return t('dossiq', 'Assignee')
-				default:
-					return field
-			}
+			// 🔴 EIGHT LITERAL `t()` CALLS (in FIELD_LABELS), NOT A MAP OF BARE
+			// STRINGS RUN THROUGH ONE `t()`. The extractor in
+			// tests/l10n/check-l10n.js reads literal call sites; a map of strings
+			// would hand `t()` a variable, the keys would never be extracted, and
+			// every label would render English inside an otherwise Dutch form
+			// with nothing to say so.
+			const label = FIELD_LABELS.get(field)
+			return label ? label() : field
 		},
 
 		/**

@@ -61,32 +61,102 @@ export const CONFIDENTIALITY_VALUES = [
  */
 export function normaliseDeclaration(declaration) {
 	const source = declaration || {}
-	const requirements = source.intakeRequirements || {}
-	const classification = source.classification || {}
-	const narrowing = source.assigneeNarrowing || {}
-	const duplicatePolicy = source.duplicatePolicy || {}
 
 	return {
 		caseType: source.caseType || '',
-		requiredBeforeCreation: [...(requirements.requiredBeforeCreation || [])],
-		requiredBeforeComplete: [...(requirements.requiredBeforeComplete || [])],
+		...requirementFields(source.intakeRequirements || {}),
+		...classificationFields(source),
+		...narrowingFields(source),
+		...refusalFields(source),
+		...duplicateFields(source.duplicatePolicy || {}),
+		unreadable: source.unreadable === true,
+	}
+}
+
+/**
+ * A copy of a declared list, or an empty list.
+ *
+ * @param {Array|undefined} list The declared list.
+ * @return {Array} The copy.
+ */
+function copyOf(list) {
+	return [...(list || [])]
+}
+
+/**
+ * What must be filled in before a case is created and before it completes.
+ *
+ * @param {object} requirements The declaration's `intakeRequirements`.
+ * @return {{requiredBeforeCreation: Array, requiredBeforeComplete: Array}} Copies of both lists.
+ */
+function requirementFields(requirements) {
+	return {
+		requiredBeforeCreation: copyOf(requirements.requiredBeforeCreation),
+		requiredBeforeComplete: copyOf(requirements.requiredBeforeComplete),
+	}
+}
+
+/**
+ * The classification scheme, its facets and values, whether it is an
+ * access rule and whether it resolves.
+ *
+ * @param {object} source The declaration.
+ * @return {object} The classification fields.
+ */
+function classificationFields(source) {
+	const classification = source.classification || {}
+	const isAccessRule = classification.classificationIsAccessRule === true
+	return {
 		scheme: classification.scheme || '',
-		classificationIsAccessRule:
-			classification.classificationIsAccessRule === true,
-		facets: [...(classification.facets || [])],
-		classificationValues: [...(source.classificationValues || [])],
+		classificationIsAccessRule: isAccessRule,
+		facets: copyOf(classification.facets),
+		classificationValues: copyOf(source.classificationValues),
 		schemeResolves: source.schemeResolves !== false,
-		allowedGroups: [...(narrowing.allowedGroups || [])],
-		allowedUsers: [...(narrowing.allowedUsers || [])],
+	}
+}
+
+/**
+ * Who a case of this type may be assigned to, and whether that narrows
+ * anything.
+ *
+ * @param {object} source The declaration.
+ * @return {{allowedGroups: Array, allowedUsers: Array, narrowsNothing: boolean}} The narrowing fields.
+ */
+function narrowingFields(source) {
+	const narrowing = source.assigneeNarrowing || {}
+	return {
+		allowedGroups: copyOf(narrowing.allowedGroups),
+		allowedUsers: copyOf(narrowing.allowedUsers),
 		narrowsNothing: source.narrowsNothing !== false,
+	}
+}
+
+/**
+ * Where a refused intake goes, and whether it may be refused at all.
+ *
+ * @param {object} source The declaration.
+ * @return {{refusalDestination: object, canRefuse: boolean}} The refusal fields.
+ */
+function refusalFields(source) {
+	return {
 		refusalDestination: source.refusalDestination || {
 			department: '',
 			role: '',
 		},
 		canRefuse: source.canRefuse === true,
+	}
+}
+
+/**
+ * Whether a duplicate blocks or warns, and whether it may be overridden.
+ *
+ * @param {object} duplicatePolicy The declaration's `duplicatePolicy`.
+ * @return {{duplicatePolicy: string, mayOverrideDuplicates: boolean}} The duplicate fields.
+ */
+function duplicateFields(duplicatePolicy) {
+	return {
 		duplicatePolicy: duplicatePolicy.policy === 'block' ? 'block' : 'warn',
 		mayOverrideDuplicates: duplicatePolicy.mayOverride === true,
-		unreadable: source.unreadable === true,
 	}
 }
 
