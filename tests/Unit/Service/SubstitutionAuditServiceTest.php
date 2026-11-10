@@ -45,8 +45,17 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
 		/** @param mixed ...$args @return mixed */
 		public function saveObject(...$args): mixed;
 
-		/** @param mixed ...$args @return mixed */
-		public function updateObject(...$args): mixed;
+		/**
+		 * Replace an object, in openregister's shape.
+		 *
+		 * @param string               $objectId      The object id.
+		 * @param array<string, mixed> $data          The object's complete new data.
+		 * @param bool                 $_rbac         Apply register RBAC.
+		 * @param bool                 $_multitenancy Apply organisation scoping.
+		 *
+		 * @return mixed
+		 */
+		public function updateObject(string $objectId, array $data, bool $_rbac = true, bool $_multitenancy = true): mixed;
 	}//end interface
 }//end if
 
@@ -113,7 +122,7 @@ class SubstitutionAuditServiceTest extends TestCase {
 		$os->method('find')->willReturn(['id' => 'case-1', 'assignee' => 'jan', 'caseType' => 'objectionProceeding', 'activity' => '[]']);
 		$captured = null;
 		$os->expects($this->once())->method('updateObject')->willReturnCallback(
-			function (string $r, string $s, string $id, array $payload) use (&$captured) {
+			function (string $id, array $payload) use (&$captured) {
 				$captured = $payload;
 				return $payload;
 			}

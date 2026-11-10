@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use JsonSerializable;
 use OCA\Dossiq\Service\Substitution\HumaniqLeaveReader;
 use OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver;
 use OCA\Dossiq\Service\Substitution\SubstitutionValidator;
@@ -181,11 +182,14 @@ class SubstitutionService {
 		}
 
 		$existing['status'] = 'revoked';
-		$saved = $objectService->updateObject($register, $schema, $id, $existing);
+		$saved = $objectService->updateObject(objectId: $id, data: $existing);
 		$this->activeCache = [];
 
-		if (is_array($saved) === true) {
-			return $saved;
+		if ($saved instanceof JsonSerializable === true) {
+			$serialized = $saved->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
 		}
 
 		return $existing;
@@ -241,9 +245,7 @@ class SubstitutionService {
 			$resolved = $this->activeRowOn(
 				row: $row,
 				refDay: $refDay,
-				objectService: $objectService,
-				register: $register,
-				schema: $schema
+				objectService: $objectService
 			);
 			if ($resolved !== null) {
 				$active[] = $resolved;
@@ -273,8 +275,6 @@ class SubstitutionService {
 	 * @param array<string, mixed> $row The substitution row.
 	 * @param string $refDay Reference day (Y-m-d).
 	 * @param object $objectService The ObjectService.
-	 * @param string $register Register id.
-	 * @param string $schema Substitution schema id.
 	 *
 	 * @return array<string, mixed>|null The applicable row, or null.
 	 *
@@ -284,8 +284,6 @@ class SubstitutionService {
 		array $row,
 		string $refDay,
 		object $objectService,
-		string $register,
-		string $schema,
 	): ?array {
 		$status = (string)($row['status'] ?? '');
 		// `revoked` and the lazily persisted `ended` both land here: a
@@ -315,8 +313,6 @@ class SubstitutionService {
 		if ($end !== '' && $refDay > $end) {
 			$this->markEnded(
 				objectService: $objectService,
-				register: $register,
-				schema: $schema,
 				row: $row
 			);
 
@@ -404,13 +400,11 @@ class SubstitutionService {
 	 * Best-effort lazy persistence of the `ended` status.
 	 *
 	 * @param object $objectService The ObjectService.
-	 * @param string $register Register id.
-	 * @param string $schema Schema id.
 	 * @param array<string, mixed> $row The expired substitution row.
 	 *
 	 * @return void
 	 */
-	private function markEnded(object $objectService, string $register, string $schema, array $row): void {
+	private function markEnded(object $objectService, array $row): void {
 		$id = (string)($row['id'] ?? ($row['uuid'] ?? ''));
 		if ($id === '') {
 			return;
@@ -418,7 +412,7 @@ class SubstitutionService {
 
 		try {
 			$row['status'] = 'ended';
-			$objectService->updateObject($register, $schema, $id, $row);
+			$objectService->updateObject(objectId: $id, data: $row);
 		} catch (\Throwable $e) {
 			$this->logger->warning('Substitution lazy-ended persistence failed', ['id' => $id, 'error' => $e->getMessage()]);
 		}

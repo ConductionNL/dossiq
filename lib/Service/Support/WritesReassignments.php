@@ -55,7 +55,6 @@ trait WritesReassignments {
 	 * Reassign one item and append the audit entry.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $register      The register.
 	 * @param string               $schema        The schema.
 	 * @param string               $id            The object id.
 	 * @param array<string, mixed> $item          The stored object.
@@ -67,7 +66,6 @@ trait WritesReassignments {
 	 */
 	private function reassignItem(
 		object $objectService,
-		string $register,
 		string $schema,
 		string $id,
 		array $item,
@@ -99,7 +97,7 @@ trait WritesReassignments {
 				$item['activity'] = json_encode($activity);
 			}
 
-			$objectService->updateObject($register, $schema, $id, $item);
+			$objectService->updateObject(objectId: $id, data: $item);
 
 			return true;
 		} catch (Throwable $e) {

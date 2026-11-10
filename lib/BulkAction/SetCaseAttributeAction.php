@@ -253,6 +253,6 @@ class SetCaseAttributeAction implements BulkActionInterface {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
-		$objectService->updateObject($register, $schema, $caseId, $case);
+		$objectService->updateObject(objectId: $caseId, data: $case);
 	}//end write()
 }//end class

@@ -82,19 +82,20 @@ final class GoldenRebindObjects {
 	/**
 	 * Update one object.
 	 *
-	 * @param int|string           $register The register.
-	 * @param int|string           $schema   The schema.
-	 * @param string               $id       The id.
-	 * @param array<string, mixed> $object   The object.
+	 * @param string               $objectId      The id.
+	 * @param array<string, mixed> $data          The object's complete new data.
+	 * @param bool                 $_rbac         Apply register RBAC.
+	 * @param bool                 $_multitenancy Apply organisation scoping.
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function updateObject(int|string $register, int|string $schema, string $id, array $object): array {
+	public function updateObject(string $objectId, array $data, bool $_rbac = true, bool $_multitenancy = true): array {
+		$object = $data;
 		if (is_string($object['activity'] ?? null) === true) {
 			$object['activity'] = preg_replace('/"timestamp":"[^"]*"/', '"timestamp":"<now>"', $object['activity']);
 		}
 
-		$this->log[] = ['objects.updateObject' => compact('register', 'schema', 'id', 'object')];
+		$this->log[] = ['objects.updateObject' => ['id' => $objectId, 'object' => $object]];
 		if (($this->behaviour['updateThrows'] ?? false) === true) {
 			throw new RuntimeException('update failed');
 		}

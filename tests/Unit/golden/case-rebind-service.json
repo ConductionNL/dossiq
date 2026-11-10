@@ -2113,8 +2113,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -2393,8 +2391,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -2657,8 +2653,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -2921,8 +2915,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -3185,8 +3177,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -3449,8 +3439,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -3712,8 +3700,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -3967,8 +3953,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -4229,8 +4213,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -4479,8 +4461,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -5299,8 +5279,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -5539,8 +5517,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {
@@ -5760,8 +5736,6 @@
             "settings getConfigValue case_schema",
             {
                 "objects.updateObject": {
-                    "register": "dossiq",
-                    "schema": "case",
                     "id": "case-1",
                     "object": {
                         "properties": {

@@ -430,7 +430,7 @@ class CaseVersionMove {
 		[$objectService, $register, $schema] = $this->scope();
 
 		try {
-			$objectService->updateObject($register, $schema, $caseId, $case);
+			$objectService->updateObject(objectId: $caseId, data: $case);
 		} catch (Throwable $e) {
 			throw RefusedException::indeterminate(
 				rule: 'version-move-not-written',
