@@ -127,4 +127,24 @@ class FrozenRecordSuccessorFieldsTest extends TestCase {
 		);
 		self::assertSame('', $fields['supersedes']);
 	}//end testThePredecessorIdAndMoment()
+
+	/**
+	 * The forward pointer is refused the same way for an entry without successor.
+	 *
+	 * @return void
+	 */
+	public function testPredecessorFieldsWithoutSuccessor(): void {
+		try {
+			$this->successor()->predecessorFields(
+				definition: FrozenRecordFixture::definition(override: ['successor' => null]),
+				successorId: 'rec-2',
+			);
+			self::fail('Not refused');
+		} catch (RefusedException $refusal) {
+			self::assertSame(
+				['record-has-no-successor', 422, 'This kind of record cannot be replaced by a successor.'],
+				[$refusal->getRule(), $refusal->getStatus(), $refusal->getSentence()]
+			);
+		}
+	}//end testPredecessorFieldsWithoutSuccessor()
 }//end class
