@@ -34,46 +34,59 @@ function todayString() {
 export function computeKpis(openCases, completedCases, myTasks) {
 	const today = todayString()
 
-	const openCount = openCases.length
-	const newToday = openCases.filter(
-		(c) => c.startDate && c.startDate.slice(0, 10) === today,
-	).length
-
-	const overdueCount = openCases.filter((c) => isCaseOverdue(c, false)).length
-
-	const completedCount = completedCases.length
-	let avgDays = null
-	if (completedCount > 0) {
-		const totalDays = completedCases.reduce((sum, c) => {
-			if (c.startDate && c.endDate) {
-				const start = new Date(c.startDate)
-				const end = new Date(c.endDate)
-				start.setHours(0, 0, 0, 0)
-				end.setHours(0, 0, 0, 0)
-				return (
-					sum
-					+ Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)))
-				)
-			}
-			return sum
-		}, 0)
-		avgDays = Math.round(totalDays / completedCount)
-	}
-
-	const taskCount = myTasks.length
-	const tasksDueToday = myTasks.filter(
-		(t) => t.dueDate && t.dueDate.slice(0, 10) === today,
-	).length
-
 	return {
-		openCount,
-		newToday,
-		overdueCount,
-		completedCount,
-		avgDays,
-		taskCount,
-		tasksDueToday,
+		openCount: openCases.length,
+		newToday: countOnDay(openCases.map((c) => c.startDate), today),
+		overdueCount: openCases.filter((c) => isCaseOverdue(c, false)).length,
+		completedCount: completedCases.length,
+		avgDays: averageLeadDays(completedCases),
+		taskCount: myTasks.length,
+		tasksDueToday: countOnDay(myTasks.map((task) => task.dueDate), today),
 	}
+}
+
+/**
+ * How many of the dates fall on the given day.
+ *
+ * @param {Array<string|undefined>} dates The dates, missing ones included.
+ * @param {string} day The day, `YYYY-MM-DD`.
+ * @return {number} The count.
+ */
+function countOnDay(dates, day) {
+	return dates.filter((date) => date && date.slice(0, 10) === day).length
+}
+
+/**
+ * The average whole days from start to end of the completed cases, rounded;
+ * null without any.
+ *
+ * @param {object[]} completedCases Cases completed this month.
+ * @return {number|null} The average.
+ */
+function averageLeadDays(completedCases) {
+	if (completedCases.length === 0) {
+		return null
+	}
+	const totalDays = completedCases.reduce((sum, c) => sum + leadDays(c), 0)
+	return Math.round(totalDays / completedCases.length)
+}
+
+/**
+ * Whole days from a case's start to its end, never negative; 0 when either
+ * date is missing.
+ *
+ * @param {object} c A completed case.
+ * @return {number} The days.
+ */
+function leadDays(c) {
+	if (!c.startDate || !c.endDate) {
+		return 0
+	}
+	const start = new Date(c.startDate)
+	const end = new Date(c.endDate)
+	start.setHours(0, 0, 0, 0)
+	end.setHours(0, 0, 0, 0)
+	return Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)))
 }
 
 /**
@@ -89,21 +102,54 @@ export function computeKpis(openCases, completedCases, myTasks) {
  * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
  */
 export function aggregateByStatus(openCases, statusTypes) {
-	const statusMap = new Map()
-	const idsMap = new Map()
-	const orderMap = new Map()
-
-	for (const st of statusTypes) {
-		if (!orderMap.has(st.name)) {
-			orderMap.set(st.name, st.order ?? 999)
-		}
-	}
+	const orderMap = firstOrderByName(statusTypes)
 
 	const statusIdToName = new Map()
 	for (const st of statusTypes) {
 		statusIdToName.set(st.id, st.name)
 	}
 
+	const { statusMap, idsMap } = tallyStatuses(openCases, statusIdToName)
+
+	return Array.from(statusMap.entries())
+		.map(([name, count]) => ({
+			name,
+			count,
+			statusIds: Array.from(idsMap.get(name) || []),
+		}))
+		.sort(
+			(a, b) => (orderMap.get(a.name) ?? 999) - (orderMap.get(b.name) ?? 999),
+		)
+}
+
+/**
+ * The order of each status name: the first status type carrying the name
+ * sets it, 999 when it has none.
+ *
+ * @param {object[]} statusTypes All status types.
+ * @return {Map<string, number>} The order per name.
+ */
+function firstOrderByName(statusTypes) {
+	const orderMap = new Map()
+	for (const st of statusTypes) {
+		if (!orderMap.has(st.name)) {
+			orderMap.set(st.name, st.order ?? 999)
+		}
+	}
+	return orderMap
+}
+
+/**
+ * Count open cases per status name, and collect the status ids behind
+ * each resolved name.
+ *
+ * @param {object[]} openCases Cases with non-final status.
+ * @param {Map<string, string>} statusIdToName Status type id to name.
+ * @return {{statusMap: Map<string, number>, idsMap: Map<string, Set<string>>}} The tally.
+ */
+function tallyStatuses(openCases, statusIdToName) {
+	const statusMap = new Map()
+	const idsMap = new Map()
 	for (const c of openCases) {
 		// A case's `status` is a statusType id. Only ids that resolve to a known
 		// statusType get their real name; anything else (null, or a stale/junk
@@ -115,20 +161,22 @@ export function aggregateByStatus(openCases, statusTypes) {
 		const name = resolvedName || t('dossiq', 'Unknown')
 		statusMap.set(name, (statusMap.get(name) || 0) + 1)
 		if (resolvedName) {
-			if (!idsMap.has(name)) idsMap.set(name, new Set())
-			idsMap.get(name).add(c.status)
+			idsFor(idsMap, name).add(c.status)
 		}
 	}
+	return { statusMap, idsMap }
+}
 
-	return Array.from(statusMap.entries())
-		.map(([name, count]) => ({
-			name,
-			count,
-			statusIds: Array.from(idsMap.get(name) || []),
-		}))
-		.sort(
-			(a, b) => (orderMap.get(a.name) ?? 999) - (orderMap.get(b.name) ?? 999),
-		)
+/**
+ * The set of status ids behind a status name, started when it is new.
+ *
+ * @param {Map<string, Set<string>>} idsMap The ids per name.
+ * @param {string} name The status name.
+ * @return {Set<string>} The ids.
+ */
+function idsFor(idsMap, name) {
+	if (!idsMap.has(name)) idsMap.set(name, new Set())
+	return idsMap.get(name)
 }
 
 /**
