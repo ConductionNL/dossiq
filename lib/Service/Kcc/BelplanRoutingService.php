@@ -52,6 +52,19 @@ class BelplanRoutingService {
 	public const AVAILABLE_STATUSES = ['beschikbaar', 'available', 'idle'];
 
 	/**
+	 * The route of a call that needs no skill: nobody, no escalation.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private const NO_SKILL_ROUTE = [
+		'destinationSpecialistId' => null,
+		'escalatieFlag' => false,
+		'estimatedWaitTime' => 0,
+		'vaardigheid' => '',
+		'candidatePool' => 0,
+	];
+
+	/**
 	 * Match a phone number against a belplan's triggerNummer (E.164 or local).
 	 *
 	 * @param string $phoneNumber The inbound number.
@@ -153,18 +166,16 @@ class BelplanRoutingService {
 		int $maxQueueLengte = self::DEFAULT_OVERFLOW_WACHTRIJ_LENGTE,
 	): array {
 		if ($vaardigheid === '') {
-			return [
-				'destinationSpecialistId' => null,
-				'escalatieFlag' => false,
-				'estimatedWaitTime' => 0,
-				'vaardigheid' => '',
-				'candidatePool' => 0,
-			];
+			return self::NO_SKILL_ROUTE;
 		}
 
-		$candidates = $this->filterCandidates(pool: $pool, vaardigheid: $vaardigheid);
+		$routing = new CallRouting();
+		$routing->vaardigheid = $vaardigheid;
+		$routing->overflowWachttijd = $overflowWachttijd;
+		$routing->maxQueueLengte = $maxQueueLengte;
+		$routing->candidates = $this->filterCandidates(pool: $pool, vaardigheid: $vaardigheid);
 
-		if (count($candidates) === 0) {
+		if (count($routing->candidates) === 0) {
 			return [
 				'destinationSpecialistId' => null,
 				'escalatieFlag' => true,
@@ -174,29 +185,63 @@ class BelplanRoutingService {
 			];
 		}
 
-		$available = array_filter(
+		$available = $this->availableOf(candidates: $routing->candidates);
+
+		// No-one available: overflow check.
+		if (count($available) === 0) {
+			return $this->overflowRoute(routing: $routing);
+		}
+
+		return $this->pickedRoute(routing: $routing, available: $available);
+	}//end routeCall()
+
+	/**
+	 * The candidates whose status says they can take a call now.
+	 *
+	 * @param array<int, array<string, mixed>> $candidates The specialists with the skill.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function availableOf(array $candidates): array {
+		return array_filter(
 			$candidates,
 			static function (array $c): bool {
 				$status = mb_strtolower((string)($c['status'] ?? ''));
 				return in_array($status, self::AVAILABLE_STATUSES, true);
 			}
 		);
+	}//end availableOf()
 
-		// No-one available: overflow check.
-		if (count($available) === 0) {
-			$minQueue = $this->minQueueLength(pool: $candidates);
-			$estWait = $minQueue * $this->avgHandlingDuration(pool: $candidates);
-			$overflow = ($estWait > $overflowWachttijd) || ($minQueue > $maxQueueLengte);
+	/**
+	 * The route when nobody is available: escalate when the wait or the queue is too long.
+	 *
+	 * @param CallRouting $routing The call being routed.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function overflowRoute(CallRouting $routing): array {
+		$minQueue = $this->minQueueLength(pool: $routing->candidates);
+		$estWait = $minQueue * $this->avgHandlingDuration(pool: $routing->candidates);
+		$overflow = ($estWait > $routing->overflowWachttijd) || ($minQueue > $routing->maxQueueLengte);
 
-			return [
-				'destinationSpecialistId' => null,
-				'escalatieFlag' => $overflow,
-				'estimatedWaitTime' => $estWait,
-				'vaardigheid' => $vaardigheid,
-				'candidatePool' => count($candidates),
-			];
-		}
+		return [
+			'destinationSpecialistId' => null,
+			'escalatieFlag' => $overflow,
+			'estimatedWaitTime' => $estWait,
+			'vaardigheid' => $routing->vaardigheid,
+			'candidatePool' => count($routing->candidates),
+		];
+	}//end overflowRoute()
 
+	/**
+	 * The route to the available specialist with the shortest queue, then the shortest handling.
+	 *
+	 * @param CallRouting                      $routing   The call being routed.
+	 * @param array<int, array<string, mixed>> $available The available candidates.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function pickedRoute(CallRouting $routing, array $available): array {
 		usort(
 			$available,
 			static function (array $a, array $b): int {
@@ -220,10 +265,10 @@ class BelplanRoutingService {
 			'destinationSpecialistId' => (string)($picked['employeeId'] ?? ($picked['id'] ?? '')),
 			'escalatieFlag' => false,
 			'estimatedWaitTime' => $picked['currentQueueLength'] * $picked['averageHandlingDuration'],
-			'vaardigheid' => $vaardigheid,
-			'candidatePool' => count($candidates),
+			'vaardigheid' => $routing->vaardigheid,
+			'candidatePool' => count($routing->candidates),
 		];
-	}//end routeCall()
+	}//end pickedRoute()
 
 	/**
 	 * Normalise a phone number: keep digits + leading +.

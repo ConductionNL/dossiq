@@ -103,7 +103,7 @@ class IntakeRequirementsListener implements IEventListener {
 		// save that sends a draft. A draft may miss required data (decision 180).
 		if ($event instanceof ObjectCreatingEvent === true) {
 			$entity = $event->getObject();
-			$this->inspect(event: $event, entity: $entity, creating: $this->receipt->isDraft(object: $entity) === false);
+			$this->inspect(event: $event, creating: $this->receipt->isDraft(object: $entity) === false);
 			return;
 		}
 
@@ -111,7 +111,6 @@ class IntakeRequirementsListener implements IEventListener {
 			$entity = $event->getNewObject();
 			$this->inspect(
 				event: $event,
-				entity: $entity,
 				creating: $this->receipt->leavesDraft(before: $event->getOldObject(), after: $entity)
 			);
 		}
@@ -121,34 +120,84 @@ class IntakeRequirementsListener implements IEventListener {
 	 * Refuse the save when a declaration refuses it.
 	 *
 	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event    The pre-persist event.
-	 * @param ObjectEntity                            $entity   The case being saved.
 	 * @param boolean                                 $creating Whether this is a creation.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
-	private function inspect(
-		ObjectCreatingEvent|ObjectUpdatingEvent $event,
-		ObjectEntity $entity,
-		bool $creating,
-	): void {
+	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, bool $creating): void {
+		$payload = $this->payloadOf(entity: $this->savedCase(event: $event));
+		if ($payload === null) {
+			return;
+		}
+
+		$caseType = $this->caseTypeOfCase(payload: $payload);
+		if ($caseType === []) {
+			return;
+		}
+
 		try {
-			$payload = $entity->jsonSerialize();
+			if ($creating === true) {
+				$this->assertCreatable(payload: $payload, caseType: $caseType);
+			}
+
+			$this->assertWritable(payload: $payload, caseType: $caseType);
+		} catch (RefusedException $e) {
+			$this->refuse(event: $event, refusal: $e);
+		}
+	}//end inspect()
+
+	/**
+	 * The case the event is about to persist.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event The pre-persist event.
+	 *
+	 * @return ObjectEntity The case being saved.
+	 */
+	private function savedCase(ObjectCreatingEvent|ObjectUpdatingEvent $event): ObjectEntity {
+		if ($event instanceof ObjectCreatingEvent === true) {
+			return $event->getObject();
+		}
+
+		return $event->getNewObject();
+	}//end savedCase()
+
+	/**
+	 * Read the case payload; an unreadable payload is logged and leaves the save alone.
+	 *
+	 * @param ObjectEntity $entity The case being saved.
+	 *
+	 * @return array<string, mixed>|null The payload, or null when it cannot be read.
+	 */
+	private function payloadOf(ObjectEntity $entity): ?array {
+		try {
+			return $entity->jsonSerialize();
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq intake: the case payload could not be read: ' . $e->getMessage()
 			);
-			return;
+			return null;
 		}
+	}//end payloadOf()
 
+	/**
+	 * The effective case type of a case payload, or none.
+	 *
+	 * A payload of another schema, or a case without a case type, has none.
+	 *
+	 * @param array<string, mixed> $payload The case payload.
+	 *
+	 * @return array<string, mixed> The effective case type, or [] when there is none.
+	 */
+	private function caseTypeOfCase(array $payload): array {
 		if ($this->isCaseSchema(object: $payload) === false) {
-			return;
+			return [];
 		}
 
 		$caseTypeId = $this->caseTypeIdOf(case: $payload);
 		if ($caseTypeId === '') {
-			return;
+			return [];
 		}
 
 		// 🔴 AN UNRESOLVABLE CASE TYPE LEAVES THE SAVE ALONE, ON PURPOSE.
@@ -159,34 +208,62 @@ class IntakeRequirementsListener implements IEventListener {
 		// than the one it would prevent. Telling the two apart is an
 		// openregister change; `IntakeRequirementsListenerTest` pins the
 		// behaviour so it stays a decision rather than an accident.
-		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);
-		if ($caseType === []) {
-			return;
-		}
+		return $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);
+	}//end caseTypeOfCase()
 
-		try {
-			if ($creating === true) {
-				$this->declarations->requirements->assertCreatable(case: $payload, caseType: $caseType);
-				$this->declarations->classification->assertCreatable(case: $payload, caseType: $caseType);
-				$this->declarations->duplicates->assertCreatable(
-					case: $payload,
-					caseType: $caseType,
-					user: $this->userSession->getUser()
-				);
-			}
+	/**
+	 * Assert what only a received case must satisfy: its requirements, its
+	 * classification and the duplicate policy, in that order.
+	 *
+	 * @param array<string, mixed> $payload  The case payload.
+	 * @param array<string, mixed> $caseType Its effective case type.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When a declaration refuses the case.
+	 */
+	private function assertCreatable(array $payload, array $caseType): void {
+		$this->declarations->requirements->assertCreatable(case: $payload, caseType: $caseType);
+		$this->declarations->classification->assertCreatable(case: $payload, caseType: $caseType);
+		$this->declarations->duplicates->assertCreatable(
+			case: $payload,
+			caseType: $caseType,
+			user: $this->userSession->getUser()
+		);
+	}//end assertCreatable()
 
-			$this->declarations->narrowing->assertWritable(case: $payload, caseType: $caseType);
-		} catch (RefusedException $e) {
-			$event->setErrors(
-				[
-					'message' => $e->getSentence(),
-					'error' => $e->getRule(),
-					'code' => $e->getMessage(),
-				]
-			);
-			$event->stopPropagation();
-		}//end try
-	}//end inspect()
+	/**
+	 * Assert what every save of a case must satisfy: the assignee narrowing.
+	 *
+	 * @param array<string, mixed> $payload  The case payload.
+	 * @param array<string, mixed> $caseType Its effective case type.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the narrowing refuses the case.
+	 */
+	private function assertWritable(array $payload, array $caseType): void {
+		$this->declarations->narrowing->assertWritable(case: $payload, caseType: $caseType);
+	}//end assertWritable()
+
+	/**
+	 * Stop the save with the refusal's sentence, rule and code.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event   The pre-persist event.
+	 * @param RefusedException                        $refusal The refusal.
+	 *
+	 * @return void
+	 */
+	private function refuse(ObjectCreatingEvent|ObjectUpdatingEvent $event, RefusedException $refusal): void {
+		$event->setErrors(
+			[
+				'message' => $refusal->getSentence(),
+				'error' => $refusal->getRule(),
+				'code' => $refusal->getMessage(),
+			]
+		);
+		$event->stopPropagation();
+	}//end refuse()
 
 	/**
 	 * Whether this payload is a `case`.

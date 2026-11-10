@@ -334,4 +334,32 @@ class TakeBackTest extends TestCase {
 		$this->assertSame(expected: CaseRouter::KEPT, actual: $stored['routingTakeBacks'][0]['outcome']);
 		$this->assertSame(expected: 'aad', actual: $stored['routingTakeBacks'][0]['to']);
 	}//end testAPoolOfOneKeepsTheCaseAndSaysSo()
+	/**
+	 * Earlier take-backs stay in front of the new record, and a rule without a window records none.
+	 *
+	 * @return void
+	 */
+	public function testEarlierTakeBacksStayAndARuleWithoutWindowRecordsNone(): void {
+		$earlier = ['from' => 'carla', 'to' => 'aad', 'reason' => CaseRouter::REASON_NOT_ACCEPTED, 'at' => '2026-10-10T09:00:00+02:00', 'outcome' => CaseRouter::TAKEN_BACK];
+		$this->routedToAad(
+			routing: ['rule' => ['strategy' => 'round-robin', 'roleType' => 'behandelaar']],
+			case: ['routingTakeBacks' => ['x' => $earlier]]
+		);
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(['aad'], ['bea']);
+
+		$this->assertSame(expected: CaseRouter::TAKEN_BACK, actual: $this->router()->takeBack(caseId: 'case-1', routedTo: 'aad', routedAt: ''));
+		$this->assertSame(
+			expected: [
+				$earlier,
+				[
+					'from'    => 'aad',
+					'to'      => 'bea',
+					'reason'  => CaseRouter::REASON_NOT_ACCEPTED,
+					'at'      => '2026-10-14T09:00:00+02:00',
+					'outcome' => CaseRouter::TAKEN_BACK,
+				],
+			],
+			actual: $this->store->cases['case-1']['routingTakeBacks']
+		);
+	}//end testEarlierTakeBacksStayAndARuleWithoutWindowRecordsNone()
 }//end class
