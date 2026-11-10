@@ -135,6 +135,59 @@ class DeadlinePauseRegistrationFlowTest extends TestCase {
 	}//end testAMissingOrPausedInstanceIsRefused()
 
 	/**
+	 * A resume pulls back the unused days, clears the pause and records it.
+	 *
+	 * @return void
+	 */
+	public function testAResumeClearsThePauseAndRecordsTheUnusedDays(): void {
+		$this->instance = ['id' => 't1', 'status' => 'paused', 'endDateCurrent' => '2026-11-20', 'pauzeStartDatum' => '2026-11-01', 'pauzeDuurDagen' => 10];
+		$received = new DateTimeImmutable('2026-11-04');
+
+		$result = $this->service(timers: null)->resumeAfterPauze(termInstanceId: 't1', aanvullingDatum: $received);
+
+		self::assertSame(
+			[
+				'update',
+				't1',
+				[
+					'endDateCurrent' => '2026-11-13',
+					'status' => 'lopend',
+					'pauseDeadline' => null,
+					'pauseTimerId' => null,
+					'pauseReason' => '',
+					'pauseWaitingOn' => '',
+					'chasesSent' => 0,
+					'lastChasedAt' => null,
+					'chaseEscalatedAt' => null,
+				],
+			],
+			$this->calls[0]
+		);
+		self::assertSame(['event', 't1', 'hervat', 'AWB 4:15', 'Aanvulling ontvangen; termijn hervat', -7, '', $received], $this->calls[1]);
+		self::assertSame(['id' => 't1', 'updated' => true], $result);
+	}//end testAResumeClearsThePauseAndRecordsTheUnusedDays()
+
+	/**
+	 * A missing instance and a running one cannot be resumed.
+	 *
+	 * @return void
+	 */
+	public function testAMissingOrRunningInstanceCannotBeResumed(): void {
+		$messages = [];
+		foreach ([null, ['id' => 't1', 'status' => 'lopend']] as $instance) {
+			$this->instance = $instance;
+			try {
+				$this->service(timers: null)->resumeAfterPauze(termInstanceId: 't1');
+			} catch (RuntimeException $e) {
+				$messages[] = $e->getMessage();
+			}
+		}
+
+		self::assertSame(['TermijnInstance not found: t1', 'TermijnInstance not in gepauzeerd state: t1'], $messages);
+		self::assertSame([], $this->calls);
+	}//end testAMissingOrRunningInstanceCannotBeResumed()
+
+	/**
 	 * The service over a store that writes down every call.
 	 *
 	 * @param TermijnTimerService|null $timers The engine bridge, or none.
