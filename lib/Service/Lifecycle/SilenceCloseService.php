@@ -192,11 +192,36 @@ class SilenceCloseService {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
 	 */
 	public function close(string $caseId, array $decision): void {
-		$reason = sprintf(
+		if ($this->abortSilent(caseId: $caseId, reason: self::reasonFor(decision: $decision)) === false) {
+			return;
+		}
+
+		$this->recordAutoClose(caseId: $caseId, decision: $decision);
+	}//end close()
+
+	/**
+	 * Why a silent case is closed: the period its case type declares.
+	 *
+	 * @param array<string, mixed> $decision The silence decision.
+	 *
+	 * @return string The reason.
+	 */
+	private static function reasonFor(array $decision): string {
+		return sprintf(
 			'Closed after %d days without activity, the period this case type declares.',
 			$decision['period'],
 		);
+	}//end reasonFor()
 
+	/**
+	 * Abort the case for its silence, or leave it open and log why when it cannot be.
+	 *
+	 * @param string $caseId The case.
+	 * @param string $reason Why it is closed.
+	 *
+	 * @return bool True when the case was aborted.
+	 */
+	private function abortSilent(string $caseId, string $reason): bool {
 		try {
 			$this->steps->endings->abort(caseId: $caseId, reason: $reason, resultTypeId: '');
 		} catch (Throwable $e) {
@@ -209,9 +234,21 @@ class SilenceCloseService {
 				['caseId' => $caseId, 'reason' => $e->getMessage()],
 			);
 
-			return;
+			return false;
 		}
 
+		return true;
+	}//end abortSilent()
+
+	/**
+	 * Mark the aborted case as closed by the product and journal why.
+	 *
+	 * @param string               $caseId   The case.
+	 * @param array<string, mixed> $decision The silence decision.
+	 *
+	 * @return void
+	 */
+	private function recordAutoClose(string $caseId, array $decision): void {
 		$reloaded = $this->store->loadCase(caseId: $caseId);
 		if ($reloaded === null) {
 			return;
@@ -222,7 +259,7 @@ class SilenceCloseService {
 			case: $reloaded,
 			entry: [
 				'type' => 'autoClose',
-				'reason' => $reason,
+				'reason' => self::reasonFor(decision: $decision),
 				'product' => true,
 				'period' => $decision['period'],
 				'silentDays' => $decision['silentDays'],
@@ -234,7 +271,7 @@ class SilenceCloseService {
 			'SilenceCloseService: the product closed a silent case',
 			['caseId' => $caseId, 'period' => $decision['period'], 'silentDays' => $decision['silentDays']],
 		);
-	}//end close()
+	}//end recordAutoClose()
 
 	/**
 	 * When this case was last touched by anything but this service.
