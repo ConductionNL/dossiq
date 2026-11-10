@@ -213,52 +213,16 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 	 */
 	private function restoreRegisterIdentity(IOutput $output): void {
 		$registerMapper = $this->container->get('OCA\OpenRegister\Db\RegisterMapper');
-
-		try {
-			$register = $registerMapper->find(
-				id: Application::APP_ID,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$output->info('Demo-fork repair: no `dossiq` register on this instance.');
-			return;
-		}
-
-		if ($register->getApplication() !== self::FORKED_APPLICATION) {
-			$output->info('Demo-fork repair: the register still carries its own application id; left alone.');
+		$register = $this->forkedRegister(registerMapper: $registerMapper, output: $output);
+		if ($register === null) {
 			return;
 		}
 
 		$register->setApplication(Application::APP_ID);
-
-		$shipped = $this->shippedIdentity();
-		$restoredTitle = false;
-		// No `?? ''`: shippedIdentity() always returns all three keys, so the
-		// coalesce was dead and phpstan said so. The emptiness check is the
-		// real one and stays.
-		if ($shipped['title'] !== '' && $register->getTitle() === self::DEFACED_TITLE) {
-			$register->setTitle($shipped['title']);
-			if ($shipped['description'] !== '') {
-				$register->setDescription($shipped['description']);
-			}
-
-			if ($shipped['version'] !== '') {
-				$register->setVersion($shipped['version']);
-			}
-
-			$restoredTitle = true;
-		}
-
+		$restoredTitle = $this->restoreShippedTitle(register: $register);
 		$registerMapper->update($register);
 
-		$note = 'Demo-fork repair: register `dossiq` moved back to application `dossiq`.';
-		if ($restoredTitle === true) {
-			$note = 'Demo-fork repair: register `dossiq` moved back to application `dossiq` and retitled "'
-				. $register->getTitle() . '".';
-		}
-
-		$output->info($note);
+		$output->info($this->restoredNote(register: $register, restoredTitle: $restoredTitle));
 		$this->logger->warning(
 			'Dossiq: restored the register identity a demo import overwrote',
 			[
@@ -268,6 +232,81 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 			]
 		);
 	}//end restoreRegisterIdentity()
+
+	/**
+	 * The `dossiq` register when the demo import forked it; null (with a note)
+	 * when there is none or it still carries its own application id.
+	 *
+	 * @param object  $registerMapper OpenRegister's register mapper.
+	 * @param IOutput $output         Repair output.
+	 *
+	 * @return object|null The forked register.
+	 */
+	private function forkedRegister(object $registerMapper, IOutput $output): ?object {
+		try {
+			$register = $registerMapper->find(
+				id: Application::APP_ID,
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			$output->info('Demo-fork repair: no `dossiq` register on this instance.');
+			return null;
+		}
+
+		if ($register->getApplication() !== self::FORKED_APPLICATION) {
+			$output->info('Demo-fork repair: the register still carries its own application id; left alone.');
+			return null;
+		}
+
+		return $register;
+	}//end forkedRegister()
+
+	/**
+	 * Put the shipped title, description and version back, but only while the
+	 * title still reads what the import made it read.
+	 *
+	 * @param object $register The forked register.
+	 *
+	 * @return bool Whether the title was restored.
+	 */
+	private function restoreShippedTitle(object $register): bool {
+		$shipped = $this->shippedIdentity();
+		// No `?? ''`: shippedIdentity() always returns all three keys, so the
+		// coalesce was dead and phpstan said so. The emptiness check is the
+		// real one and stays.
+		if ($shipped['title'] === '' || $register->getTitle() !== self::DEFACED_TITLE) {
+			return false;
+		}
+
+		$register->setTitle($shipped['title']);
+		if ($shipped['description'] !== '') {
+			$register->setDescription($shipped['description']);
+		}
+
+		if ($shipped['version'] !== '') {
+			$register->setVersion($shipped['version']);
+		}
+
+		return true;
+	}//end restoreShippedTitle()
+
+	/**
+	 * The line the repair prints for a restored register.
+	 *
+	 * @param object $register      The restored register.
+	 * @param bool   $restoredTitle Whether its title was restored too.
+	 *
+	 * @return string
+	 */
+	private function restoredNote(object $register, bool $restoredTitle): string {
+		if ($restoredTitle === true) {
+			return 'Demo-fork repair: register `dossiq` moved back to application `dossiq` and retitled "'
+				. $register->getTitle() . '".';
+		}
+
+		return 'Demo-fork repair: register `dossiq` moved back to application `dossiq`.';
+	}//end restoredNote()
 
 	/**
 	 * Retire every schema that is provably part of the fork.
@@ -291,60 +330,59 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 		}
 
 		$linked = $this->schemaIdsAnyRegisterLinks();
-		$deletion = $this->container->get('OCA\OpenRegister\Service\SchemaDeletionService');
-
-		$retired = 0;
-		$objects = 0;
-		$spared = [];
-
+		$run = new ForkedSchemaRetirement(schemaMapper: $schemaMapper, deletion: $this->container->get('OCA\OpenRegister\Service\SchemaDeletionService'));
+		$run->linked = $linked;
 		foreach ($forked as $schema) {
-			$slug = (string)$schema->getSlug();
-			$reason = $this->reasonToSpare(
-				schemaMapper: $schemaMapper,
-				slug: $slug,
-				schemaId: (int)$schema->getId(),
-				linked: $linked
-			);
+			$run->retire(schema: $schema);
+		}
 
-			if ($reason !== '') {
-				$spared[$slug] = $reason;
-				continue;
-			}
+		$this->reportRetirement(output: $output, run: $run);
+	}//end retireForkedSchemas()
 
-			try {
-				$result = $deletion->cascadeDeleteSchema(schema: $schema);
-				$retired++;
-				$objects += (int)($result['deletedCount'] ?? 0);
-			} catch (Throwable $e) {
-				$spared[$slug] = 'deletion failed: ' . $e->getMessage();
-			}
-		}//end foreach
-
+	/**
+	 * Report the retirement: the counts, one warning per kept schema, one log line.
+	 *
+	 * @param IOutput           $output Repair output.
+	 * @param ForkedSchemaRetirement $run    The finished retirement.
+	 *
+	 * @return void
+	 */
+	private function reportRetirement(IOutput $output, ForkedSchemaRetirement $run): void {
 		$output->info(
 			sprintf(
 				'Demo-fork repair: retired %d forked schema(s) and the %d demo object(s) bound to them, '
 				. 'spared %d.',
-				$retired,
-				$objects,
-				count($spared)
+				$run->retired,
+				$run->objects,
+				count($run->spared)
 			)
 		);
 
-		foreach ($spared as $slug => $reason) {
+		foreach ($run->spared as $slug => $reason) {
 			$output->warning('Demo-fork repair: kept `dossiq.demo/' . $slug . '`, ' . $reason . '.');
 		}
 
+		$this->logRetirement(run: $run);
+	}//end reportRetirement()
+
+	/**
+	 * Log the retirement's outcome.
+	 *
+	 * @param ForkedSchemaRetirement $run The finished retirement.
+	 *
+	 * @return void
+	 */
+	private function logRetirement(ForkedSchemaRetirement $run): void {
 		$this->logger->warning(
 			'Dossiq: retired the dossiq.demo schema fork',
 			[
 				'app' => Application::APP_ID,
-				'retired' => $retired,
-				'objects' => $objects,
-				'spared' => $spared,
+				'retired' => $run->retired,
+				'objects' => $run->objects,
+				'spared' => $run->spared,
 			]
 		);
-
-	}//end retireForkedSchemas()
+	}//end logRetirement()
 
 	/**
 	 * Drop the deleted schema ids from the demo import's bookkeeping row.
@@ -397,49 +435,6 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 			);
 		}
 	}//end pruneDemoConfiguration()
-
-	/**
-	 * Say why this forked schema must be kept, or '' when it may go.
-	 *
-	 * Three separate questions, each with its own answer, because merging them
-	 * into one boolean is what makes a report unactionable: an operator needs
-	 * to know WHICH of the three held.
-	 *
-	 * @param object            $schemaMapper OpenRegister's schema mapper.
-	 * @param string            $slug         The forked schema's slug.
-	 * @param integer           $schemaId     The forked schema's id.
-	 * @param array<int, int>   $linked       Schema ids some register links.
-	 *
-	 * @return string The reason to spare it, or '' when every condition is met.
-	 */
-	private function reasonToSpare(object $schemaMapper, string $slug, int $schemaId, array $linked): string {
-		if ($slug === '') {
-			return 'it has no slug, so its twin cannot be identified';
-		}
-
-		if (in_array($schemaId, $linked, true) === true) {
-			return 'a register still links it, so it is reachable';
-		}
-
-		$twins = $schemaMapper->findAll(
-			filters: [
-				'application' => Application::APP_ID,
-				'slug' => $slug,
-			],
-			_rbac: false,
-			_multitenancy: false
-		);
-
-		if (count($twins) === 0) {
-			return 'no schema of that slug exists under `dossiq`, so this may be the only copy';
-		}
-
-		if (count($twins) > 1) {
-			return 'more than one schema of that slug exists under `dossiq`, so the real home is ambiguous';
-		}
-
-		return '';
-	}//end reasonToSpare()
 
 	/**
 	 * Every schema id that some register lists.
