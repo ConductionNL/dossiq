@@ -37,7 +37,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\ApplicantTermNote;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
@@ -140,6 +139,16 @@ class ApplicantTermNoteListener implements IEventListener {
 	 * @return bool True when this is a case.
 	 */
 	private function isCaseSchema(array $object): bool {
-		return SchemaMembership::belongsTo(object: $object, expected: (string)$this->settingsService->getConfigValue('case_schema'));
+		$expected = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($expected === '') {
+			return false;
+		}
+
+		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
+
+		return $candidate !== '' && (
+			$candidate === $expected
+			|| str_ends_with($candidate, '/' . $expected)
+		);
 	}//end isCaseSchema()
 }//end class
