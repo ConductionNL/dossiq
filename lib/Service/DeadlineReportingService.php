@@ -54,6 +54,13 @@ use OCP\IL10N;
  * @spec openspec/specs/termijn-reporting/spec.md
  */
 class DeadlineReportingService {
+	/**
+	 * The annual statement when the payouts cannot be read.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private const EMPTY_AUDIT_REPORT = ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
+
 	use SearchesObjects;
 
 	/**
@@ -427,64 +434,146 @@ class DeadlineReportingService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function generateDwangsomAuditReport(int $year): array {
+		$source = $this->payoutSource();
+		if ($source === null) {
+			return self::EMPTY_AUDIT_REPORT;
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(objectService: $source[0], register: $source[1], schema: $source[2], filters: []);
+		} catch (\Throwable $e) {
+			return self::EMPTY_AUDIT_REPORT;
+		}
+
+		$paid = $this->paidInYear(rows: ($this->payouts?->mergedRows(storedRows: $rows, paidInYear: $year) ?? $rows), year: $year);
+
+		return $this->statementOf(year: $year, paid: $paid);
+	}//end generateDwangsomAuditReport()
+
+	/**
+	 * Where the payouts are stored, or null when OpenRegister or a setting is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The object service, register and payout schema.
+	 */
+	private function payoutSource(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$uSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
 		if ($objectService === null || $register === '' || $uSchema === '') {
-			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
+			return null;
 		}
 
-		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: []);
-		} catch (\Throwable $e) {
-			return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0, 'totalEuros' => 0.0, 'warningCount' => 0]];
-		}
+		return [$objectService, $register, $uSchema];
+	}//end payoutSource()
 
-		$rows = ($this->payouts?->mergedRows(storedRows: $rows, paidInYear: $year) ?? $rows);
-
+	/**
+	 * The payouts paid in the year, in order.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The payouts.
+	 * @param int                              $year The year.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function paidInYear(array $rows, int $year): array {
 		$yearPrefix = (string)$year;
-		$outRows = [];
-		$total = 0;
+
+		return array_values(
+			array_filter(
+				$rows,
+				static fn (array $row): bool => str_starts_with((string)($row['actualPaymentDate'] ?? ''), $yearPrefix)
+			)
+		);
+	}//end paidInYear()
+
+	/**
+	 * One payout as the statement lists it, with the generic keys beside the old ones.
+	 *
+	 * @param array<string, mixed> $row A payout.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function statementRow(array $row): array {
+		$outRow = $this->payoutRow(row: $row);
+
+		return $outRow + self::genericKeys(row: $outRow);
+	}//end statementRow()
+
+	/**
+	 * A warning for each payout that carries no payment reference.
+	 *
+	 * @param array<int, array<string, mixed>> $paid The payouts of the year.
+	 *
+	 * @return array<int, string>
+	 */
+	private function missingReferenceWarnings(array $paid): array {
 		$warnings = [];
-
-		foreach ($rows as $row) {
-			$payment = (string)($row['actualPaymentDate'] ?? '');
-			if (str_starts_with($payment, $yearPrefix) === false) {
-				continue;
-			}
-
-			$amount = (int)($row['amount'] ?? 0);
-			$total += $amount;
-
+		foreach ($paid as $row) {
 			if (($row['betalingsreferentie'] ?? '') === '') {
 				$warnings[] = 'Missing betalingsreferentie for ' . ((string)($row['reference'] ?? ''));
 			}
+		}
 
-			$outRow = [
-				'reference' => (string)($row['reference'] ?? ''),
-				'bedragCents' => $amount,
-				'actualPaymentDate' => $payment,
-				'betalingsreferentie' => (string)($row['betalingsreferentie'] ?? ''),
-				'status' => (string)($row['status'] ?? ''),
-				'legalBasis' => (string)($row['legalBasis'] ?? ''),
-				'iban' => (string)($row['iban'] ?? ''),
-			];
-			$outRows[] = $outRow + self::genericKeys(row: $outRow);
-		}//end foreach
+		return $warnings;
+	}//end missingReferenceWarnings()
+
+	/**
+	 * One payout as the statement lists it.
+	 *
+	 * @param array<string, mixed> $row A payout.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function payoutRow(array $row): array {
+		return [
+			'reference' => (string)($row['reference'] ?? ''),
+			'bedragCents' => (int)($row['amount'] ?? 0),
+			'actualPaymentDate' => (string)($row['actualPaymentDate'] ?? ''),
+			'betalingsreferentie' => (string)($row['betalingsreferentie'] ?? ''),
+			'status' => (string)($row['status'] ?? ''),
+			'legalBasis' => (string)($row['legalBasis'] ?? ''),
+			'iban' => (string)($row['iban'] ?? ''),
+		];
+	}//end payoutRow()
+
+	/**
+	 * The statement of the payouts paid in a year.
+	 *
+	 * @param int                              $year The year.
+	 * @param array<int, array<string, mixed>> $paid The payouts paid in it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function statementOf(int $year, array $paid): array {
+		$outRows = array_map(fn (array $row): array => $this->statementRow(row: $row), $paid);
+		$warnings = $this->missingReferenceWarnings(paid: $paid);
 
 		return [
 			'year' => $year,
 			'jaar' => $year,
 			'rows' => $outRows,
-			'summary' => [
-				'count' => count($outRows),
-				'totalCents' => $total,
-				'totalEuros' => round($total / 100, 2),
-				'warningCount' => count($warnings),
-			],
+			'summary' => $this->statementSummary(rows: $outRows, warnings: $warnings),
 			'warnings' => $warnings,
 		];
-	}//end generateDwangsomAuditReport()
+	}//end statementOf()
+
+	/**
+	 * The statement's count, totals and warning count.
+	 *
+	 * @param array<int, array<string, mixed>> $rows     The statement's rows.
+	 * @param array<int, string>               $warnings Its warnings.
+	 *
+	 * @return array{count: int, totalCents: int, totalEuros: float, warningCount: int}
+	 */
+	private function statementSummary(array $rows, array $warnings): array {
+		$total = (int)array_sum(array_column($rows, 'bedragCents'));
+
+		return [
+			'count' => count($rows),
+			'totalCents' => $total,
+			'totalEuros' => round($total / 100, 2),
+			'warningCount' => count($warnings),
+		];
+	}//end statementSummary()
 
 	/**
 	 * Compute a snapshot KPI summary for the dashboard widget.
