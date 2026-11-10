@@ -201,14 +201,7 @@ class TaskChecklistController extends Controller {
 			// faults as the caller's fault, which is the worse failure: a
 			// genuine fault must still be a 500 and must still be logged as an
 			// error, and it is, immediately below.
-			$this->logger->info(
-				'Rejected checklist run for case ' . $caseId . ': ' . $exception->getMessage(),
-				['app' => $this->appName]
-			);
-			return new JSONResponse(
-				['message' => $exception->getMessage()],
-				Http::STATUS_BAD_REQUEST
-			);
+			return $this->rejectedPayload(caseId: $caseId, exception: $exception);
 		}
 
 		if ($exception instanceof RuntimeException) {
@@ -218,6 +211,41 @@ class TaskChecklistController extends Controller {
 			);
 		}
 
+		return $this->serverFault(caseId: $caseId, exception: $exception);
+	}//end submitFailed()
+
+	/**
+	 * OpenRegister's validation refusal: a 400 logged at info.
+	 *
+	 * @param string    $caseId    The case.
+	 * @param Throwable $exception The validation refusal.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	private function rejectedPayload(string $caseId, Throwable $exception): JSONResponse {
+		$this->logger->info(
+			'Rejected checklist run for case ' . $caseId . ': ' . $exception->getMessage(),
+			['app' => $this->appName]
+		);
+		return new JSONResponse(
+			['message' => $exception->getMessage()],
+			Http::STATUS_BAD_REQUEST
+		);
+	}//end rejectedPayload()
+
+	/**
+	 * A genuine fault: a 500 logged as an error.
+	 *
+	 * @param string    $caseId    The case.
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	private function serverFault(string $caseId, Throwable $exception): JSONResponse {
 		$this->logger->error(
 			'Failed to submit a checklist run for case ' . $caseId . ': ' . $exception->getMessage(),
 			['app' => $this->appName]
@@ -226,7 +254,7 @@ class TaskChecklistController extends Controller {
 			['message' => 'Submission failed: ' . $exception->getMessage()],
 			Http::STATUS_INTERNAL_SERVER_ERROR
 		);
-	}//end submitFailed()
+	}//end serverFault()
 
 	/**
 	 * Every checklist run of a case.

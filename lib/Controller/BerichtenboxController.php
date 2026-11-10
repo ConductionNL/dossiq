@@ -96,6 +96,20 @@ class BerichtenboxController extends Controller {
 			return $refusal;
 		}
 
+		return $this->dispatch(caseId: $caseId, category: $category);
+	}//end send()
+
+	/**
+	 * Hand the message to the service and answer with what it recorded.
+	 *
+	 * @param mixed  $caseId   The case the message is about.
+	 * @param string $category The message category.
+	 *
+	 * @return JSONResponse The 200 with the message record, or the 400 the service's refusal answers with.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function dispatch(mixed $caseId, string $category): JSONResponse {
 		$result = $this->berichtenboxService->sendMessage(
 			$caseId,
 			$this->request->getParam('bsn', ''),
@@ -111,7 +125,7 @@ class BerichtenboxController extends Controller {
 		}
 
 		return new JSONResponse(['success' => true, 'message' => $result]);
-	}//end send()
+	}//end dispatch()
 
 	/**
 	 * Refuse a send without a case, or by a caller who may not change it.
