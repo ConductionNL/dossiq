@@ -377,6 +377,72 @@ class CaseDefinitionPortabilityTest extends TestCase {
 	}//end testACaseTypeSurvivesARoundTrip()
 
 	/**
+	 * A partial export: its manifest (keys in order, versions, environment,
+	 * generator, excluded components), the version it stores, the entries the
+	 * archive carries, the file name and the log line; and the refusal of a
+	 * component that does not exist.
+	 *
+	 * @return void
+	 */
+	public function testAPartialExportKeepsItsWholeShape(): void {
+		$stored = [];
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			static fn (string $app, string $key, string $default = ''): string => match ($key) {
+				'export_version_ct-1' => '1.4',
+				'environment_name' => 'acceptatie',
+				'installed_version' => '0.4.54',
+				default => $default,
+			}
+		);
+		$appConfig->method('setValueString')->willReturnCallback(
+			static function (string $app, string $key, string $value) use (&$stored): bool {
+				$stored[] = [$app, $key, $value];
+				return true;
+			}
+		);
+		$logged = [];
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$logger->method('info')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$logged): void {
+				$logged[] = [$message, $context];
+			}
+		);
+		$exporter = new CaseDefinitionExportService($appConfig, $logger, $this->store(caseTypeExists: true));
+
+		$package = $exporter->exportCaseDefinition(self::CASE_TYPE_ID, ['statuses', 'workflows']);
+		$manifest = $this->entry(path: $package['path'], entry: 'manifest.json');
+		$zip = new ZipArchive();
+		$zip->open($package['path'], ZipArchive::RDONLY);
+		$names = [];
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$names[] = $zip->getNameIndex($i);
+		}
+
+		$zip->close();
+		unlink($package['path']);
+
+		self::assertSame(['version', 'previousVersion', 'exportDate', 'sourceEnvironment', 'generator', 'caseType', 'components', 'excludedComponents', 'dependencies'], array_keys($manifest));
+		self::assertSame(['1.5', '1.4', 'acceptatie', 'dossiq/0.4.54'], [$manifest['version'], $manifest['previousVersion'], $manifest['sourceEnvironment'], $manifest['generator']]);
+		self::assertSame(['id' => 'ct-1', 'slug' => 'omgevingsvergunning', 'title' => 'Omgevingsvergunning'], $manifest['caseType']);
+		self::assertSame(['statuses', 'workflows'], $manifest['components']);
+		self::assertSame(['schema', 'permissions', 'documents', 'metadata'], $manifest['excludedComponents']);
+		self::assertSame([['dossiq', 'export_version_ct-1', '1.5']], $stored);
+		self::assertSame('manifest.json', $names[0]);
+		self::assertContains('statuses.json', $names);
+		self::assertNotContains('schema.json', $names);
+		self::assertSame('case-definition-omgevingsvergunning-v1.5.zip', $package['filename']);
+		self::assertSame([['Exporting case definition {caseTypeId} with components: {components}', ['caseTypeId' => 'ct-1', 'components' => 'statuses, workflows']]], $logged);
+
+		try {
+			$exporter->exportCaseDefinition(self::CASE_TYPE_ID, ['statuses', 'bogus', 'other']);
+			self::fail('an unknown component must be refused');
+		} catch (\InvalidArgumentException $e) {
+			self::assertSame('Invalid export components: bogus, other', $e->getMessage());
+		}
+	}//end testAPartialExportKeepsItsWholeShape()
+
+	/**
 	 * A component that writes nothing is not a success.
 	 *
 	 * @return void
