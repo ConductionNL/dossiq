@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
 use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
@@ -52,7 +53,7 @@ interface ConsultationObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters): array;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array;
 
 	/**
 	 * Search objects by numeric @self query.

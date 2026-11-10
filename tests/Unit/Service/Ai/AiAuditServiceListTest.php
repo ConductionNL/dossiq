@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\Ai\AiAuditLog;
 use OCA\Dossiq\Service\Ai\AiAuditService;
 use OCA\Dossiq\Service\Ai\AiModelIdentity;
 use OCA\Dossiq\Service\Ai\AiOversightDelegationService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -52,7 +53,7 @@ interface AiAuditObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters): array;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array;
 }//end interface
 
 /**
@@ -138,8 +139,7 @@ class AiAuditServiceListTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('searchObjectsBySlug')
 			->with(
-				'dossiq',
-				'aiAuditEntry',
+				$this->callback(static fn (RegisterSchemaRef $target): bool => $target->register === 'dossiq' && $target->schema === 'aiAuditEntry'),
 				$this->callback(function (array $filters) {
 					return ($filters['caseId'] ?? null) === 'case-a'
 						&& ($filters['type'] ?? null) === 'classification'
@@ -174,8 +174,7 @@ class AiAuditServiceListTest extends TestCase {
 		$objectService = $this->createMock(AiAuditObjectServiceStub::class);
 		$objectService->method('searchObjectsBySlug')
 			->with(
-				'dossiq',
-				'aiAuditEntry',
+				$this->callback(static fn (RegisterSchemaRef $target): bool => $target->register === 'dossiq' && $target->schema === 'aiAuditEntry'),
 				$this->callback(fn (array $filters) => ($filters['_limit'] ?? null) === 200)
 			)
 			->willReturn([]);
@@ -198,8 +197,7 @@ class AiAuditServiceListTest extends TestCase {
 		$objectService = $this->createMock(AiAuditObjectServiceStub::class);
 		$objectService->method('searchObjectsBySlug')
 			->with(
-				'dossiq',
-				'aiAuditEntry',
+				$this->callback(static fn (RegisterSchemaRef $target): bool => $target->register === 'dossiq' && $target->schema === 'aiAuditEntry'),
 				$this->callback(fn (array $filters) => ($filters['_limit'] ?? null) === 50)
 			)
 			->willReturn([]);

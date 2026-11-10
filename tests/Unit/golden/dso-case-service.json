@@ -1226,8 +1226,10 @@
             [
                 "ObjectServiceInterface::searchObjectsBySlug",
                 {
-                    "registerSlug": "dossiq",
-                    "schemaSlug": "case",
+                    "target": {
+                        "register": "dossiq",
+                        "schema": "case"
+                    },
                     "filters": {
                         "permitApplicationRef": "va-1",
                         "_limit": 1
@@ -1316,8 +1318,10 @@
             [
                 "ObjectServiceInterface::searchObjectsBySlug",
                 {
-                    "registerSlug": "dossiq",
-                    "schemaSlug": "case",
+                    "target": {
+                        "register": "dossiq",
+                        "schema": "case"
+                    },
                     "filters": {
                         "permitApplicationRef": "va-1",
                         "_limit": 1
@@ -1435,8 +1439,10 @@
             [
                 "ObjectServiceInterface::searchObjectsBySlug",
                 {
-                    "registerSlug": "dossiq",
-                    "schemaSlug": "case",
+                    "target": {
+                        "register": "dossiq",
+                        "schema": "case"
+                    },
                     "filters": {
                         "permitApplicationRef": "va-1",
                         "_limit": 1
@@ -1472,8 +1478,10 @@
             [
                 "ObjectServiceInterface::searchObjectsBySlug",
                 {
-                    "registerSlug": "dossiq",
-                    "schemaSlug": "case",
+                    "target": {
+                        "register": "dossiq",
+                        "schema": "case"
+                    },
                     "filters": {
                         "permitApplicationRef": "va-1",
                         "_limit": 1
@@ -1542,8 +1550,10 @@
             [
                 "ObjectServiceInterface::searchObjectsBySlug",
                 {
-                    "registerSlug": "dossiq",
-                    "schemaSlug": "case",
+                    "target": {
+                        "register": "dossiq",
+                        "schema": "case"
+                    },
                     "filters": {
                         "permitApplicationRef": "va-1",
                         "_limit": 1
@@ -1584,8 +1594,10 @@
             [
                 "ObjectServiceInterface::searchObjectsBySlug",
                 {
-                    "registerSlug": "dossiq",
-                    "schemaSlug": "case",
+                    "target": {
+                        "register": "dossiq",
+                        "schema": "case"
+                    },
                     "filters": {
                         "permitApplicationRef": "va-1",
                         "_limit": 1
@@ -1655,8 +1667,10 @@
             [
                 "ObjectServiceInterface::searchObjectsBySlug",
                 {
-                    "registerSlug": "dossiq",
-                    "schemaSlug": "case",
+                    "target": {
+                        "register": "dossiq",
+                        "schema": "case"
+                    },
                     "filters": {
                         "permitApplicationRef": "va-1",
                         "_limit": 1

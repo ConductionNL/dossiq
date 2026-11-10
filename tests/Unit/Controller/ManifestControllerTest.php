@@ -28,6 +28,7 @@ use OCA\Dossiq\Controller\ManifestController;
 use OCA\Dossiq\Service\CaseTypeViews;
 use OCA\Dossiq\Service\MenuCaseTypesService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Http;
 use OCP\IConfig;
 use OCP\IGroupManager;
@@ -60,7 +61,7 @@ class FakeCaseTypeObjectService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 		return $this->rows;
 	}//end searchObjectsBySlug()
 }//end class

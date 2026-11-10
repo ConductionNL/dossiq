@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\AdvisoryBodyService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -44,7 +45,7 @@ interface AdvisoryObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters): array;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array;
 
 	/**
 	 * Search objects by numeric @self query.

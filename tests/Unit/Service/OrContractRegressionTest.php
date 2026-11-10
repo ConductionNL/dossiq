@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use TypeError;
@@ -142,7 +143,7 @@ class OrContractRegressionTest extends TestCase {
 		// The retired filter form: silently zero rows, the way live behaves.
 		self::assertSame(
 			[],
-			$this->objects->searchObjectsBySlug('dossiq', 'deadlineInstance', ['id' => $id]),
+			$this->objects->searchObjectsBySlug(new RegisterSchemaRef(register: 'dossiq', schema: 'deadlineInstance'), ['id' => $id]),
 			'a top-level id filter must resolve nothing'
 		);
 

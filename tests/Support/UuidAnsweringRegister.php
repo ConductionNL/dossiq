@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
+
 /**
  * Delegates to InMemoryRegister; a save on the named schemas answers an entity with a uuid.
  */
@@ -79,13 +81,14 @@ class UuidAnsweringRegister {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function searchObjectsBySlug(
-		string $register,
-		string $schema,
+		RegisterSchemaRef $target,
 		array $filters = [],
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
-		return $this->store->searchObjectsBySlug($register, $schema, $filters);
+		$register = (string)$target->register;
+		$schema = (string)$target->schema;
+		return $this->store->searchObjectsBySlug(new RegisterSchemaRef(register: $register, schema: $schema), $filters);
 	}//end searchObjectsBySlug()
 
 	/**

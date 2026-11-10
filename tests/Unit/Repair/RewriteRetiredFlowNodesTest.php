@@ -20,6 +20,7 @@ use ArrayObject;
 use OCA\Dossiq\Repair\RewriteRetiredFlowNodes;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeRewriter;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IL10N;
 use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
@@ -195,7 +196,8 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 			public function __construct(private array $actions, private ArrayObject $calls) {
 			}
 
-			public function searchObjectsBySlug(string $register, string $schema, array $filters, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters, bool $_rbac = true, bool $_multitenancy = true): array {
+				$schema = (string)$target->schema;
 				$this->calls[] = 'search:' . $schema . ':' . (string)($filters['type'] ?? '');
 				return array_values(
 					array_filter($this->actions, static fn (array $row): bool => ($row['type'] ?? '') === ($filters['type'] ?? ''))

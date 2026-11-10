@@ -21,6 +21,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -92,7 +93,7 @@ class CaseRecordLookupTest extends TestCase {
 				 *
 				 * @return list<array<string, mixed>>
 				 */
-				public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
 					return array_fill(0, (int)$filters['_limit'], ['id' => 'x', 'case' => 'c-1']);
 				}//end searchObjectsBySlug()
 			}
@@ -128,7 +129,7 @@ class CaseRecordLookupTest extends TestCase {
 				 *
 				 * @return list<array<string, mixed>>
 				 */
-				public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
 					return array_fill(0, (int)$filters['_limit'], ['id' => 'x']);
 				}//end searchObjectsBySlug()
 			}
@@ -151,7 +152,7 @@ class CaseRecordLookupTest extends TestCase {
 				 *
 				 * @return never
 				 */
-				public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): never {
+				public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): never {
 					throw new \RuntimeException('the store is down');
 				}//end searchObjectsBySlug()
 			}

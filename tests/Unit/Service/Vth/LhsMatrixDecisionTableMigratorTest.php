@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Vth;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -98,7 +99,9 @@ class LhsMatrixDecisionTableMigratorTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				// SCHEMA-AWARE on purpose. The migrator reads matrices from one
 				// schema and existing decision tables from another; a fake that
 				// returned the same rows for both would hand the overwrite

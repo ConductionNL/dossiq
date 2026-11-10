@@ -25,6 +25,7 @@ use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -119,7 +120,9 @@ class PortalCaseMessagesTest extends TestCase {
 			$this->asSystem = false;
 			return $result;
 		});
-		$objects->method('searchObjectsBySlug')->willReturnCallback(function (string $register, string $schema, array $filters) {
+		$objects->method('searchObjectsBySlug')->willReturnCallback(function (RegisterSchemaRef $target, array $filters) {
+			$register = (string)$target->register;
+			$schema = (string)$target->schema;
 			$this->assertTrue($this->asSystem, 'the portal read runs as the system');
 			$this->assertSame('dossiq', $register);
 			$this->assertSame('portaalBericht', $schema);

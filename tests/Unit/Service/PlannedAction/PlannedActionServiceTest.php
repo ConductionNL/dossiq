@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\PlannedAction\PlannedActionChain;
 use OCA\Dossiq\Service\PlannedAction\PlannedActionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -115,10 +116,10 @@ class PlannedActionServiceTest extends TestCase {
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
 			public function searchObjectsBySlug(
-				string $register,
-				string $schema,
+				RegisterSchemaRef $target,
 				array $filters = [],
 			): array {
+				$schema = (string)$target->schema;
 				$rows = ($this->bySchema[$schema] ?? []);
 				$caseId = (string)($filters['case'] ?? '');
 				if ($caseId === '') {

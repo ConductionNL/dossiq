@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
 use OCA\Dossiq\Service\Transitions\StatusChecklistGuard;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -240,7 +241,8 @@ class WorkflowGuardConformanceTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$schema = (string)$target->schema;
 				return $this->test->rowsFor(schema: $schema);
 			}
 		};

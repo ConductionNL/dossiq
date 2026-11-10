@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Files\IRootFolder;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -80,13 +81,14 @@ class AssessedDocumentsTest extends TestCase {
 			 * @return array<int, array<string, mixed>> The matching rows.
 			 */
 			public function searchObjectsBySlug(
-				string $register,
-				string $schema,
+				RegisterSchemaRef $target,
 				array $filters = [],
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
-				$rows = parent::searchObjectsBySlug($register, $schema, $filters, $_rbac, $_multitenancy);
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
+				$rows = parent::searchObjectsBySlug(new RegisterSchemaRef(register: $register, schema: $schema), $filters, $_rbac, $_multitenancy);
 				if ($_rbac === false) {
 					return $rows;
 				}

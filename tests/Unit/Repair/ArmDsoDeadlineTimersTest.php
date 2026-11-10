@@ -31,6 +31,7 @@ use OCA\Dossiq\Repair\ArmDsoDeadlineTimers;
 use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
 use OCA\Dossiq\Service\Dso\DsoDeadlineTimer;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -65,7 +66,7 @@ class ArmDsoDeadlineTimersTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 				$this->filters = $filters;
 				return [['id' => 'case-1'], ['id' => 'case-2']];
 			}

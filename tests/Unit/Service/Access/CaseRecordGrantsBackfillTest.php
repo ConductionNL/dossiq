@@ -23,6 +23,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IAppConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
@@ -410,7 +411,7 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 			 *
 			 * @return never
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): never {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): never {
 				throw new RuntimeException('the store is down');
 			}//end searchObjectsBySlug()
 		};
@@ -435,7 +436,8 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 			 *
 			 * @return list<array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$schema = (string)$target->schema;
 				if ($schema === 'caseType') {
 					return [['id' => 'type-b'], ['id' => 'type-open'], ['id' => 'type-a']];
 				}

@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Review;
 
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -70,7 +71,7 @@ class DocumentRelevanceTest extends TestCase {
 			/** @var list<array{uuid: string|null, object: array<string, mixed>}> */
 			public array $saved = [];
 
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
 				$this->searches[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy, 'filters' => $filters];
 				if ($_rbac === true) {
 					// The caller is a batch reviewer who was granted none of these reviews.

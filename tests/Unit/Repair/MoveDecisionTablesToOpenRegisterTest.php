@@ -26,6 +26,7 @@ use OCA\Dossiq\Repair\MoveDecisionTablesToOpenRegister;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Unit\Service\Dmn\StoredDecisionTablesTest;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -142,7 +143,8 @@ class MoveDecisionTablesToOpenRegisterTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = (string)$target->register;
 				if ($register === 'decision-tables') {
 					throw new RuntimeException('register decision-tables not found');
 				}

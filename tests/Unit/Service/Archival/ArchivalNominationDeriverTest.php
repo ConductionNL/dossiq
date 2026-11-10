@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Archival;
 use OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -72,7 +73,8 @@ class FakeObjectService {
 	 *
 	 * @return array<int, array<string, mixed>> The matching rows.
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+		$schema = (string)$target->schema;
 		return array_values(
 			array_filter(
 				array_values($this->store[$schema] ?? []),

@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Bezwaar;
 use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -109,7 +110,9 @@ class PanelIndependenceCheckerGoldenTest extends TestCase {
 			 *
 			 * @return mixed The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): mixed {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): mixed {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				$this->calls[] = ['searchObjectsBySlug', $register, $schema, $filters];
 				return $this->rows();
 			}

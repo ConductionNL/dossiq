@@ -12,6 +12,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\People;
 use OCA\Dossiq\Service\People\CaseRoleProjection;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -123,7 +124,8 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$schema = (string)$target->schema;
 				$fields = array_filter($filters, static fn (string $key): bool => str_starts_with($key, '_') === false, ARRAY_FILTER_USE_KEY);
 
 				return array_values(
@@ -441,8 +443,10 @@ class CaseRoleProjectionTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
-				return $this->inner->searchObjectsBySlug($register, $schema, $filters);
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
+				return $this->inner->searchObjectsBySlug(new RegisterSchemaRef(register: $register, schema: $schema), $filters);
 			}
 
 			/**

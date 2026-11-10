@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\TenantService;
 use OCA\Dossiq\Tests\Support\EntityAnsweringRegister;
 use OCA\Dossiq\Tests\Support\MakesTenantMigration;
 use OCA\Dossiq\Tests\Support\RefusableRegister;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
@@ -100,8 +101,10 @@ class MigrateTenantsToOrganisationsTest extends TestCase {
 				$this->entities = new EntityAnsweringRegister(register: $store);
 			}
 
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
-				return $this->store->searchObjectsBySlug(register: $register, schema: $schema, filters: $filters);
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
+				return $this->store->searchObjectsBySlug(target: new RegisterSchemaRef(register: $register, schema: $schema), filters: $filters);
 			}
 
 			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {

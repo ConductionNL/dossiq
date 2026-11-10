@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\Queue\Source\AssignedCasesSource;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Config\IUserConfig;
@@ -132,14 +133,15 @@ class DailyDigestJobServiceAccountTest extends TestCase {
 			 * @return array<int, array<string, mixed>> The readable rows.
 			 */
 			public function searchObjectsBySlug(
-				string $registerSlug,
-				string $schemaSlug,
+				RegisterSchemaRef $target,
 				array $filters = [],
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$registerSlug = (string)$target->register;
+				$schemaSlug = (string)$target->schema;
 				$who = ($this->actor)();
-				$rows = parent::searchObjectsBySlug($registerSlug, $schemaSlug, $filters, $_rbac, $_multitenancy);
+				$rows = parent::searchObjectsBySlug(new RegisterSchemaRef(register: $registerSlug, schema: $schemaSlug), $filters, $_rbac, $_multitenancy);
 
 				return array_values(
 					array_filter(

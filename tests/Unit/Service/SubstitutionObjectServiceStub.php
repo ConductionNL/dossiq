@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
+
 /**
  * Mockable ObjectService surface used by the substitution services.
  */
@@ -36,7 +38,7 @@ interface SubstitutionObjectServiceStub {
 	public function searchObjects(array $query = []): array|int;
 
 	/** @param string $r @param string $s @param array<string,mixed> $f @return array<int,mixed>|int */
-	public function searchObjectsBySlug(string $r, string $s, array $f = []): array|int;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $f = []): array|int;
 
 	/** @param mixed ...$args @return mixed */
 	public function saveObject(...$args): mixed;

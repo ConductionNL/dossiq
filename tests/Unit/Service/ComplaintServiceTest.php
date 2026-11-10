@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -67,7 +68,7 @@ interface ComplaintObjectServiceStub {
 	 *
 	 * @return array<int,mixed>|int
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array|int;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array|int;
 
 	/**
 	 * Save or update an object.
@@ -405,7 +406,7 @@ class ComplaintServiceTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The scripted rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
 				return $this->rows;
 			}//end searchObjectsBySlug()
 		};

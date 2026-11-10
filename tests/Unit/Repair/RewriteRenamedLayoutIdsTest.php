@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\RewriteRenamedLayoutIds;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -146,7 +147,9 @@ final class RewriteRenamedLayoutIdsTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The arrangements.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				if ($this->missing === true || $register !== 'buildiq' || $schema !== 'applicationVersion') {
 					throw new RuntimeException('Register not found: ' . $register);
 				}

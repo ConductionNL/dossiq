@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -52,7 +53,9 @@ class LinkInFlightRemainingDecisionsRepairTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> No rows.
 			 */
-			public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$registerSlug = (string)$target->register;
+				$schemaSlug = (string)$target->schema;
 				$this->searches[] = ['register' => $registerSlug, 'schema' => $schemaSlug];
 				return [];
 			}

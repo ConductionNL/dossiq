@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\MapLegacyArchivalActions;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -89,7 +90,7 @@ class MapLegacyArchivalActionsTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> One page.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters): array {
 				$this->identities[] = ($this->asSystem === true) ? 'system' : 'user';
 				return ((int)($filters['_page'] ?? 1) > 1) ? [] : $this->rows;
 			}

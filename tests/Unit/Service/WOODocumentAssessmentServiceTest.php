@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -48,7 +49,7 @@ interface RedactionProposalObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array;
 
 	/**
 	 * Save an object (OpenRegister object-first signature).
@@ -627,17 +628,18 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 	public function testAnUnreadableAssessmentStillCountsAsAssessed(): void {
 		$register = new class extends InMemoryRegister {
 			public function searchObjectsBySlug(
-				string $register,
-				string $schema,
+				RegisterSchemaRef $target,
 				array $filters = [],
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$register = (string)$target->register;
+				$schema = (string)$target->schema;
 				if ($_rbac === true && $schema === 'wooDocumentAssessment') {
 					return [];
 				}
 
-				return parent::searchObjectsBySlug($register, $schema, $filters, $_rbac, $_multitenancy);
+				return parent::searchObjectsBySlug(new RegisterSchemaRef(register: $register, schema: $schema), $filters, $_rbac, $_multitenancy);
 			}
 		};
 		foreach (['doc-1', 'doc-2'] as $doc) {

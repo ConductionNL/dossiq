@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\MenuCaseTypesService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\TranslatedText;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IL10N;
 use OCP\IConfig;
 use OCP\IGroupManager;
@@ -54,7 +55,7 @@ class FakeMenuCaseTypeObjectService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters=[]): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters=[]): array {
 		return $this->rows;
 	}//end searchObjectsBySlug()
 

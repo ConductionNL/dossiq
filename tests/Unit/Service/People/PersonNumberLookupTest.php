@@ -17,6 +17,7 @@ use OCA\Dossiq\Service\Kcc\GuardedCitizenLookup;
 use OCA\Dossiq\Service\People\PersonNumberLookup;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\TrustedRevealRead;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
 
@@ -59,7 +60,7 @@ class PersonNumberLookupTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 				if (($filters['citizenServiceNumber'] ?? '') === '999990639') {
 					throw new \RuntimeException('register unreachable');
 				}

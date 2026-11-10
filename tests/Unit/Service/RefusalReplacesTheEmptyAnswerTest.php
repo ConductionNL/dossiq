@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuthenticationService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\App\IAppManager;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -95,7 +96,7 @@ class RefusalReplacesTheEmptyAnswerTest extends TestCase {
 			 *
 			 * @return array<int, mixed> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 				if ($this->throws === true) {
 					throw new RuntimeException('the register is not answering');
 				}

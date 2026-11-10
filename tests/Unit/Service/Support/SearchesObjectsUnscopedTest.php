@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Support;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -111,8 +112,7 @@ class SearchesObjectsUnscopedTest extends TestCase {
 			 * @return array<int, array<string, mixed>> No rows.
 			 */
 			public function searchObjectsBySlug(
-				string $registerSlug,
-				string $schemaSlug,
+				RegisterSchemaRef $target,
 				array $filters = [],
 				bool $_rbac = true,
 				bool $_multitenancy = true,

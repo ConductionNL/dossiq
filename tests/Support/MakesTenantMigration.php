@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Tests\Support;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantMigrationService;
 use OCA\OpenRegister\Db\Organisation;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -176,7 +177,8 @@ trait MakesTenantMigration {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$schema = (string)$target->schema;
 				return $schema === 'tenant' ? $this->tenants : [];
 			}
 		};

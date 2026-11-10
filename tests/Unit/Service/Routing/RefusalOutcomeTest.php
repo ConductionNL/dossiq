@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Routing\RefusalOutcome;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -83,7 +84,7 @@ class RefusalCaseStore {
 	 *
 	 * @return array<int, array<string, mixed>> The matching rows.
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 		$key = ($filters['department'] ?? '') . '|' . ($filters['roleName'] ?? '');
 		if (isset($this->teams[$key]) === false) {
 			return [];

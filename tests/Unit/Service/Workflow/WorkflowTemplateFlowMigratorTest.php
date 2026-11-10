@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Workflow;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Workflow\WorkflowTemplateFlowMigrator;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IUser;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -132,7 +133,8 @@ class WorkflowTemplateFlowMigratorTest extends TestCase {
 			 *
 			 * @return array<int, array<string, mixed>> The rows.
 			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$schema = (string)$target->schema;
 				if ($schema === 'statusType') {
 					if ($this->statusTypesThrow === true) {
 						throw new \RuntimeException('status types unavailable');

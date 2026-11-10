@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
 use OCA\Dossiq\Tests\Unit\Service\Publication\FakeWithheldDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use Psr\Container\ContainerInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -80,7 +81,7 @@ interface WooPublicationObjectServiceStub {
 	 *
 	 * @return array<int,mixed>|int
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array|int;
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array|int;
 }//end interface
 
 /**

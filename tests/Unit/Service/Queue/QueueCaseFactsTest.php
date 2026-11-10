@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Queue\QueueCaseFacts;
 use OCA\Dossiq\Service\Queue\UrgencyProfile;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -100,7 +101,8 @@ class QueueCaseFactsTest extends TestCase {
 			) {
 			}//end __construct()
 
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+			public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+				$schema = (string)$target->schema;
 				$this->calls[] = ['search', $schema, $filters];
 				if ($this->rows instanceof \Throwable) {
 					throw $this->rows;

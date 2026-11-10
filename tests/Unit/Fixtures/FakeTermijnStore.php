@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 // Idempotence guard. Checked against FakeStoredObject, NOT FakeTermijnStore:
@@ -267,7 +268,9 @@ class FakeTermijnStore {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+	public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
+		$registerSlug = (string)$target->register;
+		$schemaSlug = (string)$target->schema;
 		$self = ($filters['@self'] ?? []);
 		unset($filters['@self']);
 

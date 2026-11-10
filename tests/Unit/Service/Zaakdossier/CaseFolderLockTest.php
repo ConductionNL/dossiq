@@ -24,6 +24,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\Zaakdossier\LinkedDocumentsReader;
+use OCA\OpenRegister\Kernel\Contracts\RegisterSchemaRef;
 use OCP\AppFramework\Http;
 use OCP\Files\Folder;
 use OCP\IRequest;
@@ -116,7 +117,7 @@ class CaseFolderLockTest extends TestCase {
 				 *
 				 * @return array<int, mixed> No joins.
 				 */
-				public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				public function searchObjectsBySlug(RegisterSchemaRef $target, array $filters = []): array {
 					return [];
 				}
 			}
