@@ -43,7 +43,6 @@ use OCA\Dossiq\Service\Lifecycle\SilenceCloseService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -59,7 +58,6 @@ use Throwable;
  */
 class AutoCloseOnSilenceJob extends TimedJob {
 
-	use SearchesObjects;
 
 	/**
 	 * How many cases one sweep looks at.
@@ -129,43 +127,96 @@ class AutoCloseOnSilenceJob extends TimedJob {
 		}
 
 		$today = new DateTimeImmutable('today');
-		$warned = 0;
-		$closed = 0;
-
+		$tally = ['warn' => 0, 'close' => 0];
 		foreach ($cases as $case) {
-			$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-			if ($caseId === '') {
-				continue;
+			$done = $this->evaluate(row: $case, today: $today);
+			if (isset($tally[$done]) === true) {
+				$tally[$done]++;
 			}
-
-			try {
-				$decision = $this->silence->decide(case: $case, today: $today);
-				if ($decision['action'] === 'warn') {
-					$this->silence->warn(caseId: $caseId, case: $case, closesOn: $decision['closesOn']);
-					$warned++;
-				}
-
-				if ($decision['action'] === 'close') {
-					$this->silence->close(caseId: $caseId, decision: $decision);
-					$closed++;
-				}
-			} catch (Throwable $e) {
-				// One case that cannot be evaluated must not end the sweep:
-				// the next four hundred are unrelated to it.
-				$this->logger->warning(
-					'AutoCloseOnSilenceJob: one case could not be evaluated',
-					['caseId' => $caseId, 'exception' => $e->getMessage()],
-				);
-			}//end try
 		}
 
-		if (($warned + $closed) > 0) {
+		$this->reportSweep(tally: $tally);
+	}//end sweep()
+
+	/**
+	 * Decide one case and act on it; one case that cannot be evaluated never ends the sweep.
+	 *
+	 * @param array<string, mixed> $row   The case as the sweep read it.
+	 * @param DateTimeImmutable    $today The day of the sweep.
+	 *
+	 * @return string `warn` or `close` when that was done, else ''.
+	 *
+	 * @spec openspec/specs/case-status-machinery/spec.md
+	 */
+	private function evaluate(array $row, DateTimeImmutable $today): string {
+		$caseId = $this->caseIdOf(row: $row);
+		if ($caseId === '') {
+			return '';
+		}
+
+		try {
+			return $this->act(row: $row, decision: $this->silence->decide(case: $row, today: $today));
+		} catch (Throwable $e) {
+			// One case that cannot be evaluated must not end the sweep:
+			// the next four hundred are unrelated to it.
+			$this->logger->warning(
+				'AutoCloseOnSilenceJob: one case could not be evaluated',
+				['caseId' => $caseId, 'exception' => $e->getMessage()],
+			);
+			return '';
+		}//end try
+	}//end evaluate()
+
+	/**
+	 * Warn or close as the decision says.
+	 *
+	 * @param array<string, mixed> $row      The case.
+	 * @param array<string, mixed> $decision The silence decision.
+	 *
+	 * @return string `warn` or `close` when that was done, else ''.
+	 *
+	 * @spec openspec/specs/case-status-machinery/spec.md
+	 */
+	private function act(array $row, array $decision): string {
+		if ($decision['action'] === 'warn') {
+			$this->silence->warn(caseId: $this->caseIdOf(row: $row), case: $row, closesOn: $decision['closesOn']);
+			return 'warn';
+		}
+
+		if ($decision['action'] === 'close') {
+			$this->silence->close(caseId: $this->caseIdOf(row: $row), decision: $decision);
+			return 'close';
+		}
+
+		return '';
+	}//end act()
+
+	/**
+	 * The case's id, from the row or its `@self`.
+	 *
+	 * @param array<string, mixed> $row The case.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private function caseIdOf(array $row): string {
+		return (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+	}//end caseIdOf()
+
+	/**
+	 * Log what the sweep did, when it did anything.
+	 *
+	 * @param array{warn: int, close: int} $tally How many were warned and closed.
+	 *
+	 * @return void
+	 */
+	private function reportSweep(array $tally): void {
+		if (($tally['warn'] + $tally['close']) > 0) {
 			$this->logger->info(
 				'AutoCloseOnSilenceJob: swept the declared silence periods',
-				['warned' => $warned, 'closed' => $closed],
+				['warned' => $tally['warn'], 'closed' => $tally['close']],
 			);
 		}
-	}//end sweep()
+	}//end reportSweep()
 
 	/**
 	 * The open, non-draft cases this sweep considers.
@@ -179,26 +230,11 @@ class AutoCloseOnSilenceJob extends TimedJob {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$sweep = OpenCaseSweep::ofSettings(settingsService: $this->settingsService);
+		if ($sweep === null) {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [
-				'isFinalStatus' => 0,
-				'isDraft' => 0,
-				'_limit' => self::SWEEP_LIMIT,
-			],
-		);
+		return $sweep->openCases(limit: self::SWEEP_LIMIT);
 	}//end openCases()
 }//end class
