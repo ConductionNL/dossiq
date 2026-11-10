@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Kernel\Contracts\Value\TaskActorRef;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -390,7 +391,7 @@ class EngineTaskGateway {
         }
 
         try {
-            $this->resolveService()?->reassign($id, trim($assignee), $actor);
+            $this->resolveService()?->reassign(ref: new TaskActorRef(uuid: $id, actor: $actor), assignee: trim($assignee));
 
             return true;
         } catch (Throwable $e) {
@@ -816,8 +817,7 @@ class EngineTaskGateway {
         }
 
         try {
-            // Positional, as for complete(): the service is resolved by name.
-            $service->cancel($id, $reason, $actor);
+            $service->cancel(ref: new TaskActorRef(uuid: $id, actor: $actor), reason: $reason);
 
             return true;
         } catch (Throwable $e) {

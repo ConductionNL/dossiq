@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Kernel\Contracts\Value\TaskActorRef;
 use Psr\Container\ContainerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -580,15 +581,14 @@ class EngineTaskGatewayTest extends TestCase {
 			public array $calls = [];
 
 			/**
-			 * @param string      $uuid   The task.
-			 * @param string|null $reason Why.
-			 * @param string|null $actor  Who.
+			 * @param TaskActorRef $ref    The task and who acts.
+			 * @param string|null  $reason Why.
 			 *
 			 * @return void
 			 */
-			public function cancel(string $uuid, ?string $reason, ?string $actor): void {
-				$this->calls[] = [$uuid, $reason, $actor];
-				if ($uuid === 'locked') {
+			public function cancel(TaskActorRef $ref, ?string $reason): void {
+				$this->calls[] = [$ref->uuid, $reason, $ref->actor];
+				if ($ref->uuid === 'locked') {
 					throw new \RuntimeException('Only the requester may cancel this task.');
 				}
 			}
@@ -602,4 +602,31 @@ class EngineTaskGatewayTest extends TestCase {
 		$this->assertSame(expected: 'Only the requester may cancel this task.', actual: $gateway->lastError());
 		$this->assertFalse($this->gatewayWith(service: null)->cancel(taskId: 'task-1', reason: null, actor: 'anouk'));
 	}//end testCancelAsksTheEngineAndKeepsItsRefusal()
+	/**
+	 * A reassignment goes to the engine's reassign verb with the task, the actor and the new assignee.
+	 *
+	 * @return void
+	 */
+	public function testReassignHandsTheEngineATaskActorRef(): void {
+		$engine = new class {
+
+			/**
+			 * @var array<int, array{string, ?string, string}>
+			 */
+			public array $calls = [];
+
+			/**
+			 * @param TaskActorRef $ref      The task and who acts.
+			 * @param string       $assignee The new assignee.
+			 *
+			 * @return void
+			 */
+			public function reassign(TaskActorRef $ref, string $assignee): void {
+				$this->calls[] = [$ref->uuid, $ref->actor, $assignee];
+			}
+		};
+
+		$this->assertTrue($this->gatewayWith(service: $engine)->reassign(taskId: ' task-1 ', assignee: ' marieke ', actor: 'anouk'));
+		$this->assertSame(expected: [['task-1', 'anouk', 'marieke']], actual: $engine->calls);
+	}//end testReassignHandsTheEngineATaskActorRef()
 }//end class
