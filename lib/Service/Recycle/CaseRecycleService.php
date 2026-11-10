@@ -43,7 +43,9 @@ namespace OCA\Dossiq\Service\Recycle;
 
 use DateTime;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Db\AuditTrailMapper;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -430,7 +432,7 @@ class CaseRecycleService {
 	 */
 	private function recordRestore(object $entity, ?array $window): void {
 		$mapper = $this->settingsService->getOpenRegisterClass(class: self::AUDIT_MAPPER);
-		if ($mapper === null || method_exists($mapper, 'createAuditTrailEntry') === false) {
+		if ($mapper instanceof AuditTrailMapper === false) {
 			return;
 		}
 
@@ -443,7 +445,7 @@ class CaseRecycleService {
 		}
 
 		try {
-			$mapper->createAuditTrailEntry(
+			$mapper->recordObjectEvent(event: ObjectAuditEvents::of(
 				object: $entity,
 				action: self::RESTORE_ACTION,
 				context: [
@@ -454,7 +456,7 @@ class CaseRecycleService {
 				],
 				actorId: $actor,
 				actorName: $actorName
-			);
+			));
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the case was restored but the record could not be written: ' . $e->getMessage()

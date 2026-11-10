@@ -27,6 +27,7 @@ use DateTimeInterface;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use Psr\Log\LoggerInterface;
@@ -165,7 +166,9 @@ class StoppingRuleMet {
 
 		try {
 			$case = $objectService->find($caseId, register: $register, schema: $schema);
-			$mapper->createAuditTrailEntry(object: $case, action: self::ACTION, context: $context, actorId: $userId, actorName: $userId);
+			$mapper->recordObjectEvent(
+				event: ObjectAuditEvents::of(object: $case, action: self::ACTION, context: $context, actorId: $userId, actorName: $userId)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: a met stopping rule could not be recorded on the audit trail',

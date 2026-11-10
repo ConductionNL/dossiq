@@ -29,6 +29,10 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
 use OCA\Dossiq\Service\Recycle\DeletionWindowReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Db\AuditTrail;
+use OCA\OpenRegister\Db\AuditTrailMapper;
+use OCA\OpenRegister\Db\AuditTrail\ObjectAuditEvent;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -281,8 +285,8 @@ class CaseRecycleServiceTest extends TestCase {
 	 *
 	 * @return object The mapper.
 	 */
-	private function auditTrailMapper(): object {
-		return new class {
+	private function auditTrailMapper(): AuditTrailMapper {
+		return new class extends AuditTrailMapper {
 
 			/**
 			 * The entries written, newest last.
@@ -294,30 +298,19 @@ class CaseRecycleServiceTest extends TestCase {
 			/**
 			 * Keep the entry rather than writing one.
 			 *
-			 * @param object $object The object acted on.
-			 * @param string $action The action.
-			 * @param array<string, mixed> $context The record.
-			 * @param string|null $actorId The actor.
-			 * @param string|null $actorName The actor's display name.
+			 * @param ObjectAuditEvent $event The object, action, record and actor.
 			 *
-			 * @return array<string, mixed> The entry.
+			 * @return AuditTrail The entry.
 			 */
-			public function createAuditTrailEntry(
-				object $object,
-				string $action,
-				array $context = [],
-				?string $actorId = null,
-				?string $actorName = null,
-			): array {
-				$entry = [
-					'action' => $action,
-					'context' => $context,
-					'actorId' => $actorId,
-					'actorName' => $actorName,
+			public function recordObjectEvent(ObjectAuditEvent $event): AuditTrail {
+				$this->entries[] = [
+					'action' => $event->action,
+					'context' => $event->context,
+					'actorId' => $event->options->actor->id,
+					'actorName' => $event->options->actor->name,
 				];
-				$this->entries[] = $entry;
 
-				return $entry;
+				return new AuditTrail();
 			}
 		};
 	}//end auditTrailMapper()
@@ -543,62 +536,10 @@ class CaseRecycleServiceTestEntity {
 	 * @param array<string, mixed> $payload The object payload.
 	 * @param array<string, mixed> $deleted The deletion marker.
 	 *
-	 * @return object The entity.
+	 * @return ObjectEntity The entity, as OpenRegister's object service hands it back.
 	 */
-	public static function make(string $uuid, string $schema, array $payload, array $deleted): object {
-		return new class($uuid, $schema, $payload, $deleted) {
-
-			/**
-			 * Build the entity.
-			 *
-			 * @param string $uuid The UUID.
-			 * @param string $schema The schema slug.
-			 * @param array<string, mixed> $payload The object payload.
-			 * @param array<string, mixed> $deleted The deletion marker.
-			 */
-			public function __construct(
-				private readonly string $uuid,
-				private readonly string $schema,
-				private readonly array $payload,
-				private readonly array $deleted,
-			) {
-			}
-
-			/**
-			 * The UUID.
-			 *
-			 * @return string The UUID.
-			 */
-			public function getUuid(): string {
-				return $this->uuid;
-			}
-
-			/**
-			 * The schema slug.
-			 *
-			 * @return string The slug.
-			 */
-			public function getSchema(): string {
-				return $this->schema;
-			}
-
-			/**
-			 * The payload.
-			 *
-			 * @return array<string, mixed> The payload.
-			 */
-			public function getObject(): array {
-				return $this->payload;
-			}
-
-			/**
-			 * The deletion marker.
-			 *
-			 * @return array<string, mixed> The marker.
-			 */
-			public function getDeleted(): array {
-				return $this->deleted;
-			}
+	public static function make(string $uuid, string $schema, array $payload, array $deleted): ObjectEntity {
+		$entity = new class extends ObjectEntity {
 
 			/**
 			 * Whether the row is in the recycle state.
@@ -606,9 +547,15 @@ class CaseRecycleServiceTestEntity {
 			 * @return bool True when soft-deleted.
 			 */
 			public function isSoftDeleted(): bool {
-				return ($this->deleted !== []);
+				return (($this->getDeleted() ?? []) !== []);
 			}
 		};
+		$entity->setUuid($uuid);
+		$entity->setSchema($schema);
+		$entity->setObject($payload);
+		$entity->setDeleted($deleted);
+
+		return $entity;
 	}//end make()
 
 	/**
