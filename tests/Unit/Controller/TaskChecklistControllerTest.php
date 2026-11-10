@@ -423,4 +423,29 @@ class TaskChecklistControllerTest extends TestCase {
 			message: 'A code fault is the server\'s fault and must stay a 500.'
 		);
 	}//end testSubmitResultStillAnswersFiveHundredForAGenuineServerFault()
+
+	/**
+	 * A submission without a checklist is a 400; this app's own refusal a 422;
+	 * a caller without a session is refused before anything is read.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	public function testSubmitResultNeedsAChecklistAndReportsTheAppsOwnRefusalAs422(): void {
+		$mockUser = $this->createMock(IUser::class);
+		$mockUser->method('getUID')->willReturn('inspecteur-a');
+		$this->userSession->method('getUser')->willReturn($mockUser);
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->request->method('getParams')->willReturnOnConsecutiveCalls([], ['checklistId' => 'checklist-uuid']);
+		$this->runs->method('submit')->willThrowException(new \RuntimeException('A photo is required.'));
+
+		$missing = $this->controller->submit(id: 'case-uuid');
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $missing->getStatus());
+		$this->assertSame(['message' => 'checklistId is required'], $missing->getData());
+
+		$refused = $this->controller->submit(id: 'case-uuid');
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $refused->getStatus());
+		$this->assertSame(['message' => 'A photo is required.'], $refused->getData());
+	}//end testSubmitResultNeedsAChecklistAndReportsTheAppsOwnRefusalAs422()
 }//end class
