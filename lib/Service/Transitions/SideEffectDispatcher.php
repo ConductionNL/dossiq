@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -189,7 +190,7 @@ class SideEffectDispatcher {
 		}
 
 		try {
-			$node->execute(items: [['json' => $case]], config: $action, context: $transitionContext);
+			$node->execute(call: new FlowNodeCall(items: [['json' => $case]], config: $action, context: $transitionContext));
 		} catch (Throwable $e) {
 			// An exception with an empty message still has to report SOMETHING —
 			// 'ok' => false with a blank error reads downstream as "failed, cause

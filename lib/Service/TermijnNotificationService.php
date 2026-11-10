@@ -117,9 +117,7 @@ class TermijnNotificationService {
 			return false;
 		}
 
-		if (in_array($type, self::TEMPLATES, true) === false) {
-			throw new InvalidArgumentException('Unknown template: ' . $type);
-		}
+		$this->refuseUnknownTemplate(type: $type);
 
 		// The case type decides which of these go out, and CaseTypeHandling is
 		// the one reader of that decision. An empty $caseType is a caller that
@@ -134,21 +132,31 @@ class TermijnNotificationService {
 			return false;
 		}
 
-		$this->jobList->add(
-			DeadlineNotificationDispatchJob::class,
-			[
+		$this->enqueue(
+			job: [
 				'type' => $type,
 				'termijnInstanceId' => $termInstanceId,
 				'recipientUserId' => $recipientUserId,
 				'context' => $context,
 			]
 		);
-		$this->logger->info(
-			'TermijnNotification queued',
-			['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termInstanceId]
-		);
 		return true;
 	}//end queueTermijnNotification()
+
+	/**
+	 * Add the dispatch job and log that it was queued.
+	 *
+	 * @param array{type: string, termijnInstanceId: string, recipientUserId: string, context: array} $job The dispatch job's arguments.
+	 *
+	 * @return void
+	 */
+	private function enqueue(array $job): void {
+		$this->jobList->add(DeadlineNotificationDispatchJob::class, $job);
+		$this->logger->info(
+			'TermijnNotification queued',
+			['type' => $job['type'], 'recipient' => $job['recipientUserId'], 'instance' => $job['termijnInstanceId']]
+		);
+	}//end enqueue()
 
 	/**
 	 * Send a templated termijnbewaking notification.
@@ -177,43 +185,19 @@ class TermijnNotificationService {
 		array $context = [],
 		array $requester = [],
 	): array {
-		if (in_array($type, self::TEMPLATES, true) === false) {
-			throw new InvalidArgumentException('Unknown template: ' . $type);
-		}
+		$this->refuseUnknownTemplate(type: $type);
 
-		$instance = $this->notices->termService->getTermijnInstance($termInstanceId);
-		$payload = $this->renderTemplate(
-			type: $type,
-			instance: $instance ?? [],
-			context: $this->withCaseNumber(instance: ($instance ?? []), context: $context)
-		);
+		$notice = new TermNotice();
+		$notice->type = $type;
+		$notice->termInstanceId = $termInstanceId;
+		$notice->recipientUserId = $recipientUserId;
+		$notice->context = $context;
+		$notice->instance = ($this->notices->termService->getTermijnInstance($termInstanceId) ?? []);
 
-		$payload['recipient'] = $recipientUserId;
-		$payload['deadlineInstance'] = $termInstanceId;
-		$payload['template'] = $type;
+		$payload = $this->noticePayload(notice: $notice);
+		$notice->case = $this->noticeCase(notice: $notice, requester: $requester);
 
-		$case = $requester;
-		if (trim((string)($case['id'] ?? '')) === '') {
-			$case['id'] = $this->caseRefOf(instance: ($instance ?? []), context: $context);
-		}
-
-		$sender = ($this->requester ?? new RequesterNoticeSender(email: $this->notices->sender, logger: $this->logger));
-		$moment = (string)($context['moment'] ?? $sender->momentFor(template: $type));
-
-		$dispatch = $sender->send(
-			case: $case,
-			template: $type,
-			rendered: ['subject' => (string)$payload['subject'], 'body' => (string)$payload['body']],
-			moment: $moment,
-			options: [
-				'recipient' => $recipientUserId,
-				'instanceId' => $termInstanceId,
-				'dedupeKey' => (string)($context['dedupeKey'] ?? ''),
-				'recordExtras' => (array)($context['recordExtras'] ?? []),
-				'channels' => ($context['channels'] ?? null),
-			],
-		);
-
+		$dispatch = $this->dispatchNotice(notice: $notice, payload: $payload);
 		if ($dispatch['status'] !== RequesterNoticeSender::STATUS_SENT) {
 			throw new NoticeNotSentException(
 				reasonCode: (string)$dispatch['reasonCode'],
@@ -223,19 +207,110 @@ class TermijnNotificationService {
 		}
 
 		$payload['dispatch'] = $dispatch;
+		$this->logDispatched(notice: $notice, dispatch: $dispatch);
 
+		return $payload;
+	}//end sendTermijnNotification()
+
+	/**
+	 * Refuse a template this service does not know.
+	 *
+	 * @param string $type The template.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When the template is unknown.
+	 */
+	private function refuseUnknownTemplate(string $type): void {
+		if (in_array($type, self::TEMPLATES, true) === false) {
+			throw new InvalidArgumentException('Unknown template: ' . $type);
+		}
+	}//end refuseUnknownTemplate()
+
+	/**
+	 * The rendered notice with its recipient, term instance and template.
+	 *
+	 * @param TermNotice $notice The notice.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function noticePayload(TermNotice $notice): array {
+		$payload = $this->renderTemplate(
+			type: $notice->type,
+			instance: $notice->instance,
+			context: $this->withCaseNumber(instance: $notice->instance, context: $notice->context)
+		);
+
+		$payload['recipient'] = $notice->recipientUserId;
+		$payload['deadlineInstance'] = $notice->termInstanceId;
+		$payload['template'] = $notice->type;
+
+		return $payload;
+	}//end noticePayload()
+
+	/**
+	 * The case the notice goes out on: the requester's, named after the term's case when it has no id.
+	 *
+	 * @param TermNotice           $notice    The notice.
+	 * @param array<string, mixed> $requester The requester's case row, possibly empty.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function noticeCase(TermNotice $notice, array $requester): array {
+		$case = $requester;
+		if (trim((string)($case['id'] ?? '')) === '') {
+			$case['id'] = $this->caseRefOf(instance: $notice->instance, context: $notice->context);
+		}
+
+		return $case;
+	}//end noticeCase()
+
+	/**
+	 * Hand the rendered notice to the requester notice sender.
+	 *
+	 * @param TermNotice           $notice  The notice, with its case.
+	 * @param array<string, mixed> $payload The rendered notice.
+	 *
+	 * @return array<string, mixed> What the sender answered.
+	 */
+	private function dispatchNotice(TermNotice $notice, array $payload): array {
+		$sender = ($this->requester ?? new RequesterNoticeSender(email: $this->notices->sender, logger: $this->logger));
+		$context = $notice->context;
+
+		return $sender->send(
+			case: $notice->case,
+			template: $notice->type,
+			rendered: ['subject' => (string)$payload['subject'], 'body' => (string)$payload['body']],
+			moment: (string)($context['moment'] ?? $sender->momentFor(template: $notice->type)),
+			options: [
+				'recipient' => $notice->recipientUserId,
+				'instanceId' => $notice->termInstanceId,
+				'dedupeKey' => (string)($context['dedupeKey'] ?? ''),
+				'recordExtras' => (array)($context['recordExtras'] ?? []),
+				'channels' => ($context['channels'] ?? null),
+			],
+		);
+	}//end dispatchNotice()
+
+	/**
+	 * Log that the notice went out.
+	 *
+	 * @param TermNotice           $notice   The notice.
+	 * @param array<string, mixed> $dispatch What the sender answered.
+	 *
+	 * @return void
+	 */
+	private function logDispatched(TermNotice $notice, array $dispatch): void {
 		$this->logger->info(
 			'TermijnNotification dispatched',
 			[
-				'type' => $type,
-				'instance' => $termInstanceId,
+				'type' => $notice->type,
+				'instance' => $notice->termInstanceId,
 				'notificationChannel' => (string)$dispatch['channel'],
 				'duplicate' => (($dispatch['duplicate'] ?? false) === true),
 			]
 		);
-
-		return $payload;
-	}//end sendTermijnNotification()
+	}//end logDispatched()
 
 	/**
 	 * The case a notice is about, as integriq's case-scoped opt-out knows it.
