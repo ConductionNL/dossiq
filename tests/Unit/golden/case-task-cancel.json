@@ -1,0 +1,133 @@
+{
+    "not signed in": {
+        "status": 401,
+        "body": {
+            "message": "You are not signed in",
+            "error": "not_authenticated"
+        },
+        "calls": []
+    },
+    "task engine unreachable": {
+        "status": 503,
+        "body": {
+            "message": "The task engine could not be reached",
+            "error": "storage_unavailable"
+        },
+        "calls": [
+            "find task-1"
+        ]
+    },
+    "task not found": {
+        "status": 404,
+        "body": {
+            "message": "That task could not be found",
+            "error": "task_not_found"
+        },
+        "calls": [
+            "find task-1"
+        ]
+    },
+    "task without a case": {
+        "status": 404,
+        "body": {
+            "message": "That task could not be found",
+            "error": "task_not_found"
+        },
+        "calls": [
+            "find task-1"
+        ]
+    },
+    "task with an empty case": {
+        "status": 404,
+        "body": {
+            "message": "That task could not be found",
+            "error": "task_not_found"
+        },
+        "calls": [
+            "find task-1"
+        ]
+    },
+    "no write access on the case": {
+        "status": 403,
+        "body": {
+            "message": "You may not act on this case",
+            "error": "not_authorized"
+        },
+        "calls": [
+            "find task-1",
+            "access case-1 behandelaar"
+        ]
+    },
+    "cancelled": {
+        "status": 200,
+        "body": {
+            "cancelled": true,
+            "task": {
+                "id": "engine-task-7"
+            }
+        },
+        "calls": [
+            "find task-1",
+            "access case-1 behandelaar",
+            "cancel engine-task-7 \"not needed\" by behandelaar"
+        ]
+    },
+    "cancelled, task without its own id": {
+        "status": 200,
+        "body": {
+            "cancelled": true,
+            "task": {
+                "id": "task-1"
+            }
+        },
+        "calls": [
+            "find task-1",
+            "access case-1 behandelaar",
+            "cancel task-1 \"not needed\" by behandelaar"
+        ]
+    },
+    "engine refuses with a reason": {
+        "status": 409,
+        "body": {
+            "message": "Cancelling refused for Check the plan: the task is already done",
+            "error": "cancel_refused",
+            "notice": {
+                "variant": "error",
+                "role": "alert",
+                "title": "Cancelling refused for Check the plan:",
+                "text": "the task is already done"
+            }
+        },
+        "calls": [
+            "find task-1",
+            "access case-1 behandelaar",
+            "cancel engine-task-7 \"not needed\" by behandelaar"
+        ]
+    },
+    "engine refuses without a reason": {
+        "status": 409,
+        "body": {
+            "message": "Cancelling refused for Check the plan: ",
+            "error": "cancel_refused",
+            "notice": {
+                "variant": "error",
+                "role": "alert",
+                "title": "Cancelling refused for Check the plan:",
+                "text": ""
+            }
+        },
+        "calls": [
+            "find task-1",
+            "access case-1 behandelaar",
+            "cancel engine-task-7 \"not needed\" by behandelaar"
+        ]
+    },
+    "engine breaks otherwise": {
+        "thrown": "LogicException: engine bug",
+        "calls": [
+            "find task-1",
+            "access case-1 behandelaar",
+            "cancel engine-task-7 \"not needed\" by behandelaar"
+        ]
+    }
+}
