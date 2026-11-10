@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Subsidie\BewijsstukService;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -155,16 +156,6 @@ class BewijsstukImmutabilityListener implements IEventListener {
 	 * @return bool True when this is a bewijsstuk.
 	 */
 	private function isBewijsstukSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('bewijsstuk_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('bewijsstuk_schema'));
 	}//end isBewijsstukSchema()
 }//end class

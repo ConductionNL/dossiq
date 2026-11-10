@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Flow;
 use DateTime;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
@@ -406,9 +407,7 @@ class DossiqAskPersonNode implements IFlowNode {
      * answer whose signal never arrived, which is the difference between a
      * safety net and a timer that only ever re-suspends.
      *
-     * @param array $items   The input items.
-     * @param array $config  The step configuration.
-     * @param array $context Run-level metadata.
+     * @param FlowNodeCall $call The items, the step config and the run context.
      *
      * @return array The items, each carrying the answer.
      *
@@ -419,7 +418,10 @@ class DossiqAskPersonNode implements IFlowNode {
      * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
-    public function execute(array $items, array $config, array $context): array {
+    public function execute(FlowNodeCall $call): array {
+        $items = $call->items;
+        $config = $call->config;
+        $context = $call->context;
         $this->validateConfig(config: $config);
 
         $resume = ($context[FlowNodeResumeState::CONTEXT_KEY] ?? null);

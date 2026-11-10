@@ -126,23 +126,49 @@ class PublishSeededCaseTypes implements IRepairStep {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$publication = $this->publicationTarget();
+		if ($publication === null) {
 			$output->info('OpenRegister or the case type schema is not available; skipping.');
 			return;
 		}
 
 		$tally = $this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: fn (): array => $this->publish(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-			),
+			objectService: $publication->objectService,
+			operation: fn (): array => $this->publish(publication: $publication),
 		);
+		$this->reportPublication(output: $output, tally: $tally);
+	}//end run()
 
+	/**
+	 * Where the seeded case types are stored, or null when OpenRegister or
+	 * either setting is missing.
+	 *
+	 * @return SeededCaseTypePublication|null
+	 */
+	private function publicationTarget(): ?SeededCaseTypePublication {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('case_type_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		$publication = new SeededCaseTypePublication(objectService: $objectService, register: $register);
+		$publication->schema = $schema;
+
+		return $publication;
+	}//end publicationTarget()
+
+	/**
+	 * Print the counts, and record the run only when every write succeeded,
+	 * so a failed write is tried again on the next repair rather than forgotten.
+	 *
+	 * @param IOutput                                                             $output Progress reporting.
+	 * @param array{published: int, skipped: int, failed: int, unreadable: bool} $tally  The counts.
+	 *
+	 * @return void
+	 */
+	private function reportPublication(IOutput $output, array $tally): void {
 		$output->info(
 			sprintf(
 				'Seeded case types: %d published, %d already published, %d failed.',
@@ -155,7 +181,7 @@ class PublishSeededCaseTypes implements IRepairStep {
 		if ($tally['failed'] === 0 && $tally['unreadable'] === false) {
 			$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, '1');
 		}
-	}//end run()
+	}//end reportPublication()
 
 	/**
 	 * Set `isDraft: false` on each seeded case type that is not published.
@@ -164,22 +190,18 @@ class PublishSeededCaseTypes implements IRepairStep {
 	 * boolean filter on OpenRegister's search is not something this step
 	 * should depend on to find the rows it has to change.
 	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The register id.
-	 * @param string $schema The case type schema id.
+	 * @param SeededCaseTypePublication $publication The run.
 	 *
 	 * @return array{published: int, skipped: int, failed: int, unreadable: bool} The tally.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function publish(object $objectService, string $register, string $schema): array {
-		$tally = ['published' => 0, 'skipped' => 0, 'failed' => 0, 'unreadable' => false];
-
+	private function publish(SeededCaseTypePublication $publication): array {
 		try {
 			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $publication->objectService,
+				register: $publication->register,
+				schema: $publication->schema,
 				filters: ['_limit' => 1000],
 			);
 		} catch (Throwable $e) {
@@ -187,45 +209,79 @@ class PublishSeededCaseTypes implements IRepairStep {
 				'Dossiq: could not read the case types to publish the seeded ones',
 				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
 			);
-			$tally['unreadable'] = true;
-			return $tally;
+			$publication->unreadable = true;
+			return $publication->tally();
 		}
 
 		foreach ($rows as $row) {
-			$self = ($row['@self'] ?? []);
-			if (is_array($self) === false) {
-				$self = [];
-			}
+			$this->publishRow(publication: $publication, row: $row);
+		}
 
-			$slug = (string)($self['slug'] ?? '');
-			$uuid = (string)($self['id'] ?? ($row['id'] ?? ''));
-			if ($uuid === '' || in_array($slug, self::SLUGS, true) === false) {
-				continue;
-			}
-
-			if (($row['isDraft'] ?? true) === false) {
-				$tally['skipped']++;
-				continue;
-			}
-
-			try {
-				$this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: $uuid,
-					changes: ['isDraft' => false],
-				);
-				$tally['published']++;
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: could not publish a seeded case type',
-					['app' => Application::APP_ID, 'slug' => $slug, 'exception' => $e->getMessage()]
-				);
-				$tally['failed']++;
-			}
-		}//end foreach
-
-		return $tally;
+		return $publication->tally();
 	}//end publish()
+
+	/**
+	 * Publish one row when it is a seeded draft; count one already published.
+	 *
+	 * @param SeededCaseTypePublication $publication The run.
+	 * @param array<string, mixed>      $row         A case type row.
+	 *
+	 * @return void
+	 */
+	private function publishRow(SeededCaseTypePublication $publication, array $row): void {
+		$identity = $this->seededIdentity(row: $row);
+		if ($identity[1] === '' || in_array($identity[0], self::SLUGS, true) === false) {
+			return;
+		}
+
+		if (($row['isDraft'] ?? true) === false) {
+			$publication->skipped++;
+			return;
+		}
+
+		$this->markPublished(publication: $publication, identity: $identity);
+	}//end publishRow()
+
+	/**
+	 * A row's slug and uuid.
+	 *
+	 * @param array<string, mixed> $row A case type row.
+	 *
+	 * @return array{0: string, 1: string} `[slug, uuid]`.
+	 */
+	private function seededIdentity(array $row): array {
+		$self = ($row['@self'] ?? []);
+		if (is_array($self) === false) {
+			$self = [];
+		}
+
+		return [(string)($self['slug'] ?? ''), (string)($self['id'] ?? ($row['id'] ?? ''))];
+	}//end seededIdentity()
+
+	/**
+	 * Write `isDraft: false` on one seeded draft.
+	 *
+	 * @param SeededCaseTypePublication   $publication The run.
+	 * @param array{0: string, 1: string} $identity    `[slug, uuid]`.
+	 *
+	 * @return void
+	 */
+	private function markPublished(SeededCaseTypePublication $publication, array $identity): void {
+		try {
+			$this->patchObjectAsArray(
+				objectService: $publication->objectService,
+				register: $publication->register,
+				schema: $publication->schema,
+				id: $identity[1],
+				changes: ['isDraft' => false],
+			);
+			$publication->published++;
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: could not publish a seeded case type',
+				['app' => Application::APP_ID, 'slug' => $identity[0], 'exception' => $e->getMessage()]
+			);
+			$publication->failed++;
+		}
+	}//end markPublished()
 }//end class
