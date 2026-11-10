@@ -231,46 +231,13 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 * @return array|null Validation error, or null if unique
 	 */
 	private function checkDecisionIdentificationUnique(array $body): ?array {
-		if (empty($body['identificatie']) === true || $this->objectService === null) {
-			return null;
-		}
-
-		$identification = $body['identificatie'];
-		$organisation = $body['verantwoordelijkeOrganisatie'] ?? '';
-
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->mappingConfig['sourceSchema'] ?? '';
-
-		if (empty($register) === true || empty($schema) === true) {
+		if ($this->canCheckIdentification(body: $body) === false) {
 			return null;
 		}
 
 		try {
-			$searchParams = ['title' => $identification];
-			if ($organisation !== '') {
-				$searchParams['responsibleOrganisation'] = $organisation;
-			}
-
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: $searchParams,
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-			$total = $result['total'] ?? count($result['results'] ?? []);
-
-			if ($total > 0) {
-				return $this->error(
-					status: 400,
-					detail: 'De combinatie van verantwoordelijke_organisatie en identificatie is niet uniek.',
-					invalidParams: [
-						$this->fieldError(
-							fieldName: 'identificatie',
-							code: 'identificatie-niet-uniek',
-							reason: 'De combinatie van verantwoordelijke_organisatie en identificatie bestaat al.'
-						),
-					]
-				);
+			if ($this->countDecisionsMatching(searchParams: self::identificationSearch(body: $body)) > 0) {
+				return $this->identificationTakenError();
 			}
 		} catch (\Throwable $e) {
 			$this->logger->warning(
@@ -280,6 +247,78 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 
 		return null;
 	}//end checkDecisionIdentificationUnique()
+
+	/**
+	 * Brc-002 can only be checked for an identificatie, with a store and the source register and schema.
+	 *
+	 * @param array $body The request body (ZGW Dutch field names)
+	 *
+	 * @return bool True when the uniqueness can be checked.
+	 */
+	private function canCheckIdentification(array $body): bool {
+		if (empty($body['identificatie']) === true || $this->objectService === null) {
+			return false;
+		}
+
+		$register = $this->mappingConfig['sourceRegister'] ?? '';
+		$schema = $this->mappingConfig['sourceSchema'] ?? '';
+
+		return (empty($register) === false && empty($schema) === false);
+	}//end canCheckIdentification()
+
+	/**
+	 * The search for besluiten with this identificatie, and organisation when one is given.
+	 *
+	 * @param array $body The request body (ZGW Dutch field names)
+	 *
+	 * @return array<string, string> The search parameters.
+	 */
+	private static function identificationSearch(array $body): array {
+		$searchParams = ['title' => $body['identificatie']];
+		$organisation = $body['verantwoordelijkeOrganisatie'] ?? '';
+		if ($organisation !== '') {
+			$searchParams['responsibleOrganisation'] = $organisation;
+		}
+
+		return $searchParams;
+	}//end identificationSearch()
+
+	/**
+	 * How many stored besluiten match a search.
+	 *
+	 * @param array<string, string> $searchParams The search parameters.
+	 *
+	 * @return int The total, or the count of the results when no total is given.
+	 */
+	private function countDecisionsMatching(array $searchParams): int {
+		$query = $this->objectService->buildSearchQuery(
+			requestParams: $searchParams,
+			register: $this->mappingConfig['sourceRegister'] ?? '',
+			schema: $this->mappingConfig['sourceSchema'] ?? ''
+		);
+		$result = $this->objectService->searchObjectsPaginated(query: $query);
+
+		return $result['total'] ?? count($result['results'] ?? []);
+	}//end countDecisionsMatching()
+
+	/**
+	 * Brc-002: the refusal for an identificatie that is already taken.
+	 *
+	 * @return array The validation error.
+	 */
+	private function identificationTakenError(): array {
+		return $this->error(
+			status: 400,
+			detail: 'De combinatie van verantwoordelijke_organisatie en identificatie is niet uniek.',
+			invalidParams: [
+				$this->fieldError(
+					fieldName: 'identificatie',
+					code: 'identificatie-niet-uniek',
+					reason: 'De combinatie van verantwoordelijke_organisatie en identificatie bestaat al.'
+				),
+			]
+		);
+	}//end identificationTakenError()
 
 	/**
 	 * Validate zaak-besluittype relation (brc-007).
@@ -293,10 +332,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 * @return array|null Validation error, or null if valid
 	 */
 	private function validateCaseBesluittypeRelation(mixed $caseUrl, mixed $decisionTypeUrl): ?array {
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		if ($caseUrl === null || $caseUrl === '' || empty($decisionTypeUrl) === true
-			|| empty($register) === true || $this->objectService === null
-		) {
+		if ($this->canCheckRelation(caseUrl: $caseUrl, decisionTypeUrl: $decisionTypeUrl) === false) {
 			return null;
 		}
 
@@ -306,20 +342,55 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 			return null;
 		}
 
+		if ($this->relationHolds(caseCaseType: $caseCaseType, decisionTypeUrl: $decisionTypeUrl) !== false) {
+			return null;
+		}
+
+		return $this->caseTypeMismatchError();
+	}//end validateCaseBesluittypeRelation()
+
+	/**
+	 * Brc-007: whether the zaak's zaaktype and the besluittype are related.
+	 *
+	 * @param mixed $caseCaseType    The zaaktype of the zaak.
+	 * @param mixed $decisionTypeUrl The besluittype URL from the request
+	 *
+	 * @return bool|null Whether they are related, or null when the besluittype cannot be resolved.
+	 */
+	private function relationHolds(mixed $caseCaseType, mixed $decisionTypeUrl): ?bool {
 		$btData = $this->getObjectByUrl(url: $decisionTypeUrl, schemaKey: 'decision_type_schema');
 		if ($btData === null) {
 			return null;
 		}
 
-		$related = $this->isCaseTypeRelatedToDecisionType(
+		return $this->isCaseTypeRelatedToDecisionType(
 			caseTypeUuid: $this->extractUuid(url: $caseCaseType),
 			btUuid: (string)$this->extractUuid(url: $decisionTypeUrl),
 			btData: $btData
 		);
-		if ($related === true) {
-			return null;
-		}
+	}//end relationHolds()
 
+	/**
+	 * Brc-007 can only be checked with a zaak, a besluittype, a source register and a store.
+	 *
+	 * @param mixed $caseUrl         The zaak URL from the request
+	 * @param mixed $decisionTypeUrl The besluittype URL from the request
+	 *
+	 * @return bool True when the relation can be checked.
+	 */
+	private function canCheckRelation(mixed $caseUrl, mixed $decisionTypeUrl): bool {
+		$register = $this->mappingConfig['sourceRegister'] ?? '';
+
+		return ($caseUrl !== null && $caseUrl !== '' && empty($decisionTypeUrl) === false
+			&& empty($register) === false && $this->objectService !== null);
+	}//end canCheckRelation()
+
+	/**
+	 * Brc-007: the refusal for a zaak whose zaaktype is not related to the besluittype.
+	 *
+	 * @return array The validation error.
+	 */
+	private function caseTypeMismatchError(): array {
 		$detail = 'Het zaaktype van de zaak is niet gerelateerd aan het besluittype.';
 
 		return $this->error(
@@ -333,7 +404,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 				),
 			]
 		);
-	}//end validateCaseBesluittypeRelation()
+	}//end caseTypeMismatchError()
 
 	/**
 	 * Brc-007: whether the besluittype lists the zaaktype, or else the zaaktype lists the besluittype.

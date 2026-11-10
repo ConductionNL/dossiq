@@ -149,88 +149,7 @@ class DecisionConcludedListener implements IEventListener {
 		}
 
 		try {
-			// REQ-PDCD-003: only project events this app raised, or that
-			// Decidiq's flow step raised about one of this app's cases.
-			$flowCase = ($this->flowDecisions?->caseIdOf(event: $event) ?? '');
-			if ($flowCase === '' && (string)$event->getSourceApp() !== self::SOURCE_APP) {
-				return;
-			}
-
-			$status = strtolower($this->readString(event: $event, getter: 'getStatus'));
-			if (in_array($status, self::TERMINAL_STATUSES, true) === false) {
-				// Non-terminal (e.g. pending): nothing to materialise yet.
-				return;
-			}
-
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return;
-			}
-
-			$decisionId = $this->readString(event: $event, getter: 'getDecisionId');
-			$register = $this->readString(event: $event, getter: 'getSubjectRegister');
-			$schema = $this->readString(event: $event, getter: 'getSubjectSchema');
-			$subjectId = $this->readString(event: $event, getter: 'getSubjectId');
-			$externalRef = $this->referenceOf(event: $event, flowCase: $flowCase);
-
-			// Locate the dossiq domain record carrying this decisionRef so we
-			// can resolve the owning case and any existing besluitRef. Fall back
-			// to the externalReference / subjectId as the case identifier.
-			[$caseId, $besluitId, $decisionRecord] = $this->records->resolveCaseAndDecision(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				decisionId: $decisionId,
-				subjectId: $subjectId,
-				externalRef: $externalRef
-			);
-
-			if ($caseId === '') {
-				$this->logger->warning(
-					'Dossiq DecisionConcludedListener: could not resolve a case for the concluded decision',
-					['decisionId' => $decisionId, 'externalReference' => $externalRef]
-				);
-				return;
-			}
-
-			$this->decisionMaterialiser->materialiseFromConcludedEvent(
-				caseId: $caseId,
-				decisionId: $besluitId,
-				event: $this->projectOutcome(event: $event)
-			);
-
-			$this->logger->info(
-				'Dossiq DecisionConcludedListener: materialised ZGW Besluit from decidesk outcome',
-				['decisionId' => $decisionId, 'caseId' => $caseId, 'status' => $status]
-			);
-
-			// Awb art. 7:13 lid 7: a besluit op bezwaar that departs from the
-			// BAC advice must carry a documented motivation. The besluit is
-			// FINAL at this point, so this is where the deviation becomes a
-			// fact worth recording on the advice request's OpenRegister audit
-			// trail.
-			$this->records->recordCouncilDeviation(
-				decision: $decisionRecord,
-				decisionId: $besluitId,
-				subjectId: $subjectId
-			);
-
-			// Decision 172: the product the case type declares; never throws.
-			$this->products?->onConcludedDecision(
-				caseId: $caseId,
-				decisionId: $decisionId,
-				status: $status,
-				decidedAt: $this->readString(event: $event, getter: 'getDecidedAt')
-			);
-
-			// A case flow that ASKED for this decision is suspended on it.
-			// Deliberately last: the besluit is materialised before the run is
-			// woken, so the steps after the decision see a case that already
-			// carries its outcome rather than racing the projection.
-			// A flow decision's run is woken by Decidiq, which raised it.
-			if ($flowCase === '') {
-				$this->resumer->resumeWaitingRun(caseId: $caseId, decisionRef: $decisionId, status: $status);
-			}
+			$this->projectConcluded(event: $event);
 		} catch (Throwable $e) {
 			// Never block event delivery on our own derivation failure; never
 			// author a besluit on a failed outcome.
@@ -240,6 +159,162 @@ class DecisionConcludedListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Project a terminal decision onto its case, then record what follows from it.
+	 *
+	 * @param Event $event The decidesk DecisionConcludedEvent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 */
+	private function projectConcluded(Event $event): void {
+		$run = $this->terminalRun(event: $event);
+		if ($run === null) {
+			return;
+		}
+
+		$this->resolveCase(run: $run);
+		if ($run->caseId === '') {
+			$this->logger->warning(
+				'Dossiq DecisionConcludedListener: could not resolve a case for the concluded decision',
+				['decisionId' => $run->decisionId, 'externalReference' => $run->externalRef]
+			);
+			return;
+		}
+
+		$this->materialise(run: $run);
+		$this->recordConsequences(run: $run);
+	}//end projectConcluded()
+
+	/**
+	 * The run for a terminal decision this app projects, or null when it projects none.
+	 *
+	 * @param Event $event The decidesk DecisionConcludedEvent.
+	 *
+	 * @return DecisionConcludedRun|null
+	 *
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 */
+	private function terminalRun(Event $event): ?DecisionConcludedRun {
+		// REQ-PDCD-003: only project events this app raised, or that
+		// Decidiq's flow step raised about one of this app's cases.
+		$flowCase = ($this->flowDecisions?->caseIdOf(event: $event) ?? '');
+		if ($flowCase === '' && $this->readString(event: $event, getter: 'getSourceApp') !== self::SOURCE_APP) {
+			return null;
+		}
+
+		$status = strtolower($this->readString(event: $event, getter: 'getStatus'));
+		if (in_array($status, self::TERMINAL_STATUSES, true) === false) {
+			// Non-terminal (e.g. pending): nothing to materialise yet.
+			return null;
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$run = new DecisionConcludedRun();
+		$run->event = $event;
+		$run->flowCase = $flowCase;
+		$run->status = $status;
+		$run->objectService = $objectService;
+		return $run;
+	}//end terminalRun()
+
+	/**
+	 * Resolve the case and existing besluit of the run's decision.
+	 *
+	 * Locate the dossiq domain record carrying this decisionRef so we can
+	 * resolve the owning case and any existing besluitRef. Fall back to the
+	 * externalReference / subjectId as the case identifier.
+	 *
+	 * @param DecisionConcludedRun $run The run.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 */
+	private function resolveCase(DecisionConcludedRun $run): void {
+		$run->decisionId = $this->readString(event: $run->event, getter: 'getDecisionId');
+		$run->subjectId = $this->readString(event: $run->event, getter: 'getSubjectId');
+		$run->externalRef = $this->referenceOf(event: $run->event, flowCase: $run->flowCase);
+
+		[$caseId, $besluitId, $decisionRecord] = $this->records->resolveCaseAndDecision(
+			objectService: $run->objectService,
+			register: $this->readString(event: $run->event, getter: 'getSubjectRegister'),
+			schema: $this->readString(event: $run->event, getter: 'getSubjectSchema'),
+			decisionId: $run->decisionId,
+			subjectId: $run->subjectId,
+			externalRef: $run->externalRef
+		);
+		$run->caseId = $caseId;
+		$run->besluitId = $besluitId;
+		$run->decisionRecord = $decisionRecord;
+	}//end resolveCase()
+
+	/**
+	 * Materialise the ZGW Besluit on the run's case from the decided outcome.
+	 *
+	 * @param DecisionConcludedRun $run The run.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 */
+	private function materialise(DecisionConcludedRun $run): void {
+		$this->decisionMaterialiser->materialiseFromConcludedEvent(
+			caseId: $run->caseId,
+			decisionId: $run->besluitId,
+			event: $this->projectOutcome(event: $run->event)
+		);
+
+		$this->logger->info(
+			'Dossiq DecisionConcludedListener: materialised ZGW Besluit from decidesk outcome',
+			['decisionId' => $run->decisionId, 'caseId' => $run->caseId, 'status' => $run->status]
+		);
+	}//end materialise()
+
+	/**
+	 * Record what the materialised besluit sets off: the council deviation, the product, the waiting run.
+	 *
+	 * @param DecisionConcludedRun $run The run.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 */
+	private function recordConsequences(DecisionConcludedRun $run): void {
+		// Awb art. 7:13 lid 7: a besluit op bezwaar that departs from the
+		// BAC advice must carry a documented motivation. The besluit is
+		// FINAL at this point, so this is where the deviation becomes a
+		// fact worth recording on the advice request's OpenRegister audit
+		// trail.
+		$this->records->recordCouncilDeviation(
+			decision: $run->decisionRecord,
+			decisionId: $run->besluitId,
+			subjectId: $run->subjectId
+		);
+
+		// Decision 172: the product the case type declares; never throws.
+		$this->products?->onConcludedDecision(
+			caseId: $run->caseId,
+			decisionId: $run->decisionId,
+			status: $run->status,
+			decidedAt: $this->readString(event: $run->event, getter: 'getDecidedAt')
+		);
+
+		// A case flow that ASKED for this decision is suspended on it.
+		// Deliberately last: the besluit is materialised before the run is
+		// woken, so the steps after the decision see a case that already
+		// carries its outcome rather than racing the projection.
+		// A flow decision's run is woken by Decidiq, which raised it.
+		if ($run->flowCase === '') {
+			$this->resumer->resumeWaitingRun(caseId: $run->caseId, decisionRef: $run->decisionId, status: $run->status);
+		}
+	}//end recordConsequences()
 
 	/**
 	 * The reference the case is looked up by.
@@ -301,42 +376,74 @@ class DecisionConcludedListener implements IEventListener {
 	 * @return array<string,mixed> Normalised projection: status, outcome, decidedAt, signer, method, signers, signingReference.
 	 */
 	private function projectOutcome(Event $event): array {
-		$signers = [];
-		if (method_exists($event, 'getSigners') === true) {
-			$rawSigners = $event->getSigners();
-			if (is_array($rawSigners) === true) {
-				$signers = $rawSigners;
-			}
-		}
-
-		// First signer (if any) is recorded as the mandaathouder on the Besluit.
-		$signer = '';
-		if ($signers !== []) {
-			// A signer entry is either a record or a bare user id; normalise
-			// the bare form to the record shape so one read covers both.
-			$first = reset($signers);
-			if (is_array($first) === false) {
-				$first = ['id' => (string)$first];
-			}
-
-			$signer = (string)($first['id'] ?? $first['name'] ?? '');
-		}
-
-		// The decision method is recorded as "signature" when the outcome was
-		// signed, otherwise the decisionType carries the method provenance.
-		$method = $this->readString(event: $event, getter: 'getDecisionType');
-		if (method_exists($event, 'isSigned') === true && $event->isSigned() === true) {
-			$method = 'signature';
-		}
+		$signers = $this->signersOf(event: $event);
 
 		return [
 			'status' => $this->readString(event: $event, getter: 'getStatus'),
 			'outcome' => $this->readString(event: $event, getter: 'getOutcome'),
 			'decidedAt' => $this->readString(event: $event, getter: 'getDecidedAt'),
-			'signer' => $signer,
-			'method' => $method,
+			'signer' => $this->firstSigner(signers: $signers),
+			'method' => $this->methodOf(event: $event),
 			'signers' => $signers,
 			'signingReference' => $this->readString(event: $event, getter: 'getSigningReference'),
 		];
 	}//end projectOutcome()
+
+	/**
+	 * The event's signers, or [] when it carries none.
+	 *
+	 * @param Event $event The decidesk DecisionConcludedEvent.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function signersOf(Event $event): array {
+		if (method_exists($event, 'getSigners') === false) {
+			return [];
+		}
+
+		$rawSigners = $event->getSigners();
+		if (is_array($rawSigners) === false) {
+			return [];
+		}
+
+		return $rawSigners;
+	}//end signersOf()
+
+	/**
+	 * The first signer (if any), recorded as the mandaathouder on the Besluit.
+	 *
+	 * @param array<int|string, mixed> $signers The event's signers.
+	 *
+	 * @return string The signer's id or name, or ''.
+	 */
+	private function firstSigner(array $signers): string {
+		if ($signers === []) {
+			return '';
+		}
+
+		// A signer entry is either a record or a bare user id; normalise
+		// the bare form to the record shape so one read covers both.
+		$first = reset($signers);
+		if (is_array($first) === false) {
+			$first = ['id' => (string)$first];
+		}
+
+		return (string)($first['id'] ?? $first['name'] ?? '');
+	}//end firstSigner()
+
+	/**
+	 * The decision method: "signature" when the outcome was signed, otherwise
+	 * the decisionType, which carries the method provenance.
+	 *
+	 * @param Event $event The decidesk DecisionConcludedEvent.
+	 *
+	 * @return string
+	 */
+	private function methodOf(Event $event): string {
+		if (method_exists($event, 'isSigned') === true && $event->isSigned() === true) {
+			return 'signature';
+		}
+
+		return $this->readString(event: $event, getter: 'getDecisionType');
+	}//end methodOf()
 }//end class

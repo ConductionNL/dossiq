@@ -89,99 +89,113 @@ class PortalWooAnswer {
 	 * request of a case of the same subject answers 404: the caller learns
 	 * nothing about a request that is not theirs.
 	 *
-	 * @param string                 $subjectRef The portal subject portaliq vouches for.
-	 * @param string                 $requestId  The aanvullingsverzoek the row names.
-	 * @param string                 $answer     What the requester wrote.
-	 * @param DateTimeImmutable|null $now        The moment of the answer.
-	 * @param list<array{name: string, content: string}> $attachments The files sent with the answer.
+	 * @param WooAnswerSubmission $submission The subject portaliq vouches for, the request, the answer and its files.
 	 *
 	 * @return array{status: int, body: array<string, mixed>} The HTTP status and body.
 	 *
 	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
-	public function answer(
-		string $subjectRef,
-		string $requestId,
-		string $answer,
-		?DateTimeImmutable $now = null,
-		array $attachments = [],
-	): array {
-		$text = trim($answer);
+	public function submit(WooAnswerSubmission $submission): array {
+		$text = trim($submission->answer);
 		if ($text === '' || mb_strlen($text) > self::MAX_LENGTH) {
 			return ['status' => 400, 'body' => ['error' => 'invalid', 'message' => 'Write an answer of at most 4000 characters.']];
 		}
 
+		$run = $this->openRun(submission: $submission);
+		if ($run === null) {
+			return ['status' => 503, 'body' => ['error' => 'unavailable']];
+		}
+
+		return (array)$this->runAsSystemIfAvailable(
+			objectService: $run->objectService,
+			operation: fn (): array => $this->record(run: $run)
+		);
+	}//end submit()
+
+	/**
+	 * The run of one answer, or null without OpenRegister, a register or a case schema.
+	 *
+	 * @param WooAnswerSubmission $submission What was sent.
+	 *
+	 * @return WooAnswerRun|null
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 */
+	private function openRun(WooAnswerSubmission $submission): ?WooAnswerRun {
 		$objectService = $this->settings->getObjectService();
 		$register = (string)$this->settings->getConfigValue('register');
 		$caseSchema = (string)$this->settings->getConfigValue('case_schema');
 		if ($objectService === null || $register === '' || $caseSchema === '') {
-			return ['status' => 503, 'body' => ['error' => 'unavailable']];
+			return null;
 		}
 
-		$moment = ($now ?? new DateTimeImmutable());
+		$run = new WooAnswerRun();
+		$run->objectService = $objectService;
+		$run->register = $register;
+		$run->caseSchema = $caseSchema;
+		$run->moment = ($submission->now ?? new DateTimeImmutable());
+		$run->subjectRef = trim($submission->subjectRef);
+		$run->requestId = trim($submission->requestId);
+		$run->text = trim($submission->answer);
+		$run->attachments = $submission->attachments;
 
-		return (array)$this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: fn (): array => $this->record(
-				objectService: $objectService,
-				register: $register,
-				caseSchema: $caseSchema,
-				subjectRef: trim($subjectRef),
-				requestId: trim($requestId),
-				text: $text,
-				moment: $moment,
-				attachments: $attachments
-			)
-		);
-	}//end answer()
+		return $run;
+	}//end openRun()
 
 	/**
-	 * The checks and the writes, as the system.
+	 * Check the request, store the answer, file the attachments and tell the handler.
 	 *
-	 * @param object            $objectService OpenRegister's object service.
-	 * @param string            $register      The register.
-	 * @param string            $caseSchema    The case schema.
-	 * @param string            $subjectRef    The portal subject.
-	 * @param string            $requestId     The request id.
-	 * @param string            $text          The answer.
-	 * @param DateTimeImmutable $moment        When.
-	 * @param list<array{name: string, content: string}> $attachments The files.
+	 * @param WooAnswerRun $run The answer being recorded.
 	 *
-	 * @return array{status: int, body: array<string, mixed>}
+	 * @return array{status: int, body: array<string, mixed>} The HTTP status and body.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
-	private function record(
-		object $objectService,
-		string $register,
-		string $caseSchema,
-		string $subjectRef,
-		string $requestId,
-		string $text,
-		DateTimeImmutable $moment,
-		array $attachments = [],
-	): array {
-		$notFound = ['status' => 404, 'body' => ['error' => 'not_found']];
-		$caseId = $this->answerableCase(
-			objectService: $objectService,
-			register: $register,
-			caseSchema: $caseSchema,
-			subjectRef: $subjectRef,
-			requestId: $requestId
-		);
+	private function record(WooAnswerRun $run): array {
+		$caseId = $this->answerableCase(run: $run);
 		if ($caseId === null) {
-			return $notFound;
+			return ['status' => 404, 'body' => ['error' => 'not_found']];
 		}
 
+		$refused = $this->storeAnswer(run: $run, caseId: $caseId);
+		if ($refused !== null) {
+			return $refused;
+		}
+
+		$filed = $this->fileAttachments(caseId: $caseId, attachments: $run->attachments);
+
+		$this->acts->recordWrite(
+			caseId: $caseId,
+			act: self::ACT,
+			fields: $this->answeredFields(filed: $filed),
+			occurredAt: $run->moment->format('c')
+		);
+
+		return ['status' => 200, 'body' => ['requestId' => $run->requestId, 'state' => 'open', 'attachments' => $filed]];
+	}//end record()
+
+	/**
+	 * Record the answer on the case's resolution and on the request.
+	 *
+	 * @param WooAnswerRun $run    The answer being recorded.
+	 * @param string       $caseId The case the request is on.
+	 *
+	 * @return array{status: int, body: array<string, mixed>}|null The 503 when the write is refused, else null.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 */
+	private function storeAnswer(WooAnswerRun $run, string $caseId): ?array {
 		try {
 			$this->resolution->recordAnswer(
 				caseId: $caseId,
 				received: [],
 				complete: false,
 				userId: self::RECORDED_BY,
-				when: $moment
+				when: $run->moment
 			);
 			$this->requests->write(
-				request: ['applicantAnswer' => $text, 'applicantAnsweredAt' => $moment->format('c')],
-				id: $requestId
+				request: ['applicantAnswer' => $run->text, 'applicantAnsweredAt' => $run->moment->format('c')],
+				id: $run->requestId
 			);
 		} catch (RefusedException $e) {
 			$this->logger->warning(
@@ -191,16 +205,26 @@ class PortalWooAnswer {
 			return ['status' => 503, 'body' => ['error' => 'unavailable']];
 		}
 
-		$filed = $this->fileAttachments(caseId: $caseId, attachments: $attachments);
+		return null;
+	}//end storeAnswer()
+
+	/**
+	 * The fields the handler is told the answer wrote.
+	 *
+	 * @param int $filed How many attachments were filed on the case.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 */
+	private function answeredFields(int $filed): array {
 		$fields = ['applicantAnswer'];
 		if ($filed > 0) {
 			$fields[] = 'documents';
 		}
 
-		$this->acts->recordWrite(caseId: $caseId, act: self::ACT, fields: $fields, occurredAt: $moment->format('c'));
-
-		return ['status' => 200, 'body' => ['requestId' => $requestId, 'state' => 'open', 'attachments' => $filed]];
-	}//end record()
+		return $fields;
+	}//end answeredFields()
 
 	/**
 	 * Store the requester's files in the case's folder.
@@ -239,41 +263,22 @@ class PortalWooAnswer {
 	}//end fileAttachments()
 
 	/**
-	 * The case of a request the subject may answer, or null.
+	 * The case of the request, when the caller may answer it; else null.
 	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register.
-	 * @param string $caseSchema    The case schema.
-	 * @param string $subjectRef    The portal subject.
-	 * @param string $requestId     The request id.
+	 * The request must be the caller's and open, its case the caller's, and
+	 * it must be that case's open request. A failed check is logged and
+	 * answers null.
 	 *
-	 * @return string|null The case id, or null when the request is not answerable.
+	 * @param WooAnswerRun $run The answer being recorded.
+	 *
+	 * @return string|null The case id, or null.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
-	private function answerableCase(
-		object $objectService,
-		string $register,
-		string $caseSchema,
-		string $subjectRef,
-		string $requestId,
-	): ?string {
-		if ($subjectRef === '' || $requestId === '') {
-			return null;
-		}
-
+	private function answerableCase(WooAnswerRun $run): ?string {
 		try {
-			$request = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: AanvullingsverzoekService::SCHEMA,
-				id: $requestId
-			);
-			if ($this->isOpenFor(row: $request, subjectRef: $subjectRef, open: true) === false) {
-				return null;
-			}
-
-			$caseId = (string)($request['case'] ?? '');
-			$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
-			if ($this->isOpenFor(row: $case, subjectRef: $subjectRef, open: false) === false) {
+			$caseId = $this->callersCaseOfRequest(run: $run);
+			if ($caseId === null) {
 				return null;
 			}
 
@@ -286,12 +291,59 @@ class PortalWooAnswer {
 			return null;
 		}//end try
 
-		if ($open === null || $this->idOf(row: $open) !== $requestId) {
+		if ($this->isRequest(open: $open, requestId: $run->requestId) === false) {
 			return null;
 		}
 
 		return $caseId;
 	}//end answerableCase()
+
+	/**
+	 * The case of an open request of the caller, when that case is the caller's too.
+	 *
+	 * @param WooAnswerRun $run The answer being recorded.
+	 *
+	 * @return string|null The case id, or null.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 */
+	private function callersCaseOfRequest(WooAnswerRun $run): ?string {
+		if ($run->subjectRef === '' || $run->requestId === '') {
+			return null;
+		}
+
+		$request = $this->findObjectAsArray(
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: AanvullingsverzoekService::SCHEMA,
+			id: $run->requestId
+		);
+		if ($this->isOpenFor(row: $request, subjectRef: $run->subjectRef, open: true) === false) {
+			return null;
+		}
+
+		$caseId = (string)($request['case'] ?? '');
+		$case = $this->findObjectAsArray(objectService: $run->objectService, register: $run->register, schema: $run->caseSchema, id: $caseId);
+		if ($this->isOpenFor(row: $case, subjectRef: $run->subjectRef, open: false) === false) {
+			return null;
+		}
+
+		return $caseId;
+	}//end callersCaseOfRequest()
+
+	/**
+	 * Whether the open request of the case is the request answered.
+	 *
+	 * @param array<string, mixed>|null $open      The case's open request, or null.
+	 * @param string                    $requestId The request answered.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 */
+	private function isRequest(?array $open, string $requestId): bool {
+		return $open !== null && $this->idOf(row: $open) === $requestId;
+	}//end isRequest()
 
 	/**
 	 * Whether a row belongs to the subject and, when asked, is an open request.

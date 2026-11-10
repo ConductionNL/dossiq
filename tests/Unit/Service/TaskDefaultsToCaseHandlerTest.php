@@ -40,6 +40,7 @@ use OCA\Dossiq\Flow\DossiqAskPersonNode;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
@@ -203,12 +204,14 @@ class TaskDefaultsToCaseHandlerTest extends TestCase {
 
 		try {
 			$node->execute(
-				[['json' => $case]],
-				$config,
-				[
+				call: new FlowNodeCall(
+					items: [['json' => $case]],
+					config: $config,
+					context: [
 					FlowNodeResumeState::CONTEXT_KEY => $resume,
 					FlowRunContext::CONTEXT_RUN => 'run-abc',
 				]
+				)
 			);
 		} catch (FlowSuspension $suspension) {
 			// Expected: the step waits while the task is outstanding.

@@ -129,72 +129,158 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 		string $category = 'case-update',
 		string $caseRef = '',
 	): array {
+		$letter = new DigitalPostLetter(recipient: $bsn, subject: $subject);
+		$letter->body = $body;
+		$letter->attachment = $attachment;
+		$letter->category = $category;
+		$letter->caseRef = $caseRef;
+
+		$refusal = $this->bindSeam(letter: $letter);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->dispatchLetter(letter: $letter);
+	}//end sendMessage()
+
+	/**
+	 * Find the seam and the source the letter goes over; a refusal when either is missing.
+	 *
+	 * @param DigitalPostLetter $letter The letter, given its event class and source here.
+	 *
+	 * @return array<string, mixed>|null The refusal, or null when the letter can go.
+	 */
+	private function bindSeam(DigitalPostLetter $letter): ?array {
 		if (FleetAppId::isEnabledForUser(appManager: $this->appManager, canonical: 'integriq') === false) {
-			return $this->refusal(
-				code: 'integriq-missing',
-				reason: 'Integriq is not installed or not enabled, so there is nothing to send '
-					. 'digital post over. Nothing was sent.',
-			);
+			return $this->integriqMissing();
 		}
 
 		$eventClass = FleetAppId::resolveClass(canonical: 'integriq', relative: self::SEND_EVENT);
 		if ($eventClass === null) {
-			return $this->refusal(
-				code: 'integriq-seam-missing',
-				reason: 'Integriq is installed but carries no digital post seam, so this version '
-					. 'cannot send digital post. Nothing was sent.',
-			);
+			return $this->seamMissing();
 		}
 
-		$sourceId = $this->sourceId();
-		if ($sourceId === '') {
-			// MEASURED from integriq `development` on 2026-09-20:
-			// `DigitalPostService::sourceConfig()` opens with
-			// `if ($sourceId === '') { return null; }`, so an empty source can
-			// never resolve and the send is refused every time. integriq's own
-			// refusal reads `No digital post source is configured under "".
-			// Nothing was sent.`, which names no key an administrator can set.
-			// Refusing here costs a dispatch nobody wanted and says what to do.
-			return $this->refusal(
-				code: 'digital-post-source-unset',
-				reason: 'No integriq digital post source is set, so there is nothing to send over. '
-					. 'Set it with occ config:app:set dossiq ' . self::SOURCE_CONFIG_KEY
-					. ' --value <slug>. Nothing was sent.',
-			);
+		$letter->eventClass = $eventClass;
+		$letter->sourceId = $this->sourceId();
+		if ($letter->sourceId === '') {
+			return $this->sourceUnset();
 		}
 
+		return null;
+	}//end bindSeam()
+
+	/**
+	 * The refusal when integriq is not there to send over.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function integriqMissing(): array {
+		return $this->refusal(
+			code: 'integriq-missing',
+			reason: 'Integriq is not installed or not enabled, so there is nothing to send '
+				. 'digital post over. Nothing was sent.',
+		);
+	}//end integriqMissing()
+
+	/**
+	 * The refusal when integriq carries no digital post seam.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function seamMissing(): array {
+		return $this->refusal(
+			code: 'integriq-seam-missing',
+			reason: 'Integriq is installed but carries no digital post seam, so this version '
+				. 'cannot send digital post. Nothing was sent.',
+		);
+	}//end seamMissing()
+
+	/**
+	 * The refusal when no digital post source is set.
+	 *
+	 * MEASURED from integriq `development` on 2026-09-20:
+	 * `DigitalPostService::sourceConfig()` opens with
+	 * `if ($sourceId === '') { return null; }`, so an empty source can
+	 * never resolve and the send is refused every time. integriq's own
+	 * refusal reads `No digital post source is configured under "".
+	 * Nothing was sent.`, which names no key an administrator can set.
+	 * Refusing here costs a dispatch nobody wanted and says what to do.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function sourceUnset(): array {
+		return $this->refusal(
+			code: 'digital-post-source-unset',
+			reason: 'No integriq digital post source is set, so there is nothing to send over. '
+				. 'Set it with occ config:app:set dossiq ' . self::SOURCE_CONFIG_KEY
+				. ' --value <slug>. Nothing was sent.',
+		);
+	}//end sourceUnset()
+
+	/**
+	 * Hand the letter to integriq and read its answer.
+	 *
+	 * @param DigitalPostLetter $letter The letter, with its seam and source.
+	 *
+	 * @return array<string, mixed> Either a tracked send, or a refusal with its reason.
+	 */
+	private function dispatchLetter(DigitalPostLetter $letter): array {
 		try {
-			$event = new $eventClass(
-				'dossiq',
-				$sourceId,
-				$bsn,
-				$subject,
-				$body,
-				$this->attachmentsOf(attachment: $attachment),
-				$this->requestedBy(),
-				bin2hex(random_bytes(8)),
-				// Ninth and tenth (integriq b20053418). An older integriq
-				// declares eight, and PHP drops extra positional arguments to
-				// a userland constructor, so the call still lands there.
-				$category,
-				$caseRef,
-			);
+			$event = $this->sendEventFor(letter: $letter);
 
 			$this->dispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: the digital post send event could not be dispatched',
-				['exception' => $e->getMessage()]
-			);
-
-			return $this->refusal(
-				code: 'dispatch-failed',
-				reason: 'The digital post request could not be handed to integriq. Nothing was sent.',
-			);
+			return $this->dispatchFailed(error: $e);
 		}
 
 		return $this->readSlot(event: $event);
-	}//end sendMessage()
+	}//end dispatchLetter()
+
+	/**
+	 * The refusal, logged as an error, when the send event could not be dispatched.
+	 *
+	 * @param Throwable $error What the dispatch threw.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function dispatchFailed(Throwable $error): array {
+		$this->logger->error(
+			'Dossiq: the digital post send event could not be dispatched',
+			['exception' => $error->getMessage()]
+		);
+
+		return $this->refusal(
+			code: 'dispatch-failed',
+			reason: 'The digital post request could not be handed to integriq. Nothing was sent.',
+		);
+	}//end dispatchFailed()
+
+	/**
+	 * Integriq's send event for the letter.
+	 *
+	 * @param DigitalPostLetter $letter The letter, with its seam and source.
+	 *
+	 * @return object The event to dispatch.
+	 */
+	private function sendEventFor(DigitalPostLetter $letter): object {
+		$eventClass = $letter->eventClass;
+
+		return new $eventClass(
+			'dossiq',
+			$letter->sourceId,
+			$letter->recipient,
+			$letter->subject,
+			$letter->body,
+			$this->attachmentsOf(attachment: $letter->attachment),
+			$this->requestedBy(),
+			bin2hex(random_bytes(8)),
+			// Ninth and tenth (integriq b20053418). An older integriq
+			// declares eight, and PHP drops extra positional arguments to
+			// a userland constructor, so the call still lands there.
+			$letter->category,
+			$letter->caseRef,
+		);
+	}//end sendEventFor()
 
 	/**
 	 * Read integriq's answer out of the event's result slot.
@@ -212,48 +298,120 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	private function readSlot(object $event): array {
-		if (method_exists($event, 'isHandled') === true && $event->isHandled() === false) {
-			return $this->refusal(
-				code: 'unhandled',
-				reason: 'Integriq did not handle the digital post request, so nothing was sent. '
-					. 'Its digital post seam is present but no binding answered.',
-			);
+		if ($this->isUnhandled(event: $event) === true) {
+			return $this->unhandled();
 		}
 
+		$refusal = $this->structuredRefusal(event: $event);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$messageId = $this->trackedMessageId(event: $event);
+		if ($messageId === '') {
+			return $this->noTrackedMessage();
+		}
+
+		return $this->sent(messageId: $messageId);
+	}//end readSlot()
+
+	/**
+	 * A tracked send, stamped now.
+	 *
+	 * @param string $messageId Integriq's tracked message id.
+	 *
+	 * @return array<string, mixed> The send result.
+	 */
+	private function sent(string $messageId): array {
+		return [
+			'messageId' => $messageId,
+			'status' => 'sent',
+			'sentAt' => (new DateTime())->format('c'),
+		];
+	}//end sent()
+
+	/**
+	 * Whether the event says no binding handled it.
+	 *
+	 * @param object $event The dispatched event.
+	 *
+	 * @return bool True when the event reports itself unhandled.
+	 */
+	private function isUnhandled(object $event): bool {
+		return method_exists($event, 'isHandled') === true && $event->isHandled() === false;
+	}//end isUnhandled()
+
+	/**
+	 * Integriq's structured refusal as a refusal here; null when the slot holds none.
+	 *
+	 * @param object $event The dispatched event.
+	 *
+	 * @return array<string, mixed>|null The refusal, or null.
+	 */
+	private function structuredRefusal(object $event): ?array {
 		$refusal = null;
 		if (method_exists($event, 'getRefusal') === true) {
 			$refusal = $event->getRefusal();
 		}
 
-		if (is_array($refusal) === true && $refusal !== []) {
-			return $this->refusal(
-				code: (string)($refusal['code'] ?? self::STATUS_REFUSED),
-				reason: (string)($refusal['reason'] ?? 'Integriq refused the send and gave no reason.'),
-			);
+		if (is_array($refusal) === false || $refusal === []) {
+			return null;
 		}
 
+		return $this->refusal(
+			code: (string)($refusal['code'] ?? self::STATUS_REFUSED),
+			reason: (string)($refusal['reason'] ?? 'Integriq refused the send and gave no reason.'),
+		);
+	}//end structuredRefusal()
+
+	/**
+	 * The tracked message id in the event's slot, trimmed; '' when there is none.
+	 *
+	 * @param object $event The dispatched event.
+	 *
+	 * @return string The message id, or ''.
+	 */
+	private function trackedMessageId(object $event): string {
 		$messageId = null;
 		if (method_exists($event, 'getMessageId') === true) {
 			$messageId = $event->getMessageId();
 		}
 
-		if (is_string($messageId) === false || trim($messageId) === '') {
-			// A handled event with neither an id nor a refusal. integriq's own
-			// contract says this cannot happen; treating it as a send anyway
-			// is how a letter that went nowhere reads as delivered.
-			return $this->refusal(
-				code: 'no-tracked-message',
-				reason: 'Integriq answered without a tracked message, so this letter cannot be '
-					. 'followed and is not recorded as sent.',
-			);
+		if (is_string($messageId) === false) {
+			return '';
 		}
 
-		return [
-			'messageId' => trim($messageId),
-			'status' => 'sent',
-			'sentAt' => (new DateTime())->format('c'),
-		];
-	}//end readSlot()
+		return trim($messageId);
+	}//end trackedMessageId()
+
+	/**
+	 * The refusal for an event no binding answered.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function unhandled(): array {
+		return $this->refusal(
+			code: 'unhandled',
+			reason: 'Integriq did not handle the digital post request, so nothing was sent. '
+				. 'Its digital post seam is present but no binding answered.',
+		);
+	}//end unhandled()
+
+	/**
+	 * The refusal for a handled event with neither an id nor a refusal.
+	 *
+	 * Integriq's own contract says this cannot happen; treating it as a send
+	 * anyway is how a letter that went nowhere reads as delivered.
+	 *
+	 * @return array<string, mixed> The refusal.
+	 */
+	private function noTrackedMessage(): array {
+		return $this->refusal(
+			code: 'no-tracked-message',
+			reason: 'Integriq answered without a tracked message, so this letter cannot be '
+				. 'followed and is not recorded as sent.',
+		);
+	}//end noTrackedMessage()
 
 	/**
 	 * A refusal in the shape the caller reads.

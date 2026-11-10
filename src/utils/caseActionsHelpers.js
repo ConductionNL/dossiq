@@ -46,6 +46,20 @@ export function proposedCopyTitle(title) {
 	return `Copy of ${source}`
 }
 
+// The sentence per case-actions refusal code. Each entry calls translate()
+// on a literal key, so the string extraction reads every one.
+const CASE_ACTION_REFUSALS = new Map([
+	['case_not_found', (translate) => translate('This case could not be read.')],
+	['storage_unavailable', (translate) => translate('The case store is not available right now.')],
+	['flows_unavailable', (translate) => translate('The case store is not available right now.')],
+	['invalid_date', (translate) => translate('Pick a date for the follow-up.')],
+	['copy_failed', (translate) => translate('The copy could not be created.')],
+	['plan_failed', (translate) => translate('The follow-up could not be planned.')],
+	['invalid_recurrence', (translate) => translate('Pick how often the follow-up comes back.')],
+	['invalid_end', (translate) => translate('Give the series an end date or a number, not both.')],
+	['stop_failed', (translate) => translate('The series could not be stopped.')],
+])
+
 /**
  * Turn a refusal from the case-actions endpoints into a sentence.
  *
@@ -59,28 +73,8 @@ export function proposedCopyTitle(title) {
  * @spec openspec/specs/case-management/spec.md
  */
 export function caseActionRefusal(error, translate) {
-	const code = String(error?.code ?? '')
-	switch (code) {
-		case 'case_not_found':
-			return translate('This case could not be read.')
-		case 'storage_unavailable':
-		case 'flows_unavailable':
-			return translate('The case store is not available right now.')
-		case 'invalid_date':
-			return translate('Pick a date for the follow-up.')
-		case 'copy_failed':
-			return translate('The copy could not be created.')
-		case 'plan_failed':
-			return translate('The follow-up could not be planned.')
-		case 'invalid_recurrence':
-			return translate('Pick how often the follow-up comes back.')
-		case 'invalid_end':
-			return translate('Give the series an end date or a number, not both.')
-		case 'stop_failed':
-			return translate('The series could not be stopped.')
-		default:
-			return translate('This did not work. Try again.')
-	}
+	const sentence = CASE_ACTION_REFUSALS.get(String(error?.code ?? ''))
+	return sentence ? sentence(translate) : translate('This did not work. Try again.')
 }
 
 /**
@@ -150,28 +144,47 @@ export function endOptions(translate) {
  * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
  */
 export function isPlanComplete(plan, earliest) {
-	const caseType = String(plan?.caseType ?? '').trim()
-	const date = String(plan?.date ?? '').trim()
-	const title = String(plan?.title ?? '').trim()
-	if (caseType === '' || date === '' || title === '') {
-		return false
-	}
-	if (date < String(earliest ?? '')) {
+	const read = plan || {}
+	const date = String(read.date ?? '').trim()
+	if (hasPlanBasics(read) === false || date < String(earliest ?? '')) {
 		return false
 	}
 
-	const recurrence = String(plan?.recurrence ?? 'none')
+	const recurrence = String(read.recurrence ?? 'none')
 	if (recurrence === 'none') {
 		return true
 	}
 
-	const end = String(plan?.end ?? 'open')
+	return seriesEndIsComplete(read, date)
+}
+
+/**
+ * Whether a plan names its case type, its date and its title.
+ *
+ * @param {object} plan The plan.
+ * @return {boolean} True when none of the three is blank.
+ */
+function hasPlanBasics(plan) {
+	return [plan.caseType, plan.date, plan.title]
+		.every((value) => String(value ?? '').trim() !== '')
+}
+
+/**
+ * Whether a recurring plan's end is complete: an until date on or after the
+ * first date, a count of at least one, or an open end.
+ *
+ * @param {object} plan The plan.
+ * @param {string} date The plan's first date.
+ * @return {boolean} True when the end is complete.
+ */
+function seriesEndIsComplete(plan, date) {
+	const end = String(plan.end ?? 'open')
 	if (end === 'until') {
-		const until = String(plan?.until ?? '').trim()
+		const until = String(plan.until ?? '').trim()
 		return until !== '' && until >= date
 	}
 	if (end === 'count') {
-		return Number(plan?.count ?? 0) >= 1
+		return Number(plan.count ?? 0) >= 1
 	}
 	return true
 }
