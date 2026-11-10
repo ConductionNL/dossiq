@@ -33,6 +33,7 @@ use OCA\Dossiq\Listener\CaseRequesterProjectionListener;
 use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
 use OCA\Dossiq\Listener\DerivedStatusListener;
 use OCA\Dossiq\Listener\IntakeFormBindingListener;
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -41,7 +42,7 @@ use ReflectionMethod;
 /**
  * Every listener's schema check answers the same table for the schema its setting names.
  *
- * @coversNothing
+ * @covers \OCA\Dossiq\Listener\Support\SchemaMembership
  *
  * @spec openspec/specs/case-management/spec.md
  */
@@ -104,6 +105,18 @@ class SchemaMembershipTest extends TestCase {
 			$this->assertFalse($this->ask(class: $class, method: $method, settings: [], payload: $payload), $name . ', nothing configured');
 		}
 	}//end testTheListenerAnswersTheTable()
+
+	/**
+	 * The shared check answers the table, and nothing for an empty expectation.
+	 *
+	 * @return void
+	 */
+	public function testTheSharedCheckAnswersTheTable(): void {
+		foreach (self::payloads() as $name => [$payload, $expected]) {
+			$this->assertSame($expected, SchemaMembership::belongsTo(object: $payload, expected: 'target'), $name);
+			$this->assertFalse(SchemaMembership::belongsTo(object: $payload, expected: ''), $name . ', nothing expected');
+		}
+	}//end testTheSharedCheckAnswersTheTable()
 
 	/**
 	 * Ask a listener's private check with the given settings.
