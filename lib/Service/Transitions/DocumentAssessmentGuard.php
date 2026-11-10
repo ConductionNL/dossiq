@@ -170,28 +170,28 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 	 * @param string $require The requirement: gathered or assessed.
 	 * @param string $caseId  The case.
 	 *
-	 * @return array{documents: int, outstanding: int} The counts.
+	 * @return DocumentCounts The counts.
 	 */
-	private function countsFor(string $require, string $caseId): array {
+	private function countsFor(string $require, string $caseId): DocumentCounts {
 		$underReview = $this->assessments->getDocumentsUnderReview(caseId: $caseId);
 		$outstanding = ['count' => 0];
 		if ($require === self::REQUIRE_ASSESSED) {
 			$outstanding = $this->assessments->getOutstanding(caseId: $caseId);
 		}
 
-		return ['documents' => count($underReview), 'outstanding' => (int)($outstanding['count'] ?? 0)];
+		return new DocumentCounts(documents: count($underReview), outstanding: (int)($outstanding['count'] ?? 0));
 	}//end countsFor()
 
 	/**
 	 * The verdict from the counts: no documents, documents still waiting, or done.
 	 *
-	 * @param string                                  $require The requirement.
-	 * @param array{documents: int, outstanding: int} $counts  The counts.
+	 * @param string         $require The requirement.
+	 * @param DocumentCounts $counts  The counts.
 	 *
 	 * @return GuardResult
 	 */
-	private function countVerdict(string $require, array $counts): GuardResult {
-		if ($counts['documents'] === 0) {
+	private function countVerdict(string $require, DocumentCounts $counts): GuardResult {
+		if ($counts->documents === 0) {
 			return new GuardResult(
 				passed: false,
 				failureMessage: $this->l10n->t('No documents have been collected yet. Found nothing? Record that with an explanation'),
@@ -199,32 +199,32 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 			);
 		}
 
-		if ($counts['outstanding'] > 0) {
+		if ($counts->outstanding > 0) {
 			return $this->stillWaiting(require: $require, counts: $counts);
 		}
 
 		return new GuardResult(
 			passed: true,
-			details: ['require' => $require, 'documents' => $counts['documents']],
+			details: ['require' => $require, 'documents' => $counts->documents],
 		);
 	}//end countVerdict()
 
 	/**
 	 * The refusal while documents still wait for an assessment.
 	 *
-	 * @param string                                  $require The requirement.
-	 * @param array{documents: int, outstanding: int} $counts  The counts.
+	 * @param string         $require The requirement.
+	 * @param DocumentCounts $counts  The counts.
 	 *
 	 * @return GuardResult
 	 */
-	private function stillWaiting(string $require, array $counts): GuardResult {
+	private function stillWaiting(string $require, DocumentCounts $counts): GuardResult {
 		return new GuardResult(
 			passed: false,
 			failureMessage: $this->l10n->t(
 				'%1$s of %2$s documents are still waiting for an assessment',
-				[(string)$counts['outstanding'], (string)$counts['documents']]
+				[(string)$counts->outstanding, (string)$counts->documents]
 			),
-			details: ['require' => $require, 'documents' => $counts['documents'], 'outstanding' => $counts['outstanding']],
+			details: ['require' => $require, 'documents' => $counts->documents, 'outstanding' => $counts->outstanding],
 		);
 	}//end stillWaiting()
 
