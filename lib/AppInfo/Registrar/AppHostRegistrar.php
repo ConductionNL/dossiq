@@ -34,6 +34,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
 use OCA\Dossiq\Mcp\DossiqScannableServices;
 use OCA\OpenRegister\AppHost\Bootstrap;
+use OCA\OpenRegister\AppHost\LeafAdoption;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -113,13 +114,15 @@ class AppHostRegistrar {
 		}
 
 		Bootstrap::register(
-			$context,
-			Application::APP_ID,
-			[
-				'namespace' => 'OCA\\Dossiq',
-				'sectionName' => 'Dossiq',
-				'dashboardWidgets' => (new DashboardWidgetList())->classes(),
-			]
+			context: $context,
+			adoption: new LeafAdoption(
+				appId: Application::APP_ID,
+				options: [
+					'namespace' => 'OCA\\Dossiq',
+					'sectionName' => 'Dossiq',
+					'dashboardWidgets' => (new DashboardWidgetList())->classes(),
+				]
+			)
 		);
 	}//end register()
 }//end class

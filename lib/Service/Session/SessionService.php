@@ -40,6 +40,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OpensInTheInitialState;
+use OCA\Dossiq\Service\Support\CaseRegisterReads;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
 use RuntimeException;
@@ -83,7 +84,7 @@ class SessionService {
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-a-case-type-declares-the-sessions-a-case-holds-req-css-1
 	 */
 	public function sessionsFor(string $caseId): array {
-		$objectService = $this->objectService();
+		$objectService = $this->reads()->objectService();
 		$register      = $this->settingsService->getConfigValue(key: 'register');
 		$definitions   = $this->definitionsFor(objectService: $objectService, register: $register, caseId: $caseId);
 
@@ -92,7 +93,7 @@ class SessionService {
 			'sessions'    => $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schemaKey(key: 'hearing_session_schema'),
+				schema: $this->reads()->schemaKey(key: 'hearing_session_schema'),
 				filters: ['case' => $caseId]
 			),
 		];
@@ -127,42 +128,16 @@ class SessionService {
 			throw new InvalidArgumentException('Name the case and who chairs the session.');
 		}
 
-		$objectService = $this->objectService();
-		$register      = $this->settingsService->getConfigValue(key: 'register');
-		$definition    = $this->declared(
-			definitions: $this->definitionsFor(objectService: $objectService, register: $register, caseId: $caseId),
-			sessionKey: $sessionKey
-		);
+		$write = $this->sessionWrite(caseId: $caseId, sessionKey: $sessionKey);
+		$write->chairpersonId = $chairpersonId;
+		$write->payload = $payload;
+		$write->invitees = $invitees;
+		$write->scheduled = $this->caseDates->parse(value: $scheduledDate, field: 'scheduledDate');
+		$write->now = $this->timeFactory->now();
+		$write->definition->rules()->assertInspectionFloor(scheduled: $write->scheduled, now: $write->now);
+		$write->definition->rules()->assertInvitees(invitees: $invitees);
 
-		$scheduled = $this->caseDates->parse(value: $scheduledDate, field: 'scheduledDate');
-		$now       = $this->timeFactory->now();
-		$definition->rules()->assertInspectionFloor(scheduled: $scheduled, now: $now);
-		$definition->rules()->assertInvitees(invitees: $invitees);
-
-		$deadline  = $definition->rules()->inspectionDeadline(scheduled: $scheduled);
-		$available = $now->setTime(0, 0, 0);
-		if ($available > $deadline) {
-			$available = $deadline;
-		}
-
-		$record = array_merge(
-			$payload,
-			[
-				'case'                    => $caseId,
-				'sessionKey'              => $definition->key,
-				'title'                   => $definition->label,
-				'scheduledDate'           => $scheduled->format(DateTimeInterface::ATOM),
-				'chairperson'             => $chairpersonId,
-				'invitees'                => $definition->rules()->stampInvitees(invitees: $invitees, when: $now),
-				'inspectionAvailableFrom' => $available->format('Y-m-d'),
-				'inspectionDeadline'      => $deadline->format('Y-m-d'),
-				'status'                  => $definition->status(step: 'planned'),
-				'hearingWaived'           => false,
-				'recordingConsent'        => ($payload['recordingConsent'] ?? 'not_requested'),
-			]
-		);
-
-		return $this->save(objectService: $objectService, register: $register, record: $record);
+		return $this->save(objectService: $write->objectService, register: $write->register, record: $this->plannedRecord(write: $write));
 	}//end schedule()
 
 	/**
@@ -197,36 +172,111 @@ class SessionService {
 			throw new InvalidArgumentException('Name the case and who records the waiver.');
 		}
 
-		$objectService = $this->objectService();
-		$register      = $this->settingsService->getConfigValue(key: 'register');
-		$definition    = $this->declared(
-			definitions: $this->definitionsFor(objectService: $objectService, register: $register, caseId: $caseId),
-			sessionKey: $sessionKey
-		);
-		if ($definition->waivable === false) {
-			throw new InvalidArgumentException("{$definition->label} cannot be waived.");
+		$write = $this->sessionWrite(caseId: $caseId, sessionKey: $sessionKey);
+		if ($write->definition->waivable === false) {
+			throw new InvalidArgumentException("{$write->definition->label} cannot be waived.");
 		}
 
-		$now    = $this->timeFactory->now();
-		$record = array_merge(
-			$payload,
+		$write->chairpersonId = $chairpersonId;
+		$write->payload = $payload;
+		$write->now = $this->timeFactory->now();
+
+		return $this->save(objectService: $write->objectService, register: $write->register, record: $this->waivedRecord(write: $write, reason: $reason));
+	}//end waive()
+
+	/**
+	 * Where a session of the case is stored, and which declared session it is.
+	 *
+	 * @param string $caseId     The case uuid.
+	 * @param string $sessionKey The declared session's key, or '' for the only one.
+	 *
+	 * @return SessionWrite
+	 *
+	 * @throws RuntimeException When the case or its case type cannot be read.
+	 */
+	private function sessionWrite(string $caseId, string $sessionKey): SessionWrite {
+		$write = new SessionWrite();
+		$write->objectService = $this->reads()->objectService();
+		$write->register = $this->settingsService->getConfigValue(key: 'register');
+		$write->definition = $this->declared(
+			definitions: $this->definitionsFor(objectService: $write->objectService, register: $write->register, caseId: $caseId),
+			sessionKey: $sessionKey
+		);
+		$write->caseId = $caseId;
+
+		return $write;
+	}//end sessionWrite()
+
+	/**
+	 * The planned session: its inspection window, its invitees stamped, and its planned status.
+	 *
+	 * @param SessionWrite $write The session being planned.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function plannedRecord(SessionWrite $write): array {
+		$rules = $write->definition->rules();
+		$deadline = $rules->inspectionDeadline(scheduled: $write->scheduled);
+		$available = $write->now->setTime(0, 0, 0);
+		if ($available > $deadline) {
+			$available = $deadline;
+		}
+
+		return array_merge(
+			$write->payload,
+			$this->sessionHead(write: $write),
 			[
-				'case'                    => $caseId,
-				'sessionKey'              => $definition->key,
-				'title'                   => $definition->label,
-				'scheduledDate'           => $now->format(DateTimeInterface::ATOM),
-				'chairperson'             => $chairpersonId,
-				'invitees'                => ($payload['invitees'] ?? []),
-				'inspectionAvailableFrom' => $now->format('Y-m-d'),
-				'inspectionDeadline'      => $now->format('Y-m-d'),
-				'status'                  => $definition->status(step: 'waived'),
+				'scheduledDate'           => $write->scheduled->format(DateTimeInterface::ATOM),
+				'chairperson'             => $write->chairpersonId,
+				'invitees'                => $rules->stampInvitees(invitees: $write->invitees, when: $write->now),
+				'inspectionAvailableFrom' => $available->format('Y-m-d'),
+				'inspectionDeadline'      => $deadline->format('Y-m-d'),
+				'status'                  => $write->definition->status(step: 'planned'),
+				'hearingWaived'           => false,
+				'recordingConsent'        => ($write->payload['recordingConsent'] ?? 'not_requested'),
+			]
+		);
+	}//end plannedRecord()
+
+	/**
+	 * The waived session: held today on paper, with the reason it was waived.
+	 *
+	 * @param SessionWrite $write  The session being waived.
+	 * @param string       $reason Why it is waived, trimmed.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function waivedRecord(SessionWrite $write, string $reason): array {
+		return array_merge(
+			$write->payload,
+			$this->sessionHead(write: $write),
+			[
+				'scheduledDate'           => $write->now->format(DateTimeInterface::ATOM),
+				'chairperson'             => $write->chairpersonId,
+				'invitees'                => ($write->payload['invitees'] ?? []),
+				'inspectionAvailableFrom' => $write->now->format('Y-m-d'),
+				'inspectionDeadline'      => $write->now->format('Y-m-d'),
+				'status'                  => $write->definition->status(step: 'waived'),
 				'hearingWaived'           => true,
 				'waiverReason'            => $reason,
 			]
 		);
+	}//end waivedRecord()
 
-		return $this->save(objectService: $objectService, register: $register, record: $record);
-	}//end waive()
+	/**
+	 * The fields every session record opens with: its case, its key and its title.
+	 *
+	 * @param SessionWrite $write The session being written.
+	 *
+	 * @return array<string, string>
+	 */
+	private function sessionHead(SessionWrite $write): array {
+		return [
+			'case'       => $write->caseId,
+			'sessionKey' => $write->definition->key,
+			'title'      => $write->definition->label,
+		];
+	}//end sessionHead()
 
 	/**
 	 * Add attendance entries to a session.
@@ -342,12 +392,12 @@ class SessionService {
 	 * @throws RuntimeException When the session or its case cannot be read.
 	 */
 	private function loadSession(string $sessionId): array {
-		$objectService = $this->objectService();
+		$objectService = $this->reads()->objectService();
 		$register      = $this->settingsService->getConfigValue(key: 'register');
 		$current       = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
-			schema: $this->schemaKey(key: 'hearing_session_schema'),
+			schema: $this->reads()->schemaKey(key: 'hearing_session_schema'),
 			id: $sessionId
 		);
 		if ($current === null) {
@@ -357,7 +407,7 @@ class SessionService {
 		$definitions = $this->definitionsFor(
 			objectService: $objectService,
 			register: $register,
-			caseId: $this->uuidOf(value: ($current['case'] ?? ''))
+			caseId: CaseRegisterReads::uuidOf(value: ($current['case'] ?? ''))
 		);
 
 		$key = ($current['sessionKey'] ?? '');
@@ -402,37 +452,26 @@ class SessionService {
 	 * @throws RuntimeException When the case or its case type cannot be read.
 	 */
 	private function definitionsFor(object $objectService, string $register, string $caseId): array {
-		$case = null;
-		if ($caseId !== '') {
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schemaKey(key: 'case_schema'),
-				id: $caseId
-			);
-		}
-
-		if ($case === null) {
+		if ($caseId === '') {
 			throw new RuntimeException('Case not found');
 		}
 
-		$caseTypeId = $this->uuidOf(value: ($case['caseType'] ?? ''));
-		if ($caseTypeId === '') {
-			return [];
-		}
-
-		$caseType = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $this->schemaKey(key: 'case_type_schema'),
-			id: $caseTypeId
-		);
+		$caseType = $this->reads()->caseTypeOf(location: [$objectService, $register], caseId: $caseId);
 		if ($caseType === null) {
-			throw new RuntimeException('Case type not found');
+			return [];
 		}
 
 		return (new SessionDefinitionReader())->allOf(caseType: $caseType);
 	}//end definitionsFor()
+
+	/**
+	 * The case and schema reads this service starts from.
+	 *
+	 * @return CaseRegisterReads
+	 */
+	private function reads(): CaseRegisterReads {
+		return new CaseRegisterReads(settingsService: $this->settingsService);
+	}//end reads()
 
 	/**
 	 * Save a new session.
@@ -452,7 +491,7 @@ class SessionService {
 		try {
 			return $this->createThenMove(
 				objectService: $objectService,
-				write: ['register' => $register, 'schema' => $this->schemaKey(key: 'hearing_session_schema'), 'object' => $record, 'field' => 'status']
+				write: ['register' => $register, 'schema' => $this->reads()->schemaKey(key: 'hearing_session_schema'), 'object' => $record, 'field' => 'status']
 			);
 		} catch (Throwable $e) {
 			throw new RuntimeException('The session could not be saved: ' . $e->getMessage(), 0, $e);
@@ -483,7 +522,7 @@ class SessionService {
 			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schemaKey(key: 'hearing_session_schema'),
+				schema: $this->reads()->schemaKey(key: 'hearing_session_schema'),
 				id: $sessionId,
 				changes: $changes
 			) ?? array_merge($current, $changes));
@@ -525,60 +564,4 @@ class SessionService {
 		return trim($value);
 	}//end field()
 
-	/**
-	 * The OpenRegister object service.
-	 *
-	 * @return object The object service.
-	 *
-	 * @throws RuntimeException When OpenRegister is not available.
-	 */
-	private function objectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end objectService()
-
-	/**
-	 * A configured schema id.
-	 *
-	 * @param string $key The config key.
-	 *
-	 * @return string The schema id.
-	 *
-	 * @throws RuntimeException When it is not configured.
-	 */
-	private function schemaKey(string $key): string {
-		$schema = $this->settingsService->getConfigValue(key: $key);
-		if ($schema === '') {
-			throw new RuntimeException("The schema '$key' is not configured.");
-		}
-
-		return $schema;
-	}//end schemaKey()
-
-	/**
-	 * The uuid of a reference, whether stored as a string or an object.
-	 *
-	 * @param mixed $value The reference.
-	 *
-	 * @return string The uuid, or ''.
-	 */
-	private function uuidOf(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === true) {
-			foreach (['id', 'uuid'] as $key) {
-				if (is_string($value[$key] ?? null) === true) {
-					return trim($value[$key]);
-				}
-			}
-		}
-
-		return '';
-	}//end uuidOf()
 }//end class

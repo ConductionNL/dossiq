@@ -75,6 +75,22 @@ class StatusTransitionService {
 	public const ADMIN_GROUP_ID = TransitionAuthorizer::ADMIN_GROUP_ID;
 
 	/**
+	 * The move a free-form transition records, in this key order; the
+	 * from-status, target, comment and actor are filled in per move.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private const FREE_FORM_MOVE = [
+		'fromStatus' => '',
+		'toStatus' => '',
+		'label' => 'Free-form transition',
+		'comment' => null,
+		'actor' => '',
+		'evaluatedGuards' => [],
+		'noWorkflowTemplate' => true,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param WorkflowTemplateLoader $templateLoader Active workflowTemplate loader
@@ -118,42 +134,9 @@ class StatusTransitionService {
 		}
 
 		$currentId = (string)($case['status'] ?? '');
-
-		// 🔑 THE CASE, NOT ITS CASE TYPE. A case type may carry several routes,
-		// and a case pinned to one of them must be offered that route's
-		// transitions. Asking by case type alone returned whichever active
-		// definition the store listed first.
-		$template = $this->templateLoader->getTemplateForCase(case: $case);
-
-		// What the status the case is in DECLARES, beside the moves out of it.
-		// The handler asks both questions in the same breath — what can I do
-		// here, and why is the thing I expected not on offer — so they are
-		// answered in one round trip rather than two.
-		$declared = $this->declarations->panel(case: $case);
-
-		$result = [
-			'transitions' => [],
-			// Always present, even when nothing is withheld: a caller that had
-			// to test for the key would read an absent list as "nothing is in
-			// the way", which is the one wrong answer that looks right.
-			'withheld' => [],
-			// The name, the colour and what this status MEANS, written by an
-			// administrator and rendered on the case: all three come off the
-			// same row.
-			'current' => array_merge(
-				['statusId' => $currentId],
-				$this->declarations->statusFacts(statusTypeId: $currentId),
-				['waitingOn' => $declared['waitingOn'], 'dwell' => $declared['dwell']],
-			),
-			'derivation' => $declared['derivation'],
-		];
-
-		if ($template === null) {
-			return $result;
-		}
-
-		$transitions = $template['transitions'] ?? [];
-		if (is_array($transitions) === false) {
+		$transitions = $this->transitionsFor(case: $case);
+		$result = $this->panelFor(case: $case, currentId: $currentId);
+		if ($transitions === null) {
 			return $result;
 		}
 
@@ -173,6 +156,64 @@ class StatusTransitionService {
 
 		return $result;
 	}//end getAvailableTransitions()
+
+	/**
+	 * The transitions of the workflow a case runs on, or null when it runs on none.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<int|string, mixed>|null The transitions, or null without a template or a transition list.
+	 */
+	private function transitionsFor(array $case): ?array {
+		// 🔑 THE CASE, NOT ITS CASE TYPE. A case type may carry several routes,
+		// and a case pinned to one of them must be offered that route's
+		// transitions. Asking by case type alone returned whichever active
+		// definition the store listed first.
+		$template = $this->templateLoader->getTemplateForCase(case: $case);
+		if ($template === null) {
+			return null;
+		}
+
+		$transitions = $template['transitions'] ?? [];
+		if (is_array($transitions) === false) {
+			return null;
+		}
+
+		return $transitions;
+	}//end transitionsFor()
+
+	/**
+	 * The status panel of a case, with no transitions offered or withheld yet.
+	 *
+	 * @param array<string, mixed> $case      The case.
+	 * @param string               $currentId The status the case is in.
+	 *
+	 * @return array<string, mixed> The panel.
+	 */
+	private function panelFor(array $case, string $currentId): array {
+		// What the status the case is in DECLARES, beside the moves out of it.
+		// The handler asks both questions in the same breath — what can I do
+		// here, and why is the thing I expected not on offer — so they are
+		// answered in one round trip rather than two.
+		$declared = $this->declarations->panel(case: $case);
+
+		return [
+			'transitions' => [],
+			// Always present, even when nothing is withheld: a caller that had
+			// to test for the key would read an absent list as "nothing is in
+			// the way", which is the one wrong answer that looks right.
+			'withheld' => [],
+			// The name, the colour and what this status MEANS, written by an
+			// administrator and rendered on the case: all three come off the
+			// same row.
+			'current' => array_merge(
+				['statusId' => $currentId],
+				$this->declarations->statusFacts(statusTypeId: $currentId),
+				['waitingOn' => $declared['waitingOn'], 'dwell' => $declared['dwell']],
+			),
+			'derivation' => $declared['derivation'],
+		];
+	}//end panelFor()
 
 	/**
 	 * Execute a guarded transition.
@@ -469,40 +510,13 @@ class StatusTransitionService {
 	 */
 	public function executeFreeForm(string $caseId, string $toStatusId, ?string $comment, ?string $userId = null): array {
 		$userId = $this->resolveUserId(explicit: $userId);
-		if ($this->authorizer->isAdmin(userId: $userId) === false) {
-			throw new RuntimeException('forbidden_admin_only');
-		}
+		$case = $this->caseForAdmin(caseId: $caseId, userId: $userId);
+		$this->assertHandSettable(case: $case, toStatusId: $toStatusId);
 
-		$case = $this->ledger->load(caseId: $caseId);
-		if ($case === null) {
-			throw new RuntimeException('case_not_found');
-		}
-
-		$caseTypeId = (string)($case['caseType'] ?? '');
-
-		// REQ-LIFE-03. A free-form transition is a status written because an
-		// administrator said so rather than because the process moved, and a
-		// case type that declares `processOwnedStatus` accepts none of those.
-		// It sits HERE and not on `execute()`: a declared transition IS the
-		// process moving the status, so the rule there would refuse the one
-		// way a process-owned status is allowed to change.
-		//
-		// What it does not reach is a PATCH sent straight to OpenRegister.
-		// That boundary is the grants gateway's, and a guard that claimed it
-		// would read complete and not be.
-		$this->processOwnedStatus->requireHandSetAllowed(caseTypeId: $caseTypeId);
-
-		$this->ledger->assertStatusOfCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
-
-		$move = [
-			'fromStatus' => (string)($case['status'] ?? ''),
-			'toStatus' => $toStatusId,
-			'label' => 'Free-form transition',
-			'comment' => $comment,
-			'actor' => $userId,
-			'evaluatedGuards' => [],
-			'noWorkflowTemplate' => true,
-		];
+		$move = array_replace(
+			self::FREE_FORM_MOVE,
+			['fromStatus' => (string)($case['status'] ?? ''), 'toStatus' => $toStatusId, 'comment' => $comment, 'actor' => $userId],
+		);
 		[$case] = $this->ledger->save(
 			case: $this->declarations->stamp(case: $case, toStatus: $toStatusId),
 			toStatus: $toStatusId,
@@ -526,6 +540,57 @@ class StatusTransitionService {
 			'failedActions' => $outcome['failedActions'],
 		];
 	}//end executeFreeForm()
+
+	/**
+	 * The case a free-form transition writes, for an administrator only.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $userId The acting user UID
+	 *
+	 * @return array<string, mixed> The case.
+	 *
+	 * @throws RuntimeException When the caller is not in the admin group or the case is not found
+	 */
+	private function caseForAdmin(string $caseId, string $userId): array {
+		if ($this->authorizer->isAdmin(userId: $userId) === false) {
+			throw new RuntimeException('forbidden_admin_only');
+		}
+
+		$case = $this->ledger->load(caseId: $caseId);
+		if ($case === null) {
+			throw new RuntimeException('case_not_found');
+		}
+
+		return $case;
+	}//end caseForAdmin()
+
+	/**
+	 * Refuse a free-form target the case type does not allow to be set by hand.
+	 *
+	 * @param array<string, mixed> $case       The case.
+	 * @param string               $toStatusId Target statusType UUID
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the case type owns its status or the target is not one of its statuses
+	 */
+	private function assertHandSettable(array $case, string $toStatusId): void {
+		$caseTypeId = (string)($case['caseType'] ?? '');
+
+		// REQ-LIFE-03. A free-form transition is a status written because an
+		// administrator said so rather than because the process moved, and a
+		// case type that declares `processOwnedStatus` accepts none of those.
+		// It sits HERE and not on `execute()`: a declared transition IS the
+		// process moving the status, so the rule there would refuse the one
+		// way a process-owned status is allowed to change.
+		//
+		// What it does not reach is a PATCH sent straight to OpenRegister.
+		// That boundary is the grants gateway's, and a guard that claimed it
+		// would read complete and not be.
+		$this->processOwnedStatus->requireHandSetAllowed(caseTypeId: $caseTypeId);
+
+		$this->ledger->assertStatusOfCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
+	}//end assertHandSettable()
 
 	/**
 	 * Return the chronological history of transitions for a case.
