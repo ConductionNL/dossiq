@@ -754,6 +754,8 @@ if (class_exists('\\OCA\\OpenRegister\\Db\\FlowTimer') === false) {
 	include_once __DIR__ . '/Stubs/Db/FlowTimer.php';
 }
 
+include_once __DIR__ . '/Stubs/Service/Flow/Timer/TimerFiringStubs.php';
+
 if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/FlowTimerFiredEventStub.php';
 }
