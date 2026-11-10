@@ -142,67 +142,26 @@ class TermijnService {
 		?DateTimeImmutable $startDate = null,
 		?array $resolution = null,
 	): array {
-		$startDate = ($startDate ?? new DateTimeImmutable());
-		$definitie = (($resolution['definition'] ?? null) ?? $this->getTermijnDefinitie(caseType: $caseType));
-		if ($definitie === null) {
-			// A DISTINCT type, because this is the one refusal a caller can
-			// act on and the one that must not be swallowed at debug level:
-			// it means no statutory clock started for this case at all.
-			throw new NoTermijnDefinitieException(
-				message: 'No active TermijnDefinitie configured for zaaktype "' . $caseType . '" (REQ-TERM-001-A)'
-			);
-		}
+		$start = new TermStart();
+		$start->caseId = $caseId;
+		$start->caseType = $caseType;
+		$start->startDate = ($startDate ?? new DateTimeImmutable());
+		$start->resolution = $resolution;
+		$start->definitie = $this->definitionToStart(start: $start);
+		$start->durationDays = (int)($start->definitie['standardDurationDays'] ?? 0);
 
-		$durationDays = (int)($definitie['standardDurationDays'] ?? 0);
-		// COUNTED AND ROLLED IN ONE CALL. The Algemene termijnenwet roll used to
-		// sit here, one line below the count, and the two always ran together.
-		// They live together now, on the class that reads what the definition
-		// declares, so no caller can take the count without the roll.
-		$endDate = $this->definitions
-			->endDateFor(start: $startDate, days: $durationDays, definitie: $definitie)
-			->format('Y-m-d');
-
-		$instance = [
-			'case' => $caseId,
-			'deadlineDefinition' => (string)($definitie['id'] ?? ''),
-			// The kind this instance carries. A term created here is the one the
-			// Awb sets and the citizen is told about, and every instance written
-			// before the four kinds existed is one of these too, which is why
-			// {@see TermKind::ofInstance()} reads an absent kind as statutory.
-			'kind' => TermKind::STATUTORY,
-			'startDate' => $startDate->format('Y-m-d\TH:i:sP'),
-			'endDateCalculated' => $endDate,
-			'endDateCurrent' => $endDate,
-			'status' => 'lopend',
-			'countExtensions' => 0,
-			'notificatiesVerstuurd' => [],
-		];
-
-		// Which rule produced this term, recorded rather than re-derivable. A
-		// term somebody disputes has to be explainable a year later, and the
-		// configuration will have changed by then.
-		if ($resolution !== null) {
-			$instance['resolvedFrom'] = (string)($resolution['resolvedFrom'] ?? '');
-			$instance['resolutionSnapshot'] = (array)($resolution['snapshot'] ?? []);
-		}
-
-		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
-		if ($saved === null) {
-			throw new RuntimeException(
-				'Failed to persist TermijnInstance for zaak "' . $caseId . '" (persistence unavailable)'
-			);
-		}
+		$saved = $this->storeStartedInstance(start: $start);
 
 		$this->recordEvent(
 			termInstanceId: (string)($saved['id'] ?? ''),
 			type: 'start',
-			basis: (string)($definitie['legalBasis'] ?? 'AWB 4:13'),
+			basis: (string)($start->definitie['legalBasis'] ?? 'AWB 4:13'),
 			rationale: 'Termijn gestart bij zaak-aanmaak',
-			daysImpact: $durationDays,
-			moment: $startDate,
+			daysImpact: $start->durationDays,
+			moment: $start->startDate,
 		);
 
-		$armed = $this->armEngineTimer(instance: $saved, definitie: $definitie);
+		$armed = $this->armEngineTimer(instance: $saved, definitie: $start->definitie);
 		if ($armed !== null) {
 			// Arming wrote the instance again through updateTermijnInstance(),
 			// which has already brought the case in line.
@@ -213,6 +172,92 @@ class TermijnService {
 
 		return $saved;
 	}//end createTermijnInstance()
+
+	/**
+	 * The definition the term starts from: the resolution's, or the case type's active one.
+	 *
+	 * @param TermStart $start The term start.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws NoTermijnDefinitieException When the case type has no active definition.
+	 */
+	private function definitionToStart(TermStart $start): array {
+		$definitie = (($start->resolution['definition'] ?? null) ?? $this->getTermijnDefinitie(caseType: $start->caseType));
+		if ($definitie === null) {
+			// A DISTINCT type, because this is the one refusal a caller can
+			// act on and the one that must not be swallowed at debug level:
+			// it means no statutory clock started for this case at all.
+			throw new NoTermijnDefinitieException(
+				message: 'No active TermijnDefinitie configured for zaaktype "' . $start->caseType . '" (REQ-TERM-001-A)'
+			);
+		}
+
+		return $definitie;
+	}//end definitionToStart()
+
+	/**
+	 * Store the new statutory term instance.
+	 *
+	 * @param TermStart $start The term start.
+	 *
+	 * @return array<string, mixed> The stored instance.
+	 *
+	 * @throws RuntimeException When the instance could not be persisted.
+	 */
+	private function storeStartedInstance(TermStart $start): array {
+		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $this->startedInstance(start: $start));
+		if ($saved === null) {
+			throw new RuntimeException(
+				'Failed to persist TermijnInstance for zaak "' . $start->caseId . '" (persistence unavailable)'
+			);
+		}
+
+		return $saved;
+	}//end storeStartedInstance()
+
+	/**
+	 * The new instance: its definition, its kind, and its end counted and rolled.
+	 *
+	 * @param TermStart $start The term start.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function startedInstance(TermStart $start): array {
+		// COUNTED AND ROLLED IN ONE CALL. The Algemene termijnenwet roll used to
+		// sit here, one line below the count, and the two always ran together.
+		// They live together now, on the class that reads what the definition
+		// declares, so no caller can take the count without the roll.
+		$endDate = $this->definitions
+			->endDateFor(start: $start->startDate, days: $start->durationDays, definitie: $start->definitie)
+			->format('Y-m-d');
+
+		$instance = [
+			'case' => $start->caseId,
+			'deadlineDefinition' => (string)($start->definitie['id'] ?? ''),
+			// The kind this instance carries. A term created here is the one the
+			// Awb sets and the citizen is told about, and every instance written
+			// before the four kinds existed is one of these too, which is why
+			// {@see TermKind::ofInstance()} reads an absent kind as statutory.
+			'kind' => TermKind::STATUTORY,
+			'startDate' => $start->startDate->format('Y-m-d\TH:i:sP'),
+			'endDateCalculated' => $endDate,
+			'endDateCurrent' => $endDate,
+			'status' => 'lopend',
+			'countExtensions' => 0,
+			'notificatiesVerstuurd' => [],
+		];
+
+		// Which rule produced this term, recorded rather than re-derivable. A
+		// term somebody disputes has to be explainable a year later, and the
+		// configuration will have changed by then.
+		if ($start->resolution !== null) {
+			$instance['resolvedFrom'] = (string)($start->resolution['resolvedFrom'] ?? '');
+			$instance['resolutionSnapshot'] = (array)($start->resolution['snapshot'] ?? []);
+		}
+
+		return $instance;
+	}//end startedInstance()
 
 	/**
 	 * Arm the engine timer for a freshly created instance and store its
@@ -432,10 +477,7 @@ class TermijnService {
 		);
 
 		if ($updated !== null) {
-			$why = trim($rationale);
-			if ($why === '') {
-				$why = 'Termijn voltooid door beschikking';
-			}
+			$why = $this->completionReason(rationale: $rationale);
 
 			$this->recordEvent(
 				termInstanceId: $termInstanceId,
@@ -463,6 +505,22 @@ class TermijnService {
 
 		return $updated;
 	}//end markTermijnCompleted()
+
+	/**
+	 * Why the term ended: the caller's reason, or the decision sentence by default.
+	 *
+	 * @param string $rationale The caller's reason, possibly empty.
+	 *
+	 * @return string
+	 */
+	private function completionReason(string $rationale): string {
+		$why = trim($rationale);
+		if ($why === '') {
+			return 'Termijn voltooid door beschikking';
+		}
+
+		return $why;
+	}//end completionReason()
 
 	/**
 	 * Append an immutable TermijnGebeurtenis row.
@@ -508,27 +566,54 @@ class TermijnService {
 			$event['documentLink'] = $documentLink;
 		}
 
+		$event = $this->withItems(event: $event, items: $items);
+
+		$saved = $this->store->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
+
+		$this->mirrorEvent(event: $event, moment: $moment);
+
+		return $saved;
+	}//end recordEvent()
+
+	/**
+	 * Mirror a recorded event as an entry on the case.
+	 *
+	 * The event row names its instance, and the instance names the case.
+	 * That read belongs here: this is the only class that knows how to
+	 * reach a term instance, and the entry writer asking for it would
+	 * depend on the class that depends on it. An instance that cannot be
+	 * read arrives as an empty array and the writer declines it, which is
+	 * a guard there rather than a branch this class has to carry.
+	 *
+	 * @param array<string, mixed> $event  The event row as stored.
+	 * @param DateTimeImmutable    $moment When the event happened.
+	 *
+	 * @return void
+	 */
+	private function mirrorEvent(array $event, DateTimeImmutable $moment): void {
+		$this->termEntry?->recordEvent(
+			instance: (array)$this->getTermijnInstance(termInstanceId: $event['deadlineInstance']),
+			type: $event['type'],
+			basis: $event['basis'],
+			rationale: $event['rationale'],
+			moment: $moment,
+		);
+	}//end mirrorEvent()
+
+	/**
+	 * The event with the items it is about, when there are any.
+	 *
+	 * @param array<string, mixed> $event The event row.
+	 * @param array<int, mixed>    $items The items, possibly none.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withItems(array $event, array $items): array {
 		if (count($items) > 0) {
 			$event['items'] = array_values($items);
 		}
 
-		$saved = $this->store->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
-
-		// The event row names its instance, and the instance names the case.
-		// That read belongs here: this is the only class that knows how to
-		// reach a term instance, and the entry writer asking for it would
-		// depend on the class that depends on it. An instance that cannot be
-		// read arrives as an empty array and the writer declines it, which is
-		// a guard there rather than a branch this class has to carry.
-		$this->termEntry?->recordEvent(
-			instance: (array)$this->getTermijnInstance(termInstanceId: $termInstanceId),
-			type: $type,
-			basis: $basis,
-			rationale: $rationale,
-			moment: $moment,
-		);
-
-		return $saved;
-	}//end recordEvent()
+		return $event;
+	}//end withItems()
 
 }//end class

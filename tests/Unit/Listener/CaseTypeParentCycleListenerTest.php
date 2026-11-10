@@ -33,6 +33,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseTypeParentCycleListener
+ * @uses \OCA\Dossiq\Listener\Support\PreSaveCheck
  * @covers \OCA\Dossiq\Service\CaseTypeResolver
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText

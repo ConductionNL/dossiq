@@ -167,6 +167,71 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 	}//end testARefusedCatalogueWarnsInsteadOfReportingAnEmptySuccess()
 
 	/**
+	 * The step reports what it created and refreshed, in one info line per run.
+	 *
+	 * @return void
+	 */
+	public function testEachRunReportsItsCounts(): void {
+		$this->settingsService->method('isOpenRegisterAvailable')->willReturn(true);
+		$this->container->method('get')->willReturn($this->mapper);
+		$lines = [];
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->never())->method('warning');
+		$output->method('info')->willReturnCallback(
+			static function (string $line) use (&$lines): void {
+				$lines[] = $line;
+			}
+		);
+
+		$this->step->run($output);
+		$seeded = $this->mapper->inserts;
+		$this->step->run($output);
+
+		$this->assertSame(
+			[
+				sprintf('Verwerkingsactiviteiten catalogue seeded: %d created (draft), 0 refreshed.', $seeded),
+				sprintf('Verwerkingsactiviteiten catalogue seeded: 0 created (draft), %d refreshed.', $seeded),
+			],
+			$lines
+		);
+	}//end testEachRunReportsItsCounts()
+
+	/**
+	 * Every refused row is logged with its code, and the warning names them all.
+	 *
+	 * @return void
+	 */
+	public function testEveryRefusalIsLoggedAndNamed(): void {
+		$this->settingsService->method('isOpenRegisterAvailable')->willReturn(true);
+		$this->container->method('get')->willReturn(new RefusingVerwerkingsactiviteitMapperDouble());
+		$codes = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('error')->willReturnCallback(
+			static function (string $message, array $context) use (&$codes): void {
+				self::assertSame('Dossiq: failed to seed verwerkingsactiviteit', $message);
+				self::assertArrayHasKey('exception', $context);
+				$codes[] = $context['code'];
+			}
+		);
+		$warnings = [];
+		$output = $this->createMock(IOutput::class);
+		$output->method('warning')->willReturnCallback(
+			static function (string $line) use (&$warnings): void {
+				$warnings[] = $line;
+			}
+		);
+		$step = new SeedVerwerkingsactiviteiten(settingsService: $this->settingsService, container: $this->container, logger: $logger);
+
+		$step->run($output);
+
+		$this->assertContains('zaakafhandeling', $codes);
+		$this->assertSame(
+			[sprintf('Verwerkingsactiviteiten catalogue: 0 created (draft), 0 refreshed, %d REFUSED (%s). See the log for each refusal.', count($codes), implode(', ', $codes))],
+			$warnings
+		);
+	}//end testEveryRefusalIsLoggedAndNamed()
+
+	/**
 	 * A re-run refreshes descriptive fields but never touches the
 	 * FG-owned lifecycle status (published stays published).
 	 *

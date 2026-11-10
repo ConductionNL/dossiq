@@ -137,6 +137,47 @@ class MajorCaseDeclarationTest extends TestCase {
 	}//end testACalamiteitIsStoodUpInOneAct()
 
 	/**
+	 * No case, and no Talk to open a channel in, each answer their reason and
+	 * write nothing; an anonymous declaration is stored as declared by nobody.
+	 *
+	 * @return void
+	 */
+	public function testTheOtherWaysADeclarationEnds(): void {
+		$this->assertSame(
+			['ok' => false, 'reason' => \OCA\Dossiq\Service\Conversation\CaseConversationService::REASON_NO_CASE],
+			$this->service->declareMajor(caseId: 'case-404')
+		);
+
+		$this->responders->method('resolve')->willReturn(['ok' => true, 'users' => ['anna'], 'unresolved' => []]);
+		$this->broker->method('isAvailable')->willReturn(false);
+		$this->assertSame(
+			['ok' => false, 'reason' => \OCA\Dossiq\Service\Conversation\CaseConversationService::REASON_NO_TALK],
+			$this->service->declareMajor(caseId: 'case-1')
+		);
+		$this->assertArrayNotHasKey('isMajor', $this->register->row(schema: 'case', uuid: 'case-1'));
+	}//end testTheOtherWaysADeclarationEnds()
+
+	/**
+	 * A declaration without a declarer stores an empty one, and answers the
+	 * channel it stored.
+	 *
+	 * @return void
+	 */
+	public function testAnAnonymousDeclarationStoresNoDeclarer(): void {
+		$this->responders->method('resolve')->willReturn(['ok' => true, 'users' => ['anna'], 'unresolved' => []]);
+		$this->broker->method('isAvailable')->willReturn(true);
+		$this->broker->method('createRoom')->willReturn(['id' => 'room-8', 'url' => 'u']);
+
+		$result = $this->service->declareMajor(caseId: 'case-1');
+
+		$stored = $this->register->row(schema: 'case', uuid: 'case-1');
+		$this->assertSame('', $stored['majorDeclaredBy']);
+		$this->assertSame(['ok' => true, 'alreadyMajor' => false, 'channel' => $stored['majorChannel']], $result);
+		$this->assertSame(['roomId', 'roomUrl', 'openedAt', 'closedAt'], array_keys($stored['majorChannel']));
+		$this->assertSame('', $stored['majorChannel']['closedAt']);
+	}//end testAnAnonymousDeclarationStoresNoDeclarer()
+
+	/**
 	 * A second declaration finds the channel that is already open.
 	 *
 	 * @return void
@@ -183,6 +224,41 @@ class MajorCaseDeclarationTest extends TestCase {
 		$this->assertArrayNotHasKey('isMajor', $stored);
 		$this->assertArrayNotHasKey('majorChannel', $stored);
 	}//end testUnresolvableRespondersRefuseTheDeclaration()
+
+	/**
+	 * The conversation filed on close carries every field, and it is filed
+	 * before the room is closed; an unknown case is refused.
+	 *
+	 * @return void
+	 */
+	public function testTheClosedChannelIsFiledWholeBeforeTheRoomCloses(): void {
+		$this->responders->method('resolve')->willReturn(['ok' => true, 'users' => ['anna'], 'unresolved' => []]);
+		$this->broker->method('isAvailable')->willReturn(true);
+		$this->broker->method('createRoom')->willReturn(['id' => 'room-9', 'url' => 'https://nc.test/call/room-9']);
+		$filedWhenClosed = null;
+		$this->broker->method('closeRoom')->willReturnCallback(
+			function (string $roomId) use (&$filedWhenClosed): bool {
+				$filedWhenClosed = count($this->register->row(schema: 'case', uuid: 'case-1')['conversations'] ?? []);
+				return true;
+			}
+		);
+		$this->service->declareMajor(caseId: 'case-1', declaredBy: 'coordinator');
+
+		$this->service->closeMajorChannel(caseId: 'case-1');
+
+		$stored = $this->register->row(schema: 'case', uuid: 'case-1');
+		$entry = $stored['conversations'][0];
+		$this->assertSame(['kind', 'subject', 'roomId', 'roomUrl', 'startedAt', 'startedBy', 'participants', 'durationSeconds', 'endedAt'], array_keys($entry));
+		$this->assertSame(['majorChannel', 'room-9', 'https://nc.test/call/room-9', 'coordinator', ['anna'], 0], [$entry['kind'], $entry['roomId'], $entry['roomUrl'], $entry['startedBy'], $entry['participants'], $entry['durationSeconds']]);
+		$this->assertSame($stored['majorChannel']['openedAt'], $entry['startedAt']);
+		$this->assertSame($stored['majorChannel']['closedAt'], $entry['endedAt']);
+		$this->assertNotSame('', (string)$entry['subject']);
+		$this->assertSame(1, $filedWhenClosed);
+		$this->assertSame(
+			['ok' => false, 'reason' => \OCA\Dossiq\Service\Conversation\CaseConversationService::REASON_NO_CASE],
+			$this->service->closeMajorChannel(caseId: 'case-404')
+		);
+	}//end testTheClosedChannelIsFiledWholeBeforeTheRoomCloses()
 
 	/**
 	 * Closing the case closes the channel, and what was said stays on the case.

@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\OpenRegister\Service\Flow\FlowNodeCall;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\EventDispatcher\Event;
@@ -65,7 +66,7 @@ class SideEffectDispatcherTest extends TestCase {
         if ($throws !== null) {
             $node->method('execute')->willThrowException($throws);
         } else {
-            $node->method('execute')->willReturnArgument(0);
+            $node->method('execute')->willReturnCallback(static fn (FlowNodeCall $call): array => $call->items);
         }
 
         return $node;
@@ -301,7 +302,10 @@ class SideEffectDispatcherTest extends TestCase {
         $node     = $this->createMock(IFlowNode::class);
         $node->method('getId')->willReturn('openregister.send-notification');
         $node->expects($this->once())->method('execute')->willReturnCallback(
-            static function (array $items, array $config, array $context) use (&$seen): array {
+            static function (FlowNodeCall $call) use (&$seen): array {
+                $items = $call->items;
+                $config = $call->config;
+                $context = $call->context;
                 $seen = ['items' => $items, 'config' => $config, 'context' => $context];
                 return $items;
             }
@@ -337,7 +341,9 @@ class SideEffectDispatcherTest extends TestCase {
             $node = $this->createMock(IFlowNode::class);
             $node->method('getId')->willReturn($id);
             $node->method('execute')->willReturnCallback(
-                static function (array $items, array $config) use ($id, &$order): array {
+                static function (FlowNodeCall $call) use ($id, &$order): array {
+                    $items = $call->items;
+                    $config = $call->config;
                     $order[] = $id;
                     if ($id === 'openregister.set-fields') {
                         $items[0]['json']['archiveStatus'] = $config['set']['archiveStatus'];
@@ -387,7 +393,10 @@ class SideEffectDispatcherTest extends TestCase {
         $node     = $this->createMock(IFlowNode::class);
         $node->method('getId')->willReturn('openconnector.source-call');
         $node->expects($this->once())->method('execute')->willReturnCallback(
-            static function (array $items, array $config, array $context) use (&$seen): array {
+            static function (FlowNodeCall $call) use (&$seen): array {
+                $items = $call->items;
+                $config = $call->config;
+                $context = $call->context;
                 $seen = ['items' => $items, 'config' => $config, 'context' => $context];
                 return $items;
             }
