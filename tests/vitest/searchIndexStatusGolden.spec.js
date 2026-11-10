@@ -14,7 +14,7 @@ const mockGet = vi.fn()
 vi.mock('@nextcloud/axios', () => ({ default: { get: (...a) => mockGet(...a) } }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (path) => path }))
 
-const { searchIndexStatus } = await import('../../src/services/searchIndexApi.js')
+const { lastRunSeconds, lastRunTime, searchIndexStatus } = await import('../../src/services/searchIndexApi.js')
 
 describe('search index status golden', () => {
 	it.each([
@@ -82,5 +82,37 @@ describe('search index status golden', () => {
 	it('keeps a tables list as it is', async () => {
 		mockGet.mockResolvedValue({ data: { tables: [1] } })
 		expect((await searchIndexStatus()).tables).toEqual([1])
+	})
+})
+
+describe('last run golden', () => {
+	it.each([
+		[undefined, null],
+		[null, null],
+		['', null],
+		['2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'],
+		[[], null],
+		[7, null],
+		[{}, null],
+		[{ startedAt: 'S' }, 'S'],
+		[{ startedAt: 'S', finishedAt: 'F' }, 'F'],
+		[{ startedAt: 'S', finishedAt: '' }, 'S'],
+		[{ startedAt: 5 }, null],
+	])('reads the time of %j as %j', (report, time) => {
+		expect(lastRunTime(report)).toBe(time)
+	})
+
+	it.each([
+		[null, null],
+		['x', null],
+		[[], null],
+		[{}, null],
+		[{ startedAt: '2026-01-01T00:00:00Z' }, null],
+		[{ startedAt: 'nope', finishedAt: '2026-01-01T00:00:05Z' }, null],
+		[{ startedAt: '2026-01-01T00:00:05Z', finishedAt: '2026-01-01T00:00:00Z' }, null],
+		[{ startedAt: '2026-01-01T00:00:00Z', finishedAt: '2026-01-01T00:00:00Z' }, 0],
+		[{ startedAt: '2026-01-01T00:00:00Z', finishedAt: '2026-01-01T00:00:02.600Z' }, 3],
+	])('reads the duration of %j as %j', (report, seconds) => {
+		expect(lastRunSeconds(report)).toBe(seconds)
 	})
 })
