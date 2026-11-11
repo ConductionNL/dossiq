@@ -1,8 +1,9 @@
 {
-  "ceiling": 247,
+  "ceiling": 246,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-11, the ApprovalService accessors left with the class in OpenRegister (723174caa), taking `OpenRegisterBridge::approvalService` with them. The ceiling went 247 to 246.",
     "2026-11-11, the custody chain and the custody query share one reader for the custody schema: `CaseCustodyChain::holdings` and `CaseCustodyQuery::heldBy` read through `Custody/CustodyRows::find`, one site for the same degradation. The ceiling went 248 to 247.",
     "2026-11-10, the custody stores share one reader for a stored moment: `CaseCustodyQuery::instant`, `CaseTakeoverRequest::instant` and `IncidentStore::instant` became `Custody/StoredInstant::parse`, one site for the same read-miss. The ceiling went 250 to 248.",
     "2026-11-04, decision document failure answers (#5063): a bijlage that could not be saved now answers null instead of an invented id, through one site, `BeschikkingGenerationService::storeBijlage`. The ceiling went 249 to 250, after the hearing split freed one.",
@@ -980,13 +981,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`resolve()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Settings/OpenRegisterBridge.php",
-      "method": "approvalService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`approvalService()`, which was `SettingsService::getApprovalService()` until the bridge was split out, answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister ApprovalService\") and the caller carries on without it."
     },
     {
       "file": "lib/Service/Settings/OpenRegisterBridge.php",
