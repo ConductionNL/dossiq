@@ -47,6 +47,7 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\TermExtensionRule;
+use OCA\Dossiq\Service\Support\RowList;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use Psr\Log\LoggerInterface;
@@ -419,23 +420,11 @@ class CaseLifecycleService {
 	 */
 	private function readJournal(array $case): array {
 		$raw = ($case[self::JOURNAL_FIELD] ?? '');
-		$decoded = $raw;
 		if (is_array($raw) === false) {
-			$decoded = json_decode((string)$raw, true);
+			$raw = (string)$raw;
 		}
 
-		if (is_array($decoded) === false) {
-			return [];
-		}
-
-		$entries = [];
-		foreach ($decoded as $entry) {
-			if (is_array($entry) === true) {
-				$entries[] = $entry;
-			}
-		}
-
-		return $entries;
+		return RowList::from(value: $raw);
 	}//end readJournal()
 
 	/**
