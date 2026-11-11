@@ -217,6 +217,8 @@ class QueueViewPreferences {
 	 * @return array<string, string> The map.
 	 *
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) JsonPreference is a stateless reader shared by the queue preference stores.
 	 */
 	private function storedHidden(string $userId): array {
 		try {
