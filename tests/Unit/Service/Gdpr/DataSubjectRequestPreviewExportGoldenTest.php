@@ -60,8 +60,28 @@ class DataSubjectRequestPreviewExportGoldenTest extends TestCase {
 				return ['uuid' => 'e1', 'expiresAt' => '2026-12-01', 'downloadable' => true];
 			}
 		);
+		$platform->method('approvePreview')->willReturnCallback(
+			function (string $previewId): array {
+				$this->calls[] = ['approvePreview', $previewId];
+
+				return [];
+			}
+		);
+		$platform->method('runErasure')->willReturnCallback(
+			function (string $previewId): array {
+				$this->calls[] = ['runErasure', $previewId];
+
+				return ['destroyed' => ['o1'], 'withheld' => [['name' => 'D']], 'complete' => true];
+			}
+		);
 		$cases = $this->createMock(CaseStatusStore::class);
 		$cases->method('loadCase')->willReturn($case);
+		$cases->method('findStatusRecords')->willReturn(
+			[
+				['transitionLabel' => DataSubjectRequestCase::ACT_PREPARE, 'actor' => 'anna', 'createdAt' => '2026-09-16T10:00:00+00:00'],
+				['transitionLabel' => DataSubjectRequestCase::ACT_APPROVE, 'actor' => 'bram', 'createdAt' => '2026-09-17T10:00:00+00:00'],
+			]
+		);
 		$cases->method('saveCase')->willReturnCallback(
 			function (array $saved): array {
 				$this->calls[] = ['saveCase', $saved];
@@ -186,4 +206,36 @@ class DataSubjectRequestPreviewExportGoldenTest extends TestCase {
 			$this->refusal(fn () => $this->requests(case: ['id' => 'c1'])->requestExport(caseId: 'c1'))
 		);
 	}//end testRefusedExports()
+
+	/**
+	 * Allowed: an approved run approves the preview, runs it, writes the case, then records the act.
+	 *
+	 * @return void
+	 */
+	public function testARunIsApprovedRunWrittenAndRecorded(): void {
+		$case = ['id' => 'c1', 'dataSubjectRequestType' => 'verwijdering', 'erasurePreviewId' => ' p1 '];
+
+		$outcome = $this->requests(case: $case)->run(caseId: 'c9');
+
+		self::assertSame(['destroyed' => ['o1'], 'withheld' => [['name' => 'D']], 'complete' => true], $outcome);
+		self::assertSame(['approvePreview', 'p1'], $this->calls[0]);
+		self::assertSame(['runErasure', 'p1'], $this->calls[1]);
+		self::assertSame('saveCase', $this->calls[2][0]);
+		self::assertSame([$outcome, 'bram', '2026-09-17T10:00:00+00:00'], [$this->calls[2][1]['erasureOutcome'], $this->calls[2][1]['erasureApprovedBy'], $this->calls[2][1]['erasureApprovedAt']]);
+		self::assertSame(['record', 'c9', TimelineKinds::DATA_SUBJECT_REQUEST], array_slice($this->calls[3], 0, 3));
+		self::assertSame(['act' => 'run', 'previewId' => 'p1', 'withheld' => 1, 'complete' => true], $this->calls[3][4]);
+		self::assertCount(4, $this->calls);
+	}//end testARunIsApprovedRunWrittenAndRecorded()
+
+	/**
+	 * Refused: a run without a preview, before the approval is looked at.
+	 *
+	 * @return void
+	 */
+	public function testARunWithoutAPreviewIsRefused(): void {
+		self::assertSame(
+			['erasure-preview-unknown', RefusedException::STATUS_UNPROCESSABLE, 'This case carries no erasure preview. Prepare the erasure first.'],
+			$this->refusal(fn () => $this->requests(case: ['id' => 'c1', 'erasurePreviewId' => ' '])->run(caseId: 'c1'))
+		);
+	}//end testARunWithoutAPreviewIsRefused()
 }//end class
