@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Vth;
 
+use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\IUser;
 use OCP\IUserSession;
 use RuntimeException;
@@ -394,17 +395,7 @@ class LhsRecommendationService {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function indexCells(mixed $cells): array {
-		if (is_string($cells) === true) {
-			$decoded = json_decode($cells, true);
-			$cells = [];
-			if (is_array($decoded) === true) {
-				$cells = $decoded;
-			}
-		}
-
-		if (is_array($cells) === false) {
-			return [];
-		}
+		$cells = StoredArray::from(value: $cells);
 
 		$index = [];
 		foreach ($cells as $cell) {

@@ -50,6 +50,7 @@ use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -259,18 +260,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 * @return array<int, string> The texts, in the order they were written.
 	 */
 	private function textsOf(array $plan, string $key): array {
-		$raw = ($plan[$key] ?? []);
-		if (is_string($raw) === true && trim($raw) !== '') {
-			$decoded = json_decode($raw, true);
-			$raw = [];
-			if (is_array($decoded) === true) {
-				$raw = $decoded;
-			}
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
+		$raw = StoredArray::from(value: ($plan[$key] ?? []));
 
 		$texts = [];
 		foreach ($raw as $value) {
