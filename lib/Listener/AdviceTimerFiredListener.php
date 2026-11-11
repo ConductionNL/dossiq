@@ -34,15 +34,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\Advice\AdviceTimer;
 use OCA\Dossiq\Service\AdviceService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Turns an advice timer's rungs into the reminder and the expiry.
@@ -81,29 +80,21 @@ class AdviceTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$timer    = $event->getTimer();
-		$metadata = ($timer->getMetadata() ?? []);
+		$metadata = TimerFire::metadataFrom(event: $event, source: AdviceTimer::METADATA_SOURCE);
 		$adviceId = (string) ($metadata['adviceId'] ?? '');
-		if ((string) $timer->getAppId() !== 'dossiq'
-			|| (string) ($metadata['source'] ?? '') !== AdviceTimer::METADATA_SOURCE
-			|| $adviceId === ''
-		) {
+		if ($metadata === null || $adviceId === '') {
 			return;
 		}
 
 		$rungKey = (string) $event->getRungKey();
-
-		try {
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(
-				operation: fn () => $this->act(adviceId: $adviceId, rungKey: $rungKey)
-			);
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged and told to the admins. Nothing was written.
-			return;
-		} catch (Throwable $e) {
+		$failure = TimerFire::runAsAccount(
+			account: $this->serviceAccount,
+			operation: fn () => $this->act(adviceId: $adviceId, rungKey: $rungKey)
+		);
+		if ($failure !== null) {
 			$this->logger->error(
 				'Dossiq advice: timer fire handling failed',
-				['advice' => $adviceId, 'rung' => $rungKey, 'error' => $e->getMessage()]
+				['advice' => $adviceId, 'rung' => $rungKey, 'error' => $failure->getMessage()]
 			);
 		}
 	}//end handle()
