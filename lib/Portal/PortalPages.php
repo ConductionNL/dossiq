@@ -313,25 +313,7 @@ class PortalPages {
 		$blocks   = [];
 		$blocks[] = ['type' => 'greeting', 'showDate' => false];
 		if ($this->declares(rows: $collections, id: 'vragenAanU') === true) {
-			// LABELLED AS THE DESIGN READS THEM. Every list block takes a
-			// `label` (portaliq ListBlockNormaliser); without one the lists
-			// ran into each other with no heading between them.
-			$blocks[] = [
-				'type' => 'tasks',
-				'collection' => 'vragenAanU',
-				'dueField' => 'hersteltermijn',
-				'titleFields' => ['summary'],
-				'label' => 'Wat u nog moet doen',
-				// THE BOARD'S CARD (portaliq#1253 board keys): one highlighted
-				// question in the warning tone, the due day in its sub line
-				// and the button that answers it. Portaliq drops a key it does
-				// not know, so these are the names in its BoardKeys and
-				// SchoolBlockKeys, read from fb7a5203.
-				'display' => 'highlight',
-				'tone' => 'warning',
-				'dueInLine' => true,
-				'buttonLabel' => 'Document toevoegen',
-			];
+			$blocks[] = $this->tasksBlock();
 		}
 
 		// WHAT THE RESIDENT CAN ARRANGE, between what they still have to do and
@@ -341,10 +323,60 @@ class PortalPages {
 			$blocks[] = ['type' => 'cta', 'page' => (string)$page['id'], 'label' => (string)$page['label']];
 		}
 
-		// The board draws the running cases compact, with "Alle zaken" beside
-		// the heading, and tags a case the resident must act on with the
-		// turn's words in the warning tone.
-		$blocks[] = [
+		$blocks[] = $this->casesBlock(labels: $labels);
+		// The messages as a plain list: a title and the day, no badge.
+		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3, 'label' => 'Nieuwe berichten', 'display' => 'list'];
+		// "Bezwaar maken" and "Klacht indienen" act on one case, so portaliq
+		// lists them on the case page through their `onCase`, not here.
+
+		return $blocks;
+	}//end residentOverviewBlocks()
+
+	/**
+	 * The questions the resident still has to answer, as the board's highlighted card.
+	 *
+	 * LABELLED AS THE DESIGN READS THEM. Every list block takes a `label`
+	 * (portaliq ListBlockNormaliser); without one the lists ran into each
+	 * other with no heading between them.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
+	 */
+	private function tasksBlock(): array {
+		return [
+			'type' => 'tasks',
+			'collection' => 'vragenAanU',
+			'dueField' => 'hersteltermijn',
+			'titleFields' => ['summary'],
+			'label' => 'Wat u nog moet doen',
+			// THE BOARD'S CARD (portaliq#1253 board keys): one highlighted
+			// question in the warning tone, the due day in its sub line
+			// and the button that answers it. Portaliq drops a key it does
+			// not know, so these are the names in its BoardKeys and
+			// SchoolBlockKeys, read from fb7a5203.
+			'display' => 'highlight',
+			'tone' => 'warning',
+			'dueInLine' => true,
+			'buttonLabel' => 'Document toevoegen',
+		];
+	}//end tasksBlock()
+
+	/**
+	 * The resident's running cases, compact.
+	 *
+	 * The board draws the running cases compact, with "Alle zaken" beside
+	 * the heading, and tags a case the resident must act on with the
+	 * turn's words in the warning tone.
+	 *
+	 * @param array<string, string> $labels The configured labels.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
+	 */
+	private function casesBlock(array $labels): array {
+		return [
 			'type' => 'cases',
 			'collection' => 'mijnZaken',
 			'open' => true,
@@ -354,13 +386,7 @@ class PortalPages {
 			'showAll' => true,
 			'yourTurn' => ['applicant'],
 		];
-		// The messages as a plain list: a title and the day, no badge.
-		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3, 'label' => 'Nieuwe berichten', 'display' => 'list'];
-		// "Bezwaar maken" and "Klacht indienen" act on one case, so portaliq
-		// lists them on the case page through their `onCase`, not here.
-
-		return $blocks;
-	}//end residentOverviewBlocks()
+	}//end casesBlock()
 
 	/**
 	 * The case page's blocks, in the order the design reads them: the question
