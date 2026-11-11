@@ -249,15 +249,7 @@ class DataSubjectRequestCase {
 	 */
 	public function run(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
-		$previewId = trim((string)($case['erasurePreviewId'] ?? ''));
-		if ($previewId === '') {
-			throw new RefusedException(
-				rule: 'erasure-preview-unknown',
-				sentence: 'This case carries no erasure preview. Prepare the erasure first.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
+		$previewId = self::previewIdOf(case: $case);
 		$approval = $this->approvingAct(caseId: $caseId);
 
 		$this->platform->approvePreview(previewId: $previewId);
@@ -267,7 +259,43 @@ class DataSubjectRequestCase {
 		$case['erasureApprovedBy'] = $approval['actor'];
 		$case['erasureApprovedAt'] = $approval['at'];
 		$this->cases->saveCase($case);
+		$this->recordRun(caseId: $caseId, case: $case);
 
+		return $outcome;
+	}//end run()
+
+	/**
+	 * The erasure preview the case carries; refused when it carries none.
+	 *
+	 * @param array<string, mixed> $case The data subject request case.
+	 *
+	 * @return string The preview id.
+	 *
+	 * @throws RefusedException When the case carries no erasure preview.
+	 */
+	private static function previewIdOf(array $case): string {
+		$previewId = trim((string)($case['erasurePreviewId'] ?? ''));
+		if ($previewId === '') {
+			throw new RefusedException(
+				rule: 'erasure-preview-unknown',
+				sentence: 'This case carries no erasure preview. Prepare the erasure first.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $previewId;
+	}//end previewIdOf()
+
+	/**
+	 * Record on the timeline what the run did, read off the case as just written.
+	 *
+	 * @param string               $caseId The data subject request case.
+	 * @param array<string, mixed> $case   The case, carrying the preview and the run's outcome.
+	 *
+	 * @return void
+	 */
+	private function recordRun(string $caseId, array $case): void {
+		$outcome = (array)$case['erasureOutcome'];
 		$withheld = $this->leftBehind(outcome: $outcome);
 		$this->timeline->record(
 			caseId: $caseId,
@@ -275,14 +303,12 @@ class DataSubjectRequestCase {
 			message: $this->runSentence(outcome: $outcome, withheld: $withheld),
 			fields: [
 				'act' => 'run',
-				'previewId' => $previewId,
+				'previewId' => self::previewIdOf(case: $case),
 				'withheld' => $withheld,
 				'complete' => (($outcome['complete'] ?? false) === true),
 			],
 		);
-
-		return $outcome;
-	}//end run()
+	}//end recordRun()
 
 	/**
 	 * Ask the platform for this subject's own export, and record it.
