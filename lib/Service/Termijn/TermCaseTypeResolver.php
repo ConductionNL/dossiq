@@ -85,7 +85,25 @@ class TermCaseTypeResolver {
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	public function resolve(array $rows): array {
-		$cases = $this->batch(configKey: 'case_schema', ids: array_map(fn (array $row): string => $this->ref(value: ($row['case'] ?? null)), $rows));
+		$lookups    = $this->lookupsFor(rows: $rows);
+		$classified = $this->classify(rows: $rows, lookups: $lookups);
+		$titles     = $this->titlesBySlug(caseTypes: $lookups->caseTypes, slugs: $classified['slugs']);
+		foreach ($classified['slugs'] as $index => $slug) {
+			$classified['byRow'][$index]['title'] = ($titles[$slug] ?? '');
+		}
+
+		return ['byRow' => $classified['byRow'], 'unresolved' => $classified['unresolved']];
+	}//end resolve()
+
+	/**
+	 * The cases the rows name, their case types and the rows' definitions, in three batched reads.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Instance rows.
+	 *
+	 * @return TermLookups The reads.
+	 */
+	private function lookupsFor(array $rows): TermLookups {
+		$cases     = $this->batch(configKey: 'case_schema', ids: array_map(fn (array $row): string => $this->ref(value: ($row['case'] ?? null)), $rows));
 		$caseTypes = $this->batch(
 			configKey: 'case_type_schema',
 			ids: array_map(fn (array $case): string => $this->ref(value: ($case['caseType'] ?? null)), array_values($cases))
@@ -95,36 +113,58 @@ class TermCaseTypeResolver {
 			ids: array_map(fn (array $row): string => $this->ref(value: ($row['deadlineDefinition'] ?? null)), $rows)
 		);
 
-		$byRow = [];
-		$unresolved = [];
-		$slugs = [];
+		return new TermLookups(cases: $cases, caseTypes: $caseTypes, definitions: $definitions);
+	}//end lookupsFor()
+
+	/**
+	 * Each row's key and title, the slugs still missing a title, and the unresolved ids.
+	 *
+	 * @param array<int, array<string, mixed>> $rows    Instance rows.
+	 * @param TermLookups                      $lookups The batched reads.
+	 *
+	 * @return array{byRow: array<int, array{key: string, title: string}>, unresolved: array<int, string>, slugs: array<int, string>}
+	 */
+	private function classify(array $rows, TermLookups $lookups): array {
+		$out = ['byRow' => [], 'unresolved' => [], 'slugs' => []];
 		foreach ($rows as $index => $row) {
-			$case = ($cases[$this->ref(value: ($row['case'] ?? null))] ?? null);
-			$caseTypeId = $this->ref(value: ($case['caseType'] ?? null));
-			if ($caseTypeId !== '' && isset($caseTypes[$caseTypeId]) === true) {
-				$key = $this->caseTypeKey(caseType: $caseTypes[$caseTypeId]);
-				$byRow[$index] = ['key' => $key, 'title' => $this->text->textOf(value: ($caseTypes[$caseTypeId]['title'] ?? null))];
-				continue;
+			$resolved = $this->resolvedRow(row: $row, lookups: $lookups);
+			$out['byRow'][$index] = ['key' => $resolved['key'], 'title' => $resolved['title']];
+			if ($resolved['via'] === 'definition') {
+				$out['slugs'][$index] = $resolved['key'];
 			}
 
-			$slug = trim((string)($definitions[$this->ref(value: ($row['deadlineDefinition'] ?? null))]['caseType'] ?? ''));
-			if ($slug !== '') {
-				$byRow[$index] = ['key' => $slug, 'title' => ''];
-				$slugs[$index] = $slug;
-				continue;
+			if ($resolved['via'] === 'none') {
+				$out['unresolved'][] = (string)($row['id'] ?? '');
 			}
-
-			$byRow[$index] = ['key' => self::UNRESOLVED, 'title' => ''];
-			$unresolved[] = (string)($row['id'] ?? '');
-		}//end foreach
-
-		$titles = $this->titlesBySlug(caseTypes: $caseTypes, slugs: $slugs);
-		foreach ($slugs as $index => $slug) {
-			$byRow[$index]['title'] = ($titles[$slug] ?? '');
 		}
 
-		return ['byRow' => $byRow, 'unresolved' => $unresolved];
-	}//end resolve()
+		return $out;
+	}//end classify()
+
+	/**
+	 * One row's key and title: through its case, else through its definition, else unresolved.
+	 *
+	 * @param array<string, mixed> $row     One instance row.
+	 * @param TermLookups          $lookups The batched reads.
+	 *
+	 * @return array{key: string, title: string, via: string} The answer and the path that gave it.
+	 */
+	private function resolvedRow(array $row, TermLookups $lookups): array {
+		$case       = ($lookups->cases[$this->ref(value: ($row['case'] ?? null))] ?? null);
+		$caseTypeId = $this->ref(value: ($case['caseType'] ?? null));
+		if ($caseTypeId !== '' && isset($lookups->caseTypes[$caseTypeId]) === true) {
+			$caseType = $lookups->caseTypes[$caseTypeId];
+			$key      = $this->caseTypeKey(caseType: $caseType);
+			return ['key' => $key, 'title' => $this->text->textOf(value: ($caseType['title'] ?? null)), 'via' => 'case'];
+		}
+
+		$slug = trim((string)($lookups->definitions[$this->ref(value: ($row['deadlineDefinition'] ?? null))]['caseType'] ?? ''));
+		if ($slug !== '') {
+			return ['key' => $slug, 'title' => '', 'via' => 'definition'];
+		}
+
+		return ['key' => self::UNRESOLVED, 'title' => '', 'via' => 'none'];
+	}//end resolvedRow()
 
 	/**
 	 * The key a case type is reported under: its identifier, then its slug, then its id.
