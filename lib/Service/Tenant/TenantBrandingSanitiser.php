@@ -150,44 +150,75 @@ class TenantBrandingSanitiser {
 	 */
 	public function sanitiseCustomCss(string $css): string {
 		// Drop dangerous tokens entirely.
+		if (self::hasDangerousToken(css: $css) === true) {
+			return '';
+		}
+
+		$kept = array_filter(
+			array_map(static fn (string $line): string => self::keptDeclaration(line: $line), self::declarationsOf(css: $css)),
+			static fn (string $declaration): bool => $declaration !== ''
+		);
+
+		if ($kept === []) {
+			return '';
+		}
+
+		return implode('; ', $kept) . ';';
+	}//end sanitiseCustomCss()
+
+	/**
+	 * Whether the sheet holds any of the tokens that discard it whole, in any case.
+	 *
+	 * @param string $css Raw CSS.
+	 *
+	 * @return bool True when a dangerous token occurs.
+	 */
+	private static function hasDangerousToken(string $css): bool {
 		foreach (self::CSS_DANGEROUS_TOKENS as $bad) {
 			if (stripos($css, $bad) !== false) {
-				return '';
+				return true;
 			}
 		}
 
+		return false;
+	}//end hasDangerousToken()
+
+	/**
+	 * The sheet split into declarations on newlines and semicolons.
+	 *
+	 * @param string $css Raw CSS.
+	 *
+	 * @return array<int, string> The pieces.
+	 */
+	private static function declarationsOf(string $css): array {
 		$lines = preg_split('/[\n;]/', $css);
 		if ($lines === false) {
-			$lines = [];
+			return [];
 		}
 
-		$kept = [];
-		foreach ($lines as $line) {
-			$trim = trim($line);
-			if ($trim === '') {
-				continue;
-			}
+		return $lines;
+	}//end declarationsOf()
 
-			$parts = explode(':', $trim, 2);
-			if (count($parts) !== 2) {
-				continue;
-			}
-
-			$prop = trim(strtolower($parts[0]));
-			$val = trim($parts[1]);
-			if (in_array($prop, self::CSS_PROPERTY_WHITELIST, true) === false) {
-				continue;
-			}
-
-			$kept[] = $prop . ': ' . $val;
+	/**
+	 * One declaration as kept, `property: value` with the property lower-cased, or '' when dropped.
+	 *
+	 * @param string $line One piece of the sheet.
+	 *
+	 * @return string The declaration, or '' when it is empty, has no value or names a property not allowed.
+	 */
+	private static function keptDeclaration(string $line): string {
+		$parts = explode(':', trim($line), 2);
+		if (count($parts) !== 2) {
+			return '';
 		}
 
-		if (count($kept) > 0) {
-			return implode('; ', $kept) . ';';
+		$prop = trim(strtolower($parts[0]));
+		if (in_array($prop, self::CSS_PROPERTY_WHITELIST, true) === false) {
+			return '';
 		}
 
-		return '';
-	}//end sanitiseCustomCss()
+		return $prop . ': ' . trim($parts[1]);
+	}//end keptDeclaration()
 
 	/**
 	 * Validate that an uploaded logo passes the MIME + size guard.
