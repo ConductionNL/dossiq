@@ -186,6 +186,38 @@ class CaseCustodyQueryTest extends TestCase {
 	}//end testWhatAUnitHeldLastQuarterIsAQuery()
 
 	/**
+	 * A unit's holdings come back oldest first, and an unreadable register answers nothing after a warning.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAUnitsHoldingsAreOldestFirstAndAnUnreadableRegisterIsEmpty(): void {
+		$this->chain()->move(
+			caseId: 'case-1',
+			organisationUnit: 'toezicht',
+			handler: '',
+			reason: 'Terug',
+			movedBy: 'sofie',
+			movedAt: '2026-08-03T10:00:00+02:00',
+		);
+		$year = $this->query()->heldBy(organisationUnit: ' toezicht ', from: '2026-01-01', to: '2026-12-31');
+		self::assertSame(['Handhaving', 'Terug'], array_column($year, 'reason'));
+		self::assertSame([], $this->query()->heldBy(organisationUnit: 'toezicht', from: 'not a date', to: '2026-12-31'));
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			'Dossiq custody: the holdings of a unit could not be read',
+			['organisationUnit' => 'toezicht', 'exception' => 'OpenRegister is not available'],
+		);
+		$query = new CaseCustodyQuery(chain: $this->chain(), settingsService: $settings, logger: $logger);
+
+		self::assertSame([], $query->heldBy(organisationUnit: 'toezicht', from: '2026-01-01', to: '2026-12-31'));
+	}//end testAUnitsHoldingsAreOldestFirstAndAnUnreadableRegisterIsEmpty()
+
+	/**
 	 * The query under test.
 	 *
 	 * @return CaseCustodyQuery The query.

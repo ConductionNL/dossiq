@@ -41,7 +41,6 @@ namespace OCA\Dossiq\BackgroundJob;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\SilenceCloseService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -104,13 +103,10 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
 	 */
 	protected function run($argument): void {
-		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->sweep());
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// read, warned or closed; the next run tries again.
-			return;
-		}
+		// Without a usable account this runs nothing: that is already logged as an
+		// error and told to the admins. Nothing was read, warned or
+		// closed; the next run tries again.
+		$this->serviceAccount->runAsWhenAvailable(operation: fn () => $this->sweep());
 	}//end run()
 
 	/**

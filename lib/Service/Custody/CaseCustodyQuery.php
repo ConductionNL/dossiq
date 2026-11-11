@@ -30,9 +30,7 @@ namespace OCA\Dossiq\Service\Custody;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Who held this case on a date, and which cases a unit held in a period.
@@ -40,8 +38,6 @@ use Throwable;
  * @spec openspec/specs/case-management/spec.md
  */
 class CaseCustodyQuery {
-
-	use SearchesObjects;
 
 	/**
 	 * How many holdings one unit read takes at most.
@@ -128,39 +124,47 @@ class CaseCustodyQuery {
 			return [];
 		}
 
-		try {
-			[$objectService, $register] = $this->dossierRegister()->context();
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->dossierRegister()->schema(key: 'case_custody_schema'),
-				filters: ['organisationUnit' => $organisationUnit, '_limit' => self::PAGE_SIZE],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq custody: the holdings of a unit could not be read',
-				['organisationUnit' => $organisationUnit, 'exception' => $e->getMessage()],
-			);
+		$overlapping = array_values(
+			array_filter(
+				$this->unitHoldings(organisationUnit: $organisationUnit),
+				fn (array $row): bool => $this->overlaps(holding: $row, windowStart: $windowStart, windowEnd: $windowEnd) === true,
+			)
+		);
 
-			return [];
-		}
+		return $this->oldestFirst(holdings: $overlapping);
+	}//end heldBy()
 
-		$overlapping = [];
-		foreach ($rows as $row) {
-			if ($this->overlaps(holding: $row, windowStart: $windowStart, windowEnd: $windowEnd) === true) {
-				$overlapping[] = $row;
-			}
-		}
+	/**
+	 * Every holding a unit had, or an empty list when the register cannot be read.
+	 *
+	 * @param string $organisationUnit The unit, trimmed.
+	 *
+	 * @return array<int, array<string, mixed>> The holdings.
+	 */
+	private function unitHoldings(string $organisationUnit): array {
+		return (new CustodyRows(settingsService: $this->settingsService, logger: $this->logger))->find(
+			filters: ['organisationUnit' => $organisationUnit, '_limit' => self::PAGE_SIZE],
+			failure: 'Dossiq custody: the holdings of a unit could not be read',
+		);
+	}//end unitHoldings()
 
+	/**
+	 * Holdings ordered by the moment they began, oldest first.
+	 *
+	 * @param array<int, array<string, mixed>> $holdings The holdings.
+	 *
+	 * @return array<int, array<string, mixed>> The same holdings, sorted.
+	 */
+	private function oldestFirst(array $holdings): array {
 		usort(
-			$overlapping,
+			$holdings,
 			static function (array $left, array $right): int {
 				return (((string)($left['from'] ?? '')) <=> ((string)($right['from'] ?? '')));
 			},
 		);
 
-		return $overlapping;
-	}//end heldBy()
+		return $holdings;
+	}//end oldestFirst()
 
 	/**
 	 * Whether one holding overlaps the window that was asked about.
@@ -186,12 +190,4 @@ class CaseCustodyQuery {
 
 		return ($holdingEnd === null || $holdingEnd >= $windowStart);
 	}//end overlaps()
-	/**
-	 * The dossier register and its configured schemas.
-	 *
-	 * @return DossierRegister The register reader.
-	 */
-	private function dossierRegister(): DossierRegister {
-		return new DossierRegister(settingsService: $this->settingsService);
-	}//end dossierRegister()
 }//end class
