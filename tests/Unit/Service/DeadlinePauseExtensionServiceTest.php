@@ -373,6 +373,41 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 	}
 
 	/**
+	 * Each verlenging records one `verleng` event with the basis and actor of
+	 * its mode, its rationale, its day impact and its document link, and
+	 * stores the end as asked beside the end it got.
+	 *
+	 * @return void
+	 */
+	public function testEachExtensionRecordsItsEventAndTheEndAsAsked(): void {
+		$instance = $this->newInstance();
+		$id = (string)$instance['id'];
+
+		$first = $this->extService->requestExtension($id, 'Complex zaak', '2026-08-31', 'doc:brief-1');
+		$second = $this->extService->requestSupervisorExtension($id, 'supervisor akkoord', '2026-09-30');
+
+		$events = [];
+		foreach (($this->objects->store['termijnGebeurtenis'] ?? []) as $event) {
+			if (($event['type'] ?? '') !== 'verleng') {
+				continue;
+			}
+
+			$events[] = array_intersect_key($event, array_flip(['deadlineInstance', 'type', 'actor', 'basis', 'rationale', 'daysImpact', 'documentLink']));
+		}
+
+		self::assertSame(
+			[
+				['deadlineInstance' => $id, 'type' => 'verleng', 'actor' => 'system', 'basis' => 'AWB 4:14 lid 1', 'rationale' => 'Complex zaak', 'daysImpact' => 35, 'documentLink' => 'doc:brief-1'],
+				['deadlineInstance' => $id, 'type' => 'verleng', 'actor' => 'supervisor', 'basis' => 'AWB 4:14 lid 3 (supervisor)', 'rationale' => 'supervisor akkoord', 'daysImpact' => 30],
+			],
+			$events
+		);
+		self::assertSame(['2026-08-31', '2026-08-31', 'verlengd', 1], [$first['endDateCurrent'], $first['endDateBeforeRoll'], $first['status'], $first['countExtensions']]);
+		self::assertSame(['2026-09-30', '2026-09-30', 'verlengd', 2], [$second['endDateCurrent'], $second['endDateBeforeRoll'], $second['status'], $second['countExtensions']]);
+		self::assertSame([], $second['notificatiesVerstuurd']);
+	}
+
+	/**
 	 * Awb 4:5: the credited suspension moves `endDateCurrent`, which is the
 	 * date a handler is judged on. Fourteen days from 12 December 2026 is
 	 * Tweede Kerstdag, and the term runs to the Monday.
