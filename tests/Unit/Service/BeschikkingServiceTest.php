@@ -830,4 +830,78 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertSame("PK\x03\x04", substr($zip, 0, 4));
 		$this->assertGreaterThan(100, strlen($zip));
 	}//end testAuditPacketIsZip()
+	/**
+	 * Sending writes the delivered line, the trigger and the transition with
+	 * exactly these fields, after the dispatch the transport answered.
+	 *
+	 * @return void
+	 */
+	public function testTheSentLineTriggerAndTransitionCarryTheseFields(): void {
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->entries = [];
+
+		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
+
+		$this->assertCount(1, $this->entries);
+		$this->assertSame(
+			[
+				'caseId' => 'zaak-2026-wmo-1',
+				'kind' => 'beschikking-verzonden',
+				'message' => 'Beschikking verzonden',
+				'fields' => [
+					'channel' => 'digital-post',
+					'sentOn' => $sent['announcementDate'],
+					'decisionType' => 'toekenning',
+					'reference' => (string)($sent['reference'] ?? ''),
+					'beschikkingId' => $id,
+				],
+				'visibility' => 'public',
+			],
+			$this->entries[0]
+		);
+		$this->assertSame(['notificationChannel', 'messageId', 'sentAt'], array_keys($sent['dispatch']));
+		$this->assertCount(1, $this->objects->searchObjectsBySlug('dossiq', 'bezwaarTrigger', ['decisionId' => $id]));
+
+		$transitions = array_column($this->objects->searchObjectsBySlug('dossiq', 'stateMachineLog', ['decisionId' => $id]), 'overgang');
+		$last = end($transitions);
+		$this->assertSame(['signed', 'sent', 'afdelingsmanager-wmo-15', 'employee', 'manual'], [$last['van'], $last['to'], $last['actor'], $last['actorType'], $last['trigger']]);
+	}//end testTheSentLineTriggerAndTransitionCarryTheseFields()
+
+	/**
+	 * The not-sent line carries the reason, the channels tried and the reference,
+	 * and the no-address refusal its sentence and status.
+	 *
+	 * @return void
+	 */
+	public function testTheNotSentLineAndTheNoAddressRefusal(): void {
+		$id = $this->composeWmo(['type' => 'burger', 'name' => 'M. Jansen'])['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->entries = [];
+		$decision = $this->service->find($id);
+
+		try {
+			$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+			$this->fail('verzend() must refuse');
+		} catch (RefusedException $e) {
+			$this->assertSame(
+				'This case has no address for the requester, so the beschikking was not sent. Add an address, then send it again.',
+				$e->getSentence()
+			);
+			$this->assertSame(RefusedException::STATUS_UNPROCESSABLE, $e->getStatus());
+		}
+
+		$this->assertCount(1, $this->entries);
+		$fields = $this->entries[0]['fields'];
+		$this->assertSame(['reasonCode', 'reason', 'channelsTried', 'reference', 'beschikkingId'], array_keys($fields));
+		$this->assertSame('no-channel', $fields['reasonCode']);
+		$this->assertIsString($fields['reason']);
+		$this->assertNotSame('', $fields['reason']);
+		$this->assertIsInt($fields['channelsTried']);
+		$this->assertSame((string)($decision['reference'] ?? ''), $fields['reference']);
+		$this->assertSame($id, $fields['beschikkingId']);
+		$this->assertSame('zaak-2026-wmo-1', $this->entries[0]['caseId']);
+	}//end testTheNotSentLineAndTheNoAddressRefusal()
 }//end class
