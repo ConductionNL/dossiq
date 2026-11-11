@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Service\Starter;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SerialisedRow;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -332,17 +333,6 @@ class StarterStore {
 	 * @return array<string, mixed>|null The array, or null.
 	 */
 	private function asArray(mixed $object): ?array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return SerialisedRow::of(value: $object);
 	}//end asArray()
 }//end class

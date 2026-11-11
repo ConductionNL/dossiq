@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SerialisedRow;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -363,17 +364,6 @@ class DossierCompiler {
 	 * @return array<string, mixed>|null The array form, or null.
 	 */
 	private function toArray(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return null;
+		return SerialisedRow::of(value: $value);
 	}//end toArray()
 }//end class

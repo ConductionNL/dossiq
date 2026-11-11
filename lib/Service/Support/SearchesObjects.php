@@ -353,18 +353,7 @@ trait SearchesObjects {
 	 * @return array<string, mixed>|null The object data, or null when uncoercible.
 	 */
 	private function objectToArrayOrNull(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return SerialisedRow::of(value: $value);
 	}//end objectToArrayOrNull()
 
 	/**

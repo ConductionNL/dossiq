@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseMergeService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedRow;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -210,18 +211,7 @@ class PublicCaseSurvivorController extends Controller {
 	 * @return array<string, mixed>|null The array, or null.
 	 */
 	private function asArrayOrNull(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return SerialisedRow::of(value: $value);
 	}//end asArrayOrNull()
 
 	/**

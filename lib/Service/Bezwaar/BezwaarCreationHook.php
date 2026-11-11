@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SerialisedRow;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -340,17 +341,6 @@ class BezwaarCreationHook {
 	 * @return array<string, mixed>|null The array form, or null.
 	 */
 	private function toArray(mixed $value): ?array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return null;
+		return SerialisedRow::of(value: $value);
 	}//end toArray()
 }//end class
