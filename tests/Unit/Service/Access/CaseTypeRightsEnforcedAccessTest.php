@@ -241,15 +241,39 @@ class CaseTypeRightsEnforcedAccessTest extends TestCase {
 			$memberOfThird = $container;
 		}
 
-		$memberOf = new $memberOfClass($schemas, $registers, $memberOfThird, $evaluator, new NullLogger());
+		// From 70e55704 on, OpenRegister takes the two mappers as one SchemaRegisterLookup.
+		$lookupClass = 'OCA\\OpenRegister\\Service\\Rbac\\SchemaRegisterLookup';
+		$first = (new \ReflectionMethod(objectOrMethod: $memberOfClass, method: '__construct'))->getParameters()[0]->getType();
+		$memberOf = null;
+		if ($first instanceof \ReflectionNamedType && $first->getName() === $lookupClass) {
+			$memberOf = new $memberOfClass(new $lookupClass($schemas, $registers), $container, $evaluator, new NullLogger());
+		}
+
+		if ($memberOf === null) {
+			$memberOf = new $memberOfClass($schemas, $registers, $memberOfThird, $evaluator, new NullLogger());
+		}
+
 		$matcher = new $matcherClass($session, $container, $evaluator, new NullLogger(), $groups, $memberOf);
 
 		$permissionClass = 'OCA\\OpenRegister\\Service\\Object\\PermissionHandler';
-		$permissions = new $permissionClass($session, $users, $groups, $schemas, $objects, $matcher, $appConfig, new NullLogger(), $container, $dispatcher);
+		// OpenRegister takes the collaborators as four bundles once PermissionCallerServices exists.
+		$bundle = 'OCA\\OpenRegister\\Service\\Object\\Permission\\';
+		if (class_exists(class: $bundle . 'PermissionCallerServices') === true) {
+			$permissions = new $permissionClass(
+				new ($bundle . 'PermissionCallerServices')($session, $users, $groups, $appConfig),
+				new ($bundle . 'PermissionDataServices')($schemas, $objects, $container, new NullLogger()),
+				new ($bundle . 'PermissionRuleServices')($matcher, $dispatcher),
+				new ($bundle . 'PermissionGrantServices')(new ($bundle . 'PermissionDenyServices')(), new ($bundle . 'PermissionDerivedGrantServices')())
+			);
+		}
+
+		if (class_exists(class: $bundle . 'PermissionCallerServices') === false) {
+			$permissions = new $permissionClass($session, $users, $groups, $schemas, $objects, $matcher, $appConfig, new NullLogger(), $container, $dispatcher);
+		}
 
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($permissions, $registers, $objects, $permissionClass) {
-				if ($id === $permissionClass) {
+				if ($id === $permissionClass || $id === $permissionClass . 'Interface') {
 					return $permissions;
 				}
 
