@@ -21,17 +21,7 @@ import { QUEUE_URGENCY_FIELDS } from '../../utils/queueUrgencySettings.js'
  */
 export function houseStyleFields(t) {
 	return [
-		{
-			// Nextcloud theming's own name, read from the capabilities and
-			// written through theming's admin-only updateStylesheet.
-			key: 'organisationName',
-			label: t('dossiq', 'Name of the organisation'),
-			url: '/ocs/v2.php/cloud/capabilities?format=json',
-			valuePath: 'ocs.data.capabilities.theming.name',
-			saveUrl: '/apps/theming/ajax/updateStylesheet',
-			saveKey: 'value',
-			saveParams: { setting: 'name' },
-		},
+		organisationNameField(t),
 		{
 			// The lists of contacts and organisations open on this city
 			// (`@config.municipalityCity`); empty leaves that lens out.
@@ -43,33 +33,72 @@ export function houseStyleFields(t) {
 			label: t('dossiq', 'Name of the app for staff'),
 			placeholder: 'Dossiq',
 		},
-		{
-			key: 'theme',
-			label: t('dossiq', 'Theme'),
-			type: 'select',
-			url: '/apps/thematiq/settings/app-brands',
-			valuePath: 'brands.dossiq.tokenSet',
-			saveUrl: '/apps/thematiq/settings/app-brands/dossiq',
-			saveKey: 'tokenSet',
-			optionsUrl: '/apps/thematiq/settings/app-brands',
-			optionsPath: 'tokenSets',
-			optionLabel: 'name',
-			optionValue: 'id',
-		},
-		{
-			key: 'logo',
-			label: t('dossiq', 'Other logo'),
-			hideLabel: true,
-			uploadLabel: t('dossiq', 'Other logo'),
-			type: 'image',
-			url: '/apps/thematiq/settings/theming',
-			valuePath: 'logo_url',
-			initialsFrom: 'organisationName',
-			uploadUrl: '/apps/theming/ajax/uploadImage',
-			uploadParams: { key: 'logo' },
-			uploadValuePath: 'data.url',
-		},
+		themeField(t),
+		logoField(t),
 	]
+}
+
+/**
+ * The organisation's name: Nextcloud theming's own, read from the
+ * capabilities and written through theming's admin-only updateStylesheet.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function organisationNameField(t) {
+	return {
+		key: 'organisationName',
+		label: t('dossiq', 'Name of the organisation'),
+		url: '/ocs/v2.php/cloud/capabilities?format=json',
+		valuePath: 'ocs.data.capabilities.theming.name',
+		saveUrl: '/apps/theming/ajax/updateStylesheet',
+		saveKey: 'value',
+		saveParams: { setting: 'name' },
+	}
+}
+
+/**
+ * The theme: thematiq's brand for dossiq, chosen from thematiq's token sets.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function themeField(t) {
+	return {
+		key: 'theme',
+		label: t('dossiq', 'Theme'),
+		type: 'select',
+		url: '/apps/thematiq/settings/app-brands',
+		valuePath: 'brands.dossiq.tokenSet',
+		saveUrl: '/apps/thematiq/settings/app-brands/dossiq',
+		saveKey: 'tokenSet',
+		optionsUrl: '/apps/thematiq/settings/app-brands',
+		optionsPath: 'tokenSets',
+		optionLabel: 'name',
+		optionValue: 'id',
+	}
+}
+
+/**
+ * The other logo, uploaded through theming and read from thematiq.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function logoField(t) {
+	return {
+		key: 'logo',
+		label: t('dossiq', 'Other logo'),
+		hideLabel: true,
+		uploadLabel: t('dossiq', 'Other logo'),
+		type: 'image',
+		url: '/apps/thematiq/settings/theming',
+		valuePath: 'logo_url',
+		initialsFrom: 'organisationName',
+		uploadUrl: '/apps/theming/ajax/uploadImage',
+		uploadParams: { key: 'logo' },
+		uploadValuePath: 'data.url',
+	}
 }
 
 /**
@@ -82,6 +111,21 @@ export function houseStyleFields(t) {
  * @spec openspec/specs/admin-settings/spec.md
  */
 export function textsAndAccessFields(t) {
+	return [
+		...messageTextFields(t),
+		...dateAndTimeFields(t),
+		...betaFeatureFields(t),
+	]
+}
+
+/**
+ * The sender of dossiq's messages, the text above Mijn zaken, and where the
+ * allowed websites are set instead.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function messageTextFields(t) {
 	return [
 		{
 			key: 'email_from_name',
@@ -100,6 +144,17 @@ export function textsAndAccessFields(t) {
 				'Set in the portal app (portaliq) and in Nextcloud, not here.',
 			),
 		},
+	]
+}
+
+/**
+ * The time zone and the date format.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function dateAndTimeFields(t) {
+	return [
 		{
 			key: 'timezone',
 			label: t('dossiq', 'Time zone'),
@@ -114,6 +169,17 @@ export function textsAndAccessFields(t) {
 			default: 'DD-MM-YYYY',
 			required: true,
 		},
+	]
+}
+
+/**
+ * The beta features heading and its switches.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function betaFeatureFields(t) {
+	return [
 		{
 			key: 'betaFeatures',
 			label: t('dossiq', 'Beta features'),
@@ -299,6 +365,26 @@ export function queueUrgencyFields(t) {
  */
 export function consultationFields(t) {
 	return [
+		...consultationTermFields(t),
+		{
+			key: 'consultation_external_response_url',
+			label: t('dossiq', 'Address for external responses'),
+			placeholder: 'https://dossiq.example.org/consultation/respond/',
+			pattern: '^https://',
+			patternMessage: t('dossiq', 'Starts with https://'),
+		},
+		consultationBottleneckField(t),
+	]
+}
+
+/**
+ * The default consultation term and how many days ahead to warn, in whole days.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function consultationTermFields(t) {
+	return [
 		{
 			key: 'consultation_default_deadline_days',
 			label: t('dossiq', 'Standard term in days'),
@@ -315,27 +401,29 @@ export function consultationFields(t) {
 			min: 0,
 			default: 5,
 		},
-		{
-			key: 'consultation_external_response_url',
-			label: t('dossiq', 'Address for external responses'),
-			placeholder: 'https://dossiq.example.org/consultation/respond/',
-			pattern: '^https://',
-			patternMessage: t('dossiq', 'Starts with https://'),
-		},
-		{
-			key: 'consultation_bottleneck_threshold',
-			advanced: true,
-			label: t('dossiq', 'Bottleneck overdue-rate threshold (0-1)'),
-			type: 'number',
-			min: 0,
-			max: 1,
-			default: 0.2,
-			hint: t(
-				'dossiq',
-				'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.',
-			),
-		},
 	]
+}
+
+/**
+ * The overdue rate from which an advisory body counts as a bottleneck.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function consultationBottleneckField(t) {
+	return {
+		key: 'consultation_bottleneck_threshold',
+		advanced: true,
+		label: t('dossiq', 'Bottleneck overdue-rate threshold (0-1)'),
+		type: 'number',
+		min: 0,
+		max: 1,
+		default: 0.2,
+		hint: t(
+			'dossiq',
+			'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.',
+		),
+	}
 }
 
 /**
@@ -443,17 +531,27 @@ export function storeRegistryFields(t) {
 			label: t('dossiq', 'Register on that instance'),
 			default: 'dossiq',
 		},
-		{
-			key: 'registryToken',
-			label: t('dossiq', 'Registry token'),
-			type: 'secret',
-			setKey: 'registryTokenSet',
-			hint: t(
-				'dossiq',
-				'The token is never shown again after saving. Leave it empty to keep the one already stored.',
-			),
-		},
+		registryTokenField(t),
 	]
+}
+
+/**
+ * The write-only registry token, never shown again after saving.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function registryTokenField(t) {
+	return {
+		key: 'registryToken',
+		label: t('dossiq', 'Registry token'),
+		type: 'secret',
+		setKey: 'registryTokenSet',
+		hint: t(
+			'dossiq',
+			'The token is never shown again after saving. Leave it empty to keep the one already stored.',
+		),
+	}
 }
 
 /**
@@ -727,33 +825,53 @@ export function workDigestFields(t) {
 			type: 'switch',
 			default: true,
 		},
-		{
-			key: 'hour',
-			label: t('dossiq', 'Hour of the day'),
-			type: 'select',
-			options: Array.from({ length: 24 }, (_, hour) => ({
-				value: hour,
-				label: t('dossiq', '{hour}:00', { hour: String(hour).padStart(2, '0') }),
-			})),
-			default: 8,
-			visibleWhen: { key: 'enabled', equals: true },
-		},
-		{
-			key: 'source',
-			type: 'status',
-			textMap: {
-				'user-override': t('dossiq', 'You set this.'),
-				'group-default': t('dossiq', 'Your team set this. You can decide for yourself.'),
-				'schema-default': t('dossiq', 'Nobody has changed this, so it is on the setting it ships with.'),
-				'*': t('dossiq', 'This instance keeps the setting here rather than with your other notifications.'),
-			},
-		},
+		digestHourField(t),
+		digestSourceField(t),
 		{
 			key: 'nothing-waiting',
 			type: 'status',
 			text: t('dossiq', 'A day with nothing waiting sends nothing.'),
 		},
 	]
+}
+
+/**
+ * The hour of the day the digest goes out, shown while it is on.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function digestHourField(t) {
+	return {
+		key: 'hour',
+		label: t('dossiq', 'Hour of the day'),
+		type: 'select',
+		options: Array.from({ length: 24 }, (_, hour) => ({
+			value: hour,
+			label: t('dossiq', '{hour}:00', { hour: String(hour).padStart(2, '0') }),
+		})),
+		default: 8,
+		visibleWhen: { key: 'enabled', equals: true },
+	}
+}
+
+/**
+ * Who decided the digest setting: the person, their team, or nobody yet.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function digestSourceField(t) {
+	return {
+		key: 'source',
+		type: 'status',
+		textMap: {
+			'user-override': t('dossiq', 'You set this.'),
+			'group-default': t('dossiq', 'Your team set this. You can decide for yourself.'),
+			'schema-default': t('dossiq', 'Nobody has changed this, so it is on the setting it ships with.'),
+			'*': t('dossiq', 'This instance keeps the setting here rather than with your other notifications.'),
+		},
+	}
 }
 
 /**
