@@ -55,7 +55,7 @@ class TaskListenerRegistrar {
 	 * Registered unconditionally: unlike the decision events,
 	 * `TaskTerminalEvent` is OpenRegister's own and OpenRegister is a hard
 	 * dependency of this app. The class ships from openregister v2.0.13 onward
-	 * (openregister#3269), and `FlowRunSignalService::signalAs()`, which the
+	 * (openregister#3269), and `FlowRunSignalService::answerByUuid()`, which the
 	 * listener signals through, from openregister#3332.
 	 *
 	 * @param IRegistrationContext $context The registration context.
