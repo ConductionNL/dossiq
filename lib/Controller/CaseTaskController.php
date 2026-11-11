@@ -339,30 +339,64 @@ class CaseTaskController extends Controller {
 		[$reason, $named] = array_pad(explode(':', $code, 2), 2, '');
 
 		if ($reason === 'required_field') {
-			return new JSONResponse(
-				[
-					'message' => sprintf('Fill in %s before completing this task', $named),
-					'error' => 'required_field',
-					'field' => $named,
-				],
-				Http::STATUS_BAD_REQUEST
-			);
+			return $this->missingField(field: $named);
 		}
 
 		if ($reason === 'unresolvable_effect') {
-			return new JSONResponse(
-				[
-					'message' => sprintf(
-						'Completing this task should run %s, and nothing answers to that name. The task stays open.',
-						$named
-					),
-					'error' => 'unresolvable_effect',
-					'effect' => $named,
-				],
-				Http::STATUS_CONFLICT
-			);
+			return $this->unresolvableEffect(effect: $named);
 		}
 
+		return $this->refusedAs(code: $code, reason: $reason);
+	}//end refusal()
+
+	/**
+	 * The 400 for a required field left empty, naming the field.
+	 *
+	 * @param string $field The field.
+	 *
+	 * @return JSONResponse
+	 */
+	private function missingField(string $field): JSONResponse {
+		return new JSONResponse(
+			[
+				'message' => sprintf('Fill in %s before completing this task', $field),
+				'error' => 'required_field',
+				'field' => $field,
+			],
+			Http::STATUS_BAD_REQUEST
+		);
+	}//end missingField()
+
+	/**
+	 * The 409 for an effect nothing answers to: the task stays open.
+	 *
+	 * @param string $effect The effect.
+	 *
+	 * @return JSONResponse
+	 */
+	private function unresolvableEffect(string $effect): JSONResponse {
+		return new JSONResponse(
+			[
+				'message' => sprintf(
+					'Completing this task should run %s, and nothing answers to that name. The task stays open.',
+					$effect
+				),
+				'error' => 'unresolvable_effect',
+				'effect' => $effect,
+			],
+			Http::STATUS_CONFLICT
+		);
+	}//end unresolvableEffect()
+
+	/**
+	 * Any other refusal: its code as the message and its reason as the error, with the status the reason maps to.
+	 *
+	 * @param string $code   The refusal code.
+	 * @param string $reason The code's reason part.
+	 *
+	 * @return JSONResponse
+	 */
+	private function refusedAs(string $code, string $reason): JSONResponse {
 		$message = $code;
 		if ($message === '') {
 			$message = 'That could not be done';
@@ -377,7 +411,7 @@ class CaseTaskController extends Controller {
 			['message' => $message, 'error' => $error],
 			(self::REFUSAL_STATUS[$reason] ?? Http::STATUS_BAD_REQUEST)
 		);
-	}//end refusal()
+	}//end refusedAs()
 
 	/**
 	 * Whether this user may run this gesture on this case.
