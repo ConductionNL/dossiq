@@ -116,37 +116,15 @@ class DocumentAccessExceptionWriter {
 	 * @spec openspec/changes/document-access-exception/specs/document-access-exception/spec.md#requirement-a-document-can-carry-an-access-exception-with-a-reason
 	 */
 	public function set(IUser $user, array $record, array $exception): array {
-		$old = $this->rule->exceptionOf(record: $record);
-		$now = (new DateTimeImmutable())->format(DATE_ATOM);
-		$new = [
-			'users' => $exception['users'],
-			'groups' => $exception['groups'],
-			'reason' => $exception['reason'],
-			'setBy' => $user->getUID(),
-			'setAt' => $now,
-		];
-
-		$fileId = (int)($record['fileId'] ?? 0);
-		if ($fileId > 0) {
-			$this->files->restrict(fileId: $fileId, users: $new['users'], groups: $new['groups'], reason: $new['reason']);
-		}
-
-		$action = 'change';
-		if ($old === null) {
-			$action = 'set';
-		}
+		$old    = $this->rule->exceptionOf(record: $record);
+		$now    = (new DateTimeImmutable())->format(DATE_ATOM);
+		$new    = self::stamped(exception: $exception, stamp: ['setBy' => $user->getUID(), 'setAt' => $now]);
+		$fileId = $this->restrictFile(record: $record, exception: $new);
 
 		$record[DocumentAccessExceptionRule::PROPERTY] = $new;
-		$record[DocumentAccessExceptionRule::HISTORY] = $this->withEntry(
+		$record[DocumentAccessExceptionRule::HISTORY]  = $this->withEntry(
 			record: $record,
-			entry: [
-				'action' => $action,
-				'by' => $user->getUID(),
-				'at' => $now,
-				'old' => $old,
-				'new' => $new,
-				'reason' => $new['reason'],
-			]
+			entry: ['action' => self::actionFor(old: $old), 'by' => $user->getUID(), 'at' => $now, 'old' => $old, 'new' => $new, 'reason' => $new['reason']]
 		);
 
 		$this->saveOrRestore(record: $record, fileId: $fileId, old: $old);
@@ -173,28 +151,78 @@ class DocumentAccessExceptionWriter {
 			return false;
 		}
 
-		$fileId = (int)($record['fileId'] ?? 0);
-		if ($fileId > 0) {
-			$this->files->lift(fileId: $fileId);
-		}
-
+		$fileId = $this->liftFile(record: $record);
 		unset($record[DocumentAccessExceptionRule::PROPERTY]);
+		$at = (new DateTimeImmutable())->format(DATE_ATOM);
 		$record[DocumentAccessExceptionRule::HISTORY] = $this->withEntry(
 			record: $record,
-			entry: [
-				'action' => 'remove',
-				'by' => $user->getUID(),
-				'at' => (new DateTimeImmutable())->format(DATE_ATOM),
-				'old' => $old,
-				'new' => null,
-				'reason' => trim($reason),
-			]
+			entry: ['action' => 'remove', 'by' => $user->getUID(), 'at' => $at, 'old' => $old, 'new' => null, 'reason' => trim($reason)]
 		);
 
 		$this->saveOrRestore(record: $record, fileId: $fileId, old: $old);
 
 		return true;
 	}//end remove()
+
+	/**
+	 * The exception as stored: its users, groups and reason, then who set it and when.
+	 *
+	 * @param array{users: list<string>, groups: list<string>, reason: string} $exception The validated exception.
+	 * @param array{setBy: string, setAt: string}                               $stamp     Who sets it, and when.
+	 *
+	 * @return array<string, mixed> The stored exception.
+	 */
+	private static function stamped(array $exception, array $stamp): array {
+		return ['users' => $exception['users'], 'groups' => $exception['groups'], 'reason' => $exception['reason']] + $stamp;
+	}//end stamped()
+
+	/**
+	 * The history action of a set: `set` when there was none before, `change` otherwise.
+	 *
+	 * @param array<string, mixed>|null $old The exception before.
+	 *
+	 * @return string The action.
+	 */
+	private static function actionFor(?array $old): string {
+		if ($old === null) {
+			return 'set';
+		}
+
+		return 'change';
+	}//end actionFor()
+
+	/**
+	 * Restrict the record's file to the exception, when it has one.
+	 *
+	 * @param array<string, mixed> $record    The informatieobject.
+	 * @param array<string, mixed> $exception The exception as stored.
+	 *
+	 * @return int The file, 0 when none.
+	 */
+	private function restrictFile(array $record, array $exception): int {
+		$fileId = (int)($record['fileId'] ?? 0);
+		if ($fileId > 0) {
+			$this->files->restrict(fileId: $fileId, users: $exception['users'], groups: $exception['groups'], reason: $exception['reason']);
+		}
+
+		return $fileId;
+	}//end restrictFile()
+
+	/**
+	 * Free the record's file, when it has one.
+	 *
+	 * @param array<string, mixed> $record The informatieobject.
+	 *
+	 * @return int The file, 0 when none.
+	 */
+	private function liftFile(array $record): int {
+		$fileId = (int)($record['fileId'] ?? 0);
+		if ($fileId > 0) {
+			$this->files->lift(fileId: $fileId);
+		}
+
+		return $fileId;
+	}//end liftFile()
 
 	/**
 	 * Save the record; when that fails, put the file back the way the old exception had it.
