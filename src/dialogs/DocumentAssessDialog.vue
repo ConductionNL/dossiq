@@ -205,6 +205,82 @@ function sentenceOf(failure, fallback) {
 }
 
 /**
+ * Which fields of a ground row hold its value and its label.
+ *
+ * @param {object} source Where the grounds are read: `{ valueField, labelField }`.
+ * @return {{value: string, label: string}} The field names; the value is `id` and the label the value when not configured.
+ */
+function groundFieldsOf(source) {
+	const value = source.valueField || 'id'
+	return { value, label: source.labelField || value }
+}
+
+/**
+ * The query for the grounds: the configured filter, at most 200, by value.
+ *
+ * @param {object} source Where the grounds are read: `{ filter }`.
+ * @param {{value: string, label: string}} fields The ground fields.
+ * @return {object} The parameters.
+ */
+function groundsParams(source, fields) {
+	return {
+		...(source.filter || {}),
+		_limit: 200,
+		_order: { [fields.value]: 'asc' },
+	}
+}
+
+/**
+ * One ground row as a picker option: its value, and its label after the value
+ * when the label says something more.
+ *
+ * @param {object} row The ground row.
+ * @param {{value: string, label: string}} fields The ground fields.
+ * @return {{id: string, label: string}} The option.
+ */
+function groundOption(row, fields) {
+	const value = String(row?.[fields.value] ?? '')
+	const label = String(row?.[fields.label] ?? '')
+	return {
+		id: value,
+		label: label !== '' && label !== value ? value + ' ' + label : value,
+	}
+}
+
+/**
+ * @param {object} failure The axios error.
+ * @return {string} What to say when the grounds could not be read.
+ */
+function groundsFailureSentence(failure) {
+	return sentenceOf(
+		failure,
+		t(
+			'dossiq',
+			'The grounds could not be read, so an assessment that needs one cannot be saved.',
+		),
+	)
+}
+
+/**
+ * The document a refusal names: by the configured field, else `documentRef`.
+ *
+ * @param {object} refused One refusal of the answer.
+ * @param {string} fieldOfDocument What the document field of an assessment is called.
+ * @return {string} The document id, or ''.
+ */
+function refusedDocumentId(refused, fieldOfDocument) {
+	return String(refused?.[fieldOfDocument] ?? refused?.documentRef ?? '')
+}
+
+/**
+ * @param {object} refused One refusal of the answer.
+ * @return {string} Its sentences, joined.
+ */
+function refusalSentencesOf(refused) {
+	return Object.values(refused?.errors || {}).map(String).join(' ')
+}
+
+/**
  * What to say when the assessment was not saved: that each refused document
  * says why, or the server's own sentence.
  *
@@ -347,12 +423,29 @@ export default {
 		canSave() {
 			return (
 				this.busy === false
-				&& this.assessUrl !== ''
-				&& this.targetCaseId !== ''
+				&& this.targetKnown
 				&& this.selected.length > 0
 				&& this.classification !== null
-				&& (this.needsGrounds === false || this.pickedGrounds.length > 0)
+				&& this.groundsGiven
 			)
+		},
+
+		/**
+		 * Whether there is somewhere to save to: the endpoint and the case.
+		 *
+		 * @return {boolean} True when both are known.
+		 */
+		targetKnown() {
+			return this.assessUrl !== '' && this.targetCaseId !== ''
+		},
+
+		/**
+		 * Whether the classification needs no grounds, or some are picked.
+		 *
+		 * @return {boolean} True when the grounds do not hold the save back.
+		 */
+		groundsGiven() {
+			return this.needsGrounds === false || this.pickedGrounds.length > 0
 		},
 	},
 
@@ -457,48 +550,44 @@ export default {
 				return
 			}
 
-			const valueField = source.valueField || 'id'
-			const labelField = source.labelField || valueField
-			this.groundsLoading = true
-			this.groundsError = ''
+			this.startLoadingGrounds()
 			try {
-				const { data } = await axios.get(
-					generateUrl(
-						`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`,
-					),
-					{
-						params: {
-							...(source.filter || {}),
-							_limit: 200,
-							_order: { [valueField]: 'asc' },
-						},
-					},
-				)
-				this.groundOptions = (data?.results || [])
-					.map((row) => {
-						const value = String(row?.[valueField] ?? '')
-						const label = String(row?.[labelField] ?? '')
-						return {
-							id: value,
-							label:
-								label !== '' && label !== value
-									? value + ' ' + label
-									: value,
-						}
-					})
-					.filter((option) => option.id !== '')
+				this.groundOptions = await this.fetchGroundOptions(source)
 				this.groundsLoaded = true
 			} catch (failure) {
-				this.groundsError = sentenceOf(
-					failure,
-					t(
-						'dossiq',
-						'The grounds could not be read, so an assessment that needs one cannot be saved.',
-					),
-				)
+				this.groundsError = groundsFailureSentence(failure)
 			} finally {
 				this.groundsLoading = false
 			}
+		},
+
+		/**
+		 * Mark the grounds as loading and clear the last error.
+		 *
+		 * @return {void}
+		 */
+		startLoadingGrounds() {
+			this.groundsLoading = true
+			this.groundsError = ''
+		},
+
+		/**
+		 * The grounds the configured schema holds, as picker options.
+		 *
+		 * @param {object} source Where the grounds are read: `{ register, schema, valueField, labelField, filter }`.
+		 * @return {Promise<Array<{id: string, label: string}>>} The options.
+		 */
+		async fetchGroundOptions(source) {
+			const fields = groundFieldsOf(source)
+			const { data } = await axios.get(
+				generateUrl(
+					`/apps/openregister/api/objects/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}`,
+				),
+				{ params: groundsParams(source, fields) },
+			)
+			return (data?.results || [])
+				.map((row) => groundOption(row, fields))
+				.filter((option) => option.id !== '')
 		},
 
 		/**
@@ -537,12 +626,9 @@ export default {
 			const fieldOfDocument = this.fields?.document || 'documentRef'
 			const out = {}
 			for (const refused of data?.errors || []) {
-				const id = String(
-					refused?.[fieldOfDocument] ?? refused?.documentRef ?? '',
-				)
-				const sentences = Object.values(refused?.errors || {}).map(String)
+				const id = refusedDocumentId(refused, fieldOfDocument)
 				if (id !== '') {
-					out[id] = sentences.join(' ')
+					out[id] = refusalSentencesOf(refused)
 				}
 			}
 
