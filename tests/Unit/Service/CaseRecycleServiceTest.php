@@ -569,10 +569,34 @@ class CaseRecycleServiceTest extends TestCase {
 
 		$this->assertSame(expected: 'Dakkapel', actual: $service($register, $config)->liveCase(caseId: 'case-1')['title']);
 		$this->assertNull(actual: $service($register, $config)->liveCase(caseId: 'case-2'));
-		$this->assertNull(actual: $service($register, $config)->liveCase(caseId: ''));
+		$answering = new class {
+
+			/**
+			 * The finds asked.
+			 *
+			 * @var array<int, string>
+			 */
+			public array $asked = [];
+
+			/**
+			 * A store that answers every find.
+			 *
+			 * @param string $id       The uuid.
+			 * @param mixed  $register The register.
+			 * @param mixed  $schema   The schema.
+			 *
+			 * @return array<string, mixed> The row.
+			 */
+			public function find(string $id, mixed $register = null, mixed $schema = null): array {
+				$this->asked[] = $id;
+				return ['title' => 'anything'];
+			}
+		};
+		$this->assertNull(actual: $service($answering, $config)->liveCase(caseId: ''));
 		$this->assertNull(actual: $service(null, $config)->liveCase(caseId: 'case-1'));
-		$this->assertNull(actual: $service($register, ['register' => 'dossiq'])->liveCase(caseId: 'case-1'));
-		$this->assertNull(actual: $service($register, ['case_schema' => 'case'])->liveCase(caseId: 'case-1'));
+		$this->assertNull(actual: $service($answering, ['register' => 'dossiq'])->liveCase(caseId: 'case-1'));
+		$this->assertNull(actual: $service($answering, ['case_schema' => 'case'])->liveCase(caseId: 'case-1'));
+		$this->assertSame(expected: [], actual: $answering->asked);
 		$this->assertSame(expected: [], actual: $warnings);
 
 		$this->assertNull(actual: $service($failing, $config)->liveCase(caseId: 'case-1'));
