@@ -89,34 +89,42 @@ class ResidentQuestionTask {
 	 * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
 	 */
 	public function raise(array $question, string $actor): ?string {
-		$subject = trim((string)($question['portalSubject'] ?? ''));
-		$case = trim((string)($question['case'] ?? ''));
-		$id = trim((string)($question['id'] ?? ''));
-		$title = trim((string)($question['title'] ?? ''));
-		if ($subject === '' || $case === '' || $id === '' || $title === '') {
+		$asked = new ResidentQuestion(question: $question);
+		if ($asked->isComplete() === false) {
 			return null;
 		}
 
-		try {
-			$task = $this->container->get(self::TASK_SERVICE)->import(
-				data: $this->taskData(question: $question, subject: $subject, case: $case, id: $id, title: $title),
-				actor: $actor
-			);
-			$uuid = trim((string)$task->getUuid());
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the question to the resident stands, but its portal task could not be raised',
-				['question' => $id, 'case' => $case, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
-
-		if ($uuid === '') {
+		$uuid = $this->importTask(asked: $asked, actor: $actor);
+		if ($uuid === null || $uuid === '') {
 			return null;
 		}
 
 		return $uuid;
 	}//end raise()
+
+	/**
+	 * Have OpenRegister write the task, logging a failure.
+	 *
+	 * @param ResidentQuestion $asked The complete question.
+	 * @param string           $actor Who asked.
+	 *
+	 * @return string|null The task's trimmed uuid, or null when it could not be written.
+	 */
+	private function importTask(ResidentQuestion $asked, string $actor): ?string {
+		try {
+			$task = $this->container->get(self::TASK_SERVICE)->import(
+				data: $this->taskData(asked: $asked),
+				actor: $actor
+			);
+			return trim((string)$task->getUuid());
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the question to the resident stands, but its portal task could not be raised',
+				['question' => $asked->id, 'case' => $asked->case, 'error' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end importTask()
 
 	/**
 	 * Close the task of a question that is settled.
@@ -151,30 +159,26 @@ class ResidentQuestionTask {
 	/**
 	 * The external task OpenRegister writes for a question.
 	 *
-	 * @param array<string, mixed> $question The question.
-	 * @param string               $subject  The case's portal subject.
-	 * @param string               $case     The case uuid.
-	 * @param string               $id       The question's id.
-	 * @param string               $title    The task title.
+	 * @param ResidentQuestion $asked The complete question.
 	 *
 	 * @return array<string, mixed> The task fields.
 	 */
-	private function taskData(array $question, string $subject, string $case, string $id, string $title): array {
-		$party = self::PARTY_PREFIX . $subject;
+	private function taskData(ResidentQuestion $asked): array {
+		$party = self::PARTY_PREFIX . $asked->subject;
 
 		return [
-			'title' => $title,
-			'description' => $this->description(question: $question),
+			'title' => $asked->title,
+			'description' => $this->description(question: $asked->question),
 			'state' => 'active',
 			'performerType' => 'external',
 			'priority' => 'normal',
 			'assignee' => $party,
-			'dueAt' => $this->dueAt(date: (string)($question['due'] ?? '')),
-			'objectUuid' => $case,
+			'dueAt' => $this->dueAt(date: (string)($asked->question['due'] ?? '')),
+			'objectUuid' => $asked->case,
 			'metadata' => [
-				'source' => (string)($question['source'] ?? ''),
-				'question' => $id,
-				'case' => $case,
+				'source' => (string)($asked->question['source'] ?? ''),
+				'question' => $asked->id,
+				'case' => $asked->case,
 				'partyReference' => $party,
 			],
 		];
