@@ -39,28 +39,22 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Milestone;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
-use OCA\OpenRegister\Kernel\Contracts\TimerChange;
-use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
+use OCA\Dossiq\Service\Timer\EngineTimer;
+use OCA\Dossiq\Service\Timer\EngineTimerOutcomes;
+use OCA\Dossiq\Service\Timer\EscalationRung;
+use OCA\Dossiq\Service\Timer\TimerConfig;
+use OCA\Dossiq\Service\Timer\TimerWindow;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Keeps one engine timer per case on the milestone it waits on.
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class MilestoneStallTimer {
-
-	/**
-	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
-	 *
-	 * @var string
-	 */
-	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
+class MilestoneStallTimer implements EngineTimerOutcomes {
 
 	/**
 	 * The metadata source the fired listener recognises the timer by.
@@ -77,39 +71,11 @@ class MilestoneStallTimer {
 	public const SUBJECT_SUFFIX = ':milestone';
 
 	/**
-	 * Outcome: a timer is armed.
-	 *
-	 * @var string
-	 */
-	public const ARMED = 'armed';
-
-	/**
-	 * Outcome: the case waits on no milestone and its timer is cancelled.
-	 *
-	 * @var string
-	 */
-	public const CANCELLED = 'cancelled';
-
-	/**
 	 * Outcome: the case is already stalled; the caller tells the assignee now.
 	 *
 	 * @var string
 	 */
 	public const DUE = 'due';
-
-	/**
-	 * Outcome: nothing to time.
-	 *
-	 * @var string
-	 */
-	public const SKIPPED = 'skipped';
-
-	/**
-	 * Outcome: the engine is absent or refused.
-	 *
-	 * @var string
-	 */
-	public const UNAVAILABLE = 'unavailable';
 
 	/**
 	 * Build the service.
@@ -139,7 +105,7 @@ class MilestoneStallTimer {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function sync(array $case): string {
-		$caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));
+		$caseId = EngineTimer::objectId(object: $case);
 		if ($caseId === '') {
 			return self::SKIPPED;
 		}
@@ -147,111 +113,87 @@ class MilestoneStallTimer {
 		$waiting  = $this->detector->waitingOn(case: $case);
 		$deadline = $this->dates->tryParse($waiting['deadline'] ?? null);
 		if ($waiting === null || $deadline === null) {
-			return $this->cancel(caseId: $caseId, reason: 'The case waits on no milestone') ?? self::CANCELLED;
+			return $this->stallTimer()->cancel(ownerId: $caseId, reason: 'The case waits on no milestone') ?? self::CANCELLED;
 		}
 
-		$cancelled = $this->cancel(caseId: $caseId, reason: 'Superseded by the milestone the case waits on now');
+		return $this->rearm(caseId: $caseId, waiting: $waiting);
+	}//end sync()
+
+	/**
+	 * Replace the case's milestone timer by one on the milestone it waits on.
+	 *
+	 * @param string               $caseId  The case id.
+	 * @param array<string, mixed> $waiting The milestone row, with a deadline that parses.
+	 *
+	 * @return string ARMED, DUE, or UNAVAILABLE.
+	 */
+	private function rearm(string $caseId, array $waiting): string {
+		$cancelled = $this->stallTimer()->cancel(ownerId: $caseId, reason: 'Superseded by the milestone the case waits on now');
 		if ($cancelled !== null) {
 			return $cancelled;
 		}
 
 		$today = $this->dates->today();
-		$stall = $deadline->setTimezone($this->dates->timeZone())->setTime(0, 0, 0)->modify('+1 day');
+		$stall = $this->dates->tryParse($waiting['deadline'] ?? null)->setTimezone($this->dates->timeZone())->setTime(0, 0, 0)->modify('+1 day');
 		if ($stall <= $today) {
 			return self::DUE;
 		}
 
-		return $this->arm(caseId: $caseId, waiting: $waiting, anchor: $today, slaDays: $this->days->between(from: $today, to: $stall));
-	}//end sync()
+		$window = new TimerWindow(ownerId: $caseId, anchor: $today, slaDays: $this->days->between(from: $today, to: $stall));
+		return $this->arm(waiting: $waiting, window: $window);
+	}//end rearm()
 
 	/**
 	 * Arm the timer.
 	 *
-	 * @param string               $caseId  The case id.
 	 * @param array<string, mixed> $waiting The milestone row.
-	 * @param DateTimeImmutable    $anchor  Midnight today.
-	 * @param int                  $slaDays Calendar days to the day after the deadline.
+	 * @param TimerWindow          $window  The case id, midnight today and the calendar days to the day after the deadline.
 	 *
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
-	private function arm(string $caseId, array $waiting, DateTimeImmutable $anchor, int $slaDays): string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		$config = [
-			'subjectType'     => 'object',
-			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
-			'appId'           => 'dossiq',
-			'title'           => 'Mijlpaal '.(string) ($waiting['milestoneLabel'] ?? ''),
-			'purpose'         => 'due',
-			'legalEffect'     => 'none',
-			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
-			'escalationRules' => [
-				[
-					'trigger'        => 'slaBreached',
-					'offset'         => 0,
-					'offsetUnit'     => 'calendarDays',
-					'notifyRole'     => [],
-					'escalateToRole' => [],
-					'priority'       => 'normal',
-					'message'        => 'mijlpaal-vertraagd',
-					'openIncident'   => false,
-				],
-			],
-			'anchorEvent'     => 'milestone_waiting',
-			'anchorEventAt'   => $anchor,
-			'metadata'        => [
-				'source'              => self::METADATA_SOURCE,
-				'caseId'              => $caseId,
-				'milestoneIdentifier' => (string) ($waiting['milestoneIdentifier'] ?? ''),
-			],
-		];
-
-		try {
-			$engine->arm(config: $config, actor: null);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq milestone: the engine refused the stall timer', ['case' => $caseId, 'error' => $e->getMessage()]);
-			return self::UNAVAILABLE;
-		}
-
-		return self::ARMED;
+	private function arm(array $waiting, TimerWindow $window): string {
+		return $this->stallTimer()->arm(
+			config: fn (): array => $this->stallConfig(waiting: $waiting, window: $window)->toArray(),
+			ownerId: $window->ownerId
+		);
 	}//end arm()
 
 	/**
-	 * Cancel the case's milestone timers (and only those).
+	 * The stall timer's configuration: one rung on the day after the deadline.
 	 *
-	 * @param string $caseId The case id.
-	 * @param string $reason Why.
+	 * @param array<string, mixed> $waiting The milestone row.
+	 * @param TimerWindow          $window  The timer's window.
 	 *
-	 * @return string|null UNAVAILABLE when the engine is absent or refused, null when done.
+	 * @return TimerConfig
 	 */
-	private function cancel(string $caseId, string $reason): ?string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		try {
-			$engine->cancelForSubject(
-				subject: new TimerSubjectRef(type: 'object', uuid: $caseId.self::SUBJECT_SUFFIX),
-				change: new TimerChange(reason: $reason, actor: null)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq milestone: the engine refused to cancel the stall timer', ['case' => $caseId, 'error' => $e->getMessage()]);
-			return self::UNAVAILABLE;
-		}
-
-		return null;
-	}//end cancel()
+	private function stallConfig(array $waiting, TimerWindow $window): TimerConfig {
+		return new TimerConfig(
+			subjectUuid: $window->ownerId.self::SUBJECT_SUFFIX,
+			title: 'Mijlpaal '.(string) ($waiting['milestoneLabel'] ?? ''),
+			window: $window,
+			rungs: [new EscalationRung(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'mijlpaal-vertraagd')],
+			anchorEvent: 'milestone_waiting',
+			metadata: [
+				'source'              => self::METADATA_SOURCE,
+				'caseId'              => $window->ownerId,
+				'milestoneIdentifier' => (string) ($waiting['milestoneIdentifier'] ?? ''),
+			],
+		);
+	}//end stallConfig()
 
 	/**
-	 * The engine, or null when OpenRegister does not ship it.
+	 * The engine calls for this timer.
 	 *
-	 * @return object|null
+	 * @return EngineTimer
 	 */
-	private function engine(): ?object {
-		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
-	}//end engine()
+	private function stallTimer(): EngineTimer {
+		return new EngineTimer(
+			settingsService: $this->settingsService,
+			logger: $this->logger,
+			ownerKey: 'case',
+			armRefused: 'Dossiq milestone: the engine refused the stall timer',
+			cancelRefused: 'Dossiq milestone: the engine refused to cancel the stall timer',
+			subjectSuffix: self::SUBJECT_SUFFIX
+		);
+	}//end stallTimer()
 }//end class

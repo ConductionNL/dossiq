@@ -50,24 +50,19 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\DayCount;
-use OCA\OpenRegister\Kernel\Contracts\TimerChange;
-use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
+use OCA\Dossiq\Service\Timer\EngineTimer;
+use OCA\Dossiq\Service\Timer\EngineTimerOutcomes;
+use OCA\Dossiq\Service\Timer\EscalationRung;
+use OCA\Dossiq\Service\Timer\TimerConfig;
+use OCA\Dossiq\Service\Timer\TimerWindow;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Keeps one engine timer per open DSO case in step with the case.
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class DsoDeadlineTimer {
-
-	/**
-	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
-	 *
-	 * @var string
-	 */
-	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
+class DsoDeadlineTimer implements EngineTimerOutcomes {
 
 	/**
 	 * The metadata source the fired listener recognises the timer by.
@@ -105,39 +100,11 @@ class DsoDeadlineTimer {
 	public const MESSAGE_CRITICAL = 'dso-termijn-kritiek';
 
 	/**
-	 * Outcome: a timer is armed.
-	 *
-	 * @var string
-	 */
-	public const ARMED = 'armed';
-
-	/**
-	 * Outcome: the case is no longer open for DSO and its timer is cancelled.
-	 *
-	 * @var string
-	 */
-	public const CANCELLED = 'cancelled';
-
-	/**
 	 * Outcome: the deadline is today or past; the caller marks it overdue now.
 	 *
 	 * @var string
 	 */
 	public const DUE = 'due';
-
-	/**
-	 * Outcome: nothing to time.
-	 *
-	 * @var string
-	 */
-	public const SKIPPED = 'skipped';
-
-	/**
-	 * Outcome: the engine is absent or refused.
-	 *
-	 * @var string
-	 */
-	public const UNAVAILABLE = 'unavailable';
 
 	/**
 	 * Build the service.
@@ -165,7 +132,7 @@ class DsoDeadlineTimer {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function sync(array $case): string {
-		$caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));
+		$caseId = EngineTimer::objectId(object: $case);
 		if ($caseId === '') {
 			return self::SKIPPED;
 		}
@@ -173,10 +140,23 @@ class DsoDeadlineTimer {
 		$open     = in_array((string) ($case['dsoStatus'] ?? ''), self::OPEN_STATUSES, true);
 		$deadline = $this->dates->tryParse($case['deadlineDate'] ?? null);
 		if ($open === false || $deadline === null) {
-			return $this->cancel(caseId: $caseId, reason: 'DSO term no longer running') ?? self::CANCELLED;
+			return $this->termTimer()->cancel(ownerId: $caseId, reason: 'DSO term no longer running') ?? self::CANCELLED;
 		}
 
-		$cancelled = $this->cancel(caseId: $caseId, reason: 'Superseded by the current DSO deadline');
+		return $this->rearm(case: $case, deadline: $deadline);
+	}//end sync()
+
+	/**
+	 * Replace a running term's timer by one on its current deadline.
+	 *
+	 * @param array<string, mixed> $case     The case, with an id.
+	 * @param DateTimeImmutable    $deadline Its parsed DSO deadline.
+	 *
+	 * @return string ARMED, DUE, or UNAVAILABLE.
+	 */
+	private function rearm(array $case, DateTimeImmutable $deadline): string {
+		$caseId    = EngineTimer::objectId(object: $case);
+		$cancelled = $this->termTimer()->cancel(ownerId: $caseId, reason: 'Superseded by the current DSO deadline');
 		if ($cancelled !== null) {
 			return $cancelled;
 		}
@@ -187,81 +167,50 @@ class DsoDeadlineTimer {
 			return self::DUE;
 		}
 
-		return $this->arm(case: $case, caseId: $caseId, anchor: $today, slaDays: $this->days->between(from: $today, to: $deadline));
-	}//end sync()
+		$window = new TimerWindow(ownerId: $caseId, anchor: $today, slaDays: $this->days->between(from: $today, to: $deadline));
+		return $this->arm(case: $case, window: $window);
+	}//end rearm()
 
 	/**
 	 * Arm the timer.
 	 *
-	 * @param array<string, mixed> $case    The case.
-	 * @param string               $caseId  Its id.
-	 * @param DateTimeImmutable    $anchor  Midnight today.
-	 * @param int                  $slaDays Calendar days to the deadline day.
+	 * @param array<string, mixed> $case   The case.
+	 * @param TimerWindow          $window Its id, midnight today and the calendar days to the deadline day.
 	 *
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
-	private function arm(array $case, string $caseId, DateTimeImmutable $anchor, int $slaDays): string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		$warning  = $this->lead(key: 'dso_deadline_warning_weeks_warning', fallback: 14);
-		$critical = $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5);
-
-		$config = [
-			'subjectType'     => 'object',
-			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
-			'appId'           => 'dossiq',
-			'title'           => 'DSO-beslistermijn '.(string) ($case['identifier'] ?? $caseId),
-			'purpose'         => 'due',
-			'legalEffect'     => 'none',
-			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
-			'escalationRules' => [
-				$this->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
-				$this->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
-				$this->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
-			],
-			'anchorEvent'     => 'dso_term_running',
-			'anchorEventAt'   => $anchor,
-			'metadata'        => [
-				'source' => self::METADATA_SOURCE,
-				'caseId' => $caseId,
-			],
-		];
-
-		try {
-			$engine->arm(config: $config, actor: null);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq DSO: the engine refused the DSO term timer', ['case' => $caseId, 'error' => $e->getMessage()]);
-			return self::UNAVAILABLE;
-		}
-
-		return self::ARMED;
+	private function arm(array $case, TimerWindow $window): string {
+		return $this->termTimer()->arm(
+			config: fn (): array => $this->termConfig(case: $case, window: $window)->toArray(),
+			ownerId: $window->ownerId
+		);
 	}//end arm()
 
 	/**
-	 * One escalation rule.
+	 * The DSO term timer's configuration: the breach and the two lead rungs.
 	 *
-	 * @param string $trigger slaBreached or preBreach.
-	 * @param int    $offset  The offset.
-	 * @param string $unit    The offset unit.
-	 * @param string $message The message identity.
+	 * @param array<string, mixed> $case   The case.
+	 * @param TimerWindow          $window The timer's window.
 	 *
-	 * @return array<string, mixed>
+	 * @return TimerConfig
 	 */
-	private function rule(string $trigger, int $offset, string $unit, string $message): array {
-		return [
-			'trigger'        => $trigger,
-			'offset'         => $offset,
-			'offsetUnit'     => $unit,
-			'notifyRole'     => [],
-			'escalateToRole' => [],
-			'priority'       => 'normal',
-			'message'        => $message,
-			'openIncident'   => false,
-		];
-	}//end rule()
+	private function termConfig(array $case, TimerWindow $window): TimerConfig {
+		$warning  = $this->lead(key: 'dso_deadline_warning_weeks_warning', fallback: 14);
+		$critical = $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5);
+
+		return new TimerConfig(
+			subjectUuid: $window->ownerId.self::SUBJECT_SUFFIX,
+			title: 'DSO-beslistermijn '.(string) ($case['identifier'] ?? $window->ownerId),
+			window: $window,
+			rungs: [
+				new EscalationRung(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
+				new EscalationRung(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
+				new EscalationRung(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
+			],
+			anchorEvent: 'dso_term_running',
+			metadata: ['source' => self::METADATA_SOURCE, 'caseId' => $window->ownerId],
+		);
+	}//end termConfig()
 
 	/**
 	 * A lead setting, read as the job read it.
@@ -281,38 +230,18 @@ class DsoDeadlineTimer {
 	}//end lead()
 
 	/**
-	 * Cancel the case's DSO timers (and only those).
+	 * The engine calls for this timer.
 	 *
-	 * @param string $caseId The case id.
-	 * @param string $reason Why.
-	 *
-	 * @return string|null UNAVAILABLE when the engine is absent or refused, null when done.
+	 * @return EngineTimer
 	 */
-	private function cancel(string $caseId, string $reason): ?string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		try {
-			$engine->cancelForSubject(
-				subject: new TimerSubjectRef(type: 'object', uuid: $caseId.self::SUBJECT_SUFFIX),
-				change: new TimerChange(reason: $reason, actor: null)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq DSO: the engine refused to cancel the DSO term timer', ['case' => $caseId, 'error' => $e->getMessage()]);
-			return self::UNAVAILABLE;
-		}
-
-		return null;
-	}//end cancel()
-
-	/**
-	 * The engine, or null when OpenRegister does not ship it.
-	 *
-	 * @return object|null
-	 */
-	private function engine(): ?object {
-		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
-	}//end engine()
+	private function termTimer(): EngineTimer {
+		return new EngineTimer(
+			settingsService: $this->settingsService,
+			logger: $this->logger,
+			ownerKey: 'case',
+			armRefused: 'Dossiq DSO: the engine refused the DSO term timer',
+			cancelRefused: 'Dossiq DSO: the engine refused to cancel the DSO term timer',
+			subjectSuffix: self::SUBJECT_SUFFIX
+		);
+	}//end termTimer()
 }//end class
