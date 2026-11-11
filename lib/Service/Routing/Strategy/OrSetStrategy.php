@@ -63,6 +63,22 @@ class OrSetStrategy implements RoutingStrategyInterface {
 			return [];
 		}
 
+		$allowed = self::allowedTypes(rawTypes: $rawTypes);
+		if ($allowed === []) {
+			return [];
+		}
+
+		return self::participantsOf(roles: $roles, allowed: $allowed);
+	}//end resolve()
+
+	/**
+	 * The role types the rule allows, as a set.
+	 *
+	 * @param array<int|string, mixed> $rawTypes The rule's role types.
+	 *
+	 * @return array<string, true> The allowed types.
+	 */
+	private static function allowedTypes(array $rawTypes): array {
 		$allowed = [];
 		foreach ($rawTypes as $type) {
 			$value = (string)$type;
@@ -71,20 +87,23 @@ class OrSetStrategy implements RoutingStrategyInterface {
 			}
 		}
 
-		if ($allowed === []) {
-			return [];
-		}
+		return $allowed;
+	}//end allowedTypes()
 
+	/**
+	 * Each participant holding an allowed role type, once, in role order.
+	 *
+	 * @param array<int, array<string, mixed>> $roles   The case's roles.
+	 * @param array<string, true>              $allowed The allowed types.
+	 *
+	 * @return array<int, string> The participants.
+	 */
+	private static function participantsOf(array $roles, array $allowed): array {
 		$seen = [];
 		$result = [];
 		foreach ($roles as $role) {
-			$type = (string)($role['roleType'] ?? '');
-			if (isset($allowed[$type]) === false) {
-				continue;
-			}
-
 			$participant = (string)($role['participant'] ?? '');
-			if ($participant === '' || isset($seen[$participant]) === true) {
+			if (isset($allowed[(string)($role['roleType'] ?? '')]) === false || $participant === '' || isset($seen[$participant]) === true) {
 				continue;
 			}
 
@@ -93,5 +112,5 @@ class OrSetStrategy implements RoutingStrategyInterface {
 		}
 
 		return $result;
-	}//end resolve()
+	}//end participantsOf()
 }//end class

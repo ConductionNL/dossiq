@@ -141,18 +141,8 @@ class LocationBagValidationListener implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
-		try {
-			$payload = $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: location BAG validation could not read the object payload: ' . $e->getMessage()
-			);
-			return;
-		}//end try
-
-		if ($this->isLocationSchema(object: $payload) === false
-			|| (string)($payload['source'] ?? '') !== 'bag'
-		) {
+		$payload = $this->bagLocation(entity: $entity);
+		if ($payload === null) {
 			return;
 		}
 
@@ -162,6 +152,49 @@ class LocationBagValidationListener implements IEventListener {
 			return;
 		}
 
+		$event->setErrors($this->refusal(outcome: $outcome, payload: $payload));
+		$event->stopPropagation();
+	}//end inspect()
+
+	/**
+	 * The payload of a location that names its BAG address, or null for anything else.
+	 *
+	 * @param ObjectEntity $entity The object being saved.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+	 */
+	private function bagLocation(ObjectEntity $entity): ?array {
+		try {
+			$payload = $entity->jsonSerialize();
+		} catch (Throwable $e) {
+			$this->logger->debug(
+				'Dossiq: location BAG validation could not read the object payload: ' . $e->getMessage()
+			);
+			return null;
+		}//end try
+
+		if ($this->isLocationSchema(object: $payload) === false
+			|| (string)($payload['source'] ?? '') !== 'bag'
+		) {
+			return null;
+		}
+
+		return $payload;
+	}//end bagLocation()
+
+	/**
+	 * The errors of a refused location: the message, the outcome code and, where it has one, the refusal code.
+	 *
+	 * @param string               $outcome The validation outcome.
+	 * @param array<string, mixed> $payload The location payload.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+	 */
+	private function refusal(string $outcome, array $payload): array {
 		$errors = [
 			'message' => $this->buildMessage(code: $outcome),
 			'codes' => [$outcome],
@@ -175,9 +208,8 @@ class LocationBagValidationListener implements IEventListener {
 			$errors['addressId'] = trim((string)($payload['addressDesignationId'] ?? ''));
 		}
 
-		$event->setErrors($errors);
-		$event->stopPropagation();
-	}//end inspect()
+		return $errors;
+	}//end refusal()
 
 	/**
 	 * Whether the supplied payload belongs to the `location` schema.

@@ -248,59 +248,92 @@ class PanelIndependenceChecker {
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
 	private function resolveContestedDecisionAuthors(array $lookup): array|false {
-		$objectService = $lookup['objectService'];
-		$objectionId = $lookup['objectionId'];
-		$register = $lookup['register'];
-		$legacyObjSchema = $lookup['legacyObjSchema'];
-		// Resolve the underlying dossiq case via the bezwaar entity
-		// when the bezwaar_schema is registered. When unavailable
-		// (e.g. legacy callers passing a case UUID directly), fall back
-		// to treating the input as the case id.
-		$caseId = $objectionId;
-		if ($legacyObjSchema !== '') {
-			$bezwaar = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $legacyObjSchema,
-				id: $objectionId
-			);
-			if ($bezwaar !== null) {
-				$caseId = (string)($bezwaar['case'] ?? $objectionId);
-			}
-		}
-
-		$objections = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $lookup['objectionSchema'],
-			filters: ['case' => $caseId]
-		);
-		$objection = null;
-		if ($objections !== []) {
-			$objection = $objections[0];
-		}
-
+		$objection = $this->objectionOn(lookup: $lookup, caseId: $this->caseOf(lookup: $lookup));
 		if (is_array($objection) === false) {
 			return false;
 		}
 
-		$contestedId = (string)($objection['contestedDecision'] ?? '');
-		if ($contestedId === '') {
-			return false;
-		}
-
-		$decision = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $lookup['decisionSchema'],
-			id: $contestedId
-		);
+		$decision = $this->contestedDecision(lookup: $lookup, objection: $objection);
 		if ($decision === null) {
 			return false;
 		}
 
 		return $this->authorsOf(decision: $decision);
 	}//end resolveContestedDecisionAuthors()
+
+	/**
+	 * The dossiq case the objection is filed on.
+	 *
+	 * Resolved via the bezwaar entity when the bezwaar_schema is registered.
+	 * When unavailable (e.g. legacy callers passing a case UUID directly), the
+	 * input is treated as the case id.
+	 *
+	 * @param Lookup $lookup The store, the objection id, the register and the schemas.
+	 *
+	 * @return string The case id.
+	 */
+	private function caseOf(array $lookup): string {
+		$objectionId = $lookup['objectionId'];
+		if ($lookup['legacyObjSchema'] === '') {
+			return $objectionId;
+		}
+
+		$bezwaar = $this->findObjectAsArray(
+			objectService: $lookup['objectService'],
+			register: $lookup['register'],
+			schema: $lookup['legacyObjSchema'],
+			id: $objectionId
+		);
+		if ($bezwaar === null) {
+			return $objectionId;
+		}
+
+		return (string)($bezwaar['case'] ?? $objectionId);
+	}//end caseOf()
+
+	/**
+	 * The first objection filed on the case, or null when there is none.
+	 *
+	 * @param Lookup $lookup The store, the register and the schemas.
+	 * @param string $caseId The case.
+	 *
+	 * @return array<string, mixed>|null The objection.
+	 */
+	private function objectionOn(array $lookup, string $caseId): ?array {
+		$objections = $this->searchObjectsAsArrays(
+			objectService: $lookup['objectService'],
+			register: $lookup['register'],
+			schema: $lookup['objectionSchema'],
+			filters: ['case' => $caseId]
+		);
+		if ($objections === []) {
+			return null;
+		}
+
+		return $objections[0];
+	}//end objectionOn()
+
+	/**
+	 * The decision the objection contests, or null when it names none or it cannot be read.
+	 *
+	 * @param Lookup               $lookup    The store, the register and the schemas.
+	 * @param array<string, mixed> $objection The objection.
+	 *
+	 * @return array<string, mixed>|null The decision.
+	 */
+	private function contestedDecision(array $lookup, array $objection): ?array {
+		$contestedId = (string)($objection['contestedDecision'] ?? '');
+		if ($contestedId === '') {
+			return null;
+		}
+
+		return $this->findObjectAsArray(
+			objectService: $lookup['objectService'],
+			register: $lookup['register'],
+			schema: $lookup['decisionSchema'],
+			id: $contestedId
+		);
+	}//end contestedDecision()
 
 	/**
 	 * Every recorded author of the decision: the non-empty values of `decidedBy`, `@self.owner`, `createdBy` and `steller`.

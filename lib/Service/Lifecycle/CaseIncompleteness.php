@@ -52,6 +52,8 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 class CaseIncompleteness {
+	use LoadsCaseOrRefuses;
+
 
 	/**
 	 * Whether the case knows it is incomplete.
@@ -208,28 +210,4 @@ class CaseIncompleteness {
 	public function requireComplete(array $case): void {
 		$this->requireFields(case: $case, needs: $this->missingOn(case: $case));
 	}//end requireComplete()
-
-	/**
-	 * Load the case, or refuse.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When the case cannot be read.
-	 *
-	 * @spec exclude one read behind record(), which carries the requirement
-	 */
-	private function load(string $caseId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end load()
 }//end class

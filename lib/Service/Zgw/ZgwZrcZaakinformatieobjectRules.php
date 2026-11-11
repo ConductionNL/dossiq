@@ -149,30 +149,14 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function validateZioInformatieobjecttype(string $caseUrl, string $ioUrl): ?array {
-		// Get the informatieobject to find its informatieobjecttype.
-		$docTypeId = $this->resolveDocumentTypeId(ioUrl: $ioUrl);
-		if ($docTypeId === null) {
-			return null;
-		}
-
-		// Get the zaak's zaaktype.
-		$zaaktypeUuid = $this->resolveCaseTypeUuid(caseUrl: $caseUrl);
-		if ($zaaktypeUuid === null) {
+		$types = $this->typesOf(caseUrl: $caseUrl, ioUrl: $ioUrl);
+		if ($types === null) {
 			return null;
 		}
 
 		// Check if a ZaakType-InformatieObjectType record links this zaaktype
 		// to the document's informatieobjecttype.
-		$docTypeUuid = $this->extractUuid(url: $docTypeId);
-		if ($docTypeUuid === null) {
-			return null;
-		}
-
-		$isMissing = $this->isCaseTypeInformatieobjecttypeMissing(
-			zaaktypeUuid: $zaaktypeUuid,
-			docTypeUuid: $docTypeUuid
-		);
-		if ($isMissing === false) {
+		if ($this->isCaseTypeInformatieobjecttypeMissing(zaaktypeUuid: $types['zaaktype'], docTypeUuid: $types['informatieobjecttype']) === false) {
 			return null;
 		}
 
@@ -180,14 +164,32 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		return $this->error(
 			status: 400,
 			detail: $detail,
-			invalidParams: [$this->fieldError(
-				fieldName: 'nonFieldErrors',
-				code: 'missing-zaaktype-informatieobjecttype-relation',
-				reason: $detail
-			)
-			]
+			invalidParams: [$this->fieldError(fieldName: 'nonFieldErrors', code: 'missing-zaaktype-informatieobjecttype-relation', reason: $detail)]
 		);
 	}//end validateZioInformatieobjecttype()
+
+	/**
+	 * The zaak's zaaktype and the document's informatieobjecttype, as uuids; null when either cannot be read.
+	 *
+	 * @param string $caseUrl The zaak URL
+	 * @param string $ioUrl   The informatieobject URL
+	 *
+	 * @return array{zaaktype: string, informatieobjecttype: string}|null The two types
+	 */
+	private function typesOf(string $caseUrl, string $ioUrl): ?array {
+		$docTypeId = $this->resolveDocumentTypeId(ioUrl: $ioUrl);
+		if ($docTypeId === null) {
+			return null;
+		}
+
+		$zaaktypeUuid = $this->resolveCaseTypeUuid(caseUrl: $caseUrl);
+		$docTypeUuid  = $this->extractUuid(url: $docTypeId);
+		if ($zaaktypeUuid === null || $docTypeUuid === null) {
+			return null;
+		}
+
+		return ['zaaktype' => $zaaktypeUuid, 'informatieobjecttype' => $docTypeUuid];
+	}//end typesOf()
 
 	/**
 	 * Resolve the informatieobjecttype reference carried by an informatieobject.

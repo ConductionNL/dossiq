@@ -1,0 +1,75 @@
+{
+    "anonymous": {
+        "status": 401,
+        "body": {
+            "message": "Not logged in"
+        },
+        "calls": []
+    },
+    "unsafe key": {
+        "status": 400,
+        "body": {
+            "message": "Invalid key"
+        },
+        "calls": []
+    },
+    "empty key": {
+        "status": 400,
+        "body": {
+            "message": "Invalid key"
+        },
+        "calls": []
+    },
+    "value at the limit": {
+        "status": 200,
+        "body": {
+            "value": "8192 bytes"
+        },
+        "calls": [
+            "set alice dossiq pref_notes (8192 bytes)"
+        ]
+    },
+    "value over the limit": {
+        "status": 400,
+        "body": {
+            "message": "Value exceeds maximum length of 8192 bytes"
+        },
+        "calls": []
+    },
+    "stores a value": {
+        "status": 200,
+        "body": {
+            "value": "dark"
+        },
+        "calls": [
+            "set alice dossiq pref_theme (4 bytes)"
+        ]
+    },
+    "stores a value that reads as zero": {
+        "status": 200,
+        "body": {
+            "value": "0"
+        },
+        "calls": [
+            "set alice dossiq pref_count (1 bytes)"
+        ]
+    },
+    "clears with an empty value": {
+        "status": 200,
+        "body": {
+            "value": null
+        },
+        "calls": [
+            "delete alice dossiq pref_theme"
+        ]
+    },
+    "page view key": {
+        "status": 200,
+        "body": {
+            "value": "table"
+        },
+        "calls": [
+            "set alice dossiq pref_cn_page_view:cases (5 bytes)"
+        ]
+    }
+}

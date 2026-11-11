@@ -168,24 +168,63 @@ class WorkQueueController extends Controller {
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
 	 */
 	private function ofReadersTeams(IUser $user, array $handlers): array {
+		$teamGroupIds = $this->teamGroupIds(user: $user);
+		if ($teamGroupIds === null || $teamGroupIds === []) {
+			return $handlers;
+		}
+
+		return $this->withMembers(handlers: $handlers, members: $this->membersOf(groupIds: $teamGroupIds));
+	}//end ofReadersTeams()
+
+	/**
+	 * The groups of the reader's teams, or null (logged) when they cannot be read.
+	 *
+	 * @param IUser $user The reader.
+	 *
+	 * @return array<mixed>|null
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
+	 */
+	private function teamGroupIds(IUser $user): ?array {
 		try {
-			$teamGroupIds = array_column($this->teams->teamsOf(user: $user), 'groupId');
+			return array_column($this->teams->teamsOf(user: $user), 'groupId');
 		} catch (\Throwable $e) {
 			$this->logger->warning('WorkQueue: the reader\'s teams could not be read', ['error' => $e->getMessage()]);
-			return $handlers;
+			return null;
 		}
+	}//end teamGroupIds()
 
-		if ($teamGroupIds === []) {
-			return $handlers;
-		}
-
+	/**
+	 * Everyone in the given groups, as a set keyed by uid.
+	 *
+	 * @param array<mixed> $groupIds The groups.
+	 *
+	 * @return array<true>
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
+	 */
+	private function membersOf(array $groupIds): array {
 		$members = [];
-		foreach ($teamGroupIds as $groupId) {
+		foreach ($groupIds as $groupId) {
 			foreach (array_keys($this->groupManager->displayNamesInGroup(gid: $groupId)) as $uid) {
 				$members[(string)$uid] = true;
 			}
 		}
 
+		return $members;
+	}//end membersOf()
+
+	/**
+	 * The handler rows of the members, then a zero row for each member without one.
+	 *
+	 * @param array<int, array<string, mixed>> $handlers The workload rows.
+	 * @param array<true>                      $members  The members, keyed by uid.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#requirement-coordinator-workload-endpoint-mvp
+	 */
+	private function withMembers(array $handlers, array $members): array {
 		$listed = [];
 		$result = [];
 		foreach ($handlers as $row) {
@@ -202,7 +241,7 @@ class WorkQueueController extends Controller {
 		}
 
 		return $result;
-	}//end ofReadersTeams()
+	}//end withMembers()
 
 	/**
 	 * Add each handler's display name, so a list can show a person rather than a user id.

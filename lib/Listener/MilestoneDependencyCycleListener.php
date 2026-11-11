@@ -164,8 +164,35 @@ class MilestoneDependencyCycleListener implements IEventListener {
 			return;
 		}
 
+		$stored = $this->storedDefinitions(caseTypeId: $caseTypeId);
+		if ($stored === null) {
+			return;
+		}
+
+		$cycle = $this->schedule->cycle($this->withSaved(stored: $stored, payload: $payload));
+		if ($cycle === []) {
+			return;
+		}
+
+		$this->refuse(event: $event, cycle: $cycle);
+		$this->logger->info(
+			'Dossiq: refused a milestone definition whose dependencies return to itself',
+			['caseType' => $caseTypeId, 'milestone' => $identifier, 'cycle' => $cycle]
+		);
+	}//end refuseCycle()
+
+	/**
+	 * The case type's stored milestone definitions, or null when they cannot be read.
+	 *
+	 * @param string $caseTypeId The case type.
+	 *
+	 * @return array<mixed>|null
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/milestone-tracking/spec.md
+	 */
+	private function storedDefinitions(string $caseTypeId): ?array {
 		try {
-			$stored = $this->repository->findDefinitions(caseTypeId: $caseTypeId);
+			return $this->repository->findDefinitions(caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
 			// The guard cannot read the rest of the case type. Refusing the
 			// save on that basis would block authoring whenever the register
@@ -174,9 +201,22 @@ class MilestoneDependencyCycleListener implements IEventListener {
 			$this->logger->debug(
 				'Dossiq: milestone cycle check could not read the case type: ' . $e->getMessage()
 			);
-			return;
+			return null;
 		}
+	}//end storedDefinitions()
 
+	/**
+	 * The stored definitions with the one being saved in place of its stored version.
+	 *
+	 * @param array<mixed>         $stored  The stored definitions.
+	 * @param array<string, mixed> $payload The definition being saved.
+	 *
+	 * @return array<mixed>
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/milestone-tracking/spec.md
+	 */
+	private function withSaved(array $stored, array $payload): array {
+		$identifier = trim((string)($payload['identifier'] ?? ''));
 		$definitions = [];
 		foreach ($stored as $definition) {
 			if (trim((string)($definition['identifier'] ?? '')) !== $identifier) {
@@ -185,12 +225,20 @@ class MilestoneDependencyCycleListener implements IEventListener {
 		}
 
 		$definitions[] = $payload;
+		return $definitions;
+	}//end withSaved()
 
-		$cycle = $this->schedule->cycle($definitions);
-		if ($cycle === []) {
-			return;
-		}
-
+	/**
+	 * Stop the save and say which milestones wait for each other.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event The save.
+	 * @param array<string>                           $cycle The milestones in the loop.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/milestone-tracking/spec.md
+	 */
+	private function refuse(ObjectCreatingEvent|ObjectUpdatingEvent $event, array $cycle): void {
 		$event->setErrors(
 			[
 				'message' => $this->l10n->t(
@@ -206,11 +254,7 @@ class MilestoneDependencyCycleListener implements IEventListener {
 			]
 		);
 		$event->stopPropagation();
-		$this->logger->info(
-			'Dossiq: refused a milestone definition whose dependencies return to itself',
-			['caseType' => $caseTypeId, 'milestone' => $identifier, 'cycle' => $cycle]
-		);
-	}//end refuseCycle()
+	}//end refuse()
 
 	/**
 	 * Whether the supplied payload belongs to the `milestoneDefinition` schema.

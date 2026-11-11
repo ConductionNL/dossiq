@@ -114,8 +114,34 @@ class BewijsstukImmutabilityListener implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectUpdatingEvent|ObjectDeletingEvent $event, ?ObjectEntity $stored): void {
-		if ($stored === null) {
+		$payload = $this->storedBewijsstuk(stored: $stored);
+		if ($payload === null) {
 			return;
+		}
+
+		try {
+			$this->bewijsstukService->assertMutable(bewijsstuk: $payload);
+		} catch (OCSBadRequestException $rejection) {
+			$this->refuse(event: $event, rejection: $rejection);
+			$this->logger->info(
+				'Dossiq: rejected a mutation on an immutable bewijsstuk (REQ-SUB-007)',
+				['uuid' => (string)$stored->getUuid()]
+			);
+		}
+	}//end inspect()
+
+	/**
+	 * The stored payload of a bewijsstuk, or null when there is none or it is something else.
+	 *
+	 * @param ObjectEntity|null $stored The stored object.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function storedBewijsstuk(?ObjectEntity $stored): ?array {
+		if ($stored === null) {
+			return null;
 		}
 
 		try {
@@ -124,29 +150,35 @@ class BewijsstukImmutabilityListener implements IEventListener {
 			$this->logger->debug(
 				'Dossiq: bewijsstuk immutability listener could not read the stored payload: ' . $e->getMessage()
 			);
-			return;
+			return null;
 		}
 
 		if ($this->isBewijsstukSchema(object: $payload) === false) {
-			return;
+			return null;
 		}
 
-		try {
-			$this->bewijsstukService->assertMutable(bewijsstuk: $payload);
-		} catch (OCSBadRequestException $rejection) {
-			$event->setErrors(
-				[
-					'message' => $rejection->getMessage(),
-					'code' => 'bewijsstuk.immutable',
-				]
-			);
-			$event->stopPropagation();
-			$this->logger->info(
-				'Dossiq: rejected a mutation on an immutable bewijsstuk (REQ-SUB-007)',
-				['uuid' => (string)$stored->getUuid()]
-			);
-		}
-	}//end inspect()
+		return $payload;
+	}//end storedBewijsstuk()
+
+	/**
+	 * Stop the mutation and say why.
+	 *
+	 * @param ObjectUpdatingEvent|ObjectDeletingEvent $event     The mutation.
+	 * @param OCSBadRequestException                  $rejection Why the bewijsstuk may not change.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function refuse(ObjectUpdatingEvent|ObjectDeletingEvent $event, OCSBadRequestException $rejection): void {
+		$event->setErrors(
+			[
+				'message' => $rejection->getMessage(),
+				'code' => 'bewijsstuk.immutable',
+			]
+		);
+		$event->stopPropagation();
+	}//end refuse()
 
 	/**
 	 * Whether the supplied payload belongs to the `bewijsstuk` schema.

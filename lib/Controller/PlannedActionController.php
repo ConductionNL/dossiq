@@ -41,6 +41,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -106,31 +107,12 @@ class PlannedActionController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function complete(string $caseId, string $actionId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		$user = $this->writerOf(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
-		// MUTATION access, not read: completing an action changes what the
-		// case says happens next, and a reader of the case is not thereby
-		// somebody who may decide that.
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		$action = null;
-		foreach ($this->plannedActions->plannedOn(caseId: $caseId) as $candidate) {
-			$candidateId = (string)($candidate['id'] ?? ($candidate['uuid'] ?? ''));
-			if ($candidateId === $actionId) {
-				$action = $candidate;
-				break;
-			}
-		}
-
-		// The action is looked up WITHIN this case rather than by id alone.
-		// Fetching it by id and trusting the `case` on it would let a caller
-		// complete another case's action by naming a case they may write, and
-		// the guard above would have answered about the wrong case.
+		$action = $this->actionOnCase(caseId: $caseId, actionId: $actionId);
 		if ($action === null) {
 			return new JSONResponse(
 				['error' => 'No such planned action on this case'],
@@ -146,4 +128,55 @@ class PlannedActionController extends Controller {
 
 		return new JSONResponse(['next' => $next]);
 	}//end complete()
+
+	/**
+	 * The caller when they may change the case, or the 401/403 refusal.
+	 *
+	 * MUTATION access, not read: completing an action changes what the
+	 * case says happens next, and a reader of the case is not thereby
+	 * somebody who may decide that.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
+	 */
+	private function writerOf(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $user;
+	}//end writerOf()
+
+	/**
+	 * The planned action of this case with the given id, or null.
+	 *
+	 * The action is looked up WITHIN this case rather than by id alone.
+	 * Fetching it by id and trusting the `case` on it would let a caller
+	 * complete another case's action by naming a case they may write, and
+	 * the guard would have answered about the wrong case.
+	 *
+	 * @param string $caseId   The case.
+	 * @param string $actionId The action's id (or uuid).
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/task-dependencies-and-the-next-planned-action/specs/task-management/spec.md
+	 */
+	private function actionOnCase(string $caseId, string $actionId): ?array {
+		foreach ($this->plannedActions->plannedOn(caseId: $caseId) as $candidate) {
+			if ((string)($candidate['id'] ?? ($candidate['uuid'] ?? '')) === $actionId) {
+				return $candidate;
+			}
+		}
+
+		return null;
+	}//end actionOnCase()
 }//end class

@@ -149,13 +149,7 @@ class CaseCustodyController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function unit(string $unit): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notYours();
-		}
-
-		$mine = array_map('strval', $this->groups->getUserGroupIds($user));
-		if (in_array($unit, $mine, true) === false && $this->groups->isAdmin($user->getUID()) === false) {
+		if ($this->mayReadUnit(unit: $unit) === false) {
 			return $this->notYours();
 		}
 
@@ -180,6 +174,25 @@ class CaseCustodyController extends Controller {
 			]
 		);
 	}//end unit()
+
+	/**
+	 * Whether the caller may read a unit's custody: a member of it, or an administrator.
+	 *
+	 * @param string $unit The organisation unit (a group id).
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	private function mayReadUnit(string $unit): bool {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return false;
+		}
+
+		$mine = array_map('strval', $this->groups->getUserGroupIds($user));
+		return in_array($unit, $mine, true) === true || $this->groups->isAdmin($user->getUID()) === true;
+	}//end mayReadUnit()
 
 	/**
 	 * Whether the caller may read this case at all.

@@ -195,9 +195,24 @@ class MailIntakeController extends Controller {
 			return new JSONResponse(['message' => 'not_quarantined'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$message = $this->messageOf(entry: $entry);
-		$outcome = $this->intake->fileOnCase(
-			message: $message,
+		$outcome = $this->fileReleased(entry: $entry);
+		$this->markReleased(entryId: $entryId);
+
+		return new JSONResponse(['released' => true, 'outcome' => $outcome]);
+	}//end release()
+
+	/**
+	 * File a quarantined message on its case, accepted by hand.
+	 *
+	 * @param array<string, mixed> $entry The quarantined intake log entry.
+	 *
+	 * @return string The outcome the intake answered.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function fileReleased(array $entry): string {
+		return $this->intake->fileOnCase(
+			message: $this->messageOf(entry: $entry),
 			verdict: FilterVerdict::accept(
 				filterName: 'release',
 				reason: 'Released by hand after a failing sender-authentication verdict.'
@@ -205,7 +220,18 @@ class MailIntakeController extends Controller {
 			results: $this->resultsOf(entry: $entry),
 			caseId: (string)($entry['case'] ?? '')
 		);
+	}//end fileReleased()
 
+	/**
+	 * Record on the intake log entry that it was released, by whom and when.
+	 *
+	 * @param string $entryId The intake log entry.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function markReleased(string $entryId): void {
 		$this->log->amend(
 			entryId: $entryId,
 			changes: [
@@ -214,9 +240,7 @@ class MailIntakeController extends Controller {
 				'releasedAt' => $this->time->getDateTime()->format(DATE_ATOM),
 			]
 		);
-
-		return new JSONResponse(['released' => true, 'outcome' => $outcome]);
-	}//end release()
+	}//end markReleased()
 
 	/**
 	 * Correct a junk verdict, in either direction.

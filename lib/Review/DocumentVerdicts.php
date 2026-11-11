@@ -24,7 +24,6 @@ namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Service\Assessment\OutstandingDocuments as DocumentTitles;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IL10N;
@@ -40,8 +39,6 @@ use Throwable;
  * @spec openspec/specs/document-assessment/spec.md#requirement-a-case-answers-its-document-verdicts-and-the-grounds-cited-req-cdv-001
  */
 class DocumentVerdicts {
-
-	use SearchesObjects;
 
 	/**
 	 * Constructor.
@@ -233,18 +230,6 @@ class DocumentVerdicts {
 	 * @return array<int, array<string, mixed>> The assessments.
 	 */
 	private function assessmentRows(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('woo_assessment_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['caseRef' => $caseId, '_limit' => 1000],
-		);
+		return (new CaseAssessmentRows(settingsService: $this->settingsService))->forCase(caseId: $caseId);
 	}//end assessmentRows()
 }//end class

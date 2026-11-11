@@ -99,21 +99,64 @@ class TermHandlerNotice {
 	 * @return bool True when a notification went out.
 	 */
 	private function tellOrFail(array $instance, int $threshold): bool {
-		$definition = $this->read(configKey: 'termijn_definitie_schema', id: (string) ($instance['deadlineDefinition'] ?? ''));
-		if ($definition === null || in_array($threshold, $this->thresholdsOf(definition: $definition), true) === false) {
+		if ($this->rungIsNamed(instance: $instance, threshold: $threshold) === false) {
 			return false;
 		}
 
 		$caseId   = (string) ($instance['case'] ?? '');
-		$case     = $this->read(configKey: 'case_schema', id: $caseId);
-		$assignee = $case['assignee'] ?? null;
-		if (is_string($assignee) === false || $assignee === '') {
+		$assignee = $this->assigneeOf(caseId: $caseId);
+		if ($assignee === '') {
 			// A case nobody holds has nobody to tell; the escalation itself is already recorded.
 			return false;
 		}
 
+		$deadline = (string) ($instance['endDateCurrent'] ?? '');
+		$this->send(assignee: $assignee, params: ['caseId' => $caseId, 'daysRemaining' => $threshold, 'deadline' => $deadline]);
+
+		return true;
+	}//end tellOrFail()
+
+	/**
+	 * Whether the term's definition tells the handler at this rung.
+	 *
+	 * @param array<string, mixed> $instance  The term instance the rung fired on.
+	 * @param int                  $threshold Days before the end the rung stands for.
+	 *
+	 * @return bool True when the definition names the rung.
+	 */
+	private function rungIsNamed(array $instance, int $threshold): bool {
+		$definition = $this->read(configKey: 'termijn_definitie_schema', id: (string) ($instance['deadlineDefinition'] ?? ''));
+
+		return $definition !== null && in_array($threshold, $this->thresholdsOf(definition: $definition), true) === true;
+	}//end rungIsNamed()
+
+	/**
+	 * The user who holds the case, '' when nobody does.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return string The assignee's user id.
+	 */
+	private function assigneeOf(string $caseId): string {
+		$assignee = ($this->read(configKey: 'case_schema', id: $caseId)['assignee'] ?? null);
+		if (is_string($assignee) === false) {
+			return '';
+		}
+
+		return $assignee;
+	}//end assigneeOf()
+
+	/**
+	 * Send the notification: the term ran out at rung 0, it is nearing otherwise.
+	 *
+	 * @param string                                                     $assignee Who is told.
+	 * @param array{caseId: string, daysRemaining: int, deadline: string} $params   The subject parameters.
+	 *
+	 * @return void
+	 */
+	private function send(string $assignee, array $params): void {
 		$subject = Notifier::SUBJECT_TERM_NEARING;
-		if ($threshold === 0) {
+		if ($params['daysRemaining'] === 0) {
 			$subject = Notifier::SUBJECT_TERM_EXCEEDED;
 		}
 
@@ -122,19 +165,10 @@ class TermHandlerNotice {
 			->setApp(Application::APP_ID)
 			->setUser($assignee)
 			->setDateTime(new DateTime())
-			->setObject('case', $caseId)
-			->setSubject(
-				$subject,
-				[
-					'caseId'        => $caseId,
-					'daysRemaining' => $threshold,
-					'deadline'      => (string) ($instance['endDateCurrent'] ?? ''),
-				]
-			);
+			->setObject('case', $params['caseId'])
+			->setSubject($subject, $params);
 		$this->notifications->notify($notification);
-
-		return true;
-	}//end tellOrFail()
+	}//end send()
 
 	/**
 	 * The days a definition tells the handler at, as integers.

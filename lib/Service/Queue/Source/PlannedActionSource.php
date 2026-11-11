@@ -120,38 +120,79 @@ class PlannedActionSource implements QueueSource {
 
 		$items = [];
 		foreach ($this->plannedActions->ownedBy(userId: $userId) as $action) {
-			$caseId = (string)($action['case'] ?? '');
-			$label = trim((string)($action['label'] ?? ''));
-			if ($label === '') {
-				$label = trim((string)($action['actionType'] ?? ''));
-			}
-
-			$plannedFor = (string)($action['plannedFor'] ?? '');
-			$dueAt = null;
-			if ($plannedFor !== '') {
-				$dueAt = substr($plannedFor, 0, 10);
-			}
-
-			$route = ['name' => 'PersonalQueue'];
-			if ($caseId !== '') {
-				$route = ['name' => 'CaseDetail', 'params' => ['id' => $caseId]];
-			}
-
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'plannedAction',
-				subjectId: (string)($action['id'] ?? ($action['uuid'] ?? '')),
-				title: $label,
-				priority: '',
-				dueAt: $dueAt,
-				coveredFor: null,
-				// The route goes to the CASE and not to the action. There is no
-				// planned-action page, and the thing a person needs in order to
-				// do the action is the case it is on.
-				route: $route
-			);
+			$items[] = $this->itemOf(action: $action);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * One planned action as a queue item.
+	 *
+	 * @param array<string, mixed> $action The planned action.
+	 *
+	 * @return QueueItem The item.
+	 */
+	private function itemOf(array $action): QueueItem {
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'plannedAction',
+			subjectId: (string)($action['id'] ?? ($action['uuid'] ?? '')),
+			title: self::labelOf(action: $action),
+			priority: '',
+			dueAt: self::dueDayOf(action: $action),
+			coveredFor: null,
+			// The route goes to the CASE and not to the action. There is no
+			// planned-action page, and the thing a person needs in order to
+			// do the action is the case it is on.
+			route: self::routeOf(caseId: (string)($action['case'] ?? ''))
+		);
+	}//end itemOf()
+
+	/**
+	 * The action's label, or its type when it has none.
+	 *
+	 * @param array<string, mixed> $action The planned action.
+	 *
+	 * @return string The label.
+	 */
+	private static function labelOf(array $action): string {
+		$label = trim((string)($action['label'] ?? ''));
+		if ($label === '') {
+			$label = trim((string)($action['actionType'] ?? ''));
+		}
+
+		return $label;
+	}//end labelOf()
+
+	/**
+	 * The day the action is planned for, or null when it is not planned.
+	 *
+	 * @param array<string, mixed> $action The planned action.
+	 *
+	 * @return string|null The day, Y-m-d.
+	 */
+	private static function dueDayOf(array $action): ?string {
+		$plannedFor = (string)($action['plannedFor'] ?? '');
+		if ($plannedFor === '') {
+			return null;
+		}
+
+		return substr($plannedFor, 0, 10);
+	}//end dueDayOf()
+
+	/**
+	 * The case the action is on, or the personal queue when it is on none.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array<string, mixed> The route.
+	 */
+	private static function routeOf(string $caseId): array {
+		if ($caseId === '') {
+			return ['name' => 'PersonalQueue'];
+		}
+
+		return ['name' => 'CaseDetail', 'params' => ['id' => $caseId]];
+	}//end routeOf()
 }//end class

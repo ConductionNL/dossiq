@@ -264,40 +264,65 @@ class TermijnController extends Controller {
 		}
 
 		$body = $this->jsonBody();
-		$rationale = (string)($body['rationale'] ?? '');
-		$newEndDate = (string)($body['newEinddatum'] ?? '');
-		$documentLink = (string)($body['documentLink'] ?? '');
-		$isSupervisor = (bool)($body['supervisorOverride'] ?? false);
-
-		// The extension service used to take this as a raw string and parse it
-		// its own way. It is normalised here, once, before it reaches any
-		// arithmetic. An absent value stays absent: the service owns the
-		// "a new deadline is required" rule and states it in Awb terms.
-		if ($newEndDate !== '') {
-			try {
-				$newEndDate = $this->dates->toCalendarDate($newEndDate, 'newEinddatum');
-			} catch (InvalidArgumentException $e) {
-				return $this->badRequest(msg: $e->getMessage());
-			}
+		$newEndDate = $this->newEndDate(value: (string)($body['newEinddatum'] ?? ''));
+		if ($newEndDate instanceof JSONResponse) {
+			return $newEndDate;
 		}
 
+		$body['newEinddatum'] = $newEndDate;
 		try {
-			if ($isSupervisor === true) {
-				$row = $this->extension->requestSupervisorExtension(
-					$id,
-					$rationale,
-					$newEndDate,
-					$documentLink
-				);
-				return new JSONResponse($row);
-			}
-
-			$row = $this->extension->requestExtension($id, $rationale, $newEndDate, $documentLink);
-			return new JSONResponse($row);
+			return new JSONResponse($this->extend(id: $id, body: $body));
 		} catch (Throwable $e) {
 			return $this->error(e: $e, log: 'Verleng failed');
 		}
 	}//end verleng()
+
+	/**
+	 * The requested new end date as a calendar date, or the 400 refusal.
+	 *
+	 * The extension service used to take this as a raw string and parse it
+	 * its own way. It is normalised here, once, before it reaches any
+	 * arithmetic. An absent value stays absent: the service owns the
+	 * "a new deadline is required" rule and states it in Awb terms.
+	 *
+	 * @param string $value The posted `newEinddatum`, empty when absent.
+	 *
+	 * @return string|JSONResponse
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 */
+	private function newEndDate(string $value): string|JSONResponse {
+		if ($value === '') {
+			return $value;
+		}
+
+		try {
+			return $this->dates->toCalendarDate($value, 'newEinddatum');
+		} catch (InvalidArgumentException $e) {
+			return $this->badRequest(msg: $e->getMessage());
+		}
+	}//end newEndDate()
+
+	/**
+	 * Ask for the extension: the supervisor path only when the body explicitly asks for it.
+	 *
+	 * @param string               $id   The termijn instance id.
+	 * @param array<string, mixed> $body The request body, its `newEinddatum` normalised.
+	 *
+	 * @return array<string, mixed> The updated instance.
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 */
+	private function extend(string $id, array $body): array {
+		$rationale = (string)($body['rationale'] ?? '');
+		$newEndDate = (string)($body['newEinddatum'] ?? '');
+		$documentLink = (string)($body['documentLink'] ?? '');
+		if ((bool)($body['supervisorOverride'] ?? false) === true) {
+			return $this->extension->requestSupervisorExtension($id, $rationale, $newEndDate, $documentLink);
+		}
+
+		return $this->extension->requestExtension($id, $rationale, $newEndDate, $documentLink);
+	}//end extend()
 
 	/**
 	 * Mark a TermijnInstance as voltooid.

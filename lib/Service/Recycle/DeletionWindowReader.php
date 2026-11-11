@@ -135,6 +135,26 @@ class DeletionWindowReader {
 	 */
 	public function fromMarker(object $entity): ?array {
 		$marker = $this->marker(entity: $entity);
+		$ends = $this->endsOn(marker: $marker);
+		if ($ends === null) {
+			return null;
+		}
+
+		return $this->windowOf(marker: $marker, ends: $ends);
+	}//end fromMarker()
+
+	/**
+	 * The day the marker says the entity may be destroyed, or null when it says none readable.
+	 *
+	 * An unreadable date is logged; a missing one is not.
+	 *
+	 * @param array<string, mixed> $marker The deletion marker.
+	 *
+	 * @return DateTimeImmutable|null Midnight of that day.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) `DateTimeImmutable::createFromFormat` answers false where the constructor throws.
+	 */
+	private function endsOn(array $marker): ?DateTimeImmutable {
 		$endsOn = trim((string)($marker['destroyableFrom'] ?? ($marker['purgeDate'] ?? '')));
 		if ($endsOn === '') {
 			return null;
@@ -142,34 +162,54 @@ class DeletionWindowReader {
 
 		$ends = DateTimeImmutable::createFromFormat('!Y-m-d', substr($endsOn, 0, 10));
 		if ($ends === false) {
-			$this->logger->warning(
-				'Dossiq: a deletion marker carries no readable destroyable-from date',
-				['value' => $endsOn]
-			);
+			$this->logger->warning('Dossiq: a deletion marker carries no readable destroyable-from date', ['value' => $endsOn]);
 
 			return null;
 		}
 
+		return $ends;
+	}//end endsOn()
+
+	/**
+	 * The window of a marker whose end is known.
+	 *
+	 * @param array<string, mixed> $marker The deletion marker.
+	 * @param DateTimeImmutable    $ends   Midnight of the day it may be destroyed.
+	 *
+	 * @return array<string, mixed> The window.
+	 */
+	private function windowOf(array $marker, DateTimeImmutable $ends): array {
 		$today = new DateTimeImmutable('today');
 		$remaining = 0;
 		if ($ends > $today) {
 			$remaining = $this->days->between(from: $today, to: $ends);
 		}
 
-		$retention = ($marker['retentionPeriod'] ?? null);
-		if (is_numeric($retention) === false || (int)$retention < 1) {
-			$retention = self::DEFAULT_RETENTION_DAYS;
-		}
-
 		return [
 			'deletedAt' => $this->deletedAt(marker: $marker),
 			'destroyableFrom' => $ends->format(DATE_ATOM),
 			'daysRemaining' => $remaining,
-			'retentionDays' => (int)$retention,
+			'retentionDays' => self::retentionOf(marker: $marker),
 			'retentionSource' => 'default',
 			'lapsed' => ($remaining === 0),
 		];
-	}//end fromMarker()
+	}//end windowOf()
+
+	/**
+	 * The marker's retention in days, or the default when it carries no positive number.
+	 *
+	 * @param array<string, mixed> $marker The deletion marker.
+	 *
+	 * @return int The retention.
+	 */
+	private static function retentionOf(array $marker): int {
+		$retention = ($marker['retentionPeriod'] ?? null);
+		if (is_numeric($retention) === false || (int)$retention < 1) {
+			return self::DEFAULT_RETENTION_DAYS;
+		}
+
+		return (int)$retention;
+	}//end retentionOf()
 
 	/**
 	 * The deletion marker of an entity.

@@ -1,0 +1,33 @@
+{
+    "openregister not installed": [],
+    "object service unavailable": [
+        "info: Dossiq: ResetMonthlyQuotasJob — OR ObjectService unavailable []"
+    ],
+    "fetch fails": [
+        "findAll {\"filters\":{\"register\":\"dossiq\",\"schema\":\"tenantQuota\"},\"limit\":1000,\"offset\":0}",
+        "error: Dossiq: ResetMonthlyQuotasJob fetch failed {\"exception\":\"register offline\"}"
+    ],
+    "fetch answers no list": [
+        "findAll {\"filters\":{\"register\":\"dossiq\",\"schema\":\"tenantQuota\"},\"limit\":1000,\"offset\":0}"
+    ],
+    "no quotas": [
+        "findAll {\"filters\":{\"register\":\"dossiq\",\"schema\":\"tenantQuota\"},\"limit\":1000,\"offset\":0}"
+    ],
+    "nothing due": [
+        "findAll {\"filters\":{\"register\":\"dossiq\",\"schema\":\"tenantQuota\"},\"limit\":1000,\"offset\":0}"
+    ],
+    "a due quota that was unused": [
+        "findAll {\"filters\":{\"register\":\"dossiq\",\"schema\":\"tenantQuota\"},\"limit\":1000,\"offset\":0}",
+        "save quota-due-unused usage 0"
+    ],
+    "one due, one not": [
+        "findAll {\"filters\":{\"register\":\"dossiq\",\"schema\":\"tenantQuota\"},\"limit\":1000,\"offset\":0}",
+        "save quota-due usage 0",
+        "info: Dossiq: ResetMonthlyQuotasJob reset 1 quotas []"
+    ],
+    "a row that is not a quota": [
+        "findAll {\"filters\":{\"register\":\"dossiq\",\"schema\":\"tenantQuota\"},\"limit\":1000,\"offset\":0}",
+        "save quota-due usage 0",
+        "info: Dossiq: ResetMonthlyQuotasJob reset 1 quotas []"
+    ]
+}

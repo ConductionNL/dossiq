@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Deelzaak;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\OpenRegister\Service\Relation\ParentInheritance;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -191,10 +192,12 @@ class SubCaseDeriver {
 			return ['data' => $childData, 'inherited' => []];
 		}
 
-		$applied = $link->relations->applyInheritance(
-			parent: $link->parent,
-			childData: $childData,
-			inherits: $link->inherits()
+		$applied = $link->relations->inherit(
+			new ParentInheritance(
+				parent: $link->parent,
+				childData: $childData,
+				inherits: $link->inherits()
+			)
 		);
 
 		return ['data' => ($applied['data'] ?? $childData), 'inherited' => ($applied['inherited'] ?? [])];
