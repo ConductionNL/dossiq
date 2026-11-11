@@ -150,6 +150,18 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
+/**
+ * The sentence for a refused split: the server's own, or the plain one.
+ *
+ * @param {object} splitError The axios error.
+ * @return {string} The sentence.
+ */
+function splitRefusal(splitError) {
+	return splitError?.response?.data?.message
+		|| splitError?.response?.data?.error
+		|| t('dossiq', 'This case was not split.')
+}
+
 export default {
 	name: 'CaseSplitDialog',
 
@@ -226,18 +238,32 @@ export default {
 		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 		 */
 		canConfirm() {
-			const contradicts = this.chosenParties.some((id) =>
-				this.onBoth.includes(id),
-			)
-
 			return (
 				this.busy === false
-				&& contradicts === false
+				&& this.partiesContradict === false
 				&& this.title.trim().length > 0
-				&& (this.chosenDocuments.length > 0
-					|| this.chosenParties.length > 0
-					|| this.onBoth.length > 0)
+				&& this.somethingChosen
 			)
+		},
+
+		/**
+		 * Whether a party is ticked as moving and as on both halves.
+		 *
+		 * @return {boolean} True on a contradiction.
+		 */
+		partiesContradict() {
+			return this.chosenParties.some((id) => this.onBoth.includes(id))
+		},
+
+		/**
+		 * Whether a document or a party is ticked, to move or to keep on both halves.
+		 *
+		 * @return {boolean} True when the split would divide something.
+		 */
+		somethingChosen() {
+			return this.chosenDocuments.length > 0
+				|| this.chosenParties.length > 0
+				|| this.onBoth.length > 0
 		},
 	},
 
@@ -416,30 +442,51 @@ export default {
 				return
 			}
 
-			this.busy = true
-			this.error = ''
+			this.startSplitting()
 
 			try {
-				await axios.post(
-					generateUrl(
-						`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/split`,
-					),
-					{
-						title: this.title.trim(),
-						documents: this.chosenDocuments,
-						parties: this.chosenParties,
-						partiesOnBoth: this.onBoth,
-					},
-				)
+				await axios.post(this.splitUrl(), this.splitBody())
 				emit(PAGE_REFRESH, {})
 				this.$emit('close')
 			} catch (splitError) {
-				this.error =
-					splitError?.response?.data?.message
-					|| splitError?.response?.data?.error
-					|| t('dossiq', 'This case was not split.')
+				this.error = splitRefusal(splitError)
 			} finally {
 				this.busy = false
+			}
+		},
+
+		/**
+		 * Mark the dialog busy and clear the last refusal.
+		 *
+		 * @return {void}
+		 */
+		startSplitting() {
+			this.busy = true
+			this.error = ''
+		},
+
+		/**
+		 * The split endpoint of this case.
+		 *
+		 * @return {string} The url.
+		 */
+		splitUrl() {
+			return generateUrl(
+				`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/split`,
+			)
+		},
+
+		/**
+		 * What the split sends, under the names the endpoint reads.
+		 *
+		 * @return {object} The body.
+		 */
+		splitBody() {
+			return {
+				title: this.title.trim(),
+				documents: this.chosenDocuments,
+				parties: this.chosenParties,
+				partiesOnBoth: this.onBoth,
 			}
 		},
 	},
