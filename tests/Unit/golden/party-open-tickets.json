@@ -1,0 +1,134 @@
+{
+    "not signed in": {
+        "status": 401,
+        "body": {
+            "error": "Sign in to read this party."
+        },
+        "calls": []
+    },
+    "no key": {
+        "status": 200,
+        "body": {
+            "available": true,
+            "results": [],
+            "total": 0
+        },
+        "calls": []
+    },
+    "the party cannot be read": {
+        "status": 503,
+        "body": {
+            "error": "The party could not be read. Try again later."
+        },
+        "calls": [
+            "readable [\"party-1\"]"
+        ]
+    },
+    "a party the caller may not read": {
+        "status": 404,
+        "body": {
+            "error": "Party not found"
+        },
+        "calls": [
+            "readable [\"party-1\"]"
+        ]
+    },
+    "pipelinq absent": {
+        "status": 200,
+        "body": {
+            "available": false
+        },
+        "calls": [
+            "readable [\"party-1\"]",
+            "tickets [\"party-1\"] open"
+        ]
+    },
+    "open tickets": {
+        "status": 200,
+        "body": {
+            "available": true,
+            "results": [
+                {
+                    "id": "t-1"
+                },
+                {
+                    "id": "t-2"
+                }
+            ],
+            "total": 2
+        },
+        "calls": [
+            "readable [\"party-1\"]",
+            "tickets [\"party-1\"] open"
+        ]
+    },
+    "closed tickets": {
+        "status": 200,
+        "body": {
+            "available": true,
+            "results": [
+                {
+                    "id": "t-1"
+                },
+                {
+                    "id": "t-2"
+                }
+            ],
+            "total": 2
+        },
+        "calls": [
+            "readable [\"party-1\"]",
+            "tickets [\"party-1\"] closed"
+        ]
+    },
+    "all tickets": {
+        "status": 200,
+        "body": {
+            "available": true,
+            "results": [
+                {
+                    "id": "t-1"
+                },
+                {
+                    "id": "t-2"
+                }
+            ],
+            "total": 2
+        },
+        "calls": [
+            "readable [\"party-1\"]",
+            "tickets [\"party-1\"] all"
+        ]
+    },
+    "an unknown status reads open": {
+        "status": 200,
+        "body": {
+            "available": true,
+            "results": [
+                {
+                    "id": "t-1"
+                },
+                {
+                    "id": "t-2"
+                }
+            ],
+            "total": 2
+        },
+        "calls": [
+            "readable [\"party-1\"]",
+            "tickets [\"party-1\"] open"
+        ]
+    },
+    "a party without tickets": {
+        "status": 200,
+        "body": {
+            "available": true,
+            "results": [],
+            "total": 0
+        },
+        "calls": [
+            "readable [\"party-1\"]",
+            "tickets [\"party-1\"] open"
+        ]
+    }
+}
