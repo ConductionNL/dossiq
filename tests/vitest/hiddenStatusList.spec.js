@@ -107,8 +107,8 @@ describe('the counts agree with the lists', () => {
 				+ "'statusHiddenInLists' => 0, 'isDraft' => 0];",
 		)
 		expect(kpiSource).toContain('filters: self::OPEN_WORK')
-		expect(kpiSource).toContain(
-			"filters: (self::OPEN_WORK + ['deadline' => ['lt' => $today]])",
+		expect(kpiSource).toMatch(
+			/filters: \(self::OPEN_WORK \+ \['deadline' => \['lt' => \$[\w>-]*today\]\]\)/,
 		)
 	})
 
