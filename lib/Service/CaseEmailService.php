@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
+use OCA\Dossiq\Service\Email\SentCaseMail;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use Psr\Log\LoggerInterface;
@@ -288,34 +289,62 @@ class CaseEmailService {
 		string $body,
 		string $delivery = 'sent',
 	): string {
-		// Record the sent email as a case document.
-		$messageId = $this->repository->recordSentEmail(
-			caseId: $caseId,
-			fromAddress: $fromAddress,
-			to: $to,
-			subject: $subject,
-			body: $body,
+		$mail = new SentCaseMail(
+			caseId: $caseId, fromAddress: $fromAddress, to: $to, subject: $subject, body: $body, delivery: $delivery
 		);
 
-		// PUBLIC: the recipient already has this message in their own inbox,
-		// so hiding its line from the timeline they are shown would only hide
-		// it from the person who has it.
+		return $this->recordSent(mail: $mail);
+	}//end recordSentEmail()
+
+	/**
+	 * Record a sent mail as a case document and put its line on the timeline.
+	 *
+	 * @param SentCaseMail $mail The mail.
+	 *
+	 * @return string The message id of the stored email record.
+	 */
+	private function recordSent(SentCaseMail $mail): string {
+		// Record the sent email as a case document.
+		$messageId = $this->repository->recordSentEmail(
+			caseId: $mail->caseId,
+			fromAddress: $mail->fromAddress,
+			to: $mail->to,
+			subject: $mail->subject,
+			body: $mail->body,
+		);
+
+		$this->recordMailOut(mail: $mail, messageId: (string)$messageId);
+
+		return (string)$messageId;
+	}//end recordSent()
+
+	/**
+	 * Put a sent mail's line on the case timeline.
+	 *
+	 * PUBLIC: the recipient already has this message in their own inbox,
+	 * so hiding its line from the timeline they are shown would only hide
+	 * it from the person who has it.
+	 *
+	 * @param SentCaseMail $mail      The mail.
+	 * @param string       $messageId The document it was recorded as.
+	 *
+	 * @return void
+	 */
+	private function recordMailOut(SentCaseMail $mail, string $messageId): void {
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: $mail->caseId,
 			kind: TimelineKinds::MAIL_OUT,
-			message: $subject,
+			message: $mail->subject,
 			fields: [
-				'recipient' => $to,
-				'subject' => $subject,
-				'documentId' => (string)$messageId,
-				'delivery' => $delivery,
-				'sender' => $fromAddress,
+				'recipient' => $mail->to,
+				'subject' => $mail->subject,
+				'documentId' => $messageId,
+				'delivery' => $mail->delivery,
+				'sender' => $mail->fromAddress,
 			],
 			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
-
-		return (string)$messageId;
-	}//end recordSentEmail()
+	}//end recordMailOut()
 
 	/**
 	 * Assert that a recipient address is well-formed and allowed.
