@@ -104,6 +104,10 @@ class ImmutabilityListenerRegistrar {
 			event: ObjectUpdatingEvent::class,
 			listener: ChecklistRunImmutabilityListener::class
 		);
+		$context->registerEventListener(
+			event: ObjectLeavingEvent::class,
+			listener: ChecklistRunImmutabilityListener::class
+		);
 
 		// REQ-BES-008: a beschikking at `signed` or later is frozen. The rule
 		// was enforced only inside BeschikkingService::updateFields(), one
