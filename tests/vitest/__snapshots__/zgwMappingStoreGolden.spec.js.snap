@@ -1,0 +1,222 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ZGW mapping store > fetches, saves and resets as before 1`] = `
+{
+  "logged": [
+    [
+      "Error fetching ZGW mappings:",
+      "Failed to fetch ZGW mappings: Forbidden",
+    ],
+    [
+      "Error saving ZGW mapping:",
+      "Failed to save ZGW mapping: Forbidden",
+    ],
+    [
+      "Error resetting ZGW mapping:",
+      "offline",
+    ],
+  ],
+  "outcomes": [
+    {
+      "action": "fetchMappings",
+      "answer": {
+        "zaak": {
+          "a": 1,
+        },
+      },
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "GET",
+          },
+          "url": "/index.php/apps/dossiq/api/zgw-mappings",
+        },
+      ],
+      "state": {
+        "error": null,
+        "loading": false,
+        "mappings": {
+          "zaak": {
+            "a": 1,
+          },
+        },
+      },
+    },
+    {
+      "action": "fetchMappings",
+      "answer": {},
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "GET",
+          },
+          "url": "/index.php/apps/dossiq/api/zgw-mappings",
+        },
+      ],
+      "state": {
+        "error": null,
+        "loading": false,
+        "mappings": {},
+      },
+    },
+    {
+      "action": "fetchMappings",
+      "answer": null,
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "GET",
+          },
+          "url": "/index.php/apps/dossiq/api/zgw-mappings",
+        },
+      ],
+      "state": {
+        "error": "Failed to fetch ZGW mappings: Forbidden",
+        "loading": false,
+        "mappings": {},
+      },
+    },
+    {
+      "action": "saveMapping",
+      "answer": {
+        "b": 2,
+      },
+      "asked": [
+        {
+          "init": {
+            "body": "{"b":2}",
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "PUT",
+          },
+          "url": "/index.php/apps/dossiq/api/zgw-mappings/zaak",
+        },
+      ],
+      "state": {
+        "error": null,
+        "loading": false,
+        "mappings": {
+          "zaak": {
+            "b": 2,
+          },
+        },
+      },
+    },
+    {
+      "action": "saveMapping",
+      "answer": null,
+      "asked": [
+        {
+          "init": {
+            "body": "{"b":2}",
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "PUT",
+          },
+          "url": "/index.php/apps/dossiq/api/zgw-mappings/zaak",
+        },
+      ],
+      "state": {
+        "error": "Failed to save ZGW mapping: Forbidden",
+        "loading": false,
+        "mappings": {},
+      },
+    },
+    {
+      "action": "resetMapping",
+      "answer": {
+        "c": 3,
+      },
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "POST",
+          },
+          "url": "/index.php/apps/dossiq/api/zgw-mappings/status/reset",
+        },
+      ],
+      "state": {
+        "error": null,
+        "loading": false,
+        "mappings": {
+          "status": {
+            "c": 3,
+          },
+        },
+      },
+    },
+    {
+      "action": "resetMapping",
+      "answer": undefined,
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "POST",
+          },
+          "url": "/index.php/apps/dossiq/api/zgw-mappings/status/reset",
+        },
+      ],
+      "state": {
+        "error": null,
+        "loading": false,
+        "mappings": {
+          "status": undefined,
+        },
+      },
+    },
+    {
+      "action": "resetMapping",
+      "answer": null,
+      "asked": [
+        {
+          "init": {
+            "headers": {
+              "Content-Type": "application/json",
+              "OCS-APIREQUEST": "true",
+              "requesttoken": "token-1",
+            },
+            "method": "POST",
+          },
+          "url": "/index.php/apps/dossiq/api/zgw-mappings/status/reset",
+        },
+      ],
+      "state": {
+        "error": "offline",
+        "loading": false,
+        "mappings": {},
+      },
+    },
+  ],
+}
+`;
