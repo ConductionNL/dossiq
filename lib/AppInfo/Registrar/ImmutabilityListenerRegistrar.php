@@ -42,6 +42,7 @@ use OCA\Dossiq\Listener\BewijsstukImmutabilityListener;
 use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
 use OCA\Dossiq\Listener\WooDeliveredSetGuard;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
+use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -75,6 +76,10 @@ class ImmutabilityListenerRegistrar {
 			event: ObjectDeletingEvent::class,
 			listener: \OCA\Dossiq\Listener\FrozenRecordListener::class
 		);
+		$context->registerEventListener(
+			event: ObjectLeavingEvent::class,
+			listener: \OCA\Dossiq\Listener\FrozenRecordListener::class
+		);
 
 		// REQ-SUB-007: a bewijsstuk linked to a vaststelling is immutable.
 		// This is the production call site for
@@ -85,6 +90,10 @@ class ImmutabilityListenerRegistrar {
 		);
 		$context->registerEventListener(
 			event: ObjectDeletingEvent::class,
+			listener: BewijsstukImmutabilityListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectLeavingEvent::class,
 			listener: BewijsstukImmutabilityListener::class
 		);
 
@@ -108,6 +117,10 @@ class ImmutabilityListenerRegistrar {
 			event: ObjectDeletingEvent::class,
 			listener: BeschikkingImmutabilityListener::class
 		);
+		$context->registerEventListener(
+			event: ObjectLeavingEvent::class,
+			listener: BeschikkingImmutabilityListener::class
+		);
 
 		// Woo delivered sets (REQ-WDS-002): a frozen delivered set
 		// and the assessments it names refuse change, through every writer.
@@ -117,6 +130,10 @@ class ImmutabilityListenerRegistrar {
 		);
 		$context->registerEventListener(
 			event: ObjectDeletingEvent::class,
+			listener: WooDeliveredSetGuard::class
+		);
+		$context->registerEventListener(
+			event: ObjectLeavingEvent::class,
 			listener: WooDeliveredSetGuard::class
 		);
 	}//end register()
