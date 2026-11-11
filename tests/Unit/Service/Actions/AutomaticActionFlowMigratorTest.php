@@ -62,6 +62,11 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 			public array $page = [];
 
 			/**
+			 * @var array<int, array<int, object>> Pages keyed by offset; overrides $page when set.
+			 */
+			public array $pages = [];
+
+			/**
 			 * Record a save and hand back a flow-like object.
 			 *
 			 * @param array<string, mixed> $document The flow document.
@@ -106,6 +111,10 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 				int $limit = 100,
 				int $offset = 0,
 			): array {
+				if ($this->pages !== []) {
+					return ($this->pages[$offset] ?? []);
+				}
+
 				if ($offset > 0) {
 					return [];
 				}
@@ -387,6 +396,48 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 		$this->assertSame(1, $summary['updated']);
 		$this->assertSame(0, $summary['created']);
 		$this->assertSame('existing-uuid', $flowService->saves[0]['uuid']);
+	}
+
+	/**
+	 * A flow on a later page of the marker index is still found and updated.
+	 *
+	 * A full first page means another page may follow; stopping after the first
+	 * would create a second flow for every action whose flow sits beyond it.
+	 *
+	 * @return void
+	 */
+	public function testItFindsTheFlowItCreatedOnALaterPage(): void {
+		$flowService = $this->flowServiceFake();
+		$firstPage = [];
+		for ($i = 0; $i < 100; $i++) {
+			$firstPage[] = $this->flowRow('someone-else:'.$i, 'other-'.$i);
+		}
+
+		$flowService->pages = [
+			0 => $firstPage,
+			100 => [$this->flowRow('dossiq:automaticAction:tenant-a:send-decision-email', 'second-page-uuid')],
+		];
+
+		$migrator = $this->migrator(
+			[
+				[
+					'tenantId' => 'tenant-a',
+					'slug' => 'send-decision-email',
+					'title' => 'Send decision email',
+					'type' => 'sendEmail',
+					'config' => '{"recipientRef":"email:loket@example.org","bodyTemplate":"Hallo"}',
+				],
+			],
+			$flowService,
+			['openregister.send-email'],
+		);
+
+		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
+
+		$this->assertSame(1, $summary['updated']);
+		$this->assertSame(0, $summary['created']);
+		$this->assertSame('second-page-uuid', $flowService->saves[0]['uuid']);
+		$this->assertSame('flow second-page-uuid', $summary['rows'][0]['detail']);
 	}
 
 	/**
