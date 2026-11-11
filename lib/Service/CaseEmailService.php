@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
+use OCA\Dossiq\Service\Email\ReceivedEmail;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
@@ -596,44 +597,75 @@ class CaseEmailService {
 		string $body,
 		string $inReplyTo = '',
 	): array {
-		$caseNumber = $this->extractCaseNumber(subject: $subject);
+		return $this->receive(
+			email: new ReceivedEmail(from: $from, to: $to, subject: $subject, body: $body, inReplyTo: $inReplyTo)
+		);
+	}//end processInbound()
 
-		if ($caseNumber !== null) {
-			// Auto-link to case.
-			$caseId = $this->repository->findCaseIdByIdentifier(identifier: $caseNumber);
-			if ($caseId !== null) {
-				$messageId = $this->repository->recordReceivedEmail(
-					caseId: $caseId,
-					from: $from,
-					recipient: $to,
-					subject: $subject,
-					body: $body,
-					inReplyTo: $inReplyTo,
-				);
-
-				$this->logger->info(
-					'Inbound email auto-linked to case ' . $caseId,
-					['app' => Application::APP_ID],
-				);
-
-				return [
-					'linked' => true,
-					'caseId' => $caseId,
-					'messageId' => $messageId,
-					'method' => 'auto',
-				];
-			}//end if
-		}//end if
+	/**
+	 * Link a received email to the case its subject names, or answer it unlinked.
+	 *
+	 * @param ReceivedEmail $email The email.
+	 *
+	 * @return array<string, mixed> Processing result
+	 */
+	private function receive(ReceivedEmail $email): array {
+		$caseNumber = $this->extractCaseNumber(subject: $email->subject);
+		$caseId = $this->caseNamed(caseNumber: $caseNumber);
+		if ($caseId !== null) {
+			return $this->linkToCase(email: $email, caseId: $caseId);
+		}
 
 		// Could not auto-link; add to unlinked queue.
 		return [
 			'linked' => false,
 			'caseNumber' => $caseNumber,
-			'from' => $from,
-			'subject' => $subject,
+			'from' => $email->from,
+			'subject' => $email->subject,
 			'method' => 'unlinked',
 		];
-	}//end processInbound()
+	}//end receive()
+
+	/**
+	 * The case a case number names, or null when it names none or there is none.
+	 *
+	 * @param string|null $caseNumber The case number, or null when the subject named none.
+	 *
+	 * @return string|null The case id.
+	 */
+	private function caseNamed(?string $caseNumber): ?string {
+		if ($caseNumber === null) {
+			return null;
+		}
+
+		return $this->repository->findCaseIdByIdentifier(identifier: $caseNumber);
+	}//end caseNamed()
+
+	/**
+	 * Record a received email on its case, and log the auto-link.
+	 *
+	 * @param ReceivedEmail $email  The email.
+	 * @param string        $caseId The case it names.
+	 *
+	 * @return array<string, mixed> Processing result
+	 */
+	private function linkToCase(ReceivedEmail $email, string $caseId): array {
+		$messageId = $this->repository->recordReceivedEmail(
+			caseId: $caseId,
+			from: $email->from,
+			recipient: $email->to,
+			subject: $email->subject,
+			body: $email->body,
+			inReplyTo: $email->inReplyTo,
+		);
+
+		$this->logger->info(
+			'Inbound email auto-linked to case ' . $caseId,
+			['app' => Application::APP_ID],
+		);
+
+		return ['linked' => true, 'caseId' => $caseId, 'messageId' => $messageId, 'method' => 'auto'];
+	}//end linkToCase()
 
 	/**
 	 * Get email templates for a case type.
