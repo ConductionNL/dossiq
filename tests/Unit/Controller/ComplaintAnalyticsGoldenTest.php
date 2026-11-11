@@ -73,10 +73,15 @@ class ComplaintAnalyticsGoldenTest extends TestCase {
 			$record[$name] = [
 				'status' => $response->getStatus(),
 				'body' => $response->getData(),
-				'calls' => $this->calls,
+				'calls' => str_replace(
+					search: [date('Y-01-01'), date('Y-m-d')],
+					replace: ['<year-start>', '<today>'],
+					subject: $this->calls
+				),
 			];
 		}
 
+		// The default window is relative to the run date, so it is recorded as placeholders.
 		$this->assertMatchesGolden(name: 'complaint-analytics', value: $record);
 	}//end testAnalyticsAcrossWorlds()
 

@@ -89,11 +89,11 @@
         },
         "calls": [
             "audience hr-1",
-            "frequency category 2026-02-01..2026-11-10",
-            "frequency involvedDepartment 2026-02-01..2026-11-10",
-            "frequency receiptChannel 2026-02-01..2026-11-10",
-            "trend 2026-02-01..2026-11-10",
-            "resolution 2026-02-01..2026-11-10"
+            "frequency category 2026-02-01..<today>",
+            "frequency involvedDepartment 2026-02-01..<today>",
+            "frequency receiptChannel 2026-02-01..<today>",
+            "trend 2026-02-01..<today>",
+            "resolution 2026-02-01..<today>"
         ]
     },
     "only an end date": {
@@ -117,11 +117,11 @@
         },
         "calls": [
             "audience hr-1",
-            "frequency category 2026-01-01..2026-03-31",
-            "frequency involvedDepartment 2026-01-01..2026-03-31",
-            "frequency receiptChannel 2026-01-01..2026-03-31",
-            "trend 2026-01-01..2026-03-31",
-            "resolution 2026-01-01..2026-03-31"
+            "frequency category <year-start>..2026-03-31",
+            "frequency involvedDepartment <year-start>..2026-03-31",
+            "frequency receiptChannel <year-start>..2026-03-31",
+            "trend <year-start>..2026-03-31",
+            "resolution <year-start>..2026-03-31"
         ]
     }
 }
