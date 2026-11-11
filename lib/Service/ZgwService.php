@@ -1280,23 +1280,29 @@ class ZgwService {
 	): JSONResponse {
 		// Resolve UUID from URL path — Nextcloud's getParam() merges JSON body
 		// into controller args, so a body "uuid" field can override the route's {uuid}.
-		$uuid = $this->resolvePathUuid(request: $request, uuid: $uuid);
-		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource, uuid: $uuid);
+		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource, uuid: $this->resolvePathUuid(request: $request, uuid: $uuid));
+		$action = match ($partial) { true => 'patch', default => 'update' };
+		$flags = new RuleFlags(action: $action, parentCaseTypeDraft: $parentZtDraft, caseClosed: $caseClosed, hasGeforceerd: $hasForceer);
+
+		return $this->updateRoute(route: $route, flags: $flags);
+	}//end handleUpdate()
+
+	/**
+	 * Update the stored object a route names, or answer why it cannot be read.
+	 *
+	 * @param ResourceRoute $route The route, with the object id.
+	 * @param RuleFlags     $flags The action (update or patch) and parent state flags.
+	 *
+	 * @return JSONResponse The updated object, or the refusal
+	 */
+	private function updateRoute(ResourceRoute $route, RuleFlags $flags): JSONResponse {
 		$draft = $this->existingWrite(route: $route, operation: 'ZGW update');
 		if ($draft instanceof JSONResponse) {
 			return $draft;
 		}
 
-		$action = 'update';
-		if ($partial === true) {
-			$action = 'patch';
-		}
-
-		return $this->update(
-			draft: $draft,
-			flags: new RuleFlags(action: $action, parentCaseTypeDraft: $parentZtDraft, caseClosed: $caseClosed, hasGeforceerd: $hasForceer)
-		);
-	}//end handleUpdate()
+		return $this->update(draft: $draft, flags: $flags);
+	}//end updateRoute()
 
 	/**
 	 * The write on a stored object, or the answer when the store, the mapping or the object is missing.
@@ -1481,53 +1487,31 @@ class ZgwService {
 	}//end mapInbound()
 
 	/**
-	 * Map a saved object back to its ZGW shape.
-	 *
-	 * @param IRequest $request The request (for the base URL)
-	 * @param string $zgwApi The ZGW API
-	 * @param string $resource The ZGW resource
-	 * @param array $mappingConfig The ZGW mapping
-	 * @param mixed $object The saved object
-	 *
-	 * @return array{mapped: array, baseUrl: string, objectData: mixed} The ZGW object, its
-	 *                                                                  collection URL and the
-	 *                                                                  serialised object
-	 */
-	private function mapOutbound(IRequest $request, string $zgwApi, string $resource, array $mappingConfig, mixed $object): array {
-		$objectData = $object;
-		if (is_array($object) === false) {
-			$objectData = $object->jsonSerialize();
-		}
-
-		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
-		$mapped = $this->applyOutboundMapping(
-			objectData: $objectData,
-			mapping: $this->createOutboundMapping(mappingConfig: $mappingConfig),
-			mappingConfig: $mappingConfig,
-			baseUrl: $baseUrl
-		);
-
-		return ['mapped' => $mapped, 'baseUrl' => $baseUrl, 'objectData' => $objectData];
-	}//end mapOutbound()
-
-	/**
 	 * Map a written object back to the ZGW shape of its route.
 	 *
 	 * @param ResourceWrite $write  The write.
 	 * @param mixed         $object The saved object.
 	 *
-	 * @return array{mapped: array, baseUrl: string, objectData: mixed} As mapOutbound()
+	 * @return array{mapped: array, baseUrl: string, objectData: mixed} The ZGW object, its
+	 *                                                                  collection URL and the
+	 *                                                                  serialised object
 	 */
 	private function outboundFor(ResourceWrite $write, mixed $object): array {
-		$route = $write->route;
+		$objectData = $object;
+		if (is_array($object) === false) {
+			$objectData = $object->jsonSerialize();
+		}
 
-		return $this->mapOutbound(
-			request: $route->request,
-			zgwApi: $route->api,
-			resource: $route->resource,
+		$route = $write->route;
+		$baseUrl = $this->buildBaseUrl(request: $route->request, zgwApi: $route->api, resource: $route->resource);
+		$mapped = $this->applyOutboundMapping(
+			objectData: $objectData,
+			mapping: $this->createOutboundMapping(mappingConfig: $write->mapping),
 			mappingConfig: $write->mapping,
-			object: $object
+			baseUrl: $baseUrl
 		);
+
+		return ['mapped' => $mapped, 'baseUrl' => $baseUrl, 'objectData' => $objectData];
 	}//end outboundFor()
 
 	/**
@@ -1557,15 +1541,27 @@ class ZgwService {
 		bool $hasForceer = true,
 	): JSONResponse {
 		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource, uuid: $uuid);
+		$flags = new RuleFlags(action: 'destroy', parentCaseTypeDraft: $parentZtDraft, caseClosed: $caseClosed, hasGeforceerd: $hasForceer);
+
+		return $this->destroyRoute(route: $route, flags: $flags);
+	}//end handleDestroy()
+
+	/**
+	 * Delete the stored object a route names, or answer why it cannot be read.
+	 *
+	 * @param ResourceRoute $route The route, with the object id.
+	 * @param RuleFlags     $flags The destroy action and parent state flags.
+	 *
+	 * @return JSONResponse The answer, or the refusal
+	 */
+	private function destroyRoute(ResourceRoute $route, RuleFlags $flags): JSONResponse {
 		$write = $this->existingWrite(route: $route, operation: 'ZGW delete');
 		if ($write instanceof JSONResponse) {
 			return $write;
 		}
 
-		$flags = new RuleFlags(action: 'destroy', parentCaseTypeDraft: $parentZtDraft, caseClosed: $caseClosed, hasGeforceerd: $hasForceer);
-
 		return $this->destroy(write: $write, flags: $flags);
-	}//end handleDestroy()
+	}//end destroyRoute()
 
 	/**
 	 * Validate and delete a stored object, then announce it.
