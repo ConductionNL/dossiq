@@ -1,0 +1,69 @@
+{
+    "register fails": {
+        "status": 500,
+        "body": {
+            "error": "The endpoint could not be read"
+        },
+        "events": [
+            "findAll stufEndpoint {\"id\":\"ep-1\"} limit 1",
+            "error: Dossiq: could not read the StUF endpoint: no register"
+        ]
+    },
+    "unknown endpoint": {
+        "status": 404,
+        "body": {
+            "error": "Unknown endpoint"
+        },
+        "events": [
+            "findAll stufEndpoint {\"id\":\"ep-1\"} limit 1"
+        ]
+    },
+    "not an endpoint row": {
+        "status": 404,
+        "body": {
+            "error": "Unknown endpoint"
+        },
+        "events": [
+            "findAll stufEndpoint {\"id\":\"ep-1\"} limit 1"
+        ]
+    },
+    "endpoint without a URL": {
+        "status": 200,
+        "body": {
+            "state": "failed",
+            "endpoint": "",
+            "status": 0,
+            "reason": "The endpoint has no URL.",
+            "measuredAt": "a timestamp",
+            "responseTimeMs": 0
+        },
+        "events": [
+            "findAll stufEndpoint {\"id\":\"ep-1\"} limit 1"
+        ]
+    },
+    "endpoint with an empty URL": {
+        "status": 200,
+        "body": {
+            "state": "failed",
+            "endpoint": "",
+            "status": 0,
+            "reason": "The endpoint has no URL.",
+            "measuredAt": "a timestamp",
+            "responseTimeMs": 0
+        },
+        "events": [
+            "findAll stufEndpoint {\"id\":\"ep-1\"} limit 1"
+        ]
+    },
+    "configured endpoint": {
+        "status": 200,
+        "body": {
+            "state": "ok",
+            "endpoint": "https://stuf.example/zaken"
+        },
+        "events": [
+            "findAll stufEndpoint {\"id\":\"ep-1\"} limit 1",
+            "probe https://stuf.example/zaken"
+        ]
+    }
+}
