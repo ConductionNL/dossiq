@@ -149,7 +149,7 @@ class BezwaarAdviceRequestControllerTest extends TestCase {
 	}//end testACallWithoutAStatusIsRefused()
 
 	/**
-	 * A refused move answers 400 with the reason; a missing request answers 404.
+	 * A refused move answers 400 with the reason; a missing request answers 404; a signature by someone other than the chair answers 403.
 	 *
 	 * @return void
 	 */
@@ -158,17 +158,20 @@ class BezwaarAdviceRequestControllerTest extends TestCase {
 		$service->method('transitionAdviceStatus')->willReturnOnConsecutiveCalls(
 			$this->throwException(exception: new RuntimeException(message: 'Transition from assigned to advice-issued is not permitted')),
 			$this->throwException(exception: new RuntimeException(message: 'Advice request not found', code: AdvisoryCommitteeService::NOT_FOUND)),
+			$this->throwException(exception: new RuntimeException(message: 'Only the chair of the committee can sign the advice', code: AdvisoryCommitteeService::NOT_CHAIR)),
 		);
 		$this->service = $service;
 
 		$refused = $this->controller(uid: 'chair-1', params: ['status' => 'advice-issued'])->transition(id: 'req-1');
 		$missing = $this->controller(uid: 'chair-1', params: ['status' => 'advice-issued'])->transition(id: 'req-404');
+		$notChair = $this->controller(uid: 'member-1', params: ['status' => 'advice-issued'])->transition(id: 'req-1');
 
 		$this->assertSame(
 			expected: [Http::STATUS_BAD_REQUEST, 'Transition from assigned to advice-issued is not permitted'],
 			actual: [$refused->getStatus(), $refused->getData()['error']]
 		);
 		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $missing->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $notChair->getStatus());
 	}//end testRefusalsCarryTheirReason()
 
 	/**

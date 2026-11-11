@@ -106,21 +106,39 @@ class KpiCacheInvalidationListener implements IEventListener {
 	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false
-			&& ($event instanceof ObjectUpdatedEvent) === false
-			&& ($event instanceof ObjectDeletedEvent) === false
-		) {
-			return;
-		}
-
 		$user = $this->userSession->getUser();
-		if ($user === null) {
+		if ($this->isObjectChange(event: $event) === false || $user === null) {
 			return;
 		}
 
-		$userId = $user->getUID();
-		$versionKey = self::CACHE_PREFIX . $userId . self::VERSION_SUFFIX;
+		$this->bumpVersion(versionKey: self::CACHE_PREFIX . $user->getUID() . self::VERSION_SUFFIX);
+	}//end handle()
 
+	/**
+	 * Whether the event is an object being created, updated or deleted.
+	 *
+	 * @param Event $event The dispatched event.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
+	 */
+	private function isObjectChange(Event $event): bool {
+		return ($event instanceof ObjectCreatedEvent) === true
+			|| ($event instanceof ObjectUpdatedEvent) === true
+			|| ($event instanceof ObjectDeletedEvent) === true;
+	}//end isObjectChange()
+
+	/**
+	 * Move the caller's KPI cache version on, so every cached figure reads as stale.
+	 *
+	 * @param string $versionKey The caller's version key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
+	 */
+	private function bumpVersion(string $versionKey): void {
 		try {
 			$current = $this->cache->get($versionKey);
 			$newVersion = 2;
@@ -138,5 +156,5 @@ class KpiCacheInvalidationListener implements IEventListener {
 				]
 			);
 		}//end try
-	}//end handle()
+	}//end bumpVersion()
 }//end class

@@ -746,6 +746,11 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectDeletingEventStub.php';
 }
 
+// identity-survives-a-move: a move out of the register is a deleting event to a guard.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectLeavingEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectLeavingEventStub.php';
+}
+
 // termijnbewaking-op-engine-timers: the business-timer surface the termijn
 // mapping arms and the fired-listener consumes. The event stub mirrors the
 // REAL engine constructor signature — a stub that agrees with the caller

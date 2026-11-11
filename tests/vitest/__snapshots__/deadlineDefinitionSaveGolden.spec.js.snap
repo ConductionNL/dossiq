@@ -1,0 +1,122 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`saving a term definition > versions and saves as before 1`] = `
+{
+  "closeRefused": {
+    "calls": [
+      [
+        "patch",
+        "/index.php/apps/dossiq/api/deadlines/definitions/td-3",
+        {
+          "validUntil": "2026-11-10",
+        },
+      ],
+    ],
+    "error": "Locked",
+  },
+  "created": {
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/deadlines/definitions",
+        {
+          "name": "Beslistermijn",
+          "validFrom": "2026-11-11",
+          "validUntil": null,
+          "version": 1,
+        },
+      ],
+      [
+        "closeEditor",
+      ],
+      [
+        "load",
+      ],
+    ],
+    "error": "",
+  },
+  "edited": {
+    "calls": [
+      [
+        "patch",
+        "/index.php/apps/dossiq/api/deadlines/definitions/td%2F1",
+        {
+          "validUntil": "2026-11-10",
+        },
+      ],
+      [
+        "post",
+        "/index.php/apps/dossiq/api/deadlines/definitions",
+        {
+          "name": "Beslistermijn",
+          "validFrom": "2026-11-11",
+          "validUntil": null,
+          "version": 3,
+        },
+      ],
+      [
+        "closeEditor",
+      ],
+      [
+        "load",
+      ],
+    ],
+    "error": "",
+  },
+  "editedWithoutVersion": {
+    "calls": [
+      [
+        "patch",
+        "/index.php/apps/dossiq/api/deadlines/definitions/td-2",
+        {
+          "validUntil": "2026-11-10",
+        },
+      ],
+      [
+        "post",
+        "/index.php/apps/dossiq/api/deadlines/definitions",
+        {
+          "validFrom": "2026-11-11",
+          "validUntil": null,
+          "version": 2,
+        },
+      ],
+      [
+        "closeEditor",
+      ],
+      [
+        "load",
+      ],
+    ],
+    "error": "",
+  },
+  "postFailed": {
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/deadlines/definitions",
+        {
+          "validFrom": "2026-11-11",
+          "validUntil": null,
+          "version": 1,
+        },
+      ],
+    ],
+    "error": "offline",
+  },
+  "postFailedSilently": {
+    "calls": [
+      [
+        "post",
+        "/index.php/apps/dossiq/api/deadlines/definitions",
+        {
+          "validFrom": "2026-11-11",
+          "validUntil": null,
+          "version": 1,
+        },
+      ],
+    ],
+    "error": "Failed to save",
+  },
+}
+`;

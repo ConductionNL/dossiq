@@ -104,7 +104,7 @@ class TermEndRoll {
 		?string $calendarSlug = null,
 		?string $organisation = null,
 	): DateTimeImmutable {
-		return $this->rollOnCalendar(date: $date, calendarSlug: $calendarSlug, organisation: $organisation);
+		return $this->rollOnCalendar(ask: new TermEndAsk(date: $date, calendarSlug: $calendarSlug, organisation: $organisation));
 	}//end rollTermEnd()
 
 	/**
@@ -188,19 +188,15 @@ class TermEndRoll {
 	/**
 	 * The roll as the engine computes it, falling back when it cannot answer.
 	 *
-	 * @param DateTimeImmutable $date The computed end date.
-	 * @param string|null $calendarSlug The calendar named on the term, when any.
-	 * @param string|null $organisation The subject's organisation, when any.
+	 * @param TermEndAsk $ask The date, the calendar named on the term and the organisation.
 	 *
 	 * @return DateTimeImmutable The first ordinary day on or after the date.
 	 */
-	private function rollOnCalendar(
-		DateTimeImmutable $date,
-		?string $calendarSlug,
-		?string $organisation,
-	): DateTimeImmutable {
-		$calendars = $this->settingsService->getOpenRegisterClass(TermijnTimerService::CALENDAR_SERVICE_CLASS);
-		$calculator = $this->settingsService->getOpenRegisterClass(TermijnTimerService::SLA_CALCULATOR_CLASS);
+	private function rollOnCalendar(TermEndAsk $ask): DateTimeImmutable {
+		$engine = [
+			'calendars' => $this->settingsService->getOpenRegisterClass(TermijnTimerService::CALENDAR_SERVICE_CLASS),
+			'calculator' => $this->settingsService->getOpenRegisterClass(TermijnTimerService::SLA_CALCULATOR_CLASS),
+		];
 
 		// A term that NAMES a calendar refuses when that calendar does not
 		// resolve, rather than answering on a different one (REQ-TERM-060). The
@@ -208,32 +204,39 @@ class TermEndRoll {
 		// shape `every-term-on-the-engine-calendar` shipped: a term naming no
 		// calendar still falls back, and still says so in the log.
 		$this->calendarGuard?->requireNamedCalendarResolves(
-			calendarSlug: $calendarSlug,
-			organisation: $organisation,
-			calendars: $calendars
+			calendarSlug: $ask->calendarSlug,
+			organisation: $ask->organisation,
+			calendars: $engine['calendars']
 		);
 
-		if ($calendars === null || $calculator === null) {
-			return $this->fallbackRoll(date: $date, because: 'OpenRegister is not installed');
+		if ($engine['calendars'] === null || $engine['calculator'] === null) {
+			return $this->fallbackRoll(date: $ask->date, because: 'OpenRegister is not installed');
 		}
 
-		try {
-			$calendar = $calendars->resolve(calendarSlug: $calendarSlug, organisation: $organisation);
+		return $this->engineRoll(engine: $engine, ask: $ask);
+	}//end rollOnCalendar()
 
-			return $calculator->add(
-				from: $date,
-				value: 0.0,
-				unit: TermijnTimerService::UNIT_BUSINESS_DAYS,
-				calendar: $calendar
-			);
+	/**
+	 * The roll on the engine's calendar, falling back when the engine throws.
+	 *
+	 * @param array{calendars: object, calculator: object} $engine The engine's calendar service and calculator.
+	 * @param TermEndAsk                                   $ask    The date, the calendar named on the term and the organisation.
+	 *
+	 * @return DateTimeImmutable The first ordinary day on or after the date.
+	 */
+	private function engineRoll(array $engine, TermEndAsk $ask): DateTimeImmutable {
+		try {
+			$calendar = $engine['calendars']->resolve(calendarSlug: $ask->calendarSlug, organisation: $ask->organisation);
+
+			return $engine['calculator']->add(from: $ask->date, value: 0.0, unit: TermijnTimerService::UNIT_BUSINESS_DAYS, calendar: $calendar);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Dossiq termijn: engine timer call failed, domain flow continues on case data',
-				['operation' => 'roll to working day', 'id' => $date->format('Y-m-d'), 'error' => $e->getMessage()]
+				['operation' => 'roll to working day', 'id' => $ask->date->format('Y-m-d'), 'error' => $e->getMessage()]
 			);
-			return $this->fallbackRoll(date: $date, because: 'the engine calendar could not be read');
+			return $this->fallbackRoll(date: $ask->date, because: 'the engine calendar could not be read');
 		}
-	}//end rollOnCalendar()
+	}//end engineRoll()
 
 	/**
 	 * The roll on dossiq's own calendar, used only when the engine cannot answer.

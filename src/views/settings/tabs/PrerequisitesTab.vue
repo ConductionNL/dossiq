@@ -28,19 +28,7 @@
 		</NcNoteCard>
 
 		<table class="prerequisites__table" data-testid="prerequisites-platform">
-			<thead>
-				<tr>
-					<th scope="col">
-						{{ t('dossiq', 'Platform') }}
-					</th>
-					<th scope="col">
-						{{ t('dossiq', 'What it does') }}
-					</th>
-					<th scope="col" class="prerequisites__here">
-						{{ t('dossiq', 'Here') }}
-					</th>
-				</tr>
-			</thead>
+			<PrerequisitesTableHead :label="t('dossiq', 'Platform')" />
 			<tbody>
 				<tr data-testid="prerequisite-php">
 					<th scope="row">
@@ -64,19 +52,7 @@
 		</table>
 
 		<table class="prerequisites__table" data-testid="prerequisites-extensions">
-			<thead>
-				<tr>
-					<th scope="col">
-						{{ t('dossiq', 'PHP extension') }}
-					</th>
-					<th scope="col">
-						{{ t('dossiq', 'What it does') }}
-					</th>
-					<th scope="col" class="prerequisites__here">
-						{{ t('dossiq', 'Here') }}
-					</th>
-				</tr>
-			</thead>
+			<PrerequisitesTableHead :label="t('dossiq', 'PHP extension')" />
 			<tbody>
 				<tr
 					v-for="row in extensions"
@@ -92,34 +68,10 @@
 		</table>
 
 		<table class="prerequisites__table" data-testid="prerequisites-apps">
-			<thead>
-				<tr>
-					<th scope="col">
-						{{ t('dossiq', 'App') }}
-					</th>
-					<th scope="col">
-						{{ t('dossiq', 'What it does') }}
-					</th>
-					<th scope="col" class="prerequisites__here">
-						{{ t('dossiq', 'Here') }}
-					</th>
-				</tr>
-			</thead>
-			<tbody>
+			<PrerequisitesTableHead :label="t('dossiq', 'App')" />
+			<tbody v-for="(apps, group) in appGroups" :key="group">
 				<tr
-					v-for="row in required"
-					:key="row.id"
-					:data-testid="`prerequisite-app-${row.id}`">
-					<th scope="row">
-						{{ row.name || row.id }}
-					</th>
-					<td>{{ t('dossiq', row.unlocks) }}</td>
-					<td><span :class="markClass(row.present)">{{ mark(row.present) }}</span></td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr
-					v-for="row in optional"
+					v-for="row in apps"
 					:key="row.id"
 					:data-testid="`prerequisite-app-${row.id}`">
 					<th scope="row">
@@ -137,11 +89,12 @@
 import { loadState } from '@nextcloud/initial-state'
 import { translate as t } from '@nextcloud/l10n'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import PrerequisitesTableHead from './PrerequisitesTableHead.vue'
 
 export default {
 	name: 'PrerequisitesTab',
 
-	components: { NcNoteCard },
+	components: { NcNoteCard, PrerequisitesTableHead },
 
 	data() {
 		// An absent state renders an empty block rather than throwing. The
@@ -172,6 +125,16 @@ export default {
 		 */
 		missingRequired() {
 			return this.required.filter((row) => row.present !== true)
+		},
+
+		/**
+		 * The apps in the order the table lists them, one body each: required, then optional.
+		 *
+		 * @return {Array<Array>} The required and the optional apps.
+		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 */
+		appGroups() {
+			return [this.required, this.optional]
 		},
 	},
 
@@ -222,10 +185,6 @@ export default {
 
 .prerequisites__table td:nth-child(2)::first-letter {
 	text-transform: uppercase;
-}
-
-.prerequisites__here {
-	inline-size: 120px;
 }
 
 /*

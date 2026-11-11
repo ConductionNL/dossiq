@@ -51,6 +51,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -132,29 +133,8 @@ class CaseRecycleController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$limit = (int)$this->request->getParam('limit', CaseRecycleService::PAGE_SIZE);
-		$offset = (int)$this->request->getParam('offset', 0);
-		$search = (string)$this->request->getParam('search', '');
-
 		try {
-			// `=== true` and not a cast: IGroupManager::isAdmin() carries no
-			// return type, so a double that answers null would otherwise reach
-			// a bool parameter and turn a read into a 500.
-			$isAdmin = ($this->groupManager->isAdmin($user->getUID()) === true);
-
-			$page = $this->recycle->deletedCases(
-				limit: $limit,
-				offset: $offset,
-				forUser: $user->getUID(),
-				isAdmin: $isAdmin,
-				search: $search
-			);
-			$page['results'] = array_map(
-				fn (array $row): array => ($row + ['windowNote' => $this->windowNote(row: $row)]),
-				($page['results'] ?? [])
-			);
-
-			return new JSONResponse($page);
+			return new JSONResponse($this->deletedPage(user: $user));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: the deleted lens failed: ' . $e->getMessage());
 
@@ -164,6 +144,36 @@ class CaseRecycleController extends Controller {
 			);
 		}
 	}//end deleted()
+
+	/**
+	 * The page of deleted cases the caller may see, each row saying what is left of its window.
+	 *
+	 * @param IUser $user The caller.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	private function deletedPage(IUser $user): array {
+		// `=== true` and not a cast: IGroupManager::isAdmin() carries no
+		// return type, so a double that answers null would otherwise reach
+		// a bool parameter and turn a read into a 500.
+		$isAdmin = ($this->groupManager->isAdmin($user->getUID()) === true);
+
+		$page = $this->recycle->deletedCases(
+			limit: (int)$this->request->getParam('limit', CaseRecycleService::PAGE_SIZE),
+			offset: (int)$this->request->getParam('offset', 0),
+			forUser: $user->getUID(),
+			isAdmin: $isAdmin,
+			search: (string)$this->request->getParam('search', '')
+		);
+		$page['results'] = array_map(
+			fn (array $row): array => ($row + ['windowNote' => $this->windowNote(row: $row)]),
+			($page['results'] ?? [])
+		);
+
+		return $page;
+	}//end deletedPage()
 
 	/**
 	 * Get a deleted case back, inside its window.

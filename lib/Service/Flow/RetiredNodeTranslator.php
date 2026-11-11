@@ -195,20 +195,10 @@ class RetiredNodeTranslator {
 	 */
 	private function emailFromAction(array $config): array {
 		$recipient = $this->syntax->recipientFromRef(ref: trim((string)($config['recipientRef'] ?? '')));
-		$body = $this->syntax->forMessaging(template: (string)($config['bodyTemplate'] ?? ''), what: 'body');
-		if (trim($body) === '') {
-			throw new UnmappableStep(message: 'the step has no body, which the send-email step refuses');
-		}
+		$body = self::withBody(body: $this->syntax->forMessaging(template: (string)($config['bodyTemplate'] ?? ''), what: 'body'));
+		$subject = $this->syntax->forMessaging(template: (string)($config['subjectTemplate'] ?? ''), what: 'subject');
 
-		return [
-			'type' => self::SEND_EMAIL,
-			'config' => [
-				'recipients' => [$recipient],
-				'externalRecipients' => self::EXTERNAL_OBJECT,
-				'subject' => $this->syntax->forMessaging(template: (string)($config['subjectTemplate'] ?? ''), what: 'subject'),
-				'body' => $body,
-			],
-		];
+		return self::sendEmail(recipient: $recipient, message: ['subject' => $subject, 'body' => $body]);
 	}//end emailFromAction()
 
 	/**
@@ -235,21 +225,47 @@ class RetiredNodeTranslator {
 			throw new UnmappableStep(message: 'the step names no recipient');
 		}
 
-		$body = (string)($config['body'] ?? '');
+		$body = self::withBody(body: (string)($config['body'] ?? ''));
+
+		return self::sendEmail(recipient: $recipient, message: ['subject' => (string)($config['subject'] ?? ''), 'body' => $body]);
+	}//end emailFromTransition()
+
+	/**
+	 * The body of a mail; refused when it is blank, which the send-email step refuses.
+	 *
+	 * @param string $body The body.
+	 *
+	 * @return string The body.
+	 *
+	 * @throws UnmappableStep When the body is blank.
+	 */
+	private static function withBody(string $body): string {
 		if (trim($body) === '') {
 			throw new UnmappableStep(message: 'the step has no body, which the send-email step refuses');
 		}
 
+		return $body;
+	}//end withBody()
+
+	/**
+	 * The send-email step for one recipient.
+	 *
+	 * @param string                $recipient The recipient.
+	 * @param array<string, string> $message   The `subject` and `body`.
+	 *
+	 * @return array{type: string, config: array<string, mixed>} The send-email step.
+	 */
+	private static function sendEmail(string $recipient, array $message): array {
 		return [
 			'type' => self::SEND_EMAIL,
 			'config' => [
 				'recipients' => [$recipient],
 				'externalRecipients' => self::EXTERNAL_OBJECT,
-				'subject' => (string)($config['subject'] ?? ''),
-				'body' => $body,
+				'subject' => $message['subject'],
+				'body' => $message['body'],
 			],
 		];
-	}//end emailFromTransition()
+	}//end sendEmail()
 
 	/**
 	 * `dossiq.action.notifyRole`: tell everyone who holds a role on the case.

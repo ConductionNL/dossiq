@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Listener;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -93,14 +94,7 @@ class CaseInheritedDeadlineListener implements IEventListener {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->apply(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->apply(event: $event, entity: $event->getNewObject());
-		}
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->apply(...));
 	}//end handle()
 
 	/**
@@ -205,14 +199,7 @@ class CaseInheritedDeadlineListener implements IEventListener {
 	 * @return array<string, mixed>|null The payload, or null.
 	 */
 	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: inherited deadline listener could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
+		return (new PreSaveCheck(logger: $this->logger))->read(entity: $entity, check: 'inherited deadline listener');
 	}//end payload()
 
 	/**

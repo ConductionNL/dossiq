@@ -263,6 +263,45 @@ class SubstitutionServiceTest extends TestCase {
 	}//end testSelfSubstitutionRejected()
 
 	/**
+	 * An empty absentee or substitute is rejected before anything else.
+	 *
+	 * @return void
+	 */
+	public function testEmptyIdentityRejected(): void {
+		$service = $this->makeService($this->objectServiceMock());
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Both absentee and substitute are required');
+		$service->create(absentee: '  ', substitute: 'marieke', startDate: '2026-07-01', endDate: '2026-07-21');
+	}//end testEmptyIdentityRejected()
+
+	/**
+	 * A scope outside all|caseTypes|cases is rejected.
+	 *
+	 * @return void
+	 */
+	public function testUnknownScopeRejected(): void {
+		$service = $this->makeService($this->objectServiceMock());
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Invalid scope; expected all, caseTypes or cases');
+		$service->create(absentee: 'jan', substitute: 'marieke', startDate: '2026-07-01', endDate: '2026-07-21', scope: 'everything');
+	}//end testUnknownScopeRejected()
+
+	/**
+	 * A reason outside verlof|ziekte|anders is rejected, after the scope check passes.
+	 *
+	 * @return void
+	 */
+	public function testUnknownReasonRejected(): void {
+		$service = $this->makeService($this->objectServiceMock());
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Invalid reason; expected verlof, ziekte or anders');
+		$service->create(absentee: 'jan', substitute: 'marieke', startDate: '2026-07-01', endDate: '2026-07-21', reason: 'vakantie');
+	}//end testUnknownReasonRejected()
+
+	/**
 	 * Missing endDate is rejected.
 	 *
 	 * @return void

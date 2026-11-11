@@ -115,47 +115,84 @@ class BackfilledTemplateLabels {
 			return [];
 		}
 
-		$changes = [];
-		if (str_starts_with((string)($template['title'] ?? ''), self::CAST_OF_A_MAP . ' ') === true) {
-			$changes['title'] = $this->titleFor(caseTypeTitle: ($caseType['title'] ?? null));
-		}
-
-		$steps = $this->healedList(
-			raw: ($template['steps'] ?? null),
-			heal: function (array $step) use ($statusesById): array {
-				$status = ($statusesById[(string)($step['status'] ?? '')] ?? []);
-				if (($step['title'] ?? null) === self::CAST_OF_A_MAP) {
-					$step['title'] = $this->text->textOr(value: ($status['name'] ?? null), fallback: self::STEP_FALLBACK);
-				}
-
-				if (($step['description'] ?? null) === self::CAST_OF_A_MAP) {
-					$step['description'] = $this->text->textOf(value: ($status['description'] ?? null));
-				}
-
-				return $step;
+		$changes = $this->healedTitle(template: $template, caseType: $caseType);
+		foreach ($this->healers(statusesById: $statusesById) as $key => $heal) {
+			$list = $this->healedList(raw: ($template[$key] ?? null), heal: $heal);
+			if ($list !== null) {
+				$changes[$key] = $list;
 			}
-		);
-		if ($steps !== null) {
-			$changes['steps'] = $steps;
-		}
-
-		$transitions = $this->healedList(
-			raw: ($template['transitions'] ?? null),
-			heal: function (array $move) use ($statusesById): array {
-				if (($move['label'] ?? null) === self::CAST_OF_A_MAP) {
-					$target = ($statusesById[(string)($move['toStatus'] ?? '')] ?? []);
-					$move['label'] = $this->text->textOr(value: ($target['name'] ?? null), fallback: self::MOVE_FALLBACK);
-				}
-
-				return $move;
-			}
-		);
-		if ($transitions !== null) {
-			$changes['transitions'] = $transitions;
 		}
 
 		return $changes;
 	}//end healed()
+
+	/**
+	 * How each stored list is healed, by the template field that holds it, steps first.
+	 *
+	 * @param array<string, array<string, mixed>> $statusesById The case type's statuses, by id.
+	 *
+	 * @return array<string, callable> The healer of one entry, by field.
+	 */
+	private function healers(array $statusesById): array {
+		return [
+			'steps' => fn (array $step): array => $this->healedStep(step: $step, statusesById: $statusesById),
+			'transitions' => fn (array $move): array => $this->healedMove(move: $move, statusesById: $statusesById),
+		];
+	}//end healers()
+
+	/**
+	 * The title to write when the stored one is a cast of a map, as a change set.
+	 *
+	 * @param array<string, mixed> $template The stored template.
+	 * @param array<string, mixed> $caseType Its case type.
+	 *
+	 * @return array<string, string> ['title' => ...], or [] when the title is fine.
+	 */
+	private function healedTitle(array $template, array $caseType): array {
+		if (str_starts_with((string)($template['title'] ?? ''), self::CAST_OF_A_MAP . ' ') === false) {
+			return [];
+		}
+
+		return ['title' => $this->titleFor(caseTypeTitle: ($caseType['title'] ?? null))];
+	}//end healedTitle()
+
+	/**
+	 * One step with its "Array" title and description read from its status.
+	 *
+	 * @param array<string, mixed>                $step         The stored step.
+	 * @param array<string, array<string, mixed>> $statusesById The case type's statuses, by id.
+	 *
+	 * @return array<string, mixed> The step.
+	 */
+	private function healedStep(array $step, array $statusesById): array {
+		$status = ($statusesById[(string)($step['status'] ?? '')] ?? []);
+		if (($step['title'] ?? null) === self::CAST_OF_A_MAP) {
+			$step['title'] = $this->text->textOr(value: ($status['name'] ?? null), fallback: self::STEP_FALLBACK);
+		}
+
+		if (($step['description'] ?? null) === self::CAST_OF_A_MAP) {
+			$step['description'] = $this->text->textOf(value: ($status['description'] ?? null));
+		}
+
+		return $step;
+	}//end healedStep()
+
+	/**
+	 * One transition with its "Array" label read from its target status.
+	 *
+	 * @param array<string, mixed>                $move         The stored transition.
+	 * @param array<string, array<string, mixed>> $statusesById The case type's statuses, by id.
+	 *
+	 * @return array<string, mixed> The transition.
+	 */
+	private function healedMove(array $move, array $statusesById): array {
+		if (($move['label'] ?? null) === self::CAST_OF_A_MAP) {
+			$target        = ($statusesById[(string)($move['toStatus'] ?? '')] ?? []);
+			$move['label'] = $this->text->textOr(value: ($target['name'] ?? null), fallback: self::MOVE_FALLBACK);
+		}
+
+		return $move;
+	}//end healedMove()
 
 	/**
 	 * A stored JSON list with each entry healed, or null when nothing changed.
@@ -169,6 +206,27 @@ class BackfilledTemplateLabels {
 	 * @return string|null The healed list as JSON, or null when nothing changed.
 	 */
 	private function healedList(mixed $raw, callable $heal): ?string {
+		$list = self::storedList(raw: $raw);
+		if ($list === null) {
+			return null;
+		}
+
+		$healed = self::healEach(list: $list, heal: $heal);
+		if ($healed === null) {
+			return null;
+		}
+
+		return (string)json_encode(array_values($healed), (JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+	}//end healedList()
+
+	/**
+	 * A stored list as an array, decoding a JSON string; null when it is no list.
+	 *
+	 * @param mixed $raw The stored list.
+	 *
+	 * @return array<int|string, mixed>|null The list.
+	 */
+	private static function storedList(mixed $raw): ?array {
 		$list = $raw;
 		if (is_string($raw) === true) {
 			$list = json_decode($raw, true);
@@ -178,16 +236,24 @@ class BackfilledTemplateLabels {
 			return null;
 		}
 
+		return $list;
+	}//end storedList()
+
+	/**
+	 * Every array entry healed in place, or null when no entry changed.
+	 *
+	 * @param array<int|string, mixed> $list The list.
+	 * @param callable                 $heal Heals one entry.
+	 *
+	 * @return array<int|string, mixed>|null The healed list.
+	 */
+	private static function healEach(array $list, callable $heal): ?array {
 		$changed = false;
 		foreach ($list as $index => $entry) {
-			if (is_array($entry) === false) {
-				continue;
-			}
-
-			$healed = $heal($entry);
+			$healed = self::healedEntry(entry: $entry, heal: $heal);
 			if ($healed !== $entry) {
 				$list[$index] = $healed;
-				$changed = true;
+				$changed      = true;
 			}
 		}
 
@@ -195,6 +261,22 @@ class BackfilledTemplateLabels {
 			return null;
 		}
 
-		return (string)json_encode(array_values($list), (JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-	}//end healedList()
+		return $list;
+	}//end healEach()
+
+	/**
+	 * One entry healed when it is an array, as it was otherwise.
+	 *
+	 * @param mixed    $entry The stored entry.
+	 * @param callable $heal  Heals one entry.
+	 *
+	 * @return mixed The entry.
+	 */
+	private static function healedEntry(mixed $entry, callable $heal): mixed {
+		if (is_array($entry) === false) {
+			return $entry;
+		}
+
+		return $heal($entry);
+	}//end healedEntry()
 }//end class

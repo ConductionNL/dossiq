@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
-class JccBackend implements AppointmentBackendInterface {
+class JccBackend extends RestAppointmentBackend {
 	/**
 	 * Constructor.
 	 *
@@ -45,10 +45,10 @@ class JccBackend implements AppointmentBackendInterface {
 	 * @param string $apiKey The JCC API bearer key.
 	 */
 	public function __construct(
-		private IClientService $clientService,
-		private LoggerInterface $logger,
-		private string $apiUrl,
-		private string $apiKey,
+		protected IClientService $clientService,
+		protected LoggerInterface $logger,
+		protected string $apiUrl,
+		protected string $apiKey,
 	) {
 	}//end __construct()
 
@@ -64,76 +64,36 @@ class JccBackend implements AppointmentBackendInterface {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getTimeslots(string $productId, string $locationId, string $date): array {
-		try {
-			$client = $this->clientService->newClient();
-			$response = $client->get(
-				$this->apiUrl . '/timeslots',
-				[
-					'query' => [
-						'product' => $productId,
-						'location' => $locationId,
-						'date' => $date,
-					],
-					'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
-				]
-			);
-
-			return json_decode($response->getBody(), true) ?? [];
-		} catch (\Exception $e) {
-			$this->logger->error('JCC API error: ' . $e->getMessage());
-			return [];
-		}
+		return $this->getJson(
+			url: $this->apiUrl . '/timeslots',
+			options: [
+				'query' => [
+					'product' => $productId,
+					'location' => $locationId,
+					'date' => $date,
+				],
+				'headers' => $this->authHeaders(),
+			]
+		);
 	}//end getTimeslots()
 
 	/**
-	 * Book an appointment via the JCC API.
+	 * The JCC API takes a bearer key.
 	 *
-	 * @param array<string, mixed> $data Appointment data to POST to JCC.
-	 *
-	 * @return array<string, mixed> Booking result from JCC, or error payload.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @return array<string, string>
 	 */
-	public function bookAppointment(array $data): array {
-		try {
-			$client = $this->clientService->newClient();
-			$response = $client->post(
-				$this->apiUrl . '/appointments',
-				[
-					'json' => $data,
-					'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
-				]
-			);
-
-			return json_decode($response->getBody(), true) ?? [];
-		} catch (\Exception $e) {
-			$this->logger->error('JCC booking error: ' . $e->getMessage());
-			return ['error' => $e->getMessage()];
-		}
-	}//end bookAppointment()
+	protected function authHeaders(): array {
+		return ['Authorization' => 'Bearer ' . $this->apiKey];
+	}//end authHeaders()
 
 	/**
-	 * Cancel an appointment via the JCC API.
+	 * The name JCC error log lines start with.
 	 *
-	 * @param string $externalId The JCC appointment id.
-	 *
-	 * @return bool True on success, false on API error.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @return string
 	 */
-	public function cancelAppointment(string $externalId): bool {
-		try {
-			$client = $this->clientService->newClient();
-			$client->delete(
-				$this->apiUrl . '/appointments/' . $externalId,
-				['headers' => ['Authorization' => 'Bearer ' . $this->apiKey]]
-			);
-			return true;
-		} catch (\Exception $e) {
-			$this->logger->error('JCC cancel error: ' . $e->getMessage());
-			return false;
-		}
-	}//end cancelAppointment()
+	protected function vendor(): string {
+		return 'JCC';
+	}//end vendor()
 
 	/**
 	 * Reschedule an appointment via the JCC API (cancel then book).

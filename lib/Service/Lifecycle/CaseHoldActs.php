@@ -51,6 +51,8 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 class CaseHoldActs {
+	use LoadsCaseOrRefuses;
+
 
 	/**
 	 * The date a held case returns on.
@@ -222,28 +224,4 @@ class CaseHoldActs {
 
 		return $wake->format('Y-m-d');
 	}//end wakeDate()
-
-	/**
-	 * Load the case, or refuse.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When the case cannot be read.
-	 *
-	 * @spec exclude one read behind both acts in this class
-	 */
-	private function load(string $caseId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end load()
 }//end class

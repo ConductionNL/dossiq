@@ -24,7 +24,6 @@ namespace OCA\Dossiq\Review;
 
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 
 /**
@@ -33,8 +32,6 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
 class ReviewSummary {
-
-	use SearchesObjects;
 
 	/**
 	 * Constructor.
@@ -116,18 +113,6 @@ class ReviewSummary {
 	 * @return array<int, array<string, mixed>> The assessments.
 	 */
 	private function assessmentRows(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('woo_assessment_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['caseRef' => $caseId, '_limit' => 1000],
-		);
+		return (new CaseAssessmentRows(settingsService: $this->settingsService))->forCase(caseId: $caseId);
 	}//end assessmentRows()
 }//end class

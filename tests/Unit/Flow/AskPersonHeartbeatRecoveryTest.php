@@ -77,6 +77,7 @@ use OCA\OpenRegister\Service\Flow\FlowPlaceClaims;
 use OCA\OpenRegister\Service\Flow\FlowRunCommit;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCA\OpenRegister\Service\Flow\FlowRunSignalService;
+use OCA\OpenRegister\Service\Flow\RunSignal;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -655,11 +656,9 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		// deliver, and the run is left exactly as it was.
 		$refused = false;
 		try {
-			$this->signals->signalAs(
+			$this->signals->answerByUuid(
 				runUuid: (string)$run->getUuid(),
-				payload: ['decision' => 'completed'],
-				actorUid: 'mallory',
-				nodeId: 'ask-indiener'
+				signal: new RunSignal(payload: ['decision' => 'completed'], actorUid: 'mallory', nodeId: 'ask-indiener')
 			);
 		} catch (FlowSignalRefused $refusal) {
 			$refused = true;
@@ -751,11 +750,9 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		$this->complete($task);
 
 		// The assignee answers, so the guard delivers.
-		$run = $this->signals->signalAs(
+		$run = $this->signals->answerByUuid(
 			runUuid: (string)$run->getUuid(),
-			payload: ['decision' => 'completed', 'completedBy' => 'alice'],
-			actorUid: 'alice',
-			nodeId: 'ask-indiener'
+			signal: new RunSignal(payload: ['decision' => 'completed', 'completedBy' => 'alice'], actorUid: 'alice', nodeId: 'ask-indiener')
 		);
 
 		$run = $this->service->execute($run, $this->chainFlow(), new AskPersonSubject());
