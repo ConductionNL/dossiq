@@ -82,4 +82,34 @@ describe('ReviewBatchDialog', () => {
 		)
 		expect(wrapper.emitted('created')).toHaveLength(1)
 	})
+
+	it('hands the answer on, and clears the last refusal', async () => {
+		const wrapper = mountDialog()
+		wrapper.vm.error = 'old'
+		await wrapper.vm.create()
+		expect(wrapper.emitted('created')[0]).toEqual([{ batch: { id: 'b-1' } }])
+		expect(wrapper.vm.error).toBe('')
+		expect(wrapper.vm.saving).toBe(false)
+	})
+
+	it('names the documents another batch already holds, after the server sentence', async () => {
+		const wrapper = mountDialog()
+		axios.post.mockRejectedValueOnce({ response: { data: { message: 'Taken.', taken: { d1: 'Mail 2024', d2: 'B' } } } })
+		await wrapper.vm.create()
+		expect(wrapper.vm.error).toBe('Taken. d1: Mail 2024, d2: B')
+
+		axios.post.mockRejectedValueOnce({ response: { data: { taken: { d1: 'X' } } } })
+		await wrapper.vm.create()
+		expect(wrapper.vm.error).toBe('The Review batch cannot be stored, so nothing was assigned. d1: X')
+
+		axios.post.mockRejectedValueOnce({ response: { data: { message: 'Nee', taken: 'd1' } } })
+		await wrapper.vm.create()
+		expect(wrapper.vm.error).toBe('Nee')
+
+		axios.post.mockRejectedValueOnce(new Error('down'))
+		await wrapper.vm.create()
+		expect(wrapper.vm.error).toBe('The Review batch cannot be stored, so nothing was assigned.')
+		expect(wrapper.vm.saving).toBe(false)
+		expect(wrapper.emitted('created')).toBeUndefined()
+	})
 })
