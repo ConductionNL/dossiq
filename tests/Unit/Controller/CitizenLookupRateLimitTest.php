@@ -132,7 +132,10 @@ class CitizenLookupRateLimitTest extends TestCase {
 			// old marker matched nothing and the sweep derived an EMPTY list,
 			// which is a sweep that can never find the endpoint it exists to
 			// find. A sweep that matches nothing is not a sweep that passed.
-			if (str_contains($body, 'lookups->isAllowed') === true) {
+			// An endpoint may also ask through `kccCaller()`, which asks the guard.
+			if (str_contains($body, 'lookups->isAllowed') === true
+				|| str_contains($body, '$this->kccCaller(') === true
+			) {
 				$guarded[] = $method->getName();
 			}
 		}
