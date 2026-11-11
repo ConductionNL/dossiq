@@ -45,6 +45,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -127,13 +128,9 @@ class CaseConversationController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function start(string $caseId, ?string $subject = null): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -165,13 +162,9 @@ class CaseConversationController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function end(string $caseId, string $roomId = '', array $participants = [], int $durationSeconds = 0): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -207,13 +200,9 @@ class CaseConversationController extends Controller {
 		string $content = '',
 		?string $taskId = null,
 	): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -241,13 +230,9 @@ class CaseConversationController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function declareMajor(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -272,6 +257,25 @@ class CaseConversationController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function closeMajorChannel(string $caseId): JSONResponse {
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		return $this->answer(result: $this->major->closeMajorChannel(caseId: $caseId));
+	}//end closeMajorChannel()
+
+	/**
+	 * The signed-in user when they may change the case, else the refusal.
+	 *
+	 * No session user is 401 and the case is not asked about; a user without
+	 * mutation access to the case is 403.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse The user, or the refusal to answer.
+	 */
+	private function caseMutator(string $caseId): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
@@ -281,8 +285,8 @@ class CaseConversationController extends Controller {
 			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
 		}
 
-		return $this->answer(result: $this->major->closeMajorChannel(caseId: $caseId));
-	}//end closeMajorChannel()
+		return $user;
+	}//end caseMutator()
 
 	/**
 	 * Turn a service result into a response, with the refusal's own status.
