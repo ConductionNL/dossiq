@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Service;
 use DomainException;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
@@ -100,6 +101,13 @@ class ZaakdossierService {
 	public const KEYWORD_MAX_LENGTH = InformatieobjectMetadataNormaliser::KEYWORD_MAX_LENGTH;
 
 	/**
+	 * The register, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
@@ -122,6 +130,7 @@ class ZaakdossierService {
 		private readonly DocumentRecordStore $recordStore,
 		private readonly CorrespondentWriter $correspondents,
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -689,17 +698,7 @@ class ZaakdossierService {
 	 * @throws \RuntimeException When OpenRegister or the register config is unavailable.
 	 */
 	private function requireRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end requireRegister()
 
 	/**
