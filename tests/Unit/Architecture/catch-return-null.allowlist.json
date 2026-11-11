@@ -1501,10 +1501,10 @@
     },
     {
       "file": "lib/Service/Transitions/CaseStatusStore.php",
-      "method": "findStatusRecords",
+      "method": "searchStatusRecords",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`findStatusRecords()` answers `return null` when the read fails; the catch logs at error (\"StatusTransitionService: replay searchObjects failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`searchStatusRecords()`, the read behind `findStatusRecords()`, answers `return null` when the read fails; the catch logs at error (\"StatusTransitionService: replay searchObjects failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Transitions/CaseStatusStore.php",
