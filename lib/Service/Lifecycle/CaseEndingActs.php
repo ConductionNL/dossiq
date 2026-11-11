@@ -64,6 +64,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 class CaseEndingActs {
+	use LoadsCaseOrRefuses;
+
 
 	/**
 	 * The journal types this class writes, and the ones reopening looks for.
@@ -651,30 +653,6 @@ class CaseEndingActs {
 
 		return trim((string)($entry['resultType'] ?? ''));
 	}//end resultTypeOn()
-
-	/**
-	 * Load the case, or refuse.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When the case cannot be read.
-	 *
-	 * @spec exclude one read behind every act in this class
-	 */
-	private function load(string $caseId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end load()
 
 	/**
 	 * Every ending act records why.

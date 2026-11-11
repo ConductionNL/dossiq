@@ -46,6 +46,8 @@ namespace OCA\Dossiq\Listener;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -92,14 +94,7 @@ class CaseInheritedDeadlineListener implements IEventListener {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->apply(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->apply(event: $event, entity: $event->getNewObject());
-		}
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->apply(...));
 	}//end handle()
 
 	/**
@@ -204,14 +199,7 @@ class CaseInheritedDeadlineListener implements IEventListener {
 	 * @return array<string, mixed>|null The payload, or null.
 	 */
 	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: inherited deadline listener could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
+		return (new PreSaveCheck(logger: $this->logger))->read(entity: $entity, check: 'inherited deadline listener');
 	}//end payload()
 
 	/**
@@ -241,16 +229,6 @@ class CaseInheritedDeadlineListener implements IEventListener {
 	 * @return bool True when this is a case.
 	 */
 	private function isCaseSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('case_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('case_schema'));
 	}//end isCaseSchema()
 }//end class

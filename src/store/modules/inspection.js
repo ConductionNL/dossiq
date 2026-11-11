@@ -33,6 +33,52 @@ export function flattenTemplate(template) {
 	return { ...template, items }
 }
 
+/**
+ * The body a recorded run is posted with; an absent date is now.
+ *
+ * @param {object} reportData Run data: `checklist`, `items`, optional `remarks`, `location`, `inspectionDate`.
+ * @return {object} The body.
+ */
+function runBody(reportData) {
+	return {
+		checklistId: reportData.checklist,
+		items: reportData.items || [],
+		remarks: reportData.remarks,
+		location: reportData.location,
+		inspectionDate: reportData.inspectionDate || new Date().toISOString(),
+	}
+}
+
+/**
+ * Post one run, keep it on the store, and open a follow-up task when items failed.
+ *
+ * @param {object} store The inspection store.
+ * @param {object} reportData Run data: `case`, `checklist`, `items`, optional `remarks`, `location`.
+ * @return {Promise<object>} The recorded run.
+ */
+async function recordRun(store, reportData) {
+	const response = await axios.post(
+		generateUrl('/apps/dossiq/api/cases/{id}/checklist-results', { id: reportData.case }),
+		runBody(reportData),
+	)
+	const saved = response.data
+	store.reports.push(saved)
+	if (saved.failedItems > 0) {
+		await store.createFollowUpTask(reportData.case, saved.failedItems, saved.id)
+	}
+	return saved
+}
+
+/**
+ * The message a failed request carries: the server's own, else the error's.
+ *
+ * @param {Error} error The failure.
+ * @return {string} The message.
+ */
+function refusalOf(error) {
+	return error?.response?.data?.message || error.message
+}
+
 export const useInspectionStore = defineStore('inspection', {
 	state: () => ({
 		/** @type {Array} Checklists for the current case type */
@@ -168,34 +214,9 @@ export const useInspectionStore = defineStore('inspection', {
 			this.loading = true
 			this.error = null
 			try {
-				const response = await axios.post(
-					generateUrl(
-						'/apps/dossiq/api/cases/{id}/checklist-results',
-						{ id: reportData.case },
-					),
-					{
-						checklistId: reportData.checklist,
-						items: reportData.items || [],
-						remarks: reportData.remarks,
-						location: reportData.location,
-						inspectionDate:
-							reportData.inspectionDate || new Date().toISOString(),
-					},
-				)
-				const saved = response.data
-				this.reports.push(saved)
-
-				if (saved.failedItems > 0) {
-					await this.createFollowUpTask(
-						reportData.case,
-						saved.failedItems,
-						saved.id,
-					)
-				}
-
-				return saved
+				return await recordRun(this, reportData)
 			} catch (error) {
-				this.error = error?.response?.data?.message || error.message
+				this.error = refusalOf(error)
 				console.error('Error creating report:', error)
 				return null
 			} finally {

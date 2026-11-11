@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Object\ObjectStateRequest;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -169,7 +170,7 @@ class CaseArchiveState {
 	 * platform gave is carried through unchanged, because the reason the user
 	 * reads has to be the reason the server gave (ADR-105).
 	 *
-	 * @param string $verb `archive` or `unarchive`.
+	 * @param string $verb `archive` or `unarchive`; the handler answers it as `<verb>With()`.
 	 * @param string $caseId The case UUID.
 	 * @param string $reason Why.
 	 *
@@ -192,7 +193,9 @@ class CaseArchiveState {
 
 		try {
 			// The handler is resolved by name, so its methods are called by name too.
-			$answer = $handler->{$verb}($caseId, $reason, $register, $schema);
+			$answer = $handler->{$verb . 'With'}(
+				new ObjectStateRequest(identifier: $caseId, reason: $reason, register: $register, schema: $schema)
+			);
 		} catch (RefusedException $e) {
 			throw $e;
 		} catch (Throwable $e) {

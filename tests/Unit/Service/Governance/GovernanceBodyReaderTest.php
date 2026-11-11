@@ -124,6 +124,41 @@ class GovernanceBodyReaderTest extends TestCase {
 	}//end testAFoundBodyOverridesTheLocalRow()
 
 	/**
+	 * Only the first chair and the first secretary take their field; a second
+	 * one, and a member without a role, join the plain members as members, and
+	 * a member that is not a row or has no uid is left out.
+	 *
+	 * @return void
+	 */
+	public function testTheRosterSeatsOnlyTheFirstChairAndSecretary(): void {
+		$body = [
+			'id' => 'gb-9',
+			'members' => [
+				'not a member',
+				['uid' => '  ', 'role' => 'chair'],
+				['uid' => ' jan ', 'name' => 'Jan', 'role' => 'chair'],
+				['uid' => 'els', 'name' => 'Els', 'role' => 'chair', 'external' => 'yes'],
+				['uid' => 'piet', 'role' => 'secretary'],
+				['uid' => 'mo', 'name' => 'Mo', 'role' => 'secretary', 'external' => true],
+				['uid' => 'kees'],
+			],
+		];
+
+		$resolved = $this->reader(mode: 'found', body: $body)->resolve(row: ['id' => 'committee-1', 'governanceBodyId' => 'gb-9']);
+
+		self::assertSame(expected: 'jan', actual: $resolved['chair']);
+		self::assertSame(expected: 'piet', actual: $resolved['secretary']);
+		self::assertSame(
+			expected: [
+				['uid' => 'els', 'displayName' => 'Els', 'role' => 'member', 'external' => false],
+				['uid' => 'mo', 'displayName' => 'Mo', 'role' => 'member', 'external' => true],
+				['uid' => 'kees', 'displayName' => '', 'role' => 'member', 'external' => false],
+			],
+			actual: $resolved['members']
+		);
+	}//end testTheRosterSeatsOnlyTheFirstChairAndSecretary()
+
+	/**
 	 * An absent decidiq, a failing read and a body not yet migrated all keep the
 	 * local row as it is, with no error.
 	 *

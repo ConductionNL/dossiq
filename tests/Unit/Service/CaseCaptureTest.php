@@ -101,6 +101,54 @@ class CaseCaptureTest extends TestCase {
 	}//end testAVoiceNoteBecomesACaseDocument()
 
 	/**
+	 * Both stored records carry every field, the same moment and the link between them.
+	 *
+	 * @return void
+	 */
+	public function testBothRecordsCarryEveryFieldAndTheLink(): void {
+		$result = $this->service->attachCapture(
+			caseId: 'case-9',
+			fileName: 'foto.jpg',
+			mimeType: 'image/jpeg',
+			content: 'Ynl0ZXM=',
+			taskId: 'task-1',
+		);
+
+		$documents = $this->register->all(schema: 'document');
+		$document = reset($documents);
+		$this->assertSame(
+			['foto.jpg', 'foto.jpg', 'image/jpeg', 'Ynl0ZXM=', '', 'Foto bij taak task-1'],
+			[$document['title'], $document['fileName'], $document['format'], $document['content'], $document['author'], $document['description']]
+		);
+		$caseDocument = $result['document'];
+		$this->assertSame((string)($document['id'] ?? ($document['uuid'] ?? '')), $caseDocument['document']);
+		$this->assertSame(['foto.jpg', 'Foto bij taak task-1'], [$caseDocument['title'], $caseDocument['description']]);
+		$this->assertSame($document['creationDate'], $caseDocument['registrationDate']);
+		$this->assertSame(['ok', 'document'], array_keys($result));
+	}//end testBothRecordsCarryEveryFieldAndTheLink()
+
+	/**
+	 * Without the document schemas the capture is refused with the configuration sentence, and nothing is stored.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheDocumentSchemasNothingIsStored(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->register);
+		$settings->method('getConfigValue')->willReturn('');
+		$service = new CaseCaptureService(settingsService: $settings);
+
+		try {
+			$service->attachCapture(caseId: 'case-1', fileName: 'a.ogg', mimeType: 'audio/ogg', content: 'eA==');
+			$this->fail('An unconfigured store must refuse.');
+		} catch (\RuntimeException $e) {
+			$this->assertSame('Document schema not configured', $e->getMessage());
+		}
+
+		$this->assertSame([], $this->register->all(schema: 'document'));
+	}//end testWithoutTheDocumentSchemasNothingIsStored()
+
+	/**
 	 * A capture made for a task says which task, and still files on the case.
 	 *
 	 * @return void

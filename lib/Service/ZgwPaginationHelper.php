@@ -38,6 +38,20 @@ namespace OCA\Dossiq\Service;
  */
 class ZgwPaginationHelper {
 	/**
+	 * Pagination and framework parameters that never go into a page link.
+	 *
+	 * @var array<string, int>
+	 */
+	private const FRAMEWORK_PARAMS = [
+		'page' => 1,
+		'_page' => 1,
+		'_route' => 1,
+		'zgwApi' => 1,
+		'resource' => 1,
+		'uuid' => 1,
+	];
+
+	/**
 	 * Wrap paginated results in ZGW format.
 	 *
 	 * @param array $mappedObjects The mapped objects for the current page
@@ -51,54 +65,66 @@ class ZgwPaginationHelper {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function wrapResults(
-		array $mappedObjects,
-		int $totalCount,
-		int $page,
-		int $pageSize,
-		string $baseUrl,
-		array $queryParams,
-	): array {
-		$totalPages = 1;
-		if ($pageSize > 0) {
-			$totalPages = (int)ceil($totalCount / $pageSize);
-		}
-
-		// Remove pagination and framework params from query string.
-		$filteredParams = array_diff_key(
-			$queryParams,
-			[
-				'page' => 1,
-				'_page' => 1,
-				'_route' => 1,
-				'zgwApi' => 1,
-				'resource' => 1,
-				'uuid' => 1,
-			]
-		);
-		$queryString = http_build_query(data: $filteredParams);
-
-		$separator = '?';
-		if ($queryString !== '') {
-			$separator = '?' . $queryString . '&';
-		}
-
-		$next = null;
-		$previous = null;
-
-		if ($page < $totalPages) {
-			$next = $baseUrl . $separator . 'page=' . ($page + 1);
-		}
-
-		if ($page > 1) {
-			$previous = $baseUrl . $separator . 'page=' . ($page - 1);
-		}
+	public function wrapResults(array $mappedObjects, int $totalCount, int $page, int $pageSize, string $baseUrl, array $queryParams): array {
+		$prefix = self::linkPrefix(baseUrl: $baseUrl, queryParams: $queryParams);
+		$totalPages = self::totalPages(totalCount: $totalCount, pageSize: $pageSize);
 
 		return [
 			'count' => $totalCount,
-			'next' => $next,
-			'previous' => $previous,
+			'next' => self::linkIf(url: $prefix . 'page=' . ($page + 1), exists: ($page < $totalPages)),
+			'previous' => self::linkIf(url: $prefix . 'page=' . ($page - 1), exists: ($page > 1)),
 			'results' => $mappedObjects,
 		];
 	}//end wrapResults()
+
+	/**
+	 * The number of pages; one when the page size is not positive.
+	 *
+	 * @param int $totalCount The total number of matching objects.
+	 * @param int $pageSize   The page size.
+	 *
+	 * @return int The number of pages.
+	 */
+	private static function totalPages(int $totalCount, int $pageSize): int {
+		if ($pageSize > 0) {
+			return (int)ceil($totalCount / $pageSize);
+		}
+
+		return 1;
+	}//end totalPages()
+
+	/**
+	 * The base URL with the caller's own query parameters, ready for `page=N`.
+	 *
+	 * Pagination and framework parameters are left out.
+	 *
+	 * @param string $baseUrl     The base URL for pagination links.
+	 * @param array  $queryParams The original query parameters.
+	 *
+	 * @return string The link up to `page=`.
+	 */
+	private static function linkPrefix(string $baseUrl, array $queryParams): string {
+		$queryString = http_build_query(data: array_diff_key($queryParams, self::FRAMEWORK_PARAMS));
+		if ($queryString !== '') {
+			return $baseUrl . '?' . $queryString . '&';
+		}
+
+		return $baseUrl . '?';
+	}//end linkPrefix()
+
+	/**
+	 * The link when that page exists, else null.
+	 *
+	 * @param string $url    The link.
+	 * @param bool   $exists Whether the page exists.
+	 *
+	 * @return string|null The link or null.
+	 */
+	private static function linkIf(string $url, bool $exists): ?string {
+		if ($exists === true) {
+			return $url;
+		}
+
+		return null;
+	}//end linkIf()
 }//end class

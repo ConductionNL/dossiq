@@ -285,8 +285,8 @@ class StatusChecklist {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function tasksFor(string $statusTypeId, array $case, string $actor): array {
-		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-		if ($caseId === '' || $statusTypeId === '') {
+		$read = self::readOf(statusTypeId: $statusTypeId, case: $case);
+		if ($read === null) {
 			return [];
 		}
 
@@ -298,19 +298,10 @@ class StatusChecklist {
 		// cannot tell the two apart and the consequence is a duplicated
 		// checklist or a case that will not move.
 		if (trim($actor) === '') {
-			$this->logger->error(
-				'StatusChecklist: no acting identity, so the status tasks cannot be read',
-				['case' => $caseId, 'statusType' => $statusTypeId],
-			);
-			return [];
+			return $this->unread(message: 'StatusChecklist: no acting identity, so the status tasks cannot be read', context: $read);
 		}
 
-		$tasks = $this->engineTasks->forCase(
-			caseId: $caseId,
-			actor: $actor,
-			limit: self::CASE_TASK_LIMIT,
-		);
-
+		$tasks = $this->engineTasks->forCase(caseId: $read['case'], actor: $actor, limit: self::CASE_TASK_LIMIT);
 		// A read that cannot answer reads as "no tasks yet", which on a
 		// re-entry means a second copy of the list and, for the guard, an
 		// item that counts as not done. Both are the safe direction of the
@@ -321,18 +312,56 @@ class StatusChecklist {
 		// duplicate is otherwise unattributable.
 		$failure = $this->engineTasks->lastError();
 		if ($failure !== '') {
-			$this->logger->error(
-				'StatusChecklist: reading the status tasks failed',
-				['exception' => $failure, 'case' => $caseId, 'statusType' => $statusTypeId],
-			);
-			return [];
+			return $this->unread(message: 'StatusChecklist: reading the status tasks failed', context: ['exception' => $failure] + $read);
 		}
 
+		return self::onStatus(tasks: $tasks, statusTypeId: $statusTypeId);
+	}//end tasksFor()
+
+	/**
+	 * The case and status a task read is about, null when either is missing.
+	 *
+	 * @param string               $statusTypeId The statusType UUID.
+	 * @param array<string, mixed> $case         The case.
+	 *
+	 * @return array{case: string, statusType: string}|null The read, as it is logged.
+	 */
+	private static function readOf(string $statusTypeId, array $case): ?array {
+		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+		if ($caseId === '' || $statusTypeId === '') {
+			return null;
+		}
+
+		return ['case' => $caseId, 'statusType' => $statusTypeId];
+	}//end readOf()
+
+	/**
+	 * Log why the status tasks were not read, and answer none.
+	 *
+	 * @param string               $message The log line.
+	 * @param array<string, mixed> $context The read and, when there is one, the failure.
+	 *
+	 * @return array<int, array<string, mixed>> No tasks.
+	 */
+	private function unread(string $message, array $context): array {
+		$this->logger->error($message, $context);
+		return [];
+	}//end unread()
+
+	/**
+	 * The tasks the given status asked for.
+	 *
+	 * @param array<int, array<string, mixed>> $tasks        The case's tasks.
+	 * @param string                           $statusTypeId The statusType UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The tasks whose step is that status.
+	 */
+	private static function onStatus(array $tasks, string $statusTypeId): array {
 		return array_values(
 			array_filter(
 				$tasks,
 				static fn (array $task): bool => trim((string)($task['workflowStepId'] ?? '')) === $statusTypeId
 			)
 		);
-	}//end tasksFor()
+	}//end onStatus()
 }//end class

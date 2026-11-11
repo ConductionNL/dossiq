@@ -76,41 +76,93 @@ class PenaltyPaymentRows {
 	 * @spec openspec/specs/termijn-reporting/spec.md#requirement-the-annual-audit-lists-the-forfeited-payments-by-case
 	 */
 	public function forYear(int $year): array {
-		$none = ['count' => 0, 'totalEuros' => 0.0, 'disputedCount' => 0];
-		$empty = ['year' => $year, 'rows' => [], 'summary' => $none, 'summaryRows' => [['year' => $year] + $none]];
-
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$paymentSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
-		if ($objectService === null || $register === '' || $paymentSchema === '') {
-			return $empty;
+		$store = $this->paymentStore();
+		if ($store === null) {
+			return self::yearOf(year: $year, rows: []);
 		}
 
 		try {
-			$payments = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $paymentSchema, filters: []);
+			$payments = $this->paymentsIn(store: $store);
 		} catch (Throwable $e) {
-			return $empty;
+			return self::yearOf(year: $year, rows: []);
 		}
 
 		$payments = ($this->payouts?->mergedRows(storedRows: $payments) ?? $payments);
+		return self::yearOf(year: $year, rows: self::inYear(rows: $this->rowsFor(store: $store, payments: $payments), year: $year));
+	}//end forYear()
 
-		$this->found = [];
-		$rows = [];
-		foreach ($payments as $payment) {
-			$row = $this->rowOf(objectService: $objectService, register: $register, payment: $payment);
-			if (str_starts_with($row['forfeitDate'], (string)$year) === false) {
-				continue;
-			}
-
-			$rows[] = $row;
+	/**
+	 * The object service, register and payment schema, null when any is missing.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function paymentStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register      = (string)$this->settingsService->getConfigValue('register');
+		$paymentSchema = (string)$this->settingsService->getConfigValue(MoneyConfigKeys::PAYOUT_SCHEMA);
+		if ($objectService === null || $register === '' || $paymentSchema === '') {
+			return null;
 		}
 
-		usort($rows, static fn (array $a, array $b): int => strcmp($b['forfeitDate'], $a['forfeitDate']));
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $paymentSchema];
+	}//end paymentStore()
 
-		$total = array_sum(array_map(static fn (array $row): float => $row['amountEuros'], $rows));
+	/**
+	 * Every stored payment.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The payment store.
+	 *
+	 * @return array<int, array<string, mixed>> The payments.
+	 */
+	private function paymentsIn(array $store): array {
+		return $this->searchObjectsAsArrays(objectService: $store['objectService'], register: $store['register'], schema: $store['schema'], filters: []);
+	}//end paymentsIn()
+
+	/**
+	 * Every payment as a row, with the objects it names read once for the whole call.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store    The payment store.
+	 * @param array<int, array<string, mixed>>                                $payments The payments.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, in payment order.
+	 */
+	private function rowsFor(array $store, array $payments): array {
+		$this->found = [];
+		$rows        = [];
+		foreach ($payments as $payment) {
+			$rows[] = $this->rowOf(store: $store, payment: $payment);
+		}
+
+		return $rows;
+	}//end rowsFor()
+
+	/**
+	 * The rows forfeited in a year, newest forfeit first.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Every row.
+	 * @param int                              $year The year.
+	 *
+	 * @return array<int, array<string, mixed>> The year's rows.
+	 */
+	private static function inYear(array $rows, int $year): array {
+		$inYear = array_values(array_filter($rows, static fn (array $row): bool => str_starts_with($row['forfeitDate'], (string)$year)));
+		usort($inYear, static fn (array $a, array $b): int => strcmp($b['forfeitDate'], $a['forfeitDate']));
+
+		return $inYear;
+	}//end inYear()
+
+	/**
+	 * The report of a year over its rows: the rows, the summary and the summary as one row.
+	 *
+	 * @param int                              $year The year.
+	 * @param array<int, array<string, mixed>> $rows The year's rows, newest forfeit first.
+	 *
+	 * @return array<string, mixed> The report.
+	 */
+	private static function yearOf(int $year, array $rows): array {
+		$total    = array_sum(array_map(static fn (array $row): float => $row['amountEuros'], $rows));
 		$disputed = count(array_filter($rows, static fn (array $row): bool => $row['paymentStatus'] === 'on-hold-objection'));
-
-		$summary = ['count' => count($rows), 'totalEuros' => round($total, 2), 'disputedCount' => $disputed];
+		$summary  = ['count' => count($rows), 'totalEuros' => round($total, 2), 'disputedCount' => $disputed];
 
 		// The summary also as a one-row list, the shape a record list reads.
 		return [
@@ -119,37 +171,18 @@ class PenaltyPaymentRows {
 			'summary'     => $summary,
 			'summaryRows' => [['year' => $year] + $summary],
 		];
-	}//end forYear()
+	}//end yearOf()
 
 	/**
 	 * One payment as a row, named by its case.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $register      The register id.
-	 * @param array<string, mixed> $payment       The payment.
+	 * @param array{objectService: object, register: string, schema: string} $store   The payment store.
+	 * @param array<string, mixed>                                            $payment The payment.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function rowOf(object $objectService, string $register, array $payment): array {
-		$calculation = $this->read(
-			objectService: $objectService,
-			register: $register,
-			schemaKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
-			id: (string)($payment['penaltyPaymentCalculation'] ?? '')
-		);
-		$term = $this->read(
-			objectService: $objectService,
-			register: $register,
-			schemaKey: 'termijn_instance_schema',
-			id: (string)($calculation['deadlineInstance'] ?? '')
-		);
-		$case = $this->read(objectService: $objectService, register: $register, schemaKey: 'case_schema', id: (string)($term['case'] ?? ''));
-		$caseType = $this->read(objectService: $objectService, register: $register, schemaKey: 'case_type_schema', id: (string)($case['caseType'] ?? ''));
-
-		$forfeitDate = (string)($calculation['stoppedOn'] ?? '');
-		if ($forfeitDate === '') {
-			$forfeitDate = (string)($calculation['startDate'] ?? '');
-		}
+	private function rowOf(array $store, array $payment): array {
+		[$calculation, $term, $case, $caseType] = $this->linkedTo(store: $store, payment: $payment);
 
 		return [
 			'id'             => (string)($payment['id'] ?? ($payment['@self']['id'] ?? '')),
@@ -158,32 +191,63 @@ class PenaltyPaymentRows {
 			'caseTitle'      => (string)($case['title'] ?? ''),
 			'caseTypeTitle'  => (string)($caseType['title'] ?? ''),
 			'requester'      => (string)($case['initiatorDisplayName'] ?? ''),
-			'forfeitDate'    => $forfeitDate,
+			'forfeitDate'    => self::forfeitDateOf(calculation: $calculation),
 			'amountEuros'    => round(((int)($payment['amount'] ?? 0)) / 100, 2),
 			'paymentStatus'  => (string)($payment['status'] ?? ''),
 		];
 	}//end rowOf()
 
 	/**
+	 * The calculation, term, case and case type a payment leads to, each [] when absent.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store   The payment store.
+	 * @param array<string, mixed>                                            $payment The payment.
+	 *
+	 * @return array{0: array, 1: array, 2: array, 3: array} The four objects, in that order.
+	 */
+	private function linkedTo(array $store, array $payment): array {
+		$calculation = $this->read(store: $store, ref: [MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA, (string)($payment['penaltyPaymentCalculation'] ?? '')]);
+		$term        = $this->read(store: $store, ref: ['termijn_instance_schema', (string)($calculation['deadlineInstance'] ?? '')]);
+		$case        = $this->read(store: $store, ref: ['case_schema', (string)($term['case'] ?? '')]);
+		$caseType    = $this->read(store: $store, ref: ['case_type_schema', (string)($case['caseType'] ?? '')]);
+
+		return [$calculation, $term, $case, $caseType];
+	}//end linkedTo()
+
+	/**
+	 * The day a calculation forfeited: the day it stopped, else the day it started.
+	 *
+	 * @param array<string, mixed> $calculation The penalty payment calculation.
+	 *
+	 * @return string The date, or ''.
+	 */
+	private static function forfeitDateOf(array $calculation): string {
+		$forfeitDate = (string)($calculation['stoppedOn'] ?? '');
+		if ($forfeitDate === '') {
+			$forfeitDate = (string)($calculation['startDate'] ?? '');
+		}
+
+		return $forfeitDate;
+	}//end forfeitDateOf()
+
+	/**
 	 * Read one object by the schema a setting names, once per call.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The register id.
-	 * @param string $schemaKey     The setting that names the schema.
-	 * @param string $id            The object id.
+	 * @param array{objectService: object, register: string, schema: string} $store The payment store, for its object service and register.
+	 * @param array{0: string, 1: string}                                     $ref   The setting that names the schema, and the object id.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function read(object $objectService, string $register, string $schemaKey, string $id): array {
-		$schema = (string)$this->settingsService->getConfigValue($schemaKey);
-		if ($id === '' || $schema === '') {
+	private function read(array $store, array $ref): array {
+		$schema = (string)$this->settingsService->getConfigValue($ref[0]);
+		if ($ref[1] === '' || $schema === '') {
 			return [];
 		}
 
-		$key = $schemaKey.':'.$id;
+		$key = implode(':', $ref);
 		if (array_key_exists($key, $this->found) === false) {
 			try {
-				$this->found[$key] = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
+				$this->found[$key] = $this->findObjectAsArray(objectService: $store['objectService'], register: $store['register'], schema: $schema, id: $ref[1]);
 			} catch (Throwable $e) {
 				$this->found[$key] = null;
 			}

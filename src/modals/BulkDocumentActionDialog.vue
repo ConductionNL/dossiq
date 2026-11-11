@@ -445,52 +445,80 @@ export default {
 				// It happens for real: a file dropped a moment ago has no
 				// informatieobject record until the projection listener runs.
 				if (ids.length === 0) {
-					this.error =
-						this.fileName === ''
-							? this.t(
-									'dossiq',
-									'No document record was found, so nothing was changed',
-								)
-							: this.t(
-									'dossiq',
-									'No document record was found for {name}, so nothing was changed',
-									{ name: this.fileName },
-								)
-					showError(this.error)
+					this.showFailure(this.noDocumentSentence())
 					return
 				}
 
-				const { data } = await axios.post(generateUrl(path), {
-					ids,
-					...extra,
-				})
-				this.results = data.results || []
-
-				// 🔴 A 200 IS NOT A RESULT. Both endpoints answer 200 with a
-				// per-item list, and each entry carries its own `success`, so a
-				// request where every single item failed came back 200 and this
-				// said "Bulk action applied" over the top of it. That toast is
-				// why nothing on screen contradicted the join-id bug for as long
-				// as it shipped. The reader is told what actually happened now.
-				if (this.results.length > 0 && this.succeededCount === 0) {
-					this.error = this.t('dossiq', 'Bulk action changed nothing')
-					showError(this.error)
-				} else {
-					showSuccess(
-						this.t('dossiq', '{count} of {total} document(s) updated', {
-							count: this.succeededCount,
-							total: this.results.length,
-						}),
-					)
-				}
-
-				emit('cn:page:refresh')
+				await this.postBulk(path, { ids, ...extra })
 			} catch {
-				this.error = this.t('dossiq', 'Bulk action failed')
-				showError(this.error)
+				this.showFailure(this.t('dossiq', 'Bulk action failed'))
 			} finally {
 				this.busy = false
 			}
+		},
+
+		/**
+		 * Keep a failure sentence and show it.
+		 *
+		 * @param {string} sentence The sentence.
+		 * @return {void}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		showFailure(sentence) {
+			this.error = sentence
+			showError(this.error)
+		},
+
+		/**
+		 * What to say when the selection names no document record.
+		 *
+		 * @return {string} The sentence.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		noDocumentSentence() {
+			if (this.fileName === '') {
+				return this.t(
+					'dossiq',
+					'No document record was found, so nothing was changed',
+				)
+			}
+			return this.t(
+				'dossiq',
+				'No document record was found for {name}, so nothing was changed',
+				{ name: this.fileName },
+			)
+		},
+
+		/**
+		 * Post the bulk request, say what it changed, and refresh the page.
+		 *
+		 * @param {string} path The API path.
+		 * @param {object} body The ids and the mode-specific fields.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async postBulk(path, body) {
+			const { data } = await axios.post(generateUrl(path), body)
+			this.results = data.results || []
+
+			// 🔴 A 200 IS NOT A RESULT. Both endpoints answer 200 with a
+			// per-item list, and each entry carries its own `success`, so a
+			// request where every single item failed came back 200 and this
+			// said "Bulk action applied" over the top of it. That toast is
+			// why nothing on screen contradicted the join-id bug for as long
+			// as it shipped. The reader is told what actually happened now.
+			if (this.results.length > 0 && this.succeededCount === 0) {
+				this.showFailure(this.t('dossiq', 'Bulk action changed nothing'))
+			} else {
+				showSuccess(
+					this.t('dossiq', '{count} of {total} document(s) updated', {
+						count: this.succeededCount,
+						total: this.results.length,
+					}),
+				)
+			}
+
+			emit('cn:page:refresh')
 		},
 
 		/**

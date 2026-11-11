@@ -121,6 +121,50 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { caseIdFromLocation } from '../utils/savedMail.js'
 
+/**
+ * Look up the household's cases or the person's records, keep them, and say it was answered.
+ *
+ * @param {object} dialog The lookup dialog.
+ * @return {Promise<void>}
+ */
+async function showMatches(dialog) {
+	if (dialog.household) {
+		dialog.found = await householdMatches(dialog.ground)
+		emit('cn:page:refresh')
+	} else {
+		dialog.found = await personMatches(dialog)
+	}
+	dialog.answered = true
+}
+
+/**
+ * The cases of this case's household that the ground lets the handler see.
+ *
+ * @param {string} ground The ground the lookup is made on.
+ * @return {Promise<Array<object>>} The cases.
+ */
+async function householdMatches(ground) {
+	const { data } = await axios.post(
+		generateUrl('/apps/dossiq/api/cases/{caseId}/household-cases/lookup', { caseId: caseIdFromLocation() }),
+		{ ground },
+	)
+	return Array.isArray(data?.results) ? data.results : []
+}
+
+/**
+ * What the other domain holds on the person, as the ground lets the handler see.
+ *
+ * @param {{bsn: string, domain: string, ground: string}} dialog The person, the domain and the ground.
+ * @return {Promise<Array<object>>} What was found.
+ */
+async function personMatches(dialog) {
+	const { data } = await axios.post(
+		generateUrl('/apps/dossiq/api/cross-domain/lookup'),
+		{ bsn: dialog.bsn.trim(), domain: dialog.domain, ground: dialog.ground },
+	)
+	return Array.isArray(data?.found) ? data.found : []
+}
+
 export default {
 	name: 'CrossDomainLookupDialog',
 
@@ -233,32 +277,12 @@ export default {
 			this.error = ''
 			this.answered = false
 			try {
-				if (this.household) {
-					const { data } = await axios.post(
-						generateUrl('/apps/dossiq/api/cases/{caseId}/household-cases/lookup', { caseId: caseIdFromLocation() }),
-						{ ground: this.ground },
-					)
-					this.found = Array.isArray(data?.results) ? data.results : []
-					emit('cn:page:refresh')
-				} else {
-					const { data } = await axios.post(
-						generateUrl('/apps/dossiq/api/cross-domain/lookup'),
-						{
-							bsn: this.bsn.trim(),
-							domain: this.domain,
-							ground: this.ground,
-						},
-					)
-					this.found = Array.isArray(data?.found) ? data.found : []
-				}
-				this.answered = true
+				await showMatches(this)
 			} catch (e) {
 				// The server's own sentence, which names the rule it refused
 				// on. Replacing it here is how "choose the ground you are
 				// looking this person up on" becomes "request failed".
-				this.error =
-					e?.response?.data?.message
-					|| t('dossiq', 'The lookup was not made.')
+				this.error = e?.response?.data?.message || t('dossiq', 'The lookup was not made.')
 			} finally {
 				this.busy = false
 			}

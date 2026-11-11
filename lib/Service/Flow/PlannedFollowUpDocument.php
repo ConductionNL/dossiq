@@ -143,54 +143,80 @@ class PlannedFollowUpDocument {
 		string $until = '',
 		int $count = 0,
 	): array {
-		$cron = $this->cronFor(due: $due, recurrence: $recurrence);
-		$series = [
-			'recurrence' => $recurrence,
-			'anchor' => $due->format('Y-m-d'),
-			'until' => $until,
-			'count' => $count,
-		];
+		$followUp = new PlannedFollowUp();
+		$followUp->caseId = $caseId;
+		$followUp->caseTypeId = $caseTypeId;
+		$followUp->due = $due;
+		$followUp->title = $title;
+		$followUp->uid = $uid;
+		$followUp->recurrence = $recurrence;
+		$followUp->until = $until;
+		$followUp->count = $count;
+
+		return $this->flowDocument(followUp: $followUp);
+	}//end build()
+
+	/**
+	 * The scheduled flow that creates the planned case.
+	 *
+	 * @param PlannedFollowUp $followUp The planned follow-up.
+	 *
+	 * @return array<string, mixed> The flow document.
+	 */
+	private function flowDocument(PlannedFollowUp $followUp): array {
+		$cron = $this->cronFor(due: $followUp->due, recurrence: $followUp->recurrence);
 
 		return [
-			'name' => 'Planned follow-up: ' . $title,
-			'description' => $this->describe(
-				caseId: $caseId,
-				caseTypeId: $caseTypeId,
-				due: $due,
-				uid: $uid,
-				recurrence: $recurrence
-			),
+			'name' => 'Planned follow-up: ' . $followUp->title,
+			'description' => $this->describe(followUp: $followUp),
 			'app' => Application::APP_ID,
 			'applicationSlug' => self::PLANNED_SLUG,
 			'trigger' => 'schedule',
 			'cron' => $cron,
 			'executionMode' => 'async',
 			'enabled' => false,
-			'nodes' => [
-				[
-					'id' => 'when',
-					'type' => 'openregister.trigger-schedule',
-					'config' => ['cron' => $cron, 'runAs' => $uid],
-				],
-				[
-					'id' => 'create',
-					'type' => 'dossiq.createSubCase',
-					'config' => [
-						'caseType' => $caseTypeId,
-						'title' => $title,
-						'relatedCases' => [$caseId],
-						'series' => $series,
-					],
-				],
-				['id' => 'done', 'type' => 'openregister.end', 'config' => []],
-			],
+			'nodes' => $this->flowNodes(followUp: $followUp, cron: $cron),
 			'edges' => [
 				['id' => 'e-create', 'from' => 'when', 'to' => 'create'],
 				['id' => 'e-done', 'from' => 'create', 'to' => 'done'],
 			],
 			'limits' => ['maxTransitions' => 10],
 		];
-	}//end build()
+	}//end flowDocument()
+
+	/**
+	 * The schedule trigger, the node that creates the case with its series, and the end.
+	 *
+	 * @param PlannedFollowUp $followUp The planned follow-up.
+	 * @param string          $cron     When the trigger fires.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function flowNodes(PlannedFollowUp $followUp, string $cron): array {
+		return [
+			[
+				'id' => 'when',
+				'type' => 'openregister.trigger-schedule',
+				'config' => ['cron' => $cron, 'runAs' => $followUp->uid],
+			],
+			[
+				'id' => 'create',
+				'type' => 'dossiq.createSubCase',
+				'config' => [
+					'caseType' => $followUp->caseTypeId,
+					'title' => $followUp->title,
+					'relatedCases' => [$followUp->caseId],
+					'series' => [
+						'recurrence' => $followUp->recurrence,
+						'anchor' => $followUp->due->format('Y-m-d'),
+						'until' => $followUp->until,
+						'count' => $followUp->count,
+					],
+				],
+			],
+			['id' => 'done', 'type' => 'openregister.end', 'config' => []],
+		];
+	}//end flowNodes()
 
 	/**
 	 * Stamp the series flow's own id onto the cases it will create.
@@ -518,38 +544,28 @@ class PlannedFollowUpDocument {
 	/**
 	 * The sentence a planned flow carries as its description.
 	 *
-	 * @param string $caseId The case the follow-up belongs to.
-	 * @param string $caseTypeId The planned case's type.
-	 * @param DateTimeImmutable $due The first occurrence.
-	 * @param string $uid The user who planned it.
-	 * @param string $recurrence The recurrence token.
+	 * @param PlannedFollowUp $followUp The planned follow-up.
 	 *
 	 * @return string The description.
 	 */
-	private function describe(
-		string $caseId,
-		string $caseTypeId,
-		DateTimeImmutable $due,
-		string $uid,
-		string $recurrence,
-	): string {
-		if ($recurrence === self::RECURRENCE_NONE) {
+	private function describe(PlannedFollowUp $followUp): string {
+		if ($followUp->recurrence === self::RECURRENCE_NONE) {
 			return sprintf(
 				'Creates a case of type %s on %s, related to case %s. Planned by %s.',
-				$caseTypeId,
-				$due->format('Y-m-d'),
-				$caseId,
-				$uid
+				$followUp->caseTypeId,
+				$followUp->due->format('Y-m-d'),
+				$followUp->caseId,
+				$followUp->uid
 			);
 		}
 
 		return sprintf(
 			'Creates a case of type %s every %s from %s, related to case %s. Planned by %s.',
-			$caseTypeId,
-			$this->calendar->inWords(recurrence: $recurrence),
-			$due->format('Y-m-d'),
-			$caseId,
-			$uid
+			$followUp->caseTypeId,
+			$this->calendar->inWords(recurrence: $followUp->recurrence),
+			$followUp->due->format('Y-m-d'),
+			$followUp->caseId,
+			$followUp->uid
 		);
 	}//end describe()
 

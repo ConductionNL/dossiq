@@ -104,27 +104,41 @@ class ExistingRowMatcher {
 		array $caseTypes,
 		array $match = [],
 	): ?array {
+		$run = new RowMatchRun(objectService: $objectService, register: $register, schema: $schema, schemaKey: $schemaKey, row: $row);
 		if ($match !== []) {
-			return $this->findBy(objectService: $objectService, register: $register, schema: $schema, properties: $match, row: $row);
+			return $this->findBy(run: $run, properties: $match);
 		}
 
-		$filters = $this->filtersFor(schemaKey: $schemaKey, row: $row, caseTypes: $caseTypes);
+		return $this->findByName(run: $run, caseTypes: $caseTypes);
+	}//end find()
+
+	/**
+	 * The row held here under the package row's identifier or name.
+	 *
+	 * @param RowMatchRun        $run       The package row and where to look.
+	 * @param array<int, string> $caseTypes The ids of case types adopted this run.
+	 *
+	 * @return array<string, mixed>|null The existing row.
+	 */
+	private function findByName(RowMatchRun $run, array $caseTypes): ?array {
+		$filters = $this->filtersFor(run: $run, caseTypes: $caseTypes);
 		if ($filters === []) {
 			return null;
 		}
 
-		// Read unscoped: an install runs as a repair step, without a user, and
-		// a scoped read there answers "none" and would duplicate the row.
-		$found = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: $filters,
-		);
-		if ($found === [] && $schemaKey === self::CASE_TYPE_KEY) {
-			$found = $this->withoutIdentifier(objectService: $objectService, register: $register, schema: $schema, row: $row);
-		}
+		return $this->firstNamed(run: $run, filters: $filters);
+	}//end findByName()
 
+	/**
+	 * The first row held here for the name filters, or null.
+	 *
+	 * @param RowMatchRun           $run     The package row and where to look.
+	 * @param array<string, string> $filters The name filters.
+	 *
+	 * @return array<string, mixed>|null The existing row.
+	 */
+	private function firstNamed(RowMatchRun $run, array $filters): ?array {
+		$found = $this->namedRows(run: $run, filters: $filters);
 		if ($found === []) {
 			return null;
 		}
@@ -132,12 +146,32 @@ class ExistingRowMatcher {
 		if (count($found) > 1) {
 			$this->logger->warning(
 				'Package install: {count} rows in {schema} match {filters}; adopting the first',
-				['count' => count($found), 'schema' => $schema, 'filters' => json_encode($filters)]
+				['count' => count($found), 'schema' => $run->schema, 'filters' => json_encode($filters)]
 			);
 		}
 
 		return $found[0];
-	}//end find()
+	}//end firstNamed()
+
+	/**
+	 * The rows held here for the name filters, or the case types with the title
+	 * and no identifier when none carries the identifier.
+	 *
+	 * @param RowMatchRun           $run     The package row and where to look.
+	 * @param array<string, string> $filters The name filters.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function namedRows(RowMatchRun $run, array $filters): array {
+		// Read unscoped: an install runs as a repair step, without a user, and
+		// a scoped read there answers "none" and would duplicate the row.
+		$found = $this->search(run: $run, filters: $filters);
+		if ($found === [] && $run->schemaKey === self::CASE_TYPE_KEY) {
+			return $this->withoutIdentifier(run: $run);
+		}
+
+		return $found;
+	}//end namedRows()
 
 	/**
 	 * The row this instance holds with the same value for one property.
@@ -148,17 +182,31 @@ class ExistingRowMatcher {
 	 * when it is equal on every property named. Matching on a flag alone
 	 * adopts whichever row has the flag set, whatever it is called.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The schema.
-	 * @param array<int, string>   $properties    The properties to match on.
-	 * @param array<string, mixed> $row           The package row.
+	 * @param RowMatchRun        $run        The package row and where to look.
+	 * @param array<int, string> $properties The properties to match on.
 	 *
 	 * @return array<string, mixed>|null The row held here, or null.
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
-	private function findBy(object $objectService, string $register, string $schema, array $properties, array $row): ?array {
+	private function findBy(RowMatchRun $run, array $properties): ?array {
+		$wanted = $this->wantedValues(row: $run->row, properties: $properties);
+		if ($wanted === null) {
+			return null;
+		}
+
+		return $this->heldWith(run: $run, wanted: $wanted);
+	}//end findBy()
+
+	/**
+	 * The values the package row carries for the match properties.
+	 *
+	 * @param array<string, mixed> $row        The package row.
+	 * @param array<int, string>   $properties The properties to match on.
+	 *
+	 * @return array<string, string|int|bool>|null The values, or null when one cannot be matched on.
+	 */
+	private function wantedValues(array $row, array $properties): ?array {
 		$rules = new PackageSeedRules();
 		$wanted = [];
 		foreach ($properties as $property) {
@@ -170,34 +218,25 @@ class ExistingRowMatcher {
 			$wanted[$property] = $value;
 		}
 
+		return $wanted;
+	}//end wantedValues()
+
+	/**
+	 * The first row held here equal on every wanted value, or null.
+	 *
+	 * @param RowMatchRun                    $run    The package row and where to look.
+	 * @param array<string, string|int|bool> $wanted The values to match.
+	 *
+	 * @return array<string, mixed>|null The row held here, or null.
+	 */
+	private function heldWith(RowMatchRun $run, array $wanted): ?array {
 		// The store is asked for the text values only. How it compares a
 		// number or a flag in a filter is its own business, and an answer
 		// that is too narrow would write a second row; every property is
 		// compared here, on the rows it answers.
 		$filters = array_filter($wanted, 'is_string');
 		$filters['_limit'] = self::MATCH_LIMIT;
-		$found = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: $filters,
-		);
-
-		// The store may answer a wider match than asked; only equal values count.
-		$found = array_values(
-			array_filter(
-				$found,
-				function (array $existing) use ($wanted): bool {
-					foreach ($wanted as $property => $value) {
-						if ($this->isSame(held: ($existing[$property] ?? null), shipped: $value) === false) {
-							return false;
-						}
-					}
-
-					return true;
-				}
-			)
-		);
+		$found = $this->equalOn(found: $this->search(run: $run, filters: $filters), wanted: $wanted);
 		if ($found === []) {
 			return null;
 		}
@@ -205,12 +244,49 @@ class ExistingRowMatcher {
 		if (count($found) > 1) {
 			$this->logger->warning(
 				'Package install: {count} rows in {schema} have {values}; adopting the first',
-				['count' => count($found), 'schema' => $schema, 'values' => json_encode($wanted)]
+				['count' => count($found), 'schema' => $run->schema, 'values' => json_encode($wanted)]
 			);
 		}
 
 		return $found[0];
-	}//end findBy()
+	}//end heldWith()
+
+	/**
+	 * The rows that hold every wanted value.
+	 *
+	 * The store may answer a wider match than asked; only equal values count.
+	 *
+	 * @param array<int, array<string, mixed>> $found  The rows the store answered.
+	 * @param array<string, string|int|bool>   $wanted The values to match.
+	 *
+	 * @return array<int, array<string, mixed>> The equal rows.
+	 */
+	private function equalOn(array $found, array $wanted): array {
+		return array_values(
+			array_filter(
+				$found,
+				fn (array $existing): bool => $this->holdsAll(existing: $existing, wanted: $wanted)
+			)
+		);
+	}//end equalOn()
+
+	/**
+	 * Whether a row holds every wanted value.
+	 *
+	 * @param array<string, mixed>           $existing The row held here.
+	 * @param array<string, string|int|bool> $wanted   The values to match.
+	 *
+	 * @return bool True when every value is the same.
+	 */
+	private function holdsAll(array $existing, array $wanted): bool {
+		foreach ($wanted as $property => $value) {
+			if ($this->isSame(held: ($existing[$property] ?? null), shipped: $value) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end holdsAll()
 
 	/**
 	 * Whether the value a row holds is the value the package ships.
@@ -243,25 +319,17 @@ class ExistingRowMatcher {
 	/**
 	 * The case types with the package row's title that carry no identifier.
 	 *
-	 * @param object               $objectService The OpenRegister object service.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The case type schema.
-	 * @param array<string, mixed> $row           The package case type.
+	 * @param RowMatchRun $run The package case type and where to look.
 	 *
 	 * @return array<int, array<string, mixed>> The matching rows.
 	 */
-	private function withoutIdentifier(object $objectService, string $register, string $schema, array $row): array {
-		$title = trim((string)($row['title'] ?? ''));
+	private function withoutIdentifier(RowMatchRun $run): array {
+		$title = trim((string)($run->row['title'] ?? ''));
 		if ($title === '') {
 			return [];
 		}
 
-		$found = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['title' => $title],
-		);
+		$found = $this->search(run: $run, filters: ['title' => $title]);
 
 		return array_values(
 			array_filter(
@@ -272,36 +340,91 @@ class ExistingRowMatcher {
 	}//end withoutIdentifier()
 
 	/**
+	 * The rows in the run's schema that the store answers for the filters, unscoped.
+	 *
+	 * @param RowMatchRun          $run     Where to look.
+	 * @param array<string, mixed> $filters The filters.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function search(RowMatchRun $run, array $filters): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->schema,
+			filters: $filters,
+		);
+	}//end search()
+
+	/**
 	 * The equality filters that identify the row, or none when it cannot be matched.
 	 *
-	 * @param string               $schemaKey The settings key naming the schema.
+	 * @param RowMatchRun        $run       The package row and the schema key.
+	 * @param array<int, string> $caseTypes The ids of case types adopted this run.
+	 *
+	 * @return array<string, string> The filters.
+	 */
+	private function filtersFor(RowMatchRun $run, array $caseTypes): array {
+		if ($run->schemaKey === self::CASE_TYPE_KEY) {
+			return $this->identifierFilter(row: $run->row);
+		}
+
+		return $this->namedInCaseType(row: $run->row, caseTypes: $caseTypes);
+	}//end filtersFor()
+
+	/**
+	 * The filter on a case type's identifier, or none when it carries none.
+	 *
+	 * @param array<string, mixed> $row The package case type.
+	 *
+	 * @return array<string, string> The filter.
+	 */
+	private function identifierFilter(array $row): array {
+		$identifier = trim((string)($row['identifier'] ?? ''));
+		if ($identifier === '') {
+			return [];
+		}
+
+		return ['identifier' => $identifier];
+	}//end identifierFilter()
+
+	/**
+	 * The filters on a row's case type and name, or none when it cannot be matched.
+	 *
 	 * @param array<string, mixed> $row       The package row.
 	 * @param array<int, string>   $caseTypes The ids of case types adopted this run.
 	 *
 	 * @return array<string, string> The filters.
 	 */
-	private function filtersFor(string $schemaKey, array $row, array $caseTypes): array {
-		if ($schemaKey === self::CASE_TYPE_KEY) {
-			$identifier = trim((string)($row['identifier'] ?? ''));
-			if ($identifier === '') {
-				return [];
-			}
-
-			return ['identifier' => $identifier];
-		}
-
+	private function namedInCaseType(array $row, array $caseTypes): array {
 		$caseType = ($row['caseType'] ?? '');
 		if (is_string($caseType) === false || in_array($caseType, $caseTypes, true) === false) {
 			return [];
 		}
 
+		$name = $this->firstName(row: $row);
+		if ($name === null) {
+			return [];
+		}
+
+		return ['caseType' => $caseType] + $name;
+	}//end namedInCaseType()
+
+	/**
+	 * The first naming field the row carries with its value, or null.
+	 *
+	 * @param array<string, mixed> $row The package row.
+	 *
+	 * @return array<string, string>|null The field and its value.
+	 */
+	private function firstName(array $row): ?array {
 		foreach (self::NAMING_FIELDS as $field) {
 			$value = ($row[$field] ?? '');
 			if (is_string($value) === true && trim($value) !== '') {
-				return ['caseType' => $caseType, $field => $value];
+				return [$field => $value];
 			}
 		}
 
-		return [];
-	}//end filtersFor()
+		return null;
+	}//end firstName()
 }//end class

@@ -306,21 +306,7 @@ class PlannedSeriesLedger {
 			throw new RuntimeException('flows_unavailable');
 		}
 
-		// The series is found through THIS case's planned flows rather than by
-		// uuid alone. A uuid the caller supplies is a uuid the caller chose, and
-		// the guard at the controller only proves they may act on $caseId.
-		$flow = null;
-		foreach ($this->plannedFlows() as $candidate) {
-			if ((string)$candidate->getUuid() !== $flowId) {
-				continue;
-			}
-
-			$marker = $this->document->markerOf(nodes: (array)($candidate->getNodes() ?? []));
-			if ($marker !== null && $marker['case'] === $caseId) {
-				$flow = $candidate;
-			}
-		}
-
+		$flow = $this->seriesOfCase(caseId: $caseId, flowId: $flowId);
 		if ($flow === null) {
 			throw new RuntimeException('case_not_found');
 		}
@@ -346,6 +332,43 @@ class PlannedSeriesLedger {
 	}//end stopSeries()
 
 	/**
+	 * The series flow with this uuid among THIS case's planned flows, or null.
+	 *
+	 * The series is found through THIS case's planned flows rather than by
+	 * uuid alone. A uuid the caller supplies is a uuid the caller chose, and
+	 * the guard at the controller only proves they may act on $caseId.
+	 *
+	 * @param string $caseId The case the series belongs to.
+	 * @param string $flowId The series flow's uuid.
+	 *
+	 * @return object|null The flow; the last match when several carry the uuid.
+	 */
+	private function seriesOfCase(string $caseId, string $flowId): ?object {
+		$flow = null;
+		foreach ($this->plannedFlows() as $candidate) {
+			if ((string)$candidate->getUuid() === $flowId && $this->plannedFor(flow: $candidate, caseId: $caseId) === true) {
+				$flow = $candidate;
+			}
+		}
+
+		return $flow;
+	}//end seriesOfCase()
+
+	/**
+	 * Whether a planned flow's marker names this case.
+	 *
+	 * @param object $flow   The planned flow.
+	 * @param string $caseId The case.
+	 *
+	 * @return bool True when the flow was planned on the case.
+	 */
+	private function plannedFor(object $flow, string $caseId): bool {
+		$marker = $this->document->markerOf(nodes: (array)($flow->getNodes() ?? []));
+
+		return ($marker !== null && $marker['case'] === $caseId);
+	}//end plannedFor()
+
+	/**
 	 * Switch off every planned follow-up that has nothing left to do.
 	 *
 	 * A schedule trigger is a five-field cron, and five fields cannot say
@@ -369,43 +392,77 @@ class PlannedSeriesLedger {
 			return 0;
 		}
 
-		$day = $today;
-		if ($day === null) {
-			$day = new DateTimeImmutable('today');
-		}
-
+		$sweep = new RetirementSweep(flowService: $service, day: ($today ?? new DateTimeImmutable('today')));
 		$retired = 0;
 		foreach ($this->plannedFlows() as $flow) {
-			if ($flow->getLastRunAt() === null || $flow->getEnabled() === false) {
-				continue;
-			}
-
-			$flowId = (string)$flow->getUuid();
-			$nodes = (array)($flow->getNodes() ?? []);
-			$fired = $this->firedCount(flowId: $flowId, lastRunAt: $flow->getLastRunAt());
-			if ($this->document->isSpent(document: ['nodes' => $nodes], firedCount: $fired, today: $day) === false) {
-				continue;
-			}
-
-			$series = $this->document->seriesOf(nodes: $nodes);
-			$reason = 'follow-up created';
-			if ($series['recurrence'] !== PlannedFollowUpDocument::RECURRENCE_NONE) {
-				$reason = 'series complete';
-			}
-
-			try {
-				$service->save(data: ['enabled' => false, 'notes' => $reason], uuid: $flowId);
-				$retired++;
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'PlannedSeriesLedger: could not retire a spent follow-up',
-					['flow' => $flowId, 'exception' => $e->getMessage()]
-				);
-			}
-		}//end foreach
+			$retired += $this->retireIfSpent(sweep: $sweep, flow: $flow);
+		}
 
 		return $retired;
 	}//end retireSpent()
+
+	/**
+	 * Switch off one planned follow-up that has fired and has nothing left to do.
+	 *
+	 * @param RetirementSweep $sweep The sweep.
+	 * @param object          $flow  The planned flow.
+	 *
+	 * @return integer 1 when it was switched off, 0 otherwise.
+	 */
+	private function retireIfSpent(RetirementSweep $sweep, object $flow): int {
+		if ($flow->getLastRunAt() === null || $flow->getEnabled() === false) {
+			return 0;
+		}
+
+		if ($this->isSpent(sweep: $sweep, flow: $flow) === false) {
+			return 0;
+		}
+
+		return $this->retire(sweep: $sweep, flow: $flow);
+	}//end retireIfSpent()
+
+	/**
+	 * Whether a planned flow has fired as often, or as long, as it was meant to.
+	 *
+	 * @param RetirementSweep $sweep The sweep.
+	 * @param object          $flow  The planned flow.
+	 *
+	 * @return bool True when it is spent.
+	 */
+	private function isSpent(RetirementSweep $sweep, object $flow): bool {
+		$nodes = (array)($flow->getNodes() ?? []);
+		$fired = $this->firedCount(flowId: (string)$flow->getUuid(), lastRunAt: $flow->getLastRunAt());
+
+		return $this->document->isSpent(document: ['nodes' => $nodes], firedCount: $fired, today: $sweep->day);
+	}//end isSpent()
+
+	/**
+	 * Switch a spent flow off with the reason in its notes; a failed save is logged.
+	 *
+	 * @param RetirementSweep $sweep The sweep.
+	 * @param object          $flow  The spent flow.
+	 *
+	 * @return integer 1 when it was switched off, 0 when the save failed.
+	 */
+	private function retire(RetirementSweep $sweep, object $flow): int {
+		$flowId = (string)$flow->getUuid();
+		$series = $this->document->seriesOf(nodes: (array)($flow->getNodes() ?? []));
+		$reason = 'follow-up created';
+		if ($series['recurrence'] !== PlannedFollowUpDocument::RECURRENCE_NONE) {
+			$reason = 'series complete';
+		}
+
+		try {
+			$sweep->flowService->save(data: ['enabled' => false, 'notes' => $reason], uuid: $flowId);
+			return 1;
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'PlannedSeriesLedger: could not retire a spent follow-up',
+				['flow' => $flowId, 'exception' => $e->getMessage()]
+			);
+			return 0;
+		}
+	}//end retire()
 
 
 	/**
