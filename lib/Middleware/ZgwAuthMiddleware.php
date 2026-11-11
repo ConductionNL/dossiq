@@ -176,50 +176,8 @@ class ZgwAuthMiddleware extends Middleware {
 		}
 
 		$authorization = $this->request->getHeader(name: 'Authorization');
-		if ($authorization === '') {
-			throw new ZgwAuthException(
-				message: 'Authorization header is required',
-				statusCode: Http::STATUS_FORBIDDEN
-			);
-		}
-
-		// Extract and validate JWT payload.
-		$token = substr(string: $authorization, offset: strlen(string: 'Bearer '));
-		$payload = $this->decodeJwtPayload(token: $token);
-
-		if ($payload === null || isset($payload['iss']) === false) {
-			throw new ZgwAuthException(
-				message: 'Invalid token payload',
-				statusCode: Http::STATUS_FORBIDDEN
-			);
-		}
-
-		// Validate JWT signature via the dossiq-owned ZgwJwtValidator.
-		// M3: Log detailed message server-side; surface only a generic message to caller.
-		// Catch \Throwable: a misconfigured dependency raises \Error (not \Exception),
-		// which previously escaped as a 500 instead of a clean 403.
-		try {
-			$this->jwtValidator->validate(authorization: $authorization);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'ZGW auth failed: ' . $e->getMessage()
-			);
-			throw new ZgwAuthException(
-				message: 'Authenticatiegegevens zijn niet geldig.',
-				statusCode: Http::STATUS_FORBIDDEN
-			);
-		}
-
-		// Enforce scope-based authorization via ConsumerMapper.
-		$consumer = $this->findConsumerByIssuer(issuer: $payload['iss']);
-		if ($consumer === null) {
-			throw new ZgwAuthException(
-				message: 'Unknown issuer',
-				statusCode: Http::STATUS_FORBIDDEN
-			);
-		}
-
-		$authConfig = $consumer->getAuthorizationConfiguration();
+		$issuer = $this->verifiedIssuer(authorization: $authorization);
+		$authConfig = $this->consumerConfiguration(issuer: $issuer);
 
 		// Superuser bypasses all scope checks.
 		if (($authConfig['superuser'] ?? false) === true) {
@@ -229,6 +187,102 @@ class ZgwAuthMiddleware extends Middleware {
 		// Enforce scope-based authorization.
 		$this->enforceScopes(authConfig: $authConfig);
 	}//end beforeController()
+
+	/**
+	 * The issuer of a present, well-formed token whose signature validates.
+	 *
+	 * @param string $authorization The Authorization header.
+	 *
+	 * @return mixed The `iss` claim.
+	 *
+	 * @throws ZgwAuthException When the header is missing, the payload unreadable or the signature invalid.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	private function verifiedIssuer(string $authorization): mixed {
+		$payload = $this->tokenPayload(authorization: $authorization);
+		$this->validateSignature(authorization: $authorization);
+		return $payload['iss'];
+	}//end verifiedIssuer()
+
+	/**
+	 * The token's payload, when the header carries one with an issuer.
+	 *
+	 * @param string $authorization The Authorization header.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws ZgwAuthException When the header is missing or the payload has no issuer.
+	 */
+	private function tokenPayload(string $authorization): array {
+		if ($authorization === '') {
+			throw $this->forbidden(message: 'Authorization header is required');
+		}
+
+		// Extract and validate JWT payload.
+		$payload = $this->decodeJwtPayload(token: substr(string: $authorization, offset: strlen(string: 'Bearer ')));
+		if ($payload === null || isset($payload['iss']) === false) {
+			throw $this->forbidden(message: 'Invalid token payload');
+		}
+
+		return $payload;
+	}//end tokenPayload()
+
+	/**
+	 * Validate the JWT signature via the dossiq-owned ZgwJwtValidator.
+	 *
+	 * M3: Log detailed message server-side; surface only a generic message to caller.
+	 * Catch \Throwable: a misconfigured dependency raises \Error (not \Exception),
+	 * which previously escaped as a 500 instead of a clean 403.
+	 *
+	 * @param string $authorization The Authorization header.
+	 *
+	 * @return void
+	 *
+	 * @throws ZgwAuthException When the signature does not validate.
+	 */
+	private function validateSignature(string $authorization): void {
+		try {
+			$this->jwtValidator->validate(authorization: $authorization);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'ZGW auth failed: ' . $e->getMessage()
+			);
+			throw $this->forbidden(message: 'Authenticatiegegevens zijn niet geldig.');
+		}
+	}//end validateSignature()
+
+	/**
+	 * The authorization configuration of the consumer the issuer names.
+	 *
+	 * @param mixed $issuer The token's issuer.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws ZgwAuthException When no consumer answers to the issuer.
+	 */
+	private function consumerConfiguration(mixed $issuer): array {
+		$consumer = $this->findConsumerByIssuer(issuer: $issuer);
+		if ($consumer === null) {
+			throw $this->forbidden(message: 'Unknown issuer');
+		}
+
+		return $consumer->getAuthorizationConfiguration();
+	}//end consumerConfiguration()
+
+	/**
+	 * The 403 the gate refuses with.
+	 *
+	 * @param string $message Why.
+	 *
+	 * @return ZgwAuthException
+	 */
+	private function forbidden(string $message): ZgwAuthException {
+		return new ZgwAuthException(
+			message: $message,
+			statusCode: Http::STATUS_FORBIDDEN
+		);
+	}//end forbidden()
 
 	/**
 	 * Handle exceptions thrown during beforeController.
@@ -295,18 +349,12 @@ class ZgwAuthMiddleware extends Middleware {
 		$component = $this->deriveComponentFromUrl();
 
 		if ($component === null) {
-			throw new ZgwAuthException(
-				message: 'Unknown API component',
-				statusCode: Http::STATUS_FORBIDDEN
-			);
+			throw $this->forbidden(message: 'Unknown API component');
 		}
 
 		$requiredSuffix = self::METHOD_TO_SCOPE[$method] ?? null;
 		if ($requiredSuffix === null) {
-			throw new ZgwAuthException(
-				message: 'Unsupported HTTP method',
-				statusCode: Http::STATUS_FORBIDDEN
-			);
+			throw $this->forbidden(message: 'Unsupported HTTP method');
 		}
 
 		// Check if any scope grants cover this request.
@@ -321,10 +369,7 @@ class ZgwAuthMiddleware extends Middleware {
 			}
 		}
 
-		throw new ZgwAuthException(
-			message: "Scope '{$component}.{$requiredSuffix}' is required for this operation",
-			statusCode: Http::STATUS_FORBIDDEN
-		);
+		throw $this->forbidden(message: "Scope '{$component}.{$requiredSuffix}' is required for this operation");
 	}//end enforceScopes()
 
 	/**
