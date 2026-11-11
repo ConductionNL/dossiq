@@ -39,6 +39,13 @@ const SCOPES = [
 	{ reminder: null },
 ]
 
+// An icon is recorded by its name: the component object carries the absolute
+// path of the checkout it was compiled in.
+expect.addSnapshotSerializer({
+	test: (value) => value !== null && typeof value === 'object' && typeof value.__file === 'string',
+	serialize: (value) => `[Component ${value.name}]`,
+})
+
 describe('actForm golden', () => {
 	it.each(ENTRIES.map((entry) => [JSON.stringify(entry), entry]))('opens the recorded form for %s', (_label, entry) => {
 		expect(SCOPES.map((scope) => actForm(entry, scope))).toMatchSnapshot()

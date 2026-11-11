@@ -224,28 +224,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
 [
   {
     "columns": 1,
-    "confirmIcon": {
-      "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/ArchiveOutline.vue",
-      "emits": [
-        "click",
-      ],
-      "name": "ArchiveOutlineIcon",
-      "props": {
-        "fillColor": {
-          "default": "currentColor",
-          "type": [Function],
-        },
-        "size": {
-          "default": 24,
-          "type": [Function],
-        },
-        "title": {
-          "type": [Function],
-        },
-      },
-      "setup": [Function],
-      "ssrRender": [Function],
-    },
+    "confirmIcon": [Component ArchiveOutlineIcon],
     "inputs": [
       {
         "field": "reason",
@@ -276,28 +255,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
     "summary": {
       "card": {
         "badge": "kase.resultPublicLabel",
-        "icon": {
-          "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/FolderOutline.vue",
-          "emits": [
-            "click",
-          ],
-          "name": "FolderOutlineIcon",
-          "props": {
-            "fillColor": {
-              "default": "currentColor",
-              "type": [Function],
-            },
-            "size": {
-              "default": 24,
-              "type": [Function],
-            },
-            "title": {
-              "type": [Function],
-            },
-          },
-          "setup": [Function],
-          "ssrRender": [Function],
-        },
+        "icon": [Component FolderOutlineIcon],
         "meta": [
           "kase.identifier",
           "kase.initiatorDisplayName",
@@ -328,28 +286,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
   },
   {
     "columns": 1,
-    "confirmIcon": {
-      "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/ArchiveOutline.vue",
-      "emits": [
-        "click",
-      ],
-      "name": "ArchiveOutlineIcon",
-      "props": {
-        "fillColor": {
-          "default": "currentColor",
-          "type": [Function],
-        },
-        "size": {
-          "default": 24,
-          "type": [Function],
-        },
-        "title": {
-          "type": [Function],
-        },
-      },
-      "setup": [Function],
-      "ssrRender": [Function],
-    },
+    "confirmIcon": [Component ArchiveOutlineIcon],
     "inputs": [
       {
         "field": "reason",
@@ -380,28 +317,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
     "summary": {
       "card": {
         "badge": "kase.resultPublicLabel",
-        "icon": {
-          "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/FolderOutline.vue",
-          "emits": [
-            "click",
-          ],
-          "name": "FolderOutlineIcon",
-          "props": {
-            "fillColor": {
-              "default": "currentColor",
-              "type": [Function],
-            },
-            "size": {
-              "default": 24,
-              "type": [Function],
-            },
-            "title": {
-              "type": [Function],
-            },
-          },
-          "setup": [Function],
-          "ssrRender": [Function],
-        },
+        "icon": [Component FolderOutlineIcon],
         "meta": [
           "kase.identifier",
           "kase.initiatorDisplayName",
@@ -432,28 +348,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
   },
   {
     "columns": 1,
-    "confirmIcon": {
-      "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/ArchiveOutline.vue",
-      "emits": [
-        "click",
-      ],
-      "name": "ArchiveOutlineIcon",
-      "props": {
-        "fillColor": {
-          "default": "currentColor",
-          "type": [Function],
-        },
-        "size": {
-          "default": 24,
-          "type": [Function],
-        },
-        "title": {
-          "type": [Function],
-        },
-      },
-      "setup": [Function],
-      "ssrRender": [Function],
-    },
+    "confirmIcon": [Component ArchiveOutlineIcon],
     "inputs": [
       {
         "field": "reason",
@@ -484,28 +379,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
     "summary": {
       "card": {
         "badge": "kase.resultPublicLabel",
-        "icon": {
-          "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/FolderOutline.vue",
-          "emits": [
-            "click",
-          ],
-          "name": "FolderOutlineIcon",
-          "props": {
-            "fillColor": {
-              "default": "currentColor",
-              "type": [Function],
-            },
-            "size": {
-              "default": 24,
-              "type": [Function],
-            },
-            "title": {
-              "type": [Function],
-            },
-          },
-          "setup": [Function],
-          "ssrRender": [Function],
-        },
+        "icon": [Component FolderOutlineIcon],
         "meta": [
           "kase.identifier",
           "kase.initiatorDisplayName",
@@ -536,28 +410,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
   },
   {
     "columns": 1,
-    "confirmIcon": {
-      "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/ArchiveOutline.vue",
-      "emits": [
-        "click",
-      ],
-      "name": "ArchiveOutlineIcon",
-      "props": {
-        "fillColor": {
-          "default": "currentColor",
-          "type": [Function],
-        },
-        "size": {
-          "default": 24,
-          "type": [Function],
-        },
-        "title": {
-          "type": [Function],
-        },
-      },
-      "setup": [Function],
-      "ssrRender": [Function],
-    },
+    "confirmIcon": [Component ArchiveOutlineIcon],
     "inputs": [
       {
         "field": "reason",
@@ -588,28 +441,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
     "summary": {
       "card": {
         "badge": "kase.resultPublicLabel",
-        "icon": {
-          "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/FolderOutline.vue",
-          "emits": [
-            "click",
-          ],
-          "name": "FolderOutlineIcon",
-          "props": {
-            "fillColor": {
-              "default": "currentColor",
-              "type": [Function],
-            },
-            "size": {
-              "default": 24,
-              "type": [Function],
-            },
-            "title": {
-              "type": [Function],
-            },
-          },
-          "setup": [Function],
-          "ssrRender": [Function],
-        },
+        "icon": [Component FolderOutlineIcon],
         "meta": [
           "kase.identifier",
           "kase.initiatorDisplayName",
@@ -640,28 +472,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
   },
   {
     "columns": 1,
-    "confirmIcon": {
-      "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/ArchiveOutline.vue",
-      "emits": [
-        "click",
-      ],
-      "name": "ArchiveOutlineIcon",
-      "props": {
-        "fillColor": {
-          "default": "currentColor",
-          "type": [Function],
-        },
-        "size": {
-          "default": 24,
-          "type": [Function],
-        },
-        "title": {
-          "type": [Function],
-        },
-      },
-      "setup": [Function],
-      "ssrRender": [Function],
-    },
+    "confirmIcon": [Component ArchiveOutlineIcon],
     "inputs": [
       {
         "field": "reason",
@@ -692,28 +503,7 @@ exports[`actForm golden > opens the recorded form for {"id":"archive"} 1`] = `
     "summary": {
       "card": {
         "badge": "kase.resultPublicLabel",
-        "icon": {
-          "__file": "/root/f5/dossiq/node_modules/vue-material-design-icons/FolderOutline.vue",
-          "emits": [
-            "click",
-          ],
-          "name": "FolderOutlineIcon",
-          "props": {
-            "fillColor": {
-              "default": "currentColor",
-              "type": [Function],
-            },
-            "size": {
-              "default": 24,
-              "type": [Function],
-            },
-            "title": {
-              "type": [Function],
-            },
-          },
-          "setup": [Function],
-          "ssrRender": [Function],
-        },
+        "icon": [Component FolderOutlineIcon],
         "meta": [
           "kase.identifier",
           "kase.initiatorDisplayName",
