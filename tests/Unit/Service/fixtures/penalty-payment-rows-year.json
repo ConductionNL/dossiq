@@ -1,0 +1,110 @@
+{
+    "2026": {
+        "year": 2026,
+        "rows": [
+            {
+                "id": "pay-3",
+                "caseId": "case-3",
+                "caseIdentifier": "2026-0003",
+                "caseTitle": "Case 3",
+                "caseTypeTitle": "Woo-verzoek",
+                "requester": "Dagblad Drechtsteden",
+                "forfeitDate": "2026-09-09",
+                "amountEuros": 0.0,
+                "paymentStatus": "on-hold-objection"
+            },
+            {
+                "id": "dwangsomUitbetaling-1",
+                "caseId": "",
+                "caseIdentifier": "",
+                "caseTitle": "",
+                "caseTypeTitle": "",
+                "requester": "",
+                "forfeitDate": "2026-07-01",
+                "amountEuros": 19.99,
+                "paymentStatus": "paid"
+            },
+            {
+                "id": "pay-2",
+                "caseId": "case-2",
+                "caseIdentifier": "2026-0002",
+                "caseTitle": "Case 2",
+                "caseTypeTitle": "Subsidie",
+                "requester": "Buurtvereniging Oost",
+                "forfeitDate": "2026-05-28",
+                "amountEuros": 2160.0,
+                "paymentStatus": "paid"
+            },
+            {
+                "id": "pay-1",
+                "caseId": "case-1",
+                "caseIdentifier": "2026-0001",
+                "caseTitle": "Case 1",
+                "caseTypeTitle": "Woo-verzoek",
+                "requester": "M. de Graaf",
+                "forfeitDate": "2026-03-12",
+                "amountEuros": 1260.0,
+                "paymentStatus": "paid"
+            }
+        ],
+        "summary": {
+            "count": 4,
+            "totalEuros": 3439.99,
+            "disputedCount": 1
+        },
+        "summaryRows": [
+            {
+                "year": 2026,
+                "count": 4,
+                "totalEuros": 3439.99,
+                "disputedCount": 1
+            }
+        ]
+    },
+    "2025": {
+        "year": 2025,
+        "rows": [
+            {
+                "id": "pay-4",
+                "caseId": "case-4",
+                "caseIdentifier": "2026-0004",
+                "caseTitle": "Case 4",
+                "caseTypeTitle": "Woo-verzoek",
+                "requester": "Vorig jaar",
+                "forfeitDate": "2025-12-30",
+                "amountEuros": 500.0,
+                "paymentStatus": "paid"
+            }
+        ],
+        "summary": {
+            "count": 1,
+            "totalEuros": 500.0,
+            "disputedCount": 0
+        },
+        "summaryRows": [
+            {
+                "year": 2025,
+                "count": 1,
+                "totalEuros": 500.0,
+                "disputedCount": 0
+            }
+        ]
+    },
+    "2030": {
+        "year": 2030,
+        "rows": [],
+        "summary": {
+            "count": 0,
+            "totalEuros": 0.0,
+            "disputedCount": 0
+        },
+        "summaryRows": [
+            {
+                "year": 2030,
+                "count": 0,
+                "totalEuros": 0.0,
+                "disputedCount": 0
+            }
+        ]
+    }
+}
