@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Actions;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
 use OCA\Dossiq\Service\Flow\UnmappableStep;
@@ -108,12 +109,12 @@ class AutomaticActionFlowMigrator {
 	public function migrate(IUser $user, bool $dryRun): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return $this->emptySummary(note: 'OpenRegister is not available.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister is not available.');
 		}
 
 		$flowService = $this->flowService();
 		if ($flowService === null) {
-			return $this->emptySummary(note: 'OpenRegister exposes no FlowService on this instance.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister exposes no FlowService on this instance.');
 		}
 
 		return $objectService->runAs(
@@ -143,25 +144,6 @@ class AutomaticActionFlowMigrator {
 			return null;
 		}
 	}//end flowService()
-
-	/**
-	 * A summary describing a run that could not start.
-	 *
-	 * @param string $note Why nothing happened.
-	 *
-	 * @return array<string, mixed> The summary.
-	 */
-	private function emptySummary(string $note): array {
-		return [
-			'total' => 0,
-			'created' => 0,
-			'updated' => 0,
-			'skipped' => 0,
-			'failed' => 0,
-			'rows' => [],
-			'note' => $note,
-		];
-	}//end emptySummary()
 
 	/**
 	 * Walk every action and project it, inside the acting user's context.
@@ -197,7 +179,7 @@ class AutomaticActionFlowMigrator {
 	 * @return array<string, mixed> The summary.
 	 */
 	private function startSummary(int $total): array {
-		$summary = $this->emptySummary(note: '');
+		$summary = FlowMigrationSummary::empty(note: '');
 		$summary['total'] = $total;
 		unset($summary['note']);
 
