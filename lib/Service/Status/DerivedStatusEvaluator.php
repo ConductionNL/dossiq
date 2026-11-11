@@ -221,6 +221,8 @@ class DerivedStatusEvaluator {
 	 * @return bool
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) FilledValue is the one stateless filled-in check shared with intake completeness.
 	 */
 	private function isPresent(mixed $value): bool {
 		if ($value === null || $value === false) {

@@ -309,6 +309,8 @@ class CaseCompleteness {
 	 * @param mixed $value The value.
 	 *
 	 * @return bool
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) FilledValue is the one stateless filled-in check shared with derived status.
 	 */
 	private function isAnswered(mixed $value): bool {
 		if ($value === null) {
