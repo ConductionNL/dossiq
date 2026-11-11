@@ -243,12 +243,12 @@ class CaseCustodyChain {
 		string $movedBy,
 	): ?array {
 		$move = new CustodyMove();
+		$move->at = $from;
 		$move->caseId = $caseId;
 		$move->organisationUnit = $organisationUnit;
 		$move->handler = $handler;
 		$move->reason = $reason;
 		$move->movedBy = $movedBy;
-		$move->at = $from;
 
 		return $this->beginCase(move: $move);
 	}//end begin()
