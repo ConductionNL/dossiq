@@ -29,6 +29,7 @@ use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\BulkAction\SetCaseAttributeAction;
 use OCA\Dossiq\BulkAction\TransitionCasesAction;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -321,18 +322,6 @@ class BulkJobHandoff {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function asArray(mixed $job): array {
-		if (is_array($job) === true) {
-			return $job;
-		}
-
-		if (is_object($job) === true && method_exists($job, 'jsonSerialize') === true) {
-			$serialised = $job->jsonSerialize();
-
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $job);
 	}//end asArray()
 }//end class
