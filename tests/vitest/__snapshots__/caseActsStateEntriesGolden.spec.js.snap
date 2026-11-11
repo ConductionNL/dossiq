@@ -1,0 +1,292 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`acts menu state entries > answers every held and draft value as before 1`] = `
+{
+  "held=0 draft=0": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "held=0 draft=true": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+    {
+      "disabled": false,
+      "explainer": "The term starts now. The case leaves your drafts.",
+      "id": "promote",
+      "kind": "state",
+      "label": "Promote to case",
+      "reason": "",
+    },
+  ],
+  "held=0 draft=undefined": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "held=1 draft=0": [
+    {
+      "disabled": false,
+      "explainer": "You pick the case up again before its date.",
+      "id": "release-hold",
+      "kind": "state",
+      "label": "Take off hold",
+      "reason": "",
+    },
+  ],
+  "held=1 draft=true": [
+    {
+      "disabled": false,
+      "explainer": "You pick the case up again before its date.",
+      "id": "release-hold",
+      "kind": "state",
+      "label": "Take off hold",
+      "reason": "",
+    },
+    {
+      "disabled": false,
+      "explainer": "The term starts now. The case leaves your drafts.",
+      "id": "promote",
+      "kind": "state",
+      "label": "Promote to case",
+      "reason": "",
+    },
+  ],
+  "held=1 draft=undefined": [
+    {
+      "disabled": false,
+      "explainer": "You pick the case up again before its date.",
+      "id": "release-hold",
+      "kind": "state",
+      "label": "Take off hold",
+      "reason": "",
+    },
+  ],
+  "held=false draft=0": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "held=false draft=true": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+    {
+      "disabled": false,
+      "explainer": "The term starts now. The case leaves your drafts.",
+      "id": "promote",
+      "kind": "state",
+      "label": "Promote to case",
+      "reason": "",
+    },
+  ],
+  "held=false draft=undefined": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "held=null draft=0": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "held=null draft=true": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+    {
+      "disabled": false,
+      "explainer": "The term starts now. The case leaves your drafts.",
+      "id": "promote",
+      "kind": "state",
+      "label": "Promote to case",
+      "reason": "",
+    },
+  ],
+  "held=null draft=undefined": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "held=true draft=0": [
+    {
+      "disabled": false,
+      "explainer": "You pick the case up again before its date.",
+      "id": "release-hold",
+      "kind": "state",
+      "label": "Take off hold",
+      "reason": "",
+    },
+  ],
+  "held=true draft=true": [
+    {
+      "disabled": false,
+      "explainer": "You pick the case up again before its date.",
+      "id": "release-hold",
+      "kind": "state",
+      "label": "Take off hold",
+      "reason": "",
+    },
+    {
+      "disabled": false,
+      "explainer": "The term starts now. The case leaves your drafts.",
+      "id": "promote",
+      "kind": "state",
+      "label": "Promote to case",
+      "reason": "",
+    },
+  ],
+  "held=true draft=undefined": [
+    {
+      "disabled": false,
+      "explainer": "You pick the case up again before its date.",
+      "id": "release-hold",
+      "kind": "state",
+      "label": "Take off hold",
+      "reason": "",
+    },
+  ],
+  "held=undefined draft=0": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "held=undefined draft=true": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+    {
+      "disabled": false,
+      "explainer": "The term starts now. The case leaves your drafts.",
+      "id": "promote",
+      "kind": "state",
+      "label": "Promote to case",
+      "reason": "",
+    },
+  ],
+  "held=undefined draft=undefined": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "held=yes draft=0": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "held=yes draft=true": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+    {
+      "disabled": false,
+      "explainer": "The term starts now. The case leaves your drafts.",
+      "id": "promote",
+      "kind": "state",
+      "label": "Promote to case",
+      "reason": "",
+    },
+  ],
+  "held=yes draft=undefined": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "no acts": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+  "null acts": [
+    {
+      "disabled": false,
+      "explainer": "Park it internally, the term keeps running.",
+      "id": "hold",
+      "kind": "state",
+      "label": "Hold",
+      "reason": "",
+    },
+  ],
+}
+`;
