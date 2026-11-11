@@ -1,0 +1,84 @@
+{
+    "not signed in": {
+        "status": 401,
+        "body": {
+            "error": "not-authenticated"
+        },
+        "calls": []
+    },
+    "no write access on the case": {
+        "status": 403,
+        "body": {
+            "error": "no-case-access",
+            "message": "You do not have access to this case"
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1"
+        ]
+    },
+    "made": {
+        "status": 201,
+        "body": {
+            "id": "batch-1",
+            "name": "Batch A"
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "select [\"case-1\",[\"doc-1\",\"2\"],{\"custodian\":\"alice\"}]",
+            "taken [\"case-1\",[\"doc-1\",\"doc-2\"]]",
+            "create [\"case-1\",\"Batch A\",\"reviewer\",[\"doc-1\",\"doc-2\"],\"coordinator\",{\"custodian\":\"alice\"}]"
+        ]
+    },
+    "made without parameters": {
+        "status": 201,
+        "body": {
+            "id": "batch-1",
+            "name": ""
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "select [\"case-1\",[],[]]",
+            "taken [\"case-1\",[\"doc-1\",\"doc-2\"]]",
+            "create [\"case-1\",\"\",\"\",[\"doc-1\",\"doc-2\"],\"coordinator\",[]]"
+        ]
+    },
+    "a document already in a batch": {
+        "status": 409,
+        "body": {
+            "error": "review-batch-document-taken",
+            "message": "A document is already in another open batch.",
+            "taken": {
+                "doc-1": "Batch B"
+            }
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "select [\"case-1\",[\"doc-1\",\"2\"],{\"custodian\":\"alice\"}]",
+            "taken [\"case-1\",[\"doc-1\",\"doc-2\"]]"
+        ]
+    },
+    "selection refused": {
+        "status": 422,
+        "body": {
+            "error": "review-batch-filter-unknown",
+            "message": "A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "select [\"case-1\",[\"doc-1\",\"2\"],{\"custodian\":\"alice\"}]"
+        ]
+    },
+    "create refused": {
+        "status": 409,
+        "body": {
+            "error": "review-batch-name-required",
+            "message": "Give the batch a name."
+        },
+        "calls": [
+            "hasCaseMutationAccess case-1",
+            "select [\"case-1\",[\"doc-1\",\"2\"],{\"custodian\":\"alice\"}]",
+            "taken [\"case-1\",[\"doc-1\",\"doc-2\"]]",
+            "create [\"case-1\",\"Batch A\",\"reviewer\",[\"doc-1\",\"doc-2\"],\"coordinator\",{\"custodian\":\"alice\"}]"
+        ]
+    }
+}
