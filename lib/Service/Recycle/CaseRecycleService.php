@@ -296,24 +296,45 @@ class CaseRecycleService {
 	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
 	 */
 	public function liveCase(string $caseId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '' || $caseId === '') {
+		$location = $this->caseStoreLocation();
+		if ($location === null || $caseId === '') {
 			return null;
 		}
 
+		return $this->readLiveCase(location: $location, caseId: $caseId);
+	}//end liveCase()
+
+	/**
+	 * Where the live cases are stored, or null when OpenRegister or its configuration is missing.
+	 *
+	 * @return CaseStoreLocation|null The location.
+	 */
+	private function caseStoreLocation(): ?CaseStoreLocation {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return new CaseStoreLocation(objectService: $objectService, register: $register, schema: $schema);
+	}//end caseStoreLocation()
+
+	/**
+	 * Read one live case; a store that cannot be read is logged and answers null.
+	 *
+	 * @param CaseStoreLocation $location Where the case is stored.
+	 * @param string            $caseId   The case UUID.
+	 *
+	 * @return array<string, mixed>|null The case payload, or null.
+	 */
+	private function readLiveCase(CaseStoreLocation $location, string $caseId): ?array {
 		// The catch LOGS and does not answer: a store that could not be read is
 		// a different fact from a case that is not there, and a bare `return
 		// null` in the catch makes the two indistinguishable downstream.
 		$case = null;
 		try {
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseId
-			);
+			$case = $this->findLiveCase(location: $location, caseId: $caseId);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the case behind the retention clocks could not be read',
@@ -322,7 +343,24 @@ class CaseRecycleService {
 		}
 
 		return $case;
-	}//end liveCase()
+	}//end readLiveCase()
+
+	/**
+	 * Find one case at its location.
+	 *
+	 * @param CaseStoreLocation $location Where the case is stored.
+	 * @param string            $caseId   The case UUID.
+	 *
+	 * @return array<string, mixed>|null The case payload, or null when it is not there.
+	 */
+	private function findLiveCase(CaseStoreLocation $location, string $caseId): ?array {
+		return $this->findObjectAsArray(
+			objectService: $location->objectService,
+			register: $location->register,
+			schema: $location->schema,
+			id: $caseId
+		);
+	}//end findLiveCase()
 
 	/**
 	 * Restore a deleted case, and record who did it and when.
