@@ -49,6 +49,7 @@ namespace OCA\Dossiq\Service\Intake;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedArray;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -270,17 +271,6 @@ class CaseIntakeFiling {
 	 * @return array<string, mixed> The array.
 	 */
 	private function asArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedArray::of(value: $value);
 	}//end asArray()
 }//end class

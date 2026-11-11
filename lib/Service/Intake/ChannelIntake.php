@@ -61,6 +61,7 @@ use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SerialisedArray;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -479,17 +480,6 @@ class ChannelIntake {
 	 * @return array<string, mixed> The row, or an empty array.
 	 */
 	private function objectAsArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedArray::of(value: $value);
 	}//end objectAsArray()
 }//end class

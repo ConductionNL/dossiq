@@ -30,6 +30,7 @@ use Exception;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SerialisedArray;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\IAppConfig;
 use OCP\IUser;
@@ -437,18 +438,7 @@ class DsoCaseService {
 	 * @return array<string, mixed> The normalised array (empty when not coercible).
 	 */
 	private function normalizeToArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return SerialisedArray::of(value: $value);
 	}//end normalizeToArray()
 
 	/**

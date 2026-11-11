@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service\Advice;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SerialisedArray;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -232,17 +233,6 @@ class AdviceRepository {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function normalize(mixed $result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			$data = $result->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return [];
+		return SerialisedArray::of(value: $result);
 	}//end normalize()
 }//end class

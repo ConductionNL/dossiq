@@ -45,6 +45,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
+use OCA\Dossiq\Service\Support\SerialisedArray;
 use OCA\OpenRegister\Service\Form\FormSubmission;
 use OCA\OpenRegister\Service\Form\FormSubmitter;
 use Psr\Log\LoggerInterface;
@@ -351,18 +352,7 @@ class FormsIntakeService {
 	 * @return array<string, mixed> The row as an array.
 	 */
 	private function arrayOf(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$serialised = $row->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedArray::of(value: $row);
 	}//end arrayOf()
 
 	/**
