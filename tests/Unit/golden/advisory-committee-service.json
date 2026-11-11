@@ -1842,6 +1842,25 @@
                 }
             ],
             [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
                 "AdviceDelegationService::raiseAdviceDecision",
                 {
                     "subjectSchema": "bacAdviceRequest",
@@ -1929,6 +1948,25 @@
                     "register": "reg",
                     "schema": "req"
                 }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
             ],
             [
                 "AdviceDelegationService::raiseAdviceDecision",
@@ -2020,6 +2058,25 @@
                 }
             ],
             [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
                 "AdviceDelegationService::raiseAdviceDecision",
                 {
                     "subjectSchema": "bacAdviceRequest",
@@ -2109,6 +2166,25 @@
                 }
             ],
             [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
                 "AdviceDelegationService::raiseAdviceDecision",
                 {
                     "subjectSchema": "bacAdviceRequest",
@@ -2189,6 +2265,25 @@
                     "register": "reg",
                     "schema": "req"
                 }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
             ]
         ],
         "logs": []
@@ -2224,6 +2319,25 @@
                     "register": "reg",
                     "schema": "req"
                 }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
             ]
         ],
         "logs": []
@@ -2259,6 +2373,25 @@
                     "register": "reg",
                     "schema": "req"
                 }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
             ]
         ],
         "logs": []
@@ -2294,6 +2427,25 @@
                     "register": "reg",
                     "schema": "req"
                 }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
             ],
             [
                 "AdviceDelegationService::raiseAdviceDecision",
@@ -2352,6 +2504,25 @@
                     "register": "reg",
                     "schema": "req"
                 }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
             ],
             [
                 "AdviceDelegationService::raiseAdviceDecision",
@@ -2435,6 +2606,25 @@
                 }
             ],
             [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
                 "AdviceDelegationService::raiseAdviceDecision",
                 {
                     "subjectSchema": "bacAdviceRequest",
@@ -2512,6 +2702,25 @@
                     "register": "reg",
                     "schema": "req"
                 }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
             ],
             [
                 "AdviceDelegationService::raiseAdviceDecision",
@@ -2606,6 +2815,25 @@
                 }
             ],
             [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
                 "AdviceDelegationService::raiseAdviceDecision",
                 {
                     "subjectSchema": "bacAdviceRequest",
@@ -2657,6 +2885,199 @@
                     "register": "reg",
                     "schema": "req"
                 }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, caller is not the chair": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Only the chair of the committee can sign the advice"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, committee names no chair": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Only the chair of the committee can sign the advice"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, issue advice, request names no committee": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Only the chair of the committee can sign the advice"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ]
+        ],
+        "logs": []
+    },
+    "move, inadmissible, caller is not the chair": {
+        "answer": {
+            "thrown": "RuntimeException",
+            "message": "Only the chair of the committee can sign the advice"
+        },
+        "calls": [
+            [
+                "SettingsService::getObjectService",
+                []
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "register",
+                    "default": ""
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bac_advice_request_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "req-1",
+                    "register": "reg",
+                    "schema": "req"
+                }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
             ]
         ],
         "logs": []
@@ -2768,6 +3189,25 @@
                 }
             ],
             [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
+            ],
+            [
                 "BezwaarAuditTrail::resolveActor",
                 []
             ],
@@ -2808,6 +3248,7 @@
             "id": "req-1",
             "status": "inadmissible",
             "bezwaar": "obj-1",
+            "committee": "com-1",
             "conclusion": "gegrond",
             "recommendation": "herroepen",
             "signatureEvidence": "sig-0",
@@ -2839,6 +3280,25 @@
                     "register": "reg",
                     "schema": "req"
                 }
+            ],
+            [
+                "SettingsService::getConfigValue",
+                {
+                    "key": "bezwaaradviescommissie_schema",
+                    "default": ""
+                }
+            ],
+            [
+                "store::find",
+                {
+                    "id": "com-1",
+                    "register": "reg",
+                    "schema": "com"
+                }
+            ],
+            [
+                "BezwaarAuditTrail::resolveActor",
+                []
             ],
             [
                 "BezwaarAuditTrail::resolveActor",
