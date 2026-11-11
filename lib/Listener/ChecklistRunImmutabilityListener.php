@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Listener\Support\SchemaMembership;
+use OCA\Dossiq\Listener\Support\SerialisedObject;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
@@ -207,31 +208,6 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	 * @return array<string, mixed>|null
 	 */
 	private function extractObject(Event $event, string $method): ?array {
-		if (method_exists($event, $method) === false) {
-			return null;
-		}
-
-		$value = $event->{$method}();
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-		}
-
-		return null;
+		return SerialisedObject::fromEvent(event: $event, methods: [$method]);
 	}//end extractObject()
 }//end class
