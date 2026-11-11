@@ -146,14 +146,9 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate creates on besluiten.aanmaken scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.aanmaken') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.aanmaken');
+		$refusal = $this->writeRefusal(scope: 'besluiten.aanmaken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// For besluitinformatieobjecten: use custom create with OIO sync.
@@ -211,14 +206,9 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate updates on besluiten.bijwerken scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
+		$refusal = $this->writeRefusal(scope: 'besluiten.bijwerken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Brc-004a: BesluitInformatieObject is immutable — PUT returns 405.
@@ -256,14 +246,9 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate patches on besluiten.bijwerken scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
+		$refusal = $this->writeRefusal(scope: 'besluiten.bijwerken');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Brc-004b: BesluitInformatieObject is immutable — PATCH returns 405.
@@ -303,14 +288,9 @@ class BrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// SB2: Gate destroys on besluiten.verwijderen scope (canonical format).
-		if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.verwijderen') === false) {
-			return $this->scopeDeniedResponse(scope: 'besluiten.verwijderen');
+		$refusal = $this->writeRefusal(scope: 'besluiten.verwijderen');
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		// Brc-009: Cascade delete for besluiten.
@@ -405,6 +385,30 @@ class BrcController extends ZgwController {
 			$auditUuid
 		);
 	}//end audittrailShow()
+
+	/**
+	 * The JWT refusal, else the scope refusal for a consumer without the given besluiten scope, else null.
+	 *
+	 * The JWT is checked first and the scope only for a valid token, so a
+	 * write is refused before anything is read or written.
+	 *
+	 * @param string $scope The scope the write needs (canonical format).
+	 *
+	 * @return JSONResponse|null The refusal, or null when the write may go ahead.
+	 */
+	private function writeRefusal(string $scope): ?JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
+
+		// SB2: Gate writes on the endpoint's besluiten scope.
+		if ($this->zgwService->consumerHasScope($this->request, 'brc', $scope) === false) {
+			return $this->scopeDeniedResponse(scope: $scope);
+		}
+
+		return null;
+	}//end writeRefusal()
 
 	/**
 	 * Create a besluit with zaak-besluit sync to ZRC (brc-006).
