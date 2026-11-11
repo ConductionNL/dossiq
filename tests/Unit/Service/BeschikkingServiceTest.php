@@ -904,4 +904,43 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertSame($id, $fields['beschikkingId']);
 		$this->assertSame('zaak-2026-wmo-1', $this->entries[0]['caseId']);
 	}//end testTheNotSentLineAndTheNoAddressRefusal()
+	/**
+	 * A successor takes the addressee, rationale and decision the handler wrote,
+	 * and the refusals carry their sentences and statuses.
+	 *
+	 * @return void
+	 */
+	public function testASuccessorTakesTheWrittenFieldsAndTheRefusalsTheirSentences(): void {
+		$original = $this->composeWmo();
+		try {
+			$this->service->issueSuccessor($original['id'], 'toekenning');
+			self::fail('An unknown kind must be refused.');
+		} catch (RefusedException $refusal) {
+			self::assertSame('A correction is either a wijzigingsbeschikking or an intrekkingsbeschikking.', $refusal->getSentence());
+			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $refusal->getStatus());
+		}
+
+		try {
+			$this->service->issueSuccessor($original['id'], 'amendment');
+			self::fail('A draft must be refused.');
+		} catch (RefusedException $refusal) {
+			self::assertSame('This beschikking has not been signed yet. Change the draft instead of issuing a correction.', $refusal->getSentence());
+		}
+
+		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
+		$addressee = ['type' => 'burger', 'bsn' => '987654321', 'name' => 'P. de Vries', 'messageBoxConfirmed' => true];
+		$successor = $this->service->issueSuccessor(
+			$original['id'],
+			'amendment',
+			['addressee' => $addressee, 'rationale' => 'Herzien na bezwaar.', 'decision' => 'Gedeeltelijk toegekend.'],
+			'tpl-wmo-v1'
+		);
+
+		self::assertSame('amendment', $successor['decisionType']);
+		self::assertSame($original['id'], $successor['supersedes']);
+		self::assertSame($addressee, $successor['addressee']);
+		self::assertSame('Herzien na bezwaar.', $successor['rationale']);
+		self::assertSame(['Gedeeltelijk toegekend.'], $successor['decision']);
+		self::assertSame($original['caseId'], $successor['caseId']);
+	}//end testASuccessorTakesTheWrittenFieldsAndTheRefusalsTheirSentences()
 }//end class
