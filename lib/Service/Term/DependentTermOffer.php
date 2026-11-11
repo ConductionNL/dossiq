@@ -293,35 +293,47 @@ class DependentTermOffer {
 			return ['refused' => 'term-gone'];
 		}
 
-		$newEnd = $this->movedEnd(current: (string)($instance['endDateCurrent'] ?? ''), days: $offer['days']);
-		if ($newEnd === null) {
+		$current = (string)($instance['endDateCurrent'] ?? '');
+		if ($current === '') {
+			return ['refused' => 'term-has-no-end-date'];
+		}
+
+		return $this->extendFrom(offer: $offer, current: $current);
+	}//end followedExtension()
+
+	/**
+	 * Extend from the current end date, or refuse when it cannot be read as a date.
+	 *
+	 * @param array{case: string, source: string, days: int, instance: string} $offer   The offer.
+	 * @param string                                                            $current The term's current end date.
+	 *
+	 * @return array{refused?: string, event?: array<string, mixed>} The outcome.
+	 */
+	private function extendFrom(array $offer, string $current): array {
+		try {
+			$newEnd = $this->movedEnd(current: $current, days: $offer['days']);
+		} catch (Throwable $e) {
 			return ['refused' => 'term-has-no-end-date'];
 		}
 
 		return $this->requestFollowed(offer: $offer, newEnd: $newEnd);
-	}//end followedExtension()
+	}//end extendFrom()
 
 	/**
-	 * The current end date moved by the offered days, null when there is none to move.
+	 * The current end date moved by the offered days.
 	 *
 	 * @param string $current The term's current end date.
 	 * @param int    $days    The offered days.
 	 *
-	 * @return string|null The proposed end date as Y-m-d.
+	 * @return string The proposed end date as Y-m-d.
+	 *
+	 * @throws Throwable When the current end date is no date.
 	 */
-	private function movedEnd(string $current, int $days): ?string {
-		if ($current === '') {
-			return null;
-		}
-
-		try {
-			// A statutory end date: rolled onto the working calendar, so an
-			// offer never proposes a Saturday.
-			$end = (new DateTimeImmutable($current))->modify('+' . $days . ' days');
-			return ($this->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
-		} catch (Throwable $e) {
-			return null;
-		}
+	private function movedEnd(string $current, int $days): string {
+		// A statutory end date: rolled onto the working calendar, so an
+		// offer never proposes a Saturday.
+		$end = (new DateTimeImmutable($current))->modify('+' . $days . ' days');
+		return ($this->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
 	}//end movedEnd()
 
 	/**
