@@ -588,17 +588,6 @@ class WorkflowDefinitionRepository {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	private function normalize(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$serialized = $row->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return $this->objectToArrayOrNull(value: $row);
 	}//end normalize()
 }//end class

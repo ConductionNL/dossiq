@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Relation;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -284,18 +285,6 @@ class CaseRelationStore {
 	 * @return array<string, mixed>|null The case as an array, or null when unusable.
 	 */
 	private function normalizeCaseObject(mixed $object): ?array {
-		if ($object === null) {
-			return null;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$object = $object->jsonSerialize();
-		}
-
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		return null;
+		return SerialisedResult::rowOf(value: $object);
 	}//end normalizeCaseObject()
 }//end class

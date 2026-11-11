@@ -256,15 +256,9 @@ class LinkMarkerListener implements IEventListener {
 	 */
 	private function objectOf(Event $event): ?array {
 		foreach ($this->eventObjectValues(event: $event) as $value) {
-			if (is_array($value) === true) {
-				return $value;
-			}
-
-			if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
+			$row = $this->objectToArrayOrNull(value: $value);
+			if ($row !== null) {
+				return $row;
 			}
 		}
 
