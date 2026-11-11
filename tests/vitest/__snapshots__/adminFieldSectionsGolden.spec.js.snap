@@ -1,0 +1,312 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`The general admin field lists > builds consultationFields exactly as pinned 1`] = `
+[
+  {
+    "default": 28,
+    "integer": true,
+    "key": "consultation_default_deadline_days",
+    "label": "[dossiq] Standard term in days",
+    "min": 0,
+    "type": "number",
+  },
+  {
+    "default": 5,
+    "integer": true,
+    "key": "consultation_warning_offset_days",
+    "label": "[dossiq] Warn, days ahead",
+    "min": 0,
+    "type": "number",
+  },
+  {
+    "key": "consultation_external_response_url",
+    "label": "[dossiq] Address for external responses",
+    "pattern": "^https://",
+    "patternMessage": "[dossiq] Starts with https://",
+    "placeholder": "https://dossiq.example.org/consultation/respond/",
+  },
+  {
+    "advanced": true,
+    "default": 0.2,
+    "hint": "[dossiq] When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.",
+    "key": "consultation_bottleneck_threshold",
+    "label": "[dossiq] Bottleneck overdue-rate threshold (0-1)",
+    "max": 1,
+    "min": 0,
+    "type": "number",
+  },
+]
+`;
+
+exports[`The general admin field lists > builds houseStyleFields exactly as pinned 1`] = `
+[
+  {
+    "key": "organisationName",
+    "label": "[dossiq] Name of the organisation",
+    "saveKey": "value",
+    "saveParams": {
+      "setting": "name",
+    },
+    "saveUrl": "/apps/theming/ajax/updateStylesheet",
+    "url": "/ocs/v2.php/cloud/capabilities?format=json",
+    "valuePath": "ocs.data.capabilities.theming.name",
+  },
+  {
+    "key": "municipality_city",
+    "label": "[dossiq] City of the municipality",
+  },
+  {
+    "key": "staff_app_name",
+    "label": "[dossiq] Name of the app for staff",
+    "placeholder": "Dossiq",
+  },
+  {
+    "key": "theme",
+    "label": "[dossiq] Theme",
+    "optionLabel": "name",
+    "optionValue": "id",
+    "optionsPath": "tokenSets",
+    "optionsUrl": "/apps/thematiq/settings/app-brands",
+    "saveKey": "tokenSet",
+    "saveUrl": "/apps/thematiq/settings/app-brands/dossiq",
+    "type": "select",
+    "url": "/apps/thematiq/settings/app-brands",
+    "valuePath": "brands.dossiq.tokenSet",
+  },
+  {
+    "hideLabel": true,
+    "initialsFrom": "organisationName",
+    "key": "logo",
+    "label": "[dossiq] Other logo",
+    "type": "image",
+    "uploadLabel": "[dossiq] Other logo",
+    "uploadParams": {
+      "key": "logo",
+    },
+    "uploadUrl": "/apps/theming/ajax/uploadImage",
+    "uploadValuePath": "data.url",
+    "url": "/apps/thematiq/settings/theming",
+    "valuePath": "logo_url",
+  },
+]
+`;
+
+exports[`The general admin field lists > builds storeRegistryFields exactly as pinned 1`] = `
+[
+  {
+    "key": "store-offline",
+    "text": "[dossiq] A marketplace registry is another OpenRegister instance that publishes case configuration. Leave the address empty to keep dossiq offline: nothing is requested from the network until one is set.",
+    "type": "status",
+  },
+  {
+    "key": "registryUrl",
+    "label": "[dossiq] Registry address",
+    "placeholder": "https://registry.example.org",
+  },
+  {
+    "default": "dossiq",
+    "key": "registryRegister",
+    "label": "[dossiq] Register on that instance",
+  },
+  {
+    "hint": "[dossiq] The token is never shown again after saving. Leave it empty to keep the one already stored.",
+    "key": "registryToken",
+    "label": "[dossiq] Registry token",
+    "setKey": "registryTokenSet",
+    "type": "secret",
+  },
+]
+`;
+
+exports[`The general admin field lists > builds textsAndAccessFields exactly as pinned 1`] = `
+[
+  {
+    "key": "email_from_name",
+    "label": "[dossiq] Sender of messages",
+  },
+  {
+    "key": "portal_intro_text",
+    "label": "[dossiq] Text above My cases in the portal",
+  },
+  {
+    "key": "allowedWebsites",
+    "label": "[dossiq] Allowed websites (CORS)",
+    "text": "[dossiq] Set in the portal app (portaliq) and in Nextcloud, not here.",
+    "type": "note",
+  },
+  {
+    "default": "Europe/Amsterdam",
+    "key": "timezone",
+    "label": "[dossiq] Time zone",
+    "placeholder": "Europe/Amsterdam",
+  },
+  {
+    "default": "DD-MM-YYYY",
+    "key": "date_format",
+    "label": "[dossiq] Date format",
+    "options": [
+      {
+        "label": "DD-MM-YYYY",
+        "value": "DD-MM-YYYY",
+      },
+      {
+        "label": "YYYY-MM-DD",
+        "value": "YYYY-MM-DD",
+      },
+      {
+        "label": "D MMMM YYYY",
+        "value": "D MMMM YYYY",
+      },
+    ],
+    "required": true,
+    "type": "select",
+  },
+  {
+    "key": "betaFeatures",
+    "label": "[dossiq] Beta features",
+    "type": "heading",
+  },
+  {
+    "falseValue": "false",
+    "hint": "[dossiq] visible to everyone at once, without waiting for the cache",
+    "key": "feature_new_case_page",
+    "label": "[dossiq] New case page",
+    "trueValue": "true",
+    "type": "switch",
+  },
+]
+`;
+
+exports[`The general admin field lists > builds workDigestFields exactly as pinned 1`] = `
+[
+  {
+    "default": true,
+    "key": "enabled",
+    "label": "[dossiq] Send me a daily digest of my open work",
+    "type": "switch",
+  },
+  {
+    "default": 8,
+    "key": "hour",
+    "label": "[dossiq] Hour of the day",
+    "options": [
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"00"}",
+        "value": 0,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"01"}",
+        "value": 1,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"02"}",
+        "value": 2,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"03"}",
+        "value": 3,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"04"}",
+        "value": 4,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"05"}",
+        "value": 5,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"06"}",
+        "value": 6,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"07"}",
+        "value": 7,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"08"}",
+        "value": 8,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"09"}",
+        "value": 9,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"10"}",
+        "value": 10,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"11"}",
+        "value": 11,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"12"}",
+        "value": 12,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"13"}",
+        "value": 13,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"14"}",
+        "value": 14,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"15"}",
+        "value": 15,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"16"}",
+        "value": 16,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"17"}",
+        "value": 17,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"18"}",
+        "value": 18,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"19"}",
+        "value": 19,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"20"}",
+        "value": 20,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"21"}",
+        "value": 21,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"22"}",
+        "value": 22,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"23"}",
+        "value": 23,
+      },
+    ],
+    "type": "select",
+    "visibleWhen": {
+      "equals": true,
+      "key": "enabled",
+    },
+  },
+  {
+    "key": "source",
+    "textMap": {
+      "*": "[dossiq] This instance keeps the setting here rather than with your other notifications.",
+      "group-default": "[dossiq] Your team set this. You can decide for yourself.",
+      "schema-default": "[dossiq] Nobody has changed this, so it is on the setting it ships with.",
+      "user-override": "[dossiq] You set this.",
+    },
+    "type": "status",
+  },
+  {
+    "key": "nothing-waiting",
+    "text": "[dossiq] A day with nothing waiting sends nothing.",
+    "type": "status",
+  },
+]
+`;

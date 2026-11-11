@@ -105,12 +105,35 @@ class MigrateCaseTeamsCommand extends Command {
 		}
 
 		$output->writeln($verb . ' ' . $report['converted'] . ' cases to their group.');
+		$this->reportTotals(output: $output, report: $report);
+
+		return $this->reportUnmapped(output: $output, unmapped: $report['unmapped']);
+	}//end execute()
+
+	/**
+	 * Print how many cases already held a group, and how many could not be written.
+	 *
+	 * @param OutputInterface      $output The console.
+	 * @param array<string, mixed> $report The migration's report.
+	 *
+	 * @return void
+	 */
+	private function reportTotals(OutputInterface $output, array $report): void {
 		$output->writeln($report['alreadyGroup'] . ' cases already held a group.');
 		if ($report['failed'] > 0) {
 			$output->writeln('<error>' . $report['failed'] . ' cases could not be written; see the log.</error>');
 		}
+	}//end reportTotals()
 
-		$unmapped = $report['unmapped'];
+	/**
+	 * Print the cases that keep their value, with the hint for each.
+	 *
+	 * @param OutputInterface                  $output   The console.
+	 * @param array<int, array<string, mixed>> $unmapped The cases left as they were.
+	 *
+	 * @return int The exit code, always success.
+	 */
+	private function reportUnmapped(OutputInterface $output, array $unmapped): int {
 		if ($unmapped === []) {
 			$output->writeln('No case was left with an organisation role as its team.');
 			return Command::SUCCESS;
@@ -121,6 +144,20 @@ class MigrateCaseTeamsCommand extends Command {
 			. 'A hint is a group that looks like the role; it is not applied.'
 		);
 
+		$this->unmappedTable(output: $output, unmapped: $unmapped)->render();
+
+		return Command::SUCCESS;
+	}//end reportUnmapped()
+
+	/**
+	 * The table of cases left as they were.
+	 *
+	 * @param OutputInterface                  $output   The console.
+	 * @param array<int, array<string, mixed>> $unmapped The cases left as they were.
+	 *
+	 * @return Table
+	 */
+	private function unmappedTable(OutputInterface $output, array $unmapped): Table {
 		$table = new Table($output);
 		$table->setHeaders(['Case', 'Title', 'Stored value', 'Role', 'Reason', 'Hint']);
 		foreach ($unmapped as $row) {
@@ -136,8 +173,6 @@ class MigrateCaseTeamsCommand extends Command {
 			);
 		}
 
-		$table->render();
-
-		return Command::SUCCESS;
-	}//end execute()
+		return $table;
+	}//end unmappedTable()
 }//end class

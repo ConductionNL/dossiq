@@ -42,6 +42,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -98,6 +99,31 @@ class NotesController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function push(string $caseId): JSONResponse {
+		$refusal = $this->pushRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$data = $this->readJsonBody();
+		$note = $data['note'] ?? null;
+		if (is_array($note) === false || $note === []) {
+			return new JSONResponse(['error' => 'A note is required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return $this->pushNote(caseId: $caseId, note: $note);
+	}//end push()
+
+	/**
+	 * Refuse a push without a session (401), without a case id (400) or by a
+	 * caller who may not change the case (403).
+	 *
+	 * @param string $caseId The case the note is on.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the push may go ahead.
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	private function pushRefusal(string $caseId): ?JSONResponse {
 		$actor = $this->userSession->getUser();
 		if ($actor === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -111,12 +137,20 @@ class NotesController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->readJsonBody();
-		$note = $data['note'] ?? null;
-		if (is_array($note) === false || $note === []) {
-			return new JSONResponse(['error' => 'A note is required'], Http::STATUS_BAD_REQUEST);
-		}
+		return null;
+	}//end pushRefusal()
 
+	/**
+	 * Push the note and answer with its outcome; a push that throws is a logged 500.
+	 *
+	 * @param string               $caseId The case the note is on.
+	 * @param array<string, mixed> $note   The note.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	private function pushNote(string $caseId, array $note): JSONResponse {
 		try {
 			$outcome = $this->notePush->push(caseId: $caseId, note: $note);
 		} catch (\Throwable $e) {
@@ -137,7 +171,7 @@ class NotesController extends Controller {
 		// push would be this app reporting its own success or failure rather
 		// than the note's.
 		return new JSONResponse($outcome);
-	}//end push()
+	}//end pushNote()
 
 	/**
 	 * Notify every user mentioned in a just-saved note.
@@ -151,7 +185,7 @@ class NotesController extends Controller {
 	 * rather than a 5xx.
 	 *
 	 * The caller must be able to read the case the note is on, and only
-	 * mentioned user ids with an account are notified.
+	 * mentioned users with an account who may read the case are notified.
 	 *
 	 * @return JSONResponse Dispatch result
 	 *
@@ -169,16 +203,7 @@ class NotesController extends Controller {
 		$data = $this->readJsonBody();
 
 		$objectId = (string)($data['objectId'] ?? '');
-		$register = (string)($data['register'] ?? '');
-		$schema = (string)($data['schema'] ?? '');
-		$noteId = (string)($data['noteId'] ?? '');
-		$mentionedUserIdsRaw = $data['mentionedUserIds'] ?? [];
-		$mentionedUserIds = [];
-		if (is_array($mentionedUserIdsRaw) === true) {
-			$mentionedUserIds = array_values(array_filter(array_map('strval', $mentionedUserIdsRaw)));
-		}
-
-		if ($objectId === '' || $mentionedUserIds === []) {
+		if ($objectId === '' || $this->mentionedIds(data: $data) === []) {
 			return new JSONResponse(
 				['error' => 'objectId and a non-empty mentionedUserIds array are required'],
 				Http::STATUS_BAD_REQUEST,
@@ -189,7 +214,39 @@ class NotesController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$mentionedUserIds = $this->existingUsers(userIds: $mentionedUserIds);
+		return $this->notifyMentioned(actor: $actor, data: $data);
+	}//end mention()
+
+	/**
+	 * The user ids the body mentions, as strings, without empties.
+	 *
+	 * @param array<string, mixed> $data The request body.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function mentionedIds(array $data): array {
+		$mentionedUserIdsRaw = $data['mentionedUserIds'] ?? [];
+		if (is_array($mentionedUserIdsRaw) === false) {
+			return [];
+		}
+
+		return array_values(array_filter(array_map('strval', $mentionedUserIdsRaw)));
+	}//end mentionedIds()
+
+	/**
+	 * Notify the mentioned users who exist; a failed dispatch is a logged 500.
+	 *
+	 * @param IUser                $actor The caller who mentioned them.
+	 * @param array<string, mixed> $data  The request body.
+	 *
+	 * @return JSONResponse How many were notified.
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function notifyMentioned(IUser $actor, array $data): JSONResponse {
+		$mentionedUserIds = $this->caseReaders(caseId: (string)$data['objectId'], userIds: $this->mentionedIds(data: $data));
 		if ($mentionedUserIds === []) {
 			return new JSONResponse(['notified' => 0], Http::STATUS_OK);
 		}
@@ -198,33 +255,73 @@ class NotesController extends Controller {
 			$notified = $this->mentionSvc->notifyMention(
 				actorUserId: $actor->getUID(),
 				actorDisplayName: $actor->getDisplayName(),
-				note: new MentionedNote(objectId: $objectId, register: $register, schema: $schema, noteId: $noteId),
+				note: $this->mentionedNote(data: $data),
 				mentionedUserIds: $mentionedUserIds,
 			);
-
-			return new JSONResponse(['notified' => $notified], Http::STATUS_OK);
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Failed to dispatch note mention notifications: ' . $e->getMessage(),
-				['app' => 'dossiq']
-			);
-			return new JSONResponse(
-				['error' => 'Could not dispatch mention notifications: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
-		}//end try
-	}//end mention()
+			return $this->mentionFailed(exception: $e);
+		}
+
+		return new JSONResponse(['notified' => $notified], Http::STATUS_OK);
+	}//end notifyMentioned()
 
 	/**
-	 * The user ids that belong to an existing account, in their given order.
+	 * The note the body names.
 	 *
+	 * @param array<string, mixed> $data The request body.
+	 *
+	 * @return MentionedNote
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function mentionedNote(array $data): MentionedNote {
+		return new MentionedNote(
+			objectId: (string)($data['objectId'] ?? ''),
+			register: (string)($data['register'] ?? ''),
+			schema: (string)($data['schema'] ?? ''),
+			noteId: (string)($data['noteId'] ?? '')
+		);
+	}//end mentionedNote()
+
+	/**
+	 * The logged 500 a failed mention dispatch answers with.
+	 *
+	 * @param \Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function mentionFailed(\Throwable $exception): JSONResponse {
+		$this->logger->error(
+			'Failed to dispatch note mention notifications: ' . $exception->getMessage(),
+			['app' => 'dossiq']
+		);
+		return new JSONResponse(
+			['error' => 'Could not dispatch mention notifications: ' . $exception->getMessage()],
+			Http::STATUS_INTERNAL_SERVER_ERROR,
+		);
+	}//end mentionFailed()
+
+	/**
+	 * The user ids of existing accounts that may read the case, in their given order.
+	 *
+	 * @param string             $caseId  The case the note is on.
 	 * @param array<int, string> $userIds The mentioned user ids.
 	 *
 	 * @return array<int, string>
 	 */
-	private function existingUsers(array $userIds): array {
-		return array_values(array_filter($userIds, fn (string $uid): bool => $this->userManager->userExists($uid)));
-	}//end existingUsers()
+	private function caseReaders(string $caseId, array $userIds): array {
+		return array_values(
+			array_filter(
+				$userIds,
+				function (string $uid) use ($caseId): bool {
+					$user = $this->userManager->get($uid);
+					return $user !== null && $this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === true;
+				}
+			)
+		);
+	}//end caseReaders()
 
 	/**
 	 * Read the decoded JSON request body.

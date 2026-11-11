@@ -201,14 +201,9 @@ class IntakeTriageController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$forbidden = $this->refuseUnauthorized(caseId: $caseId, user: $user);
-		if ($forbidden !== null) {
-			return $forbidden;
+		$user = $this->handlerOf(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -252,14 +247,9 @@ class IntakeTriageController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function judgeAdmissibility(string $caseId, string $verdict = '', string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$forbidden = $this->refuseUnauthorized(caseId: $caseId, user: $user);
-		if ($forbidden !== null) {
-			return $forbidden;
+		$user = $this->handlerOf(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -308,14 +298,7 @@ class IntakeTriageController extends Controller {
 			return $refusal;
 		}
 
-		$items = [];
-		foreach (TriageSleep::SLEEPABLE_OUTCOMES as $outcome) {
-			$items = array_merge(
-				$items,
-				$this->log->search(filters: ['outcome' => $outcome, '_limit' => self::PAGE_SIZE])
-			);
-		}
-
+		$items = $this->sleepableItems();
 		$awake = $this->sleep->awake(queue: $items);
 		$lens = $this->channels->annotate(
 			items: $this->suggestions->narrow(
@@ -334,6 +317,48 @@ class IntakeTriageController extends Controller {
 			]
 		);
 	}//end queue()
+
+	/**
+	 * The signed-in caller when they may act on the case's intake, or the 401/403 refusal.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 */
+	private function handlerOf(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$forbidden = $this->refuseUnauthorized(caseId: $caseId, user: $user);
+		if ($forbidden !== null) {
+			return $forbidden;
+		}
+
+		return $user;
+	}//end handlerOf()
+
+	/**
+	 * Every triage log item whose outcome can sleep, a page per outcome.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
+	 */
+	private function sleepableItems(): array {
+		$items = [];
+		foreach (TriageSleep::SLEEPABLE_OUTCOMES as $outcome) {
+			$items = array_merge(
+				$items,
+				$this->log->search(filters: ['outcome' => $outcome, '_limit' => self::PAGE_SIZE])
+			);
+		}
+
+		return $items;
+	}//end sleepableItems()
 
 	/**
 	 * Put a triage item to sleep until a date.

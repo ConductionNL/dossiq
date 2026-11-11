@@ -137,6 +137,31 @@ class PartyTicketController extends Controller {
 			return new JSONResponse(['available' => true, 'results' => [], 'total' => 0]);
 		}
 
+		$unreadable = $this->unreadableParty(key: $key);
+		if ($unreadable !== null) {
+			return $unreadable;
+		}
+
+		$tickets = $this->gateway->ticketsByMasterEntity(refs: [$key], status: $this->statusAsked());
+		if ($tickets === null) {
+			return new JSONResponse(['available' => false]);
+		}
+
+		$results = array_values(($tickets[$key] ?? []));
+
+		return new JSONResponse(['available' => true, 'results' => $results, 'total' => count($results)]);
+	}//end openTickets()
+
+	/**
+	 * The 503/404 answer when the party cannot be read or the caller may not read it, else null.
+	 *
+	 * @param string $key The party's master entity key.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
+	 */
+	private function unreadableParty(string $key): ?JSONResponse {
 		try {
 			$readable = $this->readable->readableMasterEntities(refs: [$key]);
 		} catch (Throwable) {
@@ -147,20 +172,24 @@ class PartyTicketController extends Controller {
 			return new JSONResponse(['error' => 'Party not found'], Http::STATUS_NOT_FOUND);
 		}
 
+		return null;
+	}//end unreadableParty()
+
+	/**
+	 * The ticket status asked for: `closed` or `all`, and `open` for anything else.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/party-tickets-all-with-reference/specs/pipelinq-consumption/spec.md#requirement-a-partys-tickets-card-lists-its-handled-tickets-too
+	 */
+	private function statusAsked(): string {
 		$status = (string)$this->request->getParam('status', 'open');
 		if (in_array($status, ['closed', 'all'], true) === false) {
-			$status = 'open';
+			return 'open';
 		}
 
-		$tickets = $this->gateway->ticketsByMasterEntity(refs: [$key], status: $status);
-		if ($tickets === null) {
-			return new JSONResponse(['available' => false]);
-		}
-
-		$results = array_values(($tickets[$key] ?? []));
-
-		return new JSONResponse(['available' => true, 'results' => $results, 'total' => count($results)]);
-	}//end openTickets()
+		return $status;
+	}//end statusAsked()
 
 	/**
 	 * The distinct, non-empty master entities a request names.

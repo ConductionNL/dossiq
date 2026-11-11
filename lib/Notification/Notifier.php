@@ -260,46 +260,12 @@ class Notifier implements INotifier {
 			throw new UnknownNotificationException('Unknown Dossiq notification subject');
 		}
 
-		$l = $this->l10nFactory->get(Application::APP_ID, $languageCode);
-		$subjectRaw = $notification->getSubjectParameters();
+		$text = new NotificationText();
+		$text->subjectKey = $subjectKey;
+		$text->l = $this->l10nFactory->get(Application::APP_ID, $languageCode);
+		$text->parameters = $notification->getSubjectParameters();
 
-		[$subject, $message] = match ($subjectKey) {
-			self::SUBJECT_CASE_STATUS_CHANGED => $this->caseStatusChangedText(subjectRaw: $subjectRaw, l: $l),
-			self::SUBJECT_CASE_ROLE_NOTIFIED => $this->caseRoleNotifiedText(subjectRaw: $subjectRaw, l: $l),
-			self::SUBJECT_MILESTONE_BOTTLENECK => $this->milestoneBottleneckText(subjectRaw: $subjectRaw, l: $l),
-			self::SUBJECT_CASES_REASSIGNED => $this->casesReassignedText(subjectRaw: $subjectRaw, l: $l),
-			self::SUBJECT_ADVICE_REQUESTED_NL,
-			self::SUBJECT_ADVICE_REQUESTED,
-			self::SUBJECT_ADVICE_RECEIVED,
-			self::SUBJECT_ADVICE_REMINDER => $this->adviceText(
-				subjectKey: $subjectKey,
-				subjectRaw: $subjectRaw,
-				l: $l,
-			),
-			self::SUBJECT_WOO_DEADLINE_WARNING,
-			self::SUBJECT_WOO_DEADLINE_OVERDUE,
-			self::SUBJECT_DSO_DEADLINE_WARNING,
-			self::SUBJECT_DSO_DEADLINE_CRITICAL,
-			self::SUBJECT_DSO_DEADLINE_OVERDUE,
-			self::SUBJECT_TERM_NEARING,
-			self::SUBJECT_TERM_EXCEEDED => $this->deadlineText(
-				subjectKey: $subjectKey,
-				subjectRaw: $subjectRaw,
-				l: $l,
-			),
-			self::SUBJECT_STUF_CIRCUIT_OPEN,
-			self::SUBJECT_STUF_TIMEOUT,
-			self::SUBJECT_STUF_PERMANENT_ERROR => $this->stufText(subjectKey: $subjectKey, l: $l),
-			self::SUBJECT_APPLICANT_RESPONDED,
-			self::SUBJECT_APPLICANT_WITHDREW => $this->applicantText(
-				subjectKey: $subjectKey,
-				subjectRaw: $subjectRaw,
-				l: $l,
-			),
-			self::SUBJECT_BACKGROUND_ACCOUNT_MISSING => $this->backgroundAccountText(l: $l),
-			self::SUBJECT_QUOTA_SOFT_LIMIT => $this->quotaSoftLimitText(subjectRaw: $subjectRaw, l: $l),
-			default => $this->noteMentionText(subjectRaw: $subjectRaw, l: $l),
-		};
+		[$subject, $message] = $this->wording(text: $text);
 
 		$notification->setParsedSubject($subject);
 		$notification->setParsedMessage($message);
@@ -309,6 +275,46 @@ class Notifier implements INotifier {
 
 		return $notification;
 	}//end prepare()
+
+	/**
+	 * The [subject, message] pair of a known subject.
+	 *
+	 * @param NotificationText $text The notification being worded.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	 */
+	private function wording(NotificationText $text): array {
+		$subjectRaw = $text->parameters;
+		$l = $text->l;
+
+		return match ($text->subjectKey) {
+			self::SUBJECT_CASE_STATUS_CHANGED => $this->caseStatusChangedText(subjectRaw: $subjectRaw, l: $l),
+			self::SUBJECT_CASE_ROLE_NOTIFIED => $this->caseRoleNotifiedText(subjectRaw: $subjectRaw, l: $l),
+			self::SUBJECT_MILESTONE_BOTTLENECK => $this->milestoneBottleneckText(subjectRaw: $subjectRaw, l: $l),
+			self::SUBJECT_CASES_REASSIGNED => $this->casesReassignedText(subjectRaw: $subjectRaw, l: $l),
+			self::SUBJECT_ADVICE_REQUESTED_NL,
+			self::SUBJECT_ADVICE_REQUESTED,
+			self::SUBJECT_ADVICE_RECEIVED,
+			self::SUBJECT_ADVICE_REMINDER => $this->adviceText(text: $text),
+			self::SUBJECT_WOO_DEADLINE_WARNING,
+			self::SUBJECT_WOO_DEADLINE_OVERDUE => $this->wooDeadlineText(text: $text),
+			self::SUBJECT_TERM_NEARING,
+			self::SUBJECT_TERM_EXCEEDED => $this->termDeadlineText(text: $text),
+			self::SUBJECT_DSO_DEADLINE_WARNING,
+			self::SUBJECT_DSO_DEADLINE_CRITICAL,
+			self::SUBJECT_DSO_DEADLINE_OVERDUE => $this->permitDeadlineText(subjectKey: $text->subjectKey, l: $l),
+			self::SUBJECT_STUF_CIRCUIT_OPEN,
+			self::SUBJECT_STUF_TIMEOUT,
+			self::SUBJECT_STUF_PERMANENT_ERROR => $this->stufText(subjectKey: $text->subjectKey, l: $l),
+			self::SUBJECT_APPLICANT_RESPONDED,
+			self::SUBJECT_APPLICANT_WITHDREW => $this->applicantText(text: $text),
+			self::SUBJECT_BACKGROUND_ACCOUNT_MISSING => $this->backgroundAccountText(l: $l),
+			self::SUBJECT_QUOTA_SOFT_LIMIT => $this->quotaSoftLimitText(subjectRaw: $subjectRaw, l: $l),
+			default => $this->noteMentionText(subjectRaw: $subjectRaw, l: $l),
+		};
+	}//end wording()
 
 	/**
 	 * The `note_mention` wording.
@@ -467,18 +473,17 @@ class Notifier implements INotifier {
 	 * `message` carries the advice subject on the request keys, so it is shown
 	 * as given. When it is empty the recipient still gets the next step.
 	 *
-	 * @param string $subjectKey The subject key being rendered.
-	 * @param array<string,mixed> $subjectRaw The stored subject parameters
-	 *                                        (`object`, and a `message` the
-	 *                                        sender may have set separately).
-	 * @param \OCP\IL10N $l The recipient-language localisation.
+	 * @param NotificationText $text The notification being worded (`object`, and a
+	 *                               `message` the sender may have set separately).
 	 *
 	 * @return array{0:string,1:string} The [subject, message] pair.
 	 *
 	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md#REQ-W2L-005
 	 */
-	private function adviceText(string $subjectKey, array $subjectRaw, \OCP\IL10N $l): array {
-		[$subject, $fallback] = match ($subjectKey) {
+	private function adviceText(NotificationText $text): array {
+		$l = $text->l;
+
+		[$subject, $fallback] = match ($text->subjectKey) {
 			self::SUBJECT_ADVICE_RECEIVED => [
 				$l->t('Your advice request was answered'),
 				$l->t('Open the request to read the advice.'),
@@ -493,7 +498,7 @@ class Notifier implements INotifier {
 			],
 		};
 
-		$message = trim((string)($subjectRaw['message'] ?? ''));
+		$message = trim((string)($text->parameters['message'] ?? ''));
 		if ($message === '') {
 			$message = $fallback;
 		}
@@ -502,7 +507,7 @@ class Notifier implements INotifier {
 	}//end adviceText()
 
 	/**
-	 * The five deadline wordings.
+	 * The two Woo deadline wordings.
 	 *
 	 * The Woo keys carry `daysRemaining`; the permit keys carry only the case,
 	 * because DsoDeadlineTimerFiredListener decides the tier itself and sends the tier rather
@@ -510,51 +515,68 @@ class Notifier implements INotifier {
 	 * does not, which is the honest split: inventing a count the sender never
 	 * measured would read as precision the notification does not have.
 	 *
-	 * @param string $subjectKey The subject key being rendered.
-	 * @param array<string,mixed> $subjectRaw The stored subject parameters
-	 *                                        (`caseId`, and `daysRemaining` on
-	 *                                        the Woo keys).
-	 * @param \OCP\IL10N $l The recipient-language localisation.
+	 * @param NotificationText $text The notification being worded (`caseId`, `daysRemaining`).
 	 *
 	 * @return array{0:string,1:string} The [subject, message] pair.
 	 *
 	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md#REQ-W2L-005
 	 */
-	private function deadlineText(string $subjectKey, array $subjectRaw, \OCP\IL10N $l): array {
-		if ($subjectKey === self::SUBJECT_WOO_DEADLINE_OVERDUE) {
+	private function wooDeadlineText(NotificationText $text): array {
+		$l = $text->l;
+		if ($text->subjectKey === self::SUBJECT_WOO_DEADLINE_OVERDUE) {
 			return [
 				$l->t('A Woo deadline has passed'),
 				$l->t('The legal term has run out. Decide on this request now.'),
 			];
 		}
 
-		if ($subjectKey === self::SUBJECT_WOO_DEADLINE_WARNING) {
-			$daysRemaining = (int)($subjectRaw['daysRemaining'] ?? 0);
-			$subject = $l->t('A Woo request is nearing its deadline');
-			if ($daysRemaining > 0) {
-				return [
-					$subject,
-					$l->t('Days left to decide: %s. Open the request.', [$daysRemaining]),
-				];
-			}
-
-			return [$subject, $l->t('Open the request and plan the decision.')];
+		$daysRemaining = (int)($text->parameters['daysRemaining'] ?? 0);
+		$subject = $l->t('A Woo request is nearing its deadline');
+		if ($daysRemaining > 0) {
+			return [
+				$subject,
+				$l->t('Days left to decide: %s. Open the request.', [$daysRemaining]),
+			];
 		}
 
-		if ($subjectKey === self::SUBJECT_TERM_EXCEEDED) {
+		return [$subject, $l->t('Open the request and plan the decision.')];
+	}//end wooDeadlineText()
+
+	/**
+	 * The two case term wordings.
+	 *
+	 * @param NotificationText $text The notification being worded (`caseId`, `daysRemaining`).
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md#REQ-W2L-005
+	 */
+	private function termDeadlineText(NotificationText $text): array {
+		$l = $text->l;
+		if ($text->subjectKey === self::SUBJECT_TERM_EXCEEDED) {
 			return [
 				$l->t('A case deadline has passed'),
 				$l->t('The legal term has run out. Decide on this case now.'),
 			];
 		}
 
-		if ($subjectKey === self::SUBJECT_TERM_NEARING) {
-			return [
-				$l->t('A case is nearing its deadline'),
-				$l->t('Days left to decide: %s. Open the case.', [(int)($subjectRaw['daysRemaining'] ?? 0)]),
-			];
-		}
+		return [
+			$l->t('A case is nearing its deadline'),
+			$l->t('Days left to decide: %s. Open the case.', [(int)($text->parameters['daysRemaining'] ?? 0)]),
+		];
+	}//end termDeadlineText()
 
+	/**
+	 * The three permit deadline wordings; the permit keys carry the tier, not a count.
+	 *
+	 * @param string     $subjectKey The subject key being rendered.
+	 * @param \OCP\IL10N $l          The recipient-language localisation.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 *
+	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md#REQ-W2L-005
+	 */
+	private function permitDeadlineText(string $subjectKey, \OCP\IL10N $l): array {
 		if ($subjectKey === self::SUBJECT_DSO_DEADLINE_OVERDUE) {
 			return [
 				$l->t('A permit deadline has passed'),
@@ -573,7 +595,7 @@ class Notifier implements INotifier {
 			$l->t('A permit case is nearing its deadline'),
 			$l->t('Open the case and plan the decision.'),
 		];
-	}//end deadlineText()
+	}//end permitDeadlineText()
 
 	/**
 	 * The text for an admin while the background jobs have no service account.
@@ -657,18 +679,17 @@ class Notifier implements INotifier {
 	 * because it is their words; without it the handler still gets the next
 	 * step.
 	 *
-	 * @param string $subjectKey The subject key being rendered.
-	 * @param array<string,mixed> $subjectRaw The stored subject parameters
-	 *                                        (`caseId`, `identifier`, `act`, `reason`).
-	 * @param \OCP\IL10N $l The recipient-language localisation.
+	 * @param NotificationText $text The notification being worded (`caseId`, `identifier`, `act`, `reason`).
 	 *
 	 * @return array{0:string,1:string} The [subject, message] pair.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
-	private function applicantText(string $subjectKey, array $subjectRaw, \OCP\IL10N $l): array {
-		if ($subjectKey === self::SUBJECT_APPLICANT_WITHDREW) {
-			$reason = trim((string)($subjectRaw['reason'] ?? ''));
+	private function applicantText(NotificationText $text): array {
+		$l = $text->l;
+
+		if ($text->subjectKey === self::SUBJECT_APPLICANT_WITHDREW) {
+			$reason = trim((string)($text->parameters['reason'] ?? ''));
 			if ($reason !== '') {
 				return [
 					$l->t('The applicant withdrew a case you handle'),
@@ -682,7 +703,7 @@ class Notifier implements INotifier {
 			];
 		}
 
-		$message = match ((string)($subjectRaw['act'] ?? '')) {
+		$message = match ((string)($text->parameters['act'] ?? '')) {
 			'amendment' => $l->t('The applicant changed an answer in the portal. Open the case to see what changed.'),
 			'document' => $l->t('The applicant added a document in the portal. Open the case to read it.'),
 			'task-answer' => $l->t('The applicant answered a task in the portal. Open the case to see the answer.'),

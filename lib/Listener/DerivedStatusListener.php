@@ -47,6 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Status\DerivedStatusJournal;
 use OCA\Dossiq\Service\Status\DerivedStatusService;
@@ -122,30 +123,84 @@ class DerivedStatusListener implements IEventListener {
 			return;
 		}
 
-		$payload = $this->payload(entity: $event->getNewObject());
-		if ($payload === null || $this->isCaseSchema(object: $payload) === false) {
+		$payload = $this->casePayload(event: $event);
+		$target = $this->targetOf(payload: $payload);
+		if ($payload === null || $target === null) {
 			return;
 		}
-
-		$modified = $event->getModifiedData();
-		$payload = array_merge($payload, $modified);
-
-		$target = $this->derived->statusFor(case: $payload);
-		if ($target === null) {
-			return;
-		}
-
-		$settled = $this->declarations->applyStatusChange(case: $payload, toStatus: $target);
-		$dwell = array_intersect_key($settled, array_flip(self::DWELL_FIELDS));
 
 		$event->setModifiedData(
 			array_merge(
-				$modified,
-				$dwell,
+				$event->getModifiedData(),
+				$this->dwellOf(payload: $payload, target: $target),
 				['status' => $target],
 			)
 		);
 
+		$this->recordMove(payload: $payload, target: $target);
+	}//end handle()
+
+	/**
+	 * The case as the save will leave it, or null when the save is not of a case.
+	 *
+	 * @param ObjectUpdatingEvent $event The save.
+	 *
+	 * @return array<string, mixed>|null The stored payload with the modified data on top.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function casePayload(ObjectUpdatingEvent $event): ?array {
+		$payload = $this->payload(entity: $event->getNewObject());
+		if ($payload === null || $this->isCaseSchema(object: $payload) === false) {
+			return null;
+		}
+
+		return array_merge($payload, $event->getModifiedData());
+	}//end casePayload()
+
+	/**
+	 * The declared status the case has become, or null when none did (or there is no case).
+	 *
+	 * @param array<string, mixed>|null $payload The case as the save leaves it.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function targetOf(?array $payload): ?string {
+		if ($payload === null) {
+			return null;
+		}
+
+		return $this->derived->statusFor(case: $payload);
+	}//end targetOf()
+
+	/**
+	 * The dwell fields the move into $target sets.
+	 *
+	 * @param array<string, mixed> $payload The case as the save leaves it.
+	 * @param string               $target  The status the case moves into.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function dwellOf(array $payload, string $target): array {
+		$settled = $this->declarations->applyStatusChange(case: $payload, toStatus: $target);
+		return array_intersect_key($settled, array_flip(self::DWELL_FIELDS));
+	}//end dwellOf()
+
+	/**
+	 * Stage the move for the timeline and log it.
+	 *
+	 * @param array<string, mixed> $payload The case as the save leaves it, before the move.
+	 * @param string               $target  The status the case moved into.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function recordMove(array $payload, string $target): void {
 		$caseId = (string)($payload['id'] ?? ($payload['@self']['id'] ?? ''));
 		$from = (string)($payload['status'] ?? '');
 
@@ -162,7 +217,7 @@ class DerivedStatusListener implements IEventListener {
 				'to' => $target,
 			]
 		);
-	}//end handle()
+	}//end recordMove()
 
 	/**
 	 * Read an entity's payload, or null when it cannot be read.
@@ -194,16 +249,6 @@ class DerivedStatusListener implements IEventListener {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function isCaseSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('case_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('case_schema'));
 	}//end isCaseSchema()
 }//end class

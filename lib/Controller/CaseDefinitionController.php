@@ -83,8 +83,6 @@ class CaseDefinitionController extends Controller {
 	public function export(): DataDownloadResponse|JSONResponse {
 		try {
 			$caseTypeId = $this->request->getParam('caseTypeId', '');
-			$components = $this->request->getParam('components', []);
-
 			if (empty($caseTypeId) === true) {
 				return new JSONResponse(
 					['error' => 'Parameter caseTypeId is required'],
@@ -92,38 +90,14 @@ class CaseDefinitionController extends Controller {
 				);
 			}
 
-			if (is_string($components) === true) {
-				$components = json_decode($components, true) ?? [];
-			}
-
-			$result = $this->exportService->exportCaseDefinition($caseTypeId, $components);
-
-			$content = file_get_contents($result['path']);
-			unlink($result['path']);
-
-			if ($content === false) {
-				return new JSONResponse(
-					['error' => 'Failed to read export file'],
-					Http::STATUS_INTERNAL_SERVER_ERROR
-				);
-			}
-
-			return new DataDownloadResponse(
-				$content,
-				$result['filename'],
-				'application/zip'
-			);
+			return $this->exportArchive(caseTypeId: $caseTypeId, components: $this->requestedComponents());
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(
 				['error' => $e->getMessage()],
 				Http::STATUS_BAD_REQUEST
 			);
 		} catch (\Throwable $e) {
-			$this->logger->error('Case definition export failed: ' . $e->getMessage());
-			return new JSONResponse(
-				['error' => 'Export failed: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->failure(action: 'export', exception: $e);
 		}//end try
 	}//end export()
 
@@ -137,24 +111,14 @@ class CaseDefinitionController extends Controller {
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function validate(): JSONResponse {
 		try {
-			$file = $this->request->getUploadedFile('package');
-
-			if (is_array($file) === false || isset($file['tmp_name']) === false) {
-				return new JSONResponse(
-					['error' => 'No package file uploaded'],
-					Http::STATUS_BAD_REQUEST
-				);
+			$package = $this->uploadedPackage();
+			if ($package === null) {
+				return $this->noPackage();
 			}
 
-			$result = $this->importService->validatePackage($file['tmp_name']);
-
-			return new JSONResponse($result);
+			return new JSONResponse($this->importService->validatePackage($package));
 		} catch (\Throwable $e) {
-			$this->logger->error('Case definition validation failed: ' . $e->getMessage());
-			return new JSONResponse(
-				['error' => 'Validation failed: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->failure(action: 'validation', exception: $e);
 		}
 	}//end validate()
 
@@ -168,14 +132,11 @@ class CaseDefinitionController extends Controller {
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function import(): JSONResponse {
 		try {
-			$file = $this->request->getUploadedFile('package');
+			$package = $this->uploadedPackage();
 			$strategy = $this->request->getParam('strategy', 'skip');
 
-			if (is_array($file) === false || isset($file['tmp_name']) === false) {
-				return new JSONResponse(
-					['error' => 'No package file uploaded'],
-					Http::STATUS_BAD_REQUEST
-				);
+			if ($package === null) {
+				return $this->noPackage();
 			}
 
 			if (in_array($strategy, ['skip', 'overwrite', 'merge'], true) === false) {
@@ -185,25 +146,117 @@ class CaseDefinitionController extends Controller {
 				);
 			}
 
-			$result = $this->importService->importCaseDefinition(
-				$file['tmp_name'],
-				$strategy
-			);
-
-			$statusCode = Http::STATUS_UNPROCESSABLE_ENTITY;
-			if ($result['success'] === true) {
-				$statusCode = Http::STATUS_OK;
-			}
-
-			return new JSONResponse($result, $statusCode);
+			return $this->importedPackage(package: $package, strategy: $strategy);
 		} catch (\Throwable $e) {
-			$this->logger->error('Case definition import failed: ' . $e->getMessage());
-			return new JSONResponse(
-				['error' => 'Import failed: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->failure(action: 'import', exception: $e);
 		}//end try
 	}//end import()
+
+	/**
+	 * The components the request asks for; a JSON string is decoded, and one that is not JSON is none.
+	 *
+	 * @return mixed
+	 */
+	private function requestedComponents(): mixed {
+		$components = $this->request->getParam('components', []);
+		if (is_string($components) === true) {
+			return json_decode($components, true) ?? [];
+		}
+
+		return $components;
+	}//end requestedComponents()
+
+	/**
+	 * Export the case type and hand the archive over, removing the file it was written to.
+	 *
+	 * @param mixed $caseTypeId The case type.
+	 * @param mixed $components The components to include.
+	 *
+	 * @return DataDownloadResponse|JSONResponse
+	 */
+	private function exportArchive(mixed $caseTypeId, mixed $components): DataDownloadResponse|JSONResponse {
+		$result = $this->exportService->exportCaseDefinition($caseTypeId, $components);
+
+		$content = file_get_contents($result['path']);
+		unlink($result['path']);
+
+		if ($content === false) {
+			return new JSONResponse(
+				['error' => 'Failed to read export file'],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}
+
+		return new DataDownloadResponse(
+			$content,
+			$result['filename'],
+			'application/zip'
+		);
+	}//end exportArchive()
+
+	/**
+	 * The uploaded package's temporary path, or null when no package was uploaded.
+	 *
+	 * @return string|null
+	 */
+	private function uploadedPackage(): ?string {
+		$file = $this->request->getUploadedFile('package');
+		if (is_array($file) === false || isset($file['tmp_name']) === false) {
+			return null;
+		}
+
+		return $file['tmp_name'];
+	}//end uploadedPackage()
+
+	/**
+	 * The 400 for a request without a package.
+	 *
+	 * @return JSONResponse
+	 */
+	private function noPackage(): JSONResponse {
+		return new JSONResponse(
+			['error' => 'No package file uploaded'],
+			Http::STATUS_BAD_REQUEST
+		);
+	}//end noPackage()
+
+	/**
+	 * Import the package and answer 200 when it succeeded, 422 when it did not.
+	 *
+	 * @param string $package  The package's temporary path.
+	 * @param mixed  $strategy How existing objects are treated.
+	 *
+	 * @return JSONResponse
+	 */
+	private function importedPackage(string $package, mixed $strategy): JSONResponse {
+		$result = $this->importService->importCaseDefinition(
+			$package,
+			$strategy
+		);
+
+		$statusCode = Http::STATUS_UNPROCESSABLE_ENTITY;
+		if ($result['success'] === true) {
+			$statusCode = Http::STATUS_OK;
+		}
+
+		return new JSONResponse($result, $statusCode);
+	}//end importedPackage()
+
+	/**
+	 * The logged 500 a failed package call answers with.
+	 *
+	 * @param string     $action    `export`, `validation` or `import`.
+	 * @param \Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function failure(string $action, \Throwable $exception): JSONResponse {
+		$this->logger->error('Case definition ' . $action . ' failed: ' . $exception->getMessage());
+		return new JSONResponse(
+			['error' => ucfirst($action) . ' failed: ' . $exception->getMessage()],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end failure()
 
 	/**
 	 * Deep-copy a case type into a new draft.

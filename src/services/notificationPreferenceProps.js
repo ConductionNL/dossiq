@@ -212,44 +212,116 @@ function appDefaultPerChannel(entry, channelIds) {
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID, channelIds = [] } = {}) {
-	const groupValues = {}
-	const personalValues = {}
-	const forcedValues = {}
-	const refusals = {}
-
-	for (const entry of entries) {
-		const id = keyFor(entry)
-		const source = String(entry?.source ?? '')
-
-		const on = channelIds.length > 0
-			? perChannel(channelIds, (channel) => channelsOnFor(entry).includes(channel))
-			: { [channelId]: entry?.enabled === true }
-		if (source === SOURCE_PERSONAL) {
-			personalValues[id] = on
-		} else if (source === SOURCE_GROUP) {
-			groupValues[id] = on
-		}
-
-		const forced = entry?.forced
-		if (forced !== undefined && forced !== null) {
-			// FORCED CAN FORCE A CHANNEL OFF. Reading a forced row as "on"
-			// would switch on a channel an administrator forbade, so the
-			// value is taken from the row and never assumed.
-			const cell = {
-				value: forced?.value === true,
-				by: String(forced?.by ?? ''),
-				reason: String(forced?.reason ?? ''),
-			}
-			forcedValues[id] = perChannel(channelIds.length > 0 ? channelIds : [channelId], () => ({ ...cell }))
-		}
-
-		const refused = entry?.refused
-		if (refused !== undefined && refused !== null) {
-			refusals[id] = perChannel(channelIds.length > 0 ? channelIds : [channelId], () => ({ reason: String(refused?.reason ?? '') }))
-		}
+	const run = {
+		channelId,
+		channelIds,
+		columns: channelIds.length > 0 ? channelIds : [channelId],
+		values: { groupValues: {}, personalValues: {}, forcedValues: {}, refusals: {} },
 	}
 
-	return { groupValues, personalValues, forcedValues, refusals }
+	for (const entry of entries) {
+		readEntry(run, entry)
+	}
+
+	return run.values
+}
+
+/**
+ * Which of the values a row's source is kept in.
+ */
+const VALUES_BY_SOURCE = new Map([
+	[SOURCE_PERSONAL, 'personalValues'],
+	[SOURCE_GROUP, 'groupValues'],
+])
+
+/**
+ * Keep what one entry says: its on/off per column under its source, and
+ * whether it is forced or refused.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {object} entry One entry.
+ */
+function readEntry(run, entry) {
+	const row = { id: keyFor(entry), entry }
+	keepOn(run, row)
+	keepForced(run, row)
+	keepRefused(run, row)
+}
+
+/**
+ * Keep an entry's on/off per column under its source, when its source is
+ * a group or a personal value.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {{id: string, entry: object}} row The entry and its id.
+ */
+function keepOn(run, row) {
+	const source = String(row.entry?.source ?? '')
+
+	const on = onPerColumn(run, row.entry)
+	const kept = VALUES_BY_SOURCE.get(source)
+	if (kept !== undefined) {
+		run.values[kept][row.id] = on
+	}
+}
+
+/**
+ * Keep an entry's forced value per column, when it carries one.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {{id: string, entry: object}} row The entry and its id.
+ */
+function keepForced(run, row) {
+	const forced = row.entry?.forced
+	if (forced !== undefined && forced !== null) {
+		run.values.forcedValues[row.id] = forcedPerColumn(run, forced)
+	}
+}
+
+/**
+ * Keep an entry's refusal per column, when it carries one.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {{id: string, entry: object}} row The entry and its id.
+ */
+function keepRefused(run, row) {
+	const refused = row.entry?.refused
+	if (refused !== undefined && refused !== null) {
+		run.values.refusals[row.id] = perChannel(run.columns, () => ({ reason: String(refused?.reason ?? '') }))
+	}
+}
+
+/**
+ * Whether one entry is on, per column: per named channel, or in the one column.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {object} entry One entry.
+ * @return {object} `{ [channelId]: boolean }`.
+ */
+function onPerColumn(run, entry) {
+	return run.channelIds.length > 0
+		? perChannel(run.channelIds, (channel) => channelsOnFor(entry).includes(channel))
+		: { [run.channelId]: entry?.enabled === true }
+}
+
+/**
+ * A forced row's cell, per column.
+ *
+ * FORCED CAN FORCE A CHANNEL OFF. Reading a forced row as "on" would switch
+ * on a channel an administrator forbade, so the value is taken from the row
+ * and never assumed.
+ *
+ * @param {object} run The values being read, with the columns they sit in.
+ * @param {object} forced The row's forced value.
+ * @return {object} `{ [channelId]: { value, by, reason } }`.
+ */
+function forcedPerColumn(run, forced) {
+	const cell = {
+		value: forced?.value === true,
+		by: String(forced?.by ?? ''),
+		reason: String(forced?.reason ?? ''),
+	}
+	return perChannel(run.columns, () => ({ ...cell }))
 }
 
 /**
@@ -315,6 +387,33 @@ export function propsFor({
  * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function writeFor({ eventId, scope = '', value, channelId = SINGLE_CHANNEL_ID, current = null } = {}) {
+	const write = notificationWrite(eventId, value)
+	if (write === null) {
+		return null
+	}
+
+	// One cell of several channels: the write is the row's whole channel set
+	// with this one switched, and the row is on while any channel is.
+	if (channelId !== SINGLE_CHANNEL_ID && Array.isArray(current) === true) {
+		Object.assign(write, switchedChannels({ channelId, current }, value))
+	}
+
+	if (scope !== '') {
+		write.scope = `domain:${scope}`
+	}
+
+	return write
+}
+
+/**
+ * The write for one notification id switched on or off, null for an id
+ * this file did not produce.
+ *
+ * @param {string} eventId The `schema-notification` id.
+ * @param {boolean} value Whether the switch is on.
+ * @return {object|null} `{ schema, notification, enabled }`.
+ */
+function notificationWrite(eventId, value) {
 	const at = String(eventId ?? '').indexOf('-')
 	if (at < 1) {
 		// Not an id this file produced. Returning null rather than writing a
@@ -323,23 +422,22 @@ export function writeFor({ eventId, scope = '', value, channelId = SINGLE_CHANNE
 		return null
 	}
 
-	const write = {
+	return {
 		schema: String(eventId).slice(0, at),
 		notification: String(eventId).slice(at + 1),
 		enabled: value === true,
 	}
+}
 
-	// One cell of several channels: the write is the row's whole channel set
-	// with this one switched, and the row is on while any channel is.
-	if (channelId !== SINGLE_CHANNEL_ID && Array.isArray(current) === true) {
-		const others = current.filter((id) => id !== channelId)
-		write.channels = value === true ? [...others, channelId] : others
-		write.enabled = write.channels.length > 0
-	}
-
-	if (scope !== '') {
-		write.scope = `domain:${scope}`
-	}
-
-	return write
+/**
+ * The row's channel set with one channel switched, and whether any is on.
+ *
+ * @param {{channelId: string, current: Array<string>}} cell The channel and the row's current set.
+ * @param {boolean} value Whether the channel is switched on.
+ * @return {{channels: Array<string>, enabled: boolean}} The channel fields of the write.
+ */
+function switchedChannels(cell, value) {
+	const others = cell.current.filter((id) => id !== cell.channelId)
+	const channels = value === true ? [...others, cell.channelId] : others
+	return { channels, enabled: channels.length > 0 }
 }

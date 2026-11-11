@@ -51,8 +51,10 @@ class AdvisoryCommitteeServiceTest extends TestCase {
 	 * @return void
 	 */
 	private function seedDeliberation(string $uuid): void {
+		$this->store->seed('bezwaaradviescommissie', 'committee-1', ['chair' => 'chair-1', 'active' => true]);
 		$this->store->seed('bacAdviceRequest', $uuid, [
 			'bezwaar' => 'bezwaar-1',
+			'committee' => 'committee-1',
 			'status' => 'in-deliberation',
 			'panel' => ['member-1'],
 			'conclusion' => 'Bezwaar gegrond',
@@ -107,6 +109,31 @@ class AdvisoryCommitteeServiceTest extends TestCase {
 	}
 
 	/**
+	 * Only the committee chair signs: another committee member, or a request whose
+	 * committee names no chair, is refused before anything is recorded or moved.
+	 *
+	 * @return void
+	 */
+	public function testOnlyTheCommitteeChairSignsTheAdvice(): void {
+		$this->seedDeliberation(uuid: 'req-1');
+		$this->store->seed('bezwaaradviescommissie', 'committee-2', ['active' => true]);
+		$this->store->seed('bacAdviceRequest', 'req-2', ['committee' => 'committee-2'] + $this->store->row('bacAdviceRequest', 'req-1'));
+
+		foreach ([['req-1', 'member-1', 'advice-issued'], ['req-1', 'member-1', 'inadmissible'], ['req-2', 'chair-1', 'advice-issued']] as [$request, $uid, $status]) {
+			try {
+				$this->realAdvisoryService(trail: $this->bezwaarAuditTrail(uid: $uid))
+					->transitionAdviceStatus(requestId: $request, newStatus: $status, payload: ['signatureEvidence' => 'forged']);
+				$this->fail($uid . ' must not sign ' . $request);
+			} catch (RuntimeException $refused) {
+				$this->assertSame(\OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService::NOT_CHAIR, $refused->getCode());
+			}
+
+			$this->assertSame('in-deliberation', $this->store->row('bacAdviceRequest', $request)['status']);
+			$this->assertSame([], $this->trail->actionsOn($request));
+		}
+	}//end testOnlyTheCommitteeChairSignsTheAdvice()
+
+	/**
 	 * A failed status write after the entry leaves a not-applied row (REQ-BAT-003).
 	 *
 	 * @return void
@@ -116,7 +143,7 @@ class AdvisoryCommitteeServiceTest extends TestCase {
 		$this->store->refuseSaves = true;
 
 		try {
-			$this->realAdvisoryService(trail: $this->bezwaarAuditTrail())->transitionAdviceStatus(requestId: 'req-1', newStatus: 'advice-issued');
+			$this->realAdvisoryService(trail: $this->bezwaarAuditTrail(uid: 'chair-1'))->transitionAdviceStatus(requestId: 'req-1', newStatus: 'advice-issued');
 			$this->fail('a failed status write must raise');
 		} catch (RuntimeException $failed) {
 			$this->assertSame('Could not transition advice request', $failed->getMessage());

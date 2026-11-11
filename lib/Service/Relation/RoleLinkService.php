@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Relation;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CaseRegisterReads;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use RuntimeException;
@@ -80,7 +81,7 @@ class RoleLinkService {
 	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-the-case-says-which-required-roles-are-missing-req-lcr-3
 	 */
 	public function rolesFor(string $caseId): array {
-		$objectService = $this->objectService();
+		$objectService = $this->reads()->objectService();
 		$register      = $this->settingsService->getConfigValue(key: 'register');
 		$roles         = $this->definitionsFor(objectService: $objectService, register: $register, caseId: $caseId);
 
@@ -125,7 +126,7 @@ class RoleLinkService {
 			throw new InvalidArgumentException('Name the case and what it is linked to.');
 		}
 
-		$objectService = $this->objectService();
+		$objectService = $this->reads()->objectService();
 		$register      = $this->settingsService->getConfigValue(key: 'register');
 		$roles         = $this->definitionsFor(objectService: $objectService, register: $register, caseId: $caseId);
 		if (isset($roles[$role]) === false) {
@@ -177,33 +178,22 @@ class RoleLinkService {
 	 * @throws RuntimeException When the case or its case type cannot be read.
 	 */
 	private function definitionsFor(object $objectService, string $register, string $caseId): array {
-		$case = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $this->schemaKey(key: 'case_schema'),
-			id: $caseId
-		);
-		if ($case === null) {
-			throw new RuntimeException('Case not found');
-		}
-
-		$caseTypeId = $this->uuidOf(value: ($case['caseType'] ?? ''));
-		if ($caseTypeId === '') {
-			return [];
-		}
-
-		$caseType = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $this->schemaKey(key: 'case_type_schema'),
-			id: $caseTypeId
-		);
+		$caseType = $this->reads()->caseTypeOf(location: [$objectService, $register], caseId: $caseId);
 		if ($caseType === null) {
-			throw new RuntimeException('Case type not found');
+			return [];
 		}
 
 		return (new RoleLinkDefinitionReader())->allOf(caseType: $caseType);
 	}//end definitionsFor()
+
+	/**
+	 * The case and schema reads this service starts from.
+	 *
+	 * @return CaseRegisterReads
+	 */
+	private function reads(): CaseRegisterReads {
+		return new CaseRegisterReads(settingsService: $this->settingsService);
+	}//end reads()
 
 	/**
 	 * The case the link points at: the target itself, or the case its object belongs to.
@@ -231,7 +221,7 @@ class RoleLinkService {
 		$target = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
-			schema: $this->schemaKey(key: $schemaKey),
+			schema: $this->reads()->schemaKey(key: $schemaKey),
 			id: $targetId
 		);
 		if ($target === null) {
@@ -242,7 +232,7 @@ class RoleLinkService {
 			return $targetId;
 		}
 
-		return $this->uuidOf(value: ($target[$definition->targetCaseField] ?? ''));
+		return CaseRegisterReads::uuidOf(value: ($target[$definition->targetCaseField] ?? ''));
 	}//end resolveLinkedCase()
 
 	/**
@@ -275,7 +265,7 @@ class RoleLinkService {
 			return null;
 		}
 
-		$schema   = $this->schemaKey(key: $definition->recordSchema);
+		$schema   = $this->reads()->schemaKey(key: $definition->recordSchema);
 		$existing = $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
@@ -324,7 +314,7 @@ class RoleLinkService {
 			return $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schemaKey(key: $definition->recordSchema),
+				schema: $this->reads()->schemaKey(key: $definition->recordSchema),
 				filters: [$definition->recordCaseField => $caseId]
 			) !== [];
 		}
@@ -337,40 +327,6 @@ class RoleLinkService {
 
 		return false;
 	}//end isLinked()
-
-	/**
-	 * The object service, or a refusal when OpenRegister is absent.
-	 *
-	 * @return object The object service.
-	 *
-	 * @throws RuntimeException When OpenRegister is not available.
-	 */
-	private function objectService(): object {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		return $objectService;
-	}//end objectService()
-
-	/**
-	 * The configured schema behind a config key, or a refusal naming the key.
-	 *
-	 * @param string $key The config key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is not configured.
-	 */
-	private function schemaKey(string $key): string {
-		$schema = $this->settingsService->getConfigValue(key: $key);
-		if ($schema === '') {
-			throw new RuntimeException("The schema '$key' is not configured.");
-		}
-
-		return $schema;
-	}//end schemaKey()
 
 	/**
 	 * The acting user id from the session.
@@ -386,26 +342,4 @@ class RoleLinkService {
 		return $user->getUID();
 	}//end actor()
 
-	/**
-	 * A uuid from a reference value: a string, or an expanded object.
-	 *
-	 * @param mixed $value The reference.
-	 *
-	 * @return string The uuid, or ''.
-	 */
-	private function uuidOf(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === true) {
-			foreach (['id', 'uuid'] as $key) {
-				if (is_string($value[$key] ?? null) === true) {
-					return trim($value[$key]);
-				}
-			}
-		}
-
-		return '';
-	}//end uuidOf()
 }//end class

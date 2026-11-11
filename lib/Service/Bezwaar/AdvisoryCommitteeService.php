@@ -111,6 +111,16 @@ class AdvisoryCommitteeService {
 	public const NOT_FOUND = 404;
 
 	/**
+	 * The code of the RuntimeException raised when someone other than the committee chair signs the advice.
+	 */
+	public const NOT_CHAIR = 403;
+
+	/**
+	 * The statuses the committee chair signs.
+	 */
+	private const SIGNED_STATUSES = ['advice-issued', 'inadmissible'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge
@@ -346,6 +356,9 @@ class AdvisoryCommitteeService {
 		$request = $this->loadAdviceRequest(requestId: $requestId);
 		$from = (string)($request['current']['status'] ?? 'assigned');
 		$this->assertTransitionAllowed(from: $from, newStatus: $newStatus);
+		if (in_array($newStatus, self::SIGNED_STATUSES, true) === true) {
+			$this->assertCallerChairs(request: $request);
+		}
 
 		$update = $payload;
 		$update['status'] = $newStatus;
@@ -461,6 +474,38 @@ class AdvisoryCommitteeService {
 
 		return '';
 	}//end guardTransition()
+
+	/**
+	 * Refuse a signature by anyone but the chair of the request's committee.
+	 *
+	 * @param array{objectService: object, register: string, schema: string, id: string, current: array<string, mixed>} $request The stored request.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the committee or its chair cannot be read, or the caller is not the chair.
+	 *
+	 * @spec exclude one guard of transitionAdviceStatus(), which carries the requirement
+	 */
+	private function assertCallerChairs(array $request): void {
+		$chair = '';
+		$committeeId = (string)($request['current']['committee'] ?? '');
+		if ($committeeId !== '') {
+			$committee = $this->findObjectAsArray(
+				objectService: $request['objectService'],
+				register: $request['register'],
+				schema: $this->settingsService->getConfigValue(key: 'bezwaaradviescommissie_schema'),
+				id: $committeeId
+			);
+			if ($committee !== null) {
+				$committee = ($this->governanceBodies?->resolve(row: $committee) ?? $committee);
+				$chair = (string)($committee['chair'] ?? '');
+			}
+		}
+
+		if ($chair === '' || $chair !== $this->auditTrail->resolveActor()) {
+			throw new RuntimeException('Only the chair of the committee can sign the advice', self::NOT_CHAIR);
+		}
+	}//end assertCallerChairs()
 
 	/**
 	 * The stored advice request with the store it lives in.
@@ -760,8 +805,7 @@ class AdvisoryCommitteeService {
 			$update['decisionRef'] = $adviceDecisionRef;
 		}
 
-		$terminal = ['advice-issued', 'inadmissible'];
-		if (in_array($update['status'], $terminal, true) === false) {
+		if (in_array($update['status'], self::SIGNED_STATUSES, true) === false) {
 			return $update;
 		}
 

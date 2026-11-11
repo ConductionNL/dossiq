@@ -1,0 +1,60 @@
+{
+    "plain event": [],
+    "acted on": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "another app": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "another source": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "no source": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "a warning rung": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "no rung": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "no account": [
+        {
+            "runAsWhenNobodyIsSignedIn": "unavailable"
+        }
+    ],
+    "a failing operation": [
+        {
+            "runAsWhenNobodyIsSignedIn": "failed"
+        },
+        {
+            "error": "Dossiq termijn: timer fire handling failed",
+            "context": {
+                "error": "store down",
+                "rung": "slaBreached:0"
+            }
+        }
+    ],
+    "without caseId": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ],
+    "an empty caseId": [
+        {
+            "runAsWhenNobodyIsSignedIn": "ran"
+        }
+    ]
+}

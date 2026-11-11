@@ -276,4 +276,53 @@ class AmountObjectionServiceTest extends TestCase {
 		self::assertSame('voorbereid', $row['status']);
 		self::assertSame('p-0', $row['payableId']);
 	}//end testAPayoutFinanceAlreadyApprovedIsNotPutOnHold()
-}
+	/**
+	 * The refusals keep their sentences: unknown amount, no configuration.
+	 *
+	 * @return void
+	 */
+	public function testTheRefusalsKeepTheirSentences(): void {
+		try {
+			$this->service->resolveObjection('does-not-exist', 1, 'AWB 7:11');
+			self::fail('an unknown amount is refused');
+		} catch (RuntimeException $e) {
+			self::assertSame('Accruing amount not found: does-not-exist', $e->getMessage());
+		}
+
+		$bare = $this->createMock(SettingsService::class);
+		$bare->method('getObjectService')->willReturn($this->objects);
+		$bare->method('getConfigValue')->willReturn('');
+		$logger  = $this->createMock(LoggerInterface::class);
+		$service = new AmountObjectionService($bare, new TermijnService($bare, $logger), $logger);
+		foreach ([fn () => $service->registerObjection('b-1', 'a', 'b'), fn () => $service->resolveObjection('b-1', 1, 'a')] as $call) {
+			try {
+				$call();
+				self::fail('an unconfigured store is refused');
+			} catch (RuntimeException $e) {
+				self::assertSame('The accruing amount and payout schemas are not configured', $e->getMessage());
+			}
+		}
+	}//end testTheRefusalsKeepTheirSentences()
+
+	/**
+	 * A stop date already there stays, resolving records its own event, and an amount
+	 * without a deadline instance records none.
+	 *
+	 * @return void
+	 */
+	public function testStopDateEventsAndAnAmountWithoutInstance(): void {
+		$this->objects->store['penaltyPaymentCalculation']['b-1']['stoppedOn'] = '2026-01-02';
+		self::assertSame('2026-01-02', $this->service->registerObjection('b-1', 'AWB 7:1', 'x')['stoppedOn']);
+		$this->service->resolveObjection('b-1', 100, 'AWB 7:11');
+
+		$events = array_values($this->objects->store['termijnGebeurtenis'] ?? []);
+		self::assertSame(['objection-submitted', 'objection-resolved'], array_column($events, 'type'));
+		self::assertSame('Bezwaar opgelost; bedrag herzien', $events[1]['rationale']);
+
+		$this->objects->seed('penaltyPaymentCalculation', ['id' => 'b-2', 'status' => 'loopt']);
+		$frozen = $this->service->registerObjection('b-2', 'AWB 7:1', 'x');
+		self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $frozen['stoppedOn']);
+		$this->service->resolveObjection('b-2', 0, 'AWB 7:11');
+		self::assertCount(2, $this->objects->store['termijnGebeurtenis']);
+	}//end testStopDateEventsAndAnAmountWithoutInstance()
+}//end class

@@ -37,11 +37,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\Pause\PauseChaseService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -112,22 +112,19 @@ class TermijnTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		try {
-			// The fire comes from OpenRegister's FlowTimerWorker, a cron job
-			// with nobody signed in, so the instance update and the event
-			// were refused as Anonymous. A signed-in caller keeps writing as
-			// themselves.
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(
-				operation: fn () => $this->dispatch(event: $event)
-			);
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// written for this fire.
-			return;
-		} catch (\Throwable $e) {
+		// The fire comes from OpenRegister's FlowTimerWorker, a cron job
+		// with nobody signed in, so the instance update and the event
+		// were refused as Anonymous. A signed-in caller keeps writing as
+		// themselves. Without a usable account it is already logged as an
+		// error and told to the admins; nothing was written for this fire.
+		$failure = TimerFire::runAsAccount(
+			account: $this->serviceAccount,
+			operation: fn () => $this->dispatch(event: $event)
+		);
+		if ($failure !== null) {
 			$this->logger->error(
 				'Dossiq termijn: timer fire handling failed',
-				['error' => $e->getMessage(), 'rung' => (string)$event->getRungKey()]
+				['error' => $failure->getMessage(), 'rung' => (string)$event->getRungKey()]
 			);
 		}
 	}//end handle()

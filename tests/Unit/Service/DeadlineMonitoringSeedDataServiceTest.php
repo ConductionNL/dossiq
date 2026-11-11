@@ -187,6 +187,70 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 	}
 
 	/**
+	 * Without OpenRegister, or without the schema configured, nothing is seeded and the reason is given.
+	 *
+	 * @return void
+	 */
+	public function testSeedSaysWhyItCannotRun(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$service = new DeadlineMonitoringSeedDataService($settings, $this->createMock(LoggerInterface::class));
+		self::assertSame(['success' => false, 'message' => 'OpenRegister is not available'], $service->seed());
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ($key === 'register') ? 'dossiq' : ''
+		);
+		$service = new DeadlineMonitoringSeedDataService($settings, $this->createMock(LoggerInterface::class));
+		self::assertSame(['success' => false, 'message' => 'Termijn schemas not configured'], $service->seed());
+	}
+
+	/**
+	 * Every refused row is logged with its id and the error, and the summary is logged once.
+	 *
+	 * @return void
+	 */
+	public function testRefusedRowsAreLoggedWithTheirId(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(new RefusingTermijnObjectService());
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'termijn_definitie_schema' => 'deadlineDefinition',
+				default => '',
+			},
+		);
+		$warnings = [];
+		$infos = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$warnings): void {
+				$warnings[] = [$message, array_keys($context), (string)$context['id']];
+			}
+		);
+		$logger->method('info')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$infos): void {
+				$infos[] = [$message, $context];
+			}
+		);
+
+		$result = (new DeadlineMonitoringSeedDataService($settings, $logger))->seed();
+
+		$seed = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/termijnbewaking_seed_data.json'), true);
+		$expected = array_map(
+			static fn (array $row): array => ['Dossiq termijnbewaking seed: row failed', ['id', 'error'], (string)($row['id'] ?? '')],
+			$seed['termijnDefinities']
+		);
+		self::assertSame($expected, $warnings);
+		self::assertSame(
+			[['Dossiq termijnbewaking: seed complete', ['definities' => 0, 'skipped' => 0, 'backfilled' => 0, 'failed' => count($expected)]]],
+			$infos
+		);
+		self::assertTrue($result['success']);
+	}
+
+	/**
 	 * @return void
 	 */
 	public function testWmoSeedHas42DayDuration(): void {

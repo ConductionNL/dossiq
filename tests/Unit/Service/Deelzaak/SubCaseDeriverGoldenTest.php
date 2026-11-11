@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Deelzaak;
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\MatchesGoldenFiles;
+use OCA\OpenRegister\Service\Relation\ParentInheritance;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -253,18 +254,17 @@ class SubCaseDeriverGoldenTest extends TestCase {
 				}//end declarationFor()
 
 				/**
-				 * ObjectRelationService::applyInheritance().
+				 * ObjectRelationService::inherit().
 				 *
-				 * @param object               $parent    The parent object.
-				 * @param array<string, mixed> $childData The child so far.
-				 * @param array<string, mixed> $inherits  Role to property name.
+				 * @param ParentInheritance $request The parent, the child so far, and role to property name.
 				 *
 				 * @return array<string, mixed> The data and what was inherited.
 				 */
-				public function applyInheritance(object $parent, array $childData, array $inherits): array {
+				public function inherit(ParentInheritance $request): array {
+					$childData = $request->childData;
 					$this->test->calls[] = [
-						'applyInheritance',
-						SubCaseDeriverGoldenTest::shown(value: ['parent' => $parent, 'childData' => $childData, 'inherits' => $inherits]),
+						'inherit',
+						SubCaseDeriverGoldenTest::shown(value: ['parent' => $request->parent, 'childData' => $childData, 'inherits' => $request->inherits]),
 					];
 					if (array_key_exists('applied', $this->world) === true) {
 						return $this->world['applied'];
@@ -274,7 +274,7 @@ class SubCaseDeriverGoldenTest extends TestCase {
 						'data' => $childData + ['confidentiality' => 'secret'],
 						'inherited' => ['confidentiality' => ['property' => 'confidentiality', 'value' => 'secret']],
 					];
-				}//end applyInheritance()
+				}//end inherit()
 
 				/**
 				 * ObjectRelationService::recordDerivation().

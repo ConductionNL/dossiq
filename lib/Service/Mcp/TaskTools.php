@@ -95,43 +95,95 @@ class TaskTools {
 	)]
 	#[McpToolTitle('Create a task')]
 	public function createTask(string $caseId, string $title, int $leadTimeDays = 0, string $for = 'handler'): array {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
+		$run = new CreateTaskRun();
+		$run->user = $this->userSession->getUser();
+		$run->caseId = trim($caseId);
+		$run->title = trim($title);
+		$run->leadTimeDays = $leadTimeDays;
+		$run->for = $for;
+
+		$refusal = ($this->inputRefusal(run: $run) ?? $this->caseRefusal(run: $run));
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->created(run: $run);
+	}//end createTask()
+
+	/**
+	 * Why the call cannot go on before the case is read: no session, or input out of bounds.
+	 *
+	 * @param CreateTaskRun $run The call.
+	 *
+	 * @return array<string, mixed>|null The error envelope, or null.
+	 */
+	private function inputRefusal(CreateTaskRun $run): ?array {
+		if ($run->user === null) {
 			return $this->error(code: 'not_authenticated', message: 'No user session.');
 		}
 
-		$caseId = trim($caseId);
-		$title = trim($title);
-		$invalid = ($this->invalidInput(title: $title, for: $for) ?? $this->invalidLeadTime(days: $leadTimeDays));
-		if ($invalid !== null) {
-			return $invalid;
-		}
+		return ($this->invalidInput(title: $run->title, for: $run->for) ?? $this->invalidLeadTime(days: $run->leadTimeDays));
+	}//end inputRefusal()
 
-		$case = $this->cases->loadCase(caseId: $caseId);
-		if ($case === null) {
+	/**
+	 * Read the case into the call; why it cannot go on when the case is not found or may not be changed.
+	 *
+	 * @param CreateTaskRun $run The call, with its caller.
+	 *
+	 * @return array<string, mixed>|null The error envelope, or null.
+	 */
+	private function caseRefusal(CreateTaskRun $run): ?array {
+		$run->openCase = $this->cases->loadCase(caseId: $run->caseId);
+		if ($run->openCase === null) {
 			return $this->error(code: 'not_found', message: 'The case was not found.');
 		}
 
-		if ($this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+		if ($this->caseAccess->hasCaseMutationAccess(caseId: $run->caseId, user: $run->user) === false) {
 			return $this->error(code: 'forbidden', message: 'You may not add work to this case.');
 		}
 
-		$action = ['type' => 'createTask', 'title' => $title];
-		if ($for === 'me') {
-			$action['assignee'] = $user->getUID();
-		}
+		return null;
+	}//end caseRefusal()
 
-		if ($leadTimeDays > 0) {
-			$action['declaration'] = ['leadTimeDays' => $leadTimeDays];
-		}
-
-		$result = $this->handler->handle(actionConfig: $action, case: $case, transitionContext: ['userId' => $user->getUID(), 'transitionLabel' => '']);
+	/**
+	 * Write the task through the handler, as a status change does.
+	 *
+	 * @param CreateTaskRun $run The checked call.
+	 *
+	 * @return array<string, mixed> `{taskId}`, or an error envelope.
+	 */
+	private function created(CreateTaskRun $run): array {
+		$result = $this->handler->handle(
+			actionConfig: self::taskAction(run: $run),
+			case: $run->openCase,
+			transitionContext: ['userId' => $run->user->getUID(), 'transitionLabel' => '']
+		);
 		if ($result->succeeded === false) {
 			return $this->error(code: (string)$result->error, message: 'The task could not be created.');
 		}
 
 		return $result->data;
-	}//end createTask()
+	}//end created()
+
+	/**
+	 * The createTask action: its title, the caller as assignee when it is for them, and a lead time when one was given.
+	 *
+	 * @param CreateTaskRun $run The checked call.
+	 *
+	 * @return array<string, mixed> The action configuration.
+	 */
+	private static function taskAction(CreateTaskRun $run): array {
+		$action = ['type' => 'createTask', 'title' => $run->title];
+		if ($run->for === 'me') {
+			$action['assignee'] = $run->user->getUID();
+		}
+
+		if ($run->leadTimeDays > 0) {
+			$action['declaration'] = ['leadTimeDays' => $run->leadTimeDays];
+		}
+
+		return $action;
+	}//end taskAction()
 
 	/**
 	 * The error for input a user may not give, or null when it is fine.

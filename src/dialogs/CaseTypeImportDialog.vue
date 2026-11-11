@@ -79,6 +79,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import { caseTypeRefusalMessages } from '../utils/caseTypeDialogs.js'
 import { importStrategies, publishRefusalMessage } from '../utils/caseTypePublish.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -118,25 +119,12 @@ export default {
 		/**
 		 * The sentences a refusal can carry, already translated.
 		 *
-		 * Built here, in literal t() calls, and handed to the helper: a string
-		 * that lives in the helper and passes through a translate callback is
-		 * invisible to `tests/l10n/check-l10n.js`, which extracts by finding a
-		 * literal inside a `t()` call for this app.
-		 *
 		 * @return {object} The messages.
 		 *
 		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		refusalMessages() {
-			return {
-				signIn: t('dossiq', 'Sign in again and retry.'),
-				forbidden: t('dossiq', 'Your account may not do this.'),
-				missing: t('dossiq', 'This case type no longer exists.'),
-				generic: t(
-					'dossiq',
-					'That did not work. Try again, or ask an administrator.',
-				),
-			}
+			return caseTypeRefusalMessages()
 		},
 	},
 

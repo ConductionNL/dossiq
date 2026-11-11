@@ -86,26 +86,50 @@ class StufZdsCaseConcludedListener implements IEventListener {
 			return;
 		}
 
-		$fout = (array)($result['fout'] ?? []);
-		$code = (string)($fout['code'] ?? '');
-		$type = match ($code) {
+		$code = (string)(((array)($result['fout'] ?? []))['code'] ?? '');
+		$this->needsInput->dispatch(
+			type: $this->subjectFor(code: $code),
+			context: $this->contextOf(event: $event, result: $result)
+		);
+	}//end handle()
+
+	/**
+	 * The notification subject for a StUF failure code.
+	 *
+	 * @param string $code The failure code.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
+	 */
+	private function subjectFor(string $code): string {
+		return match ($code) {
 			'CIRCUIT_OPEN' => Notifier::SUBJECT_STUF_CIRCUIT_OPEN,
 			'TIMEOUT' => Notifier::SUBJECT_STUF_TIMEOUT,
 			default => Notifier::SUBJECT_STUF_PERMANENT_ERROR,
 		};
+	}//end subjectFor()
+
+	/**
+	 * What the notification tells the administrator about the failed StUF write.
+	 *
+	 * @param object               $event  Integriq's StufZdsCaseConcludedEvent.
+	 * @param array<string, mixed> $result The write's result.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
+	 */
+	private function contextOf(object $event, array $result): array {
+		$fout = (array)($result['fout'] ?? []);
 
 		// StufIntegriqBridge correlates as `<endpointId>:<random>`.
-		$endpointId = explode(':', $event->getCorrelationId(), 2)[0];
-
-		$this->needsInput->dispatch(
-			type: $type,
-			context: [
-				'endpointId' => $endpointId,
-				'operation' => $event->getOperation(),
-				'referentienummer' => (string)($result['referentienummer'] ?? ''),
-				'fout' => $code,
-				'omschrijving' => (string)($fout['omschrijving'] ?? ''),
-			]
-		);
-	}//end handle()
+		return [
+			'endpointId' => explode(':', $event->getCorrelationId(), 2)[0],
+			'operation' => $event->getOperation(),
+			'referentienummer' => (string)($result['referentienummer'] ?? ''),
+			'fout' => (string)($fout['code'] ?? ''),
+			'omschrijving' => (string)($fout['omschrijving'] ?? ''),
+		];
+	}//end contextOf()
 }//end class

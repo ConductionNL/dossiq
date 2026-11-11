@@ -77,7 +77,30 @@ class SentimentService {
 	 */
 	public function analyzeSentiment(string $text, array $triggerWords): array {
 		$haystack = ' ' . mb_strtolower(trim($text)) . ' ';
+		$foundTriggers = $this->triggersIn(haystack: $haystack, triggerWords: $triggerWords);
+		$score = $this->polarityOf(haystack: $haystack);
 
+		$escalate = $this->shouldEscalate(score: $score, triggers: $foundTriggers);
+
+		return [
+			'score' => round($score, 2),
+			'label' => $this->labelFor(score: $score, triggers: $foundTriggers),
+			'triggers' => $foundTriggers,
+			'escalationRecommended' => $escalate,
+			'escalationLevel' => $this->getEscalationLevel(score: $score, triggers: $foundTriggers),
+			'snippet' => $this->extractSnippet(text: $text, triggers: $foundTriggers),
+		];
+	}//end analyzeSentiment()
+
+	/**
+	 * The configured trigger words the text contains, lower-cased, each once.
+	 *
+	 * @param string            $haystack     The lower-cased text, padded with spaces.
+	 * @param array<int, mixed> $triggerWords The configured trigger words.
+	 *
+	 * @return array<int, string> The triggers found.
+	 */
+	private function triggersIn(string $haystack, array $triggerWords): array {
 		$foundTriggers = [];
 		foreach ($triggerWords as $word) {
 			$needle = mb_strtolower(trim((string)$word));
@@ -90,8 +113,17 @@ class SentimentService {
 			}
 		}
 
-		$foundTriggers = array_values(array_unique($foundTriggers));
+		return array_values(array_unique($foundTriggers));
+	}//end triggersIn()
 
+	/**
+	 * The text's polarity from the weighted words it contains, in [-1, 1].
+	 *
+	 * @param string $haystack The lower-cased text, padded with spaces.
+	 *
+	 * @return float The score.
+	 */
+	private function polarityOf(string $haystack): float {
 		$score = 0.0;
 		$matches = 0;
 		foreach (self::WORD_WEIGHTS as $word => $weight) {
@@ -106,17 +138,8 @@ class SentimentService {
 			$score = max(-1.0, min(1.0, ($score / max(1, (int)ceil($matches / 2)))));
 		}
 
-		$escalate = $this->shouldEscalate(score: $score, triggers: $foundTriggers);
-
-		return [
-			'score' => round($score, 2),
-			'label' => $this->labelFor(score: $score, triggers: $foundTriggers),
-			'triggers' => $foundTriggers,
-			'escalationRecommended' => $escalate,
-			'escalationLevel' => $this->getEscalationLevel(score: $score, triggers: $foundTriggers),
-			'snippet' => $this->extractSnippet(text: $text, triggers: $foundTriggers),
-		];
-	}//end analyzeSentiment()
+		return $score;
+	}//end polarityOf()
 
 	/**
 	 * Decide whether a contact should be escalated.
@@ -133,6 +156,17 @@ class SentimentService {
 			return true;
 		}
 
+		return self::hasSeriousTrigger(triggers: $triggers);
+	}//end shouldEscalate()
+
+	/**
+	 * Whether any trigger found is one of the serious ones.
+	 *
+	 * @param array<int, string> $triggers The triggers found.
+	 *
+	 * @return bool True when a serious trigger is among them.
+	 */
+	private static function hasSeriousTrigger(array $triggers): bool {
 		foreach ($triggers as $trigger) {
 			if (in_array(mb_strtolower($trigger), self::SERIOUS_TRIGGERS, true) === true) {
 				return true;
@@ -140,7 +174,7 @@ class SentimentService {
 		}
 
 		return false;
-	}//end shouldEscalate()
+	}//end hasSeriousTrigger()
 
 	/**
 	 * Derive the recommended escalation level.
@@ -153,10 +187,8 @@ class SentimentService {
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
 	public function getEscalationLevel(float $score, array $triggers): string {
-		foreach ($triggers as $trigger) {
-			if (in_array(mb_strtolower($trigger), self::SERIOUS_TRIGGERS, true) === true) {
-				return 'rood';
-			}
+		if (self::hasSeriousTrigger(triggers: $triggers) === true) {
+			return 'rood';
 		}
 
 		if ($score < -0.6) {
@@ -183,10 +215,8 @@ class SentimentService {
 	 * @return string One of positief|neutraal|negatief|boos.
 	 */
 	private function labelFor(float $score, array $triggers): string {
-		foreach ($triggers as $trigger) {
-			if (in_array(mb_strtolower($trigger), self::SERIOUS_TRIGGERS, true) === true) {
-				return 'boos';
-			}
+		if (self::hasSeriousTrigger(triggers: $triggers) === true) {
+			return 'boos';
 		}
 
 		if ($score <= -0.6) {

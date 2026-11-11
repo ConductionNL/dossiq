@@ -153,42 +153,15 @@ class ZipManifestBuilder {
 		$included = $this->filterByClearance(user: $user, documents: $documents);
 		$excluded = ($candidateCount - count($included));
 
-		$zip = new ZipArchive();
-		if ($zip->open($targetPath, (ZipArchive::CREATE | ZipArchive::OVERWRITE)) !== true) {
-			throw new RuntimeException('Could not create ZIP archive at ' . $targetPath);
-		}
+		$run = new DossierZipRun(zip: self::openArchive(targetPath: $targetPath), layout: $layout);
 
 		// Manifest.csv at the archive root.
-		$zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
-
-		$usedNames = [];
+		$run->zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
 		foreach ($included as $doc) {
-			$infoId = (string)($doc['id'] ?? ($doc['uuid'] ?? ''));
-			$fileName = (string)($doc['fileName'] ?? '');
-			if ($infoId === '' || $fileName === '') {
-				continue;
-			}
+			$this->addDocument(run: $run, doc: $doc);
+		}
 
-			$entryName = $this->buildEntryName(
-				doc: $doc,
-				fileName: $fileName,
-				layout: $layout,
-				usedNames: $usedNames,
-			);
-
-			try {
-				// Read one file at a time; content is released before the next iteration.
-				$content = $this->documentService->getContent(uuid: $infoId, fileName: $fileName);
-				$zip->addFromString($entryName, $content);
-				unset($content);
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Dossiq dossier ZIP: skipped unreadable file ' . $fileName . ' (' . $e->getMessage() . ')'
-				);
-			}
-		}//end foreach
-
-		$zip->close();
+		$run->zip->close();
 
 		return [
 			'path' => $targetPath,
@@ -196,6 +169,58 @@ class ZipManifestBuilder {
 			'excluded' => $excluded,
 		];
 	}//end buildZip()
+
+	/**
+	 * Create (or overwrite) the archive at a path.
+	 *
+	 * @param string $targetPath Filesystem path to write the ZIP to.
+	 *
+	 * @return ZipArchive The open archive.
+	 *
+	 * @throws \RuntimeException When the ZIP archive cannot be created.
+	 */
+	private static function openArchive(string $targetPath): ZipArchive {
+		$zip = new ZipArchive();
+		if ($zip->open($targetPath, (ZipArchive::CREATE | ZipArchive::OVERWRITE)) !== true) {
+			throw new RuntimeException('Could not create ZIP archive at ' . $targetPath);
+		}
+
+		return $zip;
+	}//end openArchive()
+
+	/**
+	 * Write one document's file into the archive; a document without an id or file name is left out.
+	 *
+	 * @param DossierZipRun        $run The archive being written.
+	 * @param array<string, mixed> $doc The document.
+	 *
+	 * @return void
+	 */
+	private function addDocument(DossierZipRun $run, array $doc): void {
+		$infoId = (string)($doc['id'] ?? ($doc['uuid'] ?? ''));
+		$fileName = (string)($doc['fileName'] ?? '');
+		if ($infoId === '' || $fileName === '') {
+			return;
+		}
+
+		$entryName = $this->buildEntryName(
+			doc: $doc,
+			fileName: $fileName,
+			layout: $run->layout,
+			usedNames: $run->usedNames,
+		);
+
+		try {
+			// Read one file at a time; content is released before the next iteration.
+			$content = $this->documentService->getContent(uuid: $infoId, fileName: $fileName);
+			$run->zip->addFromString($entryName, $content);
+			unset($content);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq dossier ZIP: skipped unreadable file ' . $fileName . ' (' . $e->getMessage() . ')'
+			);
+		}
+	}//end addDocument()
 
 	/**
 	 * Compute the unique in-archive entry name for a document.

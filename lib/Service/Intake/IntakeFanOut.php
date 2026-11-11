@@ -182,37 +182,44 @@ class IntakeFanOut {
 			);
 		}
 
-		$created = [];
-		$failed = [];
+		$run = new FanOutRun(submission: $submission, submissionId: $submissionId);
 		foreach ($destinations as $destination) {
-			try {
-				$created[] = $this->open(
-					destination: $destination,
-					submission: $submission,
-					submissionId: $submissionId
-				);
-			} catch (Throwable $e) {
-				$reason = $this->readableReason(error: $e);
-				$this->logger->warning(
-					'Dossiq fan-out: destination {destination} opened no case',
-					['destination' => $destination['title'], 'reason' => $reason],
-				);
-				$failed[] = [
-					'destination' => $destination['title'],
-					'caseType' => $destination['caseType'],
-					'reason' => $reason,
-				];
-			}//end try
+			$this->openFor(run: $run, destination: $destination);
 		}
 
-		$this->tieTogether(created: $created);
-		$this->noteRouting(created: $created, failed: $failed, submissionId: $submissionId);
+		$this->tieTogether(created: $run->created);
+		$this->noteRouting(created: $run->created, failed: $run->failed, submissionId: $submissionId);
 
 		return [
-			'created' => $created,
-			'failed' => $failed,
+			'created' => $run->created,
+			'failed' => $run->failed,
 		];
 	}//end submit()
+
+	/**
+	 * Open the case of one destination, or report the destination as failed.
+	 *
+	 * @param FanOutRun                                                 $run         The fan-out.
+	 * @param array{title: string, caseType: string, department: string} $destination The destination.
+	 *
+	 * @return void
+	 */
+	private function openFor(FanOutRun $run, array $destination): void {
+		try {
+			$run->created[] = $this->open(destination: $destination, run: $run);
+		} catch (Throwable $e) {
+			$reason = $this->readableReason(error: $e);
+			$this->logger->warning(
+				'Dossiq fan-out: destination {destination} opened no case',
+				['destination' => $destination['title'], 'reason' => $reason],
+			);
+			$run->failed[] = [
+				'destination' => $destination['title'],
+				'caseType' => $destination['caseType'],
+				'reason' => $reason,
+			];
+		}//end try
+	}//end openFor()
 
 	/**
 	 * Tie every created case to every other one from the same submission.
@@ -248,42 +255,20 @@ class IntakeFanOut {
 	/**
 	 * Open one case for one destination.
 	 *
-	 * @param array{title: string, caseType: string, department: string} $destination  The destination.
-	 * @param array<string, mixed>                                      $submission   The submitted values.
-	 * @param string                                                    $submissionId The submission.
+	 * @param array{title: string, caseType: string, department: string} $destination The destination.
+	 * @param FanOutRun                                                 $run         The fan-out, with the submission.
 	 *
 	 * @return array<string, mixed> `{id, caseType, department, title}`.
 	 *
 	 * @throws RefusedException When the register is absent or the write failed.
 	 */
-	private function open(array $destination, array $submission, string $submissionId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			throw RefusedException::indeterminate(
-				rule: self::RULE_NOT_CONFIGURED,
-				sentence: 'The register is not configured, so the submission opened no case.',
-			);
-		}
-
-		// Each destination's case opens in its own case type's initial status,
-		// which OpenRegister fills in; a status the submission names is not it.
-		$submission = array_diff_key($submission, CallerIdentity::KEYS + ['status' => true]);
-		$payload = array_merge(
-			$submission,
-			[
-				'caseType' => $destination['caseType'],
-				'assignedGroup' => $destination['department'],
-				'intakeSubmission' => $submissionId,
-			]
-		);
-
+	private function open(array $destination, FanOutRun $run): array {
+		[$objectService, $register, $schema] = $this->caseStore();
 		$stored = $this->saveObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			object: $payload
+			object: self::payloadFor(destination: $destination, run: $run)
 		);
 		if ($stored === null) {
 			throw new RefusedException(
@@ -300,6 +285,50 @@ class IntakeFanOut {
 			'title' => $destination['title'],
 		];
 	}//end open()
+
+	/**
+	 * The ObjectService, register and schema cases are written to.
+	 *
+	 * @return array{0: object, 1: string, 2: string} ObjectService, register, schema.
+	 *
+	 * @throws RefusedException When the register is not configured.
+	 */
+	private function caseStore(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			throw RefusedException::indeterminate(
+				rule: self::RULE_NOT_CONFIGURED,
+				sentence: 'The register is not configured, so the submission opened no case.',
+			);
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseStore()
+
+	/**
+	 * The case one destination opens: the submitted values, its case type and department, and the submission.
+	 *
+	 * @param array{title: string, caseType: string, department: string} $destination The destination.
+	 * @param FanOutRun                                                 $run         The fan-out.
+	 *
+	 * @return array<string, mixed> The payload.
+	 */
+	private static function payloadFor(array $destination, FanOutRun $run): array {
+		// Each destination's case opens in its own case type's initial status,
+		// which OpenRegister fills in; a status the submission names is not it.
+		$submission = array_diff_key($run->submission, CallerIdentity::KEYS + ['status' => true]);
+
+		return array_merge(
+			$submission,
+			[
+				'caseType' => $destination['caseType'],
+				'assignedGroup' => $destination['department'],
+				'intakeSubmission' => $run->submissionId,
+			]
+		);
+	}//end payloadFor()
 
 	/**
 	 * Leave a routing note on every opened case of a split or partial fan-out.

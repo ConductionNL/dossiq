@@ -30,15 +30,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\TimerFire;
 use OCA\Dossiq\Service\Routing\CaseRouter;
 use OCA\Dossiq\Service\Routing\TakeBackWindow;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Turns a take-back breach into the case going back to its pool.
@@ -77,32 +76,40 @@ class TakeBackTimerFiredListener implements IEventListener {
 			return;
 		}
 
-		$timer    = $event->getTimer();
-		$metadata = ($timer->getMetadata() ?? []);
-		$caseId   = (string) ($metadata['caseId'] ?? '');
-		$routedTo = (string) ($metadata['routedTo'] ?? '');
-		if ((string) $timer->getAppId() !== 'dossiq'
-			|| (string) ($metadata['source'] ?? '') !== TakeBackWindow::METADATA_SOURCE
-			|| $caseId === ''
-			|| $routedTo === ''
-			|| str_starts_with((string) $event->getRungKey(), 'slaBreached:') === false
-		) {
+		$metadata = $this->takeBackFire(event: $event);
+		if ($metadata === null) {
 			return;
 		}
 
+		$caseId   = (string) $metadata['caseId'];
+		$routedTo = (string) $metadata['routedTo'];
 		$routedAt = (string) ($metadata['routedAt'] ?? '');
-
-		try {
-			$this->serviceAccount->runAsWhenNobodyIsSignedIn(
-				operation: function () use ($caseId, $routedTo, $routedAt): void {
-					$this->router->takeBack(caseId: $caseId, routedTo: $routedTo, routedAt: $routedAt);
-				}
-			);
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged and told to the admins. Nothing was written.
-			return;
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq routing: take-back handling failed', ['case' => $caseId, 'error' => $e->getMessage()]);
+		$failure  = TimerFire::runAsAccount(
+			account: $this->serviceAccount,
+			operation: fn () => $this->router->takeBack(caseId: $caseId, routedTo: $routedTo, routedAt: $routedAt)
+		);
+		if ($failure !== null) {
+			$this->logger->error('Dossiq routing: take-back handling failed', ['case' => $caseId, 'error' => $failure->getMessage()]);
 		}
 	}//end handle()
+
+	/**
+	 * The fire's metadata when it is this app's take-back window breaching for a routed case.
+	 *
+	 * @param FlowTimerFiredEvent $event The fire.
+	 *
+	 * @return array<string, mixed>|null The metadata, carrying a case and where it was routed, or null.
+	 */
+	private function takeBackFire(FlowTimerFiredEvent $event): ?array {
+		$metadata = TimerFire::metadataFrom(event: $event, source: TakeBackWindow::METADATA_SOURCE);
+		if ($metadata === null
+			|| (string) ($metadata['caseId'] ?? '') === ''
+			|| (string) ($metadata['routedTo'] ?? '') === ''
+			|| TimerFire::isBreach(event: $event) === false
+		) {
+			return null;
+		}
+
+		return $metadata;
+	}//end takeBackFire()
 }//end class

@@ -31,7 +31,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
-class QmaticBackend implements AppointmentBackendInterface {
+class QmaticBackend extends RestAppointmentBackend {
 	/**
 	 * Constructor.
 	 *
@@ -41,10 +41,10 @@ class QmaticBackend implements AppointmentBackendInterface {
 	 * @param string $apiKey The Qmatic API auth token.
 	 */
 	public function __construct(
-		private IClientService $clientService,
-		private LoggerInterface $logger,
-		private string $apiUrl,
-		private string $apiKey,
+		protected IClientService $clientService,
+		protected LoggerInterface $logger,
+		protected string $apiUrl,
+		protected string $apiKey,
 	) {
 	}//end __construct()
 
@@ -60,79 +60,40 @@ class QmaticBackend implements AppointmentBackendInterface {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getTimeslots(string $productId, string $locationId, string $date): array {
-		try {
-			$client = $this->clientService->newClient();
-			$response = $client->get(
-				$this->apiUrl . "/branches/{$locationId}/services/{$productId}/dates/{$date}/times",
-				['headers' => ['auth-token' => $this->apiKey]]
-			);
+		$data = $this->getJson(
+			url: $this->apiUrl . "/branches/{$locationId}/services/{$productId}/dates/{$date}/times",
+			options: ['headers' => $this->authHeaders()]
+		);
 
-			$data = json_decode($response->getBody(), true) ?? [];
-			$slots = [];
-			foreach (($data['times'] ?? []) as $time) {
-				$slots[] = [
-					'time' => $time['time'] ?? '',
-					'duration' => 30,
-					'available' => true,
-				];
-			}
+		$slots = [];
+		foreach (($data['times'] ?? []) as $time) {
+			$slots[] = [
+				'time' => $time['time'] ?? '',
+				'duration' => 30,
+				'available' => true,
+			];
+		}
 
-			return $slots;
-		} catch (\Exception $e) {
-			$this->logger->error('Qmatic API error: ' . $e->getMessage());
-			return [];
-		}//end try
+		return $slots;
 	}//end getTimeslots()
 
 	/**
-	 * Book an appointment via the Qmatic API.
+	 * The Qmatic API takes an auth token.
 	 *
-	 * @param array<string, mixed> $data Appointment data to POST to Qmatic.
-	 *
-	 * @return array<string, mixed> Booking result from Qmatic, or error payload.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @return array<string, string>
 	 */
-	public function bookAppointment(array $data): array {
-		try {
-			$client = $this->clientService->newClient();
-			$response = $client->post(
-				$this->apiUrl . '/appointments',
-				[
-					'json' => $data,
-					'headers' => ['auth-token' => $this->apiKey],
-				]
-			);
-
-			return json_decode($response->getBody(), true) ?? [];
-		} catch (\Exception $e) {
-			$this->logger->error('Qmatic booking error: ' . $e->getMessage());
-			return ['error' => $e->getMessage()];
-		}
-	}//end bookAppointment()
+	protected function authHeaders(): array {
+		return ['auth-token' => $this->apiKey];
+	}//end authHeaders()
 
 	/**
-	 * Cancel an appointment via the Qmatic API.
+	 * The name Qmatic error log lines start with.
 	 *
-	 * @param string $externalId The Qmatic appointment id.
-	 *
-	 * @return bool True on success, false on API error.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @return string
 	 */
-	public function cancelAppointment(string $externalId): bool {
-		try {
-			$client = $this->clientService->newClient();
-			$client->delete(
-				$this->apiUrl . '/appointments/' . $externalId,
-				['headers' => ['auth-token' => $this->apiKey]]
-			);
-			return true;
-		} catch (\Exception $e) {
-			$this->logger->error('Qmatic cancel error: ' . $e->getMessage());
-			return false;
-		}
-	}//end cancelAppointment()
+	protected function vendor(): string {
+		return 'Qmatic';
+	}//end vendor()
 
 	/**
 	 * Reschedule an appointment via the Qmatic API (cancel then book).
