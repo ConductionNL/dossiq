@@ -48,6 +48,17 @@ use OCP\IRequest;
  */
 class ComplaintAnalyticsController extends Controller {
 	/**
+	 * Response key for each complaint dimension whose frequency is reported.
+	 *
+	 * @var array<string, string>
+	 */
+	private const FREQUENCY_DIMENSIONS = [
+		'byCategorie' => 'category',
+		'byAfdeling' => 'involvedDepartment',
+		'byKanaal' => 'receiptChannel',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App name
@@ -90,40 +101,41 @@ class ComplaintAnalyticsController extends Controller {
 
 		$mayReadAlerts = $this->alertAudience->mayReadEmployeeAlerts($uid);
 
-		$dateFrom = $this->request->getParam('dateFrom') ?? date('Y-01-01');
-		$dateTo = $this->request->getParam('dateTo') ?? date('Y-m-d');
-
-		$byCategory = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'category',
-			dateFrom: $dateFrom,
-			dateTo: $dateTo,
+		$body = $this->frequencyFigures(
+			dateFrom: $this->request->getParam('dateFrom') ?? date('Y-01-01'),
+			dateTo: $this->request->getParam('dateTo') ?? date('Y-m-d'),
 		);
-		$byDepartment = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'involvedDepartment',
-			dateFrom: $dateFrom,
-			dateTo: $dateTo,
-		);
-		$byChannel = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'receiptChannel',
-			dateFrom: $dateFrom,
-			dateTo: $dateTo,
-		);
-		$monthlyTrend = $this->analyticsService->getMonthlyTrend(dateFrom: $dateFrom, dateTo: $dateTo);
-		$avgResolution = $this->analyticsService->getAverageResolutionTime(dateFrom: $dateFrom, dateTo: $dateTo);
-
-		$body = [
-			'byCategorie' => $byCategory,
-			'byAfdeling' => $byDepartment,
-			'byKanaal' => $byChannel,
-			'monthlyTrend' => $monthlyTrend,
-			'avgResolution' => $avgResolution,
-		];
 		if ($mayReadAlerts === true) {
 			$body['employeeAlerts'] = $this->analyticsService->checkEmployeeThresholdAlerts();
 		}
 
 		return new JSONResponse($body);
 	}//end analytics()
+
+	/**
+	 * The complaint frequency figures for one window.
+	 *
+	 * @param string $dateFrom First day of the window (Y-m-d).
+	 * @param string $dateTo   Last day of the window (Y-m-d).
+	 *
+	 * @return array<string, mixed> Frequency per dimension, the monthly trend and the average resolution.
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	private function frequencyFigures(string $dateFrom, string $dateTo): array {
+		$figures = [];
+		foreach (self::FREQUENCY_DIMENSIONS as $key => $dimension) {
+			$figures[$key] = $this->analyticsService->getFrequencyByDimension(
+				dimension: $dimension,
+				dateFrom: $dateFrom,
+				dateTo: $dateTo,
+			);
+		}
+
+		$figures['monthlyTrend'] = $this->analyticsService->getMonthlyTrend(dateFrom: $dateFrom, dateTo: $dateTo);
+		$figures['avgResolution'] = $this->analyticsService->getAverageResolutionTime(dateFrom: $dateFrom, dateTo: $dateTo);
+		return $figures;
+	}//end frequencyFigures()
 
 	/**
 	 * Get KPI cards for management dashboard.
