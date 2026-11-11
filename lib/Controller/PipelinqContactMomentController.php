@@ -127,23 +127,8 @@ class PipelinqContactMomentController extends Controller {
 			return $refused;
 		}
 
-		$data = [
-			'case' => $caseId,
-			'relatedCases' => [$caseId],
-			'notificationChannel' => (string)$this->request->getParam('notificationChannel', ''),
-			'direction' => (string)$this->request->getParam('direction', 'inbound'),
-			'summary' => (string)$this->request->getParam('summary', ''),
-			'callerIdentification' => (string)$this->request->getParam('callerIdentification', ''),
-			'visibleToApplicant' => ($this->request->getParam('visibleToApplicant', false) === true),
-		];
-
-		$startTime = trim((string)$this->request->getParam('startTime', ''));
-		if ($startTime !== '') {
-			$data['startTime'] = $startTime;
-		}
-
 		try {
-			$record = $this->log->createContactMoment(data: $data);
+			$record = $this->log->createContactMoment(data: $this->momentData(caseId: $caseId));
 		} catch (RuntimeException $e) {
 			return new JSONResponse(
 				['error' => $this->l10n->t('The contact moment could not be saved: %s', [$e->getMessage()])],
@@ -160,6 +145,32 @@ class PipelinqContactMomentController extends Controller {
 			Http::STATUS_CREATED
 		);
 	}//end logContactMoment()
+
+	/**
+	 * The contact moment the request describes, on the route's case; the start time only when one was sent.
+	 *
+	 * @param string $caseId The case, from the route and never from the body.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function momentData(string $caseId): array {
+		$data = [
+			'case' => $caseId,
+			'relatedCases' => [$caseId],
+			'notificationChannel' => (string)$this->request->getParam('notificationChannel', ''),
+			'direction' => (string)$this->request->getParam('direction', 'inbound'),
+			'summary' => (string)$this->request->getParam('summary', ''),
+			'callerIdentification' => (string)$this->request->getParam('callerIdentification', ''),
+			'visibleToApplicant' => ($this->request->getParam('visibleToApplicant', false) === true),
+		];
+
+		$startTime = trim((string)$this->request->getParam('startTime', ''));
+		if ($startTime !== '') {
+			$data['startTime'] = $startTime;
+		}
+
+		return $data;
+	}//end momentData()
 
 	/**
 	 * File a contact moment on this case onto a further case, through pipelinq.

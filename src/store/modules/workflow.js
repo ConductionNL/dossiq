@@ -26,6 +26,107 @@ function generateUUID() {
 	})
 }
 
+/**
+ * A template with its steps, transitions and node positions stringified.
+ *
+ * @param {object} templateData The template data to save
+ * @return {object} A copy to store
+ */
+function templateAsText(templateData) {
+	const data = { ...templateData }
+	for (const field of ['steps', 'transitions', 'nodePositions']) {
+		if (typeof data[field] !== 'string') {
+			data[field] = JSON.stringify(data[field])
+		}
+	}
+	return data
+}
+
+/**
+ * The version number after the highest of these versions.
+ *
+ * @param {Array<object>} versions The versions
+ * @return {number} The next version number
+ */
+function nextVersion(versions) {
+	const maxVersion = versions.reduce(
+		(max, v) => Math.max(max, v.version || 0),
+		0,
+	)
+	return maxVersion + 1
+}
+
+/**
+ * A new draft copied from a version.
+ *
+ * @param {object} source The version copied
+ * @param {number} version The draft's version number
+ * @return {object} The draft to store
+ */
+function draftOf(source, version) {
+	return {
+		title: source.title,
+		description: source.description,
+		caseType: source.caseType,
+		version,
+		isActive: false,
+		isDraft: true,
+		steps: source.steps,
+		transitions: source.transitions,
+		nodePositions: source.nodePositions,
+		parentWorkflow: source.parentWorkflow || null,
+	}
+}
+
+/**
+ * The arguments a dispatcher that reads the transition takes.
+ *
+ * @param {object} action The action definition
+ * @param {{caseData: object, transition: object}} context The case and the transition
+ * @return {Array} The arguments
+ */
+function withTransition(action, context) {
+	return [action, context.caseData, context.transition]
+}
+
+/**
+ * The arguments a dispatcher that reads only the case takes.
+ *
+ * @param {object} action The action definition
+ * @param {{caseData: object}} context The case
+ * @return {Array} The arguments
+ */
+function withCase(action, context) {
+	return [action, context.caseData]
+}
+
+/**
+ * The result row of an automatic action that did not run.
+ *
+ * @param {object} action The action definition
+ * @param {string} error Why
+ * @return {{action: string, success: boolean, error: string}} The result
+ */
+function failedAction(action, error) {
+	return {
+		action: action.type,
+		success: false,
+		error,
+	}
+}
+
+// The store action that dispatches each automatic action type, and what it is
+// handed. A Map, so a type such as `toString` is unknown rather than found on
+// an object's prototype.
+const ACTION_DISPATCHERS = new Map([
+	['sendEmail', { method: 'dispatchEmailAction', args: withTransition }],
+	['createTask', { method: 'dispatchCreateTaskAction', args: withCase }],
+	['createSubCase', { method: 'dispatchCreateSubCaseAction', args: withCase }],
+	['webhook', { method: 'dispatchWebhookAction', args: withTransition }],
+	['setField', { method: 'dispatchSetFieldAction', args: withCase }],
+	['notify', { method: 'dispatchNotifyAction', args: withCase }],
+])
+
 export const useWorkflowStore = defineStore('workflow', {
 	state: () => ({
 		/** @type {object|null} Currently loaded workflow template */
@@ -115,6 +216,28 @@ export const useWorkflowStore = defineStore('workflow', {
 
 	actions: {
 		/**
+		 * Run one template read or write with the loading flag up, the error
+		 * cleared before and kept after a failure.
+		 *
+		 * @param {unknown} fallback What to answer when the work fails
+		 * @param {() => Promise<unknown>} work The read or write, answering what to answer
+		 * @return {Promise<unknown>} The work's answer, or the fallback
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
+		async whileLoading(fallback, work) {
+			this.loading = true
+			this.error = null
+			try {
+				return await work()
+			} catch (err) {
+				this.error = err.message
+				return fallback
+			} finally {
+				this.loading = false
+			}
+		},
+
+		/**
 		 * List all workflow template versions for a case type.
 		 *
 		 * @param {string} caseTypeId UUID of the case type
@@ -122,9 +245,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async listVersions(caseTypeId) {
-			this.loading = true
-			this.error = null
-			try {
+			return this.whileLoading([], async () => {
 				const objectStore = useObjectStore()
 				const results = await objectStore.fetchCollection(
 					'workflowTemplate',
@@ -136,12 +257,7 @@ export const useWorkflowStore = defineStore('workflow', {
 				)
 				this.versions = results || []
 				return this.versions
-			} catch (err) {
-				this.error = err.message
-				return []
-			} finally {
-				this.loading = false
-			}
+			})
 		},
 
 		/**
@@ -152,9 +268,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async getTemplate(templateId) {
-			this.loading = true
-			this.error = null
-			try {
+			return this.whileLoading(null, async () => {
 				const objectStore = useObjectStore()
 				const template = await objectStore.fetchObject(
 					'workflowTemplate',
@@ -162,12 +276,7 @@ export const useWorkflowStore = defineStore('workflow', {
 				)
 				this.currentTemplate = template
 				return template
-			} catch (err) {
-				this.error = err.message
-				return null
-			} finally {
-				this.loading = false
-			}
+			})
 		},
 
 		/**
@@ -178,9 +287,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async getActiveVersion(caseTypeId) {
-			this.loading = true
-			this.error = null
-			try {
+			return this.whileLoading(null, async () => {
 				const objectStore = useObjectStore()
 				const results = await objectStore.fetchCollection(
 					'workflowTemplate',
@@ -193,12 +300,7 @@ export const useWorkflowStore = defineStore('workflow', {
 				)
 				const active = results && results.length > 0 ? results[0] : null
 				return active
-			} catch (err) {
-				this.error = err.message
-				return null
-			} finally {
-				this.loading = false
-			}
+			})
 		},
 
 		/**
@@ -210,9 +312,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async createTemplate(caseTypeId, title) {
-			this.loading = true
-			this.error = null
-			try {
+			return this.whileLoading(null, async () => {
 				const objectStore = useObjectStore()
 				const template = await objectStore.saveObject('workflowTemplate', {
 					title,
@@ -226,12 +326,7 @@ export const useWorkflowStore = defineStore('workflow', {
 				})
 				this.currentTemplate = template
 				return template
-			} catch (err) {
-				this.error = err.message
-				return null
-			} finally {
-				this.loading = false
-			}
+			})
 		},
 
 		/**
@@ -242,30 +337,12 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async saveTemplate(templateData) {
-			this.loading = true
-			this.error = null
-			try {
+			return this.whileLoading(null, async () => {
 				const objectStore = useObjectStore()
-				// Ensure steps/transitions/nodePositions are stringified
-				const data = { ...templateData }
-				if (typeof data.steps !== 'string') {
-					data.steps = JSON.stringify(data.steps)
-				}
-				if (typeof data.transitions !== 'string') {
-					data.transitions = JSON.stringify(data.transitions)
-				}
-				if (typeof data.nodePositions !== 'string') {
-					data.nodePositions = JSON.stringify(data.nodePositions)
-				}
-				const result = await objectStore.saveObject('workflowTemplate', data)
+				const result = await objectStore.saveObject('workflowTemplate', templateAsText(templateData))
 				this.currentTemplate = result
 				return result
-			} catch (err) {
-				this.error = err.message
-				return null
-			} finally {
-				this.loading = false
-			}
+			})
 		},
 
 		/**
@@ -276,21 +353,14 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async deleteTemplate(templateId) {
-			this.loading = true
-			this.error = null
-			try {
+			return this.whileLoading(false, async () => {
 				const objectStore = useObjectStore()
 				await objectStore.deleteObject('workflowTemplate', templateId)
 				if (this.currentTemplate?.id === templateId) {
 					this.currentTemplate = null
 				}
 				return true
-			} catch (err) {
-				this.error = err.message
-				return false
-			} finally {
-				this.loading = false
-			}
+			})
 		},
 
 		/**
@@ -372,9 +442,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async createDraftFromVersion(sourceTemplateId) {
-			this.loading = true
-			this.error = null
-			try {
+			return this.whileLoading(null, async () => {
 				const objectStore = useObjectStore()
 				const source = await objectStore.fetchObject(
 					'workflowTemplate',
@@ -385,33 +453,10 @@ export const useWorkflowStore = defineStore('workflow', {
 					return null
 				}
 
-				// Determine next version number
-				const maxVersion = this.versions.reduce(
-					(max, v) => Math.max(max, v.version || 0),
-					0,
-				)
-
-				// Create copy as draft
-				const draft = await objectStore.saveObject('workflowTemplate', {
-					title: source.title,
-					description: source.description,
-					caseType: source.caseType,
-					version: maxVersion + 1,
-					isActive: false,
-					isDraft: true,
-					steps: source.steps,
-					transitions: source.transitions,
-					nodePositions: source.nodePositions,
-					parentWorkflow: source.parentWorkflow || null,
-				})
+				const draft = await objectStore.saveObject('workflowTemplate', draftOf(source, nextVersion(this.versions)))
 				this.currentTemplate = draft
 				return draft
-			} catch (err) {
-				this.error = err.message
-				return null
-			} finally {
-				this.loading = false
-			}
+			})
 		},
 
 		// --- Guard Evaluation ---
@@ -675,57 +720,31 @@ export const useWorkflowStore = defineStore('workflow', {
 		async dispatchActions(actions, caseData, transition) {
 			const results = []
 			for (const action of actions) {
-				try {
-					switch (action.type) {
-						case 'sendEmail':
-							await this.dispatchEmailAction(
-								action,
-								caseData,
-								transition,
-							)
-							results.push({ action: action.type, success: true })
-							break
-						case 'createTask':
-							await this.dispatchCreateTaskAction(action, caseData)
-							results.push({ action: action.type, success: true })
-							break
-						case 'createSubCase':
-							await this.dispatchCreateSubCaseAction(action, caseData)
-							results.push({ action: action.type, success: true })
-							break
-						case 'webhook':
-							await this.dispatchWebhookAction(
-								action,
-								caseData,
-								transition,
-							)
-							results.push({ action: action.type, success: true })
-							break
-						case 'setField':
-							await this.dispatchSetFieldAction(action, caseData)
-							results.push({ action: action.type, success: true })
-							break
-						case 'notify':
-							await this.dispatchNotifyAction(action, caseData)
-							results.push({ action: action.type, success: true })
-							break
-						default:
-							results.push({
-								action: action.type,
-								success: false,
-								error: 'Unknown action type',
-							})
-					}
-				} catch (err) {
-					console.error(`Workflow action ${action.type} failed:`, err)
-					results.push({
-						action: action.type,
-						success: false,
-						error: err.message,
-					})
-				}
+				results.push(await this.dispatchAction(action, { caseData, transition }))
 			}
 			return results
+		},
+
+		/**
+		 * Dispatch one automatic action and answer its result row.
+		 *
+		 * @param {object} action The action definition
+		 * @param {{caseData: object, transition: object}} context The case and the transition that triggered it
+		 * @return {Promise<{action: string, success: boolean, error?: string}>} The result
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
+		async dispatchAction(action, context) {
+			const dispatcher = ACTION_DISPATCHERS.get(action.type)
+			if (dispatcher === undefined) {
+				return failedAction(action, 'Unknown action type')
+			}
+			try {
+				await this[dispatcher.method](...dispatcher.args(action, context))
+				return { action: action.type, success: true }
+			} catch (err) {
+				console.error(`Workflow action ${action.type} failed:`, err)
+				return failedAction(action, err.message)
+			}
 		},
 
 		/**

@@ -1,0 +1,73 @@
+{
+    "no getters": {
+        "role": null,
+        "checklist new": null,
+        "checklist old": null
+    },
+    "an array object": {
+        "role": {
+            "from": "object"
+        },
+        "checklist new": null,
+        "checklist old": null
+    },
+    "only a new object": {
+        "role": {
+            "from": "new"
+        },
+        "checklist new": {
+            "from": "new"
+        },
+        "checklist old": null
+    },
+    "only an old object": {
+        "role": {
+            "from": "old"
+        },
+        "checklist new": null,
+        "checklist old": {
+            "from": "old"
+        }
+    },
+    "a serialisable object": {
+        "role": {
+            "from": "json"
+        },
+        "checklist new": null,
+        "checklist old": null
+    },
+    "serialising to a string, with toArray": {
+        "role": {
+            "from": "toArray"
+        },
+        "checklist new": null,
+        "checklist old": null
+    },
+    "serialising to a string, toArray a string": {
+        "role": {
+            "from": "new"
+        },
+        "checklist new": {
+            "from": "new"
+        },
+        "checklist old": null
+    },
+    "only toArray": {
+        "role": {
+            "from": "toArray only"
+        },
+        "checklist new": {
+            "from": "toArray only"
+        },
+        "checklist old": null
+    },
+    "a scalar object, then an old one": {
+        "role": {
+            "from": "old"
+        },
+        "checklist new": null,
+        "checklist old": {
+            "from": "old"
+        }
+    }
+}

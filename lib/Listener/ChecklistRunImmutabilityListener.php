@@ -42,7 +42,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\SchemaMembership;
+use OCA\Dossiq\Listener\Support\SerialisedObject;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -77,8 +80,8 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	}//end __construct()
 
 	/**
-	 * Inspect ObjectUpdatingEvent and reject illegal mutations before the
-	 * row is written.
+	 * Inspect ObjectUpdatingEvent and ObjectLeavingEvent and reject illegal
+	 * mutations or moves before the row is written.
 	 *
 	 * @param Event $event The dispatched event
 	 *
@@ -87,7 +90,7 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectUpdatingEvent === false) {
+		if ($event instanceof ObjectUpdatingEvent === false && $event instanceof ObjectLeavingEvent === false) {
 			return;
 		}
 
@@ -112,13 +115,21 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	}//end handle()
 
 	/**
-	 * Whether the update mutates a checklist run that is already frozen.
+	 * Whether the update, or a move, touches a checklist run that is already frozen.
 	 *
-	 * @param Event $event The dispatched update event
+	 * @param Event $event The dispatched update or move event
 	 *
 	 * @return bool True when the mutation must be rejected.
 	 */
 	private function isFrozenRunMutation(Event $event): bool {
+		if ($event instanceof ObjectLeavingEvent === true) {
+			$stored = $this->extractObject(event: $event, method: 'getObject');
+
+			return $stored !== null
+				&& $this->isChecklistRunSchema(object: $stored) === true
+				&& in_array((string)($stored['status'] ?? ''), self::FROZEN_STATUSES, true) === true;
+		}
+
 		$new = $this->extractObject(event: $event, method: 'getNewObject');
 		if ($new === null) {
 			return false;
@@ -157,19 +168,7 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	 * @return bool
 	 */
 	private function isChecklistRunSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('inspection_checklist_run_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)(
-			$object['@self']['schema'] ?? ($object['schema'] ?? '')
-		);
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('inspection_checklist_run_schema'));
 	}//end isChecklistRunSchema()
 
 	/**
@@ -218,31 +217,6 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	 * @return array<string, mixed>|null
 	 */
 	private function extractObject(Event $event, string $method): ?array {
-		if (method_exists($event, $method) === false) {
-			return null;
-		}
-
-		$value = $event->{$method}();
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true) {
-			if (method_exists($value, 'jsonSerialize') === true) {
-				$serialised = $value->jsonSerialize();
-				if (is_array($serialised) === true) {
-					return $serialised;
-				}
-			}
-
-			if (method_exists($value, 'toArray') === true) {
-				$arr = $value->toArray();
-				if (is_array($arr) === true) {
-					return $arr;
-				}
-			}
-		}
-
-		return null;
+		return SerialisedObject::fromEvent(event: $event, methods: [$method]);
 	}//end extractObject()
 }//end class

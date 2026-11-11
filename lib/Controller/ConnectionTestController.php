@@ -81,6 +81,29 @@ class ConnectionTestController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function testStufEndpoint(string $endpointId): JSONResponse {
+		$endpoint = $this->endpoint(endpointId: $endpointId);
+		if ($endpoint instanceof JSONResponse) {
+			return $endpoint;
+		}
+
+		$url = (string)($endpoint['endpointUrl'] ?? '');
+		if ($url === '') {
+			return $this->withoutUrl();
+		}
+
+		return new JSONResponse($this->probe->probe(endpoint: $url));
+	}//end testStufEndpoint()
+
+	/**
+	 * The configured endpoint, or the 500/404 answer when it cannot be read or does not exist.
+	 *
+	 * @param string $endpointId The endpoint's id.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
+	 */
+	private function endpoint(string $endpointId): array|JSONResponse {
 		try {
 			$endpoints = $this->stufRegister->findAll(
 				schema: StufRegisterAccess::SCHEMA_ENDPOINT,
@@ -101,22 +124,29 @@ class ConnectionTestController extends Controller {
 			return new JSONResponse(['error' => 'Unknown endpoint'], Http::STATUS_NOT_FOUND);
 		}
 
-		$url = (string)($endpoint['endpointUrl'] ?? '');
-		if ($url === '') {
-			// Configured with no URL reads as failed, never as untested: the
-			// administrator did save this connection, and it cannot work.
-			return new JSONResponse(
-				[
-					'state' => ConnectionTestService::FAILED,
-					'endpoint' => '',
-					'status' => 0,
-					'reason' => 'The endpoint has no URL.',
-					'measuredAt' => gmdate('c'),
-					'responseTimeMs' => 0,
-				]
-			);
-		}
+		return $endpoint;
+	}//end endpoint()
 
-		return new JSONResponse($this->probe->probe(endpoint: $url));
-	}//end testStufEndpoint()
+	/**
+	 * The result for a saved endpoint that has no URL.
+	 *
+	 * Configured with no URL reads as failed, never as untested: the
+	 * administrator did save this connection, and it cannot work.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
+	 */
+	private function withoutUrl(): JSONResponse {
+		return new JSONResponse(
+			[
+				'state' => ConnectionTestService::FAILED,
+				'endpoint' => '',
+				'status' => 0,
+				'reason' => 'The endpoint has no URL.',
+				'measuredAt' => gmdate('c'),
+				'responseTimeMs' => 0,
+			]
+		);
+	}//end withoutUrl()
 }//end class

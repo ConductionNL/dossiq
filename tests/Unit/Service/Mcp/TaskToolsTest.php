@@ -186,6 +186,35 @@ final class TaskToolsTest extends TestCase {
 
 		self::assertSame(expected: 'create_task_failed', actual: $answer['error']);
 	}//end testAFailedWriteIsReported()
+
+	/**
+	 * The refusals come in their order, each with its own words, and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testTheRefusalsComeInOrder(): void {
+		self::assertSame(
+			expected: [
+				['error' => 'not_authenticated', 'message' => 'No user session.'],
+				['error' => 'title_required', 'message' => 'Say what the task asks for.'],
+				['error' => 'for_unknown', 'message' => 'A task is for the case handler or for you.'],
+				['error' => 'lead_time_out_of_range', 'message' => 'A task is due within ten years: 0 to 3650 working days.'],
+				['error' => 'not_found', 'message' => 'The case was not found.'],
+				['error' => 'forbidden', 'message' => 'You may not add work to this case.'],
+				['error' => 'create_task_failed', 'message' => 'The task could not be created.'],
+			],
+			actual: [
+				$this->tools(uid: null, readable: false)->createTask(caseId: 'gone', title: ' ', leadTimeDays: -1, for: 'x'),
+				$this->tools(readable: false)->createTask(caseId: 'gone', title: ' ', leadTimeDays: -1, for: 'x'),
+				$this->tools(readable: false)->createTask(caseId: 'gone', title: 'T', leadTimeDays: -1, for: 'x'),
+				$this->tools(readable: false)->createTask(caseId: 'gone', title: 'T', leadTimeDays: -1),
+				$this->tools(mayEdit: false)->createTask(caseId: 'gone', title: 'T'),
+				$this->tools(mayEdit: false)->createTask(caseId: 'case-1', title: 'T'),
+				$this->tools(writes: false)->createTask(caseId: 'case-1', title: 'T'),
+			]
+		);
+		self::assertCount(expectedCount: 1, haystack: $this->handled);
+	}//end testTheRefusalsComeInOrder()
 	/**
 	 * A lead time outside 0 to 3650 working days is refused before anything is read or written.
 	 *

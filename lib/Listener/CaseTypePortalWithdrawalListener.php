@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -47,7 +48,6 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Refuse a case type save whose portal withdrawal lands where the workflow cannot go.
@@ -98,14 +98,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getNewObject());
-		}
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->inspect(...));
 	}//end handle()
 
 	/**
@@ -120,18 +113,10 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
-		$payload = $this->payload(entity: $entity);
-		if ($payload === null || $this->isCaseTypeSchema(object: $payload) === false) {
-			return;
-		}
-
-		$withdrawal = ($payload['portalWithdrawal'] ?? null);
-		if (is_array($withdrawal) === false || $withdrawal === []) {
-			return;
-		}
-
+		$payload = $this->caseTypePayload(entity: $entity);
+		$withdrawal = $this->withdrawalOf(payload: $payload);
 		$self = (string)($entity->getUuid() ?? '');
-		if ($self === '') {
+		if ($payload === null || $withdrawal === [] || $self === '') {
 			return;
 		}
 
@@ -144,6 +129,60 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 			return;
 		}
 
+		$this->refuse(event: $event, refusal: $refusal);
+		$this->logger->info(
+			'Dossiq: refused a case type save whose portal withdrawal the workflow cannot write',
+			['caseType' => $self, 'targetStatus' => ($withdrawal['targetStatus'] ?? null)]
+		);
+	}//end inspect()
+
+	/**
+	 * The payload of a case type save, or null for anything else.
+	 *
+	 * @param ObjectEntity $entity The object being saved.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function caseTypePayload(ObjectEntity $entity): ?array {
+		$payload = (new PreSaveCheck(logger: $this->logger))->read(entity: $entity, check: 'portal withdrawal check');
+		if ($payload === null || (new CaseTypeSchema(settingsService: $this->settingsService))->contains(object: $payload) === false) {
+			return null;
+		}
+
+		return $payload;
+	}//end caseTypePayload()
+
+	/**
+	 * The portal withdrawal the case type configures, or an empty array when it configures none.
+	 *
+	 * @param array<string, mixed>|null $payload The case type payload.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function withdrawalOf(?array $payload): array {
+		$withdrawal = ($payload['portalWithdrawal'] ?? null);
+		if (is_array($withdrawal) === false) {
+			return [];
+		}
+
+		return $withdrawal;
+	}//end withdrawalOf()
+
+	/**
+	 * Stop the save and say why the workflow cannot write the withdrawal.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event   The save.
+	 * @param array<string, mixed>                    $refusal The refusal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function refuse(ObjectCreatingEvent|ObjectUpdatingEvent $event, array $refusal): void {
 		$event->setErrors(
 			[
 				'message' => $this->sentence(refusal: $refusal),
@@ -154,11 +193,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 			]
 		);
 		$event->stopPropagation();
-		$this->logger->info(
-			'Dossiq: refused a case type save whose portal withdrawal the workflow cannot write',
-			['caseType' => $self, 'targetStatus' => ($withdrawal['targetStatus'] ?? null)]
-		);
-	}//end inspect()
+	}//end refuse()
 
 	/**
 	 * The sentence a refusal reads as, naming the status at fault.
@@ -247,42 +282,4 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 		return array_values(array_filter($raw, 'is_array'));
 	}//end moves()
 
-	/**
-	 * Read an entity's payload, or null when it cannot be read.
-	 *
-	 * @param ObjectEntity $entity The entity carried by the event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null.
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: portal withdrawal check could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
-	}//end payload()
-
-	/**
-	 * Whether the supplied payload belongs to the `caseType` schema.
-	 *
-	 * @param array<string, mixed> $object Object payload (incl. `@self`).
-	 *
-	 * @return boolean True when this is a case type.
-	 */
-	private function isCaseTypeSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('case_type_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
-	}//end isCaseTypeSchema()
 }//end class

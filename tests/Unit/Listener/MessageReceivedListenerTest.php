@@ -44,6 +44,8 @@ use Psr\Log\LoggerInterface;
  * Tests the three answers and the duplicate guard.
  *
  * @covers \OCA\Dossiq\Listener\MessageReceivedListener
+ * @covers \OCA\Dossiq\Listener\MessageFiling
+ * @covers \OCA\Dossiq\Listener\Support\EventGetters
  * @uses \OCA\Dossiq\Service\Email\CaseEmailRepository
  * @uses \OCA\Dossiq\Service\Email\IntakeLog
  * @uses \OCA\Dossiq\Service\Email\UnmatchedMailIntake

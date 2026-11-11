@@ -301,15 +301,9 @@ class HermiqAiFeatureClient {
 	 * @throws HermiqAssistantException When hermiq is absent, unconfigured or unreachable.
 	 */
 	private function send(string $path, ?array $payload): IResponse {
-		if ($this->isAvailable() === false) {
-			throw new HermiqAssistantException(
-				message: 'Hermiq is not installed or enabled on this instance',
-				statusCode: 503
-			);
-		}
-
-		$uid = $this->appConfig->getValueString(Application::APP_ID, 'hermiq_service_uid', '');
-		$password = $this->appConfig->getValueString(Application::APP_ID, 'hermiq_service_app_password', '');
+		$call = new HermiqServiceCall(logger: $this->logger, caller: 'HermiqAiFeatureClient');
+		$call->requireAvailable(available: $this->isAvailable());
+		[$uid, $password] = $call->credentialsFrom(appConfig: $this->appConfig);
 
 		if ($uid === '' || $password === '') {
 			throw new HermiqAssistantException(
@@ -344,12 +338,7 @@ class HermiqAiFeatureClient {
 
 			return $client->post($url, $options);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'HermiqAiFeatureClient: request failed',
-				['app' => Application::APP_ID, 'url' => $url, 'error' => $e->getMessage()]
-			);
-
-			throw new HermiqAssistantException(message: 'hermiq_unreachable', statusCode: 503, previous: $e);
+			throw $call->unreachable(url: $url, failure: $e);
 		}//end try
 
 	}//end send()

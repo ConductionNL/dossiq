@@ -1,8 +1,10 @@
 {
-  "ceiling": 250,
+  "ceiling": 247,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-11-11, the custody chain and the custody query share one reader for the custody schema: `CaseCustodyChain::holdings` and `CaseCustodyQuery::heldBy` read through `Custody/CustodyRows::find`, one site for the same degradation. The ceiling went 248 to 247.",
+    "2026-11-10, the custody stores share one reader for a stored moment: `CaseCustodyQuery::instant`, `CaseTakeoverRequest::instant` and `IncidentStore::instant` became `Custody/StoredInstant::parse`, one site for the same read-miss. The ceiling went 250 to 248.",
     "2026-11-04, decision document failure answers (#5063): a bijlage that could not be saved now answers null instead of an invented id, through one site, `BeschikkingGenerationService::storeBijlage`. The ceiling went 249 to 250, after the hearing split freed one.",
     "2026-11-04, HearingService split (#4983): the existing-session lookup moved into `mayHaveSession()`, which answers true when the lookup fails, so a failed read still seeds nothing but no longer answers null. The ceiling went 250 to 249.",
     "2026-10-14, Q-dossiq-L11-3 (decision 224, guards refuse when unsure): three sites left. `Zgw/ZgwRuleLookups::findObjectByField`, `findAllObjectsByField` and `findBySchemaKey` throw `LookupNotCompleted` when the store cannot be read, and `ZgwBusinessRulesService::validate` refuses the request with 503 `check-not-completed`. An object the store does not hold, or does not show the caller, still reads as none. The ceiling went 254 to 251.",
@@ -428,13 +430,6 @@
     },
     {
       "file": "lib/Service/Cases/IncidentStore.php",
-      "method": "instant",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`instant()` answers `return null` for a stored incident moment that cannot be read. Same shape as `IncidentRecord::parse`: the reader reports the miss, and every caller treats null as \"undated\" rather than as a moment it invented."
-    },
-    {
-      "file": "lib/Service/Cases/IncidentStore.php",
       "method": "rows",
       "occurrence": 1,
       "class": "degradation",
@@ -455,32 +450,11 @@
       "reason": "`listForBurger()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to list contactmomenten\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/Custody/CaseCustodyChain.php",
-      "method": "holdings",
+      "file": "lib/Service/Custody/CustodyRows.php",
+      "method": "find",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`holdings()` answers `return []` when OpenRegister cannot be searched for the custody chain of a case; the catch logs at warning naming the case. The chain is only meaningful whole, so an unreadable one draws nothing rather than a chain with a gap in it that reads like a case nobody held."
-    },
-    {
-      "file": "lib/Service/Custody/CaseCustodyQuery.php",
-      "method": "heldBy",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`heldBy()` answers `return []` when OpenRegister cannot be searched for what a unit holds; the catch logs at warning naming the unit. The empty list is \"could not look\", and the caller reports no holdings rather than reporting that a unit holds nothing."
-    },
-    {
-      "file": "lib/Service/Custody/CaseCustodyQuery.php",
-      "method": "instant",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`instant()` answers `return null` for a stored custody moment that cannot be read, so a holding with an unreadable date is reported undated rather than placed in the chain at a moment nobody wrote."
-    },
-    {
-      "file": "lib/Service/Custody/CaseTakeoverRequest.php",
-      "method": "instant",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`instant()` answers `return null` for a stored takeover moment that cannot be read. The escalation clock then treats the request as undated rather than as raised at a moment nobody wrote, which is what would make it escalate on invented evidence."
+      "reason": "`find()` answers `return []` when OpenRegister cannot be searched for custody holdings, either the chain of one case (`CaseCustodyChain::holdings`) or what one unit holds (`CaseCustodyQuery::heldBy`); the catch logs at warning naming the case or the unit. The chain is only meaningful whole, so an unreadable one draws nothing rather than a chain with a gap in it, and for a unit the empty list is \"could not look\", reported as no holdings rather than as a unit that holds nothing."
     },
     {
       "file": "lib/Service/Custody/TakeoverStore.php",
@@ -495,6 +469,13 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`consentsFor()` answers `return []` when OpenRegister cannot be searched for the consents recorded on a case; the catch logs at warning naming the case. The empty list does NOT open the gate: `assess()` reads no consent as no consent, so a hand-off across an organisation boundary is refused rather than allowed on a read that failed."
+    },
+    {
+      "file": "lib/Service/Custody/StoredInstant.php",
+      "method": "parse",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`parse()` answers `return null` for a stored custody, takeover or incident moment that cannot be read. The custody chain reports such a holding undated rather than placed at a moment nobody wrote, the escalation clock treats such a takeover request as undated rather than escalating on invented evidence, and the incident log treats such an incident as undated."
     },
     {
       "file": "lib/Service/DeadlineMonitoringSeedDataService.php",
@@ -1506,10 +1487,10 @@
     },
     {
       "file": "lib/Service/Transitions/CapacityGuard.php",
-      "method": "countIn",
+      "method": "findRows",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`countIn()` counts the cases in a status, to decide whether the status is at capacity. Null is NOT zero here and the caller knows it: zero would read as 'the status is free' and let a transition through, so null means 'not counted' and the guard abstains. The comment above the query records the openregister#3611 filter trap this method survives."
+      "reason": "`findRows()` reads the cases in a status for `countIn()`, to decide whether the status is at capacity. Null is NOT zero here and the caller knows it: zero would read as 'the status is free' and let a transition through, so null means 'not counted' and the guard abstains. The comment above the query records the openregister#3611 filter trap this method survives."
     },
     {
       "file": "lib/Service/Transitions/CaseResultWriter.php",

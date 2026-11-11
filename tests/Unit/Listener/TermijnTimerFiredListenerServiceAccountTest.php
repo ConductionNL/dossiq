@@ -37,6 +37,8 @@ use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
+use OCA\OpenRegister\Service\Flow\Timer\EscalationNotice;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -185,12 +187,8 @@ class TermijnTimerFiredListenerServiceAccountTest extends TestCase {
 
 		return new FlowTimerFiredEvent(
 			timer: $timer,
-			kind: FlowTimerFiredEvent::KIND_RUNG,
-			transition: 'escalation:slaBreached:0',
-			rungKey: 'slaBreached:0',
-			recipients: [['type' => 'user', 'id' => 'handler-1', 'role' => 'handler']],
-			priority: 'medium',
-			message: null
+			firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:slaBreached:0', rungKey: 'slaBreached:0'),
+			notice: new EscalationNotice(recipients: [['type' => 'user', 'id' => 'handler-1', 'role' => 'handler']], priority: 'medium'),
 		);
 	}//end breachFire()
 }//end class

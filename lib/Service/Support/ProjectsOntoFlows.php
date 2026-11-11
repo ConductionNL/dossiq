@@ -28,13 +28,11 @@ use Throwable;
  * by provenance marker, write one without letting a single failure abort the
  * rest. Copying that a third time is how the copies drift.
  *
- * Measured 2026-09-03: ONE class uses this trait, WorkflowTemplateFlowMigrator.
- * The endorsement-route migrator went with the parafering runtime
- * (proposals-are-cases). AutomaticActionFlowMigrator still carries its own
- * copy of the machinery and never adopted this, which is the drift the trait
- * was extracted to stop. Adopting it there is the open work; inlining the
- * trait back into its one consumer would remove the seam that makes adopting
- * it cheap.
+ * Two classes use this trait: WorkflowTemplateFlowMigrator and
+ * AutomaticActionFlowMigrator. The endorsement-route migrator went with the
+ * parafering runtime (proposals-are-cases). AutomaticActionFlowMigrator takes
+ * the marker index and the outcome rule from here and keeps its own
+ * flowService() and writeFlow(), whose log lines differ from these.
  *
  * The consuming class supplies MARKER_PREFIX, a logger and a container.
  *

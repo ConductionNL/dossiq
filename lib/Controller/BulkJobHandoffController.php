@@ -37,6 +37,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -91,24 +92,20 @@ class BulkJobHandoffController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$action = (string)$this->request->getParam('action', '');
-		$parameters = $this->arrayParam(name: 'parameters');
-		$selection = $this->arrayParam(name: 'selection');
-		$justification = trim((string)$this->request->getParam('justification', ''));
+		return $this->startJob(action: (string)$this->request->getParam('action', ''), user: $user);
+	}//end create()
 
-		$reason = null;
-		if ($justification !== '') {
-			$reason = $justification;
-		}
-
+	/**
+	 * Start the job, and answer each refusal the hand-over can raise.
+	 *
+	 * @param string $action The act.
+	 * @param IUser  $user   The caller, who acts.
+	 *
+	 * @return JSONResponse 201 with the job, or the refusal.
+	 */
+	private function startJob(string $action, IUser $user): JSONResponse {
 		try {
-			$job = $this->handoff->create(
-				actionId: $action,
-				parameters: $parameters,
-				selection: $selection,
-				justification: $reason,
-				actorUid: $user->getUID(),
-			);
+			$job = $this->handOver(action: $action, user: $user);
 		} catch (MixedCaseTypeVersionsException $e) {
 			return $this->versionRefusal(exception: $e);
 		} catch (InvalidArgumentException $e) {
@@ -116,19 +113,63 @@ class BulkJobHandoffController extends Controller {
 		} catch (RuntimeException $e) {
 			return $this->engineRefusal(exception: $e, action: $action);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'BulkJobHandoffController: the act could not be handed over',
-				['exception' => $e->getMessage(), 'action' => $action],
-			);
-
-			return new JSONResponse(
-				['error' => 'The bulk act could not be started'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
+			return $this->handOverFailed(exception: $e, action: $action);
 		}//end try
 
 		return new JSONResponse($job, Http::STATUS_CREATED);
-	}//end create()
+	}//end startJob()
+
+	/**
+	 * Hand the act over to the job engine with the request's parameters, selection and justification.
+	 *
+	 * @param string $action The act.
+	 * @param IUser  $user   The caller, who acts.
+	 *
+	 * @return array<string, mixed> The created job.
+	 */
+	private function handOver(string $action, IUser $user): array {
+		return $this->handoff->create(
+			actionId: $action,
+			parameters: $this->arrayParam(name: 'parameters'),
+			selection: $this->arrayParam(name: 'selection'),
+			justification: $this->justification(),
+			actorUid: $user->getUID(),
+		);
+	}//end handOver()
+
+	/**
+	 * The trimmed justification, or null when none was given.
+	 *
+	 * @return string|null
+	 */
+	private function justification(): ?string {
+		$justification = trim((string)$this->request->getParam('justification', ''));
+		if ($justification === '') {
+			return null;
+		}
+
+		return $justification;
+	}//end justification()
+
+	/**
+	 * The logged 500 for an act that could not be handed over for any other reason.
+	 *
+	 * @param Throwable $exception The failure.
+	 * @param string    $action    The act.
+	 *
+	 * @return JSONResponse
+	 */
+	private function handOverFailed(Throwable $exception, string $action): JSONResponse {
+		$this->logger->error(
+			'BulkJobHandoffController: the act could not be handed over',
+			['exception' => $exception->getMessage(), 'action' => $action],
+		);
+
+		return new JSONResponse(
+			['error' => 'The bulk act could not be started'],
+			Http::STATUS_INTERNAL_SERVER_ERROR,
+		);
+	}//end handOverFailed()
 
 	/**
 	 * The refusal a selection spanning two case type versions gets.

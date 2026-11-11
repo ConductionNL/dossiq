@@ -33,7 +33,6 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\SentimentService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -90,13 +89,10 @@ class SentimentAnalysisJob extends TimedJob {
 	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
 	 */
 	protected function run($argument): void {
-		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->work());
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// read, sent or written; the next run tries again.
-			return;
-		}
+		// Without a usable account this runs nothing: that is already logged as an
+		// error and told to the admins. Nothing was read, sent or
+		// written; the next run tries again.
+		$this->serviceAccount->runAsWhenAvailable(operation: fn () => $this->work());
 	}//end run()
 
 	/**
@@ -107,29 +103,72 @@ class SentimentAnalysisJob extends TimedJob {
 	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
 	 */
 	private function work(): void {
-		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
+		$run = $this->openRun();
+		if ($run === null) {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
+		$contacts = $this->loadContacts(run: $run);
+		if ($contacts === null) {
+			return;
+		}
+
+		foreach ((array)$contacts as $contact) {
+			$this->scoreContact(run: $run, contact: $contact);
+		}
+	}//end work()
+
+	/**
+	 * The run, or null without OpenRegister, its object service, a register or either schema.
+	 *
+	 * @return SentimentRun|null
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
+	 */
+	private function openRun(): ?SentimentRun {
+		$objectService = $this->objects()->objectService();
 		if ($objectService === null) {
-			return;
+			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$contactmomentSchema = $this->settingsService->getConfigValue('contactmoment_schema');
-		$sentimentSchema = $this->settingsService->getConfigValue('klant_sentiment_schema');
-		if ($register === '' || $contactmomentSchema === '' || $sentimentSchema === '') {
-			return;
+		$run = new SentimentRun();
+		$run->objectService = $objectService;
+		$run->register = $this->settingsService->getConfigValue('register');
+		$run->contactmomentSchema = $this->settingsService->getConfigValue('contactmoment_schema');
+		$run->sentimentSchema = $this->settingsService->getConfigValue('klant_sentiment_schema');
+		if ($run->register === '' || $run->contactmomentSchema === '' || $run->sentimentSchema === '') {
+			return null;
 		}
 
-		$triggerWords = $this->triggerWords();
+		$run->triggerWords = $this->triggerWords();
 
+		return $run;
+	}//end openRun()
+
+	/**
+	 * OpenRegister as this job sees it.
+	 *
+	 * @return OpenRegisterObjects
+	 */
+	private function objects(): OpenRegisterObjects {
+		return new OpenRegisterObjects(appManager: $this->appManager, settingsService: $this->settingsService);
+	}//end objects()
+
+	/**
+	 * The contactmomenten to score; a failed read is logged and answers null.
+	 *
+	 * @param SentimentRun $run The run.
+	 *
+	 * @return array<int, mixed>|null
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
+	 */
+	private function loadContacts(SentimentRun $run): ?array {
 		try {
-			$contacts = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $contactmomentSchema,
+			return $this->searchObjectsAsArrays(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->contactmomentSchema,
 				filters: ['_limit' => 200],
 			);
 		} catch (Throwable $e) {
@@ -137,90 +176,141 @@ class SentimentAnalysisJob extends TimedJob {
 				'Dossiq: sentiment job could not load contactmomenten: ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
-			return;
+			return null;
 		}
+	}//end loadContacts()
 
-		foreach ((array)$contacts as $contact) {
-			try {
-				$this->processContact(
-					objectService: $objectService,
-					register: $register,
-					sentimentSchema: $sentimentSchema,
-					contact: $this->toArray(result: $contact),
-					triggerWords: $triggerWords,
-				);
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: sentiment scoring failed for a contactmoment: ' . $e->getMessage(),
-					['app' => Application::APP_ID],
-				);
-			}
+	/**
+	 * Score one contactmoment; a failure is logged and the run goes on.
+	 *
+	 * @param SentimentRun $run     The run.
+	 * @param mixed        $contact One search result.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
+	 */
+	private function scoreContact(SentimentRun $run, $contact): void {
+		try {
+			$this->processContact(run: $run, contact: $this->objects()->toArray(result: $contact));
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: sentiment scoring failed for a contactmoment: ' . $e->getMessage(),
+				['app' => Application::APP_ID],
+			);
 		}
-	}//end work()
+	}//end scoreContact()
 
 	/**
 	 * Score a single contactmoment and persist its sentiment.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register id.
-	 * @param string $sentimentSchema The sentiment schema id.
+	 * A contactmoment without a transcript or an id, or with a sentiment
+	 * record already, is skipped.
+	 *
+	 * @param SentimentRun         $run     The run.
 	 * @param array<string, mixed> $contact The contactmoment record.
-	 * @param array<int, string> $triggerWords The configured trigger words.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
 	 */
-	private function processContact($objectService, string $register, string $sentimentSchema, array $contact, array $triggerWords): void {
+	private function processContact(SentimentRun $run, array $contact): void {
 		$transcript = trim((string)($contact['transcript'] ?? ''));
-		if ($transcript === '') {
+		$contactId = $this->contactIdOf(contact: $contact);
+		if ($transcript === '' || $contactId === '' || $this->isScored(run: $run, contactId: $contactId) === true) {
 			return;
 		}
 
-		$contactId = (string)($contact['id'] ?? ($contact['uuid'] ?? ''));
-		if ($contactId === '') {
-			return;
-		}
-
-		// Skip when a sentiment record already exists for this contact.
-		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $sentimentSchema,
-			filters: ['interactionId' => $contactId, '_limit' => 1],
-		);
-		if (empty((array)$existing) === false) {
-			return;
-		}
-
-		$analysis = $this->sentimentService->analyzeSentiment($transcript, $triggerWords);
+		$analysis = $this->sentimentService->analyzeSentiment($transcript, $run->triggerWords);
 
 		$this->saveObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $sentimentSchema,
-			object: [
-				'interactionId' => $contactId,
-				'sentimentScore' => $analysis['score'],
-				'sentimentLabel' => $analysis['label'],
-				'triggerWoorden' => $analysis['triggers'],
-				'transcriptSnippet' => $analysis['snippet'],
-				'escalationRecommended' => $analysis['escalationRecommended'],
-				'escalationLevel' => $analysis['escalationLevel'],
-				'createdAt' => date('c'),
-			],
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->sentimentSchema,
+			object: $this->sentimentRecord(contactId: $contactId, analysis: $analysis),
 		);
 
 		if ($analysis['escalationRecommended'] === true) {
-			foreach ((array)($contact['relatedCases'] ?? []) as $caseId) {
-				$this->contactMomentService->recordActivity(
-					(string)$caseId,
-					$contactId,
-					'sentiment_detected',
-					'systeem',
-					'Sentiment ' . $analysis['label'] . ' (escalatie: ' . $analysis['escalationLevel'] . ')',
-				);
-			}
+			$this->escalate(contact: $contact, analysis: $analysis);
 		}
 	}//end processContact()
+
+	/**
+	 * The id of a contactmoment, '' when it has none.
+	 *
+	 * @param array<string, mixed> $contact The contactmoment record.
+	 *
+	 * @return string
+	 */
+	private function contactIdOf(array $contact): string {
+		return (string)($contact['id'] ?? ($contact['uuid'] ?? ''));
+	}//end contactIdOf()
+
+	/**
+	 * Whether a sentiment record already exists for this contact.
+	 *
+	 * @param SentimentRun $run       The run.
+	 * @param string       $contactId The contactmoment.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
+	 */
+	private function isScored(SentimentRun $run, string $contactId): bool {
+		$existing = $this->searchObjectsAsArrays(
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->sentimentSchema,
+			filters: ['interactionId' => $contactId, '_limit' => 1],
+		);
+
+		return empty((array)$existing) === false;
+	}//end isScored()
+
+	/**
+	 * The klant sentiment record of one analysis.
+	 *
+	 * @param string               $contactId The contactmoment.
+	 * @param array<string, mixed> $analysis  The sentiment analysis.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
+	 */
+	private function sentimentRecord(string $contactId, array $analysis): array {
+		return [
+			'interactionId' => $contactId,
+			'sentimentScore' => $analysis['score'],
+			'sentimentLabel' => $analysis['label'],
+			'triggerWoorden' => $analysis['triggers'],
+			'transcriptSnippet' => $analysis['snippet'],
+			'escalationRecommended' => $analysis['escalationRecommended'],
+			'escalationLevel' => $analysis['escalationLevel'],
+			'createdAt' => date('c'),
+		];
+	}//end sentimentRecord()
+
+	/**
+	 * Record the detected sentiment on every case the contactmoment relates to.
+	 *
+	 * @param array<string, mixed> $contact  The contactmoment record.
+	 * @param array<string, mixed> $analysis The sentiment analysis.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
+	 */
+	private function escalate(array $contact, array $analysis): void {
+		foreach ((array)($contact['relatedCases'] ?? []) as $caseId) {
+			$this->contactMomentService->recordActivity(
+				(string)$caseId,
+				$this->contactIdOf(contact: $contact),
+				'sentiment_detected',
+				'systeem',
+				'Sentiment ' . $analysis['label'] . ' (escalatie: ' . $analysis['escalationLevel'] . ')',
+			);
+		}
+	}//end escalate()
 
 	/**
 	 * Resolve the configured trigger words.
@@ -235,27 +325,4 @@ class SentimentAnalysisJob extends TimedJob {
 
 		return [];
 	}//end triggerWords()
-
-	/**
-	 * Normalise an ObjectService result into a plain array.
-	 *
-	 * @param mixed $result The ObjectService result.
-	 *
-	 * @return array<string, mixed> The normalised record.
-	 */
-	private function toArray($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
-	}//end toArray()
 }//end class

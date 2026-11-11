@@ -138,6 +138,21 @@ function emptyConditions() {
 	}
 }
 
+/**
+ * Store the dialog's rule: a change of the rule it edits, else a new rule.
+ *
+ * @param {object} dialog The triage rule dialog.
+ * @return {Promise<object>} The response.
+ */
+function storeRule(dialog) {
+	const base = `/apps/dossiq/api/cases/${encodeURIComponent(dialog.caseId)}/review/triage/rules`
+	const body = { name: dialog.name.trim(), effect: dialog.effect, conditions: dialog.filled }
+	if (dialog.rule?.id) {
+		return axios.put(generateUrl(`${base}/${encodeURIComponent(dialog.rule.id)}`), body)
+	}
+	return axios.post(generateUrl(base), body)
+}
+
 export default {
 	name: 'TriageRuleDialog',
 
@@ -244,29 +259,11 @@ export default {
 			}
 			this.saving = true
 			this.error = ''
-			const base = `/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/review/triage/rules`
-			const body = {
-				name: this.name.trim(),
-				effect: this.effect,
-				conditions: this.filled,
-			}
 			try {
-				const { data } = this.rule?.id
-					? await axios.put(
-							generateUrl(
-								`${base}/${encodeURIComponent(this.rule.id)}`,
-							),
-							body,
-						)
-					: await axios.post(generateUrl(base), body)
+				const { data } = await storeRule(this)
 				this.$emit('saved', data)
 			} catch (e) {
-				this.error =
-					e?.response?.data?.message
-					|| t(
-						'dossiq',
-						'The triage rules cannot be stored or applied, so nothing was marked.',
-					)
+				this.error = e?.response?.data?.message || t('dossiq', 'The triage rules cannot be stored or applied, so nothing was marked.')
 			} finally {
 				this.saving = false
 			}

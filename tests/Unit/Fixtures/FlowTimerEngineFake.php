@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeInterface;
 use OCA\OpenRegister\Db\FlowTimer;
+use OCA\OpenRegister\Kernel\Contracts\TimerChange;
+use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use RuntimeException;
 
 if (class_exists(FlowTimerEngineFake::class, false) === true) {
@@ -161,22 +163,13 @@ class FlowTimerEngineFake {
 	/**
 	 * Cancel by subject (mirrors FlowTimerService::cancelForSubject()).
 	 *
-	 * @param string $subjectType Subject type.
-	 * @param string $subjectUuid Subject uuid.
-	 * @param string $reason Why.
-	 * @param string|null $actor Actor.
-	 * @param DateTimeInterface|null $now The clock.
+	 * @param TimerSubjectRef $subject The subject's type and uuid.
+	 * @param TimerChange     $change  Why, who and when.
 	 *
 	 * @return int
 	 */
-	public function cancelForSubject(
-		string $subjectType,
-		string $subjectUuid,
-		string $reason,
-		?string $actor,
-		?DateTimeInterface $now = null,
-	): int {
-		$this->record(operation: 'cancelForSubject', args: ['subjectType' => $subjectType, 'subjectUuid' => $subjectUuid, 'reason' => $reason, 'actor' => $actor]);
+	public function cancelForSubject(TimerSubjectRef $subject, TimerChange $change): int {
+		$this->record(operation: 'cancelForSubject', args: ['subjectType' => $subject->type, 'subjectUuid' => $subject->uuid, 'reason' => $change->reason, 'actor' => $change->actor]);
 		return 2;
 	}
 

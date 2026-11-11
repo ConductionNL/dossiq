@@ -61,6 +61,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -190,37 +191,66 @@ class StoreController extends Controller {
 			);
 		}
 
-		$query = $this->request->getParam('q');
-		if (is_string($query) === false) {
-			$query = null;
-		}
+		return $this->searchedCards();
+	}//end search()
 
-		$kind = $this->request->getParam('kind');
-		if (is_string($kind) === false) {
-			$kind = null;
-		}
-
+	/**
+	 * The cards the engine finds for the request's query and kind.
+	 *
+	 * @return JSONResponse 200 with `{outcome, cards}`, also when the registry is unreachable.
+	 *
+	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 */
+	private function searchedCards(): JSONResponse {
 		try {
 			$result = $this->storeService->search(
 				descriptor: $this->descriptor(),
-				query: $query,
-				kind: $kind
+				query: $this->stringParam(name: 'q'),
+				kind: $this->stringParam(name: 'kind')
 			);
 		} catch (Throwable $e) {
-			// Detail to the log, generic outcome to the browser: a registry's
-			// internals are not the caller's business.
-			$this->logger->error('Dossiq store: search failed: ' . $e->getMessage());
-			return new JSONResponse(
-				data: ['outcome' => GenericStoreService::OUTCOME_UNREACHABLE, 'cards' => []],
-				statusCode: Http::STATUS_OK
-			);
+			return $this->searchFailed(exception: $e);
 		}
 
 		return new JSONResponse(
 			data: ['outcome' => $result['outcome'], 'cards' => $result['cards']],
 			statusCode: Http::STATUS_OK
 		);
-	}//end search()
+	}//end searchedCards()
+
+	/**
+	 * Detail to the log, generic outcome to the browser: a registry's
+	 * internals are not the caller's business.
+	 *
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse 200 with the unreachable outcome and no cards.
+	 *
+	 * @spec openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	 */
+	private function searchFailed(Throwable $exception): JSONResponse {
+		$this->logger->error('Dossiq store: search failed: ' . $exception->getMessage());
+		return new JSONResponse(
+			data: ['outcome' => GenericStoreService::OUTCOME_UNREACHABLE, 'cards' => []],
+			statusCode: Http::STATUS_OK
+		);
+	}//end searchFailed()
+
+	/**
+	 * A request parameter when it is a string, else null.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return string|null
+	 */
+	private function stringParam(string $name): ?string {
+		$value = $this->request->getParam($name);
+		if (is_string($value) === false) {
+			return null;
+		}
+
+		return $value;
+	}//end stringParam()
 
 	/**
 	 * Install one store item into this instance.
@@ -309,62 +339,103 @@ class StoreController extends Controller {
 	 */
 	private function installComponents(array $components): array {
 		$report = [];
-		$failed = false;
-
 		foreach ($components as $component) {
-			$slug = (string)($component['schema'] ?? '');
-			$object = ($component['object'] ?? null);
-
-			if (in_array($slug, self::INSTALLABLE_SLUGS, true) === false) {
-				$failed = true;
-				$report[] = [
-					'schema' => $slug,
-					'status' => 'refused',
-					'message' => 'Only case configuration installs from the store; '
-						. 'this component names a record schema.',
-				];
-				continue;
-			}
-
-			if (is_array($object) === false) {
-				$failed = true;
-				$report[] = [
-					'schema' => $slug,
-					'status' => 'refused',
-					'message' => 'The component declares no object to install.',
-				];
-				continue;
-			}
-
-			// No null guard on the lookup, and none is needed: every entry in
-			// INSTALLABLE_SLUGS is a key of SLUG_TO_CONFIG_KEY, and phpstan
-			// PROVES it — a slug added to the allowlist with no mapping turns
-			// this back into a nullable read and fails analysis. A defensive
-			// `?? null` here was dead code that hid that guarantee.
-			$configKey = SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug];
-
-			try {
-				$this->registry->save(
-					schemaConfigKey: $configKey,
-					data: $this->asNewObject(object: $object)
-				);
-				$report[] = ['schema' => $slug, 'status' => 'installed', 'message' => ''];
-			} catch (Throwable $e) {
-				$failed = true;
-				$this->logger->error(
-					'Dossiq store: installing {schema} failed: {error}',
-					['schema' => $slug, 'error' => $e->getMessage()]
-				);
-				$report[] = [
-					'schema' => $slug,
-					'status' => 'error',
-					'message' => 'The component could not be written.',
-				];
-			}
+			$report[] = $this->installComponent(component: $component);
 		}
+
+		$failed = in_array(false, array_map(static fn (array $row): bool => $row['status'] === 'installed', $report), true);
 
 		return ['success' => ($failed === false && $report !== []), 'components' => $report];
 	}//end installComponents()
+
+	/**
+	 * Install one component, or say why not.
+	 *
+	 * @param array<string, mixed> $component One declared component.
+	 *
+	 * @return array{schema: string, status: string, message: string} Its report row.
+	 */
+	private function installComponent(array $component): array {
+		$slug = (string)($component['schema'] ?? '');
+		$object = ($component['object'] ?? null);
+
+		$refusal = $this->componentRefusal(slug: $slug, object: $object);
+		if ($refusal !== null) {
+			return ['schema' => $slug, 'status' => 'refused', 'message' => $refusal];
+		}
+
+		return $this->writeComponent(slug: $slug, object: $object);
+	}//end installComponent()
+
+	/**
+	 * Write one admitted component as a new object.
+	 *
+	 * @param string               $slug   The component's schema.
+	 * @param array<string, mixed> $object The object it declares.
+	 *
+	 * @return array{schema: string, status: string, message: string} Its report row.
+	 */
+	private function writeComponent(string $slug, array $object): array {
+		// No null guard on the lookup, and none is needed: every entry in
+		// INSTALLABLE_SLUGS is a key of SLUG_TO_CONFIG_KEY, and phpstan
+		// PROVES it — a slug added to the allowlist with no mapping turns
+		// this back into a nullable read and fails analysis. A defensive
+		// `?? null` here was dead code that hid that guarantee.
+		$configKey = SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug];
+
+		try {
+			$this->registry->save(
+				schemaConfigKey: $configKey,
+				data: $this->asNewObject(object: $object)
+			);
+			return ['schema' => $slug, 'status' => 'installed', 'message' => ''];
+		} catch (Throwable $e) {
+			return $this->writeFailed(slug: $slug, exception: $e);
+		}
+	}//end writeComponent()
+
+	/**
+	 * The logged error row of a component that could not be written; the reason stays in the log.
+	 *
+	 * @param string    $slug      The component's schema.
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return array{schema: string, status: string, message: string}
+	 */
+	private function writeFailed(string $slug, Throwable $exception): array {
+		$this->logger->error(
+			'Dossiq store: installing {schema} failed: {error}',
+			['schema' => $slug, 'error' => $exception->getMessage()]
+		);
+		return [
+			'schema' => $slug,
+			'status' => 'error',
+			'message' => 'The component could not be written.',
+		];
+	}//end writeFailed()
+
+	/**
+	 * Why a component may not install, or null when it may.
+	 *
+	 * Only case configuration installs; a component must declare its object.
+	 *
+	 * @param string $slug   The component's schema.
+	 * @param mixed  $object The object it declares.
+	 *
+	 * @return string|null The refusal message, or null.
+	 */
+	private function componentRefusal(string $slug, mixed $object): ?string {
+		if (in_array($slug, self::INSTALLABLE_SLUGS, true) === false) {
+			return 'Only case configuration installs from the store; '
+				. 'this component names a record schema.';
+		}
+
+		if (is_array($object) === false) {
+			return 'The component declares no object to install.';
+		}
+
+		return null;
+	}//end componentRefusal()
 
 	/**
 	 * Strip every identity the remote payload carries, so an install CREATES.
@@ -423,6 +494,26 @@ class StoreController extends Controller {
 		}
 
 		$descriptor = $this->descriptor();
+		$refusal = $this->publishRefusal(descriptor: $descriptor, user: $user);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->publishItem(descriptor: $descriptor);
+	}//end publish()
+
+	/**
+	 * Refuse (403) a caller the store's publish groups do not admit, and
+	 * everyone when no authorizer is wired.
+	 *
+	 * @param StoreDescriptor $descriptor This app's store descriptor.
+	 * @param IUser           $user       The caller.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may publish.
+	 *
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
+	 */
+	private function publishRefusal(StoreDescriptor $descriptor, IUser $user): ?JSONResponse {
 		if ($this->actionAuthorizer === null
 			|| $this->actionAuthorizer->canPublish(descriptor: $descriptor, user: $user) === false
 		) {
@@ -432,6 +523,19 @@ class StoreController extends Controller {
 			);
 		}
 
+		return null;
+	}//end publishRefusal()
+
+	/**
+	 * Hand the request's item to the engine; without an item it is a 400.
+	 *
+	 * @param StoreDescriptor $descriptor This app's store descriptor.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/dossiq-store-surface/spec.md
+	 */
+	private function publishItem(StoreDescriptor $descriptor): JSONResponse {
 		$item = $this->request->getParam('item');
 		if (is_array($item) === false) {
 			return new JSONResponse(
@@ -444,7 +548,7 @@ class StoreController extends Controller {
 			data: $this->storeService->publish(descriptor: $descriptor, payload: $item),
 			statusCode: Http::STATUS_OK
 		);
-	}//end publish()
+	}//end publishItem()
 
 	/**
 	 * Read the registry connection.

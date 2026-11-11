@@ -144,20 +144,46 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			return $error;
 		}
 
-		// Zrc-002: Check unique identificatie + bronorganisatie.
-		if (empty($body['identificatie']) === false) {
-			$error = $this->checkFieldUniqueness(
-				field1Value: $body['identificatie'],
-				field1Search: 'identifier',
-				field2Value: $body['bronorganisatie'] ?? '',
-				field2Search: 'sourceOrganisation',
-				errorField: 'identificatie'
-			);
-			if ($error !== null) {
-				return $error;
-			}
+		$error = $this->checkUniqueIdentification(body: $body);
+		if ($error !== null) {
+			return $error;
 		}
 
+		$body = $this->withCreateDefaults(body: $body, caseTypeUrl: $caseTypeUrl);
+
+		return $this->caseFields->validateCaseFields(result: $this->isValid(body: $body), existingObject: null);
+	}//end rulesZakenCreate()
+
+	/**
+	 * Zrc-002: refuse an identificatie + bronorganisatie that is already taken.
+	 *
+	 * @param array $body The ZGW request body (Dutch field names)
+	 *
+	 * @return array|null The refusal, or null when unique or no identificatie is given
+	 */
+	private function checkUniqueIdentification(array $body): ?array {
+		if (empty($body['identificatie']) === true) {
+			return null;
+		}
+
+		return $this->checkFieldUniqueness(
+			field1Value: $body['identificatie'],
+			field1Search: 'identifier',
+			field2Value: $body['bronorganisatie'] ?? '',
+			field2Search: 'sourceOrganisation',
+			errorField: 'identificatie'
+		);
+	}//end checkUniqueIdentification()
+
+	/**
+	 * The create body with its identificatie, confidentiality, archive status, channel and handler filled in.
+	 *
+	 * @param array $body        The ZGW request body (Dutch field names)
+	 * @param mixed $caseTypeUrl The zaaktype URL from the body
+	 *
+	 * @return array The body
+	 */
+	private function withCreateDefaults(array $body, mixed $caseTypeUrl): array {
 		// Zrc-002: Auto-generate identificatie if not provided.
 		if (empty($body['identificatie']) === true) {
 			$body['identificatie'] = $this->generateIdentificatie(prefix: 'ZAAK');
@@ -180,10 +206,8 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Auto-assign handler from zaaktype defaultAssignee if no handler set.
-		$body = $this->typeDefaults->applyDefaultAssignee(body: $body, caseTypeUrl: $caseTypeUrl);
-
-		return $this->caseFields->validateCaseFields(result: $this->isValid(body: $body), existingObject: null);
-	}//end rulesZakenCreate()
+		return $this->typeDefaults->applyDefaultAssignee(body: $body, caseTypeUrl: $caseTypeUrl);
+	}//end withCreateDefaults()
 
 	/**
 	 * Validate the zaaktype reference on a create body (zrc-001).

@@ -42,6 +42,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
+use OCP\Mail\IMessage;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -141,6 +142,27 @@ class OutboundCaseMail {
 			);
 		}
 
+		$this->refuseAttachments(attachments: $attachments);
+
+		$message = $this->mailerMessage(sender: $sender, to: $to);
+		$message->setSubject($subject);
+		$this->transport->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe, plain: $plain);
+
+		$this->sendThroughMailer(message: $message);
+
+		return ['state' => OutboundState::SENT, 'outboxId' => null];
+	}//end send()
+
+	/**
+	 * Refuse attachments on the mailer path: only a Mail account reads them from the sender's files.
+	 *
+	 * @param array<int, string> $attachments Paths in the sending user's own files.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException attachments-need-mail-account.
+	 */
+	private function refuseAttachments(array $attachments): void {
 		if ($attachments !== []) {
 			throw new RefusedException(
 				rule: 'attachments-need-mail-account',
@@ -148,15 +170,36 @@ class OutboundCaseMail {
 				status: RefusedException::STATUS_UNPROCESSABLE
 			);
 		}
+	}//end refuseAttachments()
 
+	/**
+	 * A mailer message from the configured sender to one recipient.
+	 *
+	 * @param array<string, mixed> $sender From senderFor().
+	 * @param string               $to     The recipient.
+	 *
+	 * @return IMessage The message, without subject or body.
+	 */
+	private function mailerMessage(array $sender, string $to): IMessage {
 		$message = $this->mailer->createMessage();
 		$message->setFrom(
 			[(string)$sender['from'] => $this->appConfig->getValueString(Application::APP_ID, 'email_from_name', 'Dossiq')]
 		);
 		$message->setTo([$to]);
-		$message->setSubject($subject);
-		$this->transport->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe, plain: $plain);
 
+		return $message;
+	}//end mailerMessage()
+
+	/**
+	 * Hand the message to Nextcloud's mailer; a refusing server is a refusal here, its text kept in the log.
+	 *
+	 * @param IMessage $message The message.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException mail-transport-unavailable.
+	 */
+	private function sendThroughMailer(IMessage $message): void {
 		try {
 			$this->mailer->send($message);
 		} catch (Throwable $e) {
@@ -172,9 +215,7 @@ class OutboundCaseMail {
 				previous: $e
 			);
 		}
-
-		return ['state' => OutboundState::SENT, 'outboxId' => null];
-	}//end send()
+	}//end sendThroughMailer()
 
 	/**
 	 * Hand one message to the Mail account.

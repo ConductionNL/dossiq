@@ -411,38 +411,69 @@ class StufController extends Controller {
 	 */
 	private function recordStufHealth(array $endpoints): void {
 		if ($endpoints === []) {
-			$this->integrationStatus->record(
-				key: 'stuf',
-				status: 'unconfigured',
-				message: 'Not checked yet'
-			);
+			$this->recordStuf(status: 'unconfigured', message: 'Not checked yet');
 			return;
 		}
 
+		$unlinked = $this->unlinkedNames(endpoints: $endpoints);
+		if ($unlinked !== []) {
+			$this->recordStuf(status: 'error', message: 'No integriq source on ' . implode(', ', $unlinked));
+			return;
+		}
+
+		$this->recordStuf(status: 'configured', message: 'Healthy: ' . $this->endpointName(endpoint: $endpoints[0]));
+	}//end recordStufHealth()
+
+	/**
+	 * Record the StUF card's status.
+	 *
+	 * @param string $status  The card status.
+	 * @param string $message What the card says.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function recordStuf(string $status, string $message): void {
+		$this->integrationStatus->record(
+			key: 'stuf',
+			status: $status,
+			message: $message
+		);
+	}//end recordStuf()
+
+	/**
+	 * The names of the endpoints that have no integriq source.
+	 *
+	 * @param array<int, array<string, mixed>> $endpoints The endpoints with their health.
+	 *
+	 * @return list<string>
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function unlinkedNames(array $endpoints): array {
 		$unlinked = [];
 		foreach ($endpoints as $endpoint) {
-			$state = (string)($endpoint['health']['state'] ?? '');
-			if ($state === 'unlinked') {
-				$unlinked[] = (string)($endpoint['name'] ?? ($endpoint['id'] ?? 'endpoint'));
+			if ((string)($endpoint['health']['state'] ?? '') === 'unlinked') {
+				$unlinked[] = $this->endpointName(endpoint: $endpoint);
 			}
 		}
 
-		if ($unlinked !== []) {
-			$this->integrationStatus->record(
-				key: 'stuf',
-				status: 'error',
-				message: 'No integriq source on ' . implode(', ', $unlinked)
-			);
-			return;
-		}
+		return $unlinked;
+	}//end unlinkedNames()
 
-		$first = (string)($endpoints[0]['name'] ?? ($endpoints[0]['id'] ?? 'endpoint'));
-		$this->integrationStatus->record(
-			key: 'stuf',
-			status: 'configured',
-			message: 'Healthy: ' . $first
-		);
-	}//end recordStufHealth()
+	/**
+	 * An endpoint's name, or its id, or "endpoint".
+	 *
+	 * @param array<string, mixed> $endpoint The endpoint.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function endpointName(array $endpoint): string {
+		return (string)($endpoint['name'] ?? ($endpoint['id'] ?? 'endpoint'));
+	}//end endpointName()
 
 	/**
 	 * Query the StufMessage audit log (admin REST).

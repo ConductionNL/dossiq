@@ -289,29 +289,12 @@ class WorkflowDefinitionService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function publish(string $id): ?array {
-		$current = $this->repository->findById(id: $id);
-		if ($current === null) {
-			$this->logger->warning(
-				'Dossiq: publish() — definition not found',
-				['app' => Application::APP_ID, 'id' => $id]
-			);
+		$current = $this->publishableDraft(id: $id);
+		if ($current === null || $this->bothSchemasConfigured() === false) {
 			return null;
 		}
 
 		$transitions = $this->json->decodeList(raw: ($current['transitions'] ?? ''));
-		if ($this->guard->isPublishableDraft(current: $current, transitions: $transitions, id: $id) === false) {
-			return null;
-		}
-
-		// Both the definition schema and the caseType schema must be
-		// configured before anything is written: publishing without the
-		// caseType schema would deprecate the predecessor and leave the
-		// caseType pointing at a version it can no longer pin.
-		$configured = ($this->repository->isConfiguredFor(schemaKey: WorkflowDefinitionRepository::SCHEMA_DEFINITION) === true
-			&& $this->repository->isConfiguredFor(schemaKey: WorkflowDefinitionRepository::SCHEMA_CASE_TYPE) === true);
-		if ($configured === false) {
-			return null;
-		}
 
 		$caseTypeId = (string)($current['caseType'] ?? '');
 		$variant = $this->guard->variantOf(row: $current);
@@ -341,6 +324,45 @@ class WorkflowDefinitionService {
 
 		return $updated;
 	}//end publish()
+
+	/**
+	 * The stored definition when it is a draft that may be published, or null.
+	 *
+	 * @param string $id The definition UUID.
+	 *
+	 * @return array<string, mixed>|null The definition.
+	 */
+	private function publishableDraft(string $id): ?array {
+		$current = $this->repository->findById(id: $id);
+		if ($current === null) {
+			$this->logger->warning(
+				'Dossiq: publish() — definition not found',
+				['app' => Application::APP_ID, 'id' => $id]
+			);
+			return null;
+		}
+
+		$transitions = $this->json->decodeList(raw: ($current['transitions'] ?? ''));
+		if ($this->guard->isPublishableDraft(current: $current, transitions: $transitions, id: $id) === false) {
+			return null;
+		}
+
+		return $current;
+	}//end publishableDraft()
+
+	/**
+	 * Whether both the definition schema and the caseType schema are configured.
+	 *
+	 * Both must be configured before anything is written: publishing without
+	 * the caseType schema would deprecate the predecessor and leave the
+	 * caseType pointing at a version it can no longer pin.
+	 *
+	 * @return bool True when both are configured.
+	 */
+	private function bothSchemasConfigured(): bool {
+		return ($this->repository->isConfiguredFor(schemaKey: WorkflowDefinitionRepository::SCHEMA_DEFINITION) === true
+			&& $this->repository->isConfiguredFor(schemaKey: WorkflowDefinitionRepository::SCHEMA_CASE_TYPE) === true);
+	}//end bothSchemasConfigured()
 
 	/**
 	 * Deprecate a published definition. Refuses (returns null + logs) if
