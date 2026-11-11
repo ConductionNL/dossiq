@@ -33,6 +33,51 @@ use PHPUnit\Framework\TestCase;
  */
 class TermResolutionTest extends TestCase {
 	/**
+	 * The whole answer for each rule, apart from the moment it was resolved.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeAnswerForEachRule(): void {
+		$general  = ['id' => 'general', 'kind' => ' ', 'standardDurationDays' => '30', 'organisation' => ' '];
+		$service  = ['id' => 'svc', 'service' => ' balie ', 'standardDurationDays' => 20];
+		$priority = ['id' => 'prio', 'priority' => 'spoed', 'standardDurationDays' => 5];
+		$planned  = ['id' => 'plan', 'kind' => TermKind::PLANNED, 'organisation' => 'alkmaar'];
+		$resolution = $this->resolution([$priority, $planned, $service, $general]);
+		$answer = static function (?array $resolved): ?array {
+			if ($resolved !== null) {
+				unset($resolved['snapshot']['resolvedAt']);
+			}
+
+			return $resolved;
+		};
+
+		$this->assertSame(
+			[
+				'definition' => $service,
+				'resolvedFrom' => 'service',
+				'snapshot' => ['caseType' => 'vergunning', 'organisation' => 'alkmaar', 'service' => 'balie', 'priority' => 'spoed', 'durationDays' => 20, 'deadlineDefinition' => 'svc'],
+			],
+			$answer($resolution->resolve(caseType: 'vergunning', context: ['organisation' => ' alkmaar', 'service' => 'balie ', 'priority' => 'spoed']))
+		);
+		$this->assertSame(
+			[
+				'definition' => $general,
+				'resolvedFrom' => TermResolution::FALLBACK,
+				'snapshot' => ['caseType' => 'x', 'organisation' => '', 'service' => '', 'priority' => '', 'durationDays' => 30, 'deadlineDefinition' => 'general'],
+			],
+			$answer($resolution->resolve(caseType: 'x', context: ['priority' => ' ']))
+		);
+		$this->assertSame('prio', $resolution->resolve(caseType: 'x', context: ['priority' => 'spoed'])['definition']['id']);
+		$this->assertSame($planned, $resolution->plannedDefinitionFor(caseType: 'x', context: ['organisation' => 'alkmaar']));
+		$this->assertNull($resolution->plannedDefinitionFor(caseType: 'x', context: ['organisation' => 'bergen']));
+		$this->assertNull($resolution->resolve(caseType: 'x', context: [], kind: 'internal'));
+		$this->assertMatchesRegularExpression(
+			'/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/',
+			$resolution->resolve(caseType: 'x', context: [])['snapshot']['resolvedAt']
+		);
+	}//end testTheWholeAnswerForEachRule()
+
+	/**
 	 * Scenario: One case type, two municipal norms.
 	 *
 	 * @return void
