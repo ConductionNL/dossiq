@@ -39,6 +39,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -125,17 +126,9 @@ class TaskChecklistController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function submit(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSForbiddenException('Not authenticated');
-		}
-
-		// Per-object authorization, decided ENTIRELY from stored state: the
-		// case is loaded through OpenRegister and its `assignee` compared with
-		// the acting uid. Placed before the payload is read at all, so no part
-		// of the request can influence it.
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
-			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
+		$user = $this->submitter(caseId: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$params = $this->request->getParams();
@@ -159,6 +152,35 @@ class TaskChecklistController extends Controller {
 			return $this->submitFailed(caseId: $id, exception: $e);
 		}
 	}//end submit()
+
+	/**
+	 * The caller when they may submit on the case, or the 403 refusal.
+	 *
+	 * Per-object authorization, decided ENTIRELY from stored state: the
+	 * case is loaded through OpenRegister and its `assignee` compared with
+	 * the acting uid. Called before the payload is read at all, so no part
+	 * of the request can influence it.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @throws OCSForbiddenException When nobody is signed in.
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	private function submitter(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new OCSForbiddenException('Not authenticated');
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
+		}
+
+		return $user;
+	}//end submitter()
 
 	/**
 	 * The answer to a checklist run the store did not take.
