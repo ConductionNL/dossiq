@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
+use OCP\IUser;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -130,4 +131,131 @@ class CaseCompletenessTest extends TestCase {
 		self::assertSame([], $service->itemsOf(caseType: ['intakeRequirements' => ['requiredBeforeComplete' => ['x']]]));
 		self::assertSame(['items' => []], $service->check(items: [], case: [], documents: [], readable: []));
 	}//end testNoDeclaredListAnswersAnEmptyList()
+	/**
+	 * Items keep only a trimmed key and label plus the non-blank string options, in declared order.
+	 *
+	 * @return void
+	 */
+	public function testItemsOfTrimsAndDropsMalformedEntries(): void {
+		$service  = $this->service();
+		$caseType = [
+			'intakeRequirements' => [
+				'completenessItems' => [
+					'not an item',
+					['key' => ' a ', 'label' => ' Alpha ', 'field' => ' x.y ', 'documentType' => '  ', 'evidence' => 7, 'other' => 'z'],
+					['key' => 'b', 'label' => '   '],
+					['key' => 'c', 'label' => 'Gamma', 'evidence' => ' seen ', 'documentTitleContains' => 'brief', 'documentType' => 't'],
+				],
+			],
+		];
+
+		self::assertSame(
+			[
+				['key' => 'a', 'label' => 'Alpha', 'field' => 'x.y'],
+				['key' => 'c', 'label' => 'Gamma', 'documentType' => 't', 'documentTitleContains' => 'brief', 'evidence' => 'seen'],
+			],
+			$service->itemsOf(caseType: $caseType)
+		);
+		self::assertSame([], $service->itemsOf(caseType: ['intakeRequirements' => ['completenessItems' => 'none']]));
+	}//end testItemsOfTrimsAndDropsMalformedEntries()
+
+	/**
+	 * The first readable answering document names the evidence, even after an unreadable one.
+	 *
+	 * @return void
+	 */
+	public function testTheFirstReadableAnsweringDocumentGivesTheEvidence(): void {
+		$service  = $this->service();
+		$items    = [['key' => 'brief', 'label' => 'Brief', 'documentTitleContains' => 'BRIEF', 'field' => 'filled']];
+		$hidden   = ['id' => 'h', 'titel' => 'Brief 1', 'bestandsnaam' => 'hidden.pdf'];
+		$other    = ['@self' => ['id' => 'o'], 'titel' => 'Notitie'];
+		$readable = ['uuid' => 'r', 'titel' => ' Brief 2 ', 'bestandsnaam' => ' '];
+
+		$answer = $service->check(
+			items: $items,
+			case: ['filled' => 'yes'],
+			documents: [$hidden, $other, $readable],
+			readable: [$other, $readable],
+		);
+
+		self::assertSame(['key' => 'brief', 'label' => 'Brief', 'present' => true, 'evidence' => 'Brief 2'], $answer['items'][0]);
+	}//end testTheFirstReadableAnsweringDocumentGivesTheEvidence()
+
+	/**
+	 * A document that answers but cannot be read wins over the field: present, no evidence.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableDocumentWinsOverTheField(): void {
+		$service = $this->service();
+		$items   = [['key' => 'k', 'label' => 'K', 'documentType' => 'm', 'field' => 'f', 'evidence' => 'from field']];
+		$doc     = ['id' => 'd', 'informatieobjecttype' => 'm'];
+
+		$answer = $service->check(items: $items, case: ['f' => 'v'], documents: [$doc], readable: []);
+
+		self::assertSame(['key' => 'k', 'label' => 'K', 'present' => true, 'evidence' => null], $answer['items'][0]);
+	}//end testAnUnreadableDocumentWinsOverTheField()
+
+	/**
+	 * Fields: a scalar value is its own evidence, a list counts without evidence, a missing path or blank stays absent.
+	 *
+	 * @return void
+	 */
+	public function testFieldValuesTickWithScalarEvidenceOnly(): void {
+		$service = $this->service();
+		$items   = [
+			['key' => 'n', 'label' => 'N', 'field' => 'a.n'],
+			['key' => 'l', 'label' => 'L', 'field' => 'a.l'],
+			['key' => 'm', 'label' => 'M', 'field' => 'a.n.deeper'],
+			['key' => 'b', 'label' => 'B', 'field' => 'a.b'],
+			['key' => 'z', 'label' => 'Z', 'field' => 'a.z'],
+			['key' => 'd', 'label' => 'D'],
+		];
+		$case    = ['a' => ['n' => 42, 'l' => ['x'], 'b' => ' ', 'z' => null]];
+
+		$answer = $service->check(items: $items, case: $case, documents: [['id' => 'q', 'titel' => 'n']], readable: []);
+
+		self::assertSame(['key' => 'n', 'label' => 'N', 'present' => true, 'evidence' => '42'], $answer['items'][0]);
+		self::assertSame(['key' => 'l', 'label' => 'L', 'present' => true, 'evidence' => null], $answer['items'][1]);
+		self::assertFalse($answer['items'][2]['present']);
+		self::assertFalse($answer['items'][3]['present']);
+		self::assertFalse($answer['items'][4]['present']);
+		self::assertSame(['key' => 'd', 'label' => 'D', 'present' => false, 'evidence' => null], $answer['items'][5]);
+		self::assertSame(2, $answer['present']);
+	}//end testFieldValuesTickWithScalarEvidenceOnly()
+
+	/**
+	 * forCase: null for an unknown case, the case type id read from a nested object, readable documents from the reader.
+	 *
+	 * @return void
+	 */
+	public function testForCaseReadsTheCaseTypeAndTheReadableDocuments(): void {
+		$cases     = $this->createMock(CaseStatusStore::class);
+		$caseTypes = $this->createMock(CaseTypeResolver::class);
+		$dossier   = $this->createMock(ZaakdossierService::class);
+		$reader    = $this->createMock(InformatieobjectReader::class);
+		$user      = $this->createMock(IUser::class);
+		$doc       = ['id' => 'd1', 'bestandsnaam' => 'machtiging.pdf', 'informatieobjecttype' => 'machtiging'];
+
+		$cases->method('loadCase')->willReturnMap([
+			['missing', null],
+			['nested', ['caseType' => ['id' => 'ct-1']]],
+			['flat', ['caseType' => 'ct-2']],
+		]);
+		$caseTypes->method('effectiveCaseType')->willReturnMap([
+			['ct-1', $this->wooCaseType()],
+			['ct-2', []],
+		]);
+		$dossier->expects(self::once())->method('getDossierForCase')->with('nested')->willReturn(['informatieobjecten' => [$doc]]);
+		$reader->expects(self::once())->method('filterForUser')->with($user, [$doc])->willReturn([$doc]);
+
+		$service = new CaseCompleteness(cases: $cases, caseTypes: $caseTypes, dossier: $dossier, reader: $reader);
+
+		self::assertNull($service->forCase(caseId: 'missing', user: $user));
+		self::assertSame(['items' => []], $service->forCase(caseId: 'flat', user: $user));
+
+		$answer = $service->forCase(caseId: 'nested', user: $user);
+		self::assertSame('machtiging.pdf', $answer['items'][3]['evidence']);
+		self::assertSame(1, $answer['present']);
+	}//end testForCaseReadsTheCaseTypeAndTheReadableDocuments()
 }//end class
