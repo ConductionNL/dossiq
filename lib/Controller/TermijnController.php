@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\DeadlineExtensionService;
@@ -58,6 +59,8 @@ use Throwable;
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 class TermijnController extends Controller {
+	use ReadsJsonRequests;
+
 	/**
 	 * Constructor.
 	 *
@@ -368,34 +371,6 @@ class TermijnController extends Controller {
 			return $this->error(e: $e, log: 'Voltooi failed');
 		}
 	}//end voltooi()
-
-	/**
-	 * Decode the JSON request body into an array.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function jsonBody(): array {
-		// OCP\IRequest::getContent() is protected on the concrete OC
-		// request; read raw payload from php://input instead.
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === true) {
-			return $body;
-		}
-
-		return [];
-	}//end jsonBody()
-
-	/**
-	 * Build a 400 Bad Request response.
-	 *
-	 * @param string $msg Message.
-	 *
-	 * @return JSONResponse
-	 */
-	private function badRequest(string $msg): JSONResponse {
-		return new JSONResponse(['message' => $msg], Http::STATUS_BAD_REQUEST);
-	}//end badRequest()
 
 	/**
 	 * Build a 404 Not Found response.

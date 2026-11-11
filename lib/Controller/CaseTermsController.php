@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -63,6 +64,7 @@ use Throwable;
  */
 class CaseTermsController extends Controller {
 	use TranslatesRefusals;
+	use ReadsJsonRequests;
 
 	/**
 	 * Constructor.
@@ -496,21 +498,6 @@ class CaseTermsController extends Controller {
 
 		return $user->getUID();
 	}//end currentUserId()
-
-	/**
-	 * Decode the JSON request body into an array.
-	 *
-	 * @return array<string, mixed> The body, empty when there is none.
-	 */
-	private function jsonBody(): array {
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === false) {
-			return [];
-		}
-
-		return $body;
-	}//end jsonBody()
 
 	/**
 	 * workloadAge() on its old address.
