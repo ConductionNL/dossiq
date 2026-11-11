@@ -59,6 +59,7 @@ namespace OCA\Dossiq\Service\People;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseReassignmentService;
+use OCA\Dossiq\Service\Custody\DossierRegister;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\TranslatedText;
@@ -83,6 +84,13 @@ class LeaverHandoverService {
 	public const PAGE_SIZE = 200;
 
 	/**
+	 * The register and the configured schemas, read and refused the one shared way.
+	 *
+	 * @var DossierRegister
+	 */
+	private readonly DossierRegister $dossierRegister;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseReassignmentService $reassignment The cases a person handles, and their open tasks.
@@ -96,10 +104,11 @@ class LeaverHandoverService {
 	public function __construct(
 		private readonly CaseReassignmentService $reassignment,
 		private readonly CaseSeats $seats,
-		private readonly SettingsService $settings,
+		SettingsService $settings,
 		private readonly LoggerInterface $logger,
 		private readonly TranslatedText $text = new TranslatedText(),
 	) {
+		$this->dossierRegister = new DossierRegister(settingsService: $settings);
 	}//end __construct()
 
 	/**
@@ -416,17 +425,7 @@ class LeaverHandoverService {
 	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
 	 */
 	private function context(): array {
-		$objectService = $this->settings->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settings->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
+		return $this->dossierRegister->context();
 	}//end context()
 
 	/**
@@ -439,11 +438,6 @@ class LeaverHandoverService {
 	 * @throws RuntimeException When the key is unset.
 	 */
 	private function schema(string $key): string {
-		$schema = $this->settings->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
+		return $this->dossierRegister->schema(key: $key);
 	}//end schema()
 }//end class
