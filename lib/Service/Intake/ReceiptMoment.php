@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\SerialisedRow;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -268,20 +269,7 @@ class ReceiptMoment {
 	 * @return array<string, mixed>|null The array, or null.
 	 */
 	private function serialised(mixed $object): ?array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === false || method_exists($object, 'jsonSerialize') === false) {
-			return null;
-		}
-
-		$serialized = $object->jsonSerialize();
-		if (is_array($serialized) === true) {
-			return $serialized;
-		}
-
-		return null;
+		return SerialisedRow::of(value: $object);
 	}//end serialised()
 
 	/**

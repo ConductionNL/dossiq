@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Deelzaak;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Support\SerialisedArray;
 use OCA\OpenRegister\Service\Relation\ParentInheritance;
 use Psr\Log\LoggerInterface;
 
@@ -356,14 +357,6 @@ class SubCaseDeriver {
 	 * @return array<string, mixed> The object.
 	 */
 	private function asArray(mixed $object): array {
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$object = $object->jsonSerialize();
-		}
-
-		if (is_array($object) === false) {
-			return [];
-		}
-
-		return $object;
+		return SerialisedArray::of(value: $object);
 	}//end asArray()
 }//end class

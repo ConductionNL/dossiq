@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedArray;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -354,14 +355,6 @@ class UnmatchedMailIntake {
 	 * @return array<string, mixed> The row.
 	 */
 	private function normaliseObjectRow(mixed $row): array {
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$row = $row->jsonSerialize();
-		}
-
-		if (is_array($row) === false) {
-			return [];
-		}
-
-		return $row;
+		return SerialisedArray::of(value: $row);
 	}//end normaliseObjectRow()
 }//end class
