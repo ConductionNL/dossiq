@@ -36,6 +36,18 @@ namespace OCA\Dossiq\Service;
  */
 final class RequestWrite {
 	/**
+	 * Constructor.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register that holds the requests.
+	 */
+	public function __construct(
+		public readonly object $objectService,
+		public readonly string $register,
+	) {
+	}//end __construct()
+
+	/**
 	 * The request fields: the whole request, or the changes.
 	 *
 	 * @var array<string, mixed>
@@ -48,16 +60,4 @@ final class RequestWrite {
 	 * @var string
 	 */
 	public string $id = '';
-
-	/**
-	 * Constructor.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $register      The register that holds the requests.
-	 */
-	public function __construct(
-		public readonly object $objectService,
-		public readonly string $register,
-	) {
-	}//end __construct()
 }//end class
