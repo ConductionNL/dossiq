@@ -371,6 +371,122 @@ describe('AssessmentDecisionDialog', () => {
 	})
 })
 
+describe('AssessmentDecisionDialog, the parts it is built from', () => {
+	beforeEach(async () => {
+		const axios = (await import('@nextcloud/axios')).default
+		axios.get.mockReset()
+		axios.post.mockReset()
+		;(await import('@nextcloud/event-bus')).emit.mockReset()
+		delete globalThis.OC
+	})
+
+	it('shows the aside only with a text, and for any app when it names none', async () => {
+		const { wrapper } = await mountDialog()
+		await wrapper.setProps({ aside: { text: 'Kijk ook hier.' } })
+		expect(wrapper.vm.asideShown).toBe(true)
+		await wrapper.setProps({ aside: { text: 'Kijk ook hier.', whenApp: 'decidiq' } })
+		expect(wrapper.vm.asideShown).toBe(false)
+		globalThis.OC = { appswebroots: { decidiq: '/apps/decidiq' } }
+		await wrapper.setProps({ aside: { text: 'Kijk ook hier.', whenApp: ['', 'decidiq'] } })
+		expect(wrapper.vm.asideShown).toBe(true)
+		await wrapper.setProps({ aside: { text: '' } })
+		expect(wrapper.vm.asideShown).toBe(false)
+		await wrapper.setProps({ aside: null })
+		expect(wrapper.vm.asideShown).toBe(false)
+	})
+
+	it('builds a count row per classification, with the fallbacks for what it leaves out', async () => {
+		const { wrapper } = await mountDialog()
+		await wrapper.setProps({ classifications: [
+			{ value: 'openbaar', label: 'Public' },
+			{ value: 'niet_openbaar', decisionLabel: 'Not made public', description: 'None.' },
+			null,
+		] })
+		expect(wrapper.vm.counts).toEqual([
+			{ value: 'openbaar', label: 'Public', decisionLabel: 'Public', description: '%n documents assessed this way', count: 2 },
+			{ value: 'niet_openbaar', label: 'niet_openbaar', decisionLabel: 'Not made public', description: 'None.', count: 0 },
+			{ value: '', label: '', decisionLabel: '', description: '%n documents assessed this way', count: 0 },
+		])
+		expect(wrapper.vm.outcomeOptions).toEqual([
+			{ value: 'openbaar', label: 'Public', description: 'Proposal from the assessment: 2 public' },
+			{ value: 'niet_openbaar', label: 'Not made public', description: 'None.' },
+			{ value: '', label: '', description: '%n documents assessed this way' },
+		])
+		wrapper.vm.countsError = 'x'
+		await wrapper.vm.$nextTick()
+		expect(wrapper.vm.outcomeOptions[0].description).toBe('%n documents assessed this way')
+	})
+
+	it('reads no next step without a steps url or a case type, and none on a failure', async () => {
+		const { wrapper, axios } = await mountDialog({ kase: { id: CASE_ID, caseType: 'ct-woo', status: 'st-2' } })
+		expect(wrapper.vm.nextStep).toBeNull()
+		axios.get.mockClear()
+		wrapper.vm.kase = { caseType: '' }
+		await wrapper.vm.loadNextStep()
+		wrapper.vm.kase = { caseType: 'ct-woo' }
+		await wrapper.setProps({ stepsUrl: '' })
+		await wrapper.vm.loadNextStep()
+		expect(axios.get).not.toHaveBeenCalled()
+		await wrapper.setProps({ stepsUrl: '/steps/{caseType}' })
+		wrapper.vm.nextStep = { number: 9, name: 'Old' }
+		axios.get.mockResolvedValueOnce({ data: { statusTypes: [{ id: 'a', name: 'A', order: 1 }, { id: 'b', name: 'B', order: 2 }] } })
+		wrapper.vm.kase = { caseType: 'ct woo', status: 'a' }
+		await wrapper.vm.loadNextStep()
+		expect(axios.get).toHaveBeenLastCalledWith(expect.stringContaining('/steps/ct%20woo'))
+		expect(wrapper.vm.nextStep).not.toEqual({ number: 9, name: 'Old' })
+		axios.get.mockRejectedValueOnce(new Error('down'))
+		await wrapper.vm.loadNextStep()
+		expect(wrapper.vm.nextStep).toBeNull()
+	})
+
+	it('says the counts are not shown without a register and schema, and reads the configured field', async () => {
+		const { wrapper, axios } = await mountDialog()
+		await wrapper.setProps({ assessments: { register: 'dossiq' } })
+		axios.get.mockClear()
+		await wrapper.vm.loadCounts()
+		expect(wrapper.vm.countsError).toBe('The number of documents per assessment is not shown here.')
+		expect(axios.get).not.toHaveBeenCalled()
+		await wrapper.setProps({ assessments: null })
+		await wrapper.vm.loadCounts()
+		expect(wrapper.vm.countsError).toBe('The number of documents per assessment is not shown here.')
+
+		await wrapper.setProps({ assessments: { register: 'dossiq', schema: 'wooDocumentAssessment', caseField: 'caseRef', classificationField: 'kind' } })
+		axios.get.mockResolvedValueOnce({ data: { results: [{ kind: 'niet_openbaar' }, { classification: 'openbaar' }] } })
+		await wrapper.vm.loadCounts()
+		expect(wrapper.vm.countsError).toBe('')
+		expect(wrapper.vm.tally).toEqual(expect.objectContaining({ niet_openbaar: 1 }))
+		expect(wrapper.vm.tally.openbaar).toBeUndefined()
+		axios.get.mockRejectedValueOnce(new Error('down'))
+		await wrapper.vm.loadCounts()
+		expect(wrapper.vm.countsError).toBe('The number of documents per assessment could not be read.')
+	})
+
+	it('sends a decision date other than today, and not today', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(new Date('2026-10-07T12:00:00Z'))
+		try {
+			const { wrapper, axios } = await mountDialog()
+			axios.post.mockResolvedValue({ data: null })
+			wrapper.vm.decisionDate = '2026-10-07'
+			wrapper.vm.description = '   '
+			await wrapper.vm.save()
+			expect(axios.post.mock.calls[0][1]).toEqual({ decision: {} })
+			expect(wrapper.vm.decided).toEqual({})
+			wrapper.vm.decisionDate = '2026-10-01'
+			await wrapper.vm.save()
+			expect(axios.post.mock.calls[1][1]).toEqual({ decision: { decisionDate: '2026-10-01' } })
+			axios.post.mockRejectedValueOnce(new Error('down'))
+			wrapper.vm.decided = null
+			await wrapper.vm.save()
+			expect(wrapper.vm.error).toBe('The decision could not be recorded.')
+			expect(wrapper.vm.busy).toBe(false)
+			expect(wrapper.vm.decided).toBeNull()
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+})
+
 describe('the assessment-decide header action', () => {
 	it('opens the registered dialog', () => {
 		expect(action.type).toBe('open-modal')
