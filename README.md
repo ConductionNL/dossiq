@@ -236,6 +236,12 @@ covering stub gaps in `nextcloud/ocp` (server-internal `\OC` classes, other apps
 `OCA\` namespaces, Guzzle, Doctrine DBAL), each with a written justification.
 Do not reintroduce `phpstan-baseline.neon`.
 
+### Test coverage
+
+<!-- coverage:start -->
+Measured test coverage: 70.0% of statements (PHP 70.7% of 99,620 statements, JavaScript 63.6% of 11,969 statements), at commit `4aab4b01a` on 2026-11-11. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
+<!-- coverage:end -->
+
 ## Tech Stack
 
 | Layer | Technology |
