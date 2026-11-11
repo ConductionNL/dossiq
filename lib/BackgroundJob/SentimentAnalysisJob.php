@@ -33,7 +33,6 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\SentimentService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -90,13 +89,10 @@ class SentimentAnalysisJob extends TimedJob {
 	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
 	 */
 	protected function run($argument): void {
-		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->work());
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// read, sent or written; the next run tries again.
-			return;
-		}
+		// Without a usable account this runs nothing: that is already logged as an
+		// error and told to the admins. Nothing was read, sent or
+		// written; the next run tries again.
+		$this->serviceAccount->runAsWhenAvailable(operation: fn () => $this->work());
 	}//end run()
 
 	/**

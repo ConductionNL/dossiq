@@ -103,6 +103,28 @@ class TermsEndingFirstTest extends TestCase {
 	}//end testListsRunningStatutoryTermsSoonestFirst()
 
 	/**
+	 * The whole question asked and the whole answer, with the limit clamped.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeQuestionAndAnswer(): void {
+		$rows = [
+			['id' => 't1', 'case' => 'c1', 'status' => 'lopend', 'startDate' => '2026-11-01', 'endDateCalculated' => '2026-11-21'],
+			['id' => 't2', 'case' => '', 'status' => 'paused', 'startDate' => '2026-11-01', 'endDateCurrent' => '2026-11-15'],
+			['id' => 't3', 'case' => 'c3', 'status' => 'lopend', 'startDate' => '2026-11-01'],
+		];
+		$now = new DateTimeImmutable('2026-11-11');
+
+		$one = $this->service(rows: $rows, cases: ['c1' => ['title' => 'Alleen titel']])->list(limit: 0, now: $now);
+		$this->assertSame(['status' => ['in' => ['lopend', 'verlengd', 'paused']], '_order' => ['endDateCurrent' => 'ASC'], '_limit' => 100, '@self' => ['register' => 1, 'schema' => 2]], $this->asked);
+		$this->assertSame(['available' => true, 'terms' => [['caseId' => '', 'caseLabel' => '', 'endDate' => '2026-11-15', 'progressPercent' => 71, 'daysLeft' => 4]]], $one);
+
+		$all = $this->service(rows: $rows, cases: ['c1' => ['title' => 'Alleen titel']])->list(limit: 99, now: $now);
+		$this->assertSame(['', 'c1'], array_column($all['terms'], 'caseId'));
+		$this->assertSame('Alleen titel', $all['terms'][1]['caseLabel']);
+	}//end testTheWholeQuestionAndAnswer()
+
+	/**
 	 * Without the term schema the answer says it is not available, so the card is not drawn.
 	 *
 	 * @return void

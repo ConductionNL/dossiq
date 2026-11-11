@@ -139,30 +139,18 @@ class CaseFederationController extends Controller {
 			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$caseId = $this->request->getParam('caseId');
-		$remoteCloudId = $this->request->getParam('remoteCloudId');
-		$sharedFields = (array)$this->request->getParam('sharedFields', []);
-		$sharedDocuments = (array)$this->request->getParam('sharedDocuments', []);
-		$permissionLevel = $this->request->getParam('permissionLevel', 'bekijken');
-
-		if (empty($caseId) === true || empty($remoteCloudId) === true) {
-			return new JSONResponse(['success' => false, 'error' => 'caseId and remoteCloudId are required'], 400);
-		}
-
-		// C2: same case-access guard as the partner/token share paths.
-		if ($this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+		$wanted = $this->requestedShare();
+		$refusal = $this->shareRefusal(wanted: $wanted, userId: $user->getUID());
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$share = $this->caseSharingService->createFederatedShare(
-			$caseId,
-			$remoteCloudId,
-			$sharedFields,
-			$sharedDocuments,
-			$permissionLevel,
+			$wanted['caseId'],
+			$wanted['remoteCloudId'],
+			$wanted['sharedFields'],
+			$wanted['sharedDocuments'],
+			$wanted['permissionLevel'],
 			$user->getUID(),
 		);
 
@@ -172,6 +160,49 @@ class CaseFederationController extends Controller {
 
 		return new JSONResponse(['success' => true, 'share' => $share]);
 	}//end createFederatedShare()
+
+	/**
+	 * The share the request asks for.
+	 *
+	 * @return array{caseId: mixed, remoteCloudId: mixed, sharedFields: array<mixed>, sharedDocuments: array<mixed>, permissionLevel: mixed}
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 */
+	private function requestedShare(): array {
+		return [
+			'caseId' => $this->request->getParam('caseId'),
+			'remoteCloudId' => $this->request->getParam('remoteCloudId'),
+			'sharedFields' => (array)$this->request->getParam('sharedFields', []),
+			'sharedDocuments' => (array)$this->request->getParam('sharedDocuments', []),
+			'permissionLevel' => $this->request->getParam('permissionLevel', 'bekijken'),
+		];
+	}//end requestedShare()
+
+	/**
+	 * The refusal for a share without a case or remote, or on a case the caller may not access.
+	 *
+	 * @param array<string, mixed> $wanted The requested share.
+	 * @param string               $userId The caller.
+	 *
+	 * @return JSONResponse|null The 400/403 refusal, or null when the share may be made.
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
+	 */
+	private function shareRefusal(array $wanted, string $userId): ?JSONResponse {
+		if (empty($wanted['caseId']) === true || empty($wanted['remoteCloudId']) === true) {
+			return new JSONResponse(['success' => false, 'error' => 'caseId and remoteCloudId are required'], 400);
+		}
+
+		// C2: same case-access guard as the partner/token share paths.
+		if ($this->caseSharingService->canUserAccessCase($wanted['caseId'], $userId) === false) {
+			return new JSONResponse(
+				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return null;
+	}//end shareRefusal()
 
 	/**
 	 * Revoke a federated case share.

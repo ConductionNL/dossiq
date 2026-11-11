@@ -21,17 +21,7 @@ import { QUEUE_URGENCY_FIELDS } from '../../utils/queueUrgencySettings.js'
  */
 export function houseStyleFields(t) {
 	return [
-		{
-			// Nextcloud theming's own name, read from the capabilities and
-			// written through theming's admin-only updateStylesheet.
-			key: 'organisationName',
-			label: t('dossiq', 'Name of the organisation'),
-			url: '/ocs/v2.php/cloud/capabilities?format=json',
-			valuePath: 'ocs.data.capabilities.theming.name',
-			saveUrl: '/apps/theming/ajax/updateStylesheet',
-			saveKey: 'value',
-			saveParams: { setting: 'name' },
-		},
+		organisationNameField(t),
 		{
 			// The lists of contacts and organisations open on this city
 			// (`@config.municipalityCity`); empty leaves that lens out.
@@ -43,33 +33,72 @@ export function houseStyleFields(t) {
 			label: t('dossiq', 'Name of the app for staff'),
 			placeholder: 'Dossiq',
 		},
-		{
-			key: 'theme',
-			label: t('dossiq', 'Theme'),
-			type: 'select',
-			url: '/apps/thematiq/settings/app-brands',
-			valuePath: 'brands.dossiq.tokenSet',
-			saveUrl: '/apps/thematiq/settings/app-brands/dossiq',
-			saveKey: 'tokenSet',
-			optionsUrl: '/apps/thematiq/settings/app-brands',
-			optionsPath: 'tokenSets',
-			optionLabel: 'name',
-			optionValue: 'id',
-		},
-		{
-			key: 'logo',
-			label: t('dossiq', 'Other logo'),
-			hideLabel: true,
-			uploadLabel: t('dossiq', 'Other logo'),
-			type: 'image',
-			url: '/apps/thematiq/settings/theming',
-			valuePath: 'logo_url',
-			initialsFrom: 'organisationName',
-			uploadUrl: '/apps/theming/ajax/uploadImage',
-			uploadParams: { key: 'logo' },
-			uploadValuePath: 'data.url',
-		},
+		themeField(t),
+		logoField(t),
 	]
+}
+
+/**
+ * The organisation's name: Nextcloud theming's own, read from the
+ * capabilities and written through theming's admin-only updateStylesheet.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function organisationNameField(t) {
+	return {
+		key: 'organisationName',
+		label: t('dossiq', 'Name of the organisation'),
+		url: '/ocs/v2.php/cloud/capabilities?format=json',
+		valuePath: 'ocs.data.capabilities.theming.name',
+		saveUrl: '/apps/theming/ajax/updateStylesheet',
+		saveKey: 'value',
+		saveParams: { setting: 'name' },
+	}
+}
+
+/**
+ * The theme: thematiq's brand for dossiq, chosen from thematiq's token sets.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function themeField(t) {
+	return {
+		key: 'theme',
+		label: t('dossiq', 'Theme'),
+		type: 'select',
+		url: '/apps/thematiq/settings/app-brands',
+		valuePath: 'brands.dossiq.tokenSet',
+		saveUrl: '/apps/thematiq/settings/app-brands/dossiq',
+		saveKey: 'tokenSet',
+		optionsUrl: '/apps/thematiq/settings/app-brands',
+		optionsPath: 'tokenSets',
+		optionLabel: 'name',
+		optionValue: 'id',
+	}
+}
+
+/**
+ * The other logo, uploaded through theming and read from thematiq.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function logoField(t) {
+	return {
+		key: 'logo',
+		label: t('dossiq', 'Other logo'),
+		hideLabel: true,
+		uploadLabel: t('dossiq', 'Other logo'),
+		type: 'image',
+		url: '/apps/thematiq/settings/theming',
+		valuePath: 'logo_url',
+		initialsFrom: 'organisationName',
+		uploadUrl: '/apps/theming/ajax/uploadImage',
+		uploadParams: { key: 'logo' },
+		uploadValuePath: 'data.url',
+	}
 }
 
 /**
@@ -82,6 +111,21 @@ export function houseStyleFields(t) {
  * @spec openspec/specs/admin-settings/spec.md
  */
 export function textsAndAccessFields(t) {
+	return [
+		...messageTextFields(t),
+		...dateAndTimeFields(t),
+		...betaFeatureFields(t),
+	]
+}
+
+/**
+ * The sender of dossiq's messages, the text above Mijn zaken, and where the
+ * allowed websites are set instead.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function messageTextFields(t) {
 	return [
 		{
 			key: 'email_from_name',
@@ -100,6 +144,17 @@ export function textsAndAccessFields(t) {
 				'Set in the portal app (portaliq) and in Nextcloud, not here.',
 			),
 		},
+	]
+}
+
+/**
+ * The time zone and the date format.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function dateAndTimeFields(t) {
+	return [
 		{
 			key: 'timezone',
 			label: t('dossiq', 'Time zone'),
@@ -114,6 +169,17 @@ export function textsAndAccessFields(t) {
 			default: 'DD-MM-YYYY',
 			required: true,
 		},
+	]
+}
+
+/**
+ * The beta features heading and its switches.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function betaFeatureFields(t) {
+	return [
 		{
 			key: 'betaFeatures',
 			label: t('dossiq', 'Beta features'),
@@ -299,6 +365,26 @@ export function queueUrgencyFields(t) {
  */
 export function consultationFields(t) {
 	return [
+		...consultationTermFields(t),
+		{
+			key: 'consultation_external_response_url',
+			label: t('dossiq', 'Address for external responses'),
+			placeholder: 'https://dossiq.example.org/consultation/respond/',
+			pattern: '^https://',
+			patternMessage: t('dossiq', 'Starts with https://'),
+		},
+		consultationBottleneckField(t),
+	]
+}
+
+/**
+ * The default consultation term and how many days ahead to warn, in whole days.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function consultationTermFields(t) {
+	return [
 		{
 			key: 'consultation_default_deadline_days',
 			label: t('dossiq', 'Standard term in days'),
@@ -315,27 +401,29 @@ export function consultationFields(t) {
 			min: 0,
 			default: 5,
 		},
-		{
-			key: 'consultation_external_response_url',
-			label: t('dossiq', 'Address for external responses'),
-			placeholder: 'https://dossiq.example.org/consultation/respond/',
-			pattern: '^https://',
-			patternMessage: t('dossiq', 'Starts with https://'),
-		},
-		{
-			key: 'consultation_bottleneck_threshold',
-			advanced: true,
-			label: t('dossiq', 'Bottleneck overdue-rate threshold (0-1)'),
-			type: 'number',
-			min: 0,
-			max: 1,
-			default: 0.2,
-			hint: t(
-				'dossiq',
-				'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.',
-			),
-		},
 	]
+}
+
+/**
+ * The overdue rate from which an advisory body counts as a bottleneck.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function consultationBottleneckField(t) {
+	return {
+		key: 'consultation_bottleneck_threshold',
+		advanced: true,
+		label: t('dossiq', 'Bottleneck overdue-rate threshold (0-1)'),
+		type: 'number',
+		min: 0,
+		max: 1,
+		default: 0.2,
+		hint: t(
+			'dossiq',
+			'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.',
+		),
+	}
 }
 
 /**
@@ -443,17 +531,27 @@ export function storeRegistryFields(t) {
 			label: t('dossiq', 'Register on that instance'),
 			default: 'dossiq',
 		},
-		{
-			key: 'registryToken',
-			label: t('dossiq', 'Registry token'),
-			type: 'secret',
-			setKey: 'registryTokenSet',
-			hint: t(
-				'dossiq',
-				'The token is never shown again after saving. Leave it empty to keep the one already stored.',
-			),
-		},
+		registryTokenField(t),
 	]
+}
+
+/**
+ * The write-only registry token, never shown again after saving.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function registryTokenField(t) {
+	return {
+		key: 'registryToken',
+		label: t('dossiq', 'Registry token'),
+		type: 'secret',
+		setKey: 'registryTokenSet',
+		hint: t(
+			'dossiq',
+			'The token is never shown again after saving. Leave it empty to keep the one already stored.',
+		),
+	}
 }
 
 /**
@@ -503,15 +601,6 @@ export function archivalFields(t) {
  * @spec openspec/specs/admin-settings/spec.md
  */
 export function contactCentreFields(t) {
-	const number = (key, label, fallback, hint = '') => ({
-		key,
-		label,
-		type: 'number',
-		min: 0,
-		default: fallback,
-		placeholder: String(fallback),
-		...(hint ? { hint } : {}),
-	})
 	return [
 		{
 			key: 'kcc-scope',
@@ -521,54 +610,118 @@ export function contactCentreFields(t) {
 				'Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by Integriq and pipelinq respectively; only the Dossiq-side behaviour is configured here.',
 			),
 		},
-		{
-			key: 'identification_method',
-			label: t('dossiq', 'Identification method'),
-			type: 'select',
-			required: true,
-			default: 'both',
-			options: [
-				{ value: 'digid', label: 'DigiD' },
-				{ value: 'bsn_questions', label: t('dossiq', 'Identification questions') },
-				{ value: 'both', label: t('dossiq', 'Both') },
-			],
-			hint: t(
-				'dossiq',
-				'Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.',
-			),
-		},
-		{
-			...number(
-				'identification_score_threshold',
-				t('dossiq', 'Identification score threshold (0.6 - 1.0)'),
-				0.8,
-				t(
+		identificationMethodField(t),
+		identificationThresholdField(t),
+		...contactCentreNumberFields(t),
+		sentimentTriggerWordsField(t),
+	]
+}
+
+/**
+ * A number setting of the KCC bridge, its default doubling as the placeholder.
+ *
+ * @param {{key: string, label: string, hint?: string}} setting The setting, its label and an optional hint.
+ * @param {number} fallback The server's default.
+ * @return {object} The field.
+ */
+function contactCentreNumber(setting, fallback) {
+	return {
+		key: setting.key,
+		label: setting.label,
+		type: 'number',
+		min: 0,
+		default: fallback,
+		placeholder: String(fallback),
+		...(setting.hint ? { hint: setting.hint } : {}),
+	}
+}
+
+/**
+ * How a caller is identified: DigiD, identification questions, or both.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function identificationMethodField(t) {
+	return {
+		key: 'identification_method',
+		label: t('dossiq', 'Identification method'),
+		type: 'select',
+		required: true,
+		default: 'both',
+		options: [
+			{ value: 'digid', label: 'DigiD' },
+			{ value: 'bsn_questions', label: t('dossiq', 'Identification questions') },
+			{ value: 'both', label: t('dossiq', 'Both') },
+		],
+		hint: t(
+			'dossiq',
+			'Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.',
+		),
+	}
+}
+
+/**
+ * The match score from which a caller is linked and sees the full case information.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function identificationThresholdField(t) {
+	return {
+		...contactCentreNumber(
+			{
+				key: 'identification_score_threshold',
+				label: t('dossiq', 'Identification score threshold (0.6 - 1.0)'),
+				hint: t(
 					'dossiq',
 					'Minimum identificatievragen match score to link a burger and reveal full zaaksinfo. Below the threshold, only openbare zaaksinformatie is shown.',
 				),
-			),
-			max: 1,
-		},
-		number('sentiment_polling_interval', t('dossiq', 'Sentiment polling interval (seconds)'), 5),
-		number('specialist_availability_polling_interval', t('dossiq', 'Specialist availability polling interval (seconds)'), 30),
-		number('max_zaken_voorblad', t('dossiq', 'Max open zaken in voorblad'), 10),
-		number('max_contactmomenten_history', t('dossiq', 'Max contactmomenten in history'), 5),
-		number('belplan_overflow_threshold_wachttijd', t('dossiq', 'Belplan overflow threshold: wachttijd (seconds)'), 180),
-		number('belplan_overflow_threshold_wachtrij_lengte', t('dossiq', 'Belplan overflow threshold: wachtrij lengte'), 5),
-		{
-			key: 'sentiment_trigger_words',
-			label: t('dossiq', 'Sentiment trigger words (one per line)'),
-			type: 'lines',
-			saveAs: 'json',
-			rows: 5,
-			wide: true,
-			placeholder: 'klacht\nadvocaat\nwethouder\nmedia',
-			hint: t(
-				'dossiq',
-				'Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.',
-			),
-		},
+			},
+			0.8,
+		),
+		max: 1,
+	}
+}
+
+/**
+ * How often sentiment and availability are read, how much the voorblad and
+ * history show, and when a call plan overflows.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function contactCentreNumberFields(t) {
+	return [
+		contactCentreNumber({ key: 'sentiment_polling_interval', label: t('dossiq', 'Sentiment polling interval (seconds)') }, 5),
+		contactCentreNumber({ key: 'specialist_availability_polling_interval', label: t('dossiq', 'Specialist availability polling interval (seconds)') }, 30),
+		contactCentreNumber({ key: 'max_zaken_voorblad', label: t('dossiq', 'Max open zaken in voorblad') }, 10),
+		contactCentreNumber({ key: 'max_contactmomenten_history', label: t('dossiq', 'Max contactmomenten in history') }, 5),
+		contactCentreNumber({ key: 'belplan_overflow_threshold_wachttijd', label: t('dossiq', 'Belplan overflow threshold: wachttijd (seconds)') }, 180),
+		contactCentreNumber({ key: 'belplan_overflow_threshold_wachtrij_lengte', label: t('dossiq', 'Belplan overflow threshold: wachtrij lengte') }, 5),
 	]
+}
+
+/**
+ * The words that flag negative sentiment, one per line.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function sentimentTriggerWordsField(t) {
+	return {
+		key: 'sentiment_trigger_words',
+		label: t('dossiq', 'Sentiment trigger words (one per line)'),
+		type: 'lines',
+		saveAs: 'json',
+		rows: 5,
+		wide: true,
+		placeholder: 'klacht\nadvocaat\nwethouder\nmedia',
+		hint: t(
+			'dossiq',
+			'Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.',
+		),
+	}
 }
 
 /**
@@ -628,38 +781,42 @@ export function backgroundAccountFields(t) {
  */
 export function aiFields(t) {
 	const on = { key: 'ai_enabled', equals: true }
-	const cloud = { key: 'ai_model_type', equals: 'cloud' }
-	const features = [
-		['ai_feature_classification', t('dossiq', 'Document classification')],
-		['ai_feature_extraction', t('dossiq', 'Data extraction')],
-		['ai_feature_qa', t('dossiq', 'Knowledge base Q&A')],
-		['ai_feature_summary', t('dossiq', 'Auto-summarization')],
-		['ai_feature_routing', t('dossiq', 'Routing suggestions')],
-		['ai_feature_decision_support', t('dossiq', 'Decision support')],
-	]
 	const fields = [
 		{ key: 'ai_enabled', label: t('dossiq', 'Switch on AI-assisted processing'), type: 'switch' },
-		{
-			key: 'ai_model_type',
-			label: t('dossiq', 'Kind of model'),
-			type: 'radio',
-			default: 'local',
-			options: [
-				{ value: 'local', label: t('dossiq', 'Local (Ollama)'), description: t('dossiq', 'Data stays on your own servers') },
-				{ value: 'cloud', label: t('dossiq', 'Cloud'), description: t('dossiq', 'A provider outside your organisation') },
-			],
-			visibleWhen: on,
-		},
-		{
-			key: 'cloud-warning',
-			type: 'status',
-			tone: 'warning',
-			text: t(
-				'dossiq',
-				'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.',
-			),
-			visibleWhen: [on, cloud],
-		},
+		...aiModelFields(t, on),
+		...aiFeatureFields(t, on),
+		...aiPrivacyFields(t, on),
+		...aiConnectionTestFields(t, on),
+	]
+	// The card lays its fields out in two columns, model address beside model
+	// name as board DqBeheerinstellingen draws them; a switch or a choice
+	// keeps a row of its own.
+	return fields.map(widenOwnRowField)
+}
+
+/**
+ * A switch or a choice keeps a row of its own; any other field is left as it is.
+ *
+ * @param {object} field The field.
+ * @return {object} The field, wide when it is a switch or a choice.
+ */
+function widenOwnRowField(field) {
+	return field.type === 'switch' || field.type === 'radio' ? { ...field, wide: true } : field
+}
+
+/**
+ * The model the AI steps run on: local or cloud, its address and name, and
+ * for a cloud model the warning and the API key.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiModelFields(t, on) {
+	const cloud = { key: 'ai_model_type', equals: 'cloud' }
+	return [
+		aiModelKindField(t, on),
+		aiCloudWarningField(t, [on, cloud]),
 		{ key: 'ai_model_url', label: t('dossiq', 'Address of the model'), visibleWhen: on },
 		{ key: 'ai_model_name', label: t('dossiq', 'Model name'), placeholder: 'llama3.1', visibleWhen: on },
 		{
@@ -669,33 +826,135 @@ export function aiFields(t) {
 			setKey: 'ai_api_key_set',
 			visibleWhen: [on, cloud],
 		},
+	]
+}
+
+/**
+ * The choice between a local and a cloud model.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {object} The field.
+ */
+function aiModelKindField(t, on) {
+	return {
+		key: 'ai_model_type',
+		label: t('dossiq', 'Kind of model'),
+		type: 'radio',
+		default: 'local',
+		options: [
+			{ value: 'local', label: t('dossiq', 'Local (Ollama)'), description: t('dossiq', 'Data stays on your own servers') },
+			{ value: 'cloud', label: t('dossiq', 'Cloud'), description: t('dossiq', 'A provider outside your organisation') },
+		],
+		visibleWhen: on,
+	}
+}
+
+/**
+ * The warning that a cloud model sends case data outside the organisation.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {Array<object>} visibleWhen While AI is on and the model is a cloud one.
+ * @return {object} The field.
+ */
+function aiCloudWarningField(t, visibleWhen) {
+	return {
+		key: 'cloud-warning',
+		type: 'status',
+		tone: 'warning',
+		text: t(
+			'dossiq',
+			'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.',
+		),
+		visibleWhen,
+	}
+}
+
+/**
+ * The heading and one switch per AI feature.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiFeatureFields(t, on) {
+	const features = [
+		['ai_feature_classification', t('dossiq', 'Document classification')],
+		['ai_feature_extraction', t('dossiq', 'Data extraction')],
+		['ai_feature_qa', t('dossiq', 'Knowledge base Q&A')],
+		['ai_feature_summary', t('dossiq', 'Auto-summarization')],
+		['ai_feature_routing', t('dossiq', 'Routing suggestions')],
+		['ai_feature_decision_support', t('dossiq', 'Decision support')],
+	]
+	return [
 		{ key: 'heading-features', label: t('dossiq', 'Features'), type: 'heading', advanced: true, visibleWhen: on },
-		...features.map(([key, label]) => ({ key, label, type: 'switch', advanced: true, visibleWhen: on })),
+		...features.map(([key, label]) => advancedSwitch({ key, label }, on)),
+	]
+}
+
+/**
+ * A switch among the advanced AI settings, shown while AI is on.
+ *
+ * @param {{key: string, label: string}} setting The setting and its label.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {object} The field.
+ */
+function advancedSwitch(setting, on) {
+	return { key: setting.key, label: setting.label, type: 'switch', advanced: true, visibleWhen: on }
+}
+
+/**
+ * Privacy and compliance: stripping personal data, the DPIA acknowledgement
+ * and the warning while it is missing.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiPrivacyFields(t, on) {
+	return [
 		{ key: 'heading-privacy', label: t('dossiq', 'Privacy and compliance'), type: 'heading', advanced: true, visibleWhen: on },
-		{
-			key: 'ai_pii_stripping',
-			label: t('dossiq', 'Strip PII (BSN, financial data) from AI prompts'),
-			type: 'switch',
-			advanced: true,
-			visibleWhen: on,
-		},
-		{
-			key: 'ai_dpia_acknowledged',
-			label: t('dossiq', 'DPIA (Data Protection Impact Assessment) has been completed'),
-			type: 'switch',
-			advanced: true,
-			visibleWhen: on,
-		},
-		{
-			key: 'dpia-warning',
-			type: 'status',
-			tone: 'warning',
-			text: t(
-				'dossiq',
-				'A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.',
-			),
-			visibleWhen: [on, { key: 'ai_dpia_acknowledged', equals: false }],
-		},
+		advancedSwitch(
+			{ key: 'ai_pii_stripping', label: t('dossiq', 'Strip PII (BSN, financial data) from AI prompts') },
+			on,
+		),
+		advancedSwitch(
+			{ key: 'ai_dpia_acknowledged', label: t('dossiq', 'DPIA (Data Protection Impact Assessment) has been completed') },
+			on,
+		),
+		aiDpiaWarningField(t, [on, { key: 'ai_dpia_acknowledged', equals: false }]),
+	]
+}
+
+/**
+ * The warning that a DPIA is required before AI meets personal data.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {Array<object>} visibleWhen While AI is on and the DPIA is not acknowledged.
+ * @return {object} The field.
+ */
+function aiDpiaWarningField(t, visibleWhen) {
+	return {
+		key: 'dpia-warning',
+		type: 'status',
+		tone: 'warning',
+		text: t(
+			'dossiq',
+			'A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.',
+		),
+		visibleWhen,
+	}
+}
+
+/**
+ * The heading and the button that tests the connection to the model.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiConnectionTestFields(t, on) {
+	return [
 		{ key: 'heading-test', label: t('dossiq', 'Connection test'), type: 'heading', visibleWhen: on },
 		{
 			key: 'test-connection',
@@ -706,10 +965,6 @@ export function aiFields(t) {
 			visibleWhen: on,
 		},
 	]
-	// The card lays its fields out in two columns, model address beside model
-	// name as board DqBeheerinstellingen draws them; a switch or a choice
-	// keeps a row of its own.
-	return fields.map((field) => (field.type === 'switch' || field.type === 'radio' ? { ...field, wide: true } : field))
 }
 
 /**
@@ -727,33 +982,53 @@ export function workDigestFields(t) {
 			type: 'switch',
 			default: true,
 		},
-		{
-			key: 'hour',
-			label: t('dossiq', 'Hour of the day'),
-			type: 'select',
-			options: Array.from({ length: 24 }, (_, hour) => ({
-				value: hour,
-				label: t('dossiq', '{hour}:00', { hour: String(hour).padStart(2, '0') }),
-			})),
-			default: 8,
-			visibleWhen: { key: 'enabled', equals: true },
-		},
-		{
-			key: 'source',
-			type: 'status',
-			textMap: {
-				'user-override': t('dossiq', 'You set this.'),
-				'group-default': t('dossiq', 'Your team set this. You can decide for yourself.'),
-				'schema-default': t('dossiq', 'Nobody has changed this, so it is on the setting it ships with.'),
-				'*': t('dossiq', 'This instance keeps the setting here rather than with your other notifications.'),
-			},
-		},
+		digestHourField(t),
+		digestSourceField(t),
 		{
 			key: 'nothing-waiting',
 			type: 'status',
 			text: t('dossiq', 'A day with nothing waiting sends nothing.'),
 		},
 	]
+}
+
+/**
+ * The hour of the day the digest goes out, shown while it is on.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function digestHourField(t) {
+	return {
+		key: 'hour',
+		label: t('dossiq', 'Hour of the day'),
+		type: 'select',
+		options: Array.from({ length: 24 }, (_, hour) => ({
+			value: hour,
+			label: t('dossiq', '{hour}:00', { hour: String(hour).padStart(2, '0') }),
+		})),
+		default: 8,
+		visibleWhen: { key: 'enabled', equals: true },
+	}
+}
+
+/**
+ * Who decided the digest setting: the person, their team, or nobody yet.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function digestSourceField(t) {
+	return {
+		key: 'source',
+		type: 'status',
+		textMap: {
+			'user-override': t('dossiq', 'You set this.'),
+			'group-default': t('dossiq', 'Your team set this. You can decide for yourself.'),
+			'schema-default': t('dossiq', 'Nobody has changed this, so it is on the setting it ships with.'),
+			'*': t('dossiq', 'This instance keeps the setting here rather than with your other notifications.'),
+		},
+	}
 }
 
 /**

@@ -194,46 +194,65 @@ class MandaatMatrixController extends Controller {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	private function resolveApplicantIdentity(string $caseId): array {
-		$objectService = $this->settings->getObjectService();
-		if ($objectService === null) {
+		$case = $this->initiatingCase(caseId: $caseId);
+		$applicantBsn = (string)($case['initiatorSourceId'] ?? '');
+		if ((string)($case['initiatorType'] ?? '') !== 'person' || $applicantBsn === '') {
 			return [];
 		}
 
-		$register = $this->settings->getConfigValue('register');
-		$caseSchema = $this->settings->getConfigValue('case_schema');
-		if (empty($register) === true || empty($caseSchema) === true) {
+		return ['applicantBsn' => $applicantBsn];
+	}//end resolveApplicantIdentity()
+
+	/**
+	 * The case object, or an empty array when it cannot be resolved.
+	 *
+	 * A failing lookup is logged and answered with an empty array, as is a
+	 * missing object service, register or case schema.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function initiatingCase(string $caseId): array {
+		$where = $this->caseLocation();
+		if ($where === null) {
 			return [];
 		}
 
 		try {
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
+			return $this->findObjectAsArray(
+				objectService: $where['objectService'],
+				register: $where['register'],
+				schema: $where['schema'],
 				id: $caseId
-			);
+			) ?? [];
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq MandaatMatrixController: could not resolve applicant identity: ' . $e->getMessage()
 			);
 			return [];
 		}
+	}//end initiatingCase()
 
-		if ($case === null) {
-			return [];
+	/**
+	 * Where case objects live, or null when the app is not configured for them.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function caseLocation(): ?array {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue('register');
+		$caseSchema = $this->settings->getConfigValue('case_schema');
+		if ($objectService === null || empty($register) === true || empty($caseSchema) === true) {
+			return null;
 		}
 
-		if ((string)($case['initiatorType'] ?? '') !== 'person') {
-			return [];
-		}
-
-		$applicantBsn = (string)($case['initiatorSourceId'] ?? '');
-		if ($applicantBsn === '') {
-			return [];
-		}
-
-		return ['applicantBsn' => $applicantBsn];
-	}//end resolveApplicantIdentity()
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $caseSchema];
+	}//end caseLocation()
 
 	/**
 	 * Import a CSV of mandaten under a new MandateringsBesluit.

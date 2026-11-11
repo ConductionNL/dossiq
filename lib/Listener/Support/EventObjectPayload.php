@@ -55,6 +55,34 @@ final class EventObjectPayload {
 	}//end of()
 
 	/**
+	 * The payload of the first of the event's getters that answers one.
+	 *
+	 * A getter the event does not have is skipped, and so is one whose value
+	 * is neither an array nor a serialisable entity that serialises to one.
+	 *
+	 * @param Event         $event   The dispatched event.
+	 * @param array<string> $methods The getters to try, in order.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 */
+	public static function firstOf(Event $event, array $methods): ?array {
+		foreach ($methods as $method) {
+			if (method_exists($event, $method) === false) {
+				continue;
+			}
+
+			$payload = self::fromValue(object: $event->{$method}());
+			if ($payload !== null) {
+				return $payload;
+			}
+		}
+
+		return null;
+	}//end firstOf()
+
+	/**
 	 * An array as it is, or what a serialisable entity serialises to when that is an array.
 	 *
 	 * @param mixed $object The event's object.

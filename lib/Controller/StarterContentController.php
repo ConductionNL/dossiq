@@ -148,52 +148,98 @@ class StarterContentController extends Controller {
 			return new JSONResponse(['error' => 'Unknown schema'], Http::STATUS_NOT_FOUND);
 		}
 
-		$set = (string)$this->request->getParam('set', '');
+		$adoption = $this->adoptionOf(schema: $schema, id: $id);
+		return $this->answered(run: fn (): JSONResponse => $this->adopt(adoption: $adoption));
+	}//end adoptShipped()
+
+	/**
+	 * The adoption the request asks for.
+	 *
+	 * Two named acts rather than a flag, because what they do differs by
+	 * whether an administrator's own work survives. The caller opts into
+	 * the destructive one by name.
+	 *
+	 * @param string $schema The reported schema.
+	 * @param string $id     The object to adopt onto.
+	 *
+	 * @return ShippedAdoption
+	 */
+	private function adoptionOf(string $schema, string $id): ShippedAdoption {
+		$adoption = new ShippedAdoption();
+		$adoption->schema = $schema;
+		$adoption->objectsKey = self::REPORTABLE[$schema];
+		$adoption->id = $id;
+		$adoption->set = (string)$this->request->getParam('set', '');
 		$newShipped = $this->request->getParam('object', []);
-		if (is_array($newShipped) === false) {
-			$newShipped = [];
+		if (is_array($newShipped) === true) {
+			$adoption->newShipped = $newShipped;
 		}
 
-		// Two named acts rather than a flag, because what they do differs by
-		// whether an administrator's own work survives. The caller opts into
-		// the destructive one by name.
-		$overLocalChange = ($this->request->getParam('acceptLocalChangeLoss', false) === true);
+		$adoption->overLocalChange = ($this->request->getParam('acceptLocalChangeLoss', false) === true);
+		return $adoption;
+	}//end adoptionOf()
 
-		return $this->answered(
-			run: function () use ($schema, $objectsKey, $id, $set, $newShipped, $overLocalChange): JSONResponse {
-				// The safe act is the default, so a caller that says nothing
-				// gets the one that refuses rather than the one that
-				// overwrites.
-				$result = $this->shipped->adopt(
-					targetSchema: $schema,
-					objectsKey: $objectsKey,
-					targetObject: $id,
-					set: $set,
-					newShipped: $newShipped,
-				);
-
-				if ($overLocalChange === true) {
-					$result = $this->shipped->adoptOverLocalChange(
-						targetSchema: $schema,
-						objectsKey: $objectsKey,
-						targetObject: $id,
-						set: $set,
-						newShipped: $newShipped,
-					);
-				}
-
-				$status = Http::STATUS_OK;
-				if ($result['adopted'] === false) {
-					$status = Http::STATUS_CONFLICT;
-					if ($result['reason'] === 'not_found') {
-						$status = Http::STATUS_NOT_FOUND;
-					}
-				}
-
-				return new JSONResponse($result, $status);
-			}
+	/**
+	 * Adopt the shipped object, and over a local change when that loss was accepted.
+	 *
+	 * The safe act is the default, so a caller that says nothing gets the one
+	 * that refuses rather than the one that overwrites.
+	 *
+	 * @param ShippedAdoption $adoption The adoption.
+	 *
+	 * @return JSONResponse 200, 409 for a refusal, 404 for an object that is not there.
+	 */
+	private function adopt(ShippedAdoption $adoption): JSONResponse {
+		$result = $this->shipped->adopt(
+			targetSchema: $adoption->schema,
+			objectsKey: $adoption->objectsKey,
+			targetObject: $adoption->id,
+			set: $adoption->set,
+			newShipped: $adoption->newShipped,
 		);
-	}//end adoptShipped()
+
+		if ($adoption->overLocalChange === true) {
+			$result = $this->adoptOverLocalChange(adoption: $adoption);
+		}
+
+		return new JSONResponse($result, $this->adoptStatus(result: $result));
+	}//end adopt()
+
+	/**
+	 * Adopt the shipped object over a local change.
+	 *
+	 * @param ShippedAdoption $adoption The adoption.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function adoptOverLocalChange(ShippedAdoption $adoption): array {
+		return $this->shipped->adoptOverLocalChange(
+			targetSchema: $adoption->schema,
+			objectsKey: $adoption->objectsKey,
+			targetObject: $adoption->id,
+			set: $adoption->set,
+			newShipped: $adoption->newShipped,
+		);
+	}//end adoptOverLocalChange()
+
+	/**
+	 * The status an adoption answers with.
+	 *
+	 * @param array<string, mixed> $result The adoption's outcome.
+	 *
+	 * @return int
+	 */
+	private function adoptStatus(array $result): int {
+		if ($result['adopted'] !== false) {
+			return Http::STATUS_OK;
+		}
+
+		if ($result['reason'] === 'not_found') {
+			return Http::STATUS_NOT_FOUND;
+		}
+
+		return Http::STATUS_CONFLICT;
+	}//end adoptStatus()
 
 	/**
 	 * Stop a case type taking new cases.

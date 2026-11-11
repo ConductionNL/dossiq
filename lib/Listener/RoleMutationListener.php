@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\SerialisedObject;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -137,33 +138,6 @@ class RoleMutationListener implements IEventListener {
 	 * @return array<string, mixed>|null
 	 */
 	private function extractObject(Event $event): ?array {
-		foreach (['getObject', 'getNewObject', 'getOldObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$value = $event->{$method}();
-			if (is_array($value) === true) {
-				return $value;
-			}
-
-			if (is_object($value) === true) {
-				if (method_exists($value, 'jsonSerialize') === true) {
-					$serialised = $value->jsonSerialize();
-					if (is_array($serialised) === true) {
-						return $serialised;
-					}
-				}
-
-				if (method_exists($value, 'toArray') === true) {
-					$arr = $value->toArray();
-					if (is_array($arr) === true) {
-						return $arr;
-					}
-				}
-			}
-		}//end foreach
-
-		return null;
+		return SerialisedObject::fromEvent(event: $event, methods: ['getObject', 'getNewObject', 'getOldObject']);
 	}//end extractObject()
 }//end class

@@ -90,34 +90,77 @@ class WooDeliveredSetGuard implements IEventListener {
 		}
 
 		[$old, $new] = $this->objectsOf(event: $event);
-		$current = ($old ?? $new);
-		if ($current === null) {
-			return;
-		}
-
-		$deliveredAt = null;
-		if ($this->isSchema(object: $current, configKey: WooDeliveredSetWriter::CONFIG_KEY, slug: WooDeliveredSetWriter::SCHEMA_SLUG) === true) {
-			$deliveredAt = $this->frozenSetRefusal(old: ($old ?? []), new: $new);
-		} else if ($this->isSchema(object: $current, configKey: 'woo_assessment_schema', slug: self::ASSESSMENT_SLUG) === true) {
-			$deliveredAt = $this->deliveredAssessmentRefusal(assessment: $current);
-		}
-
+		$deliveredAt = $this->deliveredAt(old: $old, new: $new);
 		if ($deliveredAt === null) {
 			return;
 		}
 
-		$sentence = $this->l10n->t(
-			'This was delivered for publication on %1$s, so it cannot be changed. Publish again to deliver a new set.',
-			[substr($deliveredAt, 0, 10)]
-		);
-		if ($deliveredAt === '') {
-			$sentence = $this->l10n->t('Whether this was delivered for publication could not be checked, so it cannot be changed now. Try again later.');
-		}
-
-		$event->setErrors(['error' => 'woo-delivered-set-frozen', 'message' => $sentence]);
+		$event->setErrors(['error' => 'woo-delivered-set-frozen', 'message' => $this->refusalSentence(deliveredAt: $deliveredAt)]);
 		$event->stopPropagation();
 		$this->logger->info('Dossiq: refused a write to a delivered Woo set or its assessments (REQ-WDS-002)');
 	}//end handle()
+
+	/**
+	 * When the delivered set this write touches was delivered, or null when the write may go ahead.
+	 *
+	 * An empty string means the delivery could not be checked.
+	 *
+	 * @param array<string, mixed>|null $old The stored object.
+	 * @param array<string, mixed>|null $new The object as the write leaves it.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function deliveredAt(?array $old, ?array $new): ?string {
+		$current = ($old ?? $new);
+		if ($current === null) {
+			return null;
+		}
+
+		if ($this->isSchema(object: $current, configKey: WooDeliveredSetWriter::CONFIG_KEY, slug: WooDeliveredSetWriter::SCHEMA_SLUG) === true) {
+			return $this->frozenSetRefusal(old: ($old ?? []), new: $new);
+		}
+
+		return $this->assessmentDeliveredAt(object: $current);
+	}//end deliveredAt()
+
+	/**
+	 * When the delivered set an assessment belongs to was delivered, or null for anything that is not an assessment.
+	 *
+	 * @param array<string, mixed> $object The object written.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function assessmentDeliveredAt(array $object): ?string {
+		if ($this->isSchema(object: $object, configKey: 'woo_assessment_schema', slug: self::ASSESSMENT_SLUG) === false) {
+			return null;
+		}
+
+		return $this->deliveredAssessmentRefusal(assessment: $object);
+	}//end assessmentDeliveredAt()
+
+	/**
+	 * The sentence a refused write reads: delivered on a day, or the delivery could not be checked.
+	 *
+	 * @param string $deliveredAt When the set was delivered; empty when that could not be checked.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function refusalSentence(string $deliveredAt): string {
+		if ($deliveredAt === '') {
+			return $this->l10n->t('Whether this was delivered for publication could not be checked, so it cannot be changed now. Try again later.');
+		}
+
+		return $this->l10n->t(
+			'This was delivered for publication on %1$s, so it cannot be changed. Publish again to deliver a new set.',
+			[substr($deliveredAt, 0, 10)]
+		);
+	}//end refusalSentence()
 
 	/**
 	 * The stored object and, for an update, the new one.

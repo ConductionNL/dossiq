@@ -34,6 +34,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -181,10 +182,7 @@ class DeelzaakController extends Controller {
 			);
 		}
 
-		// Without this the endpoint is an existence-and-type oracle over every
-		// case on the instance: it answers whether an arbitrary parent uuid
-		// exists and whether a given child type may hang off it.
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $parent, user: $user) === false) {
+		if ($this->mayReadParent(parent: $parent, user: $user) === false) {
 			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -193,11 +191,7 @@ class DeelzaakController extends Controller {
 			childCaseTypeId: $child,
 		);
 
-		if ($result['ok'] === false) {
-			return new JSONResponse($result, Http::STATUS_CONFLICT);
-		}
-
-		return new JSONResponse($result);
+		return $this->answered(result: $result, okStatus: Http::STATUS_OK);
 	}//end validate()
 
 	/**
@@ -233,7 +227,7 @@ class DeelzaakController extends Controller {
 			);
 		}
 
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $parent, user: $user) === false) {
+		if ($this->mayReadParent(parent: $parent, user: $user) === false) {
 			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -243,12 +237,45 @@ class DeelzaakController extends Controller {
 			childData: $object,
 		);
 
+		return $this->answered(result: $result, okStatus: Http::STATUS_CREATED);
+	}//end create()
+
+	/**
+	 * Whether the caller may read the parent a sub-case would hang off.
+	 *
+	 * Without this check `validate` is an existence-and-type oracle over every
+	 * case on the instance: it answers whether an arbitrary parent uuid exists
+	 * and whether a given child type may hang off it. `create` would also copy
+	 * that parent's confidentiality and handler onto the new case.
+	 *
+	 * @param string $parent The parent case uuid.
+	 * @param IUser  $user   The caller.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	private function mayReadParent(string $parent, IUser $user): bool {
+		return $this->caseAccessGuard->hasCaseReadAccess(caseId: $parent, user: $user) === true;
+	}//end mayReadParent()
+
+	/**
+	 * The answer for the service's outcome: 409 for a refusal, $okStatus otherwise.
+	 *
+	 * @param array<string, mixed> $result   The service's outcome.
+	 * @param int                  $okStatus The status of a success.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	private function answered(array $result, int $okStatus): JSONResponse {
 		if ($result['ok'] === false) {
 			return new JSONResponse($result, Http::STATUS_CONFLICT);
 		}
 
-		return new JSONResponse($result, Http::STATUS_CREATED);
-	}//end create()
+		return new JSONResponse($result, $okStatus);
+	}//end answered()
 
 	/**
 	 * Unlink every sub-case from the given parent.

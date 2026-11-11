@@ -24,6 +24,7 @@ use OCA\Dossiq\Listener\PagesSeenGuard;
 use OCA\Dossiq\Listener\StoppingRuleGuard;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
+use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -49,7 +50,7 @@ class ReviewListenerRegistrar {
 			$context->registerEventListener(event: $event, listener: PagesSeenGuard::class);
 		}
 
-		foreach ([ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
+		foreach ([ObjectUpdatingEvent::class, ObjectDeletingEvent::class, ObjectLeavingEvent::class] as $event) {
 			$context->registerEventListener(event: $event, listener: StoppingRuleGuard::class);
 		}
 	}//end register()

@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Service\Support\FilledValue;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
@@ -308,20 +309,14 @@ class CaseCompleteness {
 	 * @param mixed $value The value.
 	 *
 	 * @return bool
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) FilledValue is the one stateless filled-in check shared with derived status.
 	 */
 	private function isAnswered(mixed $value): bool {
 		if ($value === null) {
 			return false;
 		}
 
-		if (is_string($value) === true) {
-			return trim($value) !== '';
-		}
-
-		if (is_array($value) === true) {
-			return $value !== [];
-		}
-
-		return true;
+		return FilledValue::isFilled(value: $value);
 	}//end isAnswered()
 }//end class

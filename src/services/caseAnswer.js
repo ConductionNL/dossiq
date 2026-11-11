@@ -20,15 +20,47 @@
  * @return {string} The text, or ''.
  */
 export function caseAnswerText(answers, options = {}) {
-	const name = options && typeof options.name === 'string' ? options.name : ''
+	const name = optionName(options)
 	if (name === '' || !Array.isArray(answers)) {
 		return ''
 	}
-	const entry = answers.find((answer) => answer && answer.name === name)
-	const value = entry && typeof entry.value === 'string' ? entry.value : ''
+	const value = answerValue(answers, name)
 	if (!value.startsWith('[')) {
 		return value
 	}
+	return listText(value)
+}
+
+/**
+ * The field name a column's options name.
+ *
+ * @param {{name?: string}|null} options The column's `formatterOptions`.
+ * @return {string} The name, or ''.
+ */
+function optionName(options) {
+	return options && typeof options.name === 'string' ? options.name : ''
+}
+
+/**
+ * The text value of the first answer under a name.
+ *
+ * @param {Array<object>} answers The case's `properties`.
+ * @param {string} name The field name.
+ * @return {string} The value, or '' when there is no text answer.
+ */
+function answerValue(answers, name) {
+	const entry = answers.find((answer) => answer && answer.name === name)
+	return entry && typeof entry.value === 'string' ? entry.value : ''
+}
+
+/**
+ * A JSON-encoded list as one line: words joined, records as nothing, and
+ * text that is not JSON as itself.
+ *
+ * @param {string} value The encoded list.
+ * @return {string} The text.
+ */
+function listText(value) {
 	let list
 	try {
 		list = JSON.parse(value)

@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\CaseAttentionMarkerService;
 use OCA\Dossiq\Service\CaseRiskAssessmentService;
@@ -52,7 +53,6 @@ use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Derive the risk mirror and the marker set of a case about to be written.
@@ -89,14 +89,7 @@ class CaseMarkerDerivationListener implements IEventListener {
 	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->apply(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->apply(event: $event, entity: $event->getNewObject());
-		}
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->apply(...));
 	}//end handle()
 
 	/**
@@ -142,14 +135,7 @@ class CaseMarkerDerivationListener implements IEventListener {
 	 * @return array<string, mixed>|null The payload, or null.
 	 */
 	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: marker derivation could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
+		return (new PreSaveCheck(logger: $this->logger))->read(entity: $entity, check: 'marker derivation');
 	}//end payload()
 
 	/**

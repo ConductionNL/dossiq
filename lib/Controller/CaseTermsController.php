@@ -300,29 +300,38 @@ class CaseTermsController extends Controller {
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'read the requests on this case', e: $e);
 		} catch (Throwable $e) {
-			$this->logger->warning('CaseTerms aanvullingsverzoeken failed: ' . $e->getMessage());
-
-			return new JSONResponse(
-				['message' => 'The requests could not be read.', 'error' => 'aanvullingsverzoeken-unreadable'],
-				Http::STATUS_BAD_REQUEST
-			);
+			return $this->unreadableRequests(exception: $e);
 		}//end try
 
-		$rows = [];
-		$open = 0;
-		foreach ($requests as $one) {
-			$isOpen = ((string)($one['state'] ?? '') === 'open');
-			if ($isOpen === true) {
-				$open++;
-			}
+		return $this->requestsAnswer(caseId: $caseId, rows: $this->withDaysOpen(requests: $requests));
+	}//end aanvullingsverzoeken()
 
-			$days = 0;
-			if ($isOpen === true) {
-				$days = $this->aanvullingen->daysOpen(request: $one);
-			}
+	/**
+	 * The logged 400 for a list of requests that could not be read.
+	 *
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function unreadableRequests(Throwable $exception): JSONResponse {
+		$this->logger->warning('CaseTerms aanvullingsverzoeken failed: ' . $exception->getMessage());
 
-			$rows[] = array_merge($one, ['daysOpen' => $days]);
-		}
+		return new JSONResponse(
+			['message' => 'The requests could not be read.', 'error' => 'aanvullingsverzoeken-unreadable'],
+			Http::STATUS_BAD_REQUEST
+		);
+	}//end unreadableRequests()
+
+	/**
+	 * The case's requests, how many are open, and whether the case waits on one.
+	 *
+	 * @param string                           $caseId The case.
+	 * @param array<int, array<string, mixed>> $rows   The requests with their waiting days.
+	 *
+	 * @return JSONResponse
+	 */
+	private function requestsAnswer(string $caseId, array $rows): JSONResponse {
+		$open = count(array_filter($rows, static fn (array $row): bool => ((string)($row['state'] ?? '') === 'open')));
 
 		return new JSONResponse([
 			'caseId' => $caseId,
@@ -330,7 +339,28 @@ class CaseTermsController extends Controller {
 			'open' => $open,
 			'requests' => $rows,
 		]);
-	}//end aanvullingsverzoeken()
+	}//end requestsAnswer()
+
+	/**
+	 * Each request with how many days it has waited; a request that is not open has waited none.
+	 *
+	 * @param array<int, array<string, mixed>> $requests The case's requests.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function withDaysOpen(array $requests): array {
+		$rows = [];
+		foreach ($requests as $one) {
+			$days = 0;
+			if ((string)($one['state'] ?? '') === 'open') {
+				$days = $this->aanvullingen->daysOpen(request: $one);
+			}
+
+			$rows[] = array_merge($one, ['daysOpen' => $days]);
+		}
+
+		return $rows;
+	}//end withDaysOpen()
 
 	/**
 	 * How old the open workload is right now, per status.

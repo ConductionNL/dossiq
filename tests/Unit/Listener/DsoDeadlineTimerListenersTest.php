@@ -42,6 +42,8 @@ use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Service\Flow\Timer\EscalationNotice;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -112,7 +114,7 @@ class DsoDeadlineTimerListenersTest extends TestCase {
 		$timer->setAppId('dossiq');
 		$timer->setMetadata(['source' => DsoDeadlineTimer::METADATA_SOURCE, 'caseId' => 'case-1']);
 
-		return new FlowTimerFiredEvent(timer: $timer, kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:'.$rungKey, rungKey: $rungKey, recipients: [], priority: null, message: $message);
+		return new FlowTimerFiredEvent(timer: $timer, firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:'.$rungKey, rungKey: $rungKey), notice: new EscalationNotice(message: $message));
 	}//end fire()
 
 	/**

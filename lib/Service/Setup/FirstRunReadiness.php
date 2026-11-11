@@ -85,21 +85,7 @@ class FirstRunReadiness {
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
 	public function declared(): array {
-		$path = __DIR__ . '/../../Settings/first_run_readiness.json';
-		if (is_file($path) === false) {
-			return [];
-		}
-
-		$raw = file_get_contents($path);
-		if ($raw === false) {
-			return [];
-		}
-
-		$parsed = json_decode($raw, true);
-		if (is_array($parsed) === false) {
-			return [];
-		}
-
+		$parsed = self::readJsonFile(path: __DIR__ . '/../../Settings/first_run_readiness.json');
 		$items = ($parsed['items'] ?? []);
 		if (is_array($items) === false) {
 			return [];
@@ -161,40 +147,74 @@ class FirstRunReadiness {
 		$broken = [];
 
 		foreach (($manifest['walkthrough']['tours'] ?? []) as $tour) {
-			foreach (($tour['steps'] ?? []) as $step) {
-				$target = ($step['target'] ?? []);
-				$kind = (string)($target['kind'] ?? '');
-				// A `selector` target carries no ref, so the report would name
-				// nothing at all for it.
-				$ref = (string)($target['ref'] ?? $target['selector'] ?? '');
-
-				if (in_array($kind, ['page', 'nav-item'], true) === false) {
-					$broken[] = [
-						'tour' => (string)($tour['id'] ?? ''),
-						'step' => (string)($step['id'] ?? ''),
-						'surface' => $ref,
-						'kind' => $kind,
-						'state' => 'unverifiable',
-					];
-					continue;
-				}
-
-				if (in_array($ref, $surfaces, true) === true) {
-					continue;
-				}
-
-				$broken[] = [
-					'tour' => (string)($tour['id'] ?? ''),
-					'step' => (string)($step['id'] ?? ''),
-					'surface' => $ref,
-					'kind' => $kind,
-					'state' => 'missing',
-				];
-			}
+			$broken = array_merge($broken, self::brokenStepsOf(tour: $tour, surfaces: $surfaces));
 		}
 
 		return $broken;
 	}//end brokenTourSteps()
+
+	/**
+	 * The steps of one tour that name a missing surface, or one that cannot be judged here.
+	 *
+	 * @param mixed              $tour     The tour, as the manifest holds it.
+	 * @param array<int, string> $surfaces Every surface a step could name.
+	 *
+	 * @return array<int, array<string, mixed>> The broken and unverifiable steps, in step order.
+	 */
+	private static function brokenStepsOf(mixed $tour, array $surfaces): array {
+		$broken = [];
+		foreach (($tour['steps'] ?? []) as $step) {
+			$row = self::stepRow(tour: $tour, step: $step);
+			$state = self::stateOf(row: $row, surfaces: $surfaces);
+			if ($state !== null) {
+				$row['state'] = $state;
+				$broken[] = $row;
+			}
+		}
+
+		return $broken;
+	}//end brokenStepsOf()
+
+	/**
+	 * A step as the report names it: its tour, its id, the surface it targets and the target's kind.
+	 *
+	 * @param mixed $tour The tour, as the manifest holds it.
+	 * @param mixed $step The step, as the manifest holds it.
+	 *
+	 * @return array{tour: string, step: string, surface: string, kind: string} The row.
+	 */
+	private static function stepRow(mixed $tour, mixed $step): array {
+		$target = ($step['target'] ?? []);
+
+		return [
+			'tour' => (string)($tour['id'] ?? ''),
+			'step' => (string)($step['id'] ?? ''),
+			// A `selector` target carries no ref, so the report would name
+			// nothing at all for it.
+			'surface' => (string)($target['ref'] ?? $target['selector'] ?? ''),
+			'kind' => (string)($target['kind'] ?? ''),
+		];
+	}//end stepRow()
+
+	/**
+	 * Whether a step is unverifiable here, names a missing surface, or is fine (null).
+	 *
+	 * @param array{tour: string, step: string, surface: string, kind: string} $row      The step.
+	 * @param array<int, string>                                               $surfaces Every surface a step could name.
+	 *
+	 * @return string|null `unverifiable`, `missing`, or null.
+	 */
+	private static function stateOf(array $row, array $surfaces): ?string {
+		if (in_array($row['kind'], ['page', 'nav-item'], true) === false) {
+			return 'unverifiable';
+		}
+
+		if (in_array($row['surface'], $surfaces, true) === true) {
+			return null;
+		}
+
+		return 'missing';
+	}//end stateOf()
 
 	/**
 	 * Every surface a tour step could name: the pages and the menu entries.
@@ -229,7 +249,17 @@ class FirstRunReadiness {
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
 	private function manifest(): array {
-		$path = __DIR__ . '/../../../src/manifest.json';
+		return self::readJsonFile(path: __DIR__ . '/../../../src/manifest.json');
+	}//end manifest()
+
+	/**
+	 * A shipped JSON file, decoded.
+	 *
+	 * @param string $path The file.
+	 *
+	 * @return array<string, mixed> Its content, empty when it is missing, unreadable or not an object.
+	 */
+	private static function readJsonFile(string $path): array {
 		if (is_file($path) === false) {
 			return [];
 		}
@@ -245,7 +275,7 @@ class FirstRunReadiness {
 		}
 
 		return $parsed;
-	}//end manifest()
+	}//end readJsonFile()
 
 	/**
 	 * Read one item, turning any failure into "not done" and a sentence.

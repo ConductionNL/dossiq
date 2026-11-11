@@ -63,39 +63,10 @@ class CaseRelationDetails {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function describe(array $rows, callable $canRead): array {
-		$caseTypeTitles = [];
+		$run = new RelationDetailsRun(canRead: $canRead);
 		foreach ($rows as $index => $row) {
-			$rows[$index]['group'] = $this->groupOf(row: $row);
-			$caseId = (string)($row['caseId'] ?? '');
-			if ($caseId === '' || $canRead($caseId) !== true) {
-				continue;
-			}
-
-			$case = $this->store->fetchCase(caseUuid: $caseId);
-			if ($case === null) {
-				continue;
-			}
-
-			$caseTypeId = (string)($case['caseType'] ?? '');
-			if ($caseTypeId !== '' && array_key_exists($caseTypeId, $caseTypeTitles) === false) {
-				$caseType = $this->store->fetchCaseType(caseTypeUuid: $caseTypeId);
-				$caseTypeTitles[$caseTypeId] = trim((string)($caseType['title'] ?? ''));
-			}
-
-			$assignee = (string)($case['assignee'] ?? '');
-			$rows[$index] = array_merge(
-				$rows[$index],
-				[
-					'identifier'    => (string)($case['identifier'] ?? ''),
-					'caseTypeTitle' => $caseTypeTitles[$caseTypeId] ?? '',
-					'statusLabel'   => (string)($case['statusPublicLabel'] ?? ''),
-					'statusRole'    => (string)($case['statusRole'] ?? ''),
-					'endDate'       => (string)($case['endDate'] ?? ''),
-					'assignee'      => $assignee,
-					'assigneeName'  => $this->nameOf(uid: $assignee),
-				]
-			);
-		}//end foreach
+			$rows[$index] = $this->describeRow(run: $run, row: $row);
+		}
 
 		// A related case without a readable title cannot be named in a list,
 		// so it is left out, as the related card always left it out.
@@ -106,6 +77,69 @@ class CaseRelationDetails {
 			)
 		);
 	}//end describe()
+
+	/**
+	 * One relation row with its group, and with the related case's details when the reader may open it.
+	 *
+	 * @param RelationDetailsRun   $run The description pass.
+	 * @param array<string, mixed> $row The relation row.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function describeRow(RelationDetailsRun $run, array $row): array {
+		$row['group'] = $this->groupOf(row: $row);
+		$caseId = (string)($row['caseId'] ?? '');
+		if ($caseId === '' || ($run->canRead)($caseId) !== true) {
+			return $row;
+		}
+
+		$related = $this->store->fetchCase(caseUuid: $caseId);
+		if ($related === null) {
+			return $row;
+		}
+
+		return array_merge($row, $this->detailsOf(run: $run, related: $related));
+	}//end describeRow()
+
+	/**
+	 * The details a readable related case shows in the list.
+	 *
+	 * @param RelationDetailsRun   $run     The description pass.
+	 * @param array<string, mixed> $related The related case.
+	 *
+	 * @return array<string, string> The details.
+	 */
+	private function detailsOf(RelationDetailsRun $run, array $related): array {
+		$caseTypeTitle = $this->caseTypeTitle(run: $run, caseTypeId: (string)($related['caseType'] ?? ''));
+		$assignee = (string)($related['assignee'] ?? '');
+
+		return [
+			'identifier'    => (string)($related['identifier'] ?? ''),
+			'caseTypeTitle' => $caseTypeTitle,
+			'statusLabel'   => (string)($related['statusPublicLabel'] ?? ''),
+			'statusRole'    => (string)($related['statusRole'] ?? ''),
+			'endDate'       => (string)($related['endDate'] ?? ''),
+			'assignee'      => $assignee,
+			'assigneeName'  => $this->nameOf(uid: $assignee),
+		];
+	}//end detailsOf()
+
+	/**
+	 * A case type's title, read once per pass.
+	 *
+	 * @param RelationDetailsRun $run        The description pass.
+	 * @param string             $caseTypeId The case type id; an empty id has no title.
+	 *
+	 * @return string The title.
+	 */
+	private function caseTypeTitle(RelationDetailsRun $run, string $caseTypeId): string {
+		if ($caseTypeId !== '' && array_key_exists($caseTypeId, $run->caseTypeTitles) === false) {
+			$caseType = $this->store->fetchCaseType(caseTypeUuid: $caseTypeId);
+			$run->caseTypeTitles[$caseTypeId] = trim((string)($caseType['title'] ?? ''));
+		}
+
+		return $run->caseTypeTitles[$caseTypeId] ?? '';
+	}//end caseTypeTitle()
 
 	/**
 	 * The planned follow-ups of a case as rows of the same list, in the

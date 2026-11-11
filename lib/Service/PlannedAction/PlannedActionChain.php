@@ -99,28 +99,13 @@ class PlannedActionChain {
 			return null;
 		}
 
-		$typeIdentifier = (string)($completed['actionType'] ?? '');
-		$type = ($types[$typeIdentifier] ?? null);
-		if ($type === null) {
-			// The type this action was planned as is gone. Planning a successor
-			// would mean guessing what an administrator deleted, so the chain
-			// ends here and the action stays completed.
+		$successorIdentifier = self::successorOf(completed: $completed, types: $types);
+		if ($successorIdentifier === null) {
 			return null;
 		}
 
-		$successorIdentifier = trim((string)($type['successor'] ?? ''));
-		if ($successorIdentifier === '') {
-			return null;
-		}
-
-		$successor = ($types[$successorIdentifier] ?? null);
-		if ($successor === null) {
-			// A successor naming a type that does not exist. The declaration is
-			// broken and the honest answer is no next action, not an action of
-			// an unknown type that no list can label.
-			return null;
-		}
-
+		$type = $types[(string)($completed['actionType'] ?? '')];
+		$successor = $types[$successorIdentifier];
 		$offset = max(0, (int)($type['successorOffsetWorkingDays'] ?? 0));
 
 		return [
@@ -136,6 +121,34 @@ class PlannedActionChain {
 			'plannedByRule' => (string)($completed['plannedByRule'] ?? ''),
 		];
 	}//end next()
+
+	/**
+	 * The type of the action that follows a completed (not cancelled) one, or null when the chain ends.
+	 *
+	 * @param array<string, mixed>                $completed The completed action.
+	 * @param array<string, array<string, mixed>> $types     The action types by identifier.
+	 *
+	 * @return string|null The successor's type identifier.
+	 */
+	private static function successorOf(array $completed, array $types): ?string {
+		$type = ($types[(string)($completed['actionType'] ?? '')] ?? null);
+		if ($type === null) {
+			// The type this action was planned as is gone. Planning a successor
+			// would mean guessing what an administrator deleted, so the chain
+			// ends here and the action stays completed.
+			return null;
+		}
+
+		$successorIdentifier = trim((string)($type['successor'] ?? ''));
+		if ($successorIdentifier === '' || isset($types[$successorIdentifier]) === false) {
+			// No successor, or one naming a type that does not exist. A broken
+			// declaration's honest answer is no next action, not an action of
+			// an unknown type that no list can label.
+			return null;
+		}
+
+		return $successorIdentifier;
+	}//end successorOf()
 
 	/**
 	 * Who owns an action of this type on this case.

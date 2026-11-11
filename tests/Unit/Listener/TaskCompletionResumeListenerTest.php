@@ -4,7 +4,7 @@
  * A completed task resumes its run — and only when it should.
  *
  * WHAT THESE TESTS DO AND DO NOT PROVE. The authorization RULE lives in
- * OpenRegister, inside `FlowRunSignalService::signalAs()` (openregister#3332),
+ * OpenRegister, inside `FlowRunSignalService::answerByUuid()` (openregister#3332),
  * and is tested there, including a mutation check. dossiq's suite resolves
  * OpenRegister to stubs, so re-testing the guard here would test a stub
  * against itself — a second implementation validated by a second fake,
@@ -33,6 +33,7 @@ use OCA\OpenRegister\Db\Task;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Exception\FlowSignalRefused;
 use OCA\OpenRegister\Service\Flow\FlowRunSignalService;
+use OCA\OpenRegister\Service\Flow\RunSignal;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -121,12 +122,12 @@ class TaskCompletionResumeListenerTest extends TestCase {
 			public function __construct(private array &$sink, private ?FlowSignalRefused &$refusal) {
 			}
 
-			public function signalAs(string $runUuid, array $payload, ?string $actorUid, ?string $nodeId = null): FlowRun {
+			public function answerByUuid(string $runUuid, RunSignal $signal): FlowRun {
 				if ($this->refusal !== null) {
 					throw $this->refusal;
 				}
 
-				$this->sink[] = ['run' => $runUuid, 'payload' => $payload, 'actor' => $actorUid, 'node' => $nodeId];
+				$this->sink[] = ['run' => $runUuid, 'payload' => $signal->payload, 'actor' => $signal->actorUid, 'node' => $signal->nodeId];
 
 				$run = new FlowRun();
 				$run->setUuid($runUuid);
