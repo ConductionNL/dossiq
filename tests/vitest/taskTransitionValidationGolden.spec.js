@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { validateTaskTransition } from '../../src/utils/taskValidation.js'
+import { validateTaskCreate, validateTaskTransition, validateTaskUpdate } from '../../src/utils/taskValidation.js'
 
 const STATUSES = ['', 'available', 'active', 'completed', 'terminated', 'disabled', 'onbekend']
 
@@ -21,5 +21,12 @@ describe('validateTaskTransition', () => {
 		}
 		answers['null -> active'] = validateTaskTransition(null, 'active')
 		expect(answers).toMatchSnapshot()
+	})
+	it('answers the create and update forms as before', () => {
+		const forms = [{}, { title: ' ' }, { title: 'Bel terug' }, { title: 'Bel terug', case: 'case-1' }, { case: 'case-1' }]
+		expect({
+			create: forms.map((form) => validateTaskCreate(form)),
+			update: forms.map((form) => validateTaskUpdate(form)),
+		}).toMatchSnapshot()
 	})
 })
