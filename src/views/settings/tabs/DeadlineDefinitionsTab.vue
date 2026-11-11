@@ -164,6 +164,48 @@ import TimerSand from 'vue-material-design-icons/TimerSand.vue'
 import DeadlineDefinitionEditor from '../../../modals/DeadlineDefinitionEditor.vue'
 import { newestTermDefinitions } from '../../../utils/termDefinitions.js'
 
+/**
+ * Today and tomorrow as calendar dates, the two days a new version is dated by.
+ *
+ * @param {Date} now The moment of the save.
+ * @return {{today: string, tomorrow: string}} The dates, `YYYY-MM-DD`.
+ */
+function versionDays(now) {
+	const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+	return { today: now.toISOString().slice(0, 10), tomorrow: tomorrow.toISOString().slice(0, 10) }
+}
+
+/**
+ * The version a save writes: one past the edited definition's, else the first.
+ *
+ * @param {object|null} editing The definition being edited.
+ * @return {number} The version.
+ */
+function nextVersion(editing) {
+	return editing ? Number(editing.version || 1) + 1 : 1
+}
+
+/**
+ * Close the edited version: it is valid until today.
+ *
+ * @param {object} editing The definition being edited.
+ * @param {string} today Today, `YYYY-MM-DD`.
+ * @return {Promise<object>} The response.
+ */
+function closeVersion(editing, today) {
+	return axios.patch(generateUrl('/apps/dossiq/api/deadlines/definitions/' + encodeURIComponent(editing.id)), { validUntil: today })
+}
+
+/**
+ * The sentence for a save that failed: the server's, the error's, or a plain one.
+ *
+ * @param {Error} e The failure.
+ * @return {string} The sentence.
+ */
+function saveRefusal(e) {
+	return e?.response?.data?.message || e.message || t('dossiq', 'Failed to save')
+}
+
 export default {
 	name: 'DeadlineDefinitionsTab',
 	components: {
@@ -402,42 +444,18 @@ export default {
 		 */
 		async onSave(payload) {
 			// Versioning: new version's validFrom=tomorrow, prior validUntil=today.
-			const today = new Date()
-			const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
-			const isoTomorrow = tomorrow.toISOString().slice(0, 10)
-			const isoToday = today.toISOString().slice(0, 10)
-
-			const next = {
-				...payload,
-				validFrom: isoTomorrow,
-				validUntil: null,
-				version: this.editingDefinition
-					? Number(this.editingDefinition.version || 1) + 1
-					: 1,
-			}
-
+			const days = versionDays(new Date())
+			const next = { ...payload, validFrom: days.tomorrow, validUntil: null, version: nextVersion(this.editingDefinition) }
 			try {
 				// Close the prior version if editing
 				if (this.editingDefinition) {
-					await axios.patch(
-						generateUrl(
-							'/apps/dossiq/api/deadlines/definitions/'
-								+ encodeURIComponent(this.editingDefinition.id),
-						),
-						{ validUntil: isoToday },
-					)
+					await closeVersion(this.editingDefinition, days.today)
 				}
-				await axios.post(
-					generateUrl('/apps/dossiq/api/deadlines/definitions'),
-					next,
-				)
+				await axios.post(generateUrl('/apps/dossiq/api/deadlines/definitions'), next)
 				this.closeEditor()
 				await this.load()
 			} catch (e) {
-				this.error =
-					e?.response?.data?.message
-					|| e.message
-					|| t('dossiq', 'Failed to save')
+				this.error = saveRefusal(e)
 			}
 		},
 	},
