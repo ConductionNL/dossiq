@@ -143,15 +143,7 @@ class SubstitutionService {
 	 * @throws \InvalidArgumentException On any validation failure.
 	 */
 	private function validatedPeriod(SubstitutionRequest $request): array {
-		[$start, $end] = $this->validator->validateCreate(
-			absentee: $request->absentee,
-			substitute: $request->substitute,
-			startDate: $request->startDate,
-			endDate: $request->endDate,
-			scope: $request->scope,
-			scopeRefs: $request->scopeRefs,
-			reason: $request->reason
-		);
+		[$start, $end] = $this->validator->validateCreate(request: $request);
 
 		$this->validator->assertNoOverlappingFullScope(
 			absentee: $request->absentee,
