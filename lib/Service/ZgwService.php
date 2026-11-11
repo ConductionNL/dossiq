@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
 use OCA\Dossiq\Service\Zgw\ResourceRoute;
 use OCA\Dossiq\Service\Zgw\ResourceWrite;
 use OCA\Dossiq\Service\Zgw\RuleFlags;
+use OCA\Dossiq\Service\Zgw\ZgwScopeRequirement;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -767,33 +768,80 @@ class ZgwService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function consumerHasScope(IRequest $request, string $component, string $scope): bool {
+		return $this->grantsScope(request: $request, required: new ZgwScopeRequirement(component: $component, scope: $scope));
+	}//end consumerHasScope()
+
+	/**
+	 * Whether the current JWT consumer holds a required scope; any failure denies.
+	 *
+	 * @param IRequest            $request  The request object
+	 * @param ZgwScopeRequirement $required The component and scope
+	 *
+	 * @return bool True if the consumer has the scope or heeftAlleAutorisaties
+	 */
+	private function grantsScope(IRequest $request, ZgwScopeRequirement $required): bool {
 		try {
 			// H2: Fail closed — no mapper, a malformed JWT, no client_id/iss or no matching
 			// consumer all deny, never grant.
-			$authConfig = $this->getConsumerAuthConfig(request: $request);
-			if ($authConfig === null) {
-				return false;
-			}
-
-			if (($authConfig['superuser'] ?? false) === true) {
-				return true;
-			}
-
-			foreach (($authConfig['scopes'] ?? []) as $auth) {
-				if (($auth['component'] ?? '') === $component && in_array($scope, $auth['scopes'] ?? [], true) === true) {
-					return true;
-				}
-			}
-
-			return false;
+			return $this->authConfigGrants(authConfig: $this->getConsumerAuthConfig(request: $request), required: $required);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Could not check consumer scope: ' . $e->getMessage()
 			);
 			// Fail closed (CWE-863): on error, deny the scope rather than grant it.
 			return false;
-		}//end try
-	}//end consumerHasScope()
+		}
+	}//end grantsScope()
+
+	/**
+	 * Whether a consumer's authorisation configuration grants a required scope.
+	 *
+	 * @param array|null          $authConfig The configuration, or null when there is no consumer
+	 * @param ZgwScopeRequirement $required   The component and scope
+	 *
+	 * @return bool True for a superuser, or when one authorisation on the component lists the scope
+	 */
+	private function authConfigGrants(?array $authConfig, ZgwScopeRequirement $required): bool {
+		if ($authConfig === null) {
+			return false;
+		}
+
+		if (($authConfig['superuser'] ?? false) === true) {
+			return true;
+		}
+
+		return $this->authorisationsGrant(authConfig: $authConfig, required: $required);
+	}//end authConfigGrants()
+
+	/**
+	 * Whether one of a consumer's authorisations grants a required scope.
+	 *
+	 * @param array               $authConfig The configuration: its `scopes` authorisations
+	 * @param ZgwScopeRequirement $required   The component and scope
+	 *
+	 * @return bool
+	 */
+	private function authorisationsGrant(array $authConfig, ZgwScopeRequirement $required): bool {
+		foreach (($authConfig['scopes'] ?? []) as $auth) {
+			if ($this->authorisationGrants(auth: $auth, required: $required) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end authorisationsGrant()
+
+	/**
+	 * Whether one authorisation is on the required component and lists the required scope.
+	 *
+	 * @param array               $auth     One authorisation: component and scopes
+	 * @param ZgwScopeRequirement $required The component and scope
+	 *
+	 * @return bool
+	 */
+	private function authorisationGrants(array $auth, ZgwScopeRequirement $required): bool {
+		return ($auth['component'] ?? '') === $required->component && in_array($required->scope, $auth['scopes'] ?? [], true) === true;
+	}//end authorisationGrants()
 
 	/**
 	 * Get the consumer's authorization details for a component (for zrc-006).
