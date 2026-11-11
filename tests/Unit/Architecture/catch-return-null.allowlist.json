@@ -626,10 +626,10 @@
     },
     {
       "file": "lib/Service/Email/NextcloudMailGateway.php",
-      "method": "account",
+      "method": "findAccount",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`account()` answers `return null` when Nextcloud Mail's account service refuses the configured id; the catch logs at warning (\"Dossiq: the configured intake account could not be read\") and intake reports itself unavailable rather than throwing on a cron run."
+      "reason": "`findAccount()`, the read behind `account()`, answers `return null` when Nextcloud Mail's account service refuses the configured id; the catch logs at warning (\"Dossiq: the configured intake account could not be read\") and intake reports itself unavailable rather than throwing on a cron run."
     },
     {
       "file": "lib/Service/Email/NextcloudMailGateway.php",
