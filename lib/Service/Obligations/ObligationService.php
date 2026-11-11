@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Obligations;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\SerialisedArray;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -422,17 +423,6 @@ class ObligationService {
 	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
 	 */
 	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialised = $value->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedArray::of(value: $value);
 	}//end toArray()
 }//end class
