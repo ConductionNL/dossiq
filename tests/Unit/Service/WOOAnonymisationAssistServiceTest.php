@@ -588,4 +588,67 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 
 		$this->service()->proposeSpans(caseId: 'case-1', documentRef: 'doc-1', text: 'Some text', userId: 'dave');
 	}//end testNewProposalReportsThePendingOneSuperseded()
+
+	/**
+	 * The oversight context of a review names the model, document and suggestion.
+	 *
+	 * @return void
+	 */
+	public function testAReviewReportsTheFullOversightContext(): void {
+		$this->withPendingProposal(spans: []);
+		$this->auditService->expects($this->once())
+			->method('recordUserAction')
+			->with(
+				'case-1',
+				'extraction',
+				'accepted',
+				['spans' => []],
+				null,
+				null,
+				'bob',
+				[
+					'unusedBecause' => '',
+					'model' => 'hermiq',
+					'documentId' => 'doc-1',
+					'suggestionId' => 'doc-1@2026-10-20T09:00:00+00:00',
+				]
+			);
+
+		$this->service()->reviewProposal(caseId: 'case-1', documentRef: 'doc-1', decision: 'approve', reviewerId: 'bob');
+	}//end testAReviewReportsTheFullOversightContext()
+
+	/**
+	 * A superseded proposal without a proposer is reported for the person asking anew.
+	 *
+	 * @return void
+	 */
+	public function testASupersededProposalWithoutAProposerIsReportedForTheAsker(): void {
+		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
+		$this->assessmentService->method('findAssessment')->willReturn([
+			'id' => 'assessment-1',
+			'documentRef' => 'doc-1',
+			'caseRef' => 'case-1',
+			'redactionProposal' => ['status' => 'pending_review', 'spans' => [['start' => 1, 'end' => 2]]],
+		]);
+		$this->aiService->method('detectDeterministicPiiSpans')->willReturn([]);
+		$this->auditService->expects($this->once())
+			->method('recordUserAction')
+			->with(
+				'case-1',
+				'extraction',
+				'ignored',
+				['spans' => [['start' => 1, 'end' => 2]]],
+				null,
+				null,
+				'dave',
+				[
+					'unusedBecause' => 'superseded',
+					'model' => 'hermiq',
+					'documentId' => 'doc-1',
+					'suggestionId' => 'doc-1@',
+				]
+			);
+
+		$this->service()->proposeSpans(caseId: 'case-1', documentRef: 'doc-1', text: 'Some text', userId: 'dave');
+	}//end testASupersededProposalWithoutAProposerIsReportedForTheAsker()
 }//end class
