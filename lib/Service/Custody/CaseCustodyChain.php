@@ -115,9 +115,15 @@ class CaseCustodyChain {
 		string $movedBy,
 		string $movedAt = '',
 	): array {
-		return $this->moveCase(
-			move: new CustodyMove(caseId: $caseId, organisationUnit: $organisationUnit, handler: $handler, reason: $reason, movedBy: $movedBy, at: $movedAt),
-		);
+		$move = new CustodyMove();
+		$move->caseId = $caseId;
+		$move->organisationUnit = $organisationUnit;
+		$move->handler = $handler;
+		$move->reason = $reason;
+		$move->movedBy = $movedBy;
+		$move->at = $movedAt;
+
+		return $this->moveCase(move: $move);
 	}//end move()
 
 	/**
@@ -236,9 +242,15 @@ class CaseCustodyChain {
 		string $reason,
 		string $movedBy,
 	): ?array {
-		return $this->beginCase(
-			move: new CustodyMove(caseId: $caseId, organisationUnit: $organisationUnit, handler: $handler, reason: $reason, movedBy: $movedBy, at: $from),
-		);
+		$move = new CustodyMove();
+		$move->caseId = $caseId;
+		$move->organisationUnit = $organisationUnit;
+		$move->handler = $handler;
+		$move->reason = $reason;
+		$move->movedBy = $movedBy;
+		$move->at = $from;
+
+		return $this->beginCase(move: $move);
 	}//end begin()
 
 	/**

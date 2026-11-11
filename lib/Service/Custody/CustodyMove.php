@@ -35,24 +35,46 @@ namespace OCA\Dossiq\Service\Custody;
  */
 final class CustodyMove {
 	/**
-	 * Constructor.
+	 * The case that is moving.
 	 *
-	 * @param string $caseId           The case that is moving.
-	 * @param string $organisationUnit The unit taking the case.
-	 * @param string $handler          The person on the seat, or an empty string when nobody is named.
-	 * @param string $reason           Why the case is moving.
-	 * @param string $movedBy          Who made the move.
-	 * @param string $at               The moment of the move in ISO 8601, or an empty string for now.
+	 * @var string
 	 */
-	public function __construct(
-		public readonly string $caseId,
-		public readonly string $organisationUnit,
-		public readonly string $handler,
-		public readonly string $reason,
-		public readonly string $movedBy,
-		public readonly string $at = '',
-	) {
-	}//end __construct()
+	public string $caseId = '';
+
+	/**
+	 * The unit taking the case.
+	 *
+	 * @var string
+	 */
+	public string $organisationUnit = '';
+
+	/**
+	 * The person on the seat, or an empty string when nobody is named.
+	 *
+	 * @var string
+	 */
+	public string $handler = '';
+
+	/**
+	 * Why the case is moving.
+	 *
+	 * @var string
+	 */
+	public string $reason = '';
+
+	/**
+	 * Who made the move.
+	 *
+	 * @var string
+	 */
+	public string $movedBy = '';
+
+	/**
+	 * The moment of the move in ISO 8601, or an empty string for now.
+	 *
+	 * @var string
+	 */
+	public string $at = '';
 
 	/**
 	 * The open holding this move writes, every text value trimmed.
