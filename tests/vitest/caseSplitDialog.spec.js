@@ -228,6 +228,62 @@ describe('the Split dialog', () => {
 	})
 })
 
+describe('the Split dialog gate and refusals', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it('needs a title, something ticked, no contradiction and no running request', async () => {
+		const wrapper = await mountDialog()
+		const gate = async (fields) => {
+			Object.assign(wrapper.vm.$data, fields)
+			await wrapper.vm.$nextTick()
+			return wrapper.vm.canConfirm
+		}
+		expect(await gate({ title: 'X', chosenDocuments: [], chosenParties: [], onBoth: ['p'], busy: false })).toBe(true)
+		expect(await gate({ onBoth: [], chosenParties: ['q'] })).toBe(true)
+		expect(await gate({ chosenParties: [], chosenDocuments: ['d'] })).toBe(true)
+		expect(await gate({ chosenDocuments: [] })).toBe(false)
+		expect(await gate({ chosenDocuments: ['d'], title: '   ' })).toBe(false)
+		expect(await gate({ title: 'X', busy: true })).toBe(false)
+		expect(await gate({ busy: false, chosenParties: ['p'], onBoth: ['p'] })).toBe(false)
+	})
+
+	it('asks nothing when the gate is shut', async () => {
+		const axios = (await import('@nextcloud/axios')).default
+		const wrapper = await mountDialog()
+		await wrapper.vm.confirm()
+		expect(axios.post).not.toHaveBeenCalled()
+	})
+
+	it('closes and refreshes after a split, and reads the error field or its own sentence on a refusal', async () => {
+		const axios = (await import('@nextcloud/axios')).default
+		const { emit } = await import('@nextcloud/event-bus')
+		const wrapper = await mountDialog()
+		Object.assign(wrapper.vm.$data, { title: ' Twee ', chosenParties: ['q'] })
+		await wrapper.vm.$nextTick()
+
+		axios.post.mockRejectedValueOnce({ response: { data: { error: 'Nee' } } })
+		await wrapper.vm.confirm()
+		expect(wrapper.vm.error).toBe('Nee')
+		expect(wrapper.vm.busy).toBe(false)
+
+		axios.post.mockRejectedValueOnce(new Error('down'))
+		await wrapper.vm.confirm()
+		expect(wrapper.vm.error).toBe('This case was not split.')
+		expect(wrapper.emitted('close')).toBeUndefined()
+
+		axios.post.mockResolvedValueOnce({ data: {} })
+		await wrapper.vm.confirm()
+		expect(axios.post).toHaveBeenLastCalledWith(expect.stringContaining('/split'), {
+			title: 'Twee', documents: [], parties: ['q'], partiesOnBoth: [],
+		})
+		expect(wrapper.vm.error).toBe('')
+		expect(emit).toHaveBeenCalledWith('cn:page:refresh', {})
+		expect(wrapper.emitted('close')).toHaveLength(1)
+	})
+})
+
 describe('the way the dialog is reached', () => {
 	it('is a header action on the case, hidden once the case is closed', () => {
 		const action = caseDetail.config.headerActions.find(
