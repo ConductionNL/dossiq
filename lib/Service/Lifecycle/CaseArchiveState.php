@@ -178,6 +178,33 @@ class CaseArchiveState {
 	 * @throws RefusedException When the platform refuses or cannot be reached.
 	 */
 	private function call(string $verb, string $caseId, string $reason): array {
+		[$register, $schema] = $this->configuredRegister();
+		$handler = $this->handler();
+
+		try {
+			// The handler is resolved by name, so its methods are called by name too.
+			$answer = $handler->{$verb}($caseId, $reason, $register, $schema);
+		} catch (RefusedException $e) {
+			throw $e;
+		} catch (Throwable $e) {
+			throw $this->platformRefusal(failure: $e, context: ['caseId' => $caseId, 'verb' => $verb]);
+		}
+
+		if (is_array($answer) === false) {
+			return [];
+		}
+
+		return $answer;
+	}//end call()
+
+	/**
+	 * The case register and schema; refused when either is not configured.
+	 *
+	 * @return array{0: string, 1: string} The register and the case schema.
+	 *
+	 * @throws RefusedException When the register or the schema is not configured.
+	 */
+	private function configuredRegister(): array {
 		$register = $this->settings->getConfigValue(key: 'register');
 		$schema = $this->settings->getConfigValue(key: 'case_schema');
 		if ($register === '' || $schema === '') {
@@ -188,32 +215,29 @@ class CaseArchiveState {
 			);
 		}
 
-		$handler = $this->handler();
+		return [$register, $schema];
+	}//end configuredRegister()
 
-		try {
-			// The handler is resolved by name, so its methods are called by name too.
-			$answer = $handler->{$verb}($caseId, $reason, $register, $schema);
-		} catch (RefusedException $e) {
-			throw $e;
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'CaseArchiveState: the platform refused an archive state change',
-				['caseId' => $caseId, 'verb' => $verb, 'exception' => $e->getMessage()],
-			);
+	/**
+	 * Log a failed handler call and turn it into a refusal carrying the platform's own sentence.
+	 *
+	 * @param Throwable            $failure What the handler threw.
+	 * @param array<string, mixed> $context The case and the verb, for the log.
+	 *
+	 * @return RefusedException The refusal to throw.
+	 */
+	private function platformRefusal(Throwable $failure, array $context): RefusedException {
+		$this->logger->error(
+			'CaseArchiveState: the platform refused an archive state change',
+			$context + ['exception' => $failure->getMessage()],
+		);
 
-			throw new RefusedException(
-				rule: 'archive-state-refused',
-				sentence: $e->getMessage(),
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		if (is_array($answer) === false) {
-			return [];
-		}
-
-		return $answer;
-	}//end call()
+		return new RefusedException(
+			rule: 'archive-state-refused',
+			sentence: $failure->getMessage(),
+			status: RefusedException::STATUS_REFUSED,
+		);
+	}//end platformRefusal()
 
 	/**
 	 * OpenRegister's archive handler, or a refusal naming its absence.
