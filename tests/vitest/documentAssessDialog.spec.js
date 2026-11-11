@@ -351,6 +351,103 @@ describe('DocumentAssessDialog', () => {
 	})
 })
 
+describe('DocumentAssessDialog, grounds, refusals and the save gate', () => {
+	beforeEach(async () => {
+		const axios = (await import('@nextcloud/axios')).default
+		axios.get.mockReset()
+		axios.post.mockReset()
+	})
+
+	it('reads no grounds without a register and a schema', async () => {
+		const { wrapper, axios } = await mountDialog([THREE], { grounds: { register: 'dossiq' } })
+		axios.get.mockClear()
+		await wrapper.vm.loadGrounds()
+		await wrapper.setProps({ grounds: null })
+		await wrapper.vm.loadGrounds()
+		expect(axios.get).not.toHaveBeenCalled()
+		expect(wrapper.vm.groundsLoaded).toBe(false)
+		expect(wrapper.vm.groundsLoading).toBe(false)
+	})
+
+	it('reads the grounds by the configured fields, filter and order', async () => {
+		const { wrapper, axios } = await mountDialog([THREE], { grounds: { register: 'r 1', schema: 's', labelField: 'name', filter: { active: true } } })
+		axios.get.mockReset()
+		axios.get.mockResolvedValueOnce({ data: { results: [
+			{ id: 'a', name: 'Alpha' },
+			{ id: 'b', name: 'b' },
+			{ id: 'c' },
+			{ name: 'no id' },
+			null,
+		] } })
+		wrapper.vm.groundsError = 'old'
+		await wrapper.vm.loadGrounds()
+		expect(axios.get).toHaveBeenCalledWith(
+			expect.stringContaining('/apps/openregister/api/objects/r%201/s'),
+			{ params: { active: true, _limit: 200, _order: { id: 'asc' } } },
+		)
+		expect(wrapper.vm.groundOptions).toEqual([
+			{ id: 'a', label: 'a Alpha' },
+			{ id: 'b', label: 'b' },
+			{ id: 'c', label: 'c' },
+		])
+		expect(wrapper.vm.groundsLoaded).toBe(true)
+		expect(wrapper.vm.groundsError).toBe('')
+		expect(wrapper.vm.groundsLoading).toBe(false)
+
+		axios.get.mockResolvedValueOnce({ data: {} })
+		await wrapper.vm.loadGrounds()
+		expect(wrapper.vm.groundOptions).toEqual([])
+	})
+
+	it('says the grounds could not be read, in the server words when it has them', async () => {
+		const { wrapper, axios } = await mountDialog([THREE], { grounds: { register: 'r', schema: 's', valueField: 'code' } })
+		axios.get.mockReset()
+		axios.get.mockRejectedValueOnce({ response: { data: { error: 'Geen toegang' } } })
+		await wrapper.vm.loadGrounds()
+		expect(wrapper.vm.groundsError).toBe('Geen toegang')
+		expect(wrapper.vm.groundsLoaded).toBe(false)
+		axios.get.mockRejectedValueOnce(new Error('down'))
+		await wrapper.vm.loadGrounds()
+		expect(wrapper.vm.groundsError).toBe('The grounds could not be read, so an assessment that needs one cannot be saved.')
+		expect(wrapper.vm.groundsLoading).toBe(false)
+	})
+
+	it('reads one sentence per refused document, by the configured field', async () => {
+		const { wrapper } = await mountDialog([THREE], { fields: { document: 'ref' } })
+		expect(wrapper.vm.refusalsOf({ errors: [
+			{ ref: 'io-1', errors: { a: 'One.', b: 2 } },
+			{ documentRef: 'io-2', errors: { a: 'Two.' } },
+			{ ref: '', documentRef: 'io-3', errors: {} },
+			{ errors: { a: 'Nobody.' } },
+			null,
+		] })).toEqual({ 'io-1': 'One. 2', 'io-2': 'Two.' })
+		expect(wrapper.vm.refusalsOf(null)).toEqual({})
+		const plain = (await mountDialog([THREE], { fields: {} })).wrapper
+		expect(plain.vm.refusalsOf({ errors: [{ documentRef: 'io-1', errors: { a: 'X' } }] })).toEqual({ 'io-1': 'X' })
+	})
+
+	it('saves only with a target, a selection, a classification and the grounds it needs', async () => {
+		const { wrapper } = await mountDialog([THREE])
+		const gate = async (fields) => {
+			Object.assign(wrapper.vm.$data, fields)
+			await wrapper.vm.$nextTick()
+			return wrapper.vm.canSave
+		}
+		const open = wrapper.vm.classificationOptions.find((option) => option.needsGrounds !== true)
+		const refused = wrapper.vm.classificationOptions.find((option) => option.needsGrounds === true)
+		expect(await gate({ busy: false, selected: ['io-1'], classification: open, pickedGrounds: [] })).toBe(true)
+		expect(await gate({ busy: true })).toBe(false)
+		expect(await gate({ busy: false, selected: [] })).toBe(false)
+		expect(await gate({ selected: ['io-1'], classification: null })).toBe(false)
+		expect(await gate({ classification: refused })).toBe(false)
+		expect(await gate({ pickedGrounds: [{ id: '5.1.2.e' }] })).toBe(true)
+		await wrapper.setProps({ assessUrl: '' })
+		expect(wrapper.vm.canSave).toBe(false)
+		await wrapper.setProps({ assessUrl: '/x', caseId: '' })
+		expect(wrapper.vm.canSave).toBe(wrapper.vm.targetCaseId !== '')
+	})
+})
+
 describe('the document-assess header action', () => {
 	it('is configured on the case page and opens the registered dialog', () => {
 		expect(action.type).toBe('open-modal')
