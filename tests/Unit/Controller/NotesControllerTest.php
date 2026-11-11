@@ -130,7 +130,7 @@ class NotesControllerTest extends TestCase {
 	 */
 	private function withReadableCaseAndKnownUsers(): void {
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
-		$this->userManager->method('userExists')->willReturn(true);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
 	}//end withReadableCaseAndKnownUsers()
 
 	/**
@@ -262,7 +262,7 @@ class NotesControllerTest extends TestCase {
 		$user = $this->mockUser('outsider', 'Outsider');
 		$this->userSession->method('getUser')->willReturn($user);
 		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob']]);
-		$this->userManager->method('userExists')->willReturn(true);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
 		$this->caseAccessGuard->expects($this->once())
 			->method('hasCaseReadAccess')
 			->with(caseId: 'case-1', user: $user)
@@ -284,8 +284,8 @@ class NotesControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($this->mockUser());
 		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob', 'ghost', 'carol']]);
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
-		$this->userManager->method('userExists')
-			->willReturnCallback(static fn (string $uid): bool => $uid !== 'ghost');
+		$this->userManager->method('get')
+			->willReturnCallback(fn (string $uid): ?IUser => ($uid === 'ghost' ? null : $this->mockUser($uid, $uid)));
 		$this->service->expects($this->once())
 			->method('notifyMention')
 			->with($this->anything(), $this->anything(), $this->anything(), ['bob', 'carol'])
@@ -297,6 +297,28 @@ class NotesControllerTest extends TestCase {
 	}//end testMentionSkipsUsersThatDoNotExist()
 
 	/**
+	 * Mentioned users who may not read the case are not notified.
+	 *
+	 * @return void
+	 */
+	public function testMentionSkipsUsersWhoCannotReadTheCase(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser());
+		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['bob', 'outsider', 'carol']]);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
+		$this->caseAccessGuard->method('hasCaseReadAccess')
+			->willReturnCallback(static fn (string $caseId, IUser $user): bool => $caseId === 'case-1' && $user->getUID() !== 'outsider');
+		$this->service->expects($this->once())
+			->method('notifyMention')
+			->with($this->anything(), $this->anything(), $this->anything(), ['bob', 'carol'])
+			->willReturn(2);
+
+		$response = $this->controller->mention();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['notified' => 2], $response->getData());
+	}//end testMentionSkipsUsersWhoCannotReadTheCase()
+
+	/**
 	 * When no mentioned user exists, nobody is notified and the answer says so.
 	 *
 	 * @return void
@@ -305,7 +327,7 @@ class NotesControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($this->mockUser());
 		$this->withBody(['objectId' => 'case-1', 'mentionedUserIds' => ['ghost']]);
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
-		$this->userManager->method('userExists')->willReturn(false);
+		$this->userManager->method('get')->willReturn(null);
 		$this->service->expects($this->never())->method('notifyMention');
 
 		$response = $this->controller->mention();
@@ -446,7 +468,7 @@ class NotesControllerTest extends TestCase {
 	public function testAFailingMentionDispatchIsALoggedServerError(): void {
 		$this->userSession->method('getUser')->willReturn($this->mockUser('alice', 'Alice'));
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
-		$this->userManager->method('userExists')->willReturn(true);
+		$this->userManager->method('get')->willReturnCallback(fn (string $uid): IUser => $this->mockUser($uid, $uid));
 		$this->request->method('getParams')->willReturn(['objectId' => 'case-1', 'mentionedUserIds' => ['bob']]);
 		$this->service->method('notifyMention')->willThrowException(new \RuntimeException('bus down'));
 		$this->logger->expects($this->once())->method('error')->with(
