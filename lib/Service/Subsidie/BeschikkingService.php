@@ -268,20 +268,8 @@ class BeschikkingService {
 			throw new OCSBadRequestException('Beschikking niet gevonden');
 		}
 
-		if ($current === null) {
-			throw new OCSBadRequestException('Beschikking niet gevonden');
-		}
-
-		if (((string)($current['signedBy'] ?? '')) === '') {
-			throw new OCSBadRequestException('Beschikking moet eerst worden ondertekend');
-		}
-
-		$now = new DateTimeImmutable();
-		$patch = [
-			'status' => 'granted',
-			'publicationDate' => $now->format('Y-m-d'),
-			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
-		];
+		self::assertSigned(current: $current);
+		$patch = $this->publicationPatch(now: new DateTimeImmutable());
 
 		try {
 			return ($this->patchObjectAsArray(
@@ -296,6 +284,40 @@ class BeschikkingService {
 			throw new OCSBadRequestException('Kon beschikking niet publiceren');
 		}
 	}//end publish()
+
+	/**
+	 * Refuse a beschikking that is not found or not yet signed.
+	 *
+	 * @param array<string, mixed>|null $current The stored beschikking, or null.
+	 *
+	 * @return void
+	 *
+	 * @throws OCSBadRequestException When it is not found or not signed.
+	 */
+	private static function assertSigned(?array $current): void {
+		if ($current === null) {
+			throw new OCSBadRequestException('Beschikking niet gevonden');
+		}
+
+		if (((string)($current['signedBy'] ?? '')) === '') {
+			throw new OCSBadRequestException('Beschikking moet eerst worden ondertekend');
+		}
+	}//end assertSigned()
+
+	/**
+	 * The patch that grants a beschikking: today as its publication day and its bezwaartermijn.
+	 *
+	 * @param DateTimeImmutable $now The moment of publication.
+	 *
+	 * @return array{status: string, publicationDate: string, objectionPeriodEnd: string} The patch.
+	 */
+	private function publicationPatch(DateTimeImmutable $now): array {
+		return [
+			'status' => 'granted',
+			'publicationDate' => $now->format('Y-m-d'),
+			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
+		];
+	}//end publicationPatch()
 
 	/**
 	 * Resolve the ObjectService and register/schema ids.
