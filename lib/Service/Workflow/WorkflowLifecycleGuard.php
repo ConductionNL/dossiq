@@ -314,52 +314,83 @@ class WorkflowLifecycleGuard {
 	 */
 	public function isPublishableDraft(array $current, array $transitions, string $id): bool {
 		$this->lastStepConfigErrors = [];
+		$draft = new PublishCandidate(definition: $current, transitions: $transitions, id: $id);
 
 		// A task naming a form, a group or an effect handler that is not there
 		// is refused HERE, with the other publish preconditions, because
 		// publishing is the last moment somebody is present to fix it. After
 		// it, the same declaration is a task that reaches no team or cannot be
 		// completed, met by the handler who needed the work to move.
-		if ($this->taskDeclarationsResolve(definition: $current, id: $id) === false) {
-			return false;
-		}
-
-		if ($this->statusOf(row: $current) !== self::STATUS_DRAFT) {
-			$this->logger->warning(
-				'Dossiq: publish() — definition is not a draft',
-				['app' => Application::APP_ID, 'id' => $id]
-			);
-			return false;
-		}
-
-		// The SLA, escalation and required-field blocks the workflow editor
-		// writes onto a step are checked HERE and not on draft save
-		// (process-step-configuration design): a draft may hold a half-typed
-		// config, a published template is what the term engine reads.
-		$this->lastStepConfigErrors = $this->stepConfigs->errorsFor(definition: $current);
-		if ($this->lastStepConfigErrors !== []) {
-			$this->logger->warning(
-				'Dossiq: publish() refused, a step configuration does not hold',
-				['app' => Application::APP_ID, 'id' => $id, 'errors' => $this->lastStepConfigErrors]
-			);
-			return false;
-		}
-
-		$caseTypeId = (string)($current['caseType'] ?? '');
-		$foreign = $this->transitionsReferenceForeignStatuses(
-			caseTypeId: $caseTypeId,
-			transitions: $transitions
-		);
-		if ($caseTypeId === '' || $foreign === true) {
-			$this->logger->warning(
-				'Dossiq: publish() — referential integrity failure',
-				['app' => Application::APP_ID, 'id' => $id]
-			);
-			return false;
-		}
-
-		return true;
+		return $this->taskDeclarationsResolve(definition: $current, id: $id) === true
+			&& $this->isDraft(draft: $draft) === true
+			&& $this->stepConfigsHold(draft: $draft) === true
+			&& $this->referencesOwnStatuses(draft: $draft) === true;
 	}//end isPublishableDraft()
+
+	/**
+	 * Whether the candidate is a draft; a refusal is logged.
+	 *
+	 * @param PublishCandidate $draft The definition asked to be published.
+	 *
+	 * @return bool True when it is a draft.
+	 */
+	private function isDraft(PublishCandidate $draft): bool {
+		if ($this->statusOf(row: $draft->definition) === self::STATUS_DRAFT) {
+			return true;
+		}
+
+		$this->logger->warning(
+			'Dossiq: publish() — definition is not a draft',
+			['app' => Application::APP_ID, 'id' => $draft->id]
+		);
+		return false;
+	}//end isDraft()
+
+	/**
+	 * Whether every step configuration holds; the errors are kept and a refusal is logged.
+	 *
+	 * The SLA, escalation and required-field blocks the workflow editor
+	 * writes onto a step are checked HERE and not on draft save
+	 * (process-step-configuration design): a draft may hold a half-typed
+	 * config, a published template is what the term engine reads.
+	 *
+	 * @param PublishCandidate $draft The definition asked to be published.
+	 *
+	 * @return bool True when no step configuration error was found.
+	 */
+	private function stepConfigsHold(PublishCandidate $draft): bool {
+		$this->lastStepConfigErrors = $this->stepConfigs->errorsFor(definition: $draft->definition);
+		if ($this->lastStepConfigErrors === []) {
+			return true;
+		}
+
+		$this->logger->warning(
+			'Dossiq: publish() refused, a step configuration does not hold',
+			['app' => Application::APP_ID, 'id' => $draft->id, 'errors' => $this->lastStepConfigErrors]
+		);
+		return false;
+	}//end stepConfigsHold()
+
+	/**
+	 * Whether the candidate names a case type and only that case type's statuses; a refusal is logged.
+	 *
+	 * @param PublishCandidate $draft The definition asked to be published.
+	 *
+	 * @return bool True when the references hold.
+	 */
+	private function referencesOwnStatuses(PublishCandidate $draft): bool {
+		$caseTypeId = (string)($draft->definition['caseType'] ?? '');
+		$foreign    = $this->transitionsReferenceForeignStatuses(caseTypeId: $caseTypeId, transitions: $draft->transitions);
+		if ($caseTypeId !== '' && $foreign === false) {
+			return true;
+		}
+
+		$this->logger->warning(
+			'Dossiq: publish() — referential integrity failure',
+			['app' => Application::APP_ID, 'id' => $draft->id]
+		);
+		return false;
+	}//end referencesOwnStatuses()
 
 	/**
 	 * Whether every task declaration on this definition resolves.
