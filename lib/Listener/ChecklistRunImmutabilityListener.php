@@ -45,6 +45,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Listener\Support\SerialisedObject;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -79,8 +80,8 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	}//end __construct()
 
 	/**
-	 * Inspect ObjectUpdatingEvent and reject illegal mutations before the
-	 * row is written.
+	 * Inspect ObjectUpdatingEvent and ObjectLeavingEvent and reject illegal
+	 * mutations or moves before the row is written.
 	 *
 	 * @param Event $event The dispatched event
 	 *
@@ -89,7 +90,7 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectUpdatingEvent === false) {
+		if ($event instanceof ObjectUpdatingEvent === false && $event instanceof ObjectLeavingEvent === false) {
 			return;
 		}
 
@@ -114,13 +115,21 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	}//end handle()
 
 	/**
-	 * Whether the update mutates a checklist run that is already frozen.
+	 * Whether the update, or a move, touches a checklist run that is already frozen.
 	 *
-	 * @param Event $event The dispatched update event
+	 * @param Event $event The dispatched update or move event
 	 *
 	 * @return bool True when the mutation must be rejected.
 	 */
 	private function isFrozenRunMutation(Event $event): bool {
+		if ($event instanceof ObjectLeavingEvent === true) {
+			$stored = $this->extractObject(event: $event, method: 'getObject');
+
+			return $stored !== null
+				&& $this->isChecklistRunSchema(object: $stored) === true
+				&& in_array((string)($stored['status'] ?? ''), self::FROZEN_STATUSES, true) === true;
+		}
+
 		$new = $this->extractObject(event: $event, method: 'getNewObject');
 		if ($new === null) {
 			return false;
