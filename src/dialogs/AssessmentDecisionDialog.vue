@@ -350,6 +350,38 @@ function countDescription(option, count) {
 }
 
 /**
+ * Read a case's stored assessments and count them per classification and ground.
+ *
+ * @param {object} source Where the assessments are read: `{ register, schema, caseField, classificationField }`.
+ * @param {string} caseId The case.
+ * @return {Promise<{tally: object, grounds: object}>} The counts.
+ */
+async function countAssessedDocuments(source, caseId) {
+	const rows = await readAssessedDocuments(source, caseId)
+	return assessmentCounts(rows, source.classificationField || 'classification')
+}
+
+/**
+ * @return {string} What to say when no assessment source is configured.
+ */
+function countsNotShownSentence() {
+	return t(
+		'dossiq',
+		'The number of documents per assessment is not shown here.',
+	)
+}
+
+/**
+ * @return {string} What to say when the assessments could not be read.
+ */
+function countsUnreadSentence() {
+	return t(
+		'dossiq',
+		'The number of documents per assessment could not be read.',
+	)
+}
+
+/**
  * @param {object} failure The axios error.
  * @return {string} What to say when the decision was not recorded.
  */
@@ -790,33 +822,16 @@ export default {
 			const source = this.assessments || {}
 			this.countsError = ''
 			if (!source.register || !source.schema) {
-				this.countsError = t(
-					'dossiq',
-					'The number of documents per assessment is not shown here.',
-				)
+				this.countsError = countsNotShownSentence()
 				return
 			}
 
-			await this.readCounts(source)
-		},
-
-		/**
-		 * Read the stored assessments and tally them per classification and ground.
-		 *
-		 * @param {object} source Where the assessments are read: `{ register, schema, caseField, classificationField }`.
-		 * @return {Promise<void>}
-		 */
-		async readCounts(source) {
 			try {
-				const rows = await readAssessedDocuments(source, this.targetCaseId)
-				const counts = assessmentCounts(rows, source.classificationField || 'classification')
+				const counts = await countAssessedDocuments(source, this.targetCaseId)
 				this.tally = counts.tally
 				this.groundTally = counts.grounds
 			} catch {
-				this.countsError = t(
-					'dossiq',
-					'The number of documents per assessment could not be read.',
-				)
+				this.countsError = countsUnreadSentence()
 			}
 		},
 
