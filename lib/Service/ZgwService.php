@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
 use OCA\Dossiq\Service\Zgw\ResourceRoute;
 use OCA\Dossiq\Service\Zgw\ResourceWrite;
 use OCA\Dossiq\Service\Zgw\RuleFlags;
+use OCA\Dossiq\Service\Zgw\ZgwListing;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -975,76 +976,42 @@ class ZgwService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handleIndex(IRequest $request, string $zgwApi, string $resource): JSONResponse {
-		if ($this->objectService === null) {
-			return $this->unavailableResponse();
-		}
+		return $this->indexRoute(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource));
+	}//end handleIndex()
 
-		$mappingConfig = $this->loadMappingConfig(zgwApi: $zgwApi, resource: $resource);
-		if ($mappingConfig === null) {
-			return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
+	/**
+	 * The list of a route's resource, or the answer when its store or mapping is missing or disabled.
+	 *
+	 * @param ResourceRoute $route The route.
+	 *
+	 * @return JSONResponse
+	 */
+	private function indexRoute(ResourceRoute $route): JSONResponse {
+		$mappingConfig = $this->mappingOrRefusal(route: $route);
+		if ($mappingConfig instanceof JSONResponse) {
+			return $mappingConfig;
 		}
 
 		if (($mappingConfig['enabled'] ?? true) === false) {
 			return new JSONResponse(
-				data: ['detail' => "ZGW mapping for {$zgwApi}/{$resource} is disabled"],
+				data: ['detail' => "ZGW mapping for {$route->api}/{$route->resource} is disabled"],
 				statusCode: Http::STATUS_NOT_FOUND
 			);
 		}
 
+		return $this->listOrRefuse(list: new ZgwListing(route: $route, mappingConfig: $mappingConfig));
+	}//end indexRoute()
+
+	/**
+	 * The page of the list, or a logged 500 when it cannot be read.
+	 *
+	 * @param ZgwListing $list The list.
+	 *
+	 * @return JSONResponse
+	 */
+	private function listOrRefuse(ZgwListing $list): JSONResponse {
 		try {
-			$params = $request->getParams();
-			$filters = $this->translateQueryParams(params: $params, mappingConfig: $mappingConfig);
-
-			$page = max(1, (int)($params['page'] ?? 1));
-			$pageSize = max(1, min(100, (int)($params['pageSize'] ?? 20)));
-
-			$searchParams = array_merge(
-				$filters,
-				[
-					'_limit' => $pageSize,
-					'_offset' => (($page - 1) * $pageSize),
-				]
-			);
-
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: $searchParams,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$result = $this->objectService->searchObjectsPaginated(
-				query: $query
-			);
-
-			$objects = $result['results'] ?? [];
-			$totalCount = $result['total'] ?? count($objects);
-			$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
-
-			$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = [];
-			foreach ($objects as $object) {
-				$objectData = $object;
-				if (is_array($object) === false) {
-					$objectData = $object->jsonSerialize();
-				}
-
-				$mapped[] = $this->applyOutboundMapping(
-					objectData: $objectData,
-					mapping: $outboundMapping,
-					mappingConfig: $mappingConfig,
-					baseUrl: $baseUrl
-				);
-			}
-
-			$paginatedResult = $this->paginationHelper->wrapResults(
-				mappedObjects: $mapped,
-				totalCount: $totalCount,
-				page: $page,
-				pageSize: $pageSize,
-				baseUrl: $baseUrl,
-				queryParams: $params
-			);
-
-			return new JSONResponse(data: $paginatedResult);
+			return $this->listed(list: $list);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ZGW list error: ' . $e->getMessage(),
@@ -1054,8 +1021,93 @@ class ZgwService {
 				data: ['detail' => 'Internal server error'],
 				statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
 			);
-		}//end try
-	}//end handleIndex()
+		}
+	}//end listOrRefuse()
+
+	/**
+	 * Search the page the query asks for, map it and wrap it with its paging.
+	 *
+	 * @param ZgwListing $list The list.
+	 *
+	 * @return JSONResponse
+	 */
+	private function listed(ZgwListing $list): JSONResponse {
+		$result = $this->searchPage(list: $list);
+		$objects = $result['results'] ?? [];
+		$totalCount = $result['total'] ?? count($objects);
+		$list->baseUrl = $this->buildBaseUrl(request: $list->route->request, zgwApi: $list->route->api, resource: $list->route->resource);
+
+		$paginatedResult = $this->paginationHelper->wrapResults(
+			mappedObjects: $this->mappedPage(list: $list, objects: $objects),
+			totalCount: $totalCount,
+			page: $list->page,
+			pageSize: $list->pageSize,
+			baseUrl: $list->baseUrl,
+			queryParams: $list->params
+		);
+
+		return new JSONResponse(data: $paginatedResult);
+	}//end listed()
+
+	/**
+	 * Search one page of the resource with the query's filters.
+	 *
+	 * @param ZgwListing $list The list; its query and page are read here.
+	 *
+	 * @return array<string, mixed> The search result: `results` and `total`.
+	 */
+	private function searchPage(ZgwListing $list): array {
+		$list->params = $list->route->request->getParams();
+		$filters = $this->translateQueryParams(params: $list->params, mappingConfig: $list->mappingConfig);
+		$list->page = max(1, (int)($list->params['page'] ?? 1));
+		$list->pageSize = max(1, min(100, (int)($list->params['pageSize'] ?? 20)));
+
+		$query = $this->objectService->buildSearchQuery(
+			requestParams: array_merge($filters, ['_limit' => $list->pageSize, '_offset' => (($list->page - 1) * $list->pageSize)]),
+			register: $list->mappingConfig['sourceRegister'],
+			schema: $list->mappingConfig['sourceSchema']
+		);
+
+		return $this->objectService->searchObjectsPaginated(query: $query);
+	}//end searchPage()
+
+	/**
+	 * Map every object of a page to its ZGW shape.
+	 *
+	 * @param ZgwListing        $list    The list, its collection URL set.
+	 * @param array<int, mixed> $objects The objects, arrays or serialisable.
+	 *
+	 * @return array<int, array> The ZGW objects.
+	 */
+	private function mappedPage(ZgwListing $list, array $objects): array {
+		$outboundMapping = $this->createOutboundMapping(mappingConfig: $list->mappingConfig);
+		$mapped = [];
+		foreach ($objects as $object) {
+			$mapped[] = $this->applyOutboundMapping(
+				objectData: $this->listedObjectData(object: $object),
+				mapping: $outboundMapping,
+				mappingConfig: $list->mappingConfig,
+				baseUrl: $list->baseUrl
+			);
+		}
+
+		return $mapped;
+	}//end mappedPage()
+
+	/**
+	 * A listed object as an array.
+	 *
+	 * @param mixed $object The object, an array or serialisable.
+	 *
+	 * @return array The object's data.
+	 */
+	private function listedObjectData(mixed $object): array {
+		if (is_array($object) === true) {
+			return $object;
+		}
+
+		return $object->jsonSerialize();
+	}//end listedObjectData()
 
 	/**
 	 * Generic create operation for a ZGW resource.
