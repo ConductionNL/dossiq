@@ -79,6 +79,36 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 
+/**
+ * The sentence for a batch that was not stored: the server's, or the plain
+ * one, followed by the documents another batch already holds.
+ *
+ * @param {object} e The axios error.
+ * @return {string} The sentence.
+ */
+function batchRefusal(e) {
+	const taken = e?.response?.data?.taken
+	const message =
+		e?.response?.data?.message
+		|| t(
+			'dossiq',
+			'The Review batch cannot be stored, so nothing was assigned.',
+		)
+	return taken && typeof taken === 'object'
+		? message + ' ' + takenList(taken)
+		: message
+}
+
+/**
+ * @param {object} taken The batch holding each document, by document.
+ * @return {string} "document: batch" per document, comma-separated.
+ */
+function takenList(taken) {
+	return Object.entries(taken)
+		.map(([ref, batch]) => `${ref}: ${batch}`)
+		.join(', ')
+}
+
 export default {
 	name: 'ReviewBatchDialog',
 
@@ -155,42 +185,37 @@ export default {
 			this.saving = true
 			this.error = ''
 			try {
-				const { data } = await axios.post(
-					generateUrl(
-						`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/review/batches`,
-					),
-					this.byFilter
-						? {
-								name: this.name.trim(),
-								assignee: this.assignee.trim(),
-								filter: this.filled,
-							}
-						: {
-								name: this.name.trim(),
-								assignee: this.assignee.trim(),
-								documents: this.chosen,
-							},
-				)
+				const { data } = await axios.post(this.batchesUrl(), this.batchBody())
 				this.$emit('created', data)
 			} catch (e) {
-				const taken = e?.response?.data?.taken
-				const message =
-					e?.response?.data?.message
-					|| t(
-						'dossiq',
-						'The Review batch cannot be stored, so nothing was assigned.',
-					)
-				this.error =
-					taken && typeof taken === 'object'
-						? message
-							+ ' '
-							+ Object.entries(taken)
-								.map(([ref, batch]) => `${ref}: ${batch}`)
-								.join(', ')
-						: message
+				this.error = batchRefusal(e)
 			} finally {
 				this.saving = false
 			}
+		},
+
+		/**
+		 * The review batches endpoint of this case.
+		 *
+		 * @return {string} The url.
+		 */
+		batchesUrl() {
+			return generateUrl(
+				`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/review/batches`,
+			)
+		},
+
+		/**
+		 * What making the batch sends: the name and the reviewer, and the filter
+		 * when one is filled in, else the ticked documents.
+		 *
+		 * @return {object} The body.
+		 */
+		batchBody() {
+			const named = { name: this.name.trim(), assignee: this.assignee.trim() }
+			return this.byFilter
+				? { ...named, filter: this.filled }
+				: { ...named, documents: this.chosen }
 		},
 	},
 }
