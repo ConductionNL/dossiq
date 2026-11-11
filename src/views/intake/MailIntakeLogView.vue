@@ -172,6 +172,48 @@ import {
 import MailIntakeFileOnCaseDialog from '../../dialogs/MailIntakeFileOnCaseDialog.vue'
 
 /**
+ * Read the intake log, filtered by sender and outcome when they are set.
+ *
+ * @param {string} sender The sender to find, or ''.
+ * @param {string} outcome The outcome to find, or ''.
+ * @return {Promise<Response>} The response.
+ */
+function fetchLog(sender, outcome) {
+	const params = new URLSearchParams()
+	if (sender) {
+		params.set('sender', sender)
+	}
+	if (outcome) {
+		params.set('outcome', outcome)
+	}
+	return fetch(generateUrl('/apps/dossiq/api/mail-intake/log?' + params.toString()), { headers: { 'OCS-APIRequest': 'true' } })
+}
+
+/**
+ * Keep what the log answered on the view.
+ *
+ * @param {object} view The log view.
+ * @param {object|null} data The answer.
+ * @return {void}
+ */
+function showLog(view, data) {
+	view.entries = data?.results || []
+	view.filterOrder = data?.filterOrder || []
+	view.junkRules = data?.junkRules || []
+}
+
+/**
+ * Show a reader without the intake role that they may not read the log, and nothing of it.
+ *
+ * @param {object} view The log view.
+ * @return {void}
+ */
+function refuseLog(view) {
+	view.forbidden = true
+	view.entries = []
+}
+
+/**
  * The intake log as a surface rather than a log file.
  *
  * 🔴 IT READS THROUGH THE DOSSIQ ENDPOINT, NOT THE GENERIC OBJECT API. The
@@ -275,29 +317,12 @@ export default {
 		async reload() {
 			this.loading = true
 			try {
-				const params = new URLSearchParams()
-				if (this.sender) {
-					params.set('sender', this.sender)
-				}
-				if (this.outcome) {
-					params.set('outcome', this.outcome)
-				}
-				const response = await fetch(
-					generateUrl(
-						'/apps/dossiq/api/mail-intake/log?' + params.toString(),
-					),
-					{ headers: { 'OCS-APIRequest': 'true' } },
-				)
+				const response = await fetchLog(this.sender, this.outcome)
 				if (response.status === 403) {
-					this.forbidden = true
-					this.entries = []
-					return
+					return refuseLog(this)
 				}
 				this.forbidden = false
-				const data = await response.json()
-				this.entries = data?.results || []
-				this.filterOrder = data?.filterOrder || []
-				this.junkRules = data?.junkRules || []
+				showLog(this, await response.json())
 			} catch {
 				// A read that failed shows nothing rather than a stale list. The
 				// empty state says a message that was never received leaves no
