@@ -112,11 +112,13 @@ class RecordSeal {
 	 * @param array<string, mixed> $record The record.
 	 *
 	 * @return string The hex digest.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) CanonicalValue is the one stateless canonical form shared with the guard.
 	 */
 	private function hash(array $fields, array $record): string {
 		$sealed = [];
 		foreach ($fields as $field) {
-			$sealed[$field] = CanonicalValue::of(value: ($record[$field] ?? null));
+			$sealed[$field] = CanonicalValue::formOf(value: ($record[$field] ?? null));
 		}
 
 		ksort($sealed, SORT_STRING);

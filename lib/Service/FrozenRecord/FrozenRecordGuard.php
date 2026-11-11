@@ -204,9 +204,11 @@ class FrozenRecordGuard {
 	 * @param mixed $right The incoming value.
 	 *
 	 * @return bool True when equal.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) CanonicalValue is the one stateless canonical form shared with the seal.
 	 */
 	private function same(mixed $left, mixed $right): bool {
-		return CanonicalValue::of(value: $left) === CanonicalValue::of(value: $right);
+		return CanonicalValue::formOf(value: $left) === CanonicalValue::formOf(value: $right);
 	}//end same()
 
 	/**

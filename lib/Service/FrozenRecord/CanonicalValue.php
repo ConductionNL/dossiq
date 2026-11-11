@@ -42,16 +42,16 @@ final class CanonicalValue {
 	 *
 	 * @spec openspec/specs/frozen-record/spec.md
 	 */
-	public static function of(mixed $value): mixed {
+	public static function formOf(mixed $value): mixed {
 		if (is_array($value) === false) {
 			return $value;
 		}
 
-		$canonical = array_map(static fn (mixed $item): mixed => self::of(value: $item), $value);
+		$canonical = array_map(static fn (mixed $item): mixed => self::formOf(value: $item), $value);
 		if (array_is_list($canonical) === false) {
 			ksort($canonical, SORT_STRING);
 		}
 
 		return $canonical;
-	}//end of()
+	}//end formOf()
 }//end class
