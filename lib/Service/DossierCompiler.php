@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\DossierReferenceUuid;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -208,19 +209,7 @@ class DossierCompiler {
 	 * @return string The UUID, or '' when none could be derived.
 	 */
 	private function extractUuid(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === true) {
-			foreach (['id', 'uuid', '@self.uuid', 'case', 'target'] as $key) {
-				if (isset($value[$key]) === true && is_string($value[$key]) === true) {
-					return trim($value[$key]);
-				}
-			}
-		}
-
-		return '';
+		return DossierReferenceUuid::from(value: $value);
 	}//end extractUuid()
 
 	/**
