@@ -190,7 +190,8 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 
 			$rewritten += $this->rewritePage(run: $run, page: $page);
 			$offset += self::PAGE;
-		} while (count($page) === self::PAGE);
+			$full = (count($page) === self::PAGE);
+		} while ($full === true);
 
 		return $rewritten;
 	}//end rewriteStoredFlows()
