@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
 use OCA\Dossiq\Service\Flow\UnmappableStep;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ProjectsOntoFlows;
 use OCP\IAppConfig;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -53,6 +54,8 @@ use Throwable;
  * @spec openspec/changes/page-topology-cleanup/tasks.md
  */
 class AutomaticActionFlowMigrator {
+	use ProjectsOntoFlows;
+
 	/**
 	 * The flow-node id space Dossiq's configured-action catalogue registered under.
 	 *
@@ -71,11 +74,6 @@ class AutomaticActionFlowMigrator {
 	 * lost.
 	 */
 	private const MARKER_PREFIX = 'dossiq:automaticAction:';
-
-	/**
-	 * How many flows to page through when rebuilding the marker map.
-	 */
-	private const FLOW_PAGE = 100;
 
 	/**
 	 * Constructor.
@@ -129,12 +127,14 @@ class AutomaticActionFlowMigrator {
 	 *
 	 * By name and not by type-hint: Dossiq must install and boot on an instance
 	 * without OpenRegister, where the class does not exist to hint against.
+	 * Kept over the ProjectsOntoFlows copy because this command logs the miss
+	 * at debug level, not as a warning.
 	 *
 	 * @return object|null The FlowService, or null.
 	 */
 	private function flowService(): ?object {
 		try {
-			return $this->container->get('OCA\OpenRegister\Service\Flow\FlowService');
+			return $this->container->get(self::FLOW_SERVICE);
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: FlowService could not be resolved',
@@ -254,7 +254,8 @@ class AutomaticActionFlowMigrator {
 	/**
 	 * Write (or rewrite) the flow, converting a throw into a failed row.
 	 *
-	 * One unusable action must never abort the rest of the migration.
+	 * One unusable action must never abort the rest of the migration. Kept over
+	 * the ProjectsOntoFlows copy because the log line names automatic actions.
 	 *
 	 * @param object $flowService OpenRegister's FlowService.
 	 * @param array<string, mixed> $document The flow document.
@@ -280,25 +281,6 @@ class AutomaticActionFlowMigrator {
 			'detail' => 'flow ' . (string)$flow->getUuid(),
 		];
 	}//end writeFlow()
-
-	/**
-	 * Whether writing against this uuid counts as a create or an update.
-	 *
-	 * A method rather than a ternary at both call sites: phpcs.xml forbids
-	 * inline IF, and the summary keys are the two outcomes' names, so getting
-	 * this wrong would mis-tally the run rather than fail it.
-	 *
-	 * @param string|null $uuid The existing flow uuid, or null.
-	 *
-	 * @return string Either `created` or `updated`.
-	 */
-	private function outcomeFor(?string $uuid): string {
-		if ($uuid === null) {
-			return 'created';
-		}
-
-		return 'updated';
-	}//end outcomeFor()
 
 	/**
 	 * Whether OpenRegister's node registry knows this node id.
@@ -397,42 +379,6 @@ class AutomaticActionFlowMigrator {
 
 		return self::MARKER_PREFIX . $tenantId . ':' . $slug;
 	}//end marker()
-
-	/**
-	 * Map the markers of already-migrated flows to their uuids.
-	 *
-	 * Paged: an instance with more than one page of Dossiq flows would otherwise
-	 * look empty past the first, and every action beyond it would be created a
-	 * second time on the next run.
-	 *
-	 * @param object $flowService OpenRegister's FlowService.
-	 *
-	 * @return array<string, string> Marker → flow uuid.
-	 */
-	private function existingByMarker(object $flowService): array {
-		$map = [];
-		$offset = 0;
-
-		while (true) {
-			$page = $flowService->findAll(Application::APP_ID, null, null, self::FLOW_PAGE, $offset);
-			if (is_array($page) === false || $page === []) {
-				return $map;
-			}
-
-			foreach ($page as $flow) {
-				$notes = (string)($flow->getNotes() ?? '');
-				if (str_starts_with($notes, self::MARKER_PREFIX) === true) {
-					$map[$notes] = (string)$flow->getUuid();
-				}
-			}
-
-			if (count($page) < self::FLOW_PAGE) {
-				return $map;
-			}
-
-			$offset += self::FLOW_PAGE;
-		}
-	}//end existingByMarker()
 
 	/**
 	 * Read every stored automaticAction object.
