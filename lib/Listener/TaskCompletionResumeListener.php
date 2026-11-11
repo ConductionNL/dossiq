@@ -112,15 +112,7 @@ class TaskCompletionResumeListener implements IEventListener {
 		try {
 			$this->signals->signalAs(
 				runUuid: $runUuid,
-				payload: [
-					// A resume with no `decision` is a nudge, not an answer, and
-					// the awaiting node suspends again. Saying `completed`
-					// explicitly is what makes this an answer.
-					'decision' => 'completed',
-					'node' => (string)$task['flowNode'],
-					'taskId' => (string)($task['id'] ?? ''),
-					'completedBy' => (string)$uid,
-				],
+				payload: $this->resumePayload(task: $task, uid: $uid),
 				actorUid: $uid,
 				// Addressing the node the task names makes the guard check THAT
 				// node's recorded assignee, so a run awaiting two steps never
@@ -136,6 +128,29 @@ class TaskCompletionResumeListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * The signal that answers the awaiting node: the task was completed, by whom.
+	 *
+	 * A resume with no `decision` is a nudge, not an answer, and the awaiting
+	 * node suspends again. Saying `completed` explicitly is what makes this an
+	 * answer.
+	 *
+	 * @param array<string, mixed> $task The completed flow task.
+	 * @param string|null          $uid  Who completed it.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
+	 */
+	private function resumePayload(array $task, ?string $uid): array {
+		return [
+			'decision' => 'completed',
+			'node' => (string)$task['flowNode'],
+			'taskId' => (string)($task['id'] ?? ''),
+			'completedBy' => (string)$uid,
+		];
+	}//end resumePayload()
 
 	/**
 	 * Record a refusal at the loudness its reason deserves.
