@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Custody\CaseCustodyChain;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
@@ -253,6 +254,59 @@ class CaseCustodyChainTest extends TestCase {
 		self::assertSame([], $chain->holdings(caseId: 'case-1'));
 		self::assertNull($chain->openHoldingFor(caseId: 'case-1'));
 	}//end testAnEmptyChainAnswersNothingRatherThanGuessing()
+
+	/**
+	 * A move without a case is refused and writes nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAMoveWithoutACaseIsRefused(): void {
+		try {
+			$this->chain()->move(caseId: '  ', organisationUnit: 'toezicht', handler: '', reason: 'x', movedBy: 'jan');
+			self::fail('A move without a case must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('A holding needs a case, so nothing was recorded.', $e->getMessage());
+			self::assertSame(CaseCustodyChain::CUSTODY_UNWRITABLE, $e->getRule());
+		}
+
+		self::assertNull($this->chain()->begin(caseId: ' ', organisationUnit: 'a', handler: '', from: '', reason: 'r', movedBy: 'jan'));
+	}//end testAMoveWithoutACaseIsRefused()
+
+	/**
+	 * The first move on an empty chain opens holding one with trimmed values and logs the untrimmed target.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function testAFirstMoveOpensHoldingOneTrimmedAndLogsIt(): void {
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('info')->with(
+			'Dossiq custody: a case changed hands',
+			['caseId' => 'case-1', 'to' => ' toezicht ', 'sequence' => 1, 'movedBy' => ' jan '],
+		);
+		$chain = new CaseCustodyChain(settingsService: $this->settings(), logger: $logger, dates: $this->caseDates());
+
+		$opened = $chain->move(
+			caseId: ' case-1 ',
+			organisationUnit: ' toezicht ',
+			handler: ' sofie ',
+			reason: ' Handhaving ',
+			movedBy: ' jan ',
+			movedAt: '2026-04-12T14:30:00+02:00',
+		);
+
+		self::assertSame('case-1', $opened['caseId']);
+		self::assertSame('toezicht', $opened['organisationUnit']);
+		self::assertSame('sofie', $opened['handler']);
+		self::assertSame('Handhaving', $opened['reason']);
+		self::assertSame('jan', $opened['movedBy']);
+		self::assertSame(1, $opened['sequence']);
+		self::assertSame('', $opened['until']);
+		self::assertTrue($opened['open']);
+	}//end testAFirstMoveOpensHoldingOneTrimmedAndLogsIt()
 
 	/**
 	 * The chain under test, wired to the in-memory store.
