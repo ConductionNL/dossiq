@@ -102,7 +102,18 @@ class ContactMomentBridge {
 			return ['appended' => false, 'reason' => $answer['reason'], 'indicators' => []];
 		}
 
-		$result = ($answer['value'] ?? []);
+		return $this->outcomeOf(result: ($answer['value'] ?? []), caseId: $caseId);
+	}//end append()
+
+	/**
+	 * What pipelinq's answer to an append means: written, or refused with its reason and indicators.
+	 *
+	 * @param mixed  $result What pipelinq answered.
+	 * @param string $caseId The case the moment was logged on, for the log.
+	 *
+	 * @return array{appended: bool, reason: string, indicators: array<int|string, mixed>} The outcome.
+	 */
+	private function outcomeOf(mixed $result, string $caseId): array {
 		if (is_array($result) === false) {
 			return ['appended' => false, 'reason' => 'pipelinq answered an unusable shape', 'indicators' => []];
 		}
@@ -125,7 +136,7 @@ class ContactMomentBridge {
 			'reason' => $reason,
 			'indicators' => (array)($result['indicators'] ?? []),
 		];
-	}//end append()
+	}//end outcomeOf()
 
 	/**
 	 * The contact moments on a case, by MEMBERSHIP, with the shared marker.
@@ -160,24 +171,33 @@ class ContactMomentBridge {
 			return ['available' => false, 'moments' => [], 'indicators' => []];
 		}
 
-		$moments = [];
-		foreach ((array)($result['contactMoments'] ?? []) as $moment) {
-			if (is_array($moment) === false) {
-				continue;
-			}
-
-			$moments[] = array_merge(
-				$moment,
-				['sharedLabel' => $this->sharedLabel(moment: $moment)]
-			);
-		}
-
 		return [
 			'available' => true,
-			'moments' => $moments,
+			'moments' => $this->labelledMoments(moments: (array)($result['contactMoments'] ?? [])),
 			'indicators' => (array)($result['indicators'] ?? []),
 		];
 	}//end onCase()
+
+	/**
+	 * The contact moments that are rows, each with its shared label.
+	 *
+	 * @param array<int|string, mixed> $moments What pipelinq listed.
+	 *
+	 * @return array<int, array<string, mixed>> The moments.
+	 */
+	private function labelledMoments(array $moments): array {
+		$labelled = [];
+		foreach ($moments as $moment) {
+			if (is_array($moment) === true) {
+				$labelled[] = array_merge(
+					$moment,
+					['sharedLabel' => $this->sharedLabel(moment: $moment)]
+				);
+			}
+		}
+
+		return $labelled;
+	}//end labelledMoments()
 
 	/**
 	 * File an existing contact moment onto a further case.

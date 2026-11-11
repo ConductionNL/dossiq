@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
+use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
@@ -103,6 +104,11 @@ class CaseTypeDeleteGuard implements IEventListener {
 			$event->setErrors($refusal);
 			$event->stopPropagation();
 			$this->logger->info('Dossiq: refused the delete of a case type', ['caseType' => $uuid, 'error' => $refusal['error']]);
+			return;
+		}
+
+		// A move keeps the case type, so its status types stay with it.
+		if ($event instanceof ObjectLeavingEvent === true) {
 			return;
 		}
 

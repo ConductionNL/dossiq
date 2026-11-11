@@ -1,0 +1,615 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`The admin field lists > builds aiFields exactly as pinned 1`] = `
+[
+  {
+    "key": "ai_enabled",
+    "label": "[dossiq] Switch on AI-assisted processing",
+    "type": "switch",
+    "wide": true,
+  },
+  {
+    "default": "local",
+    "key": "ai_model_type",
+    "label": "[dossiq] Kind of model",
+    "options": [
+      {
+        "description": "[dossiq] Data stays on your own servers",
+        "label": "[dossiq] Local (Ollama)",
+        "value": "local",
+      },
+      {
+        "description": "[dossiq] A provider outside your organisation",
+        "label": "[dossiq] Cloud",
+        "value": "cloud",
+      },
+    ],
+    "type": "radio",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+    "wide": true,
+  },
+  {
+    "key": "cloud-warning",
+    "text": "[dossiq] Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.",
+    "tone": "warning",
+    "type": "status",
+    "visibleWhen": [
+      {
+        "equals": true,
+        "key": "ai_enabled",
+      },
+      {
+        "equals": "cloud",
+        "key": "ai_model_type",
+      },
+    ],
+  },
+  {
+    "key": "ai_model_url",
+    "label": "[dossiq] Address of the model",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+  },
+  {
+    "key": "ai_model_name",
+    "label": "[dossiq] Model name",
+    "placeholder": "llama3.1",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+  },
+  {
+    "key": "ai_api_key",
+    "label": "[dossiq] API Key",
+    "setKey": "ai_api_key_set",
+    "type": "secret",
+    "visibleWhen": [
+      {
+        "equals": true,
+        "key": "ai_enabled",
+      },
+      {
+        "equals": "cloud",
+        "key": "ai_model_type",
+      },
+    ],
+  },
+  {
+    "advanced": true,
+    "key": "heading-features",
+    "label": "[dossiq] Features",
+    "type": "heading",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+  },
+  {
+    "advanced": true,
+    "key": "ai_feature_classification",
+    "label": "[dossiq] Document classification",
+    "type": "switch",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+    "wide": true,
+  },
+  {
+    "advanced": true,
+    "key": "ai_feature_extraction",
+    "label": "[dossiq] Data extraction",
+    "type": "switch",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+    "wide": true,
+  },
+  {
+    "advanced": true,
+    "key": "ai_feature_qa",
+    "label": "[dossiq] Knowledge base Q&A",
+    "type": "switch",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+    "wide": true,
+  },
+  {
+    "advanced": true,
+    "key": "ai_feature_summary",
+    "label": "[dossiq] Auto-summarization",
+    "type": "switch",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+    "wide": true,
+  },
+  {
+    "advanced": true,
+    "key": "ai_feature_routing",
+    "label": "[dossiq] Routing suggestions",
+    "type": "switch",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+    "wide": true,
+  },
+  {
+    "advanced": true,
+    "key": "ai_feature_decision_support",
+    "label": "[dossiq] Decision support",
+    "type": "switch",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+    "wide": true,
+  },
+  {
+    "advanced": true,
+    "key": "heading-privacy",
+    "label": "[dossiq] Privacy and compliance",
+    "type": "heading",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+  },
+  {
+    "advanced": true,
+    "key": "ai_pii_stripping",
+    "label": "[dossiq] Strip PII (BSN, financial data) from AI prompts",
+    "type": "switch",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+    "wide": true,
+  },
+  {
+    "advanced": true,
+    "key": "ai_dpia_acknowledged",
+    "label": "[dossiq] DPIA (Data Protection Impact Assessment) has been completed",
+    "type": "switch",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+    "wide": true,
+  },
+  {
+    "key": "dpia-warning",
+    "text": "[dossiq] A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.",
+    "tone": "warning",
+    "type": "status",
+    "visibleWhen": [
+      {
+        "equals": true,
+        "key": "ai_enabled",
+      },
+      {
+        "equals": false,
+        "key": "ai_dpia_acknowledged",
+      },
+    ],
+  },
+  {
+    "key": "heading-test",
+    "label": "[dossiq] Connection test",
+    "type": "heading",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+  },
+  {
+    "key": "test-connection",
+    "label": "[dossiq] Test connection",
+    "okPath": "healthy",
+    "type": "action",
+    "url": "/apps/dossiq/api/ai/health",
+    "visibleWhen": {
+      "equals": true,
+      "key": "ai_enabled",
+    },
+  },
+]
+`;
+
+exports[`The admin field lists > builds consultationFields exactly as pinned 1`] = `
+[
+  {
+    "default": 28,
+    "integer": true,
+    "key": "consultation_default_deadline_days",
+    "label": "[dossiq] Standard term in days",
+    "min": 0,
+    "type": "number",
+  },
+  {
+    "default": 5,
+    "integer": true,
+    "key": "consultation_warning_offset_days",
+    "label": "[dossiq] Warn, days ahead",
+    "min": 0,
+    "type": "number",
+  },
+  {
+    "key": "consultation_external_response_url",
+    "label": "[dossiq] Address for external responses",
+    "pattern": "^https://",
+    "patternMessage": "[dossiq] Starts with https://",
+    "placeholder": "https://dossiq.example.org/consultation/respond/",
+  },
+  {
+    "advanced": true,
+    "default": 0.2,
+    "hint": "[dossiq] When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.",
+    "key": "consultation_bottleneck_threshold",
+    "label": "[dossiq] Bottleneck overdue-rate threshold (0-1)",
+    "max": 1,
+    "min": 0,
+    "type": "number",
+  },
+]
+`;
+
+exports[`The admin field lists > builds contactCentreFields exactly as pinned 1`] = `
+[
+  {
+    "key": "kcc-scope",
+    "text": "[dossiq] Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by Integriq and pipelinq respectively; only the Dossiq-side behaviour is configured here.",
+    "type": "status",
+  },
+  {
+    "default": "both",
+    "hint": "[dossiq] Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.",
+    "key": "identification_method",
+    "label": "[dossiq] Identification method",
+    "options": [
+      {
+        "label": "DigiD",
+        "value": "digid",
+      },
+      {
+        "label": "[dossiq] Identification questions",
+        "value": "bsn_questions",
+      },
+      {
+        "label": "[dossiq] Both",
+        "value": "both",
+      },
+    ],
+    "required": true,
+    "type": "select",
+  },
+  {
+    "default": 0.8,
+    "hint": "[dossiq] Minimum identificatievragen match score to link a burger and reveal full zaaksinfo. Below the threshold, only openbare zaaksinformatie is shown.",
+    "key": "identification_score_threshold",
+    "label": "[dossiq] Identification score threshold (0.6 - 1.0)",
+    "max": 1,
+    "min": 0,
+    "placeholder": "0.8",
+    "type": "number",
+  },
+  {
+    "default": 5,
+    "key": "sentiment_polling_interval",
+    "label": "[dossiq] Sentiment polling interval (seconds)",
+    "min": 0,
+    "placeholder": "5",
+    "type": "number",
+  },
+  {
+    "default": 30,
+    "key": "specialist_availability_polling_interval",
+    "label": "[dossiq] Specialist availability polling interval (seconds)",
+    "min": 0,
+    "placeholder": "30",
+    "type": "number",
+  },
+  {
+    "default": 10,
+    "key": "max_zaken_voorblad",
+    "label": "[dossiq] Max open zaken in voorblad",
+    "min": 0,
+    "placeholder": "10",
+    "type": "number",
+  },
+  {
+    "default": 5,
+    "key": "max_contactmomenten_history",
+    "label": "[dossiq] Max contactmomenten in history",
+    "min": 0,
+    "placeholder": "5",
+    "type": "number",
+  },
+  {
+    "default": 180,
+    "key": "belplan_overflow_threshold_wachttijd",
+    "label": "[dossiq] Belplan overflow threshold: wachttijd (seconds)",
+    "min": 0,
+    "placeholder": "180",
+    "type": "number",
+  },
+  {
+    "default": 5,
+    "key": "belplan_overflow_threshold_wachtrij_lengte",
+    "label": "[dossiq] Belplan overflow threshold: wachtrij lengte",
+    "min": 0,
+    "placeholder": "5",
+    "type": "number",
+  },
+  {
+    "hint": "[dossiq] Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.",
+    "key": "sentiment_trigger_words",
+    "label": "[dossiq] Sentiment trigger words (one per line)",
+    "placeholder": "klacht
+advocaat
+wethouder
+media",
+    "rows": 5,
+    "saveAs": "json",
+    "type": "lines",
+    "wide": true,
+  },
+]
+`;
+
+exports[`The admin field lists > builds houseStyleFields exactly as pinned 1`] = `
+[
+  {
+    "key": "organisationName",
+    "label": "[dossiq] Name of the organisation",
+    "saveKey": "value",
+    "saveParams": {
+      "setting": "name",
+    },
+    "saveUrl": "/apps/theming/ajax/updateStylesheet",
+    "url": "/ocs/v2.php/cloud/capabilities?format=json",
+    "valuePath": "ocs.data.capabilities.theming.name",
+  },
+  {
+    "key": "municipality_city",
+    "label": "[dossiq] City of the municipality",
+  },
+  {
+    "key": "staff_app_name",
+    "label": "[dossiq] Name of the app for staff",
+    "placeholder": "Dossiq",
+  },
+  {
+    "key": "theme",
+    "label": "[dossiq] Theme",
+    "optionLabel": "name",
+    "optionValue": "id",
+    "optionsPath": "tokenSets",
+    "optionsUrl": "/apps/thematiq/settings/app-brands",
+    "saveKey": "tokenSet",
+    "saveUrl": "/apps/thematiq/settings/app-brands/dossiq",
+    "type": "select",
+    "url": "/apps/thematiq/settings/app-brands",
+    "valuePath": "brands.dossiq.tokenSet",
+  },
+  {
+    "hideLabel": true,
+    "initialsFrom": "organisationName",
+    "key": "logo",
+    "label": "[dossiq] Other logo",
+    "type": "image",
+    "uploadLabel": "[dossiq] Other logo",
+    "uploadParams": {
+      "key": "logo",
+    },
+    "uploadUrl": "/apps/theming/ajax/uploadImage",
+    "uploadValuePath": "data.url",
+    "url": "/apps/thematiq/settings/theming",
+    "valuePath": "logo_url",
+  },
+]
+`;
+
+exports[`The admin field lists > builds textsAndAccessFields exactly as pinned 1`] = `
+[
+  {
+    "key": "email_from_name",
+    "label": "[dossiq] Sender of messages",
+  },
+  {
+    "key": "portal_intro_text",
+    "label": "[dossiq] Text above My cases in the portal",
+  },
+  {
+    "key": "allowedWebsites",
+    "label": "[dossiq] Allowed websites (CORS)",
+    "text": "[dossiq] Set in the portal app (portaliq) and in Nextcloud, not here.",
+    "type": "note",
+  },
+  {
+    "default": "Europe/Amsterdam",
+    "key": "timezone",
+    "label": "[dossiq] Time zone",
+    "placeholder": "Europe/Amsterdam",
+  },
+  {
+    "default": "DD-MM-YYYY",
+    "key": "date_format",
+    "label": "[dossiq] Date format",
+    "options": [
+      {
+        "label": "DD-MM-YYYY",
+        "value": "DD-MM-YYYY",
+      },
+      {
+        "label": "YYYY-MM-DD",
+        "value": "YYYY-MM-DD",
+      },
+      {
+        "label": "D MMMM YYYY",
+        "value": "D MMMM YYYY",
+      },
+    ],
+    "required": true,
+    "type": "select",
+  },
+  {
+    "key": "betaFeatures",
+    "label": "[dossiq] Beta features",
+    "type": "heading",
+  },
+  {
+    "falseValue": "false",
+    "hint": "[dossiq] visible to everyone at once, without waiting for the cache",
+    "key": "feature_new_case_page",
+    "label": "[dossiq] New case page",
+    "trueValue": "true",
+    "type": "switch",
+  },
+]
+`;
+
+exports[`The admin field lists > builds workDigestFields exactly as pinned 1`] = `
+[
+  {
+    "default": true,
+    "key": "enabled",
+    "label": "[dossiq] Send me a daily digest of my open work",
+    "type": "switch",
+  },
+  {
+    "default": 8,
+    "key": "hour",
+    "label": "[dossiq] Hour of the day",
+    "options": [
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"00"}",
+        "value": 0,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"01"}",
+        "value": 1,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"02"}",
+        "value": 2,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"03"}",
+        "value": 3,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"04"}",
+        "value": 4,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"05"}",
+        "value": 5,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"06"}",
+        "value": 6,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"07"}",
+        "value": 7,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"08"}",
+        "value": 8,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"09"}",
+        "value": 9,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"10"}",
+        "value": 10,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"11"}",
+        "value": 11,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"12"}",
+        "value": 12,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"13"}",
+        "value": 13,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"14"}",
+        "value": 14,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"15"}",
+        "value": 15,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"16"}",
+        "value": 16,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"17"}",
+        "value": 17,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"18"}",
+        "value": 18,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"19"}",
+        "value": 19,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"20"}",
+        "value": 20,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"21"}",
+        "value": 21,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"22"}",
+        "value": 22,
+      },
+      {
+        "label": "[dossiq] {hour}:00 {"hour":"23"}",
+        "value": 23,
+      },
+    ],
+    "type": "select",
+    "visibleWhen": {
+      "equals": true,
+      "key": "enabled",
+    },
+  },
+  {
+    "key": "source",
+    "textMap": {
+      "*": "[dossiq] This instance keeps the setting here rather than with your other notifications.",
+      "group-default": "[dossiq] Your team set this. You can decide for yourself.",
+      "schema-default": "[dossiq] Nobody has changed this, so it is on the setting it ships with.",
+      "user-override": "[dossiq] You set this.",
+    },
+    "type": "status",
+  },
+  {
+    "key": "nothing-waiting",
+    "text": "[dossiq] A day with nothing waiting sends nothing.",
+    "type": "status",
+  },
+]
+`;

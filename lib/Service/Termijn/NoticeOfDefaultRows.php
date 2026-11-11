@@ -92,17 +92,31 @@ class NoticeOfDefaultRows {
 		$notices = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $noticeSchema, filters: []);
 
 		$this->found = [];
-		$penalties = $this->penaltiesByNotice(objectService: $objectService, register: $register);
-		$payouts = $this->payoutsByCalculation(objectService: $objectService, register: $register);
+		$run = new NoticeListRun(objectService: $objectService, register: $register);
+		$run->penalties = $this->penaltiesByNotice(objectService: $objectService, register: $register);
+		$run->payouts = $this->payoutsByCalculation(objectService: $objectService, register: $register);
+
+		return ['notices' => $this->newestFirst(run: $run, notices: $notices)];
+	}//end list()
+
+	/**
+	 * Every notice as a row, newest receipt first.
+	 *
+	 * @param NoticeListRun                    $run     The listing.
+	 * @param array<int, array<string, mixed>> $notices The notices.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function newestFirst(NoticeListRun $run, array $notices): array {
 		$rows = [];
 		foreach ($notices as $notice) {
-			$rows[] = $this->rowOf(objectService: $objectService, register: $register, notice: $notice, penalties: $penalties, payouts: $payouts);
+			$rows[] = $this->rowOf(run: $run, notice: $notice);
 		}
 
 		usort($rows, static fn (array $a, array $b): int => strcmp((string)$b['receiptDate'], (string)$a['receiptDate']));
 
-		return ['notices' => $rows];
-	}//end list()
+		return $rows;
+	}//end newestFirst()
 
 	/**
 	 * The penalty calculations by the notice each started from.
@@ -136,36 +150,49 @@ class NoticeOfDefaultRows {
 	/**
 	 * One notice as a row, named by its case.
 	 *
-	 * @param object                              $objectService The OpenRegister object service.
-	 * @param string                              $register      The register id.
-	 * @param array<string, mixed>                $notice        The notice.
-	 * @param array<string, array<string, mixed>> $penalties     The penalty calculations by notice id.
-	 * @param array<string, array<string, mixed>> $payouts       The payouts, by calculation id.
+	 * @param NoticeListRun        $run    The listing.
+	 * @param array<string, mixed> $notice The notice.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function rowOf(object $objectService, string $register, array $notice, array $penalties, array $payouts): array {
+	private function rowOf(NoticeListRun $run, array $notice): array {
 		$id = (string)($notice['id'] ?? ($notice['@self']['id'] ?? ''));
 		$term = $this->read(
-			objectService: $objectService,
-			register: $register,
+			objectService: $run->objectService,
+			register: $run->register,
 			schemaKey: 'termijn_instance_schema',
 			id: (string)($notice['deadlineInstance'] ?? '')
 		);
-		$case = $this->read(objectService: $objectService, register: $register, schemaKey: 'case_schema', id: (string)($term['case'] ?? ''));
+		$case = $this->read(objectService: $run->objectService, register: $run->register, schemaKey: 'case_schema', id: (string)($term['case'] ?? ''));
+
+		return ['id' => $id]
+			+ $this->caseColumns(case: $case, term: $term)
+			+ [
+				'receiptDate'    => (string)($notice['receiptDate'] ?? ''),
+				'validityStatus' => (string)($notice['validityStatus'] ?? 'unknown'),
+			]
+			+ $this->penaltyOf(calculation: ($run->penalties[$id] ?? null), payouts: $run->payouts);
+	}//end rowOf()
+
+	/**
+	 * The columns that name a notice's case.
+	 *
+	 * @param array<string, mixed> $case The case, or [] when it cannot be read.
+	 * @param array<string, mixed> $term The notice's term, or [].
+	 *
+	 * @return array{caseId: string, caseIdentifier: string, caseTitle: string, caseLabel: string}
+	 */
+	private function caseColumns(array $case, array $term): array {
 		$identifier = (string)($case['identifier'] ?? '');
 		$title = (string)($case['title'] ?? '');
 
 		return [
-			'id'             => $id,
 			'caseId'         => (string)($case['id'] ?? ($term['case'] ?? '')),
 			'caseIdentifier' => $identifier,
 			'caseTitle'      => $title,
 			'caseLabel'      => trim($identifier.' '.$title),
-			'receiptDate'    => (string)($notice['receiptDate'] ?? ''),
-			'validityStatus' => (string)($notice['validityStatus'] ?? 'unknown'),
-		] + $this->penaltyOf(calculation: ($penalties[$id] ?? null), payouts: $payouts);
-	}//end rowOf()
+		];
+	}//end caseColumns()
 
 	/**
 	 * The payouts, by the calculation they pay: the stored ones, merged with
@@ -216,17 +243,9 @@ class NoticeOfDefaultRows {
 			return ['penaltyState' => 'none', 'penaltyEuros' => 0.0, 'penaltySince' => '', 'financeState' => null, 'accruingAmountId' => ''];
 		}
 
-		$calculationId = (string)($calculation['id'] ?? ($calculation['@self']['id'] ?? ''));
 		$definitive = ($calculation['definitiveAmount'] ?? null);
-		$since = (string)($calculation['startDate'] ?? '');
 		if ($definitive !== null && $definitive !== '') {
-			return [
-				'penaltyState' => 'definitive',
-				'penaltyEuros' => round(((int)$definitive) / 100, 2),
-				'penaltySince' => $since,
-				'financeState' => $this->payoutState(payout: ($payouts[$calculationId] ?? null)),
-				'accruingAmountId' => $calculationId,
-			];
+			return $this->definitivePenalty(calculation: $calculation, payouts: $payouts);
 		}
 
 		$cents = (int)($calculation['cumulativeAmount'] ?? 0);
@@ -234,11 +253,42 @@ class NoticeOfDefaultRows {
 		return [
 			'penaltyState' => 'running',
 			'penaltyEuros' => round($cents / 100, 2),
-			'penaltySince' => $since,
+			'penaltySince' => (string)($calculation['startDate'] ?? ''),
 			'financeState' => 'amount-open',
-			'accruingAmountId' => $calculationId,
+			'accruingAmountId' => $this->calculationId(calculation: $calculation),
 		];
 	}//end penaltyOf()
+
+	/**
+	 * A fixed penalty: its definitive amount in euros and where its payout stands.
+	 *
+	 * @param array<string, mixed>                $calculation The calculation, with a definitive amount.
+	 * @param array<string, array<string, mixed>> $payouts     The payouts, by calculation id.
+	 *
+	 * @return array{penaltyState: string, penaltyEuros: float, penaltySince: string, financeState: string, accruingAmountId: string}
+	 */
+	private function definitivePenalty(array $calculation, array $payouts): array {
+		$calculationId = $this->calculationId(calculation: $calculation);
+
+		return [
+			'penaltyState' => 'definitive',
+			'penaltyEuros' => round(((int)$calculation['definitiveAmount']) / 100, 2),
+			'penaltySince' => (string)($calculation['startDate'] ?? ''),
+			'financeState' => $this->payoutState(payout: ($payouts[$calculationId] ?? null)),
+			'accruingAmountId' => $calculationId,
+		];
+	}//end definitivePenalty()
+
+	/**
+	 * A calculation's id, from its own field or its `@self`.
+	 *
+	 * @param array<string, mixed> $calculation The calculation.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private function calculationId(array $calculation): string {
+		return (string)($calculation['id'] ?? ($calculation['@self']['id'] ?? ''));
+	}//end calculationId()
 
 	/**
 	 * Where the payout of a fixed amount stands.
@@ -257,10 +307,11 @@ class NoticeOfDefaultRows {
 			return 'payout-due';
 		}
 
-		$status = (string)($payout['status'] ?? '');
-		if ($status === 'voorbereid' && (string)($payout['payableId'] ?? '') === '') {
+		if ($this->isOnlyStoredHere(payout: $payout) === true) {
 			return 'prepared';
 		}
+
+		$status = (string)($payout['status'] ?? '');
 
 		return match ($status) {
 			'paid' => 'paid',
@@ -269,6 +320,17 @@ class NoticeOfDefaultRows {
 			default => 'signal-sent',
 		};
 	}//end payoutState()
+
+	/**
+	 * Whether a payout is prepared here and not yet taken by the finance app.
+	 *
+	 * @param array<string, mixed> $payout The payout.
+	 *
+	 * @return bool True when it is `voorbereid` and carries no payable id.
+	 */
+	private function isOnlyStoredHere(array $payout): bool {
+		return ((string)($payout['status'] ?? '') === 'voorbereid' && (string)($payout['payableId'] ?? '') === '');
+	}//end isOnlyStoredHere()
 
 	/**
 	 * Read one object by the schema a setting names, once per call.

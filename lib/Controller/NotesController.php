@@ -185,7 +185,7 @@ class NotesController extends Controller {
 	 * rather than a 5xx.
 	 *
 	 * The caller must be able to read the case the note is on, and only
-	 * mentioned user ids with an account are notified.
+	 * mentioned users with an account who may read the case are notified.
 	 *
 	 * @return JSONResponse Dispatch result
 	 *
@@ -246,7 +246,7 @@ class NotesController extends Controller {
 	 * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	 */
 	private function notifyMentioned(IUser $actor, array $data): JSONResponse {
-		$mentionedUserIds = $this->existingUsers(userIds: $this->mentionedIds(data: $data));
+		$mentionedUserIds = $this->caseReaders(caseId: (string)$data['objectId'], userIds: $this->mentionedIds(data: $data));
 		if ($mentionedUserIds === []) {
 			return new JSONResponse(['notified' => 0], Http::STATUS_OK);
 		}
@@ -304,15 +304,24 @@ class NotesController extends Controller {
 	}//end mentionFailed()
 
 	/**
-	 * The user ids that belong to an existing account, in their given order.
+	 * The user ids of existing accounts that may read the case, in their given order.
 	 *
+	 * @param string             $caseId  The case the note is on.
 	 * @param array<int, string> $userIds The mentioned user ids.
 	 *
 	 * @return array<int, string>
 	 */
-	private function existingUsers(array $userIds): array {
-		return array_values(array_filter($userIds, fn (string $uid): bool => $this->userManager->userExists($uid)));
-	}//end existingUsers()
+	private function caseReaders(string $caseId, array $userIds): array {
+		return array_values(
+			array_filter(
+				$userIds,
+				function (string $uid) use ($caseId): bool {
+					$user = $this->userManager->get($uid);
+					return $user !== null && $this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === true;
+				}
+			)
+		);
+	}//end caseReaders()
 
 	/**
 	 * Read the decoded JSON request body.

@@ -84,33 +84,12 @@ class NewMessagesSynchronizedListener implements IEventListener {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($this->account->isConfigured() === false) {
+		$batch = $this->intakeBatch(event: $event);
+		if ($batch === null) {
 			return;
 		}
 
-		$unpacked = $this->gateway->unpackSynchronisation($event);
-		if ($unpacked === null) {
-			return;
-		}
-
-		if ($this->account->matches(accountId: $unpacked['accountId'], mailbox: $unpacked['mailbox']) === false) {
-			return;
-		}
-
-		try {
-			$counts = $this->intake->processBatch(
-				rows: $unpacked['messages'],
-				accountId: $unpacked['accountId'],
-				mailbox: $unpacked['mailbox']
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: intake failed on a Mail synchronisation event',
-				['error' => $e->getMessage()]
-			);
-			return;
-		}
-
+		$counts = $this->processed(batch: $batch);
 		if ($counts === []) {
 			return;
 		}
@@ -120,4 +99,55 @@ class NewMessagesSynchronizedListener implements IEventListener {
 			['outcomes' => $counts]
 		);
 	}//end handle()
+
+	/**
+	 * The synchronised batch of the intake account's mailbox, or null for anything else.
+	 *
+	 * @param Event $event The dispatched event.
+	 *
+	 * @return array{accountId: int, mailbox: string, messages: array<mixed>}|null
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function intakeBatch(Event $event): ?array {
+		if ($this->account->isConfigured() === false) {
+			return null;
+		}
+
+		$unpacked = $this->gateway->unpackSynchronisation($event);
+		if ($unpacked === null) {
+			return null;
+		}
+
+		if ($this->account->matches(accountId: $unpacked['accountId'], mailbox: $unpacked['mailbox']) === false) {
+			return null;
+		}
+
+		return $unpacked;
+	}//end intakeBatch()
+
+	/**
+	 * Run the batch through the intake; the outcome counts, or none when the intake failed.
+	 *
+	 * @param array{accountId: int, mailbox: string, messages: array<mixed>} $batch The batch.
+	 *
+	 * @return array<string, int>
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function processed(array $batch): array {
+		try {
+			return $this->intake->processBatch(
+				rows: $batch['messages'],
+				accountId: $batch['accountId'],
+				mailbox: $batch['mailbox']
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: intake failed on a Mail synchronisation event',
+				['error' => $e->getMessage()]
+			);
+			return [];
+		}
+	}//end processed()
 }//end class

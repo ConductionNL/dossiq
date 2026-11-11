@@ -197,6 +197,28 @@ abstract class ServiceAccount {
 	}//end runAs()
 
 	/**
+	 * Run an operation as the account, and run nothing when there is none.
+	 *
+	 * For the background jobs. The refusal that stops the run has already been
+	 * logged as an error and told to the admins, nothing was read, sent or
+	 * written, and the next run tries again, so the job has nothing to add.
+	 * Anything else the operation throws still reaches the caller.
+	 *
+	 * @param callable $operation The operation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	public function runAsWhenAvailable(callable $operation): void {
+		try {
+			$this->runAs(operation: $operation);
+		} catch (ServiceAccountUnavailableException $e) {
+			return;
+		}
+	}//end runAsWhenAvailable()
+
+	/**
 	 * Run an operation as the account only when nobody is signed in.
 	 *
 	 * For code that a request and cron both reach, such as a listener on an

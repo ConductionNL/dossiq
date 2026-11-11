@@ -268,17 +268,7 @@ class PipelinqGateway {
 			method: 'openByMasterEntity',
 			arguments: ['refs' => array_values($refs)],
 		);
-		$value = $answer['value'];
-		if ($answer['answered'] === false || is_array($value) === false || ($value['status'] ?? null) !== 200) {
-			return null;
-		}
-
-		$tickets = ($value['tickets'] ?? null);
-		if (is_array($tickets) === false) {
-			return null;
-		}
-
-		return $tickets;
+		return self::ticketsOf(answer: $answer);
 	}//end openTicketsByMasterEntity()
 
 	/**
@@ -304,18 +294,41 @@ class PipelinqGateway {
 			method: 'byMasterEntity',
 			arguments: ['refs' => array_values($refs), 'status' => $status],
 		);
-		$value = $answer['value'];
-		if ($answer['answered'] === false || is_array($value) === false || ($value['status'] ?? null) !== 200) {
+		return self::ticketsOf(answer: $answer);
+	}//end ticketsByMasterEntity()
+
+	/**
+	 * The tickets per reference in a ticket leaf's answer, or null when it did not answer them.
+	 *
+	 * @param array{answered: bool, value: mixed, reason: string} $answer The gateway's answer.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>|null Tickets per reference, or null.
+	 */
+	private static function ticketsOf(array $answer): ?array {
+		if (self::isOkAnswer(answer: $answer) === false) {
 			return null;
 		}
 
-		$tickets = ($value['tickets'] ?? null);
+		$tickets = ($answer['value']['tickets'] ?? null);
 		if (is_array($tickets) === false) {
 			return null;
 		}
 
 		return $tickets;
-	}//end ticketsByMasterEntity()
+	}//end ticketsOf()
+
+	/**
+	 * Whether the leaf answered with a 200 status.
+	 *
+	 * @param array{answered: bool, value: mixed, reason: string} $answer The gateway's answer.
+	 *
+	 * @return bool True for an answered 200.
+	 */
+	private static function isOkAnswer(array $answer): bool {
+		$value = $answer['value'];
+
+		return ($answer['answered'] !== false && is_array($value) === true && ($value['status'] ?? null) === 200);
+	}//end isOkAnswer()
 
 	/**
 	 * Say once per request which capability is unavailable.

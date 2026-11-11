@@ -167,6 +167,56 @@ import { useObjectStore } from '../../../store/modules/object.js'
 import { useSettingsStore } from '../../../store/modules/settings.js'
 import { resolveTranslatable } from '../../../utils/i18nResolver.js'
 
+/**
+ * Load only the case type, which is all the summary shows.
+ *
+ * @param {object} view The Rules tab.
+ * @return {Promise<void>}
+ */
+async function loadSummary(view) {
+	await view.loadCaseType()
+	view.loading = false
+}
+
+/**
+ * Read the schema's rules for the tab's case type, as `{ list }` or `{ e }` so the other reads still land.
+ *
+ * @param {object} view The Rules tab.
+ * @return {Promise<{list: Array<object>}|{e: Error}>} The rules, or the failure.
+ */
+function fetchRulesOf(view) {
+	return fetchSchemaRules(view.schemaSlug(), view.caseTypeId ? { caseType: view.caseTypeId } : {}).then((list) => ({ list }), (e) => ({ e }))
+}
+
+/**
+ * Keep the rules read, or none and the sentence that says why.
+ *
+ * @param {object} view The Rules tab.
+ * @param {{list: Array<object>}|{e: Error}} rules The rules, or the failure.
+ * @return {void}
+ */
+function showRules(view, rules) {
+	if (rules.e) {
+		view.rules = []
+		view.error = rulesRefusal(rules.e)
+		return
+	}
+	view.rules = rules.list
+}
+
+/**
+ * The sentence for a rules read that failed: an administrator's matter when refused, a plain failure otherwise.
+ *
+ * @param {Error} error The failure.
+ * @return {string} The sentence.
+ */
+function rulesRefusal(error) {
+	if (Number(error?.response?.status) === 403) {
+		return t('dossiq', 'Only an administrator can read the rules of a case.')
+	}
+	return t('dossiq', 'The rules could not be read. Ask an administrator.')
+}
+
 export default {
 	name: 'RulesTab',
 
@@ -373,38 +423,13 @@ export default {
 			this.loading = true
 			this.error = ''
 			if (this.summary) {
-				await this.loadCaseType()
-				this.loading = false
-				return
+				return loadSummary(this)
 			}
-			const [vocabulary, properties, rules] = await Promise.all([
-				fetchRuleVocabulary(),
-				fetchSchemaProperties(this.schemaSlug()),
-				fetchSchemaRules(this.schemaSlug(), this.caseTypeId ? { caseType: this.caseTypeId } : {}).then((list) => ({ list }), (e) => ({ e })),
-				this.loadCaseType(),
-			])
+			const reads = [fetchRuleVocabulary(), fetchSchemaProperties(this.schemaSlug()), fetchRulesOf(this), this.loadCaseType()]
+			const [vocabulary, properties, rules] = await Promise.all(reads)
 			this.kinds = kindsByName(vocabulary)
 			this.properties = properties
-
-			try {
-				if (rules.e) {
-					throw rules.e
-				}
-				this.rules = rules.list
-			} catch (e) {
-				this.rules = []
-				this.error =
-					Number(e?.response?.status) === 403
-						? t(
-								'dossiq',
-								'Only an administrator can read the rules of a case.',
-							)
-						: t(
-								'dossiq',
-								'The rules could not be read. Ask an administrator.',
-							)
-			}
-
+			showRules(this, rules)
 			this.loading = false
 		},
 

@@ -44,6 +44,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -110,15 +111,11 @@ class CaseMergeController extends Controller {
 			);
 		}
 
-		// Both halves, because a merge changes both. Mutation access to the
-		// case being merged away is not access to the one it lands in.
-		foreach ([$caseId, $into] as $subject) {
-			if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $subject, user: $user) === false) {
-				return new JSONResponse(
-					['error' => $this->l10n->t('You cannot merge these cases.')],
-					Http::STATUS_FORBIDDEN
-				);
-			}
+		if ($this->mayChangeBoth(user: $user, cases: [$caseId, $into]) === false) {
+			return new JSONResponse(
+				['error' => $this->l10n->t('You cannot merge these cases.')],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		$outcome = $this->mergeService->requestMerge(
@@ -130,17 +127,53 @@ class CaseMergeController extends Controller {
 
 		$refusal = (string)($outcome['refused'] ?? '');
 		if ($refusal !== '') {
-			return new JSONResponse(
-				[
-					'code' => $refusal,
-					'error' => $this->sentence(rule: $refusal),
-				],
-				(int)(self::REFUSAL_STATUS[$refusal] ?? Http::STATUS_CONFLICT)
-			);
+			return $this->mergeRefused(rule: $refusal);
 		}
 
 		return new JSONResponse(['operation' => ($outcome['operation'] ?? [])]);
 	}//end merge()
+
+	/**
+	 * Whether the caller may change both cases.
+	 *
+	 * Both halves, because a merge changes both. Mutation access to the
+	 * case being merged away is not access to the one it lands in.
+	 *
+	 * @param IUser         $user  The caller.
+	 * @param array<string> $cases The case merged away and the one it lands in.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 */
+	private function mayChangeBoth(IUser $user, array $cases): bool {
+		foreach ($cases as $subject) {
+			if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $subject, user: $user) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end mayChangeBoth()
+
+	/**
+	 * The answer for a merge the service refused: its code, its sentence and its status.
+	 *
+	 * @param string $rule The refusal code.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 */
+	private function mergeRefused(string $rule): JSONResponse {
+		return new JSONResponse(
+			[
+				'code' => $rule,
+				'error' => $this->sentence(rule: $rule),
+			],
+			(int)(self::REFUSAL_STATUS[$rule] ?? Http::STATUS_CONFLICT)
+		);
+	}//end mergeRefused()
 
 	/**
 	 * The sentence a refusal reads as.

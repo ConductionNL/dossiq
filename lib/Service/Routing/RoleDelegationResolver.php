@@ -102,48 +102,60 @@ class RoleDelegationResolver {
 	 * @return string The delegate when an active window applies, else the participant.
 	 */
 	private function resolveDelegate(string $participant, array $byUser, DateTimeImmutable $now): string {
-		$resolved = $participant;
-		$visited = [$participant => true];
-		while (isset($byUser[$resolved]) === true) {
-			$role = $byUser[$resolved];
-			$from = (string)($role['delegateFrom'] ?? '');
-			$until = (string)($role['delegateUntil'] ?? '');
-			$delegate = (string)($role['delegate'] ?? '');
-			if ($delegate === '' || $from === '' || $until === '') {
-				break;
-			}
+		$delegate = self::activeDelegate(role: ($byUser[$participant] ?? []), now: $now);
+		if ($delegate === '') {
+			return $participant;
+		}
 
-			try {
-				$fromAt = new DateTimeImmutable($from);
-				$untilAt = new DateTimeImmutable($until);
-			} catch (Throwable $e) {
-				break;
-			}
+		// A participant delegating to themselves is a cycle; one hop only, per spec.
+		if ($delegate === $participant) {
+			$this->logger->warning(
+				'Dossiq: delegation cycle detected',
+				['event' => 'RoleRoutingDelegationCycle', 'original' => $participant, 'delegate' => $delegate, 'app' => Application::APP_ID],
+			);
 
-			if ($now < $fromAt || $now > $untilAt) {
-				break;
-			}
+			return $participant;
+		}
 
-			if (isset($visited[$delegate]) === true) {
-				$this->logger->warning(
-					'Dossiq: delegation cycle detected',
-					[
-						'event' => 'RoleRoutingDelegationCycle',
-						'original' => $participant,
-						'delegate' => $delegate,
-						'app' => Application::APP_ID,
-					],
-				);
-				break;
-			}
-
-			$visited[$delegate] = true;
-			$resolved = $delegate;
-
-			// Per spec: break after exactly one hop.
-			break;
-		}//end while
-
-		return $resolved;
+		return $delegate;
 	}//end resolveDelegate()
+
+	/**
+	 * The role's delegate when its delegation window is complete and holds `$now`, else ''.
+	 *
+	 * @param array<string, mixed> $role The participant's case role.
+	 * @param DateTimeImmutable    $now  The evaluation moment.
+	 *
+	 * @return string The delegate, or ''.
+	 */
+	private static function activeDelegate(array $role, DateTimeImmutable $now): string {
+		$delegate = (string)($role['delegate'] ?? '');
+		if ($delegate === '' || self::windowHolds(role: $role, now: $now) === false) {
+			return '';
+		}
+
+		return $delegate;
+	}//end activeDelegate()
+
+	/**
+	 * Whether the role's delegation window has both ends, both read as dates, and `$now` lies within.
+	 *
+	 * @param array<string, mixed> $role The participant's case role.
+	 * @param DateTimeImmutable    $now  The evaluation moment.
+	 *
+	 * @return bool Whether the window holds now.
+	 */
+	private static function windowHolds(array $role, DateTimeImmutable $now): bool {
+		$from = (string)($role['delegateFrom'] ?? '');
+		$until = (string)($role['delegateUntil'] ?? '');
+		if ($from === '' || $until === '') {
+			return false;
+		}
+
+		try {
+			return ($now >= new DateTimeImmutable($from) && $now <= new DateTimeImmutable($until));
+		} catch (Throwable $e) {
+			return false;
+		}
+	}//end windowHolds()
 }//end class

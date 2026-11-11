@@ -35,6 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\DependentTermOffer;
@@ -86,7 +88,7 @@ class DependentTermListener implements IEventListener {
 	 */
 	public function handle(Event $event): void {
 		try {
-			$object = $this->payloadOf(event: $event);
+			$object = EventObjectPayload::firstOf(event: $event, methods: ['getObject', 'getNewObject']);
 			if ($object === null || $this->isTermEvent(object: $object) === false) {
 				return;
 			}
@@ -185,45 +187,9 @@ class DependentTermListener implements IEventListener {
 	 * @return bool True when it does.
 	 */
 	private function isTermEvent(array $object): bool {
-		$configured = (string)$this->settingsService->getConfigValue(self::WATCHED_SCHEMA_CONFIG_KEY);
-		if ($configured === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $configured
-			|| str_ends_with($candidate, '/' . $configured)
+		return SchemaMembership::belongsTo(
+			object: $object,
+			expected: (string)$this->settingsService->getConfigValue(self::WATCHED_SCHEMA_CONFIG_KEY)
 		);
 	}//end isTermEvent()
-
-	/**
-	 * The created object, whatever the event calls its getter.
-	 *
-	 * @param Event $event The event.
-	 *
-	 * @return array<string, mixed>|null The payload.
-	 */
-	private function payloadOf(Event $event): ?array {
-		foreach (['getObject', 'getNewObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$value = $event->{$method}();
-			if (is_array($value) === true) {
-				return $value;
-			}
-
-			if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-				$serialized = $value->jsonSerialize();
-				if (is_array($serialized) === true) {
-					return $serialized;
-				}
-			}
-		}
-
-		return null;
-	}//end payloadOf()
 }//end class

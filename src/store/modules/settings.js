@@ -1,5 +1,7 @@
-import { generateUrl } from '@nextcloud/router'
 import { defineStore } from 'pinia'
+import { guarded, jsonAnswer, jsonRequest } from './storeRequest.js'
+
+const SETTINGS = '/apps/dossiq/api/settings'
 
 export const useSettingsStore = defineStore('settings', {
 	state: () => ({
@@ -21,42 +23,18 @@ export const useSettingsStore = defineStore('settings', {
 	actions: {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchSettings() {
-			this.loading = true
-			this.error = null
+			return guarded(this, {
+				work: async () => {
+					const data = await jsonAnswer(await jsonRequest(SETTINGS, { method: 'GET' }), 'Failed to fetch settings')
+					this.config = data.config || data
+					this.openRegisters = data.openRegisters ?? false
+					this.isAdmin = data.isAdmin ?? false
+					this.initialized = true
 
-			try {
-				const response = await fetch(
-					generateUrl('/apps/dossiq/api/settings'),
-					{
-						method: 'GET',
-						headers: {
-							'Content-Type': 'application/json',
-							requesttoken: OC.requestToken,
-							'OCS-APIREQUEST': 'true',
-						},
-					},
-				)
-
-				if (!response.ok) {
-					throw new Error(
-						`Failed to fetch settings: ${response.statusText}`,
-					)
-				}
-
-				const data = await response.json()
-				this.config = data.config || data
-				this.openRegisters = data.openRegisters ?? false
-				this.isAdmin = data.isAdmin ?? false
-				this.initialized = true
-
-				return this.config
-			} catch (error) {
-				this.error = error.message
-				console.error('Error fetching Dossiq settings:', error)
-				return null
-			} finally {
-				this.loading = false
-			}
+					return this.config
+				},
+				failed: (error) => console.error('Error fetching Dossiq settings:', error),
+			})
 		},
 
 		/**
@@ -64,40 +42,15 @@ export const useSettingsStore = defineStore('settings', {
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async saveSettings(settingsData) {
-			this.loading = true
-			this.error = null
+			return guarded(this, {
+				work: async () => {
+					const data = await jsonAnswer(await jsonRequest(SETTINGS, { method: 'POST', body: settingsData }), 'Failed to save settings')
+					this.config = data.config || data
 
-			try {
-				const response = await fetch(
-					generateUrl('/apps/dossiq/api/settings'),
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							requesttoken: OC.requestToken,
-							'OCS-APIREQUEST': 'true',
-						},
-						body: JSON.stringify(settingsData),
-					},
-				)
-
-				if (!response.ok) {
-					throw new Error(
-						`Failed to save settings: ${response.statusText}`,
-					)
-				}
-
-				const data = await response.json()
-				this.config = data.config || data
-
-				return this.config
-			} catch (error) {
-				this.error = error.message
-				console.error('Error saving Dossiq settings:', error)
-				return null
-			} finally {
-				this.loading = false
-			}
+					return this.config
+				},
+				failed: (error) => console.error('Error saving Dossiq settings:', error),
+			})
 		},
 	},
 })

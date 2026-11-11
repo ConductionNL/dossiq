@@ -95,13 +95,9 @@ class BezwaarObjectionController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function open(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->accessRefusal(caseId: $caseId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$contested = trim((string)$this->request->getParam('contestedDecision', ''));
@@ -112,17 +108,12 @@ class BezwaarObjectionController extends Controller {
 			);
 		}
 
-		$payload = $this->request->getParam('objection');
-		if (is_array($payload) === false) {
-			$payload = [];
-		}
-
 		try {
 			return new JSONResponse(
 				$this->hook->onBezwaarCreated(
 					objectionCaseId: $caseId,
 					contestedDecisionId: $contested,
-					objectionPayload: $payload,
+					objectionPayload: $this->objectionPayload(),
 				)
 			);
 		} catch (RuntimeException $e) {
@@ -132,4 +123,42 @@ class BezwaarObjectionController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end open()
+
+	/**
+	 * The refusal for a caller who is not signed in or may not change the case, else null.
+	 *
+	 * @param string $caseId The case the objection is opened on.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	private function accessRefusal(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end accessRefusal()
+
+	/**
+	 * The objection the request carries, or an empty one.
+	 *
+	 * @return array<mixed>
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	private function objectionPayload(): array {
+		$payload = $this->request->getParam('objection');
+		if (is_array($payload) === false) {
+			return [];
+		}
+
+		return $payload;
+	}//end objectionPayload()
 }//end class
