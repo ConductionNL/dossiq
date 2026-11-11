@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use OCP\IL10N;
 use Throwable;
 
@@ -370,17 +371,6 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 * @return array<string, mixed> The row.
 	 */
 	private function arrayOf(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$serialised = $row->jsonSerialize();
-			if (is_array($serialised) === true) {
-				return $serialised;
-			}
-		}
-
-		return [];
+		return SerialisedResult::arrayOf(value: $row);
 	}//end arrayOf()
 }//end class

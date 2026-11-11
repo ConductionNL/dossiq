@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\SerialisedResult;
 use Throwable;
 
 /**
@@ -374,15 +375,7 @@ class CaseTypeStore {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function asRow(mixed $value): array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$value = $value->jsonSerialize();
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
+		return SerialisedResult::arrayOf(value: $value);
 	}//end asRow()
 
 	/**
