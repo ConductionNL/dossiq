@@ -197,11 +197,19 @@ class NextcloudMailGatewayThreadingTest extends TestCase {
 	 */
 	public function testASendNeedsAnOutboxWithBothVerbs(): void {
 		$unavailable = ['state' => OutboundState::UNAVAILABLE, 'outboxId' => null];
-		$saveOnly = new class {
+		$said = &$this->said;
+		$saveOnly = new class($said) {
+			/**
+			 * @param array<int, string> $said The shared record.
+			 */
+			public function __construct(private array &$said) {
+			}
+
 			/**
 			 * @return object Never used.
 			 */
 			public function saveMessage(): object {
+				$this->said[] = 'saveMessage asked';
 				throw new RuntimeException('must not be asked');
 			}
 		};
@@ -218,5 +226,6 @@ class NextcloudMailGatewayThreadingTest extends TestCase {
 		self::assertSame($unavailable, $this->gateway([self::ACCOUNTS => $this->accounts(), self::OUTBOX => $saveOnly])->sendMessage(7, $message));
 		self::assertSame($unavailable, $this->gateway([self::ACCOUNTS => $this->accounts(), self::OUTBOX => $sendOnly])->sendMessage(7, $message));
 		self::assertSame($unavailable, $this->gateway([self::ACCOUNTS => $this->accounts()])->sendMessage(7, $message));
+		self::assertNotContains('saveMessage asked', $this->said);
 	}//end testASendNeedsAnOutboxWithBothVerbs()
 }//end class
