@@ -53,6 +53,7 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for ComplaintHearingController.
  *
  * @covers \OCA\Dossiq\Controller\ComplaintHearingController
+ * @covers \OCA\Dossiq\Controller\Support\ComplaintMutationGate
  *
  * @uses \OCA\Dossiq\Service\Complaint\ComplaintAccessGuard
  */

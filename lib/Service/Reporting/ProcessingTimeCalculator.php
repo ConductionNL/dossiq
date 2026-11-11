@@ -119,43 +119,85 @@ class ProcessingTimeCalculator {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function slaCompliance(array $completed, array $types): array {
-		$byType    = [];
-		$withinSla = 0;
-		$total     = 0;
-		$excluded  = 0;
-
+		$tally        = new SlaTally();
+		$tally->types = $types;
 		foreach ($completed as $record) {
-			$typeId = (string)($record['caseType'] ?? '');
-			$target = ($types[$typeId]['targetDays'] ?? null);
-			$actual = $this->processingDays(record: $record);
-			if ($target === null || $actual === null) {
-				$excluded++;
-				continue;
-			}
+			$this->tallySla(tally: $tally, record: $record);
+		}
 
-			$total++;
-			$isWithin = ($actual <= $target);
-			if ($isWithin === true) {
-				$withinSla++;
-			}
+		return [
+			'summary' => [
+				'overallRate' => $this->percent(part: $tally->withinSla, whole: $tally->total),
+				'withinSla'   => $tally->withinSla,
+				'total'       => $tally->total,
+				'excluded'    => $tally->excluded,
+			],
+			'byType'  => $this->slaRows(byType: $tally->byType),
+		];
+	}//end slaCompliance()
 
-			// Every version of a case type is one row (its family, the shared identifier).
-			$key = (string)($types[$typeId]['family'] ?? $typeId);
-			$byType[$key] ??= [
-				'id'         => $typeId,
-				'name'       => (string)($types[$typeId]['name'] ?? ''),
-				'total'      => 0,
-				'withinSla'  => 0,
-				'totalDays'  => 0,
-				'targetDays' => $target,
-			];
-			$byType[$key]['total']++;
-			$byType[$key]['totalDays'] += $actual;
-			if ($isWithin === true) {
-				$byType[$key]['withinSla']++;
-			}
-		}//end foreach
+	/**
+	 * Count one completed record: excluded without a target or duration, else measured.
+	 *
+	 * @param SlaTally             $tally  The count so far.
+	 * @param array<string, mixed> $record One completed record.
+	 *
+	 * @return void
+	 */
+	private function tallySla(SlaTally $tally, array $record): void {
+		$typeId = (string)($record['caseType'] ?? '');
+		$target = ($tally->types[$typeId]['targetDays'] ?? null);
+		$actual = $this->processingDays(record: $record);
+		if ($target === null || $actual === null) {
+			$tally->excluded++;
+			return;
+		}
 
+		$tally->total++;
+		$isWithin = ($actual <= $target);
+		if ($isWithin === true) {
+			$tally->withinSla++;
+		}
+
+		$this->tallyType(tally: $tally, measured: ['typeId' => $typeId, 'days' => $actual, 'within' => $isWithin]);
+	}//end tallySla()
+
+	/**
+	 * Count one measured record on its case type's row.
+	 *
+	 * Every version of a case type is one row (its family, the shared identifier).
+	 *
+	 * @param SlaTally                                         $tally    The count so far.
+	 * @param array{typeId: string, days: int, within: bool} $measured The measured record.
+	 *
+	 * @return void
+	 */
+	private function tallyType(SlaTally $tally, array $measured): void {
+		$typeId = $measured['typeId'];
+		$key    = (string)($tally->types[$typeId]['family'] ?? $typeId);
+		$tally->byType[$key] ??= [
+			'id'         => $typeId,
+			'name'       => (string)($tally->types[$typeId]['name'] ?? ''),
+			'total'      => 0,
+			'withinSla'  => 0,
+			'totalDays'  => 0,
+			'targetDays' => $tally->types[$typeId]['targetDays'],
+		];
+		$tally->byType[$key]['total']++;
+		$tally->byType[$key]['totalDays'] += $measured['days'];
+		if ($measured['within'] === true) {
+			$tally->byType[$key]['withinSla']++;
+		}
+	}//end tallyType()
+
+	/**
+	 * The per-type rows of the count, with their rate and average duration.
+	 *
+	 * @param array<string, array<string, mixed>> $byType The per-family counts.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function slaRows(array $byType): array {
 		$rows = [];
 		foreach ($byType as $entry) {
 			$rows[] = [
@@ -169,16 +211,8 @@ class ProcessingTimeCalculator {
 			];
 		}
 
-		return [
-			'summary' => [
-				'overallRate' => $this->percent(part: $withinSla, whole: $total),
-				'withinSla'   => $withinSla,
-				'total'       => $total,
-				'excluded'    => $excluded,
-			],
-			'byType'  => $rows,
-		];
-	}//end slaCompliance()
+		return $rows;
+	}//end slaRows()
 
 	/**
 	 * Processing-time histogram over the fixed bins.
@@ -240,13 +274,7 @@ class ProcessingTimeCalculator {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function monthlyTrend(array $completed, array $types, int $months, DateTimeImmutable $today): array {
-		$firstOfMonth = $today->modify(modifier: 'first day of this month');
-		$buckets      = [];
-		for ($offset = (max(1, $months) - 1); $offset >= 0; $offset--) {
-			$key           = $firstOfMonth->modify(modifier: '-'.$offset.' months')->format('Y-m');
-			$buckets[$key] = ['month' => $key, 'withinSla' => 0, 'total' => 0];
-		}
-
+		$buckets = $this->trendBuckets(today: $today, months: $months);
 		foreach ($completed as $record) {
 			$key = substr((string)($record['endDate'] ?? ''), 0, 7);
 			if (isset($buckets[$key]) === false) {
@@ -265,6 +293,36 @@ class ProcessingTimeCalculator {
 			}
 		}
 
+		return $this->trendRows(buckets: $buckets);
+	}//end monthlyTrend()
+
+	/**
+	 * One empty bucket per month, oldest first, ending with this month.
+	 *
+	 * @param DateTimeImmutable $today  The day of the report.
+	 * @param int               $months How many months, at least one.
+	 *
+	 * @return array<string, array{month: string, withinSla: int, total: int}>
+	 */
+	private function trendBuckets(DateTimeImmutable $today, int $months): array {
+		$firstOfMonth = $today->modify(modifier: 'first day of this month');
+		$buckets      = [];
+		for ($offset = (max(1, $months) - 1); $offset >= 0; $offset--) {
+			$key           = $firstOfMonth->modify(modifier: '-'.$offset.' months')->format('Y-m');
+			$buckets[$key] = ['month' => $key, 'withinSla' => 0, 'total' => 0];
+		}
+
+		return $buckets;
+	}//end trendBuckets()
+
+	/**
+	 * The trend rows, with each month's rate.
+	 *
+	 * @param array<string, array{month: string, withinSla: int, total: int}> $buckets The filled buckets.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function trendRows(array $buckets): array {
 		$rows = [];
 		foreach ($buckets as $bucket) {
 			$rows[] = [
@@ -276,7 +334,7 @@ class ProcessingTimeCalculator {
 		}
 
 		return $rows;
-	}//end monthlyTrend()
+	}//end trendRows()
 
 	/**
 	 * Records closed per ISO week over the trailing weeks ending at the most

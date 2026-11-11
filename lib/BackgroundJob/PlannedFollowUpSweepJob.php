@@ -49,7 +49,6 @@ namespace OCA\Dossiq\BackgroundJob;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Flow\CaseFlowActions;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -98,13 +97,10 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
 	protected function run($argument): void {
-		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->work());
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// read, sent or written; the next run tries again.
-			return;
-		}
+		// Without a usable account this runs nothing: that is already logged as an
+		// error and told to the admins. Nothing was read, sent or
+		// written; the next run tries again.
+		$this->serviceAccount->runAsWhenAvailable(operation: fn () => $this->work());
 	}//end run()
 
 	/**

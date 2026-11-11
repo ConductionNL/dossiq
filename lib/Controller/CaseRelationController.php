@@ -179,13 +179,25 @@ class CaseRelationController extends Controller {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$targetId = (string)$this->request->getParam('targetId', '');
-		$natureRelationship = (string)$this->request->getParam('aardRelatie', '');
-		$notes = $this->request->getParam('notes', null);
-		if ($notes !== null) {
-			$notes = (string)$notes;
+		$refusal = $this->createRefusal(caseId: $caseId, user: $user);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
+		return $this->addRelation(caseId: $caseId);
+	}//end create()
+
+	/**
+	 * Refuse a relation without a target or nature (400), or between cases the caller cannot both read (403).
+	 *
+	 * @param string $caseId The case the relation starts from.
+	 * @param IUser  $user   The caller.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the relation may be added.
+	 */
+	private function createRefusal(string $caseId, IUser $user): ?JSONResponse {
+		$targetId = (string)$this->request->getParam('targetId', '');
+		$natureRelationship = (string)$this->request->getParam('aardRelatie', '');
 		if ($targetId === '' || $natureRelationship === '') {
 			return new JSONResponse(
 				['ok' => false, 'reason' => 'missing_case_id', 'message' => 'targetId and aardRelatie are required'],
@@ -200,11 +212,22 @@ class CaseRelationController extends Controller {
 			);
 		}
 
+		return null;
+	}//end createRefusal()
+
+	/**
+	 * Add the relation the request names, and answer 201, or the status its refusal maps to.
+	 *
+	 * @param string $caseId The case the relation starts from.
+	 *
+	 * @return JSONResponse
+	 */
+	private function addRelation(string $caseId): JSONResponse {
 		$result = $this->caseRelationService->addRelation(
 			caseId: $caseId,
-			targetId: $targetId,
-			natureRelationship: $natureRelationship,
-			notes: $notes,
+			targetId: (string)$this->request->getParam('targetId', ''),
+			natureRelationship: (string)$this->request->getParam('aardRelatie', ''),
+			notes: $this->notesParam(),
 		);
 
 		if ($result['ok'] === false) {
@@ -213,7 +236,21 @@ class CaseRelationController extends Controller {
 		}
 
 		return new JSONResponse($result, Http::STATUS_CREATED);
-	}//end create()
+	}//end addRelation()
+
+	/**
+	 * The relation's notes as a string, or null when none were sent.
+	 *
+	 * @return string|null
+	 */
+	private function notesParam(): ?string {
+		$notes = $this->request->getParam('notes', null);
+		if ($notes === null) {
+			return null;
+		}
+
+		return (string)$notes;
+	}//end notesParam()
 
 	/**
 	 * Remove a typed peer relation between two cases (two-sided).

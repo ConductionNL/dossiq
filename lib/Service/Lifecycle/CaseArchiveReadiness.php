@@ -191,44 +191,96 @@ class CaseArchiveReadiness {
 	 * @return array<string, mixed> The item.
 	 */
 	private function documents(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
-		if ($objectService === null || $register === '' || $joinSchema === '' || $infoSchema === '') {
+		$store = $this->documentStore();
+		if ($store === null) {
 			return ['id' => 'documents', 'met' => null];
 		}
 
 		try {
-			$joins = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $joinSchema,
-				filters: ['case' => $caseId, '_limit' => 500],
-			);
-			$ids = array_values(array_unique(array_filter(array_map(static fn (array $join): string => (string)($join['informatieobject'] ?? ''), $joins))));
-			$documents = [];
-			if ($ids !== []) {
-				$documents = $this->searchObjectsAsArrays(
-					objectService: $objectService,
-					register: $register,
-					schema: $infoSchema,
-					filters: ['_ids' => $ids, '_limit' => count($ids)],
-				);
-			}
+			$ids = $this->linkedDocumentIds(store: $store, caseId: $caseId);
+			$documents = $this->documentsWithIds(store: $store, ids: $ids);
 		} catch (Throwable) {
 			return ['id' => 'documents', 'met' => null];
 		}
 
-		$final = count(
+		$final = self::finalCount(documents: $documents);
+
+		return ['id' => 'documents', 'met' => $final === count($ids), 'count' => $final, 'total' => count($ids)];
+	}//end documents()
+
+	/**
+	 * Where the dossier documents are stored, or null when it is not configured.
+	 *
+	 * @return DossierDocumentStore|null The store.
+	 */
+	private function documentStore(): ?DossierDocumentStore {
+		$store = new DossierDocumentStore();
+		$store->objectService = $this->settingsService->getObjectService();
+		$store->register = $this->settingsService->getConfigValue('register');
+		$store->joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
+		$store->infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
+		if ($store->isComplete() === false) {
+			return null;
+		}
+
+		return $store;
+	}//end documentStore()
+
+	/**
+	 * The ids of the documents linked to a case, each once.
+	 *
+	 * @param DossierDocumentStore $store  The store.
+	 * @param string               $caseId The case UUID.
+	 *
+	 * @return array<int, string> The document ids.
+	 */
+	private function linkedDocumentIds(DossierDocumentStore $store, string $caseId): array {
+		$joins = $this->searchObjectsAsArrays(
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->joinSchema,
+			filters: ['case' => $caseId, '_limit' => 500],
+		);
+
+		return array_values(array_unique(array_filter(array_map(static fn (array $join): string => (string)($join['informatieobject'] ?? ''), $joins))));
+	}//end linkedDocumentIds()
+
+	/**
+	 * The documents with these ids, in one read; none without ids.
+	 *
+	 * @param DossierDocumentStore $store The store.
+	 * @param array<int, string>   $ids   The document ids.
+	 *
+	 * @return array<int, array<string, mixed>> The documents.
+	 */
+	private function documentsWithIds(DossierDocumentStore $store, array $ids): array {
+		if ($ids === []) {
+			return [];
+		}
+
+		return $this->searchObjectsAsArrays(
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->infoSchema,
+			filters: ['_ids' => $ids, '_limit' => count($ids)],
+		);
+	}//end documentsWithIds()
+
+	/**
+	 * How many documents are final or archived.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The documents.
+	 *
+	 * @return int The count.
+	 */
+	private static function finalCount(array $documents): int {
+		return count(
 			array_filter(
 				$documents,
 				static fn (array $document): bool => in_array((string)($document['status'] ?? ''), ['final', 'archived'], true) === true
 			)
 		);
-
-		return ['id' => 'documents', 'met' => $final === count($ids), 'count' => $final, 'total' => count($ids)];
-	}//end documents()
+	}//end finalCount()
 
 	/**
 	 * How many of the case's tasks are still open, or unknown when the engine did not answer.

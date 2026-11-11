@@ -174,4 +174,20 @@ class ZgwOpenApiControllerTest extends TestCase {
 			self::assertStringContainsString('@NoCSRFRequired', $docComment, $method . '() must be @NoCSRFRequired');
 		}
 	}//end testIndexAndSpecAreAnnotatedPublicAndNoCsrf()
+
+	/**
+	 * An unknown API, and a path-traversal attempt, are refused by the list of
+	 * known APIs itself, before any path is built: the answer names the API
+	 * as unknown rather than as a missing document.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownApiIsRefusedByTheKnownListBeforeAnyPathIsBuilt(): void {
+		foreach (['bogus', '../../../../etc/passwd'] as $api) {
+			$response = $this->controller->spec(api: $api);
+
+			self::assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+			self::assertSame(['detail' => 'Unknown ZGW API: ' . $api], $response->getData());
+		}
+	}//end testAnUnknownApiIsRefusedByTheKnownListBeforeAnyPathIsBuilt()
 }//end class

@@ -285,6 +285,25 @@ class CorrespondentWriter {
 			return 0;
 		}
 
+		$written = 0;
+		foreach (self::wantedDispatches(correspondents: $correspondents) as [$party, $role]) {
+			$dispatch = new Dispatch(caseId: $caseId, documentId: $documentId, party: $party, role: $role);
+			if ($this->writeDispatch(dispatch: $dispatch) === true) {
+				$written++;
+			}
+		}
+
+		return $written;
+	}//end recordDispatches()
+
+	/**
+	 * The party and role of every dispatch a document's correspondents ask for, sender first.
+	 *
+	 * @param array{sender?: string, recipients?: array<int, string>} $correspondents What the document names.
+	 *
+	 * @return array<int, array{0: string, 1: string}> Party and role pairs.
+	 */
+	private static function wantedDispatches(array $correspondents): array {
 		$wanted = [];
 		$sender = trim((string)($correspondents['sender'] ?? ''));
 		if ($sender !== '') {
@@ -298,19 +317,8 @@ class CorrespondentWriter {
 			}
 		}
 
-		if ($wanted === []) {
-			return 0;
-		}
-
-		$written = 0;
-		foreach ($wanted as [$party, $role]) {
-			if ($this->writeDispatch(caseId: $caseId, documentId: $documentId, party: $party, role: $role) === true) {
-				$written++;
-			}
-		}
-
-		return $written;
-	}//end recordDispatches()
+		return $wanted;
+	}//end wantedDispatches()
 
 	/**
 	 * The party links of a case, [] when OpenRegister cannot answer.
@@ -330,60 +338,22 @@ class CorrespondentWriter {
 	/**
 	 * Write one dispatch row, unless the document already has that one.
 	 *
-	 * @param string $caseId The case.
-	 * @param string $documentId The informatieobject uuid.
-	 * @param string $party The party's identifier.
-	 * @param string $role `afzender` or `geadresseerde`.
+	 * @param Dispatch $dispatch The party, role, document and case.
 	 *
 	 * @return bool True when a row was created.
 	 */
-	private function writeDispatch(string $caseId, string $documentId, string $party, string $role): bool {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('dispatch_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+	private function writeDispatch(Dispatch $dispatch): bool {
+		$store = $this->dispatchStore();
+		if ($store === null) {
 			return false;
 		}
 
 		try {
-			$existing = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: [
-					'document' => $documentId,
-					'involvedParty' => $party,
-					'relationshipType' => $role,
-					'_limit' => 1,
-				],
-			);
-			if ($existing !== []) {
+			if ($this->hasDispatch(store: $store, dispatch: $dispatch) === true) {
 				return false;
 			}
 
-			$row = [
-				'document' => $documentId,
-				'case' => $caseId,
-				'involvedParty' => $party,
-				'relationshipType' => $role,
-			];
-			// The date says which act this row records, and only one of the
-			// two is true: a sender was received from, an addressee was sent
-			// to. Writing both would make every dispatch read as a round trip.
-			if ($role === DocumentCorrespondents::ROLE_SENDER) {
-				$row['receiveDate'] = date('Y-m-d');
-			}
-
-			if ($role === DocumentCorrespondents::ROLE_RECIPIENT) {
-				$row['sendDate'] = date('Y-m-d');
-			}
-
-			$this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $row,
-			);
+			$this->saveDispatch(store: $store, dispatch: $dispatch);
 		} catch (Throwable) {
 			// The document is already on the case and already names the
 			// party; a missing audit row is not worth losing that write.
@@ -392,4 +362,56 @@ class CorrespondentWriter {
 
 		return true;
 	}//end writeDispatch()
+
+	/**
+	 * Where dispatch rows are stored, null when that is not configured.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function dispatchStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register      = $this->settingsService->getConfigValue('register');
+		$schema        = $this->settingsService->getConfigValue('dispatch_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end dispatchStore()
+
+	/**
+	 * Whether the document already has this dispatch.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store    The dispatch store.
+	 * @param Dispatch                                                        $dispatch The dispatch.
+	 *
+	 * @return bool True when a row exists.
+	 */
+	private function hasDispatch(array $store, Dispatch $dispatch): bool {
+		$existing = $this->searchObjectsAsArrays(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			filters: $dispatch->lookup(),
+		);
+
+		return $existing !== [];
+	}//end hasDispatch()
+
+	/**
+	 * Store the dispatch row, dated today.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store    The dispatch store.
+	 * @param Dispatch                                                        $dispatch The dispatch.
+	 *
+	 * @return void
+	 */
+	private function saveDispatch(array $store, Dispatch $dispatch): void {
+		$this->saveObjectAsArray(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			object: $dispatch->row(today: date('Y-m-d')),
+		);
+	}//end saveDispatch()
 }//end class

@@ -116,4 +116,74 @@ class InstallPackageCommandTest extends TestCase {
 
 		$this->assertStringContainsString(needle: '2 row(s) refreshed, 1 kept as this instance holds them: c-1', haystack: $tester->getDisplay());
 	}//end testTheOutputNamesTheRefreshedAndKeptRows()
+
+	/**
+	 * The catalogue lists every package with its version, install mode, installed version and validity.
+	 *
+	 * @return void
+	 */
+	public function testTheListNamesEveryPackage(): void {
+		$installer = $this->createMock(originalClassName: PackageInstaller::class);
+		$installer->method('catalogue')->willReturn(
+			[
+				['id' => 'jeugdwet', 'version' => '1.13.0', 'install' => 'auto', 'installed' => '1.12.0', 'valid' => true],
+				['id' => 'wmo', 'version' => '2.0.0', 'install' => 'manual', 'installed' => '', 'valid' => false],
+			]
+		);
+		$installer->expects($this->never())->method('install');
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$tester = new CommandTester(command: new InstallPackageCommand(installer: $installer, settings: $settings));
+
+		$exit = $tester->execute(input: ['--list' => true]);
+
+		$this->assertSame(expected: Command::SUCCESS, actual: $exit);
+		$this->assertSame(
+			expected: "jeugdwet\t1.13.0\tauto\tinstalled 1.12.0\nwmo\t2.0.0\tmanual\tinstalled - INVALID\n",
+			actual: $tester->getDisplay()
+		);
+	}//end testTheListNamesEveryPackage()
+
+	/**
+	 * Without a package id, --all or --list the command fails and says what to pass.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAPackageTheCommandFails(): void {
+		$calls = [];
+
+		$exit = $this->runCommand(input: [], calls: $calls);
+
+		$this->assertSame(expected: Command::FAILURE, actual: $exit);
+		$this->assertSame(expected: [], actual: $calls);
+	}//end testWithoutAPackageTheCommandFails()
+
+	/**
+	 * --all installs the whole catalogue, and a package that did not install fails the run after the rest went on.
+	 *
+	 * @return void
+	 */
+	public function testAllInstallsTheCatalogueAndAFailedPackageFailsTheRun(): void {
+		$installer = $this->createMock(originalClassName: PackageInstaller::class);
+		$installer->method('catalogue')->willReturn([['id' => 'a'], ['id' => 'b'], ['id' => 'c']]);
+		$installer->method('install')->willReturnCallback(
+			static fn (string $id): array => [
+				'status' => ['a' => PackageInstaller::CURRENT, 'b' => 'refused', 'c' => PackageInstaller::INSTALLED][$id],
+				'package' => $id,
+				'version' => '1.0.0',
+				'message' => 'm-' . $id,
+				'errors' => ($id === 'b') ? ['field x is missing'] : [],
+			]
+		);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$tester = new CommandTester(command: new InstallPackageCommand(installer: $installer, settings: $settings));
+
+		$exit = $tester->execute(input: ['--all' => true]);
+
+		$this->assertSame(expected: Command::FAILURE, actual: $exit);
+		$this->assertSame(
+			expected: "a 1.0.0: " . PackageInstaller::CURRENT . ". m-a\nb 1.0.0: refused. m-b\n  field x is missing\nc 1.0.0: " . PackageInstaller::INSTALLED . ". m-c\n",
+			actual: $tester->getDisplay()
+		);
+	}//end testAllInstallsTheCatalogueAndAFailedPackageFailsTheRun()
 }//end class

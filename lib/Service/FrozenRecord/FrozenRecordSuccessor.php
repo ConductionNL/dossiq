@@ -78,8 +78,47 @@ class FrozenRecordSuccessor {
 		string $caseId,
 		?DateTimeImmutable $moment = null,
 	): array {
-		$successor = $definition->successor;
-		if ($successor === null) {
+		$successor = $this->replaceableSuccessor(definition: $definition, predecessor: $predecessor);
+		$number = $this->numberer->issue(caseId: $caseId, series: $successor['series'], defaultPrefix: $successor['defaultPrefix'], moment: $moment);
+
+		return [
+			$successor['numberField'] => $number,
+			$successor['supersedesField'] => trim((string)($predecessor['id'] ?? ($predecessor['@self']['id'] ?? ''))),
+		];
+	}//end successorFields()
+
+	/**
+	 * The successor declaration, once the predecessor may be replaced; refused otherwise.
+	 *
+	 * The checks run in this order: an entry without successor, a record not yet
+	 * frozen, a record already replaced.
+	 *
+	 * @param FreezeDefinition $definition The freeze entry.
+	 * @param array<string, mixed> $predecessor The record being replaced.
+	 *
+	 * @return array<string, string> The successor declaration.
+	 *
+	 * @throws RefusedException 422 or 409, as successorFields documents.
+	 */
+	private function replaceableSuccessor(FreezeDefinition $definition, array $predecessor): array {
+		$successor = self::successorOf(definition: $definition);
+		$this->refuseUnlessFrozen(definition: $definition, predecessor: $predecessor);
+		self::refuseIfReplaced(successor: $successor, predecessor: $predecessor);
+
+		return $successor;
+	}//end replaceableSuccessor()
+
+	/**
+	 * The entry's successor declaration; refused when the entry allows none.
+	 *
+	 * @param FreezeDefinition $definition The freeze entry.
+	 *
+	 * @return array<string, string> The successor declaration.
+	 *
+	 * @throws RefusedException 422 when the entry allows no successor.
+	 */
+	private static function successorOf(FreezeDefinition $definition): array {
+		if ($definition->successor === null) {
 			throw new RefusedException(
 				rule: 'record-has-no-successor',
 				sentence: 'This kind of record cannot be replaced by a successor.',
@@ -87,6 +126,20 @@ class FrozenRecordSuccessor {
 			);
 		}
 
+		return $definition->successor;
+	}//end successorOf()
+
+	/**
+	 * Refuse a successor for a record that is not frozen yet.
+	 *
+	 * @param FreezeDefinition $definition The freeze entry.
+	 * @param array<string, mixed> $predecessor The record being replaced.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException 409 when the predecessor is not frozen.
+	 */
+	private function refuseUnlessFrozen(FreezeDefinition $definition, array $predecessor): void {
 		if ($this->guard->isFrozen(definition: $definition, stored: $predecessor) === false) {
 			throw new RefusedException(
 				rule: 'record-not-frozen',
@@ -94,28 +147,27 @@ class FrozenRecordSuccessor {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
+	}//end refuseUnlessFrozen()
 
-		$replacedBy = trim((string)($predecessor[$successor['supersededByField']] ?? ''));
-		if ($replacedBy !== '') {
+	/**
+	 * Refuse a second successor for a record that was already replaced.
+	 *
+	 * @param array<string, string> $successor The successor declaration.
+	 * @param array<string, mixed> $predecessor The record being replaced.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException 409 when the predecessor is already replaced.
+	 */
+	private static function refuseIfReplaced(array $successor, array $predecessor): void {
+		if (trim((string)($predecessor[$successor['supersededByField']] ?? '')) !== '') {
 			throw new RefusedException(
 				rule: 'record-already-superseded',
 				sentence: 'This record has already been replaced. Correct its successor instead.',
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
-
-		$predecessorId = trim((string)($predecessor['id'] ?? ($predecessor['@self']['id'] ?? '')));
-
-		return [
-			$successor['numberField'] => $this->numberer->issue(
-				caseId: $caseId,
-				series: $successor['series'],
-				defaultPrefix: $successor['defaultPrefix'],
-				moment: $moment,
-			),
-			$successor['supersedesField'] => $predecessorId,
-		];
-	}//end successorFields()
+	}//end refuseIfReplaced()
 
 	/**
 	 * The field the predecessor carries once its successor is saved: the forward pointer.
@@ -130,14 +182,6 @@ class FrozenRecordSuccessor {
 	 * @spec openspec/specs/frozen-record/spec.md
 	 */
 	public function predecessorFields(FreezeDefinition $definition, string $successorId): array {
-		if ($definition->successor === null) {
-			throw new RefusedException(
-				rule: 'record-has-no-successor',
-				sentence: 'This kind of record cannot be replaced by a successor.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return [$definition->successor['supersededByField'] => $successorId];
+		return [self::successorOf(definition: $definition)['supersededByField'] => $successorId];
 	}//end predecessorFields()
 }//end class

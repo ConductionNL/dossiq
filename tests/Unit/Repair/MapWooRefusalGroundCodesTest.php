@@ -135,6 +135,51 @@ class MapWooRefusalGroundCodesTest extends TestCase {
 	}//end testAnAmbiguousCodeIsFlaggedAndKept()
 
 	/**
+	 * Every page of every schema is mapped, a refused write is counted, and each schema prints its tally.
+	 *
+	 * @return void
+	 */
+	public function testEveryPageIsMappedAndEachSchemaPrintsItsTally(): void {
+		$this->store->pages = true;
+		for ($i = 1; $i <= 201; $i++) {
+			$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-' . $i, row: ['weigeringsgronden' => ['5.2.1']]);
+		}
+
+		$this->store->seed(schema: 'decision', uuid: 'd-1', row: ['weigeringsgronden' => ['5.2.1']]);
+		$this->store->seed(schema: 'decision', uuid: 'd-2', row: ['weigeringsgronden' => []]);
+		$this->store->refusedSchemas = ['decision'];
+
+		$this->runStep();
+
+		$this->assertSame(['5.1.2.b'], $this->store->row(schema: 'wooDocumentAssessment', uuid: 'a-201')['weigeringsgronden']);
+		$this->assertSame(
+			[
+				'Woo refusal ground mapping, woo_assessment_schema: 201 mapped, 0 failed, 0 with an unmapped code.',
+				'Woo refusal ground mapping, decision_schema: 0 mapped, 1 failed, 0 with an unmapped code.',
+			],
+			$this->said
+		);
+	}//end testEveryPageIsMappedAndEachSchemaPrintsItsTally()
+
+	/**
+	 * Without OpenRegister the step says so and reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterTheStepSaysSo(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')->with('OpenRegister unavailable, skipping the Woo refusal ground mapping.');
+
+		(new MapWooRefusalGroundCodes(
+			settingsService: $settings,
+			grounds: new WooRefusalGrounds(settingsService: $settings, logger: new NullLogger()),
+			logger: new NullLogger(),
+		))->run($output);
+	}//end testWithoutOpenRegisterTheStepSaysSo()
+
+	/**
 	 * A second run writes nothing, though 5.2.1 is an old code and a new one.
 	 *
 	 * @return void

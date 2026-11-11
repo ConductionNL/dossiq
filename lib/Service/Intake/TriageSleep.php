@@ -129,42 +129,9 @@ class TriageSleep {
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
 	 */
 	public function sleep(string $entryId, string $until, string $reason, string $actorId): array {
-		$why = trim($reason);
-		if ($why === '') {
-			throw new RefusedException(
-				rule: self::RULE_NO_REASON,
-				sentence: 'A sleeping item carries the reason it sleeps, so the next person '
-					. 'to see it knows what was decided.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		$wakeDate = $this->dates->toCalendarDateOrNull(value: $until);
-		if ($wakeDate === null) {
-			throw new RefusedException(
-				rule: self::RULE_NO_DATE,
-				sentence: 'A sleeping item carries the date it comes back, as a calendar date.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		if ($wakeDate <= $this->today()) {
-			throw new RefusedException(
-				rule: self::RULE_DATE_PASSED,
-				sentence: 'That date has already passed, so the item would wake the moment '
-					. 'it went to sleep.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		$entry = $this->log->find(entryId: $entryId);
-		if ($entry === null) {
-			throw new RefusedException(
-				rule: self::RULE_NO_ITEM,
-				sentence: 'There is no triage item with that number, so nothing was slept.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$why = $this->requiredReason(reason: $reason);
+		$wakeDate = $this->futureWakeDate(until: $until);
+		$entry = $this->itemToSleep(entryId: $entryId);
 
 		$this->assertNotYetACase(entry: $entry);
 
@@ -184,6 +151,82 @@ class TriageSleep {
 
 		return $record;
 	}//end sleep()
+
+	/**
+	 * The trimmed reason; a sleep without one is refused.
+	 *
+	 * @param string $reason The reason given.
+	 *
+	 * @return string
+	 *
+	 * @throws RefusedException When the reason is empty.
+	 */
+	private function requiredReason(string $reason): string {
+		$why = trim($reason);
+		if ($why === '') {
+			throw new RefusedException(
+				rule: self::RULE_NO_REASON,
+				sentence: 'A sleeping item carries the reason it sleeps, so the next person '
+					. 'to see it knows what was decided.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $why;
+	}//end requiredReason()
+
+	/**
+	 * The calendar day the item wakes, which must be a date after today.
+	 *
+	 * @param string $until The wake date given.
+	 *
+	 * @return string The day (Y-m-d).
+	 *
+	 * @throws RefusedException When it is no calendar date, or not after today.
+	 */
+	private function futureWakeDate(string $until): string {
+		$wakeDate = $this->dates->toCalendarDateOrNull(value: $until);
+		if ($wakeDate === null) {
+			throw new RefusedException(
+				rule: self::RULE_NO_DATE,
+				sentence: 'A sleeping item carries the date it comes back, as a calendar date.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		if ($wakeDate <= $this->today()) {
+			throw new RefusedException(
+				rule: self::RULE_DATE_PASSED,
+				sentence: 'That date has already passed, so the item would wake the moment '
+					. 'it went to sleep.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $wakeDate;
+	}//end futureWakeDate()
+
+	/**
+	 * The triage item, or a refusal when there is none with that number.
+	 *
+	 * @param string $entryId The item number.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RefusedException When the item is not there.
+	 */
+	private function itemToSleep(string $entryId): array {
+		$entry = $this->log->find(entryId: $entryId);
+		if ($entry === null) {
+			throw new RefusedException(
+				rule: self::RULE_NO_ITEM,
+				sentence: 'There is no triage item with that number, so nothing was slept.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $entry;
+	}//end itemToSleep()
 
 	/**
 	 * Whether one entry is asleep right now.

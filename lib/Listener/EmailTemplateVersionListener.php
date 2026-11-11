@@ -135,35 +135,14 @@ class EmailTemplateVersionListener implements IEventListener {
 	 * @return void
 	 */
 	private function onUpdate(ObjectUpdatingEvent $event): void {
-		$entity = $event->getNewObject();
-		$old = $event->getOldObject();
-		if ($old === null || $this->isEmailTemplate(schema: (string)$entity->getSchema()) === false) {
+		$before = $this->changedWording(event: $event);
+		if ($before === null) {
 			return;
 		}
 
-		$before = (array)($old->getObject() ?? []);
-		$after = (array)($entity->getObject() ?? []);
-		if (($after['isActive'] ?? true) === false || self::wordingChanged(before: $before, after: $after) === false) {
-			return;
-		}
-
-		$copy = $before;
-		unset($copy['id'], $copy['uuid'], $copy['@self']);
-		$copy['isActive'] = false;
-		$copy['version'] = (int)($before['version'] ?? 1);
-
-		try {
-			$saved = $this->repository->saveTemplate(payload: $copy);
-		} catch (Throwable $e) {
-			$event->setErrors([
-				'error'   => 'email-template-version-not-kept',
-				'message' => $this->l10n->t('The earlier wording of this message could not be kept, so the change was not saved. Try again later.'),
-			]);
-			$event->stopPropagation();
-			$this->logger->warning(
-				'Dossiq: could not keep the earlier wording of an email template',
-				['template' => $old->getUuid(), 'error' => $e->getMessage()]
-			);
+		$copy = self::inactiveCopy(before: $before);
+		$saved = $this->keepEarlierWording(event: $event, copy: $copy);
+		if ($saved === null) {
 			return;
 		}
 
@@ -173,6 +152,69 @@ class EmailTemplateVersionListener implements IEventListener {
 			'previousVersion' => (string)($saved['id'] ?? ($saved['@self']['id'] ?? '')),
 		]));
 	}//end onUpdate()
+
+	/**
+	 * The template as it was, when this update changes the wording of an active template.
+	 *
+	 * @param ObjectUpdatingEvent $event The update.
+	 *
+	 * @return array<string, mixed>|null The earlier object, or null when no version is due.
+	 */
+	private function changedWording(ObjectUpdatingEvent $event): ?array {
+		$entity = $event->getNewObject();
+		$old = $event->getOldObject();
+		if ($old === null || $this->isEmailTemplate(schema: (string)$entity->getSchema()) === false) {
+			return null;
+		}
+
+		$before = (array)($old->getObject() ?? []);
+		$after = (array)($entity->getObject() ?? []);
+		if (($after['isActive'] ?? true) === false || self::wordingChanged(before: $before, after: $after) === false) {
+			return null;
+		}
+
+		return $before;
+	}//end changedWording()
+
+	/**
+	 * The earlier wording as a new, inactive object carrying its own version.
+	 *
+	 * @param array<string, mixed> $before The template as it was.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function inactiveCopy(array $before): array {
+		$copy = $before;
+		unset($copy['id'], $copy['uuid'], $copy['@self']);
+		$copy['isActive'] = false;
+		$copy['version'] = (int)($before['version'] ?? 1);
+		return $copy;
+	}//end inactiveCopy()
+
+	/**
+	 * Store the earlier wording; when it cannot be kept the change is refused.
+	 *
+	 * @param ObjectUpdatingEvent  $event The update.
+	 * @param array<string, mixed> $copy  The earlier wording.
+	 *
+	 * @return array<string, mixed>|null The stored copy, or null when the change was refused.
+	 */
+	private function keepEarlierWording(ObjectUpdatingEvent $event, array $copy): ?array {
+		try {
+			return $this->repository->saveTemplate(payload: $copy);
+		} catch (Throwable $e) {
+			$event->setErrors([
+				'error'   => 'email-template-version-not-kept',
+				'message' => $this->l10n->t('The earlier wording of this message could not be kept, so the change was not saved. Try again later.'),
+			]);
+			$event->stopPropagation();
+			$this->logger->warning(
+				'Dossiq: could not keep the earlier wording of an email template',
+				['template' => $event->getOldObject()?->getUuid(), 'error' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end keepEarlierWording()
 
 	/**
 	 * Whether the name, subject or body differs between two states.

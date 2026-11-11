@@ -62,42 +62,35 @@ export class AiFeatureRefusal extends Error {
  * @throws {AiFeatureRefusal} When the reference is missing, or hermiq refuses.
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-a-document-reading-feature-without-a-reference-never-reaches-hermiq
  */
-export async function runFeatureOnDocument({
-	feature,
-	documentReference,
-	instruction,
-}) {
+export async function runFeatureOnDocument({ feature, documentReference, instruction }) {
 	const reference = String(documentReference ?? '').trim()
 	if (/^\d+$/.test(reference) === false) {
-		throw new AiFeatureRefusal(
-			feature,
-			t('dossiq', 'No document was chosen.'),
-			MISSING_REFERENCE,
-		)
+		throw new AiFeatureRefusal(feature, t('dossiq', 'No document was chosen.'), MISSING_REFERENCE)
 	}
 
-	const url = generateUrl('/apps/hermiq/api/ai-features/{slug}/run-on-document', {
-		slug: feature,
-	})
+	const url = generateUrl('/apps/hermiq/api/ai-features/{slug}/run-on-document', { slug: feature })
 	try {
-		const response = await axios.post(url, {
-			documentReference: reference,
-			instruction,
-		})
+		const response = await axios.post(url, { documentReference: reference, instruction })
 		return response.data
 	} catch (error) {
-		const status = error?.response?.status
-		const data = error?.response?.data ?? {}
-		if ([400, 403, 404, 422].includes(status) === true) {
-			throw new AiFeatureRefusal(
-				feature,
-				String(data.error ?? ''),
-				data.gate ?? null,
-			)
-		}
-
-		throw error
+		throw refusalOr(feature, error)
 	}
+}
+
+/**
+ * hermiq's refusal of a run (400, 403, 404 or 422) as an AiFeatureRefusal, any other failure as it is.
+ *
+ * @param {string} feature The feature slug.
+ * @param {Error} error The failure.
+ * @return {Error} What to throw.
+ */
+function refusalOr(feature, error) {
+	const status = error?.response?.status
+	const data = error?.response?.data ?? {}
+	if ([400, 403, 404, 422].includes(status) === true) {
+		return new AiFeatureRefusal(feature, String(data.error ?? ''), data.gate ?? null)
+	}
+	return error
 }
 
 /**

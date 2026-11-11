@@ -58,6 +58,24 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 	private const CATALOGUE_PATH = __DIR__ . '/../Settings/verwerkingsactiviteiten.json';
 
 	/**
+	 * The catalogue's descriptive fields: the type check a value must pass and
+	 * the candidate entity properties, newest first. The string fields are
+	 * copied before the list fields.
+	 *
+	 * @var array<string, array{0: callable-string, 1: array<int, string>}>
+	 */
+	private const DESCRIPTIVE_FIELDS = [
+		'name' => ['is_string', ['name', 'naam']],
+		'beschrijving' => ['is_string', ['description', 'beschrijving']],
+		'doelbinding' => ['is_string', ['purpose', 'doelbinding']],
+		'rechtsgrond' => ['is_string', ['legalBasis', 'rechtsgrond']],
+		'bewaartermijn' => ['is_string', ['retentionPeriod', 'bewaartermijn']],
+		'categorieenBetrokkenen' => ['is_array', ['dataSubjectCategories', 'categorieenBetrokkenen']],
+		'categorieenPersoonsgegevens' => ['is_array', ['personalDataCategories', 'categorieenPersoonsgegevens']],
+		'ontvangers' => ['is_array', ['recipients', 'ontvangers']],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService OpenRegister availability check.
@@ -106,8 +124,23 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 			return;
 		}
 
+		$mapper = $this->catalogueMapper(output: $output);
+		if ($mapper !== null) {
+			$this->reportSeed(output: $output, tally: $this->seedAll(mapper: $mapper, activities: $activities));
+		}
+	}//end run()
+
+	/**
+	 * The OpenRegister mapper of the verwerkingsregister, or null (with a
+	 * warning) when the deployed OpenRegister predates it.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return object|null The mapper.
+	 */
+	private function catalogueMapper(IOutput $output): ?object {
 		try {
-			$mapper = $this->container->get(VerwerkingsactiviteitMapper::class);
+			return $this->container->get(VerwerkingsactiviteitMapper::class);
 		} catch (\Throwable $e) {
 			// Deployed OR predates the verwerkingsregister (< 0.2.16): skip
 			// gracefully — the seed re-runs on the next upgrade.
@@ -116,12 +149,20 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 				'Dossiq: VerwerkingsactiviteitMapper unavailable, skipping catalogue seed',
 				['exception' => $e->getMessage()]
 			);
-			return;
+			return null;
 		}
+	}//end catalogueMapper()
 
-		$created = 0;
-		$updated = 0;
-		$refused = [];
+	/**
+	 * Seed every catalogue definition that carries a code.
+	 *
+	 * @param object                           $mapper     The verwerkingsregister mapper.
+	 * @param array<int, array<string, mixed>> $activities The catalogue definitions.
+	 *
+	 * @return array{created: int, updated: int, refused: array<int, string>}
+	 */
+	private function seedAll(object $mapper, array $activities): array {
+		$tally = ['created' => 0, 'updated' => 0, 'refused' => []];
 		foreach ($activities as $definition) {
 			$code = (string)($definition['code'] ?? '');
 			if ($code === '') {
@@ -129,53 +170,89 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 			}
 
 			try {
-				$existing = $mapper->findByCode(code: $code);
-				if ($existing === null) {
-					$entity = new Verwerkingsactiviteit();
-					$entity->setCode($code);
-					$this->hydrate(entity: $entity, definition: $definition);
-					// Draft for FG review: OR defaults blank status to `concept`.
-					$mapper->insert(entity: $entity);
-					$created++;
-					continue;
-				}
-
-				// Refresh descriptive fields; NEVER touch lifecycle status —
-				// FG activation in OpenRegister survives dossiq upgrades.
-				$this->hydrate(entity: $existing, definition: $definition);
-				$mapper->update(entity: $existing);
-				$updated++;
+				$tally[$this->seedOne(mapper: $mapper, definition: $definition)]++;
 			} catch (\Throwable $e) {
-				$refused[] = $code;
-				$this->logger->error(
-					'Dossiq: failed to seed verwerkingsactiviteit',
-					['code' => $code, 'exception' => $e->getMessage()]
-				);
-			}//end try
-		}//end foreach
+				$tally['refused'][] = $code;
+				$this->logRefusal(code: $code, failure: $e);
+			}
+		}
 
-		// A SEED THAT SEEDED NOTHING MUST NOT PRODUCE SUCCESS-SHAPED OUTPUT.
-		// Every row was refused on the Dutch legal-basis spellings and the step
-		// still printed "0 created (draft), 0 refreshed" — which reads as an
-		// idempotent re-run rather than an empty verwerkingsregister. The
-		// refusals are counted and named, so an operator sees that the AVG art.
-		// 30 catalogue is absent.
-		if ($refused !== []) {
+		return $tally;
+	}//end seedAll()
+
+	/**
+	 * Insert a new definition as a draft, or refresh an existing one.
+	 *
+	 * @param object               $mapper     The verwerkingsregister mapper.
+	 * @param array<string, mixed> $definition A catalogue definition with a code.
+	 *
+	 * @return string `created` or `updated`.
+	 */
+	private function seedOne(object $mapper, array $definition): string {
+		$code = (string)($definition['code'] ?? '');
+		$existing = $mapper->findByCode(code: $code);
+		if ($existing === null) {
+			$entity = new Verwerkingsactiviteit();
+			$entity->setCode($code);
+			$this->hydrate(entity: $entity, definition: $definition);
+			// Draft for FG review: OR defaults blank status to `concept`.
+			$mapper->insert(entity: $entity);
+			return 'created';
+		}
+
+		// Refresh descriptive fields; NEVER touch lifecycle status —
+		// FG activation in OpenRegister survives dossiq upgrades.
+		$this->hydrate(entity: $existing, definition: $definition);
+		$mapper->update(entity: $existing);
+		return 'updated';
+	}//end seedOne()
+
+	/**
+	 * Log one definition the register refused.
+	 *
+	 * @param string     $code    The definition's code.
+	 * @param \Throwable $failure Why it was refused.
+	 *
+	 * @return void
+	 */
+	private function logRefusal(string $code, \Throwable $failure): void {
+		$this->logger->error(
+			'Dossiq: failed to seed verwerkingsactiviteit',
+			['code' => $code, 'exception' => $failure->getMessage()]
+		);
+	}//end logRefusal()
+
+	/**
+	 * Report the seed's counts.
+	 *
+	 * A SEED THAT SEEDED NOTHING MUST NOT PRODUCE SUCCESS-SHAPED OUTPUT.
+	 * Every row was refused on the Dutch legal-basis spellings and the step
+	 * still printed "0 created (draft), 0 refreshed" — which reads as an
+	 * idempotent re-run rather than an empty verwerkingsregister. The
+	 * refusals are counted and named, so an operator sees that the AVG art.
+	 * 30 catalogue is absent.
+	 *
+	 * @param IOutput                                                        $output Progress reporting.
+	 * @param array{created: int, updated: int, refused: array<int, string>} $tally  The counts.
+	 *
+	 * @return void
+	 */
+	private function reportSeed(IOutput $output, array $tally): void {
+		if ($tally['refused'] !== []) {
 			$output->warning(
 				sprintf(
 					'Verwerkingsactiviteiten catalogue: %d created (draft), %d refreshed, %d REFUSED (%s). See the log for each refusal.',
-					$created,
-					$updated,
-					count($refused),
-					implode(', ', $refused)
+					$tally['created'],
+					$tally['updated'],
+					count($tally['refused']),
+					implode(', ', $tally['refused'])
 				)
 			);
 			return;
 		}
 
-		$output->info(sprintf('Verwerkingsactiviteiten catalogue seeded: %d created (draft), %d refreshed.', $created, $updated));
-
-	}//end run()
+		$output->info(sprintf('Verwerkingsactiviteiten catalogue seeded: %d created (draft), %d refreshed.', $tally['created'], $tally['updated']));
+	}//end reportSeed()
 
 	/**
 	 * Read and validate the catalogue JSON.
@@ -215,30 +292,11 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 		// how all 7 catalogue rows failed on every fresh install. Each field
 		// therefore lists its candidate entity properties, newest first, and
 		// the one the deployed entity actually declares wins.
-		$stringFields = [
-			'name' => ['name', 'naam'],
-			'beschrijving' => ['description', 'beschrijving'],
-			'doelbinding' => ['purpose', 'doelbinding'],
-			'rechtsgrond' => ['legalBasis', 'rechtsgrond'],
-			'bewaartermijn' => ['retentionPeriod', 'bewaartermijn'],
-		];
-		foreach ($stringFields as $field => $candidates) {
-			if (isset($definition[$field]) === true && is_string($definition[$field]) === true) {
+		foreach (self::DESCRIPTIVE_FIELDS as $field => [$isOfType, $candidates]) {
+			if (isset($definition[$field]) === true && $isOfType($definition[$field]) === true) {
 				$this->setFirstDeclared(entity: $entity, candidates: $candidates, value: $definition[$field]);
 			}
 		}
-
-		$arrayFields = [
-			'categorieenBetrokkenen' => ['dataSubjectCategories', 'categorieenBetrokkenen'],
-			'categorieenPersoonsgegevens' => ['personalDataCategories', 'categorieenPersoonsgegevens'],
-			'ontvangers' => ['recipients', 'ontvangers'],
-		];
-		foreach ($arrayFields as $field => $candidates) {
-			if (isset($definition[$field]) === true && is_array($definition[$field]) === true) {
-				$this->setFirstDeclared(entity: $entity, candidates: $candidates, value: $definition[$field]);
-			}
-		}
-
 	}//end hydrate()
 
 	/**

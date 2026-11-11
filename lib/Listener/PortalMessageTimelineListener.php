@@ -48,6 +48,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
@@ -239,23 +240,6 @@ class PortalMessageTimelineListener implements IEventListener {
 	 * @return array<string, mixed>|null The payload, or null when it cannot be read.
 	 */
 	private function payload(Event $event): ?array {
-		$object = null;
-
-		if (method_exists($event, 'getObject') === true) {
-			$object = $event->getObject();
-		}
-
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
+		return EventObjectPayload::of(event: $event);
 	}//end payload()
 }//end class

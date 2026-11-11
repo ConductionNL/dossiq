@@ -125,132 +125,180 @@ class CaseTeamMigration {
 	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function run(bool $apply): array {
-		$report = [
-			'ran' => false,
-			'skippedBecause' => '',
-			'converted' => 0,
-			'alreadyGroup' => 0,
-			'failed' => 0,
-			'unmapped' => [],
-		];
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$report['skippedBecause'] = 'OpenRegister is not available';
-			return $report;
+		$store = $this->caseStore();
+		if (is_string($store) === true) {
+			return self::reportNotRun(skippedBecause: $store);
 		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-		if ($register === '' || $caseSchema === '') {
-			$report['skippedBecause'] = 'the case schema is not configured';
-			return $report;
-		}
-
-		$roleSchema = $this->settingsService->getConfigValue(key: 'organisatie_rol_schema');
 
 		$result = $this->runAsSystemIfAvailable(
-			objectService: $objectService,
-			operation: function () use ($objectService, $register, $caseSchema, $roleSchema, $apply, $report): array {
-				$report['ran'] = true;
-				$roles = $this->roles(objectService: $objectService, register: $register, roleSchema: $roleSchema);
-
-				foreach ($this->cases(objectService: $objectService, register: $register, caseSchema: $caseSchema) as $case) {
-					$report = $this->sortOne(
-						case: $case,
-						roles: $roles,
-						apply: $apply,
-						report: $report,
-						write: function (string $caseId, string $group) use ($objectService, $register, $caseSchema): void {
-							$this->patchObjectAsArray(
-								objectService: $objectService,
-								register: $register,
-								schema: $caseSchema,
-								id: $caseId,
-								changes: [self::FIELD => $group],
-							);
-						},
-					);
-				}
-
-				return $report;
+			objectService: $store->objectService,
+			operation: function () use ($store, $apply): array {
+				return $this->migrate(store: $store, apply: $apply);
 			}
 		);
 
 		if (is_array($result) === false) {
-			return $report;
+			return self::reportNotRun(skippedBecause: '');
 		}
 
 		return $result;
 	}//end run()
 
 	/**
-	 * Decide what one case is, and convert it when it can be.
+	 * The report of a run that did not run.
 	 *
-	 * @param array<string, mixed>                $case   The stored case.
-	 * @param array<string, array<string, mixed>> $roles  The organisation roles by id.
-	 * @param bool                                $apply  Whether to write.
-	 * @param array<string, mixed>                $report The report so far.
-	 * @param callable(string, string): void      $write  Writes a group onto a case.
+	 * @param string $skippedBecause Why, or ''.
 	 *
-	 * @return array<string, mixed> The report with this case counted.
+	 * @return array<string, mixed> The report.
+	 */
+	private static function reportNotRun(string $skippedBecause): array {
+		return [
+			'ran' => false,
+			'skippedBecause' => $skippedBecause,
+			'converted' => 0,
+			'alreadyGroup' => 0,
+			'failed' => 0,
+			'unmapped' => [],
+		];
+	}//end reportNotRun()
+
+	/**
+	 * Where the cases and roles live, or why the run cannot start.
+	 *
+	 * @return CaseTeamStore|string The store, or the reason it is skipped.
+	 */
+	private function caseStore(): CaseTeamStore|string {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return 'OpenRegister is not available';
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
+		if ($register === '' || $caseSchema === '') {
+			return 'the case schema is not configured';
+		}
+
+		return new CaseTeamStore(
+			objectService: $objectService,
+			register: $register,
+			caseSchema: $caseSchema,
+			roleSchema: $this->settingsService->getConfigValue(key: 'organisatie_rol_schema')
+		);
+	}//end caseStore()
+
+	/**
+	 * Sort every case against the organisation roles, and report.
+	 *
+	 * @param CaseTeamStore $store Where the cases and roles live.
+	 * @param bool          $apply Whether to write.
+	 *
+	 * @return array<string, mixed> The report.
 	 *
 	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
-	private function sortOne(array $case, array $roles, bool $apply, array $report, callable $write): array {
+	private function migrate(CaseTeamStore $store, bool $apply): array {
+		$sort = new CaseTeamSort(
+			store: $store,
+			roles: $this->roles(objectService: $store->objectService, register: $store->register, roleSchema: $store->roleSchema),
+			apply: $apply,
+			report: new TeamMigrationReport(),
+		);
+
+		foreach ($this->cases(objectService: $store->objectService, register: $store->register, caseSchema: $store->caseSchema) as $case) {
+			$this->sortOne(sort: $sort, case: $case);
+		}
+
+		return $sort->report->toArray();
+	}//end migrate()
+
+	/**
+	 * Decide what one case is, and convert it when it can be.
+	 *
+	 * @param CaseTeamSort         $sort The run.
+	 * @param array<string, mixed> $case The stored case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 */
+	private function sortOne(CaseTeamSort $sort, array $case): void {
 		$value = $this->referenceId(value: ($case[self::FIELD] ?? ''));
 		if ($value === '') {
-			return $report;
+			return;
 		}
 
 		if ($this->groups->groupExists($value) === true) {
-			$report['alreadyGroup'] += 1;
-			return $report;
+			$sort->report->count(kind: 'alreadyGroup');
+			return;
 		}
 
-		$caseId = $this->referenceId(value: ($case['id'] ?? ($case['uuid'] ?? ($case['@self'] ?? ''))));
-		$role = ($roles[$value] ?? null);
-		$group = '';
-		$reason = self::REASON_UNKNOWN;
-		if ($role !== null) {
-			$group = trim((string)($role['ncGroupId'] ?? ''));
-			$reason = self::REASON_NO_GROUP;
-			if ($group !== '') {
-				$reason = self::REASON_GROUP_MISSING;
-			}
-		}
-
+		$reference = new CaseTeamReference(
+			caseId: $this->referenceId(value: ($case['id'] ?? ($case['uuid'] ?? ($case['@self'] ?? '')))),
+			case: $case,
+			value: $value,
+			role: ($sort->roles[$value] ?? null),
+		);
+		$group = $reference->group();
 		if ($group !== '' && $this->groups->groupExists($group) === true) {
-			if ($apply === false) {
-				$report['converted'] += 1;
-				return $report;
-			}
-
-			try {
-				$write($caseId, $group);
-				$report['converted'] += 1;
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq team migration: case {case} could not be moved to group {group}',
-					['case' => $caseId, 'group' => $group, 'exception' => $e->getMessage()],
-				);
-				$report['failed'] += 1;
-			}
-
-			return $report;
+			$this->convert(sort: $sort, reference: $reference);
+			return;
 		}
 
-		$report['unmapped'][] = [
-			'case' => $caseId,
-			'title' => trim((string)($case['title'] ?? '')),
-			'value' => $value,
-			'reason' => $reason,
-			'roleName' => trim((string)($role['roleName'] ?? '')),
-			'hints' => $this->hints(role: ($role ?? [])),
-		];
-
-		return $report;
+		$sort->report->addUnmapped(row: $this->unmappedRow(reference: $reference));
 	}//end sortOne()
+
+	/**
+	 * Move a case to the group its role names, or count it on a dry run.
+	 *
+	 * @param CaseTeamSort      $sort      The run.
+	 * @param CaseTeamReference $reference The case and its role.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 */
+	private function convert(CaseTeamSort $sort, CaseTeamReference $reference): void {
+		if ($sort->apply === false) {
+			$sort->report->count(kind: 'converted');
+			return;
+		}
+
+		try {
+			$this->patchObjectAsArray(
+				objectService: $sort->store->objectService,
+				register: $sort->store->register,
+				schema: $sort->store->caseSchema,
+				id: $reference->caseId,
+				changes: [self::FIELD => $reference->group()],
+			);
+			$sort->report->count(kind: 'converted');
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq team migration: case {case} could not be moved to group {group}',
+				['case' => $reference->caseId, 'group' => $reference->group(), 'exception' => $e->getMessage()],
+			);
+			$sort->report->count(kind: 'failed');
+		}
+	}//end convert()
+
+	/**
+	 * The report row of a case that could not be converted.
+	 *
+	 * @param CaseTeamReference $reference The case and its role.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function unmappedRow(CaseTeamReference $reference): array {
+		return [
+			'case' => $reference->caseId,
+			'title' => trim((string)($reference->case['title'] ?? '')),
+			'value' => $reference->value,
+			'reason' => $reference->reason(),
+			'roleName' => trim((string)($reference->role['roleName'] ?? '')),
+			'hints' => $this->hints(role: ($reference->role ?? [])),
+		];
+	}//end unmappedRow()
 
 	/**
 	 * Groups that look like the role, for a person to confirm. Never applied.

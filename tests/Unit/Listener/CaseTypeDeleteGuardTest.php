@@ -121,6 +121,26 @@ class CaseTypeDeleteGuardTest extends TestCase {
 	}//end testAnUnusedDraftGoesWithItsStatusTypes()
 
 	/**
+	 * A move out of the register is refused like a delete, and an allowed move keeps the status types.
+	 *
+	 * @return void
+	 */
+	public function testAMoveIsGuardedButRemovesNothing(): void {
+		$published = $this->deleteOf(isDraft: false);
+		$refused = new \OCA\OpenRegister\Event\ObjectLeavingEvent($published->getObject());
+		$this->guard()->handle($refused);
+		$this->assertTrue($refused->isPropagationStopped());
+		$this->assertSame('case-type-published', $refused->getErrors()['error']);
+
+		$draft = $this->deleteOf(isDraft: true);
+		$allowed = new \OCA\OpenRegister\Event\ObjectLeavingEvent($draft->getObject());
+		$this->guard()->handle($allowed);
+		$this->assertFalse($allowed->isPropagationStopped());
+		$this->assertNotSame([], $this->store->row('statusType', 'st-1'));
+		$this->assertNotSame([], $this->store->row('statusType', 'st-2'));
+	}//end testAMoveIsGuardedButRemovesNothing()
+
+	/**
 	 * @return void
 	 */
 	public function testAnUncheckableDeleteIsRefusedAndOtherSchemasPass(): void {

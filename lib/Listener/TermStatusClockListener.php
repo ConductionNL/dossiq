@@ -33,6 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\TermStatusClock;
 use OCP\EventDispatcher\Event;
@@ -73,7 +75,7 @@ class TermStatusClockListener implements IEventListener {
 	 */
 	public function handle(Event $event): void {
 		try {
-			$case = $this->payloadOf(event: $event);
+			$case = EventObjectPayload::firstOf(event: $event, methods: ['getNewObject', 'getObject']);
 			if ($case === null || $this->isCaseSchema(object: $case) === false) {
 				return;
 			}
@@ -126,45 +128,6 @@ class TermStatusClockListener implements IEventListener {
 	 * @return bool True when it does.
 	 */
 	private function isCaseSchema(array $object): bool {
-		$configured = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($configured === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $configured
-			|| str_ends_with($candidate, '/' . $configured)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: (string)$this->settingsService->getConfigValue('case_schema'));
 	}//end isCaseSchema()
-
-	/**
-	 * The saved object, whatever the event calls its getter.
-	 *
-	 * @param Event $event The event.
-	 *
-	 * @return array<string, mixed>|null The payload.
-	 */
-	private function payloadOf(Event $event): ?array {
-		foreach (['getNewObject', 'getObject'] as $method) {
-			if (method_exists($event, $method) === false) {
-				continue;
-			}
-
-			$value = $event->{$method}();
-			if (is_array($value) === true) {
-				return $value;
-			}
-
-			if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-				$serialized = $value->jsonSerialize();
-				if (is_array($serialized) === true) {
-					return $serialized;
-				}
-			}
-		}
-
-		return null;
-	}//end payloadOf()
 }//end class

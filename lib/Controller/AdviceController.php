@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\JsonRequestBody;
 use OCA\Dossiq\Service\AdviceService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
@@ -299,34 +300,6 @@ class AdviceController extends Controller {
 	 * @return array<string, mixed> Decoded payload or empty array
 	 */
 	private function readJsonBody(): array {
-		// Prefer the request object's getContent() when reachable — test
-		// stubs expose a public getContent(); the concrete OC request hides
-		// it, so we fall through to php://input there.
-		$content = '';
-		if (method_exists($this->request, 'getContent') === true) {
-			try {
-				$raw = $this->request->getContent();
-				if (is_string($raw) === true) {
-					$content = $raw;
-				}
-			} catch (\Throwable $e) {
-				$content = '';
-			}
-		}
-
-		if ($content === '') {
-			$content = (string)file_get_contents('php://input');
-		}
-
-		if ($content === '') {
-			return [];
-		}
-
-		$decoded = json_decode($content, true);
-		if (is_array($decoded) === true) {
-			return $decoded;
-		}
-
-		return [];
+		return (new JsonRequestBody())->read(request: $this->request);
 	}//end readJsonBody()
 }//end class

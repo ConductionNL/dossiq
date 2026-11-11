@@ -143,6 +143,41 @@ class PreferencesController extends Controller {
 		}
 
 		$safeKey = $this->sanitizeKey(key: $key);
+		$refusal = $this->writeRefusal(safeKey: $safeKey, value: $value);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		if ($value === '') {
+			$this->config->deleteUserValue(
+				userId: $user->getUID(),
+				appName: Application::APP_ID,
+				key: 'pref_' . $safeKey
+			);
+			return new JSONResponse(data: ['value' => null]);
+		}
+
+		$this->config->setUserValue(
+			userId: $user->getUID(),
+			appName: Application::APP_ID,
+			key: 'pref_' . $safeKey,
+			value: $value
+		);
+
+		return new JSONResponse(data: ['value' => $value]);
+	}//end setPreference()
+
+	/**
+	 * The 400 refusal for a key that is not safe or a value that is too long, else null.
+	 *
+	 * @param string $safeKey The sanitised key; empty when the key was refused.
+	 * @param string $value   The value to store.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function writeRefusal(string $safeKey, string $value): ?JSONResponse {
 		if ($safeKey === '') {
 			return new JSONResponse(data: ['message' => 'Invalid key'], statusCode: Http::STATUS_BAD_REQUEST);
 		}
@@ -154,27 +189,8 @@ class PreferencesController extends Controller {
 			);
 		}
 
-		$stored = null;
-		if ($value === '') {
-			$this->config->deleteUserValue(
-				userId: $user->getUID(),
-				appName: Application::APP_ID,
-				key: 'pref_' . $safeKey
-			);
-		}
-
-		if ($value !== '') {
-			$this->config->setUserValue(
-				userId: $user->getUID(),
-				appName: Application::APP_ID,
-				key: 'pref_' . $safeKey,
-				value: $value
-			);
-			$stored = $value;
-		}
-
-		return new JSONResponse(data: ['value' => $stored]);
-	}//end setPreference()
+		return null;
+	}//end writeRefusal()
 
 	/**
 	 * Accept a key only when it is already in the safe charset, so callers

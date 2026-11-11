@@ -147,6 +147,10 @@ class BezwaarAdviceRequestController extends Controller {
 				$code = Http::STATUS_NOT_FOUND;
 			}
 
+			if ($refused->getCode() === AdvisoryCommitteeService::NOT_CHAIR) {
+				$code = Http::STATUS_FORBIDDEN;
+			}
+
 			return new JSONResponse(['error' => $refused->getMessage()], $code);
 		}
 	}//end run()

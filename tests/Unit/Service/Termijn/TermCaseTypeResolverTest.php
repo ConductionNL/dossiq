@@ -145,6 +145,41 @@ class TermCaseTypeResolverTest extends TestCase {
 	}//end testEachTermResolvesThroughItsCaseThenItsDefinition()
 
 	/**
+	 * The whole answer, keyed and ordered as the rows were, for every path.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeAnswerForEveryPath(): void {
+		$this->seedTypesReachedOnlyByDefinition();
+		$this->objects->seed('caseType', ['id' => 'ct-untitled', 'identifier' => 'naamloos']);
+		$this->objects->seed('case', ['id' => 'case-9', 'caseType' => 'ct-untitled']);
+
+		$result = $this->resolver()->resolve(rows: [
+			7 => ['id' => 'ti-7', 'case' => 'case-9', 'deadlineDefinition' => 'td-sloop'],
+			2 => ['id' => 'ti-2', 'case' => 'case-gone', 'deadlineDefinition' => 'td-klein'],
+			4 => ['id' => 'ti-4', 'deadlineDefinition' => 'td-gone'],
+			0 => ['case' => 'case-gone'],
+			3 => ['id' => 'ti-3', 'case' => 'case-3', 'deadlineDefinition' => 'td-sloop'],
+			5 => ['id' => 'ti-5', 'deadlineDefinition' => 'td-woo'],
+		]);
+
+		self::assertSame(
+			expected: [
+				'byRow' => [
+					7 => ['key' => 'naamloos', 'title' => ''],
+					2 => ['key' => 'omgevingsvergunning-kleinbouw', 'title' => 'Omgevingsvergunning kleine bouwactiviteit'],
+					4 => ['key' => 'nergens', 'title' => ''],
+					0 => ['key' => TermCaseTypeResolver::UNRESOLVED, 'title' => ''],
+					3 => ['key' => 'melding', 'title' => 'Melding'],
+					5 => ['key' => 'woo-verzoek', 'title' => 'Woo-verzoek'],
+				],
+				'unresolved' => [''],
+			],
+			actual: $result
+		);
+	}//end testTheWholeAnswerForEveryPath()
+
+	/**
 	 * Three batched searches for any number of rows, never one per row.
 	 *
 	 * @return void

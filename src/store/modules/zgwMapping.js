@@ -1,5 +1,7 @@
-import { generateUrl } from '@nextcloud/router'
 import { defineStore } from 'pinia'
+import { guarded, jsonAnswer, jsonRequest } from './storeRequest.js'
+
+const MAPPINGS = '/apps/dossiq/api/zgw-mappings'
 
 export const useZgwMappingStore = defineStore('zgwMapping', {
 	state: () => ({
@@ -15,38 +17,14 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 	actions: {
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		async fetchMappings() {
-			this.loading = true
-			this.error = null
-
-			try {
-				const response = await fetch(
-					generateUrl('/apps/dossiq/api/zgw-mappings'),
-					{
-						method: 'GET',
-						headers: {
-							'Content-Type': 'application/json',
-							requesttoken: OC.requestToken,
-							'OCS-APIREQUEST': 'true',
-						},
-					},
-				)
-
-				if (!response.ok) {
-					throw new Error(
-						`Failed to fetch ZGW mappings: ${response.statusText}`,
-					)
-				}
-
-				const data = await response.json()
-				this.mappings = data.mappings || {}
-				return this.mappings
-			} catch (error) {
-				this.error = error.message
-				console.error('Error fetching ZGW mappings:', error)
-				return null
-			} finally {
-				this.loading = false
-			}
+			return guarded(this, {
+				work: async () => {
+					const data = await jsonAnswer(await jsonRequest(MAPPINGS, { method: 'GET' }), 'Failed to fetch ZGW mappings')
+					this.mappings = data.mappings || {}
+					return this.mappings
+				},
+				failed: (error) => console.error('Error fetching ZGW mappings:', error),
+			})
 		},
 
 		/**
@@ -55,39 +33,15 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async saveMapping(resourceKey, config) {
-			this.loading = true
-			this.error = null
-
-			try {
-				const response = await fetch(
-					generateUrl(`/apps/dossiq/api/zgw-mappings/${resourceKey}`),
-					{
-						method: 'PUT',
-						headers: {
-							'Content-Type': 'application/json',
-							requesttoken: OC.requestToken,
-							'OCS-APIREQUEST': 'true',
-						},
-						body: JSON.stringify(config),
-					},
-				)
-
-				if (!response.ok) {
-					throw new Error(
-						`Failed to save ZGW mapping: ${response.statusText}`,
-					)
-				}
-
-				const data = await response.json()
-				this.mappings[resourceKey] = data.mapping
-				return data.mapping
-			} catch (error) {
-				this.error = error.message
-				console.error('Error saving ZGW mapping:', error)
-				return null
-			} finally {
-				this.loading = false
-			}
+			return guarded(this, {
+				work: async () => {
+					const response = await jsonRequest(`${MAPPINGS}/${resourceKey}`, { method: 'PUT', body: config })
+					const data = await jsonAnswer(response, 'Failed to save ZGW mapping')
+					this.mappings[resourceKey] = data.mapping
+					return data.mapping
+				},
+				failed: (error) => console.error('Error saving ZGW mapping:', error),
+			})
 		},
 
 		/**
@@ -95,40 +49,15 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
 		 */
 		async resetMapping(resourceKey) {
-			this.loading = true
-			this.error = null
-
-			try {
-				const response = await fetch(
-					generateUrl(
-						`/apps/dossiq/api/zgw-mappings/${resourceKey}/reset`,
-					),
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							requesttoken: OC.requestToken,
-							'OCS-APIREQUEST': 'true',
-						},
-					},
-				)
-
-				if (!response.ok) {
-					throw new Error(
-						`Failed to reset ZGW mapping: ${response.statusText}`,
-					)
-				}
-
-				const data = await response.json()
-				this.mappings[resourceKey] = data.mapping
-				return data.mapping
-			} catch (error) {
-				this.error = error.message
-				console.error('Error resetting ZGW mapping:', error)
-				return null
-			} finally {
-				this.loading = false
-			}
+			return guarded(this, {
+				work: async () => {
+					const response = await jsonRequest(`${MAPPINGS}/${resourceKey}/reset`, { method: 'POST' })
+					const data = await jsonAnswer(response, 'Failed to reset ZGW mapping')
+					this.mappings[resourceKey] = data.mapping
+					return data.mapping
+				},
+				failed: (error) => console.error('Error resetting ZGW mapping:', error),
+			})
 		},
 	},
 })

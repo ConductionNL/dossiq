@@ -298,46 +298,76 @@ export default {
 			this.error = ''
 
 			try {
-				// 🔴 THE RULE FIRST, THEN THE ROWS. `CaseSplitPolicy` decides
-				// what this case type allows, and asking it before drawing is
-				// the whole point: otherwise the handler ticks a document,
-				// confirms, and learns from the refusal that documents may not
-				// be divided here. The rule was always enforced; it was just
-				// never said until after the attempt.
-				const { data: rules } = await axios.get(
-					generateUrl(
-						`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/split`,
-					),
-				)
-				this.allowed = Array.isArray(rules?.allowed) ? rules.allowed : []
-
-				const [documents, parties] = await Promise.all([
-					this.allows('documents')
-						? this.children('caseDocument', [
-								'title',
-								'name',
-								'documentType',
-							])
-						: [],
-					this.allows('parties')
-						? this.children('role', ['roleType', 'name', 'displayName'])
-						: [],
-				])
-				this.documents = documents
-				this.parties = parties
+				await this.readSplitRule()
+				await this.readSplitChildren()
 			} catch (loadError) {
-				this.allowed = []
-				this.documents = []
-				this.parties = []
-				this.error =
-					loadError?.response?.data?.error
-					|| t(
-						'dossiq',
-						'What this case holds could not be read, so nothing was split.',
-					)
+				this.showLoadFailure(loadError)
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * Read what this case type allows to be divided.
+		 *
+		 * 🔴 THE RULE FIRST, THEN THE ROWS. `CaseSplitPolicy` decides what this
+		 * case type allows, and asking it before drawing is the whole point:
+		 * otherwise the handler ticks a document, confirms, and learns from the
+		 * refusal that documents may not be divided here. The rule was always
+		 * enforced; it was just never said until after the attempt.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 */
+		async readSplitRule() {
+			const { data: rules } = await axios.get(
+				generateUrl(
+					`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/split`,
+				),
+			)
+			this.allowed = Array.isArray(rules?.allowed) ? rules.allowed : []
+		},
+
+		/**
+		 * Read the documents and parties, each only when the rule allows it.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 */
+		async readSplitChildren() {
+			const [documents, parties] = await Promise.all([
+				this.allows('documents')
+					? this.children('caseDocument', [
+							'title',
+							'name',
+							'documentType',
+						])
+					: [],
+				this.allows('parties')
+					? this.children('role', ['roleType', 'name', 'displayName'])
+					: [],
+			])
+			this.documents = documents
+			this.parties = parties
+		},
+
+		/**
+		 * Show nothing to split, and why.
+		 *
+		 * @param {object} loadError What the read threw.
+		 * @return {void}
+		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 */
+		showLoadFailure(loadError) {
+			this.allowed = []
+			this.documents = []
+			this.parties = []
+			this.error =
+				loadError?.response?.data?.error
+				|| t(
+					'dossiq',
+					'What this case holds could not be read, so nothing was split.',
+				)
 		},
 
 		/**

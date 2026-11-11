@@ -3,8 +3,9 @@
 /**
  * Test stub for OCA\OpenRegister\Service\Flow\FlowRunSignalService.
  *
- * Signature-matched to the real seam (openregister#3332): `signalAs()` and
- * `signalRunAs()` — resolve, assignee guard, audit and delivery in one call,
+ * Signature-matched to the real seam on openregister main: `answerByUuid()`
+ * and `answer()`, each taking a RunSignal — resolve, assignee guard, audit and
+ * delivery in one call,
  * refusing with a typed FlowSignalRefused. The stub delivers unconditionally;
  * dossiq's tests mock this class and drive the refusal paths through the
  * exception, because the guard rule belongs to OpenRegister and is tested
@@ -27,30 +28,26 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Flow\\FlowRunSignalService', fal
     class FlowRunSignalService {
 
         /**
-         * Answer a suspended run by uuid, as a named actor, guarded.
+         * Answer a suspended run by uuid, guarded.
          *
-         * @param string      $runUuid  The run to answer.
-         * @param array       $payload  What the signaller wants the run to know.
-         * @param string|null $actorUid Who is answering; null means anonymous.
-         * @param string|null $nodeId   The node the answer addresses, when known.
+         * @param string    $runUuid The run to answer.
+         * @param RunSignal $signal  What is said, by whom, to which node.
          *
          * @return FlowRun The parked run.
          */
-        public function signalAs(string $runUuid, array $payload, ?string $actorUid, ?string $nodeId = null): FlowRun {
+        public function answerByUuid(string $runUuid, RunSignal $signal): FlowRun {
             return new FlowRun();
         }
 
         /**
-         * Answer an already-resolved run, as a named actor, guarded.
+         * Answer an already-resolved run, guarded.
          *
-         * @param FlowRun     $run      The run to answer.
-         * @param array       $payload  What the signaller wants the run to know.
-         * @param string|null $actorUid Who is answering; null means anonymous.
-         * @param string|null $nodeId   The node the answer addresses, when known.
+         * @param FlowRun   $run    The run to answer.
+         * @param RunSignal $signal What is said, by whom, to which node.
          *
          * @return FlowRun The parked run.
          */
-        public function signalRunAs(FlowRun $run, array $payload, ?string $actorUid, ?string $nodeId = null): FlowRun {
+        public function answer(FlowRun $run, RunSignal $signal): FlowRun {
             return $run;
         }
     }
