@@ -159,10 +159,7 @@ class CaseCompleteness {
 			return ['items' => []];
 		}
 
-		$readableIds = [];
-		foreach ($readable as $document) {
-			$readableIds[] = $this->documentId(document: $document);
-		}
+		$readableIds = $this->documentIds(documents: $readable);
 
 		$rows    = [];
 		$present = 0;
@@ -175,20 +172,48 @@ class CaseCompleteness {
 			$rows[] = $row;
 		}
 
-		$total   = count($rows);
-		$verdict = 'incomplete';
-		if ($present === $total) {
-			$verdict = 'complete';
-		}
+		$total = count($rows);
 
 		return [
 			'items' => $rows,
 			'present' => $present,
 			'total' => $total,
 			'missing' => ($total - $present),
-			'verdict' => $verdict,
+			'verdict' => $this->verdictOf(present: $present, total: $total),
 		];
 	}//end check()
+
+	/**
+	 * The ids of documents.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The documents.
+	 *
+	 * @return array<int, string>
+	 */
+	private function documentIds(array $documents): array {
+		$ids = [];
+		foreach ($documents as $document) {
+			$ids[] = $this->documentId(document: $document);
+		}
+
+		return $ids;
+	}//end documentIds()
+
+	/**
+	 * The verdict: complete when every item is present.
+	 *
+	 * @param int $present How many items are present.
+	 * @param int $total   How many items there are.
+	 *
+	 * @return string `complete` or `incomplete`.
+	 */
+	private function verdictOf(int $present, int $total): string {
+		if ($present === $total) {
+			return 'complete';
+		}
+
+		return 'incomplete';
+	}//end verdictOf()
 
 	/**
 	 * One item, ticked against the documents and then the case field.
