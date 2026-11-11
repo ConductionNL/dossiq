@@ -313,28 +313,61 @@ class AanvullingsverzoekService {
 			return $written;
 		}
 
-		$id = trim((string)($written['id'] ?? ($written['uuid'] ?? '')));
+		$id = $this->requestId(written: $written);
+		$task = $this->portalTask->raise(question: $this->portalQuestion(written: $written, id: $id), actor: $userId);
+		if ($task === null || $id === '') {
+			return $written;
+		}
+
+		return $this->rememberTask(written: $written, task: $task);
+	}//end raisePortalTask()
+
+	/**
+	 * The trimmed id of a stored request, '' when it has none.
+	 *
+	 * @param array<string, mixed> $written The stored request.
+	 *
+	 * @return string The id.
+	 */
+	private function requestId(array $written): string {
+		return trim((string)($written['id'] ?? ($written['uuid'] ?? '')));
+	}//end requestId()
+
+	/**
+	 * The question the resident's portal task asks: what is missing, on which case, by when.
+	 *
+	 * @param array<string, mixed> $written The stored request.
+	 * @param string               $id      Its id.
+	 *
+	 * @return array<string, mixed> The question.
+	 */
+	private function portalQuestion(array $written, string $id): array {
 		$items = array_map(
 			static fn (mixed $row): string => (string)(((array)$row)['item'] ?? (((array)$row)[0] ?? '')),
 			(array)($written['missingItems'] ?? [])
 		);
 
-		$task = $this->portalTask->raise(
-			question: [
-				'id' => $id,
-				'case' => (string)($written['case'] ?? ''),
-				'portalSubject' => (string)($written['portalSubject'] ?? ''),
-				'title' => 'Vul uw aanvraag aan',
-				'items' => $items,
-				'due' => (string)($written['hersteltermijn'] ?? ''),
-				'source' => self::PORTAL_TASK_SOURCE,
-			],
-			actor: $userId
-		);
-		if ($task === null || $id === '') {
-			return $written;
-		}
+		return [
+			'id' => $id,
+			'case' => (string)($written['case'] ?? ''),
+			'portalSubject' => (string)($written['portalSubject'] ?? ''),
+			'title' => 'Vul uw aanvraag aan',
+			'items' => $items,
+			'due' => (string)($written['hersteltermijn'] ?? ''),
+			'source' => self::PORTAL_TASK_SOURCE,
+		];
+	}//end portalQuestion()
 
+	/**
+	 * Remember the raised task on the request; a request that cannot remember it is left as written.
+	 *
+	 * @param array<string, mixed> $written The stored request.
+	 * @param string               $task    The raised task's uuid.
+	 *
+	 * @return array<string, mixed> The request, with `portalTask` when it was remembered.
+	 */
+	private function rememberTask(array $written, string $task): array {
+		$id = $this->requestId(written: $written);
 		try {
 			$this->write(request: ['portalTask' => $task], id: $id);
 		} catch (RefusedException $e) {
@@ -346,7 +379,7 @@ class AanvullingsverzoekService {
 		}
 
 		return array_merge($written, ['portalTask' => $task]);
-	}//end raisePortalTask()
+	}//end rememberTask()
 
 	/**
 	 * The case's type: the identifier its version chain shares when the case
@@ -461,27 +494,7 @@ class AanvullingsverzoekService {
 			return [];
 		}
 
-		[$objectService, $register] = $this->openRegister();
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: self::SCHEMA,
-				filters: ['case' => $caseId, '_limit' => 100]
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the aanvullingsverzoeken on a case could not be read',
-				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
-			);
-			throw new RefusedException(
-				rule: 'aanvullingsverzoek-unreadable',
-				sentence: 'The requests on this case could not be read, so nothing was changed.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
-		}
-
+		$rows = $this->requestRows(caseId: $caseId);
 		usort(
 			$rows,
 			static fn (array $a, array $b): int => strcmp(
@@ -492,6 +505,51 @@ class AanvullingsverzoekService {
 
 		return $rows;
 	}//end forCase()
+
+	/**
+	 * The requests stored on a case, in the store's order.
+	 *
+	 * @param string $caseId The trimmed case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The requests.
+	 *
+	 * @throws RefusedException When the register is not configured or the requests cannot be read.
+	 */
+	private function requestRows(string $caseId): array {
+		[$objectService, $register] = $this->openRegister();
+
+		try {
+			return $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: self::SCHEMA,
+				filters: ['case' => $caseId, '_limit' => 100]
+			);
+		} catch (Throwable $e) {
+			throw $this->unreadable(caseId: $caseId, e: $e);
+		}
+	}//end requestRows()
+
+	/**
+	 * Log a case whose requests cannot be read, as the refusal to throw.
+	 *
+	 * @param string    $caseId The case.
+	 * @param Throwable $e      What the store threw.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function unreadable(string $caseId, Throwable $e): RefusedException {
+		$this->logger->warning(
+			'Dossiq: the aanvullingsverzoeken on a case could not be read',
+			['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+		);
+
+		return new RefusedException(
+			rule: 'aanvullingsverzoek-unreadable',
+			sentence: 'The requests on this case could not be read, so nothing was changed.',
+			status: RefusedException::STATUS_INDETERMINATE,
+		);
+	}//end unreadable()
 
 	/**
 	 * How long a request has been open, in days.
@@ -579,51 +637,94 @@ class AanvullingsverzoekService {
 	 */
 	public function write(array $request, string $id = ''): array {
 		[$objectService, $register] = $this->openRegister();
+		$write = new RequestWrite(objectService: $objectService, register: $register);
+		$write->request = $request;
+		$write->id = trim($id);
 
 		try {
-			if (trim($id) !== '') {
-				$patched = ($this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: self::SCHEMA,
-					id: trim($id),
-					changes: $request
-				) ?? $request);
-
-				// A request that leaves `open` takes its portal task with it
-				// (decision 169). Every change of state is written here, so
-				// this is the one place that sees all of them.
-				if (array_key_exists('state', $request) === true && $request['state'] !== 'open') {
-					$this->portalTask?->close(
-						taskUuid: (string)($patched['portalTask'] ?? ''),
-						reason: sprintf('The aanvullingsverzoek is %s in dossiq.', (string)$request['state']),
-						source: self::PORTAL_TASK_SOURCE
-					);
-				}
-
-				return $patched;
+			if ($write->id !== '') {
+				return $this->patchRequest(write: $write);
 			}
 
-			$stored = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: self::SCHEMA,
-				object: $request
-			);
+			$stored = $this->createRequest(write: $write);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: an aanvullingsverzoek could not be written',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
-			);
-			throw new RefusedException(
-				rule: 'aanvullingsverzoek-not-written',
-				sentence: 'The request could not be written down.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
-		}//end try
+			throw $this->notWritten(e: $e);
+		}
 
 		return ($stored ?? $request);
 	}//end write()
+
+	/**
+	 * Save a new request.
+	 *
+	 * @param RequestWrite $write The request to create.
+	 *
+	 * @return array<string, mixed>|null The stored request, or null when the store answered none.
+	 *
+	 * @throws Throwable When the save fails.
+	 */
+	private function createRequest(RequestWrite $write): ?array {
+		return $this->saveObjectAsArray(
+			objectService: $write->objectService,
+			register: $write->register,
+			schema: self::SCHEMA,
+			object: $write->request
+		);
+	}//end createRequest()
+
+	/**
+	 * Patch an existing request, closing its portal task when it leaves `open`.
+	 *
+	 * A request that leaves `open` takes its portal task with it (decision
+	 * 169). Every change of state is written here, so this is the one place
+	 * that sees all of them.
+	 *
+	 * @param RequestWrite $write The changes and the request they change.
+	 *
+	 * @return array<string, mixed> The stored request.
+	 *
+	 * @throws Throwable When the patch or the closing of the task fails.
+	 */
+	private function patchRequest(RequestWrite $write): array {
+		$patched = ($this->patchObjectAsArray(
+			objectService: $write->objectService,
+			register: $write->register,
+			schema: self::SCHEMA,
+			id: $write->id,
+			changes: $write->request
+		) ?? $write->request);
+
+		$request = $write->request;
+		if (array_key_exists('state', $request) === true && $request['state'] !== 'open') {
+			$this->portalTask?->close(
+				taskUuid: (string)($patched['portalTask'] ?? ''),
+				reason: sprintf('The aanvullingsverzoek is %s in dossiq.', (string)$request['state']),
+				source: self::PORTAL_TASK_SOURCE
+			);
+		}
+
+		return $patched;
+	}//end patchRequest()
+
+	/**
+	 * Log a write the store refused, as the refusal to throw.
+	 *
+	 * @param Throwable $e What the store threw.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function notWritten(Throwable $e): RefusedException {
+		$this->logger->error(
+			'Dossiq: an aanvullingsverzoek could not be written',
+			['app' => Application::APP_ID, 'error' => $e->getMessage()]
+		);
+
+		return new RefusedException(
+			rule: 'aanvullingsverzoek-not-written',
+			sentence: 'The request could not be written down.',
+			status: RefusedException::STATUS_INDETERMINATE,
+		);
+	}//end notWritten()
 
 	/**
 	 * The item rows a list of asked-for things becomes.
