@@ -115,18 +115,7 @@ class RetiredTemplateSyntax {
 			);
 		}
 
-		return (string)preg_replace_callback(
-			self::PLACEHOLDER,
-			static function (array $match): string {
-				$path = $match[1];
-				if (str_starts_with($path, self::CASE_ROOT) === false || $path === self::CASE_ROOT) {
-					return '';
-				}
-
-				return '{{ item.' . substr($path, strlen(self::CASE_ROOT)) . ' }}';
-			},
-			$template
-		);
+		return self::casePaths(template: $template, prefix: 'item.');
 	}//end forDocument()
 
 	/**
@@ -143,19 +132,31 @@ class RetiredTemplateSyntax {
 	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function forSourceCall(string $template): string {
+		return self::casePaths(template: $template, prefix: '');
+	}//end forSourceCall()
+
+	/**
+	 * Rewrite every `{{case.path}}` to `{{ <prefix>path }}`, and blank any other placeholder.
+	 *
+	 * @param string $template The dossiq template.
+	 * @param string $prefix   What the target syntax reads the case under.
+	 *
+	 * @return string The rewritten template.
+	 */
+	private static function casePaths(string $template, string $prefix): string {
 		return (string)preg_replace_callback(
 			self::PLACEHOLDER,
-			static function (array $match): string {
+			static function (array $match) use ($prefix): string {
 				$path = $match[1];
 				if (str_starts_with($path, self::CASE_ROOT) === false || $path === self::CASE_ROOT) {
 					return '';
 				}
 
-				return '{{ ' . substr($path, strlen(self::CASE_ROOT)) . ' }}';
+				return '{{ ' . $prefix . substr($path, strlen(self::CASE_ROOT)) . ' }}';
 			},
 			$template
 		);
-	}//end forSourceCall()
+	}//end casePaths()
 
 	/**
 	 * Put the merge fields a createDocument step computed into its template.
