@@ -1,0 +1,206 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`validateTaskTransition > answers every pair of statuses as before 1`] = `
+{
+  "- -> -": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "- -> active": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "- -> available": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "- -> completed": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "- -> disabled": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "- -> onbekend": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "- -> terminated": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "active -> -": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "active -> active": {
+    "error": "Cannot transition from 'active' to 'active'",
+    "valid": false,
+  },
+  "active -> available": {
+    "error": "Cannot transition from 'active' to 'available'",
+    "valid": false,
+  },
+  "active -> completed": {
+    "error": null,
+    "valid": true,
+  },
+  "active -> disabled": {
+    "error": "Cannot transition from 'active' to 'disabled'",
+    "valid": false,
+  },
+  "active -> onbekend": {
+    "error": "Cannot transition from 'active' to 'onbekend'",
+    "valid": false,
+  },
+  "active -> terminated": {
+    "error": null,
+    "valid": true,
+  },
+  "available -> -": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "available -> active": {
+    "error": null,
+    "valid": true,
+  },
+  "available -> available": {
+    "error": "Cannot transition from 'available' to 'available'",
+    "valid": false,
+  },
+  "available -> completed": {
+    "error": "A task must be active before it can be completed. Start the task first.",
+    "valid": false,
+  },
+  "available -> disabled": {
+    "error": null,
+    "valid": true,
+  },
+  "available -> onbekend": {
+    "error": "Cannot transition from 'available' to 'onbekend'",
+    "valid": false,
+  },
+  "available -> terminated": {
+    "error": null,
+    "valid": true,
+  },
+  "completed -> -": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "completed -> active": {
+    "error": "Cannot change status of a completed task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "completed -> available": {
+    "error": "Cannot change status of a completed task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "completed -> completed": {
+    "error": "Cannot change status of a completed task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "completed -> disabled": {
+    "error": "Cannot change status of a completed task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "completed -> onbekend": {
+    "error": "Cannot change status of a completed task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "completed -> terminated": {
+    "error": "Cannot change status of a completed task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "disabled -> -": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "disabled -> active": {
+    "error": "Cannot change status of a disabled task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "disabled -> available": {
+    "error": "Cannot change status of a disabled task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "disabled -> completed": {
+    "error": "Cannot change status of a disabled task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "disabled -> disabled": {
+    "error": "Cannot change status of a disabled task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "disabled -> onbekend": {
+    "error": "Cannot change status of a disabled task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "disabled -> terminated": {
+    "error": "Cannot change status of a disabled task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "null -> active": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "onbekend -> -": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "onbekend -> active": {
+    "error": "Cannot transition from 'onbekend' to 'active'",
+    "valid": false,
+  },
+  "onbekend -> available": {
+    "error": "Cannot transition from 'onbekend' to 'available'",
+    "valid": false,
+  },
+  "onbekend -> completed": {
+    "error": "Cannot transition from 'onbekend' to 'completed'",
+    "valid": false,
+  },
+  "onbekend -> disabled": {
+    "error": "Cannot transition from 'onbekend' to 'disabled'",
+    "valid": false,
+  },
+  "onbekend -> onbekend": {
+    "error": "Cannot transition from 'onbekend' to 'onbekend'",
+    "valid": false,
+  },
+  "onbekend -> terminated": {
+    "error": "Cannot transition from 'onbekend' to 'terminated'",
+    "valid": false,
+  },
+  "terminated -> -": {
+    "error": "Invalid status transition",
+    "valid": false,
+  },
+  "terminated -> active": {
+    "error": "Cannot change status of a terminated task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "terminated -> available": {
+    "error": "Cannot change status of a terminated task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "terminated -> completed": {
+    "error": "Cannot change status of a terminated task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "terminated -> disabled": {
+    "error": "Cannot change status of a terminated task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "terminated -> onbekend": {
+    "error": "Cannot change status of a terminated task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+  "terminated -> terminated": {
+    "error": "Cannot change status of a terminated task. Terminal states cannot be reversed.",
+    "valid": false,
+  },
+}
+`;
