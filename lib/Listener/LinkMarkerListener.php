@@ -123,46 +123,84 @@ class LinkMarkerListener implements IEventListener {
 	 * @return void
 	 */
 	private function apply(LinkMarkerRule $rule, array $source): void {
-		$sourceSchema = $this->settingsService->getConfigValue(key: $rule->source);
-		if ($sourceSchema === '' || $this->isInSchema(object: $source, schema: $sourceSchema) === false) {
-			return;
-		}
-
-		$targetId = $this->referenceOf(source: $source, field: $rule->field);
-		if ($targetId === '') {
-			return;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		$register      = $this->settingsService->getConfigValue(key: 'register');
-		$targetSchema  = $this->settingsService->getConfigValue(key: $rule->target);
-		if ($objectService === null || $register === '' || $targetSchema === '') {
+		$run = $this->markerRun(rule: $rule, source: $source);
+		if ($run === null || $this->locateTarget(run: $run) === false) {
 			return;
 		}
 
 		$target = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $targetSchema,
-			id: $targetId
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->targetSchema,
+			id: $run->targetId
 		);
-		if ($target === null) {
-			return;
+		if ($target !== null) {
+			$this->syncMarker(run: $run, target: $target);
+		}
+	}//end apply()
+
+	/**
+	 * The run for a source on the rule's source schema that names its target, or null.
+	 *
+	 * @param LinkMarkerRule       $rule   The rule.
+	 * @param array<string, mixed> $source The saved object.
+	 *
+	 * @return LinkMarkerRun|null
+	 */
+	private function markerRun(LinkMarkerRule $rule, array $source): ?LinkMarkerRun {
+		$sourceSchema = $this->settingsService->getConfigValue(key: $rule->source);
+		if ($sourceSchema === '' || $this->isInSchema(object: $source, schema: $sourceSchema) === false) {
+			return null;
 		}
 
-		$marker = $rule->holds(source: $source, target: $target);
-		if (($target[$rule->marker] ?? null) === $marker) {
+		$run = new LinkMarkerRun();
+		$run->rule = $rule;
+		$run->source = $source;
+		$run->targetId = $this->referenceOf(source: $source, field: $rule->field);
+		if ($run->targetId === '') {
+			return null;
+		}
+
+		return $run;
+	}//end markerRun()
+
+	/**
+	 * Where the target lives; false without an object service, a register or the target's schema.
+	 *
+	 * @param LinkMarkerRun $run The run.
+	 *
+	 * @return bool
+	 */
+	private function locateTarget(LinkMarkerRun $run): bool {
+		$run->objectService = $this->settingsService->getObjectService();
+		$run->register      = $this->settingsService->getConfigValue(key: 'register');
+		$run->targetSchema  = $this->settingsService->getConfigValue(key: $run->rule->target);
+
+		return $run->objectService !== null && $run->register !== '' && $run->targetSchema !== '';
+	}//end locateTarget()
+
+	/**
+	 * Write the rule's marker onto the target when it differs from the stored one.
+	 *
+	 * @param LinkMarkerRun        $run    The run.
+	 * @param array<string, mixed> $target The target.
+	 *
+	 * @return void
+	 */
+	private function syncMarker(LinkMarkerRun $run, array $target): void {
+		$marker = $run->rule->holds(source: $run->source, target: $target);
+		if (($target[$run->rule->marker] ?? null) === $marker) {
 			return;
 		}
 
 		$this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $targetSchema,
-			id: $targetId,
-			changes: [$rule->marker => $marker]
+			objectService: $run->objectService,
+			register: $run->register,
+			schema: $run->targetSchema,
+			id: $run->targetId,
+			changes: [$run->rule->marker => $marker]
 		);
-	}//end apply()
+	}//end syncMarker()
 
 	/**
 	 * The uuid a source field references, or '' when it holds none.
