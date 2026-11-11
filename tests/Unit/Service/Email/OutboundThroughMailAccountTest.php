@@ -432,6 +432,50 @@ class OutboundThroughMailAccountTest extends TestCase {
 	}//end testTheMailerPathRefusesWhatItCannotSend()
 
 	/**
+	 * Through the mailer the message carries the recipient, the subject and the body; the refusals keep their status.
+	 *
+	 * @return void
+	 */
+	public function testTheMailerMessageAndItsRefusalsKeepTheirShape(): void {
+		$gateway = new FakeMailGateway();
+		$message = new RecordingMessage();
+		$mailer  = $this->createMock(IMailer::class);
+		$mailer->method('createMessage')->willReturn($message);
+		$outbound = $this->outbound(gateway: $gateway, transports: '{"case-mail":"imailer"}', mailer: $mailer);
+		$sender   = $outbound->senderFor([], MailTransportPolicy::KIND_CASE_MAIL);
+
+		self::assertSame(
+			['state' => OutboundState::SENT, 'outboxId' => null],
+			$outbound->send($sender, 'burger@example.nl', 'Uw aanvraag', '<p>Tekst</p>', null, [], 'Tekst')
+		);
+		self::assertSame(['burger@example.nl'], $message->to);
+		self::assertSame('Uw aanvraag', $message->subject);
+		self::assertSame('<p>Tekst</p>', $message->htmlBody);
+		self::assertSame('Tekst', $message->plainBody);
+
+		$refusing = $this->createMock(IMailer::class);
+		$refusing->expects(self::never())->method('createMessage');
+		$attached = $this->outbound(gateway: $gateway, transports: '{"case-mail":"imailer"}', mailer: $refusing);
+		try {
+			$attached->send($sender, 'burger@example.nl', 'S', 'B', null, ['brief.pdf']);
+			self::fail('Attachments through the mailer must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame([422, 'Attachments can only be sent through a Nextcloud Mail account, and this kind of mail is set to leave through Nextcloud\'s mailer.'], [$e->getStatus(), $e->getSentence()]);
+		}
+
+		$broken = $this->createMock(IMailer::class);
+		$broken->method('createMessage')->willReturn(new RecordingMessage());
+		$broken->method('send')->willThrowException(new RuntimeException('down'));
+		try {
+			$this->outbound(gateway: $gateway, transports: '{"case-mail":"imailer"}', mailer: $broken)->send($sender, 'burger@example.nl', 'S', 'B', null);
+			self::fail('A refusing mail server must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame([503, 'The mail server did not take the message, so it was not sent. Try again later.'], [$e->getStatus(), $e->getSentence()]);
+			self::assertSame('down', $e->getPrevious()?->getMessage());
+		}
+	}//end testTheMailerMessageAndItsRefusalsKeepTheirShape()
+
+	/**
 	 * The upgrade deletes the stored outbound SMTP credential, in both app namespaces.
 	 *
 	 * @return void
