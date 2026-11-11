@@ -136,23 +136,9 @@ class CaseAccessGuard {
 	 */
 	public function hasCaseMutationAccess(string $caseId, IUser $user): bool {
 		$uid = $user->getUID();
-		if ($uid === '' || $caseId === '') {
-			return false;
-		}
-
-		// Admins bypass per-case checks (consistent with DsoCaseService and
-		// AdviceService).
-		try {
-			if ($this->groupManager->isAdmin($uid) === true) {
-				return true;
-			}
-		} catch (Throwable $e) {
-			// An unresolvable admin check is NOT an authorization: fall through
-			// to the per-case check rather than granting or throwing.
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
+		$verdict = $this->callerVerdict(caseId: $caseId, uid: $uid);
+		if ($verdict !== null) {
+			return $verdict;
 		}
 
 		$case = $this->loadCase(caseId: $caseId);
@@ -166,6 +152,53 @@ class CaseAccessGuard {
 
 		return ($assignee !== '' && $assignee === $uid);
 	}//end hasCaseMutationAccess()
+
+	/**
+	 * What the caller alone decides, before any case is read.
+	 *
+	 * No uid or no case is refused; an administrator is let through, without
+	 * reading the case. Anyone else is left to the case: null.
+	 *
+	 * @param string $caseId The case asked about.
+	 * @param string $uid    The caller's uid.
+	 *
+	 * @return bool|null False to refuse, true to allow, null when the case decides.
+	 */
+	private function callerVerdict(string $caseId, string $uid): ?bool {
+		if ($uid === '' || $caseId === '') {
+			return false;
+		}
+
+		if ($this->isAdministrator(uid: $uid) === true) {
+			return true;
+		}
+
+		return null;
+	}//end callerVerdict()
+
+	/**
+	 * Whether the caller is an administrator.
+	 *
+	 * Admins bypass per-case checks (consistent with DsoCaseService and
+	 * AdviceService). An unresolvable admin check is NOT an authorization: it
+	 * answers false, so the per-case check decides, rather than granting or
+	 * throwing.
+	 *
+	 * @param string $uid The caller's uid.
+	 *
+	 * @return bool True for an administrator.
+	 */
+	private function isAdministrator(string $uid): bool {
+		try {
+			return ($this->groupManager->isAdmin($uid) === true);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+			return false;
+		}
+	}//end isAdministrator()
 
 	/**
 	 * Whether the given user may read the given case.
@@ -221,19 +254,9 @@ class CaseAccessGuard {
 	 */
 	public function hasCaseReadAccess(string $caseId, IUser $user): bool {
 		$uid = $user->getUID();
-		if ($uid === '' || $caseId === '') {
-			return false;
-		}
-
-		try {
-			if ($this->groupManager->isAdmin($uid) === true) {
-				return true;
-			}
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: admin check failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
+		$verdict = $this->callerVerdict(caseId: $caseId, uid: $uid);
+		if ($verdict !== null) {
+			return $verdict;
 		}
 
 		// The platform is asked FIRST and without loading the case, because a
