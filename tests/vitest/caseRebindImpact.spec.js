@@ -428,3 +428,97 @@ describe('one required field, asked in the control its kind needs', () => {
 		expect(answerText({ kind: 'choice' }, null)).toBe('')
 	})
 })
+
+describe('CaseRebindDialog preview answers', () => {
+	/**
+	 * A promise with its resolve and reject in hand.
+	 *
+	 * @return {{promise: Promise, resolve: Function, reject: Function}} The handle.
+	 */
+	function deferred() {
+		let resolve
+		let reject
+		const promise = new Promise((res, rej) => {
+			resolve = res
+			reject = rej
+		})
+		return { promise, resolve, reject }
+	}
+
+	const NEWER = previewFor({ status: 'omg-behandeling' })
+	let pending
+	beforeEach(() => {
+		pending = []
+		axios.get = vi.fn((url, config) => {
+			if (config?.params?.target) {
+				const answer = deferred()
+				pending.push({ params: config.params, ...answer })
+				return answer.promise
+			}
+			return Promise.resolve({ data: { current: {}, targets: [] } })
+		})
+	})
+
+	it('clears the preview without a target and asks nothing', async () => {
+		const wrapper = mount(CaseRebindDialog, { props: { caseId: 'case-1' } })
+		await flush()
+		Object.assign(wrapper.vm.$data, { preview: previewFor({}), previewing: true })
+		await wrapper.vm.loadPreview()
+		expect(wrapper.vm.preview).toBeNull()
+		expect(wrapper.vm.previewing).toBe(false)
+		expect(pending).toHaveLength(0)
+	})
+
+	it('asks with the target, status, mapping and answers, and keeps only the newest answer', async () => {
+		const wrapper = mount(CaseRebindDialog, { props: { caseId: 'case-1' } })
+		await flush()
+		wrapper.vm.target = 'ct-omg'
+		await flush(400)
+		Object.assign(wrapper.vm.$data, { status: 's1', remap: { a: 'b' }, answers: { bouwjaar: '1974' } })
+		await flush(400)
+		pending.splice(0).forEach((call) => call.resolve({ data: {} }))
+		await flush()
+		wrapper.vm.error = 'old'
+		const first = wrapper.vm.loadPreview()
+		const second = wrapper.vm.loadPreview()
+		expect(pending.map((call) => call.params)).toEqual([
+			{ target: 'ct-omg', status: 's1', remap: { a: 'b' }, properties: { bouwjaar: '1974' } },
+			{ target: 'ct-omg', status: 's1', remap: { a: 'b' }, properties: { bouwjaar: '1974' } },
+		])
+		expect(wrapper.vm.previewing).toBe(true)
+		pending[1].resolve({ data: { preview: NEWER } })
+		await second
+		expect(wrapper.vm.preview).toEqual(NEWER)
+		expect(wrapper.vm.error).toBe('')
+		expect(wrapper.vm.previewing).toBe(false)
+		pending[0].reject({ response: { data: { message: 'stale refusal' } } })
+		await first
+		expect(wrapper.vm.preview).toEqual(NEWER)
+		expect(wrapper.vm.error).toBe('')
+		expect(wrapper.vm.previewing).toBe(false)
+	})
+
+	it('shows the refusal of the newest question, and no preview for an empty answer', async () => {
+		const wrapper = mount(CaseRebindDialog, { props: { caseId: 'case-1' } })
+		await flush()
+		wrapper.vm.target = 'ct-omg'
+		await flush(400)
+		pending.splice(0).forEach((call) => call.resolve({ data: {} }))
+		await flush()
+		const refused = wrapper.vm.loadPreview()
+		pending[0].reject({ response: { data: { message: 'Nee' } } })
+		await refused
+		expect(wrapper.vm.error).toBe('Nee')
+		expect(wrapper.vm.previewing).toBe(false)
+		const failed = wrapper.vm.loadPreview()
+		pending[1].reject(new Error('down'))
+		await failed
+		expect(wrapper.vm.error).toBe('The case was not rebound.')
+		const empty = wrapper.vm.loadPreview()
+		wrapper.vm.preview = previewFor({ status: 'omg-behandeling' })
+		pending[2].resolve({ data: {} })
+		await empty
+		expect(wrapper.vm.preview).toBeNull()
+		expect(wrapper.vm.error).toBe('')
+	})
+})
