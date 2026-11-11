@@ -120,26 +120,8 @@ class DataSubjectRequestCase {
 	 */
 	public function preview(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
-		// A preview on an inzage case would be an erasure preview nobody
-		// asked for, sitting on a case whose closing transition does not read
-		// it. The kind is what the whole case type branches on, so it is
-		// checked here rather than left to the screen that offered the button.
-		if (trim((string)($case['dataSubjectRequestType'] ?? '')) !== self::KIND_VERWIJDERING) {
-			throw new RefusedException(
-				rule: 'not-an-erasure-request',
-				sentence: 'Only a verwijdering is previewed. This case asks for something else.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		$subject = trim((string)($case['dataSubject'] ?? ''));
-		if ($subject === '') {
-			throw new RefusedException(
-				rule: 'data-subject-missing',
-				sentence: 'This case names no data subject, so there is nothing to look for.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		self::refuseUnlessErasure(case: $case);
+		$subject = self::subjectOf(case: $case, sentence: 'This case names no data subject, so there is nothing to look for.');
 
 		$preview = $this->platform->previewErasure(
 			subject: $subject,
@@ -147,11 +129,65 @@ class DataSubjectRequestCase {
 			eraseMode: (string)($case['erasureMode'] ?? PlatformDataSubjectRights::MODE_PSEUDONYMISE),
 			requestId: $caseId,
 		);
+		$this->writePreview(case: $case, preview: $preview);
+		$this->recordPreview(caseId: $caseId, preview: $preview);
 
-		$report = (array)($preview['report'] ?? []);
-		$counts = (array)($report['counts'] ?? []);
-		$protected = (array)($report['protected'] ?? []);
+		return $preview;
+	}//end preview()
 
+	/**
+	 * Refuse a preview on a case that does not ask for an erasure.
+	 *
+	 * A preview on an inzage case would be an erasure preview nobody asked
+	 * for, sitting on a case whose closing transition does not read it. The
+	 * kind is what the whole case type branches on, so it is checked here
+	 * rather than left to the screen that offered the button.
+	 *
+	 * @param array<string, mixed> $case The data subject request case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case is not a verwijdering.
+	 */
+	private static function refuseUnlessErasure(array $case): void {
+		if (trim((string)($case['dataSubjectRequestType'] ?? '')) !== self::KIND_VERWIJDERING) {
+			throw new RefusedException(
+				rule: 'not-an-erasure-request',
+				sentence: 'Only a verwijdering is previewed. This case asks for something else.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+	}//end refuseUnlessErasure()
+
+	/**
+	 * The data subject the case names; refused when it names none.
+	 *
+	 * @param array<string, mixed> $case     The data subject request case.
+	 * @param string               $sentence What the refusal says.
+	 *
+	 * @return string The subject.
+	 *
+	 * @throws RefusedException When the case names no data subject.
+	 */
+	private static function subjectOf(array $case, string $sentence): string {
+		$subject = trim((string)($case['dataSubject'] ?? ''));
+		if ($subject === '') {
+			throw new RefusedException(rule: 'data-subject-missing', sentence: $sentence, status: RefusedException::STATUS_UNPROCESSABLE);
+		}
+
+		return $subject;
+	}//end subjectOf()
+
+	/**
+	 * Write the preview onto the case, clearing the previous run's outcome.
+	 *
+	 * @param array<string, mixed> $case    The data subject request case.
+	 * @param array<string, mixed> $preview The platform's preview.
+	 *
+	 * @return void
+	 */
+	private function writePreview(array $case, array $preview): void {
+		[$counts, $protected] = self::previewReport(preview: $preview);
 		$case['erasurePreviewId'] = (string)($preview['uuid'] ?? '');
 		$case['erasureDigest'] = (string)($preview['digest'] ?? '');
 		$case['erasureCounts'] = $counts;
@@ -161,7 +197,18 @@ class DataSubjectRequestCase {
 		// a complete run as covering counts nobody has approved.
 		$case['erasureOutcome'] = [];
 		$this->cases->saveCase($case);
+	}//end writePreview()
 
+	/**
+	 * Record on the timeline that the preview was taken, with its totals.
+	 *
+	 * @param string               $caseId  The data subject request case.
+	 * @param array<string, mixed> $preview The platform's preview.
+	 *
+	 * @return void
+	 */
+	private function recordPreview(string $caseId, array $preview): void {
+		[$counts, $protected] = self::previewReport(preview: $preview);
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::DATA_SUBJECT_REQUEST,
@@ -174,9 +221,20 @@ class DataSubjectRequestCase {
 				'protected' => count($protected),
 			],
 		);
+	}//end recordPreview()
 
-		return $preview;
-	}//end preview()
+	/**
+	 * The counts and the protected records of a preview's report.
+	 *
+	 * @param array<string, mixed> $preview The platform's preview.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<int|string, mixed>} The counts and the protected records.
+	 */
+	private static function previewReport(array $preview): array {
+		$report = (array)($preview['report'] ?? []);
+
+		return [(array)($report['counts'] ?? []), (array)($report['protected'] ?? [])];
+	}//end previewReport()
 
 	/**
 	 * Run the approved erasure, and write back what the platform did.
@@ -239,9 +297,29 @@ class DataSubjectRequestCase {
 	 */
 	public function requestExport(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
-		// A verwijdering is answered by erasing, not by handing the person a
-		// copy of what we are about to destroy. Inzage and correctie both
-		// need the export: you cannot correct what you have not been shown.
+		self::refuseIfErasure(case: $case);
+		$subject = self::subjectOf(case: $case, sentence: 'This case names no data subject, so there is nothing to export.');
+		$export = $this->platform->requestExport(subject: $subject, type: $this->optional(value: ($case['dataSubjectType'] ?? null)), requestId: $caseId);
+		$this->writeExport(case: $case, export: $export);
+		$this->recordExport(caseId: $caseId, export: $export);
+
+		return $export;
+	}//end requestExport()
+
+	/**
+	 * Refuse an export on a case that asks for an erasure.
+	 *
+	 * A verwijdering is answered by erasing, not by handing the person a copy
+	 * of what we are about to destroy. Inzage and correctie both need the
+	 * export: you cannot correct what you have not been shown.
+	 *
+	 * @param array<string, mixed> $case The data subject request case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case is a verwijdering.
+	 */
+	private static function refuseIfErasure(array $case): void {
 		if (trim((string)($case['dataSubjectRequestType'] ?? '')) === self::KIND_VERWIJDERING) {
 			throw new RefusedException(
 				rule: 'not-an-access-request',
@@ -249,36 +327,24 @@ class DataSubjectRequestCase {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
+	}//end refuseIfErasure()
 
-		$subject = trim((string)($case['dataSubject'] ?? ''));
-		if ($subject === '') {
-			throw new RefusedException(
-				rule: 'data-subject-missing',
-				sentence: 'This case names no data subject, so there is nothing to export.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		$export = $this->platform->requestExport(
-			subject: $subject,
-			type: $this->optional(value: ($case['dataSubjectType'] ?? null)),
-			requestId: $caseId,
-		);
-
-		$this->writeExport(case: $case, export: $export);
-
+	/**
+	 * Record on the timeline that the export was asked for.
+	 *
+	 * @param string               $caseId The data subject request case.
+	 * @param array<string, mixed> $export The platform's export record.
+	 *
+	 * @return void
+	 */
+	private function recordExport(string $caseId, array $export): void {
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::DATA_SUBJECT_REQUEST,
 			message: 'The subject export was asked for. It is ready when the platform says so.',
-			fields: [
-				'act' => 'export',
-				'exportId' => (string)($export['uuid'] ?? ''),
-			],
+			fields: ['act' => 'export', 'exportId' => (string)($export['uuid'] ?? '')],
 		);
-
-		return $export;
-	}//end requestExport()
+	}//end recordExport()
 
 	/**
 	 * What the case can offer the data subject right now.
