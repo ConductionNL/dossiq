@@ -317,6 +317,49 @@ function groundCode(ground) {
 	return String(ground?.code ?? ground ?? '')
 }
 
+/**
+ * Whether the app an aside points to is installed: any app when it names none.
+ *
+ * @param {string|Array<string>|undefined} whenApp The app or apps the aside needs.
+ * @return {boolean} True when one of them is installed, or none is named.
+ */
+function asideAppInstalled(whenApp) {
+	const apps = [].concat(whenApp ?? []).map(String).filter(Boolean)
+	const roots = globalThis.OC?.appswebroots ?? {}
+	return apps.length === 0 || apps.some((app) => Boolean(roots[app]))
+}
+
+/**
+ * @param {object} option The configured classification.
+ * @param {string} label Its translated label.
+ * @return {string} The label of the decision for it: its own, else the classification's.
+ */
+function decisionLabelOf(option, label) {
+	return option?.decisionLabel ? t('dossiq', String(option.decisionLabel)) : label
+}
+
+/**
+ * @param {object} option The configured classification.
+ * @param {number} count How many documents were assessed this way.
+ * @return {string} Its own description, else how many documents it holds.
+ */
+function countDescription(option, count) {
+	return option?.description
+		? t('dossiq', String(option.description))
+		: n('dossiq', '%n document assessed this way', '%n documents assessed this way', count)
+}
+
+/**
+ * @param {object} failure The axios error.
+ * @return {string} What to say when the decision was not recorded.
+ */
+function decisionRefusal(failure) {
+	return sentenceOf(
+		failure,
+		t('dossiq', 'The decision could not be recorded.'),
+	)
+}
+
 export default {
 	name: 'AssessmentDecisionDialog',
 
@@ -477,20 +520,12 @@ export default {
 			if (!this.aside || !this.aside.text) {
 				return false
 			}
-			const apps = [].concat(this.aside.whenApp ?? []).map(String).filter(Boolean)
-			const roots = globalThis.OC?.appswebroots ?? {}
-			return apps.length === 0 || apps.some((app) => Boolean(roots[app]))
+			return asideAppInstalled(this.aside.whenApp)
 		},
 
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
 		outcomeOptions() {
-			return this.counts.map((row) => ({
-				value: row.value,
-				label: row.decisionLabel,
-				description: row.value === this.proposedOutcome && this.countsError === ''
-					? t('dossiq', 'Proposal from the assessment: {counts}', { counts: this.countsSummary })
-					: row.description,
-			}))
+			return this.counts.map((row) => this.outcomeOption(row))
 		},
 
 		/**
@@ -549,19 +584,7 @@ export default {
 
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
 		counts() {
-			return this.classifications.map((option) => {
-				const value = String(option?.value ?? '')
-				const label = t('dossiq', String(option?.label ?? value))
-				return {
-					value,
-					label,
-					decisionLabel: option?.decisionLabel ? t('dossiq', String(option.decisionLabel)) : label,
-					description: option?.description
-						? t('dossiq', String(option.description))
-						: n('dossiq', '%n document assessed this way', '%n documents assessed this way', this.tally[value] ?? 0),
-					count: this.tally[value] ?? 0,
-				}
-			})
+			return this.classifications.map((option) => this.countRow(option))
 		},
 
 		/**
@@ -579,12 +602,37 @@ export default {
 		canSave() {
 			return (
 				this.busy === false
-				&& this.loading === false
-				&& this.loadError === ''
-				&& this.decideUrl !== ''
-				&& this.targetCaseId !== ''
+				&& this.listRead
+				&& this.decisionTargetKnown
 				&& this.outstanding.length === 0
 			)
+		},
+
+		/**
+		 * Whether the outstanding list has been read without a failure.
+		 *
+		 * @return {boolean} True once it is read.
+		 */
+		listRead() {
+			return this.loading === false && this.loadError === ''
+		},
+
+		/**
+		 * Whether there is somewhere to record the decision: the endpoint and the case.
+		 *
+		 * @return {boolean} True when both are known.
+		 */
+		decisionTargetKnown() {
+			return this.decideUrl !== '' && this.targetCaseId !== ''
+		},
+
+		/**
+		 * The description of the proposed outcome: the assessment's counts.
+		 *
+		 * @return {string} The sentence.
+		 */
+		proposalDescription() {
+			return t('dossiq', 'Proposal from the assessment: {counts}', { counts: this.countsSummary })
 		},
 	},
 
@@ -622,11 +670,62 @@ export default {
 				return
 			}
 			try {
-				const { data } = await axios.get(this.urlOf(this.stepsUrl.replace('{caseType}', encodeURIComponent(caseType))))
-				this.nextStep = nextStepOf(data?.statusTypes, String(this.kase?.status ?? ''))
+				this.nextStep = await this.fetchNextStep(caseType)
 			} catch {
 				this.nextStep = null
 			}
+		},
+
+		/**
+		 * The step after the case's own status, from its case type's statuses.
+		 *
+		 * @param {string} caseType The case's case type.
+		 * @return {Promise<object|null>} The next step.
+		 */
+		async fetchNextStep(caseType) {
+			const { data } = await axios.get(this.urlOf(this.stepsUrl.replace('{caseType}', encodeURIComponent(caseType))))
+			return nextStepOf(data?.statusTypes, String(this.kase?.status ?? ''))
+		},
+
+		/**
+		 * One count row: a classification with its labels, its description and how many documents have it.
+		 *
+		 * @param {object} option The configured classification.
+		 * @return {object} `{value, label, decisionLabel, description, count}`.
+		 */
+		countRow(option) {
+			const value = String(option?.value ?? '')
+			const label = t('dossiq', String(option?.label ?? value))
+			const count = this.tally[value] ?? 0
+			return {
+				value,
+				label,
+				decisionLabel: decisionLabelOf(option, label),
+				description: countDescription(option, count),
+				count,
+			}
+		},
+
+		/**
+		 * One outcome option: the proposal sentence on the proposed outcome while the counts are known.
+		 *
+		 * @param {object} row One count row.
+		 * @return {{value: string, label: string, description: string}} The option.
+		 */
+		outcomeOption(row) {
+			return {
+				value: row.value,
+				label: row.decisionLabel,
+				description: this.isProposal(row) ? this.proposalDescription : row.description,
+			}
+		},
+
+		/**
+		 * @param {object} row One count row.
+		 * @return {boolean} Whether the assessment proposes this outcome and the counts could be read.
+		 */
+		isProposal(row) {
+			return row.value === this.proposedOutcome && this.countsError === ''
 		},
 
 		/**
@@ -698,6 +797,16 @@ export default {
 				return
 			}
 
+			await this.readCounts(source)
+		},
+
+		/**
+		 * Read the stored assessments and tally them per classification and ground.
+		 *
+		 * @param {object} source Where the assessments are read: `{ register, schema, caseField, classificationField }`.
+		 * @return {Promise<void>}
+		 */
+		async readCounts(source) {
 			try {
 				const rows = await readAssessedDocuments(source, this.targetCaseId)
 				const counts = assessmentCounts(rows, source.classificationField || 'classification')
@@ -768,6 +877,41 @@ export default {
 		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
 		 */
 		async save() {
+			const body = this.decisionBody()
+			this.startSaving()
+			try {
+				const { data } = await axios.post(this.urlOf(this.decideUrl), body)
+				this.decided = data || {}
+				// The case changed: what the page offers next (publishing, for
+				// one) follows from fields the server just wrote.
+				emit(PAGE_REFRESH, {})
+			} catch (failure) {
+				this.error = decisionRefusal(failure)
+				// The usual refusal is a document that was added meanwhile.
+				await this.loadOutstanding()
+			} finally {
+				this.busy = false
+			}
+		},
+
+		/**
+		 * What recording the decision sends: the decision, and the letter when the case has one.
+		 *
+		 * @return {object} The body.
+		 */
+		decisionBody() {
+			return {
+				decision: this.decisionFields(),
+				...(this.letter?.id ? { letter: this.letter.id } : {}),
+			}
+		},
+
+		/**
+		 * The decision's own fields: the summary when given, the date when it is not today.
+		 *
+		 * @return {object} The fields; empty lets the server write its own.
+		 */
+		decisionFields() {
 			const decision = {}
 			if (this.description.trim() !== '') {
 				decision.description = this.description.trim()
@@ -775,29 +919,19 @@ export default {
 			if (this.decisionDate !== '' && this.decisionDate !== new Date().toISOString().slice(0, 10)) {
 				decision.decisionDate = this.decisionDate
 			}
+			return decision
+		},
 
+		/**
+		 * Mark the dialog busy and clear the last refusal.
+		 *
+		 * @return {void}
+		 */
+		startSaving() {
 			this.busy = true
 			this.error = ''
-			try {
-				const { data } = await axios.post(this.urlOf(this.decideUrl), {
-					decision,
-					...(this.letter?.id ? { letter: this.letter.id } : {}),
-				})
-				this.decided = data || {}
-				// The case changed: what the page offers next (publishing, for
-				// one) follows from fields the server just wrote.
-				emit(PAGE_REFRESH, {})
-			} catch (failure) {
-				this.error = sentenceOf(
-					failure,
-					t('dossiq', 'The decision could not be recorded.'),
-				)
-				// The usual refusal is a document that was added meanwhile.
-				await this.loadOutstanding()
-			} finally {
-				this.busy = false
-			}
 		},
+
 	},
 }
 </script>
