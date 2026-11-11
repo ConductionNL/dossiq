@@ -47,7 +47,6 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeRewriter;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -60,8 +59,6 @@ use Throwable;
  * @spec openspec/specs/automatic-actions/spec.md
  */
 class RewriteRetiredFlowNodes implements IRepairStep {
-
-	use SearchesObjects;
 
 	/**
 	 * OpenRegister's flow mapper, resolved by name.
@@ -283,39 +280,30 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 			return;
 		}
 
+		$this->retiredActionReport(output: $output)?->report(types: $types);
+	}//end reportRetiredActions()
+
+	/**
+	 * The report over the stored automatic actions, or null when they cannot be read.
+	 *
+	 * @param IOutput $output Output sink.
+	 *
+	 * @return RetiredActionReport|null The report.
+	 */
+	private function retiredActionReport(IOutput $output): ?RetiredActionReport {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'automatic_action_schema');
 		if ($objectService === null || $register === '' || $schema === '') {
-			return;
+			return null;
 		}
 
-		foreach ($types as $type => $reason) {
-			try {
-				$rows = $this->runAsSystemIfAvailable(
-					objectService: $objectService,
-					operation: fn (): array => $this->searchObjectsAsArraysUnscoped(
-						objectService: $objectService,
-						register: $register,
-						schema: $schema,
-						filters: ['type' => $type, '_limit' => 1000]
-					)
-				);
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: could not read the stored automatic actions of a retired type',
-					['app' => Application::APP_ID, 'type' => $type, 'exception' => $e->getMessage()]
-				);
-				continue;
-			}
-
-			foreach ((array)$rows as $row) {
-				$identifier = (string)($row['slug'] ?? ($row['id'] ?? ($row['uuid'] ?? '?')));
-				$message = 'Dossiq: automatic action "' . $identifier . '" has type ' . $type
-					. ', which is retired (' . $reason . '). It is kept, but it will not run.';
-				$output->warning($message);
-				$this->logger->warning($message, ['app' => Application::APP_ID, 'action' => $identifier]);
-			}
-		}//end foreach
-	}//end reportRetiredActions()
+		return new RetiredActionReport(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			output: $output,
+			logger: $this->logger,
+		);
+	}//end retiredActionReport()
 }//end class
