@@ -283,6 +283,55 @@ import {
 /** OpenRegister's answer to a reader who may open the case and not review it. */
 const REVIEW_REFUSED = 403
 
+/**
+ * The sources that could not be read, each NAMED: an auditor reading a short
+ * list has to know which source is missing from it.
+ *
+ * @param {{set: object|null}} permissions The access set answer.
+ * @param {object} reads Each other source's answer.
+ * @return {Array<string>} The names, in reading order.
+ */
+function unreadableSources(permissions, reads) {
+	const missing = []
+	if (reads.catalogue === null)
+		missing.push(t('dossiq', 'the rights it publishes'))
+	if (permissions.set === null) {
+		missing.push(...unreadableFallbacks(reads))
+	}
+	if (reads.callerScope === null) missing.push(t('dossiq', 'your own rights'))
+	return missing
+}
+
+/**
+ * The fallback sources, read when the access set is not, that failed.
+ *
+ * @param {object} reads Each source's answer.
+ * @return {Array<string>} The names, in reading order.
+ */
+function unreadableFallbacks(reads) {
+	const missing = []
+	if (reads.objectGrants === null)
+		missing.push(t('dossiq', 'the shares on this case'))
+	if (reads.roleGrants === null) missing.push(t('dossiq', 'the roles'))
+	if (reads.denyRules === null) missing.push(t('dossiq', 'the refusals'))
+	return missing
+}
+
+/**
+ * The refusal enforcement: the access set's, else the catalogue's, else the
+ * refusals'.
+ *
+ * @param {{set: object|null}} permissions The access set answer.
+ * @param {object} reads Each other source's answer.
+ * @return {string} The enforcement, or ''.
+ */
+function accessEnforcement(permissions, reads) {
+	return permissions.set?.denyEnforcement
+		|| reads.catalogue?.denyEnforcement
+		|| reads.denyRules?.denyEnforcement
+		|| ''
+}
+
 export default {
 	name: 'CaseAccessTab',
 	components: {
@@ -415,9 +464,7 @@ export default {
 		 */
 		async load() {
 			this.loading = true
-			const permissions = this.objectId
-				? await fetchObjectPermissions(this.objectId)
-				: { status: 0, set: null }
+			const permissions = await this.readPermissions()
 
 			// A 403 is OpenRegister answering, and the answer is "not you". The
 			// fallback reads are skipped: they would assemble a partial list
@@ -425,6 +472,39 @@ export default {
 			this.reviewRefused = permissions.status === REVIEW_REFUSED
 			this.historyReadable = permissions.set !== null
 
+			const reads = await this.readAccessSources(permissions)
+
+			// The field rules ride along rather than gating anything. A reader
+			// who may not review the access set may still be looking at a gap
+			// where a field should be, and the rule behind that gap is the one
+			// thing this panel can tell them.
+			this.fieldRows = fieldRoleRows(reads.fieldRules.declared, reads.fieldRules.decided)
+			this.showAccessSources(permissions, reads)
+			this.loading = false
+		},
+
+		/**
+		 * The case's access set as OpenRegister answers it, or no set for a
+		 * panel without a case.
+		 *
+		 * @return {Promise<{status: number, set: object|null}>} The answer.
+		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 */
+		async readPermissions() {
+			return this.objectId
+				? await fetchObjectPermissions(this.objectId)
+				: { status: 0, set: null }
+		},
+
+		/**
+		 * Read every other source at once; the role grants and refusals only
+		 * when the access set itself is not readable.
+		 *
+		 * @param {{set: object|null}} permissions The access set answer.
+		 * @return {Promise<object>} Each source's answer, null where it failed.
+		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 */
+		async readAccessSources(permissions) {
 			const [
 				catalogue,
 				objectGrants,
@@ -440,41 +520,30 @@ export default {
 				permissions.set === null ? fetchDenyRules() : null,
 				fetchFieldRoleRules(this.objectId),
 			])
+			return { catalogue, objectGrants, roleGrants, callerScope, denyRules, fieldRules }
+		},
 
-			// The field rules ride along rather than gating anything. A reader
-			// who may not review the access set may still be looking at a gap
-			// where a field should be, and the rule behind that gap is the one
-			// thing this panel can tell them.
-			this.fieldRows = fieldRoleRows(fieldRules.declared, fieldRules.decided)
-
-			// Each failed read is NAMED. An auditor reading a short list has to
-			// know which source is missing from it.
-			const missing = []
-			if (catalogue === null)
-				missing.push(t('dossiq', 'the rights it publishes'))
-			if (permissions.set === null) {
-				if (objectGrants === null)
-					missing.push(t('dossiq', 'the shares on this case'))
-				if (roleGrants === null) missing.push(t('dossiq', 'the roles'))
-				if (denyRules === null) missing.push(t('dossiq', 'the refusals'))
-			}
-			if (callerScope === null) missing.push(t('dossiq', 'your own rights'))
-
-			this.catalogue = catalogue?.permissions || []
-			this.enforcement =
-				permissions.set?.denyEnforcement
-				|| catalogue?.denyEnforcement
-				|| denyRules?.denyEnforcement
-				|| ''
+		/**
+		 * Show the rights, the enforcement, the sources that could not be read
+		 * and the grant rows.
+		 *
+		 * @param {{set: object|null}} permissions The access set answer.
+		 * @param {object} reads Each other source's answer.
+		 * @return {void}
+		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 */
+		showAccessSources(permissions, reads) {
+			const missing = unreadableSources(permissions, reads)
+			this.catalogue = reads.catalogue?.permissions || []
+			this.enforcement = accessEnforcement(permissions, reads)
 			this.unreadable = this.reviewRefused ? [] : missing
 			this.rows = grantRows({
 				objectPermissions: permissions.set,
-				objectGrants,
-				roleGrants,
-				callerScope,
-				denyRules,
+				objectGrants: reads.objectGrants,
+				roleGrants: reads.roleGrants,
+				callerScope: reads.callerScope,
+				denyRules: reads.denyRules,
 			})
-			this.loading = false
 		},
 
 		/**
