@@ -168,36 +168,75 @@ class PublicationSources {
 		$items = [];
 
 		foreach ($assessments as $assessment) {
-			$classification = (string)($assessment['classification'] ?? '');
-			$originalRef = (string)($assessment['documentRef'] ?? '');
-			$deliveredRef = '';
-			if ($classification === 'openbaar') {
-				$deliveredRef = $originalRef;
-			} else if ($classification === 'deels_openbaar') {
-				// No finalized redaction yet: excluded. Never fall back to the original.
-				$deliveredRef = (string)($assessment['redactedDocumentRef'] ?? '');
-			}
+			$document = self::deliveredDocument(assessment: $assessment, documentLoader: $documentLoader);
 
-			if ($deliveredRef === '') {
-				continue;
+			if ($document !== null) {
+				$documents[] = $document;
+				$items[] = self::itemOf(assessment: $assessment, document: $document);
 			}
-
-			$document = $documentLoader($deliveredRef);
-			if ($document === null) {
-				continue;
-			}
-
-			$documents[] = $document;
-			$items[] = [
-				'assessment' => (string)($assessment['id'] ?? ($assessment['uuid'] ?? (($assessment['@self'] ?? [])['id'] ?? ''))),
-				'classification' => $classification,
-				'deliveredRef' => $deliveredRef,
-				'originalRef' => $originalRef,
-				'fileName' => (string)($document['fileName'] ?? ($document['title'] ?? '')),
-				'content' => (string)($document['content'] ?? ''),
-			];
-		}//end foreach
+		}
 
 		return ['documents' => $documents, 'items' => $items];
 	}//end collectDelivery()
+
+	/**
+	 * The document that goes out for an assessment, or null when none may or the loader finds none.
+	 *
+	 * @param array<string, mixed> $assessment     The document assessment.
+	 * @param callable             $documentLoader `fn(string $documentRef): ?array`.
+	 *
+	 * @return array<string, mixed>|null The delivered document.
+	 */
+	private static function deliveredDocument(array $assessment, callable $documentLoader): ?array {
+		$deliveredRef = self::deliveredRefOf(assessment: $assessment);
+		if ($deliveredRef === '') {
+			return null;
+		}
+
+		return $documentLoader($deliveredRef);
+	}//end deliveredDocument()
+
+	/**
+	 * The file that goes out for an assessment, or blank when none may.
+	 *
+	 * `openbaar` goes out as itself and `deels_openbaar` only as its finalized
+	 * redaction, never as the original; anything else never goes out.
+	 *
+	 * @param array<string, mixed> $assessment The document assessment.
+	 *
+	 * @return string The delivered document's ref, or ''.
+	 */
+	private static function deliveredRefOf(array $assessment): string {
+		$classification = (string)($assessment['classification'] ?? '');
+		if ($classification === 'openbaar') {
+			return (string)($assessment['documentRef'] ?? '');
+		}
+
+		if ($classification === 'deels_openbaar') {
+			return (string)($assessment['redactedDocumentRef'] ?? '');
+		}
+
+		return '';
+	}//end deliveredRefOf()
+
+	/**
+	 * What the delivered set records of one document that went out.
+	 *
+	 * @param array<string, mixed> $assessment The document assessment.
+	 * @param array<string, mixed> $document   The delivered document.
+	 *
+	 * @return array<string, string> The manifest item.
+	 */
+	private static function itemOf(array $assessment, array $document): array {
+		$self = ($assessment['@self'] ?? []);
+
+		return [
+			'assessment' => (string)($assessment['id'] ?? ($assessment['uuid'] ?? ($self['id'] ?? ''))),
+			'classification' => (string)($assessment['classification'] ?? ''),
+			'deliveredRef' => self::deliveredRefOf(assessment: $assessment),
+			'originalRef' => (string)($assessment['documentRef'] ?? ''),
+			'fileName' => (string)($document['fileName'] ?? ($document['title'] ?? '')),
+			'content' => (string)($document['content'] ?? ''),
+		];
+	}//end itemOf()
 }//end class
