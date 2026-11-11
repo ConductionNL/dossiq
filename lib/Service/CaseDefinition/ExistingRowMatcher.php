@@ -126,13 +126,19 @@ class ExistingRowMatcher {
 			return null;
 		}
 
-		// Read unscoped: an install runs as a repair step, without a user, and
-		// a scoped read there answers "none" and would duplicate the row.
-		$found = $this->search(run: $run, filters: $filters);
-		if ($found === [] && $run->schemaKey === self::CASE_TYPE_KEY) {
-			$found = $this->withoutIdentifier(run: $run);
-		}
+		return $this->firstNamed(run: $run, filters: $filters);
+	}//end findByName()
 
+	/**
+	 * The first row held here for the name filters, or null.
+	 *
+	 * @param RowMatchRun           $run     The package row and where to look.
+	 * @param array<string, string> $filters The name filters.
+	 *
+	 * @return array<string, mixed>|null The existing row.
+	 */
+	private function firstNamed(RowMatchRun $run, array $filters): ?array {
+		$found = $this->namedRows(run: $run, filters: $filters);
 		if ($found === []) {
 			return null;
 		}
@@ -145,7 +151,27 @@ class ExistingRowMatcher {
 		}
 
 		return $found[0];
-	}//end findByName()
+	}//end firstNamed()
+
+	/**
+	 * The rows held here for the name filters, or the case types with the title
+	 * and no identifier when none carries the identifier.
+	 *
+	 * @param RowMatchRun           $run     The package row and where to look.
+	 * @param array<string, string> $filters The name filters.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function namedRows(RowMatchRun $run, array $filters): array {
+		// Read unscoped: an install runs as a repair step, without a user, and
+		// a scoped read there answers "none" and would duplicate the row.
+		$found = $this->search(run: $run, filters: $filters);
+		if ($found === [] && $run->schemaKey === self::CASE_TYPE_KEY) {
+			return $this->withoutIdentifier(run: $run);
+		}
+
+		return $found;
+	}//end namedRows()
 
 	/**
 	 * The row this instance holds with the same value for one property.
