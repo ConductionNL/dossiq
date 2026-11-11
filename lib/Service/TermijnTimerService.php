@@ -456,11 +456,7 @@ class TermijnTimerService {
 	 */
 	public function suspendBeslistermijn(array $instance, string $reason, ?DateTimeImmutable $until): bool {
 		$timerId = (string)($instance['engineTimerId'] ?? '');
-		if ($timerId === '') {
-			return false;
-		}
-
-		$engine = $this->engine();
+		$engine = $this->engineFor(timerId: $timerId);
 		if ($engine === null) {
 			return false;
 		}
@@ -486,11 +482,7 @@ class TermijnTimerService {
 	 */
 	public function resumeBeslistermijn(array $instance, string $reason): bool {
 		$timerId = (string)($instance['engineTimerId'] ?? '');
-		if ($timerId === '') {
-			return false;
-		}
-
-		$engine = $this->engine();
+		$engine = $this->engineFor(timerId: $timerId);
 		if ($engine === null) {
 			return false;
 		}
@@ -524,11 +516,11 @@ class TermijnTimerService {
 	 */
 	public function extendBeslistermijn(array $instance, int $days, string $rationale, bool $supervisor): bool {
 		$timerId = (string)($instance['engineTimerId'] ?? '');
-		if ($timerId === '' || $days <= 0) {
-			return false;
+		$engine = null;
+		if ($days > 0) {
+			$engine = $this->engineFor(timerId: $timerId);
 		}
 
-		$engine = $this->engine();
 		if ($engine === null) {
 			return false;
 		}
@@ -559,11 +551,7 @@ class TermijnTimerService {
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function cancelForInstance(string $instanceId, string $reason): int {
-		if ($instanceId === '') {
-			return 0;
-		}
-
-		$engine = $this->engine();
+		$engine = $this->engineFor(timerId: $instanceId);
 		if ($engine === null) {
 			return 0;
 		}
@@ -672,6 +660,21 @@ class TermijnTimerService {
 	private function engine(): ?object {
 		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
 	}//end engine()
+
+	/**
+	 * The engine, for a call on one timer: none when the timer is not known.
+	 *
+	 * @param string $timerId The timer or instance the call is about.
+	 *
+	 * @return object|null The engine, or null when there is no timer or no engine.
+	 */
+	private function engineFor(string $timerId): ?object {
+		if ($timerId === '') {
+			return null;
+		}
+
+		return $this->engine();
+	}//end engineFor()
 
 	/**
 	 * Log a degraded engine call. The domain flow proceeds on case data;
