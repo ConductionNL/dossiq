@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\SignedIn;
 use OCA\Dossiq\Service\External\Woz\WozAdapterInterface;
 use OCA\Dossiq\Service\External\Woz\WozLookupResult;
 use OCP\AppFramework\Controller;
@@ -211,14 +212,7 @@ class WozController extends Controller {
 	 *                           null.
 	 */
 	private function requireUser(): ?JSONResponse {
-		if ($this->userSession->getUser() === null) {
-			return new JSONResponse(
-				['error' => 'Authentication required'],
-				Http::STATUS_UNAUTHORIZED,
-			);
-		}
-
-		return null;
+		return SignedIn::refusal(session: $this->userSession);
 	}//end requireUser()
 
 	/**
