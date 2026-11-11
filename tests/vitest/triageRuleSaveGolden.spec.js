@@ -11,7 +11,15 @@ import { describe, expect, it, vi } from 'vitest'
 
 const calls = []
 const answers = []
-const answer = async (verb, url, body) => {
+/**
+ * Answer one request with the next reply, recording it.
+ *
+ * @param {string} verb The method.
+ * @param {string} url The URL.
+ * @param {object} body The body.
+ * @return {Promise<object>} The reply.
+ */
+async function answer(verb, url, body) {
 	calls.push([verb, url, body])
 	const next = answers.shift()
 	if (next instanceof Error) {
