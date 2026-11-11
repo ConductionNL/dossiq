@@ -267,7 +267,7 @@ class CaseCustodyChainTest extends TestCase {
 			$this->chain()->move(caseId: '  ', organisationUnit: 'toezicht', handler: '', reason: 'x', movedBy: 'jan');
 			self::fail('A move without a case must be refused.');
 		} catch (RefusedException $e) {
-			self::assertSame('A holding needs a case, so nothing was recorded.', $e->getMessage());
+			self::assertSame('A holding needs a case, so nothing was recorded.', $e->getSentence());
 			self::assertSame(CaseCustodyChain::CUSTODY_UNWRITABLE, $e->getRule());
 		}
 
