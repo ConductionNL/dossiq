@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair\Support;
 
 /**
- * A Dutch column, its English name, and whether the English one is already there.
+ * A Dutch column, its English name, and the columns of the table it is on.
  *
  * @spec openspec/specs/case-management/spec.md
  */
@@ -34,14 +34,25 @@ final class ColumnMove {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $old          The Dutch column.
-	 * @param string $new          The English column.
-	 * @param bool   $targetExists Whether the English column is already on the table.
+	 * @param string             $old     The Dutch column.
+	 * @param string             $new     The English column.
+	 * @param array<int, string> $columns The column names of the table.
 	 */
 	public function __construct(
 		public readonly string $old,
 		public readonly string $new,
-		public readonly bool $targetExists,
+		public readonly array $columns,
 	) {
 	}//end __construct()
+
+	/**
+	 * Whether the English column is already on the table.
+	 *
+	 * @return bool True when it is.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function targetExists(): bool {
+		return in_array($this->new, $this->columns, true);
+	}//end targetExists()
 }//end class

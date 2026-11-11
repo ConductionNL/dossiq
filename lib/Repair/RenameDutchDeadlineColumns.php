@@ -68,7 +68,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Repair\Support\ColumnMove;
-use OCA\Dossiq\Repair\Support\ColumnMoveTally;
+use OCA\Dossiq\Repair\Support\MovesShardColumns;
 use OCA\Dossiq\Repair\Support\ReadsRegisterShards;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
@@ -82,6 +82,7 @@ use Psr\Log\LoggerInterface;
  */
 class RenameDutchDeadlineColumns implements IRepairStep {
 	use ReadsRegisterShards;
+	use MovesShardColumns;
 
 	/**
 	 * The name every warning starts with.
@@ -227,46 +228,16 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 	}//end run()
 
 	/**
-	 * Move the Dutch columns of every shard table, counting what was done.
+	 * Whether two Dutch columns in this table both target one English name.
 	 *
-	 * @param array<int, string> $tables The shard tables.
+	 * @param string     $table Table name.
+	 * @param ColumnMove $move  The move, with the table's column names.
 	 *
-	 * @return ColumnMoveTally The counts.
+	 * @return bool True when the rename is ambiguous and must be skipped.
 	 */
-	private function moveColumnsOfAll(array $tables): ColumnMoveTally {
-		$tally = new ColumnMoveTally();
-		foreach ($tables as $table) {
-			$this->moveColumnsOf(table: $table, tally: $tally);
-		}
-
-		return $tally;
-	}//end moveColumnsOfAll()
-
-	/**
-	 * Move every Dutch column one shard table carries to its English name.
-	 *
-	 * @param string          $table The shard table.
-	 * @param ColumnMoveTally $tally The counts of this run.
-	 *
-	 * @return void
-	 */
-	private function moveColumnsOf(string $table, ColumnMoveTally $tally): void {
-		$columns = $this->columnsOf(table: $table);
-		foreach (self::COLUMN_MAP as $old => $new) {
-			if (in_array($old, $columns, true) === false) {
-				// Already migrated, or this schema never had the property.
-				continue;
-			}
-
-			if ($this->hasCollision(table: $table, columns: $columns, target: $new) === true) {
-				$tally->refused++;
-				continue;
-			}
-
-			$move = new ColumnMove(old: $old, new: $new, targetExists: in_array($new, $columns, true));
-			$tally->count(outcome: $this->moveColumn(table: $table, move: $move));
-		}
-	}//end moveColumnsOf()
+	protected function refusesMove(string $table, ColumnMove $move): bool {
+		return $this->hasCollision(table: $table, columns: $move->columns, target: $move->new);
+	}//end refusesMove()
 
 	/**
 	 * Whether two Dutch columns in this table both target one English name.

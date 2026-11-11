@@ -156,50 +156,6 @@ trait ReadsRegisterShards {
 	}//end exec()
 
 	/**
-	 * Move one Dutch column to its English name.
-	 *
-	 * Renamed when the English column is not there yet. When the mapper
-	 * already added an empty English column it is back-filled and the Dutch
-	 * one is left, so the move stays reversible.
-	 *
-	 * @param string     $table The shard table.
-	 * @param ColumnMove $move  The column and where it goes.
-	 *
-	 * @return string What the move did (ColumnMoveTally::RENAMED or COPIED), or '' when the statement failed.
-	 */
-	private function moveColumn(string $table, ColumnMove $move): string {
-		$qTable = $this->quote(identifier: $table);
-		$qOld = $this->quote(identifier: $move->old);
-		$qNew = $this->quote(identifier: $move->new);
-		if ($move->targetExists === false) {
-			$renamed = $this->exec(sql: 'ALTER TABLE ' . $qTable . ' RENAME COLUMN ' . $qOld . ' TO ' . $qNew);
-			return $this->outcome(succeeded: $renamed, outcome: ColumnMoveTally::RENAMED);
-		}
-
-		$copied = $this->exec(
-			sql: 'UPDATE ' . $qTable . ' SET ' . $qNew . ' = ' . $qOld
-			. ' WHERE ' . $qNew . ' IS NULL AND ' . $qOld . ' IS NOT NULL'
-		);
-		return $this->outcome(succeeded: $copied, outcome: ColumnMoveTally::COPIED);
-	}//end moveColumn()
-
-	/**
-	 * The outcome of a statement: what it did, or '' when it failed.
-	 *
-	 * @param bool   $succeeded Whether the statement ran.
-	 * @param string $outcome   What it did when it ran.
-	 *
-	 * @return string The outcome.
-	 */
-	private function outcome(bool $succeeded, string $outcome): string {
-		if ($succeeded === true) {
-			return $outcome;
-		}
-
-		return '';
-	}//end outcome()
-
-	/**
 	 * Quote an identifier for the active platform.
 	 *
 	 * The table names come from information_schema on this same connection

@@ -54,7 +54,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Repair\Support\ColumnMove;
-use OCA\Dossiq\Repair\Support\ColumnMoveTally;
+use OCA\Dossiq\Repair\Support\MovesShardColumns;
 use OCA\Dossiq\Repair\Support\ReadsRegisterShards;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
@@ -70,6 +70,7 @@ use Psr\Log\LoggerInterface;
  */
 class RenameDutchColumns implements IRepairStep {
 	use ReadsRegisterShards;
+	use MovesShardColumns;
 
 	/**
 	 * The name every warning starts with.
@@ -619,61 +620,25 @@ class RenameDutchColumns implements IRepairStep {
 	}//end run()
 
 	/**
-	 * Move the Dutch columns of every shard table, counting what was done.
-	 *
-	 * @param array<int, string> $tables The shard tables.
-	 *
-	 * @return ColumnMoveTally The counts.
-	 */
-	private function moveColumnsOfAll(array $tables): ColumnMoveTally {
-		$tally = new ColumnMoveTally();
-		foreach ($tables as $table) {
-			$this->moveColumnsOf(table: $table, tally: $tally);
-		}
-
-		return $tally;
-	}//end moveColumnsOfAll()
-
-	/**
-	 * Move every Dutch column one shard table carries to its English name.
-	 *
-	 * @param string          $table The shard table.
-	 * @param ColumnMoveTally $tally The counts of this run.
-	 *
-	 * @return void
-	 */
-	private function moveColumnsOf(string $table, ColumnMoveTally $tally): void {
-		$columns = $this->columnsOf(table: $table);
-		foreach (self::COLUMN_MAP as $old => $new) {
-			if (in_array($old, $columns, true) === false) {
-				continue;
-			}
-
-			$move = new ColumnMove(old: $old, new: $new, targetExists: in_array($new, $columns, true));
-			if ($this->hasCollision(columns: $columns, target: $new) === true) {
-				$this->warnAmbiguous(table: $table, move: $move);
-				$tally->refused++;
-				continue;
-			}
-
-			$tally->count(outcome: $this->moveColumn(table: $table, move: $move));
-		}
-	}//end moveColumnsOf()
-
-	/**
-	 * Report a move refused because two sources target one destination.
+	 * Whether a move is refused because two sources target one destination,
+	 * reporting it when it is.
 	 *
 	 * @param string     $table The shard table.
-	 * @param ColumnMove $move  The refused move.
+	 * @param ColumnMove $move  The move.
 	 *
-	 * @return void
+	 * @return bool True when the move is left alone.
 	 */
-	private function warnAmbiguous(string $table, ColumnMove $move): void {
+	protected function refusesMove(string $table, ColumnMove $move): bool {
+		if ($this->hasCollision(columns: $move->columns, target: $move->new) === false) {
+			return false;
+		}
+
 		$this->logger->warning(
 			'RenameDutchColumns: two sources target one destination; migrating neither.',
 			['table' => $table, 'source' => $move->old, 'destination' => $move->new]
 		);
-	}//end warnAmbiguous()
+		return true;
+	}//end refusesMove()
 
 	/**
 	 * Whether another mapped source already targets the same destination here.
