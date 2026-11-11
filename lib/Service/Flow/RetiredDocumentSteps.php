@@ -107,13 +107,27 @@ class RetiredDocumentSteps {
 			$name = 'document.md';
 		}
 
+		return $this->filedFrom(config: $config, document: ['text' => $text, 'name' => $name]);
+	}//end create()
+
+	/**
+	 * The filed document step for a text and a name, under the configuration's type and output.
+	 *
+	 * @param array<string, mixed>  $config   The retired configuration.
+	 * @param array<string, string> $document The `text` and the file `name`.
+	 *
+	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
+	 *
+	 * @throws UnmappableStep When the step has no text or no document type.
+	 */
+	private function filedFrom(array $config, array $document): array {
 		return $this->filed(
-			text: $text,
-			name: $name,
+			text: $document['text'],
+			name: $document['name'],
 			documentType: trim((string)($config['documentType'] ?? '')),
 			output: $this->output(config: $config)
 		);
-	}//end create()
+	}//end filedFrom()
 
 	/**
 	 * `dossiq.action.mergeTemplate`: render text into a case field, or file it in the dossier.
@@ -136,12 +150,7 @@ class RetiredDocumentSteps {
 				$name = 'Document';
 			}
 
-			return $this->filed(
-				text: $text,
-				name: $name,
-				documentType: trim((string)($config['documentType'] ?? '')),
-				output: $this->output(config: $config)
-			);
+			return $this->filedFrom(config: $config, document: ['text' => $text, 'name' => $name]);
 		}
 
 		return [
