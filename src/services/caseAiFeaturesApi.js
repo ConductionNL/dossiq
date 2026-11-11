@@ -200,54 +200,81 @@ export function whereItRuns(feature) {
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-two-hundred-reports-read-as-one-item-with-a-count
  */
 export function groupView(answer) {
-	const view = {
+	if (answer === null || answer === undefined) {
+		return { ...noGroupView(), state: 'unavailable', reason: t('dossiq', 'The report group could not be read.') }
+	}
+	if (answer.declared !== true) {
+		return noGroupView()
+	}
+	if (!hasGroup(answer)) {
+		return unavailableGroupView(answer)
+	}
+	return groupedView(answer.group)
+}
+
+/**
+ * The view of a group: its count with the near-duplicates beside it.
+ *
+ * @param {object} group The group hermiq answered.
+ * @return {{state: string, count: number, nearDuplicates: Array<object>, reason: string, gate: (string|null)}} The view.
+ */
+function groupedView(group) {
+	return { ...noGroupView(), state: 'grouped', count: Number(group.count ?? 0), nearDuplicates: nearDuplicatesOf(group) }
+}
+
+/**
+ * Whether hermiq answered with a group.
+ *
+ * @param {object} answer The report-group answer.
+ * @return {boolean} True when the group is available and is an object.
+ */
+function hasGroup(answer) {
+	return answer.available === true && answer.group !== null && typeof answer.group === 'object'
+}
+
+/**
+ * The view of a case type that does not group reports.
+ *
+ * @return {{state: string, count: number, nearDuplicates: Array<object>, reason: string, gate: (string|null)}} A fresh view.
+ */
+function noGroupView() {
+	return {
 		state: 'off',
 		count: 0,
 		nearDuplicates: [],
 		reason: '',
 		gate: null,
 	}
-	if (answer === null || answer === undefined) {
-		return {
-			...view,
-			state: 'unavailable',
-			reason: t('dossiq', 'The report group could not be read.'),
-		}
-	}
+}
 
-	if (answer.declared !== true) {
-		return view
+/**
+ * The view when hermiq did not answer with a group: its reason, else a default, and its gate.
+ *
+ * @param {object} answer The report-group answer.
+ * @return {{state: string, count: number, nearDuplicates: Array<object>, reason: string, gate: (string|null)}} The view.
+ */
+function unavailableGroupView(answer) {
+	return {
+		...noGroupView(),
+		state: 'unavailable',
+		reason: String(answer.reason ?? '') || t('dossiq', 'hermiq did not answer.'),
+		gate: answer.gate ?? null,
 	}
+}
 
-	if (
-		answer.available !== true
-		|| answer.group === null
-		|| typeof answer.group !== 'object'
-	) {
-		return {
-			...view,
-			state: 'unavailable',
-			reason:
-				String(answer.reason ?? '') || t('dossiq', 'hermiq did not answer.'),
-			gate: answer.gate ?? null,
-		}
-	}
-
-	const nearDuplicates = (
-		Array.isArray(answer.group.nearDuplicates) ? answer.group.nearDuplicates : []
-	)
+/**
+ * The near-duplicates of a group that name a report, as id and score.
+ *
+ * @param {object} group The group hermiq answered.
+ * @return {Array<{reportId: string, score: number}>} The near-duplicates.
+ */
+function nearDuplicatesOf(group) {
+	return (Array.isArray(group.nearDuplicates) ? group.nearDuplicates : [])
 		.filter((member) => member && String(member.reportId ?? '') !== '')
 		.map((member) => ({
 			reportId: String(member.reportId),
 			score: Number(member.score ?? 0),
 		}))
-
-	return {
-		...view,
-		state: 'grouped',
-		count: Number(answer.group.count ?? 0),
-		nearDuplicates,
-	}
 }
 
 /**
