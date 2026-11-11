@@ -99,58 +99,60 @@ class CaseReassignmentService {
 			throw new InvalidArgumentException('fromUser is required');
 		}
 
-		[$objectService, $register] = $this->context();
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$caseType = '';
-		if (isset($filter['caseType']) === true) {
-			$caseType = (string)$filter['caseType'];
-		}
-
-		$finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
-
-		$cases = [];
-		if ($caseSchema !== '') {
-			$caseResults = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['assignee' => $fromUser]
-			);
-
-			$cases = $this->filterOpenCases(caseResults: $caseResults, finalIds: $finalIds, caseType: $caseType);
-		}
+		$run = new CaseloadPreviewRun(fromUser: $fromUser, caseType: (string)($filter['caseType'] ?? ''));
+		$run->cases = $this->openCases(run: $run);
 
 		// The ENGINE holds the tasks, and it holds the open/closed split too:
 		// `openForAssignee` asks for `isTerminal: false` rather than reading
 		// a page and dropping the closed rows from it, which would have lost
 		// every open task past the page boundary.
-		$tasks = $this->filterOpenTasks(
-			taskResults: $this->engineTasks->openForAssignee(actor: $fromUser),
-			cases: $cases,
-			caseType: $caseType
+		$tasks = $this->filterOpenTasks(taskResults: $this->engineTasks->openForAssignee(actor: $fromUser), run: $run);
+
+		return ['cases' => $run->cases, 'tasks' => $tasks];
+	}//end preview()
+
+	/**
+	 * The handler's open cases, once the statuses that close a case are read.
+	 *
+	 * @param CaseloadPreviewRun $run The preview.
+	 *
+	 * @return array<int, array<string, mixed>> The open cases, in search order.
+	 */
+	private function openCases(CaseloadPreviewRun $run): array {
+		[$objectService, $register] = $this->context();
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		$run->finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
+		if ($caseSchema === '') {
+			return [];
+		}
+
+		$caseResults = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $caseSchema,
+			filters: ['assignee' => $run->fromUser]
 		);
 
-		return ['cases' => $cases, 'tasks' => $tasks];
-	}//end preview()
+		return $this->filterOpenCases(caseResults: $caseResults, run: $run);
+	}//end openCases()
 
 	/**
 	 * Keep only the non-final cases, optionally narrowed to one case type.
 	 *
 	 * @param array<int, array<string, mixed>> $caseResults The raw case search results.
-	 * @param array<int, string> $finalIds Status ids marking a case as closed/archived.
-	 * @param string $caseType Optional caseType uuid to narrow by ('' = all).
+	 * @param CaseloadPreviewRun               $run         The preview: the final status ids and the case type ('' = all).
 	 *
 	 * @return array<int, array<string, mixed>> The open cases, in search order.
 	 */
-	private function filterOpenCases(array $caseResults, array $finalIds, string $caseType): array {
+	private function filterOpenCases(array $caseResults, CaseloadPreviewRun $run): array {
 		$cases = [];
 
 		foreach ($caseResults as $case) {
-			if (in_array((string)($case['status'] ?? ''), $finalIds, true) === true) {
+			if (in_array((string)($case['status'] ?? ''), $run->finalIds, true) === true) {
 				continue;
 			}
 
-			if ($caseType !== '' && (string)($case['caseType'] ?? '') !== $caseType) {
+			if ($run->caseType !== '' && (string)($case['caseType'] ?? '') !== $run->caseType) {
 				continue;
 			}
 
@@ -164,14 +166,13 @@ class CaseReassignmentService {
 	 * Keep only the open tasks, optionally narrowed to the previewed cases.
 	 *
 	 * @param array<int, array<string, mixed>> $taskResults The raw task search results.
-	 * @param array<int, array<string, mixed>> $cases The previewed cases the tasks may belong to.
-	 * @param string $caseType Optional caseType uuid to narrow by ('' = all).
+	 * @param CaseloadPreviewRun               $run         The preview: the previewed cases and the case type ('' = all).
 	 *
 	 * @return array<int, array<string, mixed>> The open tasks, in search order.
 	 */
-	private function filterOpenTasks(array $taskResults, array $cases, string $caseType): array {
+	private function filterOpenTasks(array $taskResults, CaseloadPreviewRun $run): array {
 		$caseIds = [];
-		foreach ($cases as $c) {
+		foreach ($run->cases as $c) {
 			$caseIds[(string)($c['id'] ?? ($c['uuid'] ?? ''))] = true;
 		}
 
@@ -184,7 +185,7 @@ class CaseReassignmentService {
 		foreach ($taskResults as $task) {
 			// When narrowed by caseType, only tasks belonging to a previewed
 			// case are in scope.
-			if ($caseType !== '' && isset($caseIds[(string)($task['case'] ?? '')]) === false) {
+			if ($run->caseType !== '' && isset($caseIds[(string)($task['case'] ?? '')]) === false) {
 				continue;
 			}
 
