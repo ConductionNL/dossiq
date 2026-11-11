@@ -167,71 +167,84 @@ class GuardRegistry {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function evaluateAll(array $guards, array $case, string $userId): array {
+		$subject = ['case' => $case, 'userId' => $userId];
 		$results = [];
 		foreach ($guards as $guard) {
-			$type = (string)($guard['type'] ?? '');
-			if ($type === '') {
-				continue;
+			if ((string)($guard['type'] ?? '') !== '') {
+				$results[] = $this->snapshotOf(guard: $guard, subject: $subject);
 			}
-
-			$this->warnOnNestedConfig(type: $type, guard: $guard);
-
-			if (isset($this->evaluators[$type]) === false) {
-				$this->logger->warning('Unknown guard type', ['type' => $type]);
-				$results[] = [
-					'type' => $type,
-					'passed' => false,
-					'failureMessage' => 'Onbekende guard',
-					'details' => ['unknown' => true],
-				];
-				continue;
-			}
-
-			$result = $this->evaluators[$type]->evaluate(guardConfig: $guard, case: $case, userId: $userId);
-
-			$snapshot = [
-				'type' => $type,
-				'passed' => $result->passed,
-				'failureMessage' => $result->failureMessage,
-			];
-
-			// EMPTY DETAILS ARE OMITTED. The key carries no value at all here,
-			// and every other spelling of "nothing to report" is refused.
-			//
-			// This snapshot is persisted as `statusRecord.evaluatedGuards`,
-			// whose `details` is declared `type: object` and is NOT required.
-			// All four shapes were posted to a running register and read back:
-			//
-			//     omitted   accepted
-			//     {"x": 1}  accepted
-			//     {}        refused, "expects object but got empty ({})"
-			//     []        refused, the same message
-			//     null      refused, "should be type 'object' but is 'null'"
-			//
-			// ⚠️ The refusal of `{}` ADVISES null: "For non-required object
-			// properties, set this to null to clear the field." Following that
-			// advice is what #1941 did, and null is refused in turn, so every
-			// status transition answered 500 from that merge until this one.
-			// Omission is the only shape the validator accepts.
-			//
-			// `GuardResult::$details` defaults to `[]`, and a guard that
-			// simply PASSES has nothing to report, so the empty case is the
-			// common one. It went unnoticed until the status checklist guard
-			// was appended to every transition: before that, a transition with
-			// no declared guards produced no snapshot entries at all, so there
-			// was nothing to reject. Afterwards every transition had at least
-			// entry 0, and `StatusTransitionController::execute()` catches
-			// Throwable and answers 500, so the failure surfaces as a dialog
-			// that never closes rather than as a validation message.
-			if ($result->details !== []) {
-				$snapshot['details'] = $result->details;
-			}
-
-			$results[] = $snapshot;
-		}//end foreach
+		}
 
 		return $results;
 	}//end evaluateAll()
+
+	/**
+	 * One guard's snapshot: unknown when no evaluator answers to its type, evaluated otherwise.
+	 *
+	 * @param array<string, mixed>                       $guard   The guard config, with a type.
+	 * @param array{case: array<string, mixed>, userId: string} $subject The case and the current user.
+	 *
+	 * @return array{type: string, passed: bool, failureMessage: ?string, details?: array<string, mixed>} The snapshot.
+	 */
+	private function snapshotOf(array $guard, array $subject): array {
+		$type = (string)$guard['type'];
+		$this->warnOnNestedConfig(type: $type, guard: $guard);
+
+		if (isset($this->evaluators[$type]) === false) {
+			$this->logger->warning('Unknown guard type', ['type' => $type]);
+			return ['type' => $type, 'passed' => false, 'failureMessage' => 'Onbekende guard', 'details' => ['unknown' => true]];
+		}
+
+		$result = $this->evaluators[$type]->evaluate(guardConfig: $guard, case: $subject['case'], userId: $subject['userId']);
+
+		return self::snapshot(type: $type, result: $result);
+	}//end snapshotOf()
+
+	/**
+	 * The snapshot of an evaluated guard.
+	 *
+	 * @param string      $type   The guard type.
+	 * @param GuardResult $result What its evaluator answered.
+	 *
+	 * @return array{type: string, passed: bool, failureMessage: ?string, details?: array<string, mixed>} The snapshot.
+	 */
+	private static function snapshot(string $type, GuardResult $result): array {
+		$snapshot = ['type' => $type, 'passed' => $result->passed, 'failureMessage' => $result->failureMessage];
+
+		// EMPTY DETAILS ARE OMITTED. The key carries no value at all here,
+		// and every other spelling of "nothing to report" is refused.
+		//
+		// This snapshot is persisted as `statusRecord.evaluatedGuards`,
+		// whose `details` is declared `type: object` and is NOT required.
+		// All four shapes were posted to a running register and read back:
+		//
+		//     omitted   accepted
+		//     {"x": 1}  accepted
+		//     {}        refused, "expects object but got empty ({})"
+		//     []        refused, the same message
+		//     null      refused, "should be type 'object' but is 'null'"
+		//
+		// ⚠️ The refusal of `{}` ADVISES null: "For non-required object
+		// properties, set this to null to clear the field." Following that
+		// advice is what #1941 did, and null is refused in turn, so every
+		// status transition answered 500 from that merge until this one.
+		// Omission is the only shape the validator accepts.
+		//
+		// `GuardResult::$details` defaults to `[]`, and a guard that
+		// simply PASSES has nothing to report, so the empty case is the
+		// common one. It went unnoticed until the status checklist guard
+		// was appended to every transition: before that, a transition with
+		// no declared guards produced no snapshot entries at all, so there
+		// was nothing to reject. Afterwards every transition had at least
+		// entry 0, and `StatusTransitionController::execute()` catches
+		// Throwable and answers 500, so the failure surfaces as a dialog
+		// that never closes rather than as a validation message.
+		if ($result->details !== []) {
+			$snapshot['details'] = $result->details;
+		}
+
+		return $snapshot;
+	}//end snapshot()
 
 	/**
 	 * Report a guard that declares its parameters at a position nothing reads.

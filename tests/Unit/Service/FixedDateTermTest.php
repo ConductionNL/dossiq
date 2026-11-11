@@ -142,6 +142,34 @@ class FixedDateTermTest extends TestCase {
 	}//end testASubsidyRoundClosesOnADate()
 
 	/**
+	 * Every declared clock is bound and answered in order: statutory, planned, internal; no ids binds nothing.
+	 *
+	 * @return void
+	 */
+	public function testEveryDeclaredClockIsAnsweredInOrder(): void {
+		$this->declarations->method('forCaseType')->willReturn(
+			$this->declared(['fixedEndDate' => '2027-03-01', 'plannedLeadTimeDays' => 10, 'internalTargetDays' => 5])
+		);
+
+		self::assertSame([], $this->service->bindForCase(caseId: '', caseTypeId: 'ct1'));
+		self::assertSame([], $this->service->bindForCase(caseId: 'c1', caseTypeId: ''));
+		self::assertSame([], $this->written);
+
+		$bound = $this->service->bindForCase(
+			caseId: 'c1',
+			caseTypeId: 'ct1',
+			start: new DateTimeImmutable('2027-01-11T09:00:00+00:00'),
+			plannedStart: '2027-01-12',
+		);
+
+		self::assertSame([TermKind::STATUTORY, TermKind::PLANNED, TermKind::INTERNAL], array_column($bound, 'kind'));
+		self::assertSame(['written-0', 'written-1', 'written-2'], array_column($bound, 'id'));
+		self::assertSame('2027-01-12', $bound[1]['plannedStartDate']);
+		self::assertArrayNotHasKey('plannedStartDate', $bound[2]);
+		self::assertSame('2027-01-11T09:00:00+00:00', $bound[2]['startDate']);
+	}//end testEveryDeclaredClockIsAnsweredInOrder()
+
+	/**
 	 * A fixed date already past creates the case with an expired term.
 	 *
 	 * @return void

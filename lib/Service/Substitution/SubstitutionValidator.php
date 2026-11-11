@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Service\Substitution;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\SubstitutionRequest;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -59,13 +60,7 @@ class SubstitutionValidator {
 	/**
 	 * Validate every create() argument and resolve the substitution period.
 	 *
-	 * @param string $absentee Handler being covered (user id), pre-trimmed.
-	 * @param string $substitute Waarnemer (user id), pre-trimmed.
-	 * @param string $startDate Inclusive start (Y-m-d).
-	 * @param string $endDate Inclusive end (Y-m-d), required.
-	 * @param string $scope One of all|caseTypes|cases.
-	 * @param array<int, string> $scopeRefs caseType/case UUIDs when narrowed.
-	 * @param string $reason One of verlof|ziekte|anders.
+	 * @param SubstitutionRequest $request The substitution to create; absentee and substitute pre-trimmed.
 	 *
 	 * @return array{0: DateTimeImmutable, 1: DateTimeImmutable} The resolved [start, end] period.
 	 *
@@ -73,21 +68,13 @@ class SubstitutionValidator {
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	public function validateCreate(
-		string $absentee,
-		string $substitute,
-		string $startDate,
-		string $endDate,
-		string $scope,
-		array $scopeRefs,
-		string $reason,
-	): array {
-		$this->assertIdentities(absentee: $absentee, substitute: $substitute);
-		$this->assertEnums(scope: $scope, reason: $reason);
+	public function validateCreate(SubstitutionRequest $request): array {
+		$this->assertIdentities(absentee: $request->absentee, substitute: $request->substitute);
+		$this->assertEnums(scope: $request->scope, reason: $request->reason);
 
-		$period = $this->resolvePeriod(startDate: $startDate, endDate: $endDate);
+		$period = $this->resolvePeriod(startDate: $request->startDate, endDate: $request->endDate);
 
-		$this->assertScopeRefs(scope: $scope, scopeRefs: $scopeRefs);
+		$this->assertScopeRefs(scope: $request->scope, scopeRefs: $request->scopeRefs);
 
 		return $period;
 	}//end validateCreate()

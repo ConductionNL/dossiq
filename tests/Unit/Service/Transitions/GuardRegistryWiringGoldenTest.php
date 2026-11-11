@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard;
+use OCA\Dossiq\Service\Transitions\GuardEvaluatorInterface;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\GuardResult;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
@@ -93,6 +94,39 @@ class GuardRegistryWiringGoldenTest extends TestCase {
 			$answers
 		);
 	}//end testEachGuardTypeIsAnsweredAsRecorded()
+
+	/**
+	 * Every shape of snapshot: skipped, passed without details, failed with and without, unknown.
+	 *
+	 * @return void
+	 */
+	public function testEveryShapeOfASnapshot(): void {
+		$registry = $this->registry(withOptional: false);
+		$answers  = [
+			'passes' => new GuardResult(passed: true),
+			'fails-bare' => new GuardResult(passed: false, failureMessage: 'Nee'),
+			'fails-detailed' => new GuardResult(passed: false, failureMessage: null, details: ['field' => 'x']),
+		];
+		foreach ($answers as $type => $result) {
+			$evaluator = $this->createMock(GuardEvaluatorInterface::class);
+			$evaluator->method('evaluate')->willReturn($result);
+			$registry->registerEvaluator(type: $type, evaluator: $evaluator);
+		}
+
+		$this->assertSame(
+			[
+				['type' => 'passes', 'passed' => true, 'failureMessage' => null],
+				['type' => 'fails-bare', 'passed' => false, 'failureMessage' => 'Nee'],
+				['type' => 'fails-detailed', 'passed' => false, 'failureMessage' => null, 'details' => ['field' => 'x']],
+				['type' => 'unheard-of', 'passed' => false, 'failureMessage' => 'Onbekende guard', 'details' => ['unknown' => true]],
+			],
+			$registry->evaluateAll(
+				guards: [['type' => ''], [], ['type' => 'passes', 'config' => ['field' => 'x']], ['type' => 'fails-bare'], ['type' => 'fails-detailed', 'config' => []], ['type' => 'unheard-of']],
+				case: ['id' => 'case-1'],
+				userId: 'behandelaar'
+			)
+		);
+	}//end testEveryShapeOfASnapshot()
 
 	/**
 	 * The registry, built the way its constructor takes the evaluators.

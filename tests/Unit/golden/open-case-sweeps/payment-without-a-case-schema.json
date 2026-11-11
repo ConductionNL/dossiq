@@ -1,0 +1,14 @@
+[
+    {
+        "isInstalled": "shillinq"
+    },
+    {
+        "getObjectService": true
+    },
+    {
+        "getConfigValue": "register"
+    },
+    {
+        "getConfigValue": "case_schema"
+    }
+]

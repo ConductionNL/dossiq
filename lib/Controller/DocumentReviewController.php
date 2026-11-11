@@ -35,6 +35,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -127,7 +128,7 @@ class DocumentReviewController extends Controller {
 				userId: $user->getUID(),
 			);
 		} catch (RefusedException $e) {
-			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+			return $this->refused(e: $e);
 		}
 
 		return new JSONResponse($review);
@@ -176,32 +177,73 @@ class DocumentReviewController extends Controller {
 			return $this->noAccess();
 		}
 
-		$filter = array_map('strval', array_filter((array)$this->request->getParam('filter', []), 'is_scalar'));
-		$listed = array_values(array_map('strval', array_filter((array)$this->request->getParam('documents', []), 'is_scalar')));
 		try {
-			$documents = $this->selection->select(caseId: $id, documents: $listed, filter: $filter);
-			$taken = $this->batches->taken(caseId: $id, documents: $documents);
-			if ($taken !== []) {
-				return new JSONResponse(
-					['error' => 'review-batch-document-taken', 'message' => $this->sentence(rule: 'review-batch-document-taken'), 'taken' => $taken],
-					Http::STATUS_CONFLICT
-				);
-			}
-
-			$made = $this->batches->create(
-				caseId: $id,
-				name: (string)$this->request->getParam('name', ''),
-				assignee: (string)$this->request->getParam('assignee', ''),
-				documents: $documents,
-				userId: $user->getUID(),
-				filter: $filter,
-			);
+			return $this->madeBatch(id: $id, user: $user);
 		} catch (RefusedException $e) {
-			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+			return $this->refused(e: $e);
+		}
+	}//end createBatch()
+
+	/**
+	 * Make the batch the request asks for, unless one of its documents is already taken.
+	 *
+	 * @param string $id   The case UUID.
+	 * @param IUser  $user The caller, who may change the case.
+	 *
+	 * @return JSONResponse The batch (201), or the 409 naming the taken documents.
+	 *
+	 * @throws RefusedException When the selection or the batch is refused.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function madeBatch(string $id, IUser $user): JSONResponse {
+		$filter = $this->scalarParam(name: 'filter');
+		$documents = $this->selection->select(caseId: $id, documents: array_values($this->scalarParam(name: 'documents')), filter: $filter);
+		$taken = $this->batches->taken(caseId: $id, documents: $documents);
+		if ($taken !== []) {
+			return $this->documentsTaken(taken: $taken);
 		}
 
+		$made = $this->batches->create(
+			caseId: $id,
+			name: (string)$this->request->getParam('name', ''),
+			assignee: (string)$this->request->getParam('assignee', ''),
+			documents: $documents,
+			userId: $user->getUID(),
+			filter: $filter,
+		);
+
 		return new JSONResponse($made, Http::STATUS_CREATED);
-	}//end createBatch()
+	}//end madeBatch()
+
+	/**
+	 * The scalar entries of a list parameter, as strings.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return array<string>
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function scalarParam(string $name): array {
+		return array_map('strval', array_filter((array)$this->request->getParam($name, []), 'is_scalar'));
+	}//end scalarParam()
+
+	/**
+	 * The 409 answer for documents already in another open batch.
+	 *
+	 * @param array<mixed> $taken The taken documents and their batches.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	private function documentsTaken(array $taken): JSONResponse {
+		return new JSONResponse(
+			['error' => 'review-batch-document-taken', 'message' => $this->sentence(rule: 'review-batch-document-taken'), 'taken' => $taken],
+			Http::STATUS_CONFLICT
+		);
+	}//end documentsTaken()
 
 	/**
 	 * The review viewer reports the pages a reviewer displayed, and the page count when it knows it.
@@ -236,7 +278,7 @@ class DocumentReviewController extends Controller {
 		try {
 			$review = $this->writes->pagesSeen(caseId: $id, documentRef: $documentRef, pages: $pages, pageCount: $pageCount, userId: $user->getUID());
 		} catch (RefusedException $e) {
-			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+			return $this->refused(e: $e);
 		}
 
 		return new JSONResponse($review);
@@ -253,6 +295,17 @@ class DocumentReviewController extends Controller {
 			Http::STATUS_FORBIDDEN
 		);
 	}//end noAccess()
+
+	/**
+	 * The answer for a refused review write: the rule, its sentence and its status.
+	 *
+	 * @param RefusedException $e The refusal.
+	 *
+	 * @return JSONResponse
+	 */
+	private function refused(RefusedException $e): JSONResponse {
+		return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+	}//end refused()
 
 	/**
 	 * The translated sentence of a refusal rule.

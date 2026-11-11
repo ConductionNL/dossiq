@@ -171,8 +171,246 @@ import {
 } from '../utils/caseHelpers.js'
 import { subCaseInitialStatus } from '../utils/deelzaakHelpers.js'
 
+/**
+ * A date as its `YYYY-MM-DD` day, followed by a time of day.
+ *
+ * @param {Date} date The date.
+ * @param {string} time The time of day suffix, e.g. `T00:00:00Z`.
+ * @return {string} The timestamp.
+ */
+function dayAt(date, time) {
+	return date.toISOString().split('T')[0] + time
+}
+
+/**
+ * The id of the signed-in user, `unknown` when there is none.
+ *
+ * @return {string} The user id.
+ */
+function currentUserId() {
+	return (getCurrentUser() && getCurrentUser().uid) || 'unknown'
+}
+
+/**
+ * The case record a sub-case is derived with, from the modal's form and
+ * the chosen sub-case type, started now.
+ *
+ * @param {object} modal The modal: its `form`, `selectedCaseType` and `parentCase`.
+ * @return {object} The case record.
+ */
+function subCaseRecord(modal) {
+	const caseType = modal.selectedCaseType
+	const now = new Date()
+	const dates = subCaseDates(caseType, now)
+	const initialStatus = subCaseInitialStatus(caseType)
+
+	return {
+		...typedFields(modal.form),
+		identifier: generateIdentifier(),
+		caseType: caseType.id,
+		...(initialStatus ? { status: initialStatus } : {}),
+		...dates,
+		...subCaseDefaults(caseType, modal.parentCase),
+		...startedHistory(caseType, now),
+	}
+}
+
+/**
+ * What the handler typed: the title and description, trimmed.
+ *
+ * @param {{title: string, description: string}} form The modal's form.
+ * @return {{title: string, description: string}} The fields.
+ */
+function typedFields(form) {
+	return {
+		title: form.title.trim(),
+		description: form.description.trim(),
+	}
+}
+
+/**
+ * The start date (today) and the deadline the sub-case type's processing
+ * time gives it, null without one.
+ *
+ * @param {object} caseType The sub-case type.
+ * @param {Date} now When the sub-case starts.
+ * @return {{startDate: string, deadline: string|null}} The dates.
+ */
+function subCaseDates(caseType, now) {
+	const startDate = dayAt(now, 'T00:00:00Z')
+	const deadline = calculateDeadline(now, caseType.processingDeadline)
+	return {
+		startDate,
+		deadline: deadline ? dayAt(deadline, 'T17:00:00Z') : null,
+	}
+}
+
+/**
+ * The fields a new sub-case starts with: inherited from its type, or blank.
+ *
+ * @param {object} caseType The sub-case type.
+ * @param {string} parentCase The parent case uuid.
+ * @return {object} The fields.
+ */
+function subCaseDefaults(caseType, parentCase) {
+	return {
+		confidentiality:
+			caseType.confidentiality
+			|| DEFAULT_CASE_CONFIDENTIALITY,
+
+		assignee: caseType.defaultAssignee || null,
+		intakeChannel: 'manual',
+		priority: 'normal',
+		endDate: null,
+		result: null,
+		extensionCount: 0,
+		parentCase,
+	}
+}
+
+/**
+ * The status history and activity a sub-case starts with. Both are
+ * JSON-encoded strings per the case schema (dossiq_register.json).
+ *
+ * @param {object} caseType The sub-case type.
+ * @param {Date} now When the sub-case starts.
+ * @return {{statusHistory: string, activity: string}} The fields.
+ */
+function startedHistory(caseType, now) {
+	const started = { now, initialStatus: subCaseInitialStatus(caseType), user: currentUserId(), caseType }
+	return {
+		statusHistory: JSON.stringify([
+			{
+				status: started.initialStatus,
+				date: started.now.toISOString(),
+				changedBy: started.user,
+			},
+		]),
+
+		activity: JSON.stringify([createdActivity(started)]),
+	}
+}
+
+/**
+ * The activity entry that records the sub-case was created.
+ *
+ * @param {{now: Date, user: string, caseType: object}} started When, by whom, of which type.
+ * @return {object} The entry.
+ */
+function createdActivity(started) {
+	return {
+		date: started.now.toISOString(),
+		type: 'created',
+		description: t(
+			'dossiq',
+			"Sub-case created with type '{type}'",
+			{
+				type: started.caseType.title,
+			},
+		),
+		user: started.user,
+	}
+}
+
 /** The library's page refresh channel: the lists on the page refetch. */
 const PAGE_REFRESH = 'cn:page:refresh'
+
+/**
+ * Ask the server whether this sub-case may be created, and show why not.
+ * Server-side validation is cheaper than rolling back a saved row.
+ *
+ * @param {object} modal The modal.
+ * @return {Promise<boolean>} True when the server refused it.
+ */
+async function refusedByServerCheck(modal) {
+	const v = await modal.deelzaakStore.validateSubCase({
+		parentCaseUuid: modal.parentCase,
+		childCaseTypeId: modal.selectedCaseType.id,
+	})
+	if (v && v.ok === false) {
+		modal.serverError =
+			v.reason || t('dossiq', 'Sub-case validation failed.')
+		modal.saving = false
+		return true
+	}
+	return false
+}
+
+/**
+ * Create the sub-case once the server check allows it.
+ *
+ * @param {object} modal The modal.
+ * @return {Promise<void>}
+ */
+async function createWhenAllowed(modal) {
+	if (await refusedByServerCheck(modal)) {
+		return
+	}
+	finishCreate(modal, await deriveSubCase(modal))
+}
+
+/**
+ * Derive the sub-case from its parent.
+ *
+ * A derive, not a save. The sub-case takes the confidentiality
+ * and the handler its parent carries because case.parentCase
+ * declares that inheritance; saving the case directly would
+ * create the hierarchy and inherit nothing, silently.
+ *
+ * @param {object} modal The modal.
+ * @return {Promise<object|null>} What the derive answered.
+ */
+function deriveSubCase(modal) {
+	return createSubCase({
+		parentCaseUuid: modal.parentCase,
+		childCaseTypeId: modal.selectedCaseType.id,
+		object: subCaseRecord(modal),
+	})
+}
+
+/**
+ * Show a refused derive, or announce the created sub-case and close.
+ *
+ * @param {object} modal The modal.
+ * @param {object|null} result What the derive answered.
+ */
+function finishCreate(modal, result) {
+	if (result?.ok === false) {
+		modal.serverError =
+			result.reason || t('dossiq', 'Failed to create sub-case.')
+		return
+	}
+
+	modal.$emit('created', createdId(result))
+	emit(PAGE_REFRESH)
+	modal.$emit('close')
+}
+
+/**
+ * What can be named of the created sub-case: its id, else the object.
+ *
+ * @param {object|null} result What the derive answered.
+ * @return {string|object} The id or the object.
+ */
+function createdId(result) {
+	const created = result?.object || {}
+	return created.id || created['@self']?.id || created
+}
+
+/**
+ * Log a failed create and show what went wrong.
+ *
+ * @param {object} modal The modal.
+ * @param {object} err What the create threw.
+ */
+function showCreateFailure(modal, err) {
+	console.error('[DeelzaakCreateModal] Failed to create sub-case', err)
+	modal.serverError =
+		err?.response?.data?.message
+		|| err?.message
+		|| t('dossiq', 'Failed to create sub-case.')
+}
+
 
 export default {
 	name: 'DeelzaakCreateModal',
@@ -374,106 +612,14 @@ export default {
 			}
 			this.saving = true
 			try {
-				// Server-side validation (cheaper than rolling back a saved row)
-				const v = await this.deelzaakStore.validateSubCase({
-					parentCaseUuid: this.parentCase,
-					childCaseTypeId: this.selectedCaseType.id,
-				})
-				if (v && v.ok === false) {
-					this.serverError =
-						v.reason || t('dossiq', 'Sub-case validation failed.')
-					this.saving = false
-					return
-				}
-
-				const now = new Date()
-				const startDate = now.toISOString().split('T')[0] + 'T00:00:00Z'
-				const deadline = calculateDeadline(
-					now,
-					this.selectedCaseType.processingDeadline,
-				)
-				const initialStatus = subCaseInitialStatus(this.selectedCaseType)
-				const currentUser =
-					(getCurrentUser() && getCurrentUser().uid) || 'unknown'
-
-				const caseData = {
-					title: this.form.title.trim(),
-					description: this.form.description.trim(),
-					identifier: generateIdentifier(),
-					caseType: this.selectedCaseType.id,
-					...(initialStatus ? { status: initialStatus } : {}),
-					startDate,
-					deadline: deadline
-						? deadline.toISOString().split('T')[0] + 'T17:00:00Z'
-						: null,
-
-					confidentiality:
-						this.selectedCaseType.confidentiality
-						|| DEFAULT_CASE_CONFIDENTIALITY,
-
-					assignee: this.selectedCaseType.defaultAssignee || null,
-					intakeChannel: 'manual',
-					priority: 'normal',
-					endDate: null,
-					result: null,
-					extensionCount: 0,
-					parentCase: this.parentCase,
-					// statusHistory/activity are JSON-encoded strings per the
-					// case schema (dossiq_register.json).
-					statusHistory: JSON.stringify([
-						{
-							status: initialStatus,
-							date: now.toISOString(),
-							changedBy: currentUser,
-						},
-					]),
-
-					activity: JSON.stringify([
-						{
-							date: now.toISOString(),
-							type: 'created',
-							description: t(
-								'dossiq',
-								"Sub-case created with type '{type}'",
-								{
-									type: this.selectedCaseType.title,
-								},
-							),
-							user: currentUser,
-						},
-					]),
-				}
-
-				// A derive, not a save. The sub-case takes the confidentiality
-				// and the handler its parent carries because case.parentCase
-				// declares that inheritance; saving the case directly would
-				// create the hierarchy and inherit nothing, silently.
-				const result = await createSubCase({
-					parentCaseUuid: this.parentCase,
-					childCaseTypeId: this.selectedCaseType.id,
-					object: caseData,
-				})
-
-				if (result?.ok === false) {
-					this.serverError =
-						result.reason || t('dossiq', 'Failed to create sub-case.')
-					return
-				}
-
-				const created = result?.object || {}
-				this.$emit('created', created.id || created['@self']?.id || created)
-				emit(PAGE_REFRESH)
-				this.$emit('close')
+				await createWhenAllowed(this)
 			} catch (err) {
-				console.error('[DeelzaakCreateModal] Failed to create sub-case', err)
-				this.serverError =
-					err?.response?.data?.message
-					|| err?.message
-					|| t('dossiq', 'Failed to create sub-case.')
+				showCreateFailure(this, err)
 			} finally {
 				this.saving = false
 			}
 		},
+
 
 		onDialogClose(open) {
 			if (!open) {

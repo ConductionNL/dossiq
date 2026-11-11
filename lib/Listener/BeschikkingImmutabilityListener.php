@@ -43,6 +43,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\SchemaMembership;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -131,41 +132,59 @@ class BeschikkingImmutabilityListener implements IEventListener {
 			return;
 		}
 
-		$uuid = (string)$event->getOldObject()?->getUuid();
-
 		$incoming = $this->payload(object: $event->getNewObject());
+		if ($this->mayWrite(stored: $stored, incoming: $incoming) === false) {
+			$this->reject(event: $event, uuid: (string)$event->getOldObject()?->getUuid());
+		}
+	}//end inspectUpdate()
+
+	/**
+	 * Whether the update may be written over the stored beschikking.
+	 *
+	 * @param array<string, mixed>      $stored   The stored beschikking.
+	 * @param array<string, mixed>|null $incoming The incoming payload, null when it cannot be read.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function mayWrite(array $stored, ?array $incoming): bool {
 		if ($incoming === null) {
 			// Fail CLOSED. A payload that cannot be read cannot be cleared
 			// either, so a frozen beschikking refuses the write it is unable
 			// to inspect rather than waving it through.
-			if ($this->stateMachine->isImmutable(status: (string)($stored['currentStatus'] ?? '')) === true) {
-				$this->reject(event: $event, uuid: $uuid);
-			}
-
-			return;
+			return $this->stateMachine->isImmutable(status: (string)($stored['currentStatus'] ?? '')) === false;
 		}
 
 		if ($this->isSoftDelete(stored: $stored, incoming: $incoming) === true) {
-			try {
-				$this->stateMachine->assertDeletable(stored: $stored);
-			} catch (RuntimeException $rejection) {
-				$this->reject(event: $event, uuid: $uuid);
-			}
-
-			return;
+			return $this->passes(assertion: fn () => $this->stateMachine->assertDeletable(stored: $stored));
 		}
 
 		$changed = $this->changedContentFields(stored: $stored, incoming: $incoming);
 		if ($changed === []) {
-			return;
+			return true;
 		}
 
+		return $this->passes(assertion: fn () => $this->stateMachine->assertMutable(stored: $stored, changed: $changed));
+	}//end mayWrite()
+
+	/**
+	 * Whether a state machine assertion holds.
+	 *
+	 * @param callable(): mixed $assertion Throws a RuntimeException when it does not hold.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function passes(callable $assertion): bool {
 		try {
-			$this->stateMachine->assertMutable(stored: $stored, changed: $changed);
+			$assertion();
+			return true;
 		} catch (RuntimeException $rejection) {
-			$this->reject(event: $event, uuid: $uuid);
+			return false;
 		}
-	}//end inspectUpdate()
+	}//end passes()
 
 	/**
 	 * Whether this update is the deletion marker being stamped on the row.
@@ -301,16 +320,6 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	 * @return bool True when this is a beschikking.
 	 */
 	private function isBeschikkingSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('beschikking_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
+		return SchemaMembership::belongsTo(object: $object, expected: $this->settingsService->getConfigValue('beschikking_schema'));
 	}//end isBeschikkingSchema()
 }//end class

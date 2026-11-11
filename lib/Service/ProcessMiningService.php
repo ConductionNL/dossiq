@@ -450,15 +450,7 @@ class ProcessMiningService {
 	 * @return array<string, array<int, array<string, mixed>>>
 	 */
 	private function groupRecordsByCase(array $records, array $cases): array {
-		$grouped = [];
-		foreach ($records as $record) {
-			$caseId = (string)($record['case'] ?? '');
-			if ($caseId === '' || isset($cases[$caseId]) === false) {
-				continue;
-			}
-
-			$grouped[$caseId][] = $record;
-		}
+		$grouped = self::recordsOfKnownCases(records: $records, cases: $cases);
 
 		// A case without status records (example data, an imported case) is read from its own status history.
 		foreach (array_diff_key($cases, $grouped) as $caseId => $case) {
@@ -469,23 +461,55 @@ class ProcessMiningService {
 		}
 
 		foreach ($grouped as $caseId => $rows) {
-			usort(
-				$rows,
-				function (array $left, array $right): int {
-					$leftAt = $this->extractTimestamp(record: $left);
-					$rightAt = $this->extractTimestamp(record: $right);
-					if ($leftAt === null || $rightAt === null) {
-						return 0;
-					}
-
-					return ($leftAt <=> $rightAt);
-				}
-			);
-			$grouped[$caseId] = $rows;
+			$grouped[$caseId] = $this->inTimeOrder(rows: $rows);
 		}
 
 		return $grouped;
 	}//end groupRecordsByCase()
+
+	/**
+	 * The status records grouped by the case they belong to, for the known cases only.
+	 *
+	 * @param array<int, array<string, mixed>>   $records The status records.
+	 * @param array<string, array<string, mixed>> $cases   The cases by id.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>> The records by case id.
+	 */
+	private static function recordsOfKnownCases(array $records, array $cases): array {
+		$grouped = [];
+		foreach ($records as $record) {
+			$caseId = (string)($record['case'] ?? '');
+			if ($caseId !== '' && isset($cases[$caseId]) === true) {
+				$grouped[$caseId][] = $record;
+			}
+		}
+
+		return $grouped;
+	}//end recordsOfKnownCases()
+
+	/**
+	 * One case's status records sorted by their timestamp; records without one keep their place.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The records.
+	 *
+	 * @return array<int, array<string, mixed>> The sorted records.
+	 */
+	private function inTimeOrder(array $rows): array {
+		usort(
+			$rows,
+			function (array $left, array $right): int {
+				$leftAt = $this->extractTimestamp(record: $left);
+				$rightAt = $this->extractTimestamp(record: $right);
+				if ($leftAt === null || $rightAt === null) {
+					return 0;
+				}
+
+				return ($leftAt <=> $rightAt);
+			}
+		);
+
+		return $rows;
+	}//end inTimeOrder()
 
 	/**
 	 * Status records read off a case's own status history: one per entry, at the moment it entered that status.

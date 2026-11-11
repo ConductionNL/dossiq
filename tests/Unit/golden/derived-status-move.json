@@ -1,0 +1,86 @@
+{
+    "not an update": {
+        "modified": null,
+        "events": []
+    },
+    "another schema": {
+        "modified": [],
+        "events": []
+    },
+    "no declared status became true": {
+        "modified": {
+            "title": "B"
+        },
+        "events": [
+            "statusFor status=intake title=B"
+        ]
+    },
+    "moves": {
+        "modified": {
+            "title": "B",
+            "statusDwellTotals": {
+                "intake": 3
+            },
+            "currentStatusEnteredAt": "2026-03-02",
+            "currentStatusDwellDays": 0,
+            "statusDwellBreached": false,
+            "status": "review"
+        },
+        "events": [
+            "statusFor status=intake title=B",
+            "applyStatusChange to review",
+            "stage case-1 intake -> review",
+            "info: Dossiq: a declared status became true and the case moved into it {\"case\":\"case-1\",\"from\":\"intake\",\"to\":\"review\"}"
+        ]
+    },
+    "moves on a status the save itself sets": {
+        "modified": {
+            "status": "review",
+            "statusDwellTotals": {
+                "intake": 3
+            },
+            "currentStatusEnteredAt": "2026-03-02",
+            "currentStatusDwellDays": 0,
+            "statusDwellBreached": false
+        },
+        "events": [
+            "statusFor status=waiting title=A case",
+            "applyStatusChange to review",
+            "stage case-1 waiting -> review",
+            "info: Dossiq: a declared status became true and the case moved into it {\"case\":\"case-1\",\"from\":\"waiting\",\"to\":\"review\"}"
+        ]
+    },
+    "moves without a journal": {
+        "modified": {
+            "statusDwellTotals": {
+                "intake": 3
+            },
+            "currentStatusEnteredAt": "2026-03-02",
+            "currentStatusDwellDays": 0,
+            "statusDwellBreached": false,
+            "status": "review"
+        },
+        "events": [
+            "statusFor status=intake title=A case",
+            "applyStatusChange to review",
+            "info: Dossiq: a declared status became true and the case moved into it {\"case\":\"case-1\",\"from\":\"intake\",\"to\":\"review\"}"
+        ]
+    },
+    "moves a case whose payload names its id": {
+        "modified": {
+            "statusDwellTotals": {
+                "intake": 3
+            },
+            "currentStatusEnteredAt": "2026-03-02",
+            "currentStatusDwellDays": 0,
+            "statusDwellBreached": false,
+            "status": "review"
+        },
+        "events": [
+            "statusFor status=intake title=A case",
+            "applyStatusChange to review",
+            "stage case-from-payload intake -> review",
+            "info: Dossiq: a declared status became true and the case moved into it {\"case\":\"case-from-payload\",\"from\":\"intake\",\"to\":\"review\"}"
+        ]
+    }
+}

@@ -182,7 +182,28 @@ class CasePlanGoals {
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	public function close(string $goalId, string $state, string $observation, string $onDate = ''): array {
-		$goal = $this->store->read(schema: self::SCHEMA, id: $goalId);
+		$goal = self::found(goal: $this->store->read(schema: self::SCHEMA, id: $goalId));
+		self::refuseUnlessClosing(state: $state);
+		$observation = trim($observation);
+		self::refuseWithoutObservation(goal: $goal, observation: $observation);
+
+		$goal['state'] = $state;
+		$goal['closedObservation'] = $observation;
+		$goal['closedDate'] = self::dayOrToday(onDate: $onDate);
+
+		return $this->store->write(schema: self::SCHEMA, object: $goal);
+	}//end close()
+
+	/**
+	 * The goal that was read; refused when there is none.
+	 *
+	 * @param array<string, mixed>|null $goal The goal as read.
+	 *
+	 * @return array<string, mixed> The goal.
+	 *
+	 * @throws RefusedException When the goal could not be found.
+	 */
+	private static function found(?array $goal): array {
 		if ($goal === null) {
 			throw new RefusedException(
 				rule: 'goal-not-found',
@@ -191,6 +212,19 @@ class CasePlanGoals {
 			);
 		}
 
+		return $goal;
+	}//end found()
+
+	/**
+	 * Refuse a state a goal is not closed into.
+	 *
+	 * @param string $state The state asked for.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the state is not `met`, `not-met` or `withdrawn`.
+	 */
+	private static function refuseUnlessClosing(string $state): void {
 		if (in_array($state, ['met', 'not-met', 'withdrawn'], true) === false) {
 			throw new RefusedException(
 				rule: 'goal-close-needs-a-closing-state',
@@ -198,8 +232,19 @@ class CasePlanGoals {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end refuseUnlessClosing()
 
-		$observation = trim($observation);
+	/**
+	 * Refuse a close with nothing observed, quoting what the goal said would count as met.
+	 *
+	 * @param array<string, mixed> $goal        The goal.
+	 * @param string               $observation The trimmed observation.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When nothing was observed.
+	 */
+	private static function refuseWithoutObservation(array $goal, string $observation): void {
 		if ($observation === '') {
 			throw new RefusedException(
 				rule: 'goal-close-needs-an-observation',
@@ -208,17 +253,22 @@ class CasePlanGoals {
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
+	}//end refuseWithoutObservation()
 
-		$goal['state'] = $state;
-		$goal['closedObservation'] = $observation;
+	/**
+	 * The day given, or today when none is.
+	 *
+	 * @param string $onDate The day, `Y-m-d`, or ''.
+	 *
+	 * @return string The day.
+	 */
+	private static function dayOrToday(string $onDate): string {
 		if ($onDate === '') {
-			$onDate = (new DateTimeImmutable())->format('Y-m-d');
+			return (new DateTimeImmutable())->format('Y-m-d');
 		}
 
-		$goal['closedDate'] = $onDate;
-
-		return $this->store->write(schema: self::SCHEMA, object: $goal);
-	}//end close()
+		return $onDate;
+	}//end dayOrToday()
 
 	/**
 	 * The state a goal carries, defaulting to open.

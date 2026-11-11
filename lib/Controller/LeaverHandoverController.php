@@ -121,29 +121,34 @@ class LeaverHandoverController extends Controller {
 			return $refusal;
 		}
 
-		$user = $this->userSession->getUser();
-		$actor = '';
-		if ($user !== null) {
-			$actor = $user->getUID();
-		}
-
 		try {
 			return new JSONResponse(
 				$this->handover->execute(
 					fromUser: (string)$this->request->getParam('fromUser', ''),
 					toUser: (string)$this->request->getParam('toUser', ''),
-					actor: $actor,
+					actor: (string)$this->userSession->getUser()?->getUID(),
 				)
 			);
 		} catch (InvalidArgumentException $e) {
-			return new JSONResponse(
-				['message' => 'Name the person who is leaving and the person receiving the work.', 'error' => 'leaver-handover-incomplete'],
-				Http::STATUS_BAD_REQUEST,
-			);
+			return $this->incomplete();
 		} catch (Throwable $e) {
 			return $this->broke(op: 'execute', e: $e);
 		}
 	}//end execute()
+
+	/**
+	 * The 400 answer for a handover that does not name both people.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 */
+	private function incomplete(): JSONResponse {
+		return new JSONResponse(
+			['message' => 'Name the person who is leaving and the person receiving the work.', 'error' => 'leaver-handover-incomplete'],
+			Http::STATUS_BAD_REQUEST,
+		);
+	}//end incomplete()
 
 	/**
 	 * Refuse anyone who is not an administrator.

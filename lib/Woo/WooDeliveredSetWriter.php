@@ -339,7 +339,9 @@ class WooDeliveredSetWriter {
 		}
 
 		[, $register, $schema] = $this->store();
-		$handler->unfreeze(identifier: $setId, reason: 'Woo-intrekking stempelen', register: $register, schema: $schema);
+		$handler->unfreezeWith(
+			request: new ObjectStateRequest(identifier: $setId, reason: 'Woo-intrekking stempelen', register: $register, schema: $schema)
+		);
 
 		return true;
 	}//end platformUnfreeze()

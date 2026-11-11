@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use InvalidArgumentException;
 use OCA\Dossiq\Service\OptOutGate;
 use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\IL10N;
@@ -73,6 +74,23 @@ class CaseMailOptOut {
 		private readonly ?UnsubscribeHeaders $unsubscribeHeaders = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Refuse a category a case mail cannot carry.
+	 *
+	 * @param string $category The category a caller asked for.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException If the category is not one a case mail can carry
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 */
+	public function assertCaseMailCategory(string $category): void {
+		if (in_array($category, self::CASE_MAIL_CATEGORIES, true) === false) {
+			throw new InvalidArgumentException('invalid-category');
+		}
+	}//end assertCaseMailCategory()
 
 	/**
 	 * Ask integriq whether this recipient may be sent this mail about the case.

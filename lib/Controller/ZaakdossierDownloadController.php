@@ -47,6 +47,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -113,13 +114,9 @@ class ZaakdossierDownloadController extends Controller {
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
 	 */
 	public function downloadZip(string $caseId): DataDownloadResponse|JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		$user = $this->readerOf(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		try {
@@ -144,6 +141,28 @@ class ZaakdossierDownloadController extends Controller {
 
 		return new DataDownloadResponse($data, 'dossier-' . $caseId . '.zip', 'application/zip');
 	}//end downloadZip()
+
+	/**
+	 * The caller when they may read the case, or the 401/403 refusal.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	private function readerOf(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $user;
+	}//end readerOf()
 
 	/**
 	 * Download a single dossier file, gated by clearance.

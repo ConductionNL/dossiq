@@ -118,6 +118,76 @@ final class RenameCollidingSchemaSlugsTest extends TestCase {
 	}//end testRenamesTheSlugInPlace()
 
 	/**
+	 * Run the step and answer with the lines it printed.
+	 *
+	 * @return array<int, array{0: string, 1: string}> Level and line.
+	 */
+	private function printed(): array {
+		$lines = [];
+		$output = $this->createMock(IOutput::class);
+		foreach (['info', 'warning'] as $level) {
+			$output->method($level)->willReturnCallback(
+				static function (string $line) use (&$lines, $level): void {
+					$lines[] = [$level, $line];
+				}
+			);
+		}
+
+		$this->step->run($output);
+
+		return $lines;
+	}//end printed()
+
+	/**
+	 * A rename prints the schema, both slugs and the app it collided with.
+	 *
+	 * @return void
+	 */
+	public function testARenamePrintsWhatMoved(): void {
+		$this->lookups(['supplierInvoice' => [844]]);
+		$this->db->method('executeStatement')->willReturn(1);
+
+		self::assertSame(
+			[['info', 'RenameCollidingSchemaSlugs: schema 844 renamed `supplierInvoice` -> `caseSupplierInvoice` (collided with shillinq); its objects stay attached.']],
+			$this->printed()
+		);
+	}//end testARenamePrintsWhatMoved()
+
+	/**
+	 * A failed rename, and an unreadable schema table, each print their own line.
+	 *
+	 * @return void
+	 */
+	public function testAFailedRenameAndAnUnreadableTablePrintTheirLines(): void {
+		$this->lookups(['supplierInvoice' => [844]]);
+		$this->db->method('executeStatement')->willThrowException(new \OCP\DB\Exception('locked'));
+		self::assertSame([['warning', 'RenameCollidingSchemaSlugs: renaming `supplierInvoice` failed; see the log.']], $this->printed());
+
+		$this->setUp();
+		$this->db->method('executeQuery')->willThrowException(new \OCP\DB\Exception('gone'));
+		$this->db->expects(self::never())->method('executeStatement');
+		self::assertSame([['info', 'RenameCollidingSchemaSlugs: schema table unreadable; leaving `supplierInvoice` alone.']], $this->printed());
+	}//end testAFailedRenameAndAnUnreadableTablePrintTheirLines()
+
+	/**
+	 * Each refusal prints its own line.
+	 *
+	 * @return void
+	 */
+	public function testEachRefusalPrintsItsLine(): void {
+		$this->lookups([]);
+		self::assertSame([['info', 'RenameCollidingSchemaSlugs: no dossiq-owned `supplierInvoice`; nothing to do.']], $this->printed());
+
+		$this->setUp();
+		$this->lookups(['supplierInvoice' => [1], 'caseSupplierInvoice' => [2]]);
+		self::assertSame([['warning', 'RenameCollidingSchemaSlugs: both `supplierInvoice` and `caseSupplierInvoice` exist; refusing to merge them. Resolve by hand.']], $this->printed());
+
+		$this->setUp();
+		$this->lookups(['supplierInvoice' => [1, 3]]);
+		self::assertSame([['warning', 'RenameCollidingSchemaSlugs: duplicate `supplierInvoice` schemas; refusing to guess.']], $this->printed());
+	}//end testEachRefusalPrintsItsLine()
+
+	/**
 	 * The lookup is scoped to this app's rows.
 	 *
 	 * Without the application filter the step would find shillinq's `supplierInvoice` and

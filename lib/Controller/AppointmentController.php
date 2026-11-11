@@ -120,7 +120,19 @@ class AppointmentController extends Controller {
 			);
 		}
 
-		$data = [
+		$result = $this->appointmentService->bookAppointment($caseId, $this->requestedBooking());
+		return new JSONResponse(['success' => true, 'appointment' => $result]);
+	}//end create()
+
+	/**
+	 * The booking the request asks for, with the default duration of 30 minutes.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function requestedBooking(): array {
+		return [
 			'productId' => $this->request->getParam('productId'),
 			'locationId' => $this->request->getParam('locationId'),
 			'dateTime' => $this->request->getParam('dateTime'),
@@ -130,10 +142,7 @@ class AppointmentController extends Controller {
 			'citizenPhone' => $this->request->getParam('citizenPhone'),
 			'notes' => $this->request->getParam('notes'),
 		];
-
-		$result = $this->appointmentService->bookAppointment($caseId, $data);
-		return new JSONResponse(['success' => true, 'appointment' => $result]);
-	}//end create()
+	}//end requestedBooking()
 
 	/**
 	 * Cancel an existing appointment.

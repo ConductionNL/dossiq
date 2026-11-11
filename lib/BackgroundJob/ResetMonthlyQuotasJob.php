@@ -51,6 +51,24 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	private const INTERVAL_SECONDS = 86400;
 
 	/**
+	 * The query for every tenant quota row.
+	 *
+	 * ObjectService::findAll() takes a single $config array — the previous
+	 * named-argument form (register:/schema:/limit:/offset:) threw
+	 * "Unknown named parameter $register" and was swallowed by the catch in
+	 * the run, so this job never reset a single quota. Register/schema are
+	 * read from inside `filters`; limit/offset are top-level config keys.
+	 */
+	private const QUOTA_QUERY = [
+		'filters' => [
+			'register' => Application::REGISTER_SLUG,
+			'schema' => 'tenantQuota',
+		],
+		'limit' => 1000,
+		'offset' => 0,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Time factory.
@@ -101,42 +119,8 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
 	 */
 	private function work(): void {
-		// IAppManager::getInstalledApps() declares its array return in PHPDoc
-		// only, so normalise defensively before the membership test.
-		$installed = (array)$this->appManager->getInstalledApps();
-		if (in_array('openregister', $installed, true) === false) {
-			return;
-		}
-
-		try {
-			$objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-		} catch (Throwable $e) {
-			$this->logger->info('Dossiq: ResetMonthlyQuotasJob — OR ObjectService unavailable');
-			return;
-		}
-
-		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form (register:/schema:/limit:/offset:) threw
-			// "Unknown named parameter $register" and was swallowed by the catch
-			// below, so this job never reset a single quota. Register/schema are
-			// read from inside `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => Application::REGISTER_SLUG,
-						'schema' => 'tenantQuota',
-					],
-					'limit' => 1000,
-					'offset' => 0,
-				]
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: ResetMonthlyQuotasJob fetch failed', ['exception' => $e->getMessage()]);
-			return;
-		}
-
-		if (is_array($rows) === false) {
+		$rows = $this->quotaRows();
+		if ($rows === null) {
 			return;
 		}
 
@@ -145,6 +129,56 @@ class ResetMonthlyQuotasJob extends TimedJob {
 			$this->logger->info('Dossiq: ResetMonthlyQuotasJob reset ' . $resetCount . ' quotas');
 		}
 	}//end work()
+
+	/**
+	 * Every tenant quota row, or null when they cannot be read.
+	 *
+	 * @return array<mixed>|null
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
+	 */
+	private function quotaRows(): ?array {
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		try {
+			$rows = $objectService->findAll(self::QUOTA_QUERY);
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq: ResetMonthlyQuotasJob fetch failed', ['exception' => $e->getMessage()]);
+			return null;
+		}
+
+		if (is_array($rows) === false) {
+			return null;
+		}
+
+		return $rows;
+	}//end quotaRows()
+
+	/**
+	 * OpenRegister's ObjectService, or null when OpenRegister is not there.
+	 *
+	 * @return object|null
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
+	 */
+	private function objectService(): ?object {
+		// IAppManager::getInstalledApps() declares its array return in PHPDoc
+		// only, so normalise defensively before the membership test.
+		$installed = (array)$this->appManager->getInstalledApps();
+		if (in_array('openregister', $installed, true) === false) {
+			return null;
+		}
+
+		try {
+			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+		} catch (Throwable $e) {
+			$this->logger->info('Dossiq: ResetMonthlyQuotasJob — OR ObjectService unavailable');
+			return null;
+		}
+	}//end objectService()
 
 	/**
 	 * Reset every quota row whose window has passed.

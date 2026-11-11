@@ -92,21 +92,54 @@ class CapacityGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true);
 		}
 
-		// 🔴 A FINAL STATUS IS NEVER CAPPED, and this is the whole of the
-		// design's "excluding cases in a final status". A case counted towards
-		// a status's limit is by definition IN that status, so the only way a
-		// closed case can reach the count is if the status being entered is
-		// itself the closing one. Capping that would mean a case type could
-		// stop being able to close cases after its twelfth, which is the
-		// deadlock the rule exists to prevent, one step further along.
-		if ($this->caseTypes->isFinalStatus(statusTypeId: $targetId) === true) {
-			return new GuardResult(passed: true, details: ['final' => true]);
-		}
-
 		// The case being moved is not counted against the place it is about to
 		// take. Without this a self-transition, or a re-run of a transition
 		// that already landed, would refuse a case for occupying its own seat.
-		$count = $this->countIn(statusTypeId: $targetId, excluding: $this->idOf(case: $case));
+		return $this->cappedVerdict(
+			capacity: new StatusCapacity(statusTypeId: $targetId, limit: $capacity),
+			caseId: $this->idOf(case: $case)
+		);
+	}//end evaluate()
+
+	/**
+	 * The verdict for a capped status: a final status is never capped, any
+	 * other is judged by its count.
+	 *
+	 * 🔴 A FINAL STATUS IS NEVER CAPPED, and this is the whole of the
+	 * design's "excluding cases in a final status". A case counted towards
+	 * a status's limit is by definition IN that status, so the only way a
+	 * closed case can reach the count is if the status being entered is
+	 * itself the closing one. Capping that would mean a case type could
+	 * stop being able to close cases after its twelfth, which is the
+	 * deadlock the rule exists to prevent, one step further along.
+	 *
+	 * @param StatusCapacity $capacity The status and its limit.
+	 * @param string         $caseId   The case being moved, not counted.
+	 *
+	 * @return GuardResult The verdict.
+	 *
+	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+	 */
+	private function cappedVerdict(StatusCapacity $capacity, string $caseId): GuardResult {
+		if ($this->caseTypes->isFinalStatus(statusTypeId: $capacity->statusTypeId) === true) {
+			return new GuardResult(passed: true, details: ['final' => true]);
+		}
+
+		return $this->countVerdict(capacity: $capacity, caseId: $caseId);
+	}//end cappedVerdict()
+
+	/**
+	 * The verdict from the number of other cases in the status.
+	 *
+	 * @param StatusCapacity $capacity The status and its limit.
+	 * @param string         $caseId   The case being moved, not counted.
+	 *
+	 * @return GuardResult The verdict.
+	 *
+	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+	 */
+	private function countVerdict(StatusCapacity $capacity, string $caseId): GuardResult {
+		$count = $this->countIn(statusTypeId: $capacity->statusTypeId, excluding: $caseId);
 		if ($count === null) {
 			// 🔴 AN UNREADABLE COUNT ALLOWS THE MOVE. A capacity is a planning
 			// aid, not an authorization: refusing work because a read failed
@@ -117,26 +150,40 @@ class CapacityGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true, details: ['unreadable' => true]);
 		}
 
-		if ($count < $capacity) {
+		if ($count < $capacity->limit) {
 			return new GuardResult(
 				passed: true,
-				details: ['capacity' => $capacity, 'count' => $count],
+				details: ['capacity' => $capacity->limit, 'count' => $count],
 			);
 		}
 
+		return $this->full(capacity: $capacity, count: $count);
+	}//end countVerdict()
+
+	/**
+	 * The refusal for a status that holds as many cases as it may.
+	 *
+	 * @param StatusCapacity $capacity The status and its limit.
+	 * @param int            $count    The cases in it.
+	 *
+	 * @return GuardResult The refusal, naming the status, the limit and the count.
+	 *
+	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+	 */
+	private function full(StatusCapacity $capacity, int $count): GuardResult {
 		return new GuardResult(
 			passed: false,
 			failureMessage: $this->l10n->t(
 				'Status %1$s is full: %2$s of %3$s cases.',
-				[$this->statuses->nameFor(statusTypeId: $targetId), (string)$count, (string)$capacity]
+				[$this->statuses->nameFor(statusTypeId: $capacity->statusTypeId), (string)$count, (string)$capacity->limit]
 			),
 			details: [
-				'statusType' => $targetId,
-				'capacity' => $capacity,
+				'statusType' => $capacity->statusTypeId,
+				'capacity' => $capacity->limit,
 				'count' => $count,
 			],
 		);
-	}//end evaluate()
+	}//end full()
 
 	/**
 	 * The limit a status carries, as a whole number.
@@ -181,6 +228,22 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
 	 */
 	public function countIn(string $statusTypeId, string $excluding = ''): ?int {
+		$rows = $this->casesIn(statusTypeId: $statusTypeId);
+		if ($rows === null) {
+			return null;
+		}
+
+		return $this->countExcept(rows: $rows, excluding: $excluding);
+	}//end countIn()
+
+	/**
+	 * The rows of the cases in a status, read from the configured case schema.
+	 *
+	 * @param string $statusTypeId The status.
+	 *
+	 * @return array<int|string, mixed>|null The rows, or null when the store could not answer.
+	 */
+	private function casesIn(string $statusTypeId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_schema');
@@ -188,29 +251,47 @@ class CapacityGuard implements GuardEvaluatorInterface {
 			return null;
 		}
 
+		return $this->findRows(
+			objectService: $objectService,
+			filters: [
+				'register' => $register,
+				'schema' => $schema,
+				// A BARE key. The objects endpoint reads a bare property
+				// name and answers the empty set for a `filter[...]`
+				// one, with no error either way (openregister#3611) —
+				// and an empty set here reads as "the status is free".
+				'status' => $statusTypeId,
+			]
+		);
+	}//end casesIn()
+
+	/**
+	 * The rows the object service answers for these filters.
+	 *
+	 * @param object               $objectService The object service.
+	 * @param array<string, mixed> $filters       The filters.
+	 *
+	 * @return array<int|string, mixed>|null The rows, or null when it could not answer.
+	 */
+	private function findRows(object $objectService, array $filters): ?array {
 		try {
-			$result = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => $register,
-						'schema' => $schema,
-						// A BARE key. The objects endpoint reads a bare property
-						// name and answers the empty set for a `filter[...]`
-						// one, with no error either way (openregister#3611) —
-						// and an empty set here reads as "the status is free".
-						'status' => $statusTypeId,
-					],
-				]
-			);
+			$result = $objectService->findAll(['filters' => $filters]);
 		} catch (Throwable) {
 			return null;
 		}
 
-		$rows = $this->rowsOf(result: $result);
-		if ($rows === null) {
-			return null;
-		}
+		return $this->rowsOf(result: $result);
+	}//end findRows()
 
+	/**
+	 * How many rows are not the excluded case; a row without an id always counts.
+	 *
+	 * @param array<int|string, mixed> $rows      The rows.
+	 * @param string                   $excluding A case id not to count, or ''.
+	 *
+	 * @return int The count.
+	 */
+	private function countExcept(array $rows, string $excluding): int {
 		$counted = 0;
 		foreach ($rows as $row) {
 			$id = $this->idOf(case: $this->arrayOf(row: $row));
@@ -220,7 +301,7 @@ class CapacityGuard implements GuardEvaluatorInterface {
 		}
 
 		return $counted;
-	}//end countIn()
+	}//end countExcept()
 
 	/**
 	 * The rows a findAll answer holds, whichever shape it came back in.
@@ -250,25 +331,36 @@ class CapacityGuard implements GuardEvaluatorInterface {
 	 * @return string The id, or ''.
 	 */
 	private function idOf(array $case): string {
+		$id = self::firstId(row: $case);
+		if ($id !== '') {
+			return $id;
+		}
+
+		$self = ($case['@self'] ?? null);
+		if (is_array($self) === true) {
+			return self::firstId(row: $self);
+		}
+
+		return '';
+	}//end idOf()
+
+	/**
+	 * The first non-empty `uuid` or `id` of a row.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private static function firstId(array $row): string {
 		foreach (['uuid', 'id'] as $key) {
-			$value = trim((string)($case[$key] ?? ''));
+			$value = trim((string)($row[$key] ?? ''));
 			if ($value !== '') {
 				return $value;
 			}
 		}
 
-		$self = ($case['@self'] ?? null);
-		if (is_array($self) === true) {
-			foreach (['uuid', 'id'] as $key) {
-				$value = trim((string)($self[$key] ?? ''));
-				if ($value !== '') {
-					return $value;
-				}
-			}
-		}
-
 		return '';
-	}//end idOf()
+	}//end firstId()
 
 	/**
 	 * One row as an array, whatever the store handed back.

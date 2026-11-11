@@ -115,6 +115,8 @@ class PersonalStageService {
 	 * @return array<string, string> Case id to stage.
 	 *
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) JsonPreference is a stateless reader shared by the queue preference stores.
 	 */
 	public function all(string $userId): array {
 		try {
@@ -128,14 +130,7 @@ class PersonalStageService {
 			$raw = '';
 		}
 
-		if (trim($raw) === '') {
-			return [];
-		}
-
-		$decoded = json_decode($raw, true);
-		if (is_array($decoded) === false) {
-			return [];
-		}
+		$decoded = JsonPreference::decode(raw: $raw);
 
 		$stages = [];
 		foreach ($decoded as $caseId => $stage) {
