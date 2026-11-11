@@ -52,4 +52,27 @@ class ImmutabilityListenerRegistrarTest extends TestCase {
 		$this->assertContains(WooDeliveredSetGuard::class, ($registered['OCA\OpenRegister\Event\ObjectDeletingEvent'] ?? []));
 		$this->assertNotContains(WooDeliveredSetGuard::class, ($registered['OCA\OpenRegister\Event\ObjectUpdatedEvent'] ?? []));
 	}//end testTheDeliveredSetGuardIsRegistered()
+
+	/**
+	 * Every guard that hears a delete also hears a move out of the register, in all three registrars.
+	 *
+	 * @return void
+	 */
+	public function testEveryDeleteGuardAlsoHearsAMove(): void {
+		$registered = [];
+		$context = $this->createMock(IRegistrationContext::class);
+		$context->method('registerEventListener')->willReturnCallback(
+			static function (string $event, string $listener) use (&$registered): void {
+				$registered[$event][] = $listener;
+			}
+		);
+
+		(new ImmutabilityListenerRegistrar())->register(context: $context);
+		(new \OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar())->register(context: $context);
+		(new \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar())->register(context: $context);
+
+		$deleting = array_unique($registered['OCA\OpenRegister\Event\ObjectDeletingEvent'] ?? []);
+		$this->assertNotSame([], $deleting);
+		$this->assertSame([], array_values(array_diff($deleting, ($registered['OCA\OpenRegister\Event\ObjectLeavingEvent'] ?? []))));
+	}//end testEveryDeleteGuardAlsoHearsAMove()
 }//end class

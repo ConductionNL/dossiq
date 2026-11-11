@@ -149,6 +149,25 @@ class CaseTaskActions {
 			throw new RuntimeException('task_not_found');
 		}
 
+		$this->refuseIncomplete(task: $task, data: $data);
+		if ($this->engineTasks->complete(taskId: $taskId, data: $data, outcome: $outcome, actor: $actor) === false) {
+			throw new RuntimeException($this->engineTasks->lastError());
+		}
+
+		return $this->completed(task: $task, taskId: $taskId);
+	}//end complete()
+
+	/**
+	 * Refuse a completion that leaves a required field blank or declares an effect nothing runs.
+	 *
+	 * @param array<string, mixed> $task The task.
+	 * @param array<string, mixed> $data The form answers, keyed by field.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException `required_field:<field>` or `unresolvable_effect:<type>`.
+	 */
+	private function refuseIncomplete(array $task, array $data): void {
 		$missing = self::missingRequiredField(task: $task, data: $data);
 		if ($missing !== '') {
 			// The FIELD, not "a required field": a form of nine fields with
@@ -157,22 +176,21 @@ class CaseTaskActions {
 			throw new RuntimeException('required_field:' . $missing);
 		}
 
-		$declared = $this->effects->declaredOn(task: $task);
-		$unresolved = $this->effects->unresolved(effects: $declared);
+		$unresolved = $this->effects->unresolved(effects: $this->effects->declaredOn(task: $task));
 		if ($unresolved !== []) {
 			throw new RuntimeException('unresolvable_effect:' . $unresolved[0]);
 		}
+	}//end refuseIncomplete()
 
-		$completed = $this->engineTasks->complete(
-			taskId: $taskId,
-			data: $data,
-			outcome: $outcome,
-			actor: $actor
-		);
-		if ($completed === false) {
-			throw new RuntimeException($this->engineTasks->lastError());
-		}
-
+	/**
+	 * The answer to a completion the engine accepted.
+	 *
+	 * @param array<string, mixed> $task   The task as it was read.
+	 * @param string               $taskId The task id asked for.
+	 *
+	 * @return array{completed: bool, task: string, case: string, state: string, isTerminal: bool, notice: array<string, string>} What happened.
+	 */
+	private function completed(array $task, string $taskId): array {
 		return [
 			'completed' => true,
 			'task' => (string)($task['id'] ?? $taskId),
@@ -187,7 +205,7 @@ class CaseTaskActions {
 			'isTerminal' => true,
 			'notice' => $this->notices->taskCompleted(task: $this->titleOf(task: $task)),
 		];
-	}//end complete()
+	}//end completed()
 
 	/**
 	 * The title a handler knows a task by, else its id.

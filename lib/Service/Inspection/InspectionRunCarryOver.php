@@ -125,32 +125,85 @@ class InspectionRunCarryOver {
 	 */
 	public function taskData(string $schema, array $object, ?array $template): array {
 		$source = self::SOURCES[$schema];
-		$answers = $this->answers->fromPayload(payload: [$source['answers'] => ($object[$source['answers']] ?? [])]);
-		$snapshot = $this->snapshot(object: $object, template: $template);
+		$run = new InspectionCarryOverRun();
+		$run->schema = $schema;
+		$run->object = $object;
+		$run->template = $template;
+		$run->answers = $this->answers->fromPayload(payload: [$source['answers'] => ($object[$source['answers']] ?? [])]);
+		$run->snapshot = $this->snapshot(object: $object, template: $template);
 
-		$data = [
-			'title' => 'Inspectie: ' . (string)($snapshot['name'] ?? ''),
+		$data = array_merge($this->baseFields(run: $run), self::snapshotFields(run: $run));
+		$data = self::withOptionalFields(data: self::withOpenState(data: $data, object: $object), object: $object);
+
+		return array_merge($data, $this->performer(object: $object));
+	}//end taskData()
+
+	/**
+	 * The fields every carried-over task has.
+	 *
+	 * @param InspectionCarryOverRun $run The source run.
+	 *
+	 * @return array<string, mixed> The fields.
+	 */
+	private function baseFields(InspectionCarryOverRun $run): array {
+		return [
+			'title' => 'Inspectie: ' . (string)($run->snapshot['name'] ?? ''),
 			'kind' => InspectionRunService::KIND,
 			'appId' => 'dossiq',
-			'objectUuid' => (string)($object['case'] ?? ''),
+			'objectUuid' => (string)($run->object['case'] ?? ''),
 			'state' => 'completed',
-			'outcome' => $this->outcome(object: $object, snapshot: $snapshot, answers: $answers),
-			'responses' => $answers,
-			'evidence' => $this->evidence(object: $object, answers: $answers),
-			'templateId' => $this->templateId(schema: $schema, object: $object, template: $template),
-			'metadata' => $this->metadata(schema: $schema, object: $object),
+			'outcome' => $this->outcome(object: $run->object, snapshot: $run->snapshot, answers: $run->answers),
+			'responses' => $run->answers,
+			'evidence' => $this->evidence(object: $run->object, answers: $run->answers),
+			'templateId' => $this->templateId(schema: $run->schema, object: $run->object, template: $run->template),
+			'metadata' => $this->metadata(schema: $run->schema, object: $run->object),
 		];
+	}//end baseFields()
 
-		if ($snapshot !== []) {
-			$data['templateSnapshot'] = $snapshot;
-			$data['templateVersion'] = (int)($object['templateVersion'] ?? $snapshot['version'] ?? 1);
+	/**
+	 * The template snapshot and its version, when the run has a snapshot.
+	 *
+	 * @param InspectionCarryOverRun $run The source run.
+	 *
+	 * @return array<string, mixed> The fields, or [] without a snapshot.
+	 */
+	private static function snapshotFields(InspectionCarryOverRun $run): array {
+		if ($run->snapshot === []) {
+			return [];
 		}
 
+		return [
+			'templateSnapshot' => $run->snapshot,
+			'templateVersion' => (int)($run->object['templateVersion'] ?? $run->snapshot['version'] ?? 1),
+		];
+	}//end snapshotFields()
+
+	/**
+	 * An open source run arrives active, without an outcome.
+	 *
+	 * @param array<string, mixed> $data   The task fields.
+	 * @param array<string, mixed> $object The source object.
+	 *
+	 * @return array<string, mixed> The task fields.
+	 */
+	private static function withOpenState(array $data, array $object): array {
 		if (in_array((string)($object['status'] ?? ''), self::OPEN, true) === true) {
 			$data['state'] = 'active';
 			unset($data['outcome']);
 		}
 
+		return $data;
+	}//end withOpenState()
+
+	/**
+	 * The start moment and the trimmed remarks, when the source carries them.
+	 *
+	 * @param array<string, mixed> $data   The task fields.
+	 * @param array<string, mixed> $object The source object.
+	 *
+	 * @return array<string, mixed> The task fields.
+	 */
+	private static function withOptionalFields(array $data, array $object): array {
 		$started = (string)($object['startedAt'] ?? $object['inspectionDate'] ?? '');
 		if ($started !== '') {
 			$data['startAt'] = $started;
@@ -161,8 +214,8 @@ class InspectionRunCarryOver {
 			$data['comment'] = $remarks;
 		}
 
-		return array_merge($data, $this->performer(object: $object));
-	}//end taskData()
+		return $data;
+	}//end withOptionalFields()
 
 	/**
 	 * Who did the run: an internal inspector, or an external party.

@@ -95,66 +95,111 @@ class AwbProceedingScanner {
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	public function scan(object $objectService, bool $includeDeleted, OutputInterface $output): array {
+		$run = new AwbScanRun();
+		$run->objectService = $objectService;
+		$run->includeDeleted = $includeDeleted;
+		$run->output = $output;
+		$run->closed = $this->closedProceedings(objectService: $objectService, output: $output);
+
+		foreach (self::OPENING_SCHEMAS as $schemaSlug) {
+			$run->schema = $schemaSlug;
+			$this->scanSchema(run: $run);
+		}
+
+		return $run->candidates;
+	}//end scan()
+
+	/**
+	 * The proceedings that carry a terminal decision, reported with their counts.
+	 *
+	 * Report the closed set explicitly. An empty set here silently disables
+	 * the "only hold OPEN proceedings" rule, which is the difference between
+	 * a targeted repair and holding every case that ever saw a proceeding —
+	 * exactly the kind of inert safety check this whole programme is about.
+	 *
+	 * @param object          $objectService OpenRegister object service.
+	 * @param OutputInterface $output        Where the counts are reported.
+	 *
+	 * @return array<int, string> The concluded proceeding UUIDs.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function closedProceedings(object $objectService, OutputInterface $output): array {
 		$closedObjection = $this->terminatedProceedingIds(objectService: $objectService, schema: 'bezwaarDecision');
 		$closedAppeal = $this->terminatedProceedingIds(objectService: $objectService, schema: 'appealDecision');
 		$closed = array_merge($closedObjection, $closedAppeal);
 
-		// Report the closed set explicitly. An empty set here silently disables
-		// the "only hold OPEN proceedings" rule, which is the difference between
-		// a targeted repair and holding every case that ever saw a proceeding —
-		// exactly the kind of inert safety check this whole programme is about.
 		$output->writeln(
 			'  terminal decisions found: ' . count($closed)
 			. ' (bezwaarDecision=' . count($closedObjection) . ', appealDecision=' . count($closedAppeal) . ')'
 		);
 
-		$candidates = [];
+		return $closed;
+	}//end closedProceedings()
 
-		foreach (self::OPENING_SCHEMAS as $schemaSlug) {
-			$proceedings = $this->listObjects(
-				objectService: $objectService,
-				schema: $schemaSlug,
-				includeDeleted: $includeDeleted
-			);
+	/**
+	 * Scan one opening schema: count its open proceedings per case, and report it.
+	 *
+	 * `closed` is reported per schema on purpose: if it is 0 while
+	 * terminal decisions exist, the "only hold OPEN proceedings" rule
+	 * is silently inert and every concluded case would be held too.
+	 * That exact failure happened during development, and only showed
+	 * up because this counter was printed.
+	 *
+	 * @param AwbScanRun $run The scan, its `schema` set to the schema to scan.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function scanSchema(AwbScanRun $run): void {
+		$proceedings = $this->listObjects(
+			objectService: $run->objectService,
+			schema: $run->schema,
+			includeDeleted: $run->includeDeleted
+		);
 
-			$closedHit = 0;
+		$closedHit = 0;
+		foreach ($proceedings as $proceeding) {
+			if ($this->isConcludedProceeding(uuid: (string)$proceeding['uuid'], closed: $run->closed) === true) {
+				// Terminal decision exists: this proceeding is concluded.
+				$closedHit++;
+				continue;
+			}
 
-			foreach ($proceedings as $proceeding) {
-				$uuid = (string)$proceeding['uuid'];
-				if ($this->isConcludedProceeding(uuid: $uuid, closed: $closed) === true) {
-					// Terminal decision exists: this proceeding is concluded.
-					$closedHit++;
-					continue;
-				}
+			$this->countOpen(run: $run, caseId: $this->caseIdOf(proceeding: $proceeding['data']));
+		}
 
-				$caseId = $this->caseIdOf(proceeding: $proceeding['data']);
-				if ($caseId === '') {
-					continue;
-				}
+		$run->output->writeln(
+			'  scanned ' . $run->schema . ': ' . count($proceedings) . ' object(s), '
+			. $closedHit . ' already concluded'
+		);
+	}//end scanSchema()
 
-				if (isset($candidates[$caseId]) === false) {
-					$candidates[$caseId] = ['schemas' => [], 'count' => 0];
-				}
+	/**
+	 * Count one open proceeding of the scanned schema against its case.
+	 *
+	 * @param AwbScanRun $run    The scan.
+	 * @param string     $caseId The case the proceeding belongs to; empty when it names none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function countOpen(AwbScanRun $run, string $caseId): void {
+		if ($caseId === '') {
+			return;
+		}
 
-				$candidates[$caseId]['count']++;
-				if (in_array($schemaSlug, $candidates[$caseId]['schemas'], true) === false) {
-					$candidates[$caseId]['schemas'][] = $schemaSlug;
-				}
-			}//end foreach
+		if (isset($run->candidates[$caseId]) === false) {
+			$run->candidates[$caseId] = ['schemas' => [], 'count' => 0];
+		}
 
-			// `closed` is reported per schema on purpose: if it is 0 while
-			// terminal decisions exist, the "only hold OPEN proceedings" rule
-			// is silently inert and every concluded case would be held too.
-			// That exact failure happened during development, and only showed
-			// up because this counter was printed.
-			$output->writeln(
-				'  scanned ' . $schemaSlug . ': ' . count($proceedings) . ' object(s), '
-				. $closedHit . ' already concluded'
-			);
-		}//end foreach
-
-		return $candidates;
-	}//end scan()
+		$run->candidates[$caseId]['count']++;
+		if (in_array($run->schema, $run->candidates[$caseId]['schemas'], true) === false) {
+			$run->candidates[$caseId]['schemas'][] = $run->schema;
+		}
+	}//end countOpen()
 
 	/**
 	 * The scan failures collected during the last scan() call.
@@ -227,33 +272,19 @@ class AwbProceedingScanner {
 	 */
 	private function listObjects(object $objectService, string $schema, bool $includeDeleted): array {
 		try {
-			$filters = [];
-			if ($includeDeleted === true) {
-				$filters['_includeDeleted'] = true;
-			}
-
 			$objects = $objectService
 				->setRegister(self::REGISTER)
 				->setSchema($schema)
 				->findAll(
 					[
 						'limit' => null,
-						'filters' => $filters,
+						'filters' => $this->filtersFor(includeDeleted: $includeDeleted),
 					],
 					false,
 					false
 				);
 
-			if (is_array($objects) === false) {
-				return [];
-			}
-
-			return array_map(
-				function (mixed $row): array {
-					return $this->normaliser->normalise(row: $row);
-				},
-				$objects
-			);
+			return $this->normaliseAll(objects: $objects);
 		} catch (\Throwable $e) {
 			// Never swallow silently: a scan that fails and a schema that is
 			// genuinely empty are indistinguishable in the result, and that
@@ -262,6 +293,45 @@ class AwbProceedingScanner {
 			return [];
 		}//end try
 	}//end listObjects()
+
+	/**
+	 * The query filters: soft-deleted objects only when asked for.
+	 *
+	 * @param bool $includeDeleted Whether to include soft-deleted objects.
+	 *
+	 * @return array<string, bool>
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function filtersFor(bool $includeDeleted): array {
+		if ($includeDeleted === true) {
+			return ['_includeDeleted' => true];
+		}
+
+		return [];
+	}//end filtersFor()
+
+	/**
+	 * Every row the register answered, normalised; nothing when it answered no list.
+	 *
+	 * @param mixed $objects What `findAll()` returned.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function normaliseAll(mixed $objects): array {
+		if (is_array($objects) === false) {
+			return [];
+		}
+
+		return array_map(
+			function (mixed $row): array {
+				return $this->normaliser->normalise(row: $row);
+			},
+			$objects
+		);
+	}//end normaliseAll()
 
 	/**
 	 * Read the case UUID a proceeding relates to.

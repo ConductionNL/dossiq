@@ -263,6 +263,45 @@ class SubstitutionServiceTest extends TestCase {
 	}//end testSelfSubstitutionRejected()
 
 	/**
+	 * An empty absentee or substitute is rejected before anything else.
+	 *
+	 * @return void
+	 */
+	public function testEmptyIdentityRejected(): void {
+		$service = $this->makeService($this->objectServiceMock());
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Both absentee and substitute are required');
+		$service->create(absentee: '  ', substitute: 'marieke', startDate: '2026-07-01', endDate: '2026-07-21');
+	}//end testEmptyIdentityRejected()
+
+	/**
+	 * A scope outside all|caseTypes|cases is rejected.
+	 *
+	 * @return void
+	 */
+	public function testUnknownScopeRejected(): void {
+		$service = $this->makeService($this->objectServiceMock());
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Invalid scope; expected all, caseTypes or cases');
+		$service->create(absentee: 'jan', substitute: 'marieke', startDate: '2026-07-01', endDate: '2026-07-21', scope: 'everything');
+	}//end testUnknownScopeRejected()
+
+	/**
+	 * A reason outside verlof|ziekte|anders is rejected, after the scope check passes.
+	 *
+	 * @return void
+	 */
+	public function testUnknownReasonRejected(): void {
+		$service = $this->makeService($this->objectServiceMock());
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('Invalid reason; expected verlof, ziekte or anders');
+		$service->create(absentee: 'jan', substitute: 'marieke', startDate: '2026-07-01', endDate: '2026-07-21', reason: 'vakantie');
+	}//end testUnknownReasonRejected()
+
+	/**
 	 * Missing endDate is rejected.
 	 *
 	 * @return void
@@ -730,4 +769,79 @@ class SubstitutionServiceTest extends TestCase {
 		$result = $this->makeService($os)->revoke('sub-4');
 		$this->assertSame('revoked', $result['status']);
 	}//end testRevoke()
+	/**
+	 * Create stores the trimmed people, the period as days, the re-indexed refs and who created it.
+	 *
+	 * @return void
+	 */
+	public function testCreateStoresTheWholeRow(): void {
+		$saved = [];
+		$os    = $this->objectServiceMock();
+		$os->method('saveObject')->willReturnCallback(
+			static function (...$args) use (&$saved): array {
+				$saved[] = $args;
+				return ['id' => 'sub-9'];
+			}
+		);
+		$service = $this->makeService($os);
+
+		$result = $service->create(
+			absentee: ' jan ',
+			substitute: ' pieter ',
+			startDate: '2026-07-01',
+			endDate: '2026-07-21',
+			scope: 'caseTypes',
+			scopeRefs: [3 => 'objectionProceeding'],
+			reason: 'ziekte',
+			comment: 'griep'
+		);
+		$this->assertSame(['id' => 'sub-9'], $result);
+		$this->assertSame(
+			[
+				'absentee' => 'jan',
+				'substitute' => 'pieter',
+				'startDate' => '2026-07-01',
+				'endDate' => '2026-07-21',
+				'scope' => 'caseTypes',
+				'scopeRefs' => ['objectionProceeding'],
+				'reason' => 'ziekte',
+				'comment' => 'griep',
+				'status' => 'active',
+				'createdBy' => 'jan',
+			],
+			$saved[0]['object']
+		);
+
+		$service->create(absentee: 'jan', substitute: 'pieter', startDate: '2026-07-01', endDate: '2026-07-21', scope: 'caseTypes', scopeRefs: ['x'], createdBy: 'coordinator');
+		$this->assertSame('coordinator', $saved[1]['object']['createdBy']);
+	}//end testCreateStoresTheWholeRow()
+
+	/**
+	 * Acting capacity: allowed for a covered absentee in scope; refused for another absentee,
+	 * out of scope, an empty actor or absentee, and own work.
+	 *
+	 * @return void
+	 */
+	public function testActingCapacityAllowedAndRefusedOutcomes(): void {
+		$day    = new DateTimeImmutable('2026-07-10');
+		$period = ['substitute' => 'marieke', 'status' => 'active', 'startDate' => '2026-07-01', 'endDate' => '2026-07-21'];
+		$os     = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturn(
+			[
+				['id' => 'sub-other', 'absentee' => 'kees', 'scope' => 'all'] + $period,
+				['id' => 'sub-narrow', 'absentee' => 'jan', 'scope' => 'cases', 'scopeRefs' => ['case-a']] + $period,
+				['id' => 'sub-types', 'absentee' => 'jan', 'scope' => 'caseTypes', 'scopeRefs' => ['permit']] + $period,
+			]
+		);
+		$service = $this->makeService($os);
+
+		$this->assertSame('sub-narrow', $service->resolveActingCapacity('marieke', 'jan', 'case-a', 'objection', $day)['id']);
+		$this->assertSame('sub-types', $service->resolveActingCapacity('marieke', 'jan', 'case-b', 'permit', $day)['id']);
+		$this->assertSame('sub-other', $service->resolveActingCapacity('marieke', 'kees', 'case-z', null, $day)['id']);
+		$this->assertNull($service->resolveActingCapacity('marieke', 'jan', 'case-b', 'objection', $day));
+		$this->assertNull($service->resolveActingCapacity('marieke', 'piet', 'case-a', null, $day));
+		$this->assertNull($service->resolveActingCapacity('', 'jan', 'case-a', null, $day));
+		$this->assertNull($service->resolveActingCapacity('marieke', '', 'case-a', null, $day));
+		$this->assertNull($service->resolveActingCapacity('jan', 'jan', 'case-a', null, $day));
+	}//end testActingCapacityAllowedAndRefusedOutcomes()
 }//end class

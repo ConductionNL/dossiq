@@ -103,37 +103,18 @@ class PayoutCallbackController extends Controller {
 	 */
 	private function handle(string $rawBody): JSONResponse {
 		if ($this->callback->isSigned(rawBody: $rawBody, request: $this->request) === false) {
-			if ($this->callback->hasSecret() === false) {
-				$this->logger->warning('Payout callback: rejected, no ' . SignedPayoutCallback::SECRET_KEY . ' configured');
-			}
+			return $this->unsigned();
+		}
 
-			$this->logger->warning('Payout callback: invalid signature');
-			// Inline 401: the signature check IS the auth of this public page.
-			return new JSONResponse(['message' => 'Invalid or missing signature'], 401);
+		$fields = $this->fieldsOf(rawBody: $rawBody);
+		if ($fields instanceof JSONResponse) {
+			return $fields;
 		}
 
 		try {
-			$fields = $this->callback->read(rawBody: $rawBody);
-			$paymentDate = null;
-			if ($fields['actualPaymentDate'] !== '') {
-				$paymentDate = $this->dates->parse($fields['actualPaymentDate'], 'actualPaymentDate');
-			}
-		} catch (InvalidArgumentException $e) {
-			// A malformed date used to be replaced by today, booking the payment on the wrong day.
-			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-
-		try {
-			$updated = $this->service->handleCallback($fields['reference'], $fields['status'], $paymentDate, $fields['bankReference']);
+			$updated = $this->service->handleCallback($fields['reference'], $fields['status'], $fields['paymentDate'], $fields['bankReference']);
 		} catch (RuntimeException $e) {
-			// A payout only finance holds has no row to update: finance is its record (REQ-DQM-004).
-			if ($this->reader?->holds(reference: $fields['reference']) === true) {
-				$held = ['reference' => $fields['reference'], 'status' => $fields['status']];
-				return new JSONResponse(['status' => 'ok', 'uitbetaling' => $held], Http::STATUS_OK);
-			}
-
-			$this->logger->info('Payout callback: unknown reference', ['reference' => $fields['reference']]);
-			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_NOT_FOUND);
+			return $this->unknownReference(fields: $fields, e: $e);
 		} catch (\Throwable $e) {
 			$this->logger->error('Payout callback failed', ['error' => $e->getMessage()]);
 			return new JSONResponse(['message' => 'Internal error processing callback'], Http::STATUS_INTERNAL_SERVER_ERROR);
@@ -141,6 +122,69 @@ class PayoutCallbackController extends Controller {
 
 		return new JSONResponse(['status' => 'ok', 'uitbetaling' => $updated], Http::STATUS_OK);
 	}//end handle()
+
+	/**
+	 * The 401 answer for a callback whose signature does not verify.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 */
+	private function unsigned(): JSONResponse {
+		if ($this->callback->hasSecret() === false) {
+			$this->logger->warning('Payout callback: rejected, no ' . SignedPayoutCallback::SECRET_KEY . ' configured');
+		}
+
+		$this->logger->warning('Payout callback: invalid signature');
+		// Inline 401: the signature check IS the auth of this public page.
+		return new JSONResponse(['message' => 'Invalid or missing signature'], 401);
+	}//end unsigned()
+
+	/**
+	 * The callback's fields with its payment date parsed, or the 400 answer.
+	 *
+	 * @param string $rawBody The raw request body.
+	 *
+	 * @return array<string, mixed>|JSONResponse The fields plus `paymentDate` (null when absent).
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 */
+	private function fieldsOf(string $rawBody): array|JSONResponse {
+		try {
+			$fields = $this->callback->read(rawBody: $rawBody);
+			$fields['paymentDate'] = null;
+			if ($fields['actualPaymentDate'] !== '') {
+				$fields['paymentDate'] = $this->dates->parse($fields['actualPaymentDate'], 'actualPaymentDate');
+			}
+		} catch (InvalidArgumentException $e) {
+			// A malformed date used to be replaced by today, booking the payment on the wrong day.
+			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+
+		return $fields;
+	}//end fieldsOf()
+
+	/**
+	 * The answer for a reference the payout rows do not know.
+	 *
+	 * A payout only finance holds has no row to update: finance is its record (REQ-DQM-004).
+	 *
+	 * @param array<string, mixed> $fields The callback's fields.
+	 * @param RuntimeException     $e      Why the row could not be updated.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 */
+	private function unknownReference(array $fields, RuntimeException $e): JSONResponse {
+		if ($this->reader?->holds(reference: $fields['reference']) === true) {
+			$held = ['reference' => $fields['reference'], 'status' => $fields['status']];
+			return new JSONResponse(['status' => 'ok', 'uitbetaling' => $held], Http::STATUS_OK);
+		}
+
+		$this->logger->info('Payout callback: unknown reference', ['reference' => $fields['reference']]);
+		return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_NOT_FOUND);
+	}//end unknownReference()
 
 	/**
 	 * The raw request body, for the signature.

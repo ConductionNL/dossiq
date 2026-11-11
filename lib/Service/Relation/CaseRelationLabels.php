@@ -70,12 +70,12 @@ class CaseRelationLabels {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function rowsFor(string $caseId, array $stored): array {
-		$properties = array_values(CaseRelationCodec::TYPED_PROPERTIES);
-		$rows       = [];
+		$run  = new RelationLabelRun(caseId: $caseId, stored: $stored);
+		$rows = [];
 
 		foreach ([false, true] as $incoming) {
 			foreach ($this->store->relationRows(caseUuid: $caseId, incoming: $incoming) as $row) {
-				$entry = $this->entryFor(caseId: $caseId, row: $row, properties: $properties, stored: $stored);
+				$entry = $this->entryFor(run: $run, row: $row);
 				if ($entry === null) {
 					continue;
 				}
@@ -90,20 +90,47 @@ class CaseRelationLabels {
 	/**
 	 * One relation row, or null when it is not a typed peer link.
 	 *
-	 * @param string $caseId The case being read.
+	 * @param RelationLabelRun     $run The read.
 	 * @param array<string, mixed> $row The serialised far case.
-	 * @param array<int, string> $properties The typed properties.
-	 * @param array<int, array<string, mixed>> $stored This case's entries.
 	 *
 	 * @return array<string, mixed>|null The row.
 	 */
-	private function entryFor(string $caseId, array $row, array $properties, array $stored): ?array {
-		$relation = ($row['relation'] ?? null);
-		if (is_array($relation) === false) {
+	private function entryFor(RelationLabelRun $run, array $row): ?array {
+		$link = self::typedLinkOf(row: $row);
+		if ($link === null) {
 			return null;
 		}
 
-		if (in_array((string)($relation['property'] ?? ''), $properties, true) === false) {
+		$relation = $link['relation'];
+		$entry = [
+			'caseId'       => $link['targetId'],
+			'aardRelatie'  => $link['type'],
+			'title'        => (string)($row['title'] ?? ''),
+			'direction'    => ($relation['direction'] ?? null),
+			'label'        => ($relation['label'] ?? null),
+			'inverseLabel' => ($relation['inverseLabel'] ?? null),
+			'displayLabel' => ($relation['displayLabel'] ?? null),
+			'legacy'       => false,
+		];
+
+		$notes = $this->noteFor(run: $run, row: $row);
+		if ($notes !== null) {
+			$entry['notes'] = $notes;
+		}
+
+		return $entry;
+	}//end entryFor()
+
+	/**
+	 * The typed peer link a far case carries: its relation, target and type, or null when it is none.
+	 *
+	 * @param array<string, mixed> $row The serialised far case.
+	 *
+	 * @return array{relation: array<string, mixed>, targetId: string, type: string}|null The link.
+	 */
+	private static function typedLinkOf(array $row): ?array {
+		$relation = ($row['relation'] ?? null);
+		if (self::isTypedRelation(relation: $relation) === false) {
 			return null;
 		}
 
@@ -113,61 +140,40 @@ class CaseRelationLabels {
 			return null;
 		}
 
-		$entry = [
-			'caseId'       => $targetId,
-			'aardRelatie'  => $type,
-			'title'        => (string)($row['title'] ?? ''),
-			'direction'    => ($relation['direction'] ?? null),
-			'label'        => ($relation['label'] ?? null),
-			'inverseLabel' => ($relation['inverseLabel'] ?? null),
-			'displayLabel' => ($relation['displayLabel'] ?? null),
-			'legacy'       => false,
-		];
-
-		$notes = $this->noteFor(
-			stored: $stored,
-			targetId: $targetId,
-			natureRelationship: $type,
-			farSide: $row,
-			caseId: $caseId
-		);
-		if ($notes !== null) {
-			$entry['notes'] = $notes;
-		}
-
-		return $entry;
-	}//end entryFor()
+		return ['relation' => $relation, 'targetId' => $targetId, 'type' => $type];
+	}//end typedLinkOf()
 
 	/**
-	 * The clarification written beside one relation, from whichever side wrote it.
+	 * Whether a relation is one of the typed peer properties.
 	 *
-	 * A note belongs to the case that declared the link, so an incoming row's
-	 * note is on the far case rather than on this one.
+	 * @param mixed $relation The far case's relation.
 	 *
-	 * @param array<int, array<string, mixed>> $stored This case's entries.
-	 * @param string $targetId The other case.
-	 * @param string $natureRelationship Relation type.
-	 * @param array<string, mixed> $farSide The other case as serialised by OpenRegister.
-	 * @param string $caseId The case being read.
-	 *
-	 * @return string|null The note.
+	 * @return bool True for a typed peer relation.
 	 */
-	private function noteFor(
-		array $stored,
-		string $targetId,
-		string $natureRelationship,
-		array $farSide,
-		string $caseId,
-	): ?string {
-		$near = $this->noteIn(entries: $stored, caseId: $targetId, natureRelationship: $natureRelationship);
+	private static function isTypedRelation(mixed $relation): bool {
+		return (is_array($relation) === true
+			&& in_array((string)($relation['property'] ?? ''), array_values(CaseRelationCodec::TYPED_PROPERTIES), true) === true);
+	}//end isTypedRelation()
+
+	/**
+	 * The clarification of a link: this case's own entry first, else the far case's.
+	 *
+	 * @param RelationLabelRun     $run The read.
+	 * @param array<string, mixed> $row The serialised far case, a typed peer link.
+	 *
+	 * @return string|null The clarification, or null.
+	 */
+	private function noteFor(RelationLabelRun $run, array $row): ?string {
+		$link = (array)self::typedLinkOf(row: $row);
+		$near = $this->noteIn(entries: $run->stored, caseId: $link['targetId'], natureRelationship: $link['type']);
 		if ($near !== null) {
 			return $near;
 		}
 
 		return $this->noteIn(
-			entries: $this->codec->decode(case: $farSide),
-			caseId: $caseId,
-			natureRelationship: $natureRelationship
+			entries: $this->codec->decode(case: $row),
+			caseId: $run->caseId,
+			natureRelationship: $link['type']
 		);
 	}//end noteFor()
 

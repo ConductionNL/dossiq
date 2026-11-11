@@ -85,6 +85,23 @@ class LeastLoadedStrategy implements RoutingStrategyInterface {
 		$team = trim((string)($rule['team'] ?? ''));
 		$members = $this->pool->membersOf(roles: $roles, roleType: $target, team: $team);
 
+		$bestParticipant = $this->leastLoaded(members: $members, counts: $counts);
+		if ($bestParticipant === null) {
+			return [];
+		}
+
+		return [$bestParticipant];
+	}//end resolve()
+
+	/**
+	 * The member with the lowest load per unit of weight, or null when nobody may take a case.
+	 *
+	 * @param array<int, array{participant: string, weight: mixed}> $members The pool.
+	 * @param array<string, int|float>                             $counts  Open tasks per participant.
+	 *
+	 * @return string|null The participant.
+	 */
+	private function leastLoaded(array $members, array $counts): ?string {
 		$bestParticipant = null;
 		$bestLoad = null;
 		foreach ($members as $member) {
@@ -99,24 +116,28 @@ class LeastLoadedStrategy implements RoutingStrategyInterface {
 				weight: $member['weight'],
 			);
 
-			if ($load === INF) {
-				// Weight zero: in the pool, holding their cases, not offered
-				// the next one.
-				continue;
-			}
-
-			if ($bestLoad === null || $load < $bestLoad) {
+			// Weight zero (INF): in the pool, holding their cases, not offered
+			// the next one.
+			if (self::isLighter(load: $load, bestLoad: $bestLoad) === true) {
 				$bestParticipant = $participant;
 				$bestLoad = $load;
 			}
 		}
 
-		if ($bestParticipant === null) {
-			return [];
-		}
+		return $bestParticipant;
+	}//end leastLoaded()
 
-		return [$bestParticipant];
-	}//end resolve()
+	/**
+	 * Whether a load may take the case and is lower than the best so far.
+	 *
+	 * @param float      $load     The member's load per unit of weight; INF at weight zero.
+	 * @param float|null $bestLoad The lowest load so far, or null before one.
+	 *
+	 * @return bool True when this member is the new best.
+	 */
+	private static function isLighter(float $load, ?float $bestLoad): bool {
+		return ($load !== INF && ($bestLoad === null || $load < $bestLoad));
+	}//end isLighter()
 
 	/**
 	 * Normalise the raw open-task tally to a participant => count map.

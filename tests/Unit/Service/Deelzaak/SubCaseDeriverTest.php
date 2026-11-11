@@ -13,8 +13,8 @@
  * in for, copied from `ObjectRelationService` and `ObjectServiceInterface` on
  * openregister `development` (openregister#3764). A double that invents a
  * method the real class lacks can only ever pass, so nothing here is invented:
- * `declarationFor`, `applyInheritance` and `recordDerivation` are real, and
- * `applyInheritance` implements the rule OpenRegister implements, so a change
+ * `declarationFor`, `inherit` and `recordDerivation` are real, and
+ * `inherit` implements the rule OpenRegister implements, so a change
  * to that rule shows up here as a disagreement rather than as silence.
  *
  * @category Tests
@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Deelzaak;
 
 use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Relation\ParentInheritance;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -230,16 +231,16 @@ class SubCaseDeriverTest extends TestCase {
 				}//end declarationFor()
 
 				/**
-				 * Mimic ObjectRelationService::applyInheritance(), rule for rule.
+				 * Mimic ObjectRelationService::inherit(), rule for rule.
 				 *
-				 * @param object $parent The parent object.
-				 * @param array<string, mixed> $childData The child so far.
-				 * @param array<string, string> $inherits Role to property name.
+				 * @param ParentInheritance $request The parent, the child so far, and role to property name.
 				 *
 				 * @return array{data: array<string, mixed>, inherited: array<string, mixed>}
 				 */
-				public function applyInheritance(object $parent, array $childData, array $inherits): array {
-					$parentData = $parent->getObject();
+				public function inherit(ParentInheritance $request): array {
+					$parentData = $request->parent->getObject();
+					$childData = $request->childData;
+					$inherits = $request->inherits;
 					$record = [];
 					foreach ($inherits as $role => $property) {
 						$value = ($parentData[$property] ?? null);
@@ -258,7 +259,7 @@ class SubCaseDeriverTest extends TestCase {
 					}
 
 					return ['data' => $childData, 'inherited' => $record];
-				}//end applyInheritance()
+				}//end inherit()
 
 				/**
 				 * Mimic ObjectRelationService::recordDerivation().

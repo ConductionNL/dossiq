@@ -69,108 +69,167 @@ class DeadlineMonitoringSeedDataService {
 			return ['success' => false, 'message' => 'OpenRegister is not available'];
 		}
 
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
-		if ($register === '' || $schema === '') {
+		$run = $this->configuredRun(objectService: $objectService);
+		if ($run === null) {
 			return ['success' => false, 'message' => 'Termijn schemas not configured'];
 		}
 
+		$data = $this->seedData();
+		if (is_string($data) === true) {
+			return ['success' => false, 'message' => $data];
+		}
+
+		$run->existing = $this->existingDefinitions(run: $run);
+		$this->insertDefinitions(run: $run, rows: ($data['termijnDefinities'] ?? []));
+
+		$this->logger->info('Dossiq termijnbewaking: seed complete', $run->counts);
+
+		return array_merge(['success' => true], $run->counts);
+	}//end seed()
+
+	/**
+	 * The pass over the configured register and schema, or null when either is unset.
+	 *
+	 * @param object $objectService OpenRegister ObjectService.
+	 *
+	 * @return DefinitionSeedRun|null The pass.
+	 */
+	private function configuredRun(object $objectService): ?DefinitionSeedRun {
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		$run = new DefinitionSeedRun(objectService: $objectService, register: $register);
+		$run->schema = $schema;
+
+		return $run;
+	}//end configuredRun()
+
+	/**
+	 * The decoded seed file, or why it could not be read.
+	 *
+	 * @return array<string, mixed>|string The seed, or the message saying what is wrong with it.
+	 */
+	private function seedData(): array|string {
 		$seedPath = __DIR__ . '/../Settings/termijnbewaking_seed_data.json';
 		if (file_exists($seedPath) === false) {
-			return ['success' => false, 'message' => 'Seed file not found'];
+			return 'Seed file not found';
 		}
 
 		$data = json_decode((string)file_get_contents($seedPath), true);
 		if (is_array($data) === false) {
-			return ['success' => false, 'message' => 'Invalid seed JSON'];
+			return 'Invalid seed JSON';
 		}
 
-		$existing = $this->existingDefinitions(objectService: $objectService, register: $register, schema: $schema);
-
-		$counts = $this->insertDefinitions(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			data: $data,
-			existing: $existing,
-		);
-
-		$this->logger->info('Dossiq termijnbewaking: seed complete', $counts);
-
-		return array_merge(['success' => true], $counts);
-	}//end seed()
+		return $data;
+	}//end seedData()
 
 	/**
-	 * Persist the seed rows that are not present yet.
+	 * Persist the seed rows that are not present yet, counting each on the run.
 	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register id.
-	 * @param string $schema Schema id.
-	 * @param array<string, mixed> $data The decoded seed file.
-	 * @param array<string, array<string, mixed>> $existing Already-seeded definitions, by id.
+	 * @param DefinitionSeedRun                $run  The pass.
+	 * @param array<int, array<string, mixed>> $rows The seed's definitions.
 	 *
-	 * @return array<string, int> Per-kind counts.
+	 * @return void
 	 */
-	private function insertDefinitions(
-		object $objectService,
-		string $register,
-		string $schema,
-		array $data,
-		array $existing,
-	): array {
-		$counts = ['definities' => 0, 'skipped' => 0, 'backfilled' => 0, 'failed' => 0];
+	private function insertDefinitions(DefinitionSeedRun $run, array $rows): void {
+		foreach ($rows as $row) {
+			$this->insertDefinition(run: $run, row: $row);
+		}
+	}//end insertDefinitions()
 
-		foreach (($data['termijnDefinities'] ?? []) as $row) {
-			$rowId = (string)($row['id'] ?? '');
-			$kind = 'definities';
-			if ($rowId !== '' && isset($existing[$rowId]) === true) {
-				// Only the keys the stored row lacks. An administrator's edit of
-				// a key the seed also ships is theirs and stays.
-				$missing = array_diff_key($row, $existing[$rowId]);
-				if ($missing === []) {
-					$counts['skipped']++;
-					continue;
-				}
-
-				$row = array_merge($existing[$rowId], $missing);
-				$kind = 'backfilled';
-			}
-
-			try {
-				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $row);
-				$counts[$kind]++;
-			} catch (\Throwable $e) {
-				// COUNTED, not merely logged. A refused row that only logs
-				// leaves the summary success-shaped, which is how a fresh
-				// install shipped zero TermijnDefinities while reporting
-				// "0 definities (0 overgeslagen)" as if that were fine.
-				$counts['failed']++;
-				$this->logger->warning(
-					'Dossiq termijnbewaking seed: row failed',
-					['id' => $rowId, 'error' => $e->getMessage()]
-				);
-			}
+	/**
+	 * Write one seed row, backfill a stored one with the keys it lacks, or skip it.
+	 *
+	 * @param DefinitionSeedRun    $run The pass.
+	 * @param array<string, mixed> $row The seed row.
+	 *
+	 * @return void
+	 */
+	private function insertDefinition(DefinitionSeedRun $run, array $row): void {
+		$rowId = (string)($row['id'] ?? '');
+		$kind = 'definities';
+		if ($rowId !== '' && isset($run->existing[$rowId]) === true) {
+			$row = $this->backfilled(stored: $run->existing[$rowId], row: $row);
+			$kind = 'backfilled';
 		}
 
-		return $counts;
-	}//end insertDefinitions()
+		if ($row === null) {
+			$run->counts['skipped']++;
+			return;
+		}
+
+		if ($this->saved(run: $run, row: $row) === true) {
+			$run->counts[$kind]++;
+			return;
+		}
+
+		$run->counts['failed']++;
+	}//end insertDefinition()
+
+	/**
+	 * A stored row with only the keys it lacks added, or null when it lacks none.
+	 *
+	 * Only the keys the stored row lacks. An administrator's edit of a key the
+	 * seed also ships is theirs and stays.
+	 *
+	 * @param array<string, mixed> $stored The stored definition.
+	 * @param array<string, mixed> $row    The seed row.
+	 *
+	 * @return array<string, mixed>|null The row to write, or null to skip.
+	 */
+	private function backfilled(array $stored, array $row): ?array {
+		$missing = array_diff_key($row, $stored);
+		if ($missing === []) {
+			return null;
+		}
+
+		return array_merge($stored, $missing);
+	}//end backfilled()
+
+	/**
+	 * Save one row, logging a refusal.
+	 *
+	 * A refusal is COUNTED by the caller, not merely logged. A refused row
+	 * that only logs leaves the summary success-shaped, which is how a fresh
+	 * install shipped zero TermijnDefinities while reporting
+	 * "0 definities (0 overgeslagen)" as if that were fine.
+	 *
+	 * @param DefinitionSeedRun    $run The pass.
+	 * @param array<string, mixed> $row The row to write.
+	 *
+	 * @return bool Whether the row was written.
+	 */
+	private function saved(DefinitionSeedRun $run, array $row): bool {
+		try {
+			$this->saveObjectAsArray(objectService: $run->objectService, register: $run->register, schema: $run->schema, object: $row);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq termijnbewaking seed: row failed',
+				['id' => (string)($row['id'] ?? ''), 'error' => $e->getMessage()]
+			);
+			return false;
+		}
+
+		return true;
+	}//end saved()
 
 	/**
 	 * Collect existing TermijnDefinitie rows, by id, for skip and backfill detection.
 	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register id.
-	 * @param string $schema Schema id.
+	 * @param DefinitionSeedRun $run The pass.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
-	private function existingDefinitions(object $objectService, string $register, string $schema): array {
-		if (method_exists($objectService, 'findObjects') === false) {
+	private function existingDefinitions(DefinitionSeedRun $run): array {
+		if (method_exists($run->objectService, 'findObjects') === false) {
 			return [];
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema);
+			$rows = $this->searchObjectsAsArrays(objectService: $run->objectService, register: $run->register, schema: $run->schema);
 		} catch (\Throwable $e) {
 			return [];
 		}

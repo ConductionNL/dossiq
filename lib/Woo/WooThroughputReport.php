@@ -90,7 +90,7 @@ class WooThroughputReport {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function forCase(string $caseId): array {
-		return $this->report(filters: ['caseRef' => $caseId], from: null, to: null);
+		return $this->report(filters: ['caseRef' => $caseId], period: new ReportPeriod(from: null, to: null));
 	}//end forCase()
 
 	/**
@@ -116,7 +116,7 @@ class WooThroughputReport {
 			}
 		}
 
-		return $this->report(filters: [], from: $from, to: $to);
+		return $this->report(filters: [], period: new ReportPeriod(from: $from, to: $to));
 	}//end forPeriod()
 
 	/**
@@ -147,17 +147,16 @@ class WooThroughputReport {
 	 * Read the assessments and group them.
 	 *
 	 * @param array<string, mixed> $filters The object filters.
-	 * @param string|null $from The first day, or null for no lower bound.
-	 * @param string|null $to The last day, or null for no upper bound.
+	 * @param ReportPeriod         $period  The days counted.
 	 *
 	 * @return array{rows: list<array<string, int|string>>, cases: list<string>, truncated: bool} The report.
 	 */
-	private function report(array $filters, ?string $from, ?string $to): array {
+	private function report(array $filters, ReportPeriod $period): array {
 		$tally = [];
 		$cases = [];
 		$read = $this->readAssessments(filters: $filters);
 		foreach ($read['rows'] as $assessment) {
-			$counted = $this->countable(assessment: $assessment, from: $from, to: $to);
+			$counted = $this->countable(assessment: $assessment, period: $period);
 			if ($counted === null) {
 				continue;
 			}
@@ -199,12 +198,27 @@ class WooThroughputReport {
 	 * The reviewer, day and verdict an assessment counts under, or null when it counts nowhere.
 	 *
 	 * @param array<string, mixed> $assessment The assessment.
-	 * @param string|null $from The first day, or null.
-	 * @param string|null $to The last day, or null.
+	 * @param ReportPeriod         $period     The days counted.
 	 *
 	 * @return array{0: string, 1: string, 2: string}|null The reviewer, day and verdict.
 	 */
-	private function countable(array $assessment, ?string $from, ?string $to): ?array {
+	private function countable(array $assessment, ReportPeriod $period): ?array {
+		$counted = $this->assessedAs(assessment: $assessment);
+		if ($counted === null || $period->contains(day: $counted[1]) === false) {
+			return null;
+		}
+
+		return $counted;
+	}//end countable()
+
+	/**
+	 * The reviewer, day and verdict of an assessment, or null when one is missing or the verdict unknown.
+	 *
+	 * @param array<string, mixed> $assessment The assessment.
+	 *
+	 * @return array{0: string, 1: string, 2: string}|null The reviewer, day and verdict.
+	 */
+	private function assessedAs(array $assessment): ?array {
 		$reviewer = trim((string)($assessment['assessedBy'] ?? ''));
 		$verdict = (string)($assessment['classification'] ?? '');
 		$day = $this->caseDates->toCalendarDateOrNull(value: (string)($assessment['assessedAt'] ?? ''));
@@ -212,12 +226,8 @@ class WooThroughputReport {
 			return null;
 		}
 
-		if (($from !== null && $day < $from) || ($to !== null && $day > $to)) {
-			return null;
-		}
-
 		return [$reviewer, $day, $verdict];
-	}//end countable()
+	}//end assessedAs()
 
 	/**
 	 * Page through the assessments the caller may read.

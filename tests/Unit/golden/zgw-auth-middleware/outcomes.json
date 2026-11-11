@@ -1,0 +1,250 @@
+{
+    "no authorization header": [
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Authorization header is required"
+        }
+    ],
+    "a token that is not three parts": [
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Invalid token payload"
+        }
+    ],
+    "a payload that is not base64": [
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Invalid token payload"
+        }
+    ],
+    "a payload that is not json": [
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Invalid token payload"
+        }
+    ],
+    "a payload without an issuer": [
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Invalid token payload"
+        }
+    ],
+    "a signature that does not validate": [
+        {
+            "validate": true
+        },
+        {
+            "warning": "ZGW auth failed: signature mismatch",
+            "context": []
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Authenticatiegegevens zijn niet geldig."
+        }
+    ],
+    "an unknown issuer": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Unknown issuer"
+        }
+    ],
+    "a failing consumer lookup": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "warning": "Failed to find consumer for issuer: app-1",
+            "context": {
+                "exception": "database gone"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Unknown issuer"
+        }
+    ],
+    "a superuser": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "allowed"
+        }
+    ],
+    "a superuser flag that is not true": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "allowed"
+        }
+    ],
+    "a uri outside the api": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "warning": "ZgwAuthMiddleware: could not derive ZGW API group from URI",
+            "context": {
+                "uri": "/index.php/apps/dossiq/elsewhere"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Unknown API component"
+        }
+    ],
+    "an unknown api group": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Unknown API component"
+        }
+    ],
+    "an unsupported method": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Unsupported HTTP method"
+        }
+    ],
+    "a covering scope": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "allowed"
+        }
+    ],
+    "a covering scope among others": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "allowed"
+        }
+    ],
+    "a scope for another method": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Scope 'zrc.aanmaken' is required for this operation"
+        }
+    ],
+    "a scope for another component": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Scope 'brc.lezen' is required for this operation"
+        }
+    ],
+    "a malformed scope": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Scope 'zrc.lezen' is required for this operation"
+        }
+    ],
+    "no scopes at all": [
+        {
+            "validate": true
+        },
+        {
+            "findAll": {
+                "name": "app-1"
+            }
+        },
+        {
+            "outcome": "refused",
+            "status": 403,
+            "message": "Scope 'zrc.lezen' is required for this operation"
+        }
+    ]
+}

@@ -268,20 +268,8 @@ class BeschikkingService {
 			throw new OCSBadRequestException('Beschikking niet gevonden');
 		}
 
-		if ($current === null) {
-			throw new OCSBadRequestException('Beschikking niet gevonden');
-		}
-
-		if (((string)($current['signedBy'] ?? '')) === '') {
-			throw new OCSBadRequestException('Beschikking moet eerst worden ondertekend');
-		}
-
-		$now = new DateTimeImmutable();
-		$patch = [
-			'status' => 'granted',
-			'publicationDate' => $now->format('Y-m-d'),
-			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
-		];
+		self::assertSigned(current: $current);
+		$patch = $this->publicationPatch(now: new DateTimeImmutable());
 
 		try {
 			return ($this->patchObjectAsArray(
@@ -298,6 +286,40 @@ class BeschikkingService {
 	}//end publish()
 
 	/**
+	 * Refuse a beschikking that is not found or not yet signed.
+	 *
+	 * @param array<string, mixed>|null $current The stored beschikking, or null.
+	 *
+	 * @return void
+	 *
+	 * @throws OCSBadRequestException When it is not found or not signed.
+	 */
+	private static function assertSigned(?array $current): void {
+		if ($current === null) {
+			throw new OCSBadRequestException('Beschikking niet gevonden');
+		}
+
+		if (((string)($current['signedBy'] ?? '')) === '') {
+			throw new OCSBadRequestException('Beschikking moet eerst worden ondertekend');
+		}
+	}//end assertSigned()
+
+	/**
+	 * The patch that grants a beschikking: today as its publication day and its bezwaartermijn.
+	 *
+	 * @param DateTimeImmutable $now The moment of publication.
+	 *
+	 * @return array{status: string, publicationDate: string, objectionPeriodEnd: string} The patch.
+	 */
+	private function publicationPatch(DateTimeImmutable $now): array {
+		return [
+			'status' => 'granted',
+			'publicationDate' => $now->format('Y-m-d'),
+			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
+		];
+	}//end publicationPatch()
+
+	/**
 	 * Resolve the ObjectService and register/schema ids.
 	 *
 	 * @return array{0: object, 1: string, 2: string} ObjectService, register, schema.
@@ -305,17 +327,7 @@ class BeschikkingService {
 	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
 	 */
 	private function resolve(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('subsidie_beschikking_schema');
-		if ($register === '' || $schema === '') {
-			throw new OCSBadRequestException('Beschikking-schema is niet geconfigureerd');
-		}
-
-		return [$objectService, $register, $schema];
+		$lookup = new SubsidieSchemaLookup(settingsService: $this->settingsService);
+		return $lookup->resolve(schemaConfigKey: 'subsidie_beschikking_schema', unconfiguredMessage: 'Beschikking-schema is niet geconfigureerd');
 	}//end resolve()
 }//end class

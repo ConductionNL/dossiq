@@ -228,9 +228,10 @@ class AdvisoryCommitteeServiceGoldenTest extends TestCase {
 		);
 		$deviate = static fn (AdvisoryCommitteeService $s): string => json_encode($s->recordCouncilDeviation(requestId: 'req-1', decisionId: 'dec-1', rationaleRef: 'mot-1'));
 		$committee = ['find' => ['id' => 'com-1', 'active' => true]];
-		$at = static fn (array $request): array => ['find' => $request, 'patchObject' => static fn (array $args): array => ['id' => 'req-1', 'patched' => $args['data']]];
+		$chaired = ['id' => 'com-1', 'active' => true, 'chair' => 'chair-anna'];
+		$at = static fn (array $request, array $committeeRow = ['id' => 'com-1', 'active' => true, 'chair' => 'chair-anna']): array => ['find' => static fn (array $args): array => ($args['schema'] === 'com' ? $committeeRow : $request), 'patchObject' => static fn (array $args): array => ['id' => 'req-1', 'patched' => $args['data']]];
 		$assigned = ['id' => 'req-1', 'status' => 'assigned', 'panel' => ['p1', 'p2'], 'bezwaar' => 'obj-1'];
-		$deliberating = ['id' => 'req-1', 'status' => 'in-deliberation', 'bezwaar' => 'obj-1', 'conclusion' => 'gegrond', 'recommendation' => 'herroepen', 'signatureEvidence' => 'sig-0'];
+		$deliberating = ['id' => 'req-1', 'status' => 'in-deliberation', 'bezwaar' => 'obj-1', 'committee' => 'com-1', 'conclusion' => 'gegrond', 'recommendation' => 'herroepen', 'signatureEvidence' => 'sig-0'];
 		$advice = ['conclusion' => 'ongegrond', 'recommendation' => 'handhaven', 'signatureEvidence' => 'sig-1'];
 		$config = ['register' => 'reg', 'bac_advice_request_schema' => 'req', 'bezwaaradviescommissie_schema' => 'com', 'bac_default_committee' => 'com-default'];
 
@@ -281,10 +282,14 @@ class AdvisoryCommitteeServiceGoldenTest extends TestCase {
 			'move, issue advice, signing entry fails' => ['store' => $at($deliberating), 'audit' => ['recordThenApply' => 'throw'], 'call' => $move('advice-issued')],
 			'move, issue advice, no signature anywhere' => ['store' => $at(array_diff_key($deliberating, ['signatureEvidence' => 1])), 'call' => $move('advice-issued')],
 			'move, issue advice, forged signer in payload and object' => ['store' => $at(['chair' => 'mallory', 'owner' => 'mallory', 'actor' => 'mallory'] + $deliberating), 'call' => $move('advice-issued', ['chair' => 'mallory', 'actor' => 'mallory', 'userId' => 'mallory'] + $advice)],
+			'move, issue advice, caller is not the chair' => ['store' => $at($deliberating, ['chair' => 'someone-else'] + $chaired), 'call' => $move('advice-issued', $advice)],
+			'move, issue advice, committee names no chair' => ['store' => $at($deliberating, array_diff_key($chaired, ['chair' => 1])), 'call' => $move('advice-issued', $advice)],
+			'move, issue advice, request names no committee' => ['store' => $at(array_diff_key($deliberating, ['committee' => 1])), 'call' => $move('advice-issued', $advice)],
+			'move, inadmissible, caller is not the chair' => ['store' => $at($deliberating, ['chair' => 'someone-else'] + $chaired), 'call' => $move('inadmissible')],
 			'move, issued advice cannot be reopened' => ['store' => $at(['status' => 'advice-issued'] + $deliberating), 'call' => $move('assigned')],
 			'move, inadmissible cannot be reopened' => ['store' => $at(['status' => 'inadmissible'] + $deliberating), 'call' => $move('in-deliberation')],
 			'move, inadmissible' => ['store' => $at($deliberating), 'call' => $move('inadmissible', ['reason' => 'te laat'])],
-			'move, inadmissible, patch answers nothing' => ['store' => ['find' => $deliberating, 'patchObject' => null], 'call' => $move('inadmissible')],
+			'move, inadmissible, patch answers nothing' => ['store' => ['patchObject' => null] + $at($deliberating), 'call' => $move('inadmissible')],
 			'auto assign' => ['store' => $committee + ['saveObject' => ['id' => 'r']], 'call' => static fn (AdvisoryCommitteeService $s): ?array => $s->autoAssignDefaultCommittee(objectionId: 'obj-1')],
 			'auto assign, none configured' => ['config' => array_diff_key($config, ['bac_default_committee' => 1]), 'call' => static fn (AdvisoryCommitteeService $s): ?array => $s->autoAssignDefaultCommittee(objectionId: 'obj-1')],
 			'auto assign, fails' => ['store' => ['find' => null], 'call' => static fn (AdvisoryCommitteeService $s): ?array => $s->autoAssignDefaultCommittee(objectionId: 'obj-1')],

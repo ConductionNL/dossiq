@@ -170,6 +170,53 @@ const FUNCTION = 'function'
  */
 const custodianRow = (name = '', role = '') => ({ name, [FUNCTION]: role })
 
+/**
+ * What recording the plan sends: the named custodians, the systems, the period, the terms and, when
+ * the plan started from a template, which one.
+ *
+ * @param {object} dialog The search plan dialog.
+ * @return {object} The body.
+ */
+function planBody(dialog) {
+	const body = {
+		custodians: dialog.custodians
+			.filter((custodian) => custodian.name.trim() !== '')
+			.map((custodian) => custodianRow(custodian.name.trim(), custodian.function.trim())),
+
+		systems: dialog.systems,
+		periodFrom: dialog.periodFrom,
+		periodTo: dialog.periodTo,
+		terms: dialog.terms.trim(),
+	}
+	if (dialog.startedFrom !== '') {
+		body.startedFrom = dialog.startedFrom
+	}
+	return body
+}
+
+/**
+ * Keep the recorded plan, forget the template it started from, and refresh the page.
+ *
+ * @param {object} dialog The search plan dialog.
+ * @param {object|null} data The answer.
+ * @return {void}
+ */
+function keepPlan(dialog, data) {
+	dialog.startedFrom = ''
+	dialog.fill(data?.plan ?? null)
+	emit(PAGE_REFRESH, {})
+}
+
+/**
+ * The sentence for a plan that was not recorded: the server's, or the plain one.
+ *
+ * @param {Error} error The failure.
+ * @return {string} The sentence.
+ */
+function planRefusal(error) {
+	return error?.response?.data?.message || t('dossiq', 'The search plan was not recorded.')
+}
+
 export default {
 	name: 'SearchPlanDialog',
 
@@ -410,27 +457,9 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
-				const body = {
-					custodians: this.custodians
-						.filter((custodian) => custodian.name.trim() !== '')
-						.map((custodian) => custodianRow(custodian.name.trim(), custodian.function.trim())),
-
-					systems: this.systems,
-					periodFrom: this.periodFrom,
-					periodTo: this.periodTo,
-					terms: this.terms.trim(),
-				}
-				if (this.startedFrom !== '') {
-					body.startedFrom = this.startedFrom
-				}
-				const { data } = await axios.put(this.url('/woo/plan'), body)
-				this.startedFrom = ''
-				this.fill(data?.plan ?? null)
-				emit(PAGE_REFRESH, {})
+				keepPlan(this, (await axios.put(this.url('/woo/plan'), planBody(this))).data)
 			} catch (error) {
-				this.error =
-					error?.response?.data?.message
-					|| t('dossiq', 'The search plan was not recorded.')
+				this.error = planRefusal(error)
 			} finally {
 				this.busy = false
 			}

@@ -132,68 +132,124 @@ class InformatieobjectStatusLifecycle {
 		}
 
 		[$objectService, $register] = $this->requireRegister();
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
-
-		$current = $this->findObjectAsArray(
+		$document = new StoredDocument(
 			objectService: $objectService,
 			register: $register,
-			schema: $infoSchema,
+			schema: $this->settingsService->getConfigValue('dossier_informatieobject_schema'),
 			id: $infoObjectId,
 		);
 
-		if ($current === null) {
-			throw new RuntimeException('Informatieobject not found: ' . $infoObjectId);
-		}
-
-		$currentStatus = (string)($current['status'] ?? 'draft');
-		if ($this->isTransitionAllowed(from: $currentStatus, to: $newStatus) === false) {
+		$move = new DocumentStatusMove(from: $this->storedStatus(document: $document), to: $newStatus);
+		if ($this->isTransitionAllowed(from: $move->from, to: $move->to) === false) {
 			throw new InvalidArgumentException(
-				'Invalid status transition from ' . $currentStatus . ' to ' . $newStatus
+				'Invalid status transition from ' . $move->from . ' to ' . $move->to
 			);
 		}
 
 		$this->requireApprovalCleared(infoObjectId: $infoObjectId, newStatus: $newStatus);
 
+		return $this->applyStatus(document: $document, move: $move);
+	}//end transition()
+
+	/**
+	 * The status a stored document carries, draft when it carries none.
+	 *
+	 * @param StoredDocument $document The document.
+	 *
+	 * @return string The status.
+	 *
+	 * @throws RuntimeException When the document does not exist.
+	 */
+	private function storedStatus(StoredDocument $document): string {
+		$current = $this->findObjectAsArray(
+			objectService: $document->objectService,
+			register: $document->register,
+			schema: $document->schema,
+			id: $document->id,
+		);
+
+		if ($current === null) {
+			throw new RuntimeException('Informatieobject not found: ' . $document->id);
+		}
+
+		return (string)($current['status'] ?? 'draft');
+	}//end storedStatus()
+
+	/**
+	 * Write the new status, stamping the lock on a move to final, and log it.
+	 *
+	 * THE TRANSITION'S FIELDS, APPLIED TO THE STORED DOCUMENT. This used to
+	 * hand the changes straight to `saveObject()` with the uuid, but that save
+	 * is PUT-semantic: the payload IS the new object. Every property it left
+	 * out was dropped, and because four of them are required OpenRegister
+	 * refused the write, so no document status change ever completed and the
+	 * bulk run failed every document it was given. patchObjectAsArray() is
+	 * the app's partial-write seam: `patchObject()` where OpenRegister has it,
+	 * a fresh read-then-save where it does not.
+	 *
+	 * @param StoredDocument     $document The document.
+	 * @param DocumentStatusMove $move     Its status before and after.
+	 *
+	 * @return array<string, mixed> The updated informatieobject summary.
+	 */
+	private function applyStatus(StoredDocument $document, DocumentStatusMove $move): array {
+		$updateData = self::statusChanges(newStatus: $move->to);
+		$this->patchObjectAsArray(
+			objectService: $document->objectService,
+			register: $document->register,
+			schema: $document->schema,
+			id: $document->id,
+			changes: $updateData,
+		);
+
+		$this->logger->info(
+			'Dossiq dossier: informatieobject ' . $document->id . ' transitioned ' . $move->from . ' -> ' . $move->to,
+			['app' => Application::APP_ID],
+		);
+
+		return self::summary(infoObjectId: $document->id, updateData: $updateData);
+	}//end applyStatus()
+
+	/**
+	 * The fields a move to a status writes: the status, and the lock stamp for final.
+	 *
+	 * @param string $newStatus The requested status.
+	 *
+	 * @return array<string, string> The changes.
+	 */
+	private static function statusChanges(string $newStatus): array {
 		$updateData = ['status' => $newStatus];
 		if ($newStatus === 'final') {
 			$updateData['lockedOn'] = date('Y-m-d\TH:i:s');
 		}
 
-		// THE TRANSITION'S FIELDS, APPLIED TO THE STORED DOCUMENT. This used to
-		// hand `$updateData` straight to `saveObject()` with the uuid, but that
-		// save is PUT-semantic: the payload IS the new object. Every property it
-		// left out was dropped, and because four of them are required
-		// OpenRegister refused the write, so no document status change ever
-		// completed and the bulk run failed every document it was given.
-		// patchObjectAsArray() is the app's partial-write seam: `patchObject()`
-		// where OpenRegister has it, a fresh read-then-save where it does not.
-		$this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $infoSchema,
-			id: $infoObjectId,
-			changes: $updateData,
-		);
+		return $updateData;
+	}//end statusChanges()
 
-		$this->logger->info(
-			'Dossiq dossier: informatieobject ' . $infoObjectId . ' transitioned ' . $currentStatus . ' -> ' . $newStatus,
-			['app' => Application::APP_ID],
-		);
-
-		// Carry `vergrendeldOp` through only when the transition set it to a
-		// non-null value. Kept as an isset() test rather than
-		// array_intersect_key(), which would also carry an explicitly-null
-		// value through and write a null back over the stored field.
+	/**
+	 * The summary a transition answers.
+	 *
+	 * Carry `vergrendeldOp` through only when the transition set it to a
+	 * non-null value. Kept as an isset() test rather than
+	 * array_intersect_key(), which would also carry an explicitly-null value
+	 * through and write a null back over the stored field.
+	 *
+	 * @param string                $infoObjectId The informatieobject UUID.
+	 * @param array<string, string> $updateData   The changes written.
+	 *
+	 * @return array<string, mixed> The summary.
+	 */
+	private static function summary(string $infoObjectId, array $updateData): array {
 		$lockedOn = [];
 		if (isset($updateData['lockedOn']) === true) {
 			$lockedOn = ['lockedOn' => $updateData['lockedOn']];
 		}
 
 		return array_merge(
-			['id' => $infoObjectId, 'status' => $newStatus],
+			['id' => $infoObjectId, 'status' => $updateData['status']],
 			$lockedOn,
 		);
-	}//end transition()
+	}//end summary()
 
 	/**
 	 * Refuse the lock while the document's approval route is still running.

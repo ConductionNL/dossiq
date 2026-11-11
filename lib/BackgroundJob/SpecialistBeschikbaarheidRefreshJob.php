@@ -34,7 +34,6 @@ namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
-use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -92,13 +91,10 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-specialist-beschikbaarheid-cache-stays-fresh
 	 */
 	protected function run($argument): void {
-		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->work());
-		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged as an error and told to the admins. Nothing was
-			// read, sent or written; the next run tries again.
-			return;
-		}
+		// Without a usable account this runs nothing: that is already logged as an
+		// error and told to the admins. Nothing was read, sent or
+		// written; the next run tries again.
+		$this->serviceAccount->runAsWhenAvailable(operation: fn () => $this->work());
 	}//end run()
 
 	/**
@@ -109,71 +105,99 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-specialist-beschikbaarheid-cache-stays-fresh
 	 */
 	private function work(): void {
-		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
+		$run = $this->openRun();
+		if ($run === null) {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
+		$records = $this->loadRecords(run: $run);
+		if ($records === null) {
+			return;
+		}
+
+		$objects = $this->objects();
+		foreach ((array)$records as $record) {
+			$this->ageOut(run: $run, record: $objects->toArray(result: $record));
+		}
+	}//end work()
+
+	/**
+	 * OpenRegister as this job sees it.
+	 *
+	 * @return OpenRegisterObjects
+	 */
+	private function objects(): OpenRegisterObjects {
+		return new OpenRegisterObjects(appManager: $this->appManager, settingsService: $this->settingsService);
+	}//end objects()
+
+	/**
+	 * The run, or null without OpenRegister, its object service, a register or the schema.
+	 *
+	 * A record is stale after four poll intervals of at least five seconds.
+	 *
+	 * @return AvailabilityRun|null
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-specialist-beschikbaarheid-cache-stays-fresh
+	 */
+	private function openRun(): ?AvailabilityRun {
+		$objectService = $this->objects()->objectService();
 		if ($objectService === null) {
-			return;
+			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('specialist_beschikbaarheid_schema');
-		if ($register === '' || $schema === '') {
-			return;
+		$run = new AvailabilityRun();
+		$run->objectService = $objectService;
+		$run->register = $this->settingsService->getConfigValue('register');
+		$run->schema = $this->settingsService->getConfigValue('specialist_beschikbaarheid_schema');
+		if ($run->register === '' || $run->schema === '') {
+			return null;
 		}
 
 		$pollInterval = max(5, (int)$this->settingsService->getKccConfigValue('specialist_availability_polling_interval'));
-		$staleSeconds = ($pollInterval * self::STALE_FACTOR);
-		$now = time();
+		$run->staleSeconds = ($pollInterval * self::STALE_FACTOR);
+		$run->now = time();
 
+		return $run;
+	}//end openRun()
+
+	/**
+	 * The availability records; a failed read is logged, keeps the cache and answers null.
+	 *
+	 * @param AvailabilityRun $run The run.
+	 *
+	 * @return array<int, mixed>|null
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-specialist-beschikbaarheid-cache-stays-fresh
+	 */
+	private function loadRecords(AvailabilityRun $run): ?array {
 		try {
-			$records = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 500]);
+			return $this->searchObjectsAsArrays(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->schema,
+				filters: ['_limit' => 500]
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: specialist availability refresh could not read records (keeping cache): ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
-			return;
+			return null;
 		}
-
-		foreach ((array)$records as $record) {
-			$this->ageOut(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				record: $this->toArray(result: $record),
-				now: $now,
-				staleSeconds: $staleSeconds,
-			);
-		}
-	}//end work()
+	}//end loadRecords()
 
 	/**
-	 * Mark a single record as afwezig when its last update is stale.
+	 * Mark one stale record afwezig.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register id.
-	 * @param string $schema The schema id.
+	 * @param AvailabilityRun      $run    The run.
 	 * @param array<string, mixed> $record The availability record.
-	 * @param int $now The current unix timestamp.
-	 * @param int $staleSeconds The staleness threshold in seconds.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-specialist-beschikbaarheid-cache-stays-fresh
 	 */
-	private function ageOut($objectService, string $register, string $schema, array $record, int $now, int $staleSeconds): void {
-		$status = (string)($record['status'] ?? '');
-		if ($status === 'afwezig') {
-			return;
-		}
-
-		$lastUpdate = strtotime((string)($record['lastUpdate'] ?? ''));
-		if ($lastUpdate === false) {
-			return;
-		}
-
-		if (($now - $lastUpdate) < $staleSeconds) {
+	private function ageOut(AvailabilityRun $run, array $record): void {
+		if ($this->isStale(run: $run, record: $record) === false) {
 			return;
 		}
 
@@ -182,11 +206,49 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 			return;
 		}
 
+		$this->markAbsent(run: $run, id: $id);
+	}//end ageOut()
+
+	/**
+	 * Whether a record that is not afwezig yet was last updated too long ago.
+	 *
+	 * @param AvailabilityRun      $run    The run.
+	 * @param array<string, mixed> $record The availability record.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-specialist-beschikbaarheid-cache-stays-fresh
+	 */
+	private function isStale(AvailabilityRun $run, array $record): bool {
+		$status = (string)($record['status'] ?? '');
+		if ($status === 'afwezig') {
+			return false;
+		}
+
+		$lastUpdate = strtotime((string)($record['lastUpdate'] ?? ''));
+		if ($lastUpdate === false) {
+			return false;
+		}
+
+		return ($run->now - $lastUpdate) >= $run->staleSeconds;
+	}//end isStale()
+
+	/**
+	 * Write afwezig with a fresh lastUpdate; a failed write is logged.
+	 *
+	 * @param AvailabilityRun $run The run.
+	 * @param string          $id  The record.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-specialist-beschikbaarheid-cache-stays-fresh
+	 */
+	private function markAbsent(AvailabilityRun $run, string $id): void {
 		try {
 			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->schema,
 				id: $id,
 				changes: [
 					'status' => 'afwezig',
@@ -199,28 +261,5 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 				['app' => Application::APP_ID],
 			);
 		}
-	}//end ageOut()
-
-	/**
-	 * Normalise an ObjectService result into a plain array.
-	 *
-	 * @param mixed $result The ObjectService result.
-	 *
-	 * @return array<string, mixed> The normalised record.
-	 */
-	private function toArray($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
-	}//end toArray()
+	}//end markAbsent()
 }//end class

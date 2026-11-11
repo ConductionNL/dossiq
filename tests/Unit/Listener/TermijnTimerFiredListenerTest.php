@@ -42,6 +42,8 @@ use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\OpenRegister\Service\Flow\Timer\EscalationNotice;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -158,12 +160,8 @@ class TermijnTimerFiredListenerTest extends TestCase {
 
 		return new FlowTimerFiredEvent(
 			timer: $timer,
-			kind: FlowTimerFiredEvent::KIND_RUNG,
-			transition: 'escalation:' . $rungKey,
-			rungKey: $rungKey,
-			recipients: [['type' => 'user', 'id' => 'handler-1', 'role' => 'handler']],
-			priority: 'medium',
-			message: null
+			firing: new TimerFiring(kind: FlowTimerFiredEvent::KIND_RUNG, transition: 'escalation:' . $rungKey, rungKey: $rungKey),
+			notice: new EscalationNotice(recipients: [['type' => 'user', 'id' => 'handler-1', 'role' => 'handler']], priority: 'medium'),
 		);
 	}
 

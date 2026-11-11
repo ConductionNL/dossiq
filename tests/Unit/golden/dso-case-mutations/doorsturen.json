@@ -1,0 +1,89 @@
+{
+    "no session": [
+        {
+            "status": 401,
+            "data": {
+                "error": "Not authenticated"
+            }
+        }
+    ],
+    "missing field": [
+        {
+            "status": 400,
+            "data": {
+                "error": "targetBevoegdGezag is required"
+            }
+        }
+    ],
+    "unknown case": [
+        {
+            "findZaak": "case-1"
+        },
+        {
+            "status": 404,
+            "data": {
+                "error": "Case not found"
+            }
+        }
+    ],
+    "guard refuses": [
+        {
+            "findZaak": "case-1"
+        },
+        {
+            "authorizeZaakMutation": [
+                "case-1",
+                "behandelaar"
+            ]
+        },
+        {
+            "status": 403,
+            "data": {
+                "error": "Forbidden"
+            }
+        }
+    ],
+    "done": [
+        {
+            "findZaak": "case-1"
+        },
+        {
+            "authorizeZaakMutation": [
+                "case-1",
+                "behandelaar"
+            ]
+        },
+        {
+            "dispatchDoorgestuurd": [
+                "case-1",
+                "case-1",
+                "pv27",
+                "Provinciaal belang",
+                "behandelaar"
+            ]
+        },
+        {
+            "status": 200,
+            "data": {
+                "status": "doorgestuurd",
+                "caseId": "case-1",
+                "targetBevoegdGezag": "pv27"
+            }
+        }
+    ],
+    "store fails": [
+        {
+            "findZaak": "case-1"
+        },
+        {
+            "error": "Dossiq DsoController::doorsturen failed: store down",
+            "context": []
+        },
+        {
+            "status": 500,
+            "data": {
+                "error": "Could not doorsturen"
+            }
+        }
+    ]
+}

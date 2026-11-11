@@ -240,44 +240,92 @@ class WorkflowTemplateFlowMigrator {
 	 */
 	private function graphOf(array $template, array $statusNames = []): ?array {
 		$transitions = $this->decodeList(value: ($template['transitions'] ?? null));
-		if ($transitions === []) {
+		$moves       = $this->movesOf(transitions: $transitions, statusNames: $statusNames);
+		if ($moves['edges'] === []) {
 			return null;
 		}
 
-		$statuses = [];
-		$edges = [];
-		foreach ($transitions as $index => $transition) {
-			// RESOLVE TO THE NAME. A stored transition carries a statusType
-			// UUID; `dossiq.setStatus` resolves a NAME. An unresolvable value
-			// is passed through unchanged, which keeps a seed-shaped template
-			// (whose endpoints already ARE names) projecting exactly as before.
-			$from = $this->statusName(value: ($transition['fromStatus'] ?? ''), names: $statusNames);
-			$to = $this->statusName(value: ($transition['toStatus'] ?? ''), names: $statusNames);
+		return ['nodes' => $this->statusNodes(statuses: array_keys($moves['statuses'])), 'edges' => $moves['edges']];
+	}//end graphOf()
 
-			// A wildcard source has no node to leave from. The seeder accepts
-			// `fromStatus: '*'` and no shipped template uses it, so it is
-			// skipped rather than guessed at — a drawn edge with no source is
-			// worse than an absent one.
-			if ($to === '' || $from === '' || $from === '*') {
+	/**
+	 * The edges the usable transitions become, and every status they touch, in first-seen order.
+	 *
+	 * @param array<int, array<string, mixed>> $transitions The stored transitions.
+	 * @param array<string, string>            $statusNames statusType uuid => name.
+	 *
+	 * @return array{statuses: array<string, true>, edges: array<int, array<string, mixed>>} The projection.
+	 */
+	private function movesOf(array $transitions, array $statusNames): array {
+		$moves = ['statuses' => [], 'edges' => []];
+		foreach ($transitions as $index => $transition) {
+			$move = $this->moveOf(transition: $transition, statusNames: $statusNames);
+			if ($move === null) {
 				continue;
 			}
 
-			$statuses[$from] = true;
-			$statuses[$to] = true;
-			$edges[] = [
-				'id' => ('t-' . ($index + 1)),
-				'from' => [$this->nodeId(status: $from)],
-				'to' => [$this->nodeId(status: $to)],
-				'label' => (string)($transition['label'] ?? ($transition['slug'] ?? '')),
-			];
+			$moves['statuses'][$move['from']] = true;
+			$moves['statuses'][$move['to']]   = true;
+			$moves['edges'][] = $this->edgeOf(index: $index, move: $move);
 		}
 
-		if ($edges === []) {
+		return $moves;
+	}//end movesOf()
+
+	/**
+	 * One transition's source and target status names and its label, or null when it has no edge.
+	 *
+	 * @param array<string, mixed>  $transition  The stored transition.
+	 * @param array<string, string> $statusNames statusType uuid => name.
+	 *
+	 * @return array{from: string, to: string, label: string}|null The move.
+	 */
+	private function moveOf(array $transition, array $statusNames): ?array {
+		// RESOLVE TO THE NAME. A stored transition carries a statusType
+		// UUID; `dossiq.setStatus` resolves a NAME. An unresolvable value
+		// is passed through unchanged, which keeps a seed-shaped template
+		// (whose endpoints already ARE names) projecting exactly as before.
+		$from = $this->statusName(value: ($transition['fromStatus'] ?? ''), names: $statusNames);
+		$to   = $this->statusName(value: ($transition['toStatus'] ?? ''), names: $statusNames);
+
+		// A wildcard source has no node to leave from. The seeder accepts
+		// `fromStatus: '*'` and no shipped template uses it, so it is
+		// skipped rather than guessed at — a drawn edge with no source is
+		// worse than an absent one.
+		if ($to === '' || $from === '' || $from === '*') {
 			return null;
 		}
 
+		return ['from' => $from, 'to' => $to, 'label' => (string)($transition['label'] ?? ($transition['slug'] ?? ''))];
+	}//end moveOf()
+
+	/**
+	 * The flow edge of one move, numbered by the transition's place in the list.
+	 *
+	 * @param int                                         $index The transition's index.
+	 * @param array{from: string, to: string, label: string} $move  The move.
+	 *
+	 * @return array<string, mixed> The edge.
+	 */
+	private function edgeOf(int $index, array $move): array {
+		return [
+			'id' => ('t-' . ($index + 1)),
+			'from' => [$this->nodeId(status: $move['from'])],
+			'to' => [$this->nodeId(status: $move['to'])],
+			'label' => $move['label'],
+		];
+	}//end edgeOf()
+
+	/**
+	 * One `dossiq.setStatus` node per status.
+	 *
+	 * @param array<int, int|string> $statuses The status names, in first-seen order.
+	 *
+	 * @return array<int, array<string, mixed>> The nodes.
+	 */
+	private function statusNodes(array $statuses): array {
 		$nodes = [];
-		foreach (array_keys($statuses) as $status) {
+		foreach ($statuses as $status) {
 			$nodes[] = [
 				'id' => $this->nodeId(status: (string)$status),
 				'type' => 'dossiq.setStatus',
@@ -285,9 +333,8 @@ class WorkflowTemplateFlowMigrator {
 			];
 		}
 
-		return ['nodes' => $nodes, 'edges' => $edges];
-
-	}//end graphOf()
+		return $nodes;
+	}//end statusNodes()
 
 	/**
 	 * A stable node id for a status name.
@@ -402,29 +449,31 @@ class WorkflowTemplateFlowMigrator {
 	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
 	 */
 	private function statusNames(): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'status_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->storeFor(schemaKey: 'status_type_schema');
+		if ($store === null) {
 			return [];
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::BATCH_LIMIT],
-			);
+			$rows = $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not list status types for the flow projection',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-			);
+			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$this->logger->warning('Dossiq: could not list status types for the flow projection', $context);
 
 			return [];
 		}
 
+		return $this->namesByUuid(rows: $rows);
+	}//end statusNames()
+
+	/**
+	 * Each status type's name by its uuid, leaving out one without either.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The status types.
+	 *
+	 * @return array<string, string> uuid => name.
+	 */
+	private function namesByUuid(array $rows): array {
 		$names = [];
 		foreach ($rows as $row) {
 			$uuid = trim((string)($row['id'] ?? ''));
@@ -435,7 +484,7 @@ class WorkflowTemplateFlowMigrator {
 		}
 
 		return $names;
-	}//end statusNames()
+	}//end namesByUuid()
 
 	/**
 	 * Read the stored templates.
@@ -443,34 +492,58 @@ class WorkflowTemplateFlowMigrator {
 	 * @return array<int, array<string, mixed>> The templates.
 	 */
 	private function fetchTemplates(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'workflow_template_schema');
-		if ($register === '' || $schema === '') {
+		$store = $this->storeFor(schemaKey: 'workflow_template_schema');
+		if ($store === null) {
 			return [];
 		}
 
 		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::BATCH_LIMIT],
-			);
+			return $this->batchOf(store: $store);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not list workflow templates',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-			);
+			$context = ['app' => Application::APP_ID, 'exception' => $e->getMessage()];
+			$this->logger->warning('Dossiq: could not list workflow templates', $context);
 
 			return [];
 		}
-
 	}//end fetchTemplates()
+
+	/**
+	 * The object service, register and schema for one schema key, null when any is missing.
+	 *
+	 * @param string $schemaKey The settings key of the schema.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|null The store.
+	 */
+	private function storeFor(string $schemaKey): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema   = $this->settingsService->getConfigValue(key: $schemaKey);
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
+	}//end storeFor()
+
+	/**
+	 * One batch of the objects of a store.
+	 *
+	 * @param array{objectService: object, register: string, schema: string} $store The store.
+	 *
+	 * @return array<int, array<string, mixed>> Up to BATCH_LIMIT objects.
+	 */
+	private function batchOf(array $store): array {
+		return $this->searchObjectsAsArrays(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			filters: ['_limit' => self::BATCH_LIMIT],
+		);
+	}//end batchOf()
 
 
 

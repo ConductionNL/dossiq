@@ -596,8 +596,9 @@ class DeliberationStartGuardTest extends TestCase {
 			}
 		};
 		$this->store = $guarded;
-		$this->seedRequest(row: ['status' => 'in-deliberation', 'panel' => ['a.bakker']]);
-		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail());
+		$this->store->seed('bezwaaradviescommissie', 'committee-1', ['chair' => 'chair-1']);
+		$this->seedRequest(row: ['status' => 'in-deliberation', 'panel' => ['a.bakker'], 'committee' => 'committee-1']);
+		$service = $this->realAdvisoryService(trail: $this->bezwaarAuditTrail(uid: 'chair-1'));
 		$saves = 0;
 		$guarded->beforeSave = function (array $before, array $after) use ($service, &$saves): void {
 			$saves++;

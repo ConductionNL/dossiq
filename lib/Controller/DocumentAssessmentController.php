@@ -81,25 +81,15 @@ class DocumentAssessmentController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function outstanding(string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->guard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return new JSONResponse(
-				['error' => 'forbidden', 'message' => $this->l10n->t('You do not have access to this case.')],
-				Http::STATUS_FORBIDDEN
-			);
+		$refusal = $this->refusal(caseId: $id);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
 			return new JSONResponse($this->outstanding->forCase(caseId: $id));
 		} catch (Throwable $e) {
-			return new JSONResponse(
-				['error' => 'unavailable', 'message' => $this->l10n->t('OpenRegister is not available.')],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
+			return $this->unavailable();
 		}
 	}//end outstanding()
 
@@ -114,25 +104,52 @@ class DocumentAssessmentController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(string $id): JSONResponse {
+		$refusal = $this->refusal(caseId: $id);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		try {
+			return new JSONResponse($this->assessed->forCase(caseId: $id));
+		} catch (Throwable $e) {
+			return $this->unavailable();
+		}
+	}//end index()
+
+	/**
+	 * The answer that refuses the caller this case, or null when they may read it.
+	 *
+	 * 401 without a signed-in user, 403 without read access to the case.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return JSONResponse|null The refusal, or null to go on.
+	 */
+	private function refusal(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->guard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
+		if ($this->guard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
 			return new JSONResponse(
 				['error' => 'forbidden', 'message' => $this->l10n->t('You do not have access to this case.')],
 				Http::STATUS_FORBIDDEN
 			);
 		}
 
-		try {
-			return new JSONResponse($this->assessed->forCase(caseId: $id));
-		} catch (Throwable $e) {
-			return new JSONResponse(
-				['error' => 'unavailable', 'message' => $this->l10n->t('OpenRegister is not available.')],
-				Http::STATUS_SERVICE_UNAVAILABLE
-			);
-		}
-	}//end index()
+		return null;
+	}//end refusal()
+
+	/**
+	 * The answer when OpenRegister cannot be read: 503, never an empty list.
+	 *
+	 * @return JSONResponse The 503.
+	 */
+	private function unavailable(): JSONResponse {
+		return new JSONResponse(
+			['error' => 'unavailable', 'message' => $this->l10n->t('OpenRegister is not available.')],
+			Http::STATUS_SERVICE_UNAVAILABLE
+		);
+	}//end unavailable()
 }//end class

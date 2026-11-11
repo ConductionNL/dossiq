@@ -163,14 +163,9 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(string $entryId): JSONResponse {
-		$refusal = $this->requireIntakeRole();
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
 		}
 
 		return new JSONResponse($entry);
@@ -191,23 +186,33 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function release(string $entryId): JSONResponse {
-		$refusal = $this->requireIntakeRole();
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
 		}
 
 		if ((string)($entry['outcome'] ?? '') !== IntakeLog::OUTCOME_QUARANTINED) {
 			return new JSONResponse(['message' => 'not_quarantined'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$message = $this->messageOf(entry: $entry);
-		$outcome = $this->intake->fileOnCase(
-			message: $message,
+		$outcome = $this->fileReleased(entry: $entry);
+		$this->markReleased(entryId: $entryId);
+
+		return new JSONResponse(['released' => true, 'outcome' => $outcome]);
+	}//end release()
+
+	/**
+	 * File a quarantined message on its case, accepted by hand.
+	 *
+	 * @param array<string, mixed> $entry The quarantined intake log entry.
+	 *
+	 * @return string The outcome the intake answered.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function fileReleased(array $entry): string {
+		return $this->intake->fileOnCase(
+			message: $this->messageOf(entry: $entry),
 			verdict: FilterVerdict::accept(
 				filterName: 'release',
 				reason: 'Released by hand after a failing sender-authentication verdict.'
@@ -215,7 +220,18 @@ class MailIntakeController extends Controller {
 			results: $this->resultsOf(entry: $entry),
 			caseId: (string)($entry['case'] ?? '')
 		);
+	}//end fileReleased()
 
+	/**
+	 * Record on the intake log entry that it was released, by whom and when.
+	 *
+	 * @param string $entryId The intake log entry.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function markReleased(string $entryId): void {
 		$this->log->amend(
 			entryId: $entryId,
 			changes: [
@@ -224,9 +240,7 @@ class MailIntakeController extends Controller {
 				'releasedAt' => $this->time->getDateTime()->format(DATE_ATOM),
 			]
 		);
-
-		return new JSONResponse(['released' => true, 'outcome' => $outcome]);
-	}//end release()
+	}//end markReleased()
 
 	/**
 	 * Correct a junk verdict, in either direction.
@@ -244,14 +258,9 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function junk(string $entryId, bool $junk = false): JSONResponse {
-		$refusal = $this->requireIntakeRole();
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
 		}
 
 		if ($junk === true) {
@@ -292,14 +301,9 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function bounce(string $entryId, string $address = '', string $reason = ''): JSONResponse {
-		$refusal = $this->requireIntakeRole();
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
 		}
 
 		$result = $this->bounce->bounce(
@@ -339,14 +343,9 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function move(string $entryId, string $target = '', string $note = ''): JSONResponse {
-		$refusal = $this->requireIntakeRole();
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$entry = $this->workableEntry(entryId: $entryId);
+		if ($entry instanceof JSONResponse) {
+			return $entry;
 		}
 
 		$result = $this->move->move(
@@ -403,6 +402,39 @@ class MailIntakeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function fileOnCase(string $entryId, string $caseId = '', string $reason = ''): JSONResponse {
+		$refusal = $this->fileOnCaseRefusal(caseId: $caseId, reason: $reason);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$entry = $this->entryOrNull(entryId: $entryId);
+		if ($entry === null) {
+			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$filing = new ManualFiling();
+		$filing->entryId = $entryId;
+		$filing->entry = $entry;
+		$filing->caseId = trim($caseId);
+		$filing->reason = $reason;
+
+		return $this->fileByHand(filing: $filing);
+	}//end fileOnCase()
+
+	/**
+	 * Refuse a filing by hand the caller may not make, or that says too little.
+	 *
+	 * The intake role first; then a case and a reason; then whether THIS
+	 * caller may see THIS case.
+	 *
+	 * @param string $caseId The case the handler picked.
+	 * @param string $reason Why they overrode the match.
+	 *
+	 * @return JSONResponse|null A refusal, or null when the filing may go ahead.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function fileOnCaseRefusal(string $caseId, string $reason): ?JSONResponse {
 		$refusal = $this->requireIntakeRole();
 		if ($refusal !== null) {
 			return $refusal;
@@ -420,56 +452,91 @@ class MailIntakeController extends Controller {
 			return new JSONResponse(['message' => 'reason_required'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->caseReadRefusal(caseId: trim($caseId));
+	}//end fileOnCaseRefusal()
+
+	/**
+	 * Refuse a caller who may not read the case.
+	 *
+	 * @param string $caseId The case, trimmed.
+	 *
+	 * @return JSONResponse|null A refusal, or null when the caller may read it.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function caseReadRefusal(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: trim($caseId), user: $user) === false) {
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
 			return new JSONResponse(
-				['message' => 'Not authorized', 'case' => trim($caseId)],
+				['message' => 'Not authorized', 'case' => $caseId],
 				Http::STATUS_FORBIDDEN
 			);
 		}
 
-		$entry = $this->entryOrNull(entryId: $entryId);
-		if ($entry === null) {
-			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
+		return null;
+	}//end caseReadRefusal()
 
-		$previous = trim((string)($entry['case'] ?? ''));
+	/**
+	 * File the message on the picked case and record who, why and where it was before.
+	 *
+	 * @param ManualFiling $filing The message being filed by hand.
+	 *
+	 * @return JSONResponse What happened.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function fileByHand(ManualFiling $filing): JSONResponse {
+		$previous = trim((string)($filing->entry['case'] ?? ''));
 
 		$outcome = $this->intake->fileOnCase(
-			message: $this->messageOf(entry: $entry),
+			message: $this->messageOf(entry: $filing->entry),
 			verdict: FilterVerdict::accept(
 				filterName: 'file-on-case',
-				reason: $reason
+				reason: $filing->reason
 			),
-			results: $this->resultsOf(entry: $entry),
-			caseId: trim($caseId)
+			results: $this->resultsOf(entry: $filing->entry),
+			caseId: $filing->caseId
 		);
 
+		$this->recordFiledByHand(filing: $filing, previous: $previous);
+
+		return new JSONResponse(
+			[
+				'filed' => true,
+				'case' => $filing->caseId,
+				'previousCase' => $previous,
+				'outcome' => $outcome,
+			]
+		);
+	}//end fileByHand()
+
+	/**
+	 * Record on the log entry who filed it by hand, when, why, and where it was before.
+	 *
+	 * @param ManualFiling $filing   The message filed by hand.
+	 * @param string       $previous The case it was on before, or ''.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function recordFiledByHand(ManualFiling $filing, string $previous): void {
 		$this->log->amend(
-			entryId: $entryId,
+			entryId: $filing->entryId,
 			changes: [
 				'outcome' => IntakeLog::OUTCOME_CASE,
-				'case' => trim($caseId),
-				'reason' => $reason,
+				'case' => $filing->caseId,
+				'reason' => $filing->reason,
 				'filedBy' => $this->callerId(),
 				'filedAt' => $this->time->getDateTime()->format(DATE_ATOM),
 				'previousCase' => $previous,
 			]
 		);
-
-		return new JSONResponse(
-			[
-				'filed' => true,
-				'case' => trim($caseId),
-				'previousCase' => $previous,
-				'outcome' => $outcome,
-			]
-		);
-	}//end fileOnCase()
+	}//end recordFiledByHand()
 
 	/**
 	 * Refuse a caller who is not the intake role.
@@ -490,6 +557,29 @@ class MailIntakeController extends Controller {
 
 		return null;
 	}//end requireIntakeRole()
+
+	/**
+	 * The entry an intake act works on, or the refusal: the intake role first, then the entry.
+	 *
+	 * @param string $entryId The entry.
+	 *
+	 * @return array<string, mixed>|JSONResponse The entry, or the 401, 403 or 404.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function workableEntry(string $entryId): array|JSONResponse {
+		$refusal = $this->requireIntakeRole();
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$entry = $this->entryOrNull(entryId: $entryId);
+		if ($entry === null) {
+			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $entry;
+	}//end workableEntry()
 
 	/**
 	 * One log entry, or null when there is none and when the log cannot answer.

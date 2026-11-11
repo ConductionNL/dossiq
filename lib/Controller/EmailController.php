@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use Closure;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseEmailService;
@@ -81,25 +82,51 @@ class EmailController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		return $this->guarded(send: fn (): JSONResponse => $this->sendComposed(caseId: $caseId));
+	}//end send()
+
+	/**
+	 * Send the message the handler composed, in a category a handler may send.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function sendComposed(string $caseId): JSONResponse {
+		$data = $this->readJsonBody();
+
+		// A handler sends a case update or a besluit, nothing else.
+		// statutory is for templates; marketing never comes from here.
+		$category = (string)($data['category'] ?? OptOutGate::CATEGORY_CASE_UPDATE);
+		if (in_array($category, self::HANDLER_CATEGORIES, true) === false) {
+			return new JSONResponse(['error' => 'invalid-category'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$result = $this->emailService->sendEmail(
+			$caseId,
+			$data['to'] ?? '',
+			$data['subject'] ?? '',
+			$data['body'] ?? '',
+			$data['attachments'] ?? [],
+			$category,
+		);
+		return $this->answer(result: $result);
+	}//end sendComposed()
+
+	/**
+	 * Run a send and answer its refusals: an opted-out recipient, a refused send, or a bad request.
+	 *
+	 * @param Closure(): JSONResponse $send The send.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function guarded(Closure $send): JSONResponse {
 		try {
-			$data = $this->readJsonBody();
-
-			// A handler sends a case update or a besluit, nothing else.
-			// statutory is for templates; marketing never comes from here.
-			$category = (string)($data['category'] ?? OptOutGate::CATEGORY_CASE_UPDATE);
-			if (in_array($category, self::HANDLER_CATEGORIES, true) === false) {
-				return new JSONResponse(['error' => 'invalid-category'], Http::STATUS_BAD_REQUEST);
-			}
-
-			$result = $this->emailService->sendEmail(
-				$caseId,
-				$data['to'] ?? '',
-				$data['subject'] ?? '',
-				$data['body'] ?? '',
-				$data['attachments'] ?? [],
-				$category,
-			);
-			return $this->answer(result: $result);
+			return $send();
 		} catch (RecipientOptedOutException $e) {
 			return $this->refused(exception: $e);
 		} catch (RefusedException $e) {
@@ -107,7 +134,7 @@ class EmailController extends Controller {
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}//end try
-	}//end send()
+	}//end guarded()
 
 	/**
 	 * Send email using a template.
@@ -125,22 +152,19 @@ class EmailController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		try {
-			$data = $this->readJsonBody();
+		return $this->guarded(
+			send: function () use ($caseId): JSONResponse {
+				$data = $this->readJsonBody();
 
-			$result = $this->emailService->sendFromTemplate(
-				$caseId,
-				$data['templateId'] ?? '',
-				$data['to'] ?? '',
-			);
-			return $this->answer(result: $result);
-		} catch (RecipientOptedOutException $e) {
-			return $this->refused(exception: $e);
-		} catch (RefusedException $e) {
-			return $this->refusedSend(exception: $e);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}//end try
+				return $this->answer(
+					result: $this->emailService->sendFromTemplate(
+						$caseId,
+						$data['templateId'] ?? '',
+						$data['to'] ?? '',
+					)
+				);
+			}
+		);
 	}//end sendFromTemplate()
 
 	/**
