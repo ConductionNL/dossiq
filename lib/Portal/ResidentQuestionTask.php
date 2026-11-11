@@ -175,14 +175,26 @@ class ResidentQuestionTask {
 			'assignee' => $party,
 			'dueAt' => $this->dueAt(date: (string)($asked->question['due'] ?? '')),
 			'objectUuid' => $asked->case,
-			'metadata' => [
-				'source' => (string)($asked->question['source'] ?? ''),
-				'question' => $asked->id,
-				'case' => $asked->case,
-				'partyReference' => $party,
-			],
+			'metadata' => $this->taskMetadata(asked: $asked, party: $party),
 		];
 	}//end taskData()
+
+	/**
+	 * What the task records about where it came from: the source, question, case and party.
+	 *
+	 * @param ResidentQuestion $asked The complete question.
+	 * @param string           $party The resident's party reference.
+	 *
+	 * @return array<string, string> The metadata.
+	 */
+	private function taskMetadata(ResidentQuestion $asked, string $party): array {
+		return [
+			'source' => (string)($asked->question['source'] ?? ''),
+			'question' => $asked->id,
+			'case' => $asked->case,
+			'partyReference' => $party,
+		];
+	}//end taskMetadata()
 
 	/**
 	 * What the resident reads on the task: what is asked and by when.
