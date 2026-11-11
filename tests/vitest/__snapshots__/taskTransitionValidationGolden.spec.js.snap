@@ -204,3 +204,68 @@ exports[`validateTaskTransition > answers every pair of statuses as before 1`] =
   },
 }
 `;
+
+exports[`validateTaskTransition > answers the create and update forms as before 1`] = `
+{
+  "create": [
+    {
+      "errors": {
+        "case": "Case is required",
+        "title": "Title is required",
+      },
+      "valid": false,
+    },
+    {
+      "errors": {
+        "case": "Case is required",
+        "title": "Title is required",
+      },
+      "valid": false,
+    },
+    {
+      "errors": {
+        "case": "Case is required",
+      },
+      "valid": false,
+    },
+    {
+      "errors": {},
+      "valid": true,
+    },
+    {
+      "errors": {
+        "title": "Title is required",
+      },
+      "valid": false,
+    },
+  ],
+  "update": [
+    {
+      "errors": {
+        "title": "Title is required",
+      },
+      "valid": false,
+    },
+    {
+      "errors": {
+        "title": "Title is required",
+      },
+      "valid": false,
+    },
+    {
+      "errors": {},
+      "valid": true,
+    },
+    {
+      "errors": {},
+      "valid": true,
+    },
+    {
+      "errors": {
+        "title": "Title is required",
+      },
+      "valid": false,
+    },
+  ],
+}
+`;
