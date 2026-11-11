@@ -49,6 +49,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -96,10 +97,7 @@ class AcknowledgementController extends Controller {
 	public function duty(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
@@ -137,10 +135,7 @@ class AcknowledgementController extends Controller {
 	public function recordMet(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return new JSONResponse(
-				['error' => $this->l10n->t('You are not signed in.')],
-				Http::STATUS_UNAUTHORIZED
-			);
+			return $this->notSignedIn();
 		}
 
 		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
@@ -150,6 +145,18 @@ class AcknowledgementController extends Controller {
 			);
 		}
 
+		return $this->recordMetAs(caseId: $caseId, user: $user);
+	}//end recordMet()
+
+	/**
+	 * Record that the case was acknowledged another way, as the caller.
+	 *
+	 * @param string $caseId The case.
+	 * @param IUser  $user   Who said so.
+	 *
+	 * @return JSONResponse The duty, the refusal, or a 500 that hides the failure.
+	 */
+	private function recordMetAs(string $caseId, IUser $user): JSONResponse {
 		try {
 			$duty = $this->acknowledgement->recordMetAnotherWay(
 				caseId: $caseId,
@@ -164,17 +171,41 @@ class AcknowledgementController extends Controller {
 				$e->getStatus()
 			);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq acknowledgement: recording a manual confirmation on case {case} failed',
-				['case' => $caseId, 'reason' => $e->getMessage()]
-			);
-
-			return new JSONResponse(
-				['error' => $this->l10n->t('The confirmation could not be recorded.')],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->recordFailed(caseId: $caseId, exception: $e);
 		}//end try
 
 		return new JSONResponse(['duty' => $duty]);
-	}//end recordMet()
+	}//end recordMetAs()
+
+	/**
+	 * The logged 500 for a confirmation that could not be recorded.
+	 *
+	 * @param string    $caseId    The case.
+	 * @param Throwable $exception The failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function recordFailed(string $caseId, Throwable $exception): JSONResponse {
+		$this->logger->error(
+			'Dossiq acknowledgement: recording a manual confirmation on case {case} failed',
+			['case' => $caseId, 'reason' => $exception->getMessage()]
+		);
+
+		return new JSONResponse(
+			['error' => $this->l10n->t('The confirmation could not be recorded.')],
+			Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end recordFailed()
+
+	/**
+	 * The 401 for a caller without a session.
+	 *
+	 * @return JSONResponse
+	 */
+	private function notSignedIn(): JSONResponse {
+		return new JSONResponse(
+			['error' => $this->l10n->t('You are not signed in.')],
+			Http::STATUS_UNAUTHORIZED
+		);
+	}//end notSignedIn()
 }//end class
