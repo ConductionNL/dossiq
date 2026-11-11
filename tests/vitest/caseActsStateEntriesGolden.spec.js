@@ -15,7 +15,7 @@ describe('acts menu state entries', () => {
 		const menus = {}
 		for (const held of values) {
 			for (const draft of [undefined, true, 'true', 0]) {
-				menus[`held=${String(held)} draft=${String(draft)}`] = buildActsMenu({ acts: { held, draft } })
+				menus[`held=${JSON.stringify(held)} draft=${JSON.stringify(draft)}`] = buildActsMenu({ acts: { held, draft } })
 					.filter((entry) => entry.kind === 'state')
 			}
 		}
