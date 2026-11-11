@@ -288,19 +288,18 @@ class CaseAccessLinkService {
 	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function holderPreview(string $anchor): ?array {
-		$service = $this->gateway->accessLinkService();
-		$reader = $this->gateway->accessLinkReader();
-		if ($service === null || $reader === null) {
+		$tools = $this->previewTools();
+		if ($tools === []) {
 			return null;
 		}
 
 		try {
-			$link = $service->resolve(trim($anchor));
+			$link = $tools['service']->resolve(trim($anchor));
 			if ($link === null) {
 				return null;
 			}
 
-			$body = $reader->read($link);
+			$body = $tools['reader']->read($link);
 		} catch (\Throwable $failure) {
 			$this->logger->error(
 				'CaseAccessLinkService: could not read a link preview',
@@ -309,12 +308,38 @@ class CaseAccessLinkService {
 			return null;
 		}
 
+		return $this->strippedPreview(body: $body);
+	}//end holderPreview()
+
+	/**
+	 * OpenRegister's link service and link reader, empty when either is not there.
+	 *
+	 * @return array{service: object, reader: object}|array{}
+	 */
+	private function previewTools(): array {
+		$service = $this->gateway->accessLinkService();
+		$reader = $this->gateway->accessLinkReader();
+		if ($service === null || $reader === null) {
+			return [];
+		}
+
+		return ['service' => $service, 'reader' => $reader];
+	}//end previewTools()
+
+	/**
+	 * What a holder reads, stripped of the internals OpenRegister does not publish; null when the link read nothing.
+	 *
+	 * @param mixed $body What the link reader answered.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function strippedPreview(mixed $body): ?array {
 		if (is_array($body) === false) {
 			return null;
 		}
 
 		return $this->projection->strip(body: $body);
-	}//end holderPreview()
+	}//end strippedPreview()
 
 	/**
 	 * Mint one link, whatever its subject.
