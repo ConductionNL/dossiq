@@ -279,6 +279,22 @@ class CaseReassignmentService {
 	 * @return void
 	 */
 	private function reportRelease(CaseloadReleaseRun $run, array $tasks): void {
+		$this->logRelease(run: $run, taskCount: count($tasks));
+
+		if ($tasks !== []) {
+			$this->notifyDigest(run: $run, count: count($tasks));
+		}
+	}//end reportRelease()
+
+	/**
+	 * Log that the release was handed to a bulk job.
+	 *
+	 * @param CaseloadReleaseRun $run       The release being carried out.
+	 * @param int                $taskCount How many tasks were handed over.
+	 *
+	 * @return void
+	 */
+	private function logRelease(CaseloadReleaseRun $run, int $taskCount): void {
 		$this->logger->info(
 			'Dossiq caseload release handed to a bulk job',
 			[
@@ -287,14 +303,10 @@ class CaseReassignmentService {
 				'to' => $run->toUser,
 				'actor' => $run->actorId,
 				'cases' => count($run->caseIds),
-				'tasks' => count($tasks),
+				'tasks' => $taskCount,
 			]
 		);
-
-		if ($tasks !== []) {
-			$this->notifyDigest(run: $run, count: count($tasks));
-		}
-	}//end reportRelease()
+	}//end logRelease()
 
 	/**
 	 * Refuse a release that names no handler, no receiver or no reason.
