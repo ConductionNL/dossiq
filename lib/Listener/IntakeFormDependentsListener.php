@@ -81,30 +81,7 @@ class IntakeFormDependentsListener implements IEventListener {
 		}
 
 		try {
-			if ($this->isCaseSchema(schema: $event->getSchema()) === false) {
-				return;
-			}
-
-			foreach ($this->bindings->boundCaseTypes() as $caseType) {
-				$names = $this->check->namesOf(caseType: $caseType);
-				if ($names === []) {
-					continue;
-				}
-
-				$caseTypeId = $names[0];
-				$event->addForm(
-					new $formClass(
-						id: $caseTypeId,
-						app: Application::APP_ID,
-						title: $this->titleOf(caseType: $caseType),
-						author: $this->ownerOf(caseType: $caseType),
-						mapping: $this->binding->mappingFor(caseType: $caseType),
-						unpublish: function () use ($caseTypeId): void {
-							$this->bindings->unbind(caseTypeId: $caseTypeId);
-						},
-					)
-				);
-			}
+			$this->announceForms(event: $event, formClass: $formClass);
 		} catch (Throwable $e) {
 			// A schema save must not fail on this answer. The price is that
 			// the save is judged without dossiq's forms, so say so loudly.
@@ -114,6 +91,54 @@ class IntakeFormDependentsListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Announce every bound case type's form when the schema about to change is the case schema.
+	 *
+	 * @param FormDestinationDependentsEvent $event     The engine's question.
+	 * @param string                         $formClass The engine's form dependent class.
+	 *
+	 * @return void
+	 */
+	private function announceForms(FormDestinationDependentsEvent $event, string $formClass): void {
+		if ($this->isCaseSchema(schema: $event->getSchema()) === false) {
+			return;
+		}
+
+		foreach ($this->bindings->boundCaseTypes() as $caseType) {
+			$form = $this->formOf(caseType: $caseType, formClass: $formClass);
+			if ($form !== null) {
+				$event->addForm($form);
+			}
+		}
+	}//end announceForms()
+
+	/**
+	 * The form dependent a bound case type announces, or null when it names no form.
+	 *
+	 * @param array<string, mixed> $caseType  The bound case type.
+	 * @param string               $formClass The engine's form dependent class.
+	 *
+	 * @return object|null
+	 */
+	private function formOf(array $caseType, string $formClass): ?object {
+		$names = $this->check->namesOf(caseType: $caseType);
+		if ($names === []) {
+			return null;
+		}
+
+		$caseTypeId = $names[0];
+		return new $formClass(
+			id: $caseTypeId,
+			app: Application::APP_ID,
+			title: $this->titleOf(caseType: $caseType),
+			author: $this->ownerOf(caseType: $caseType),
+			mapping: $this->binding->mappingFor(caseType: $caseType),
+			unpublish: function () use ($caseTypeId): void {
+				$this->bindings->unbind(caseTypeId: $caseTypeId);
+			},
+		);
+	}//end formOf()
 
 	/**
 	 * Whether the proposed schema is the case schema.

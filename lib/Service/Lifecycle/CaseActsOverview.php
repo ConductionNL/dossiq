@@ -97,28 +97,80 @@ class CaseActsOverview {
 		$marker = ($this->archiveState?->markerOn(case: $case) ?? []);
 
 		return array_merge(
-			[
-				'caseId' => $caseId,
-				'archived' => ($marker !== []),
-				'archivedAt' => (string)($marker['at'] ?? ''),
-				'archivedBy' => (string)($marker['by'] ?? ''),
-				'archivedReason' => (string)($marker['reason'] ?? ''),
-				'held' => $this->acts->holds->isHeld(case: $case),
-				'heldUntil' => (string)($case[CaseHoldActs::UNTIL_FIELD] ?? ''),
-				'draft' => $this->acts->drafts->isDraft(case: $case),
-				'incomplete' => ($missing !== []),
-				'missingFields' => $missing,
-				'endingAct' => (string)($case[CaseEndingActs::ENDING_FIELD] ?? ''),
-				'ending' => $this->acts->endings->endingOf(case: $case),
-				'resultTypes' => $this->acts->endings->resultChoicesOn(case: $case),
-				'statusIsHandSettable' => $this->processStatus->allowsHandSet(
-					caseTypeId: (string)($case['caseType'] ?? '')
-				),
-				'remedies' => ($this->remedies?->forCase(caseId: $caseId, case: $case) ?? []),
-			],
-			$this->acts->menu->forCase(caseId: $caseId, case: $case)
+			['caseId' => $caseId],
+			self::archiveFacts(marker: $marker),
+			$this->workFacts(openCase: $case, missing: $missing),
+			$this->endingFacts(openCase: $case),
+			$this->actionFacts(caseId: $caseId, openCase: $case)
 		);
 	}//end overview()
+
+	/**
+	 * Whether the case is archived, and when, by whom and why.
+	 *
+	 * @param array<string, mixed> $marker The archive marker on the case, empty when it is not archived.
+	 *
+	 * @return array<string, mixed> The archive facts.
+	 */
+	private static function archiveFacts(array $marker): array {
+		return [
+			'archived' => ($marker !== []),
+			'archivedAt' => (string)($marker['at'] ?? ''),
+			'archivedBy' => (string)($marker['by'] ?? ''),
+			'archivedReason' => (string)($marker['reason'] ?? ''),
+		];
+	}//end archiveFacts()
+
+	/**
+	 * Whether the case is held, a draft or incomplete.
+	 *
+	 * @param array<string, mixed> $openCase The case.
+	 * @param array<int, string>   $missing  The fields it misses.
+	 *
+	 * @return array<string, mixed> The facts.
+	 */
+	private function workFacts(array $openCase, array $missing): array {
+		return [
+			'held' => $this->acts->holds->isHeld(case: $openCase),
+			'heldUntil' => (string)($openCase[CaseHoldActs::UNTIL_FIELD] ?? ''),
+			'draft' => $this->acts->drafts->isDraft(case: $openCase),
+			'incomplete' => ($missing !== []),
+			'missingFields' => $missing,
+		];
+	}//end workFacts()
+
+	/**
+	 * How the case ended, the results it may end with, and whether its status may be set by hand.
+	 *
+	 * @param array<string, mixed> $openCase The case.
+	 *
+	 * @return array<string, mixed> The facts.
+	 */
+	private function endingFacts(array $openCase): array {
+		return [
+			'endingAct' => (string)($openCase[CaseEndingActs::ENDING_FIELD] ?? ''),
+			'ending' => $this->acts->endings->endingOf(case: $openCase),
+			'resultTypes' => $this->acts->endings->resultChoicesOn(case: $openCase),
+			'statusIsHandSettable' => $this->processStatus->allowsHandSet(
+				caseTypeId: (string)($openCase['caseType'] ?? '')
+			),
+		];
+	}//end endingFacts()
+
+	/**
+	 * The remedies the case offers, then the acts menu.
+	 *
+	 * @param string               $caseId   The case UUID.
+	 * @param array<string, mixed> $openCase The case.
+	 *
+	 * @return array<string, mixed> The remedies and the menu.
+	 */
+	private function actionFacts(string $caseId, array $openCase): array {
+		return array_merge(
+			['remedies' => ($this->remedies?->forCase(caseId: $caseId, case: $openCase) ?? [])],
+			$this->acts->menu->forCase(caseId: $caseId, case: $openCase)
+		);
+	}//end actionFacts()
 
 	/**
 	 * Whether the case is ready to be archived, item by item.

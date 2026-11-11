@@ -60,39 +60,83 @@ function asArray(raw) {
 export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 	const nodes = asArray(statusNodes)
 	const edges = asArray(transitions)
-	const issues = []
 
 	if (nodes.length === 0) {
 		// Nothing to validate yet — an empty canvas is incomplete, not invalid.
-		return issues
+		return []
 	}
 
+	const graph = workflowGraph(nodes, edges)
+	return [
+		...danglingEdgeIssues(graph, edges),
+		...duplicateTransitionIssues(graph),
+		...noFinalStatusIssues(graph),
+		...orphanNodeIssues(graph),
+		...unreachableFinalIssues(graph),
+		...cycleNoExitIssues(graph),
+	]
+}
+
+/**
+ * The graph the rules read: the nodes, the transitions between two of them,
+ * the final nodes, and the forward and reverse adjacency over those
+ * transitions.
+ *
+ * @param {Array<object>} nodes The `statusType` objects
+ * @param {Array<object>} edges The transitions
+ * @return {object} The graph
+ */
+function workflowGraph(nodes, edges) {
 	const nodeIds = new Set(nodes.map((n) => n.id))
-	const nodeName = (id) => nodes.find((n) => n.id === id)?.name || id
-
-	// --- DANGLING_EDGE: transition references a status outside this graph.
-	const validEdges = []
-	edges.forEach((edge) => {
-		const fromValid = nodeIds.has(edge.fromStatus)
-		const toValid = nodeIds.has(edge.toStatus)
-		if (!fromValid || !toValid) {
-			issues.push({
-				type: 'error',
-				code: RULES.DANGLING_EDGE,
-				message: t(
-					'dossiq',
-					'Transition "{label}" references a status that no longer exists',
-					{ label: edge.label || `${edge.fromStatus} → ${edge.toStatus}` },
-				),
-			})
-			return
-		}
-		validEdges.push(edge)
-	})
-
-	// --- DUPLICATE_TRANSITION: two edges with the same from/to pair.
-	const seenPairs = new Set()
+	const validEdges = edges.filter((edge) => nodeIds.has(edge.fromStatus) && nodeIds.has(edge.toStatus))
+	const forward = new Map(nodes.map((n) => [n.id, []]))
+	const reverse = new Map(nodes.map((n) => [n.id, []]))
 	validEdges.forEach((edge) => {
+		forward.get(edge.fromStatus).push(edge.toStatus)
+		reverse.get(edge.toStatus).push(edge.fromStatus)
+	})
+	return {
+		nodes,
+		nodeIds,
+		edges: validEdges,
+		finalNodes: nodes.filter((n) => n.isFinal === true),
+		forward,
+		reverse,
+		nodeName: (id) => nodes.find((n) => n.id === id)?.name || id,
+	}
+}
+
+/**
+ * DANGLING_EDGE: a transition references a status outside this graph.
+ *
+ * @param {object} graph The graph
+ * @param {Array<object>} edges Every transition, valid or not
+ * @return {Array<object>} The issues
+ */
+function danglingEdgeIssues(graph, edges) {
+	return edges
+		.filter((edge) => !graph.nodeIds.has(edge.fromStatus) || !graph.nodeIds.has(edge.toStatus))
+		.map((edge) => ({
+			type: 'error',
+			code: RULES.DANGLING_EDGE,
+			message: t(
+				'dossiq',
+				'Transition "{label}" references a status that no longer exists',
+				{ label: edge.label || `${edge.fromStatus} → ${edge.toStatus}` },
+			),
+		}))
+}
+
+/**
+ * DUPLICATE_TRANSITION: two transitions with the same from/to pair.
+ *
+ * @param {object} graph The graph
+ * @return {Array<object>} The issues
+ */
+function duplicateTransitionIssues(graph) {
+	const issues = []
+	const seenPairs = new Set()
+	graph.edges.forEach((edge) => {
 		const key = `${edge.fromStatus}::${edge.toStatus}`
 		if (seenPairs.has(key)) {
 			issues.push({
@@ -101,139 +145,203 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 				message: t(
 					'dossiq',
 					'Duplicate transition from "{from}" to "{to}"',
-					{ from: nodeName(edge.fromStatus), to: nodeName(edge.toStatus) },
+					{ from: graph.nodeName(edge.fromStatus), to: graph.nodeName(edge.toStatus) },
 				),
 			})
 		}
 		seenPairs.add(key)
 	})
+	return issues
+}
 
-	// --- NO_FINAL_STATUS: at least one statusType must be marked final.
-	const finalNodes = nodes.filter((n) => n.isFinal === true)
-	if (finalNodes.length === 0) {
-		issues.push({
-			type: 'error',
-			code: RULES.NO_FINAL_STATUS,
-			message: t('dossiq', 'Workflow has no final status defined'),
-		})
+/**
+ * NO_FINAL_STATUS: at least one statusType must be marked final.
+ *
+ * @param {object} graph The graph
+ * @return {Array<object>} The issues
+ */
+function noFinalStatusIssues(graph) {
+	if (graph.finalNodes.length > 0) {
+		return []
 	}
+	return [{
+		type: 'error',
+		code: RULES.NO_FINAL_STATUS,
+		message: t('dossiq', 'Workflow has no final status defined'),
+	}]
+}
 
-	// Build forward/reverse adjacency over valid edges only.
-	const forward = new Map(nodes.map((n) => [n.id, []]))
-	const reverse = new Map(nodes.map((n) => [n.id, []]))
-	validEdges.forEach((edge) => {
-		forward.get(edge.fromStatus).push(edge.toStatus)
-		reverse.get(edge.toStatus).push(edge.fromStatus)
-	})
+/**
+ * ORPHAN_NODE: an isolated status (no incoming or outgoing transitions), in
+ * a graph of more than one status.
+ *
+ * @param {object} graph The graph
+ * @return {Array<object>} The issues
+ */
+function orphanNodeIssues(graph) {
+	if (graph.nodes.length <= 1) {
+		return []
+	}
+	return graph.nodes
+		.filter((n) => graph.reverse.get(n.id).length === 0 && graph.forward.get(n.id).length === 0)
+		.map((n) => ({
+			type: 'warning',
+			code: RULES.ORPHAN_NODE,
+			message: t(
+				'dossiq',
+				'Status "{name}" has no transitions connecting it to the rest of the workflow',
+				{ name: n.name },
+			),
+		}))
+}
 
-	// --- ORPHAN_NODE: isolated status (no incoming or outgoing transitions).
-	if (nodes.length > 1) {
-		nodes.forEach((n) => {
-			const hasIn = reverse.get(n.id).length > 0
-			const hasOut = forward.get(n.id).length > 0
-			if (!hasIn && !hasOut) {
-				issues.push({
-					type: 'warning',
-					code: RULES.ORPHAN_NODE,
-					message: t(
-						'dossiq',
-						'Status "{name}" has no transitions connecting it to the rest of the workflow',
-						{ name: n.name },
-					),
-				})
+/**
+ * UNREACHABLE_FINAL: a final status no starting status leads to.
+ *
+ * @param {object} graph The graph
+ * @return {Array<object>} The issues
+ */
+function unreachableFinalIssues(graph) {
+	const reachable = reachableFromStart(graph)
+	return graph.finalNodes
+		.filter((n) => !reachable.has(n.id))
+		.map((n) => ({
+			type: 'error',
+			code: RULES.UNREACHABLE_FINAL,
+			message: t(
+				'dossiq',
+				'Final status "{name}" cannot be reached from any starting status',
+				{ name: n.name },
+			),
+		}))
+}
+
+/**
+ * The statuses a breadth-first walk forward from the "initial" nodes (no
+ * incoming transitions) visits. If every node has an incoming transition
+ * (e.g. the whole graph is a cycle), there is no clear entry point, so
+ * nothing is reachable.
+ *
+ * @param {object} graph The graph
+ * @return {Set<string>} The reachable status ids
+ */
+function reachableFromStart(graph) {
+	const reachable = new Set()
+	const queue = graph.nodes.filter((n) => graph.reverse.get(n.id).length === 0).map((n) => n.id)
+	while (queue.length > 0) {
+		const current = queue.shift()
+		if (reachable.has(current)) continue
+		reachable.add(current)
+		graph.forward.get(current).forEach((next) => queue.push(next))
+	}
+	return reachable
+}
+
+/**
+ * The statuses that can reach a final status: a breadth-first walk over the
+ * REVERSED graph, starting from the final nodes.
+ *
+ * @param {object} graph The graph
+ * @return {Set<string>} The status ids
+ */
+function canReachFinal(graph) {
+	const reaching = new Set(graph.finalNodes.map((n) => n.id))
+	const queue = [...reaching]
+	while (queue.length > 0) {
+		const current = queue.shift()
+		graph.reverse.get(current).forEach((prev) => {
+			if (!reaching.has(prev)) {
+				reaching.add(prev)
+				queue.push(prev)
 			}
 		})
 	}
+	return reaching
+}
 
-	// --- UNREACHABLE_FINAL: BFS forward from "initial" nodes (no incoming
-	// edges); any final node never visited is unreachable. If every node has
-	// an incoming edge (e.g. the whole graph is a cycle), there is no clear
-	// entry point, so nothing is reachable.
-	const initialNodes = nodes.filter((n) => reverse.get(n.id).length === 0)
-	const reachableFromInitial = new Set()
-	const bfsQueue = [...initialNodes.map((n) => n.id)]
-	while (bfsQueue.length > 0) {
-		const current = bfsQueue.shift()
-		if (reachableFromInitial.has(current)) continue
-		reachableFromInitial.add(current)
-		forward.get(current).forEach((next) => bfsQueue.push(next))
+const WHITE = 0
+const GRAY = 1
+const BLACK = 2
+
+/**
+ * CYCLE_NO_EXIT: a cycle whose member statuses can never reach a final
+ * status, each distinct cycle once.
+ *
+ * @param {object} graph The graph
+ * @return {Array<object>} The issues
+ */
+function cycleNoExitIssues(graph) {
+	const reaching = canReachFinal(graph)
+	const reported = new Set()
+	const issues = []
+	for (const cycleNodes of cyclesOf(graph)) {
+		const cycleKey = [...cycleNodes].sort().join(',')
+		if (reported.has(cycleKey) || cycleNodes.some((id) => reaching.has(id))) {
+			continue
+		}
+		reported.add(cycleKey)
+		issues.push(cycleNoExitIssue(graph, cycleNodes))
 	}
-	finalNodes.forEach((n) => {
-		if (!reachableFromInitial.has(n.id)) {
-			issues.push({
-				type: 'error',
-				code: RULES.UNREACHABLE_FINAL,
-				message: t(
-					'dossiq',
-					'Final status "{name}" cannot be reached from any starting status',
-					{ name: n.name },
-				),
-			})
+	return issues
+}
+
+/**
+ * The issue for one cycle without an exit.
+ *
+ * @param {object} graph The graph
+ * @param {Array<string>} cycleNodes The statuses on the cycle
+ * @return {object} The issue
+ */
+function cycleNoExitIssue(graph, cycleNodes) {
+	return {
+		type: 'warning',
+		code: RULES.CYCLE_NO_EXIT,
+		message: t(
+			'dossiq',
+			'Cycle detected with no exit to a final status: {names}',
+			{ names: cycleNodes.map(graph.nodeName).join(' → ') },
+		),
+	}
+}
+
+/**
+ * Every cycle a depth-first walk (white/gray/black) finds, as the statuses
+ * on the stack from the one a back edge returns to, in the order found.
+ *
+ * @param {object} graph The graph
+ * @return {Array<Array<string>>} The cycles
+ */
+function cyclesOf(graph) {
+	const walk = {
+		graph,
+		color: new Map(graph.nodes.map((n) => [n.id, WHITE])),
+		stack: [],
+		cycles: [],
+	}
+	graph.nodes.forEach((n) => {
+		if (walk.color.get(n.id) === WHITE) visit(walk, n.id)
+	})
+	return walk.cycles
+}
+
+/**
+ * Visit one status of the depth-first walk.
+ *
+ * @param {object} walk The walk: graph, colours, stack and cycles found
+ * @param {string} nodeId Node to visit
+ * @return {void}
+ */
+function visit(walk, nodeId) {
+	walk.color.set(nodeId, GRAY)
+	walk.stack.push(nodeId)
+	walk.graph.forward.get(nodeId).forEach((next) => {
+		if (walk.color.get(next) === GRAY) {
+			// Back edge found — the cycle is the stack from that node on.
+			walk.cycles.push(walk.stack.slice(walk.stack.indexOf(next)))
+		} else if (walk.color.get(next) === WHITE) {
+			visit(walk, next)
 		}
 	})
-
-	// --- CYCLE_NO_EXIT: a cycle whose member nodes can never reach a final
-	// status. First compute canReachFinal via BFS over the REVERSED graph
-	// starting from final nodes.
-	const canReachFinal = new Set(finalNodes.map((n) => n.id))
-	const revQueue = [...finalNodes.map((n) => n.id)]
-	while (revQueue.length > 0) {
-		const current = revQueue.shift()
-		reverse.get(current).forEach((prev) => {
-			if (!canReachFinal.has(prev)) {
-				canReachFinal.add(prev)
-				revQueue.push(prev)
-			}
-		})
-	}
-
-	// DFS cycle detection (white/gray/black) collecting the node set of each
-	// distinct cycle found via a back-edge to a node still on the stack.
-	const WHITE = 0
-	const GRAY = 1
-	const BLACK = 2
-	const color = new Map(nodes.map((n) => [n.id, WHITE]))
-	const stack = []
-	const reportedCycles = new Set()
-
-	/**
-	 * @param {string} nodeId Node to visit
-	 */
-	function dfs(nodeId) {
-		color.set(nodeId, GRAY)
-		stack.push(nodeId)
-		forward.get(nodeId).forEach((next) => {
-			if (color.get(next) === GRAY) {
-				// Back edge found — extract the cycle from the stack.
-				const cycleStart = stack.indexOf(next)
-				const cycleNodes = stack.slice(cycleStart)
-				const cycleKey = [...cycleNodes].sort().join(',')
-				if (
-					!reportedCycles.has(cycleKey)
-					&& !cycleNodes.some((id) => canReachFinal.has(id))
-				) {
-					reportedCycles.add(cycleKey)
-					issues.push({
-						type: 'warning',
-						code: RULES.CYCLE_NO_EXIT,
-						message: t(
-							'dossiq',
-							'Cycle detected with no exit to a final status: {names}',
-							{ names: cycleNodes.map(nodeName).join(' → ') },
-						),
-					})
-				}
-			} else if (color.get(next) === WHITE) {
-				dfs(next)
-			}
-		})
-		stack.pop()
-		color.set(nodeId, BLACK)
-	}
-
-	nodes.forEach((n) => {
-		if (color.get(n.id) === WHITE) dfs(n.id)
-	})
-
-	return issues
+	walk.stack.pop()
+	walk.color.set(nodeId, BLACK)
 }
