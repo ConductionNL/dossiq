@@ -61,18 +61,13 @@ final class ConfiguredSchemaRows {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function search(string $schemaKey, array $filters): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
 		$target = $this->target(schemaKey: $schemaKey);
 		if ($target === null) {
 			return [];
 		}
 
 		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
+			objectService: $target['objectService'],
 			register: $target['register'],
 			schema: $target['schema'],
 			filters: $filters,
@@ -80,19 +75,27 @@ final class ConfiguredSchemaRows {
 	}//end search()
 
 	/**
-	 * The configured register and the schema a key names, or null when either is unset.
+	 * The object service, the configured register and the schema a key names,
+	 * or null when any of them is missing.
+	 *
+	 * OpenRegister is asked first, so without it no configuration is read.
 	 *
 	 * @param string $schemaKey The configuration key of the schema.
 	 *
-	 * @return array{register: string, schema: string}|null The two, or null.
+	 * @return array{objectService: object, register: string, schema: string}|null The three, or null.
 	 */
 	private function target(string $schemaKey): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
+
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue($schemaKey);
 		if (empty($register) === true || empty($schema) === true) {
 			return null;
 		}
 
-		return ['register' => $register, 'schema' => $schema];
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $schema];
 	}//end target()
 }//end class
