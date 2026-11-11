@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\IntakeRoleGate;
 use OCA\Dossiq\Service\Email\BounceAction;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
@@ -546,16 +547,7 @@ class MailIntakeController extends Controller {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function requireIntakeRole(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->policy->mayRunIntake(userId: $user->getUID()) === false) {
-			return new JSONResponse(['message' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->refusal();
 	}//end requireIntakeRole()
 
 	/**
@@ -616,12 +608,7 @@ class MailIntakeController extends Controller {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function callerId(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return '';
-		}
-
-		return $user->getUID();
+		return (new IntakeRoleGate(userSession: $this->userSession, policy: $this->policy))->callerId();
 	}//end callerId()
 
 	/**
