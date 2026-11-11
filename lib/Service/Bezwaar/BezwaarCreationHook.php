@@ -42,7 +42,7 @@ namespace OCA\Dossiq\Service\Bezwaar;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CallerIdentity;
-use OCA\Dossiq\Service\Support\DossierReferenceUuid;
+use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -318,7 +318,7 @@ class BezwaarCreationHook {
 	 * @return string The UUID, or '' when none could be derived.
 	 */
 	private function extractUuid(mixed $value): string {
-		return DossierReferenceUuid::from(value: $value);
+		return ReferencedUuid::inDossierReference(value: $value);
 	}//end extractUuid()
 
 	/**

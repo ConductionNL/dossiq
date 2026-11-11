@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Support\DossierReferenceUuid;
+use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -209,7 +209,7 @@ class DossierCompiler {
 	 * @return string The UUID, or '' when none could be derived.
 	 */
 	private function extractUuid(mixed $value): string {
-		return DossierReferenceUuid::from(value: $value);
+		return ReferencedUuid::inDossierReference(value: $value);
 	}//end extractUuid()
 
 	/**
