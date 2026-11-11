@@ -210,6 +210,53 @@ class RetiredNodeTranslatorTest extends TestCase {
 	}//end testATransitionMailKeepsItsTextAsWritten()
 
 	/**
+	 * Both mails refuse an empty body, and the catalogue mail does so before it reads its subject.
+	 *
+	 * @return void
+	 */
+	public function testAMailWithoutABodyIsRefused(): void {
+		$refusals = [];
+		foreach (
+			[
+				[RetiredNodeMap::EMAIL_ACTION, ['recipientRef' => 'indiener', 'subjectTemplate' => '{{case.a.b}}', 'bodyTemplate' => ' ']],
+				[RetiredNodeMap::EMAIL_TRANSITION, ['recipient' => 'a@example.org', 'subject' => 'S', 'body' => " \n"]],
+			] as [$translation, $config]
+		) {
+			try {
+				$this->translator()->translate(translation: $translation, config: $config);
+				self::fail('Not refused: ' . $translation);
+			} catch (UnmappableStep $e) {
+				$refusals[] = $e->getMessage();
+			}
+		}
+
+		self::assertSame(
+			['the step has no body, which the send-email step refuses', 'the step has no body, which the send-email step refuses'],
+			$refusals
+		);
+	}//end testAMailWithoutABodyIsRefused()
+
+	/**
+	 * A transition mail reads `recipient` when `to` is absent, and refuses one with neither.
+	 *
+	 * @return void
+	 */
+	public function testATransitionMailNeedsARecipient(): void {
+		$steps = $this->translator()->translate(
+			translation: RetiredNodeMap::EMAIL_TRANSITION,
+			config: ['recipient' => ' b@example.org ', 'body' => 'B']
+		);
+		self::assertSame(
+			[['type' => 'openregister.send-email', 'config' => ['recipients' => ['b@example.org'], 'externalRecipients' => 'object', 'subject' => '', 'body' => 'B']]],
+			$steps
+		);
+
+		$this->expectException(UnmappableStep::class);
+		$this->expectExceptionMessage('the step names no recipient');
+		$this->translator()->translate(translation: RetiredNodeMap::EMAIL_TRANSITION, config: ['body' => 'B']);
+	}//end testATransitionMailNeedsARecipient()
+
+	/**
 	 * A role notification reads both role fields and gets the notifier's wording when it had none.
 	 *
 	 * @return void
