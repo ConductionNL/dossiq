@@ -1614,18 +1614,7 @@ class ZrcController extends ZgwController {
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	private function buildRelevanteAndereCases(array $caseData): array {
-		$uuid = (string)($caseData['uuid'] ?? ($caseData['identificatie'] ?? ''));
-		$pattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-
-		// Prefer a UUID embedded in the id field, else fall back to the self URL.
-		// When neither yields one the original id is kept verbatim.
-		foreach ([$uuid, (string)($caseData['url'] ?? '')] as $candidate) {
-			if ($candidate !== '' && preg_match($pattern, $candidate, $matches) === 1) {
-				$uuid = $matches[1];
-				break;
-			}
-		}
-
+		$uuid = $this->relatedCasesOwnerId(caseData: $caseData);
 		if ($uuid === '') {
 			return [];
 		}
@@ -1635,23 +1624,55 @@ class ZrcController extends ZgwController {
 			return [];
 		}
 
+		return $this->relationLinks(relations: $relations);
+	}//end buildRelevanteAndereZaken()
+
+	/**
+	 * The id a zaak's relations are listed under.
+	 *
+	 * Prefer a UUID embedded in the id field, else fall back to the self URL.
+	 * When neither yields one the original id is kept verbatim.
+	 *
+	 * @param array<string, mixed> $caseData The mapped zaak response data.
+	 *
+	 * @return string The id, or '' when the zaak carries none.
+	 */
+	private function relatedCasesOwnerId(array $caseData): string {
+		$uuid = (string)($caseData['uuid'] ?? ($caseData['identificatie'] ?? ''));
+		$pattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+
+		foreach ([$uuid, (string)($caseData['url'] ?? '')] as $candidate) {
+			if ($candidate !== '' && preg_match($pattern, $candidate, $matches) === 1) {
+				return $matches[1];
+			}
+		}
+
+		return $uuid;
+	}//end relatedCasesOwnerId()
+
+	/**
+	 * The relations as ZRC entries: absolute zaak URL and aardRelatie, incomplete ones left out.
+	 *
+	 * @param array<int, array<string, mixed>> $relations The case's relations.
+	 *
+	 * @return array<int, array{url: string, aardRelatie: string}>
+	 */
+	private function relationLinks(array $relations): array {
 		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, 'zaken');
 		$out = [];
 		foreach ($relations as $relation) {
 			$targetId = (string)($relation['caseId'] ?? '');
 			$nature = (string)($relation['aardRelatie'] ?? '');
-			if ($targetId === '' || $nature === '') {
-				continue;
+			if ($targetId !== '' && $nature !== '') {
+				$out[] = [
+					'url' => $baseUrl . '/' . $targetId,
+					'aardRelatie' => $nature,
+				];
 			}
-
-			$out[] = [
-				'url' => $baseUrl . '/' . $targetId,
-				'aardRelatie' => $nature,
-			];
 		}
 
 		return $out;
-	}//end buildRelevanteAndereZaken()
+	}//end relationLinks()
 
 	/**
 	 * Set relevanteAndereZaken on a single-zaak (show/update/patch) response.
@@ -1683,7 +1704,7 @@ class ZrcController extends ZgwController {
 	 */
 	private function enrichCasesListRelevanteAndereCases(JSONResponse $response): JSONResponse {
 		$data = $response->getData();
-		if (is_array($data) === false || isset($data['results']) === false || is_array($data['results']) === false) {
+		if ($this->hasResultList(data: $data) === false) {
 			return $response;
 		}
 
@@ -1698,6 +1719,20 @@ class ZrcController extends ZgwController {
 
 		return $response;
 	}//end enrichZakenListRelevanteAndereZaken()
+
+	/**
+	 * Whether response data is a list response: an object whose `results` is a list.
+	 *
+	 * @param mixed $data The response data.
+	 *
+	 * @return bool
+	 *
+	 * @psalm-assert-if-true array{results: array<int|string, mixed>} $data
+	 * @phpstan-assert-if-true array{results: array<int|string, mixed>} $data
+	 */
+	private function hasResultList(mixed $data): bool {
+		return is_array($data) === true && isset($data['results']) === true && is_array($data['results']) === true;
+	}//end hasResultList()
 
 	/**
 	 * Resolve an inbound relevanteAndereZaken array on a zaak write into local
@@ -1718,6 +1753,18 @@ class ZrcController extends ZgwController {
 			return null;
 		}
 
+		return $this->addInboundRelations(caseUuid: $caseUuid, relevanteCases: $relevanteCases);
+	}//end applyInboundRelevanteAndereCases()
+
+	/**
+	 * Add the inbound relations in order, stopping at the first that names no usable local zaak.
+	 *
+	 * @param string                  $caseUuid       The zaak being written.
+	 * @param array<int|string, mixed> $relevanteCases The relevanteAndereZaken entries.
+	 *
+	 * @return JSONResponse|null The 400 validation error for that entry, or null when all were usable.
+	 */
+	private function addInboundRelations(string $caseUuid, array $relevanteCases): ?JSONResponse {
 		foreach ($relevanteCases as $idx => $relCase) {
 			if ($this->addInboundRelation(caseUuid: $caseUuid, relCase: $relCase) === false) {
 				return $this->unknownRelatedCaseRefusal(idx: $idx);
@@ -1725,7 +1772,7 @@ class ZrcController extends ZgwController {
 		}
 
 		return null;
-	}//end applyInboundRelevanteAndereCases()
+	}//end addInboundRelations()
 
 	/**
 	 * Add one inbound relation; false when its URL names no usable local zaak.
