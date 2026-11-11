@@ -45,6 +45,13 @@ use Psr\Log\LoggerInterface;
  */
 class AutomaticActionFlowMigratorTest extends TestCase {
 	/**
+	 * App-config values that override the default register/schema answers.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $appValues = [];
+
+	/**
 	 * A minimal stand-in for OpenRegister's FlowService.
 	 *
 	 * @return object The fake, exposing saves[] and a settable page.
@@ -243,7 +250,7 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
-			static fn (string $app, string $key, string $default = ''): string => ($key === 'register') ? '17' : '115'
+			fn (string $app, string $key, string $default = ''): string => $this->appValues[$key] ?? (($key === 'register') ? '17' : '115')
 		);
 
 		return new AutomaticActionFlowMigrator(
@@ -387,6 +394,95 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 		$this->assertSame(1, $summary['updated']);
 		$this->assertSame(0, $summary['created']);
 		$this->assertSame('existing-uuid', $flowService->saves[0]['uuid']);
+	}
+
+	/**
+	 * An action handed back as a serialisable object is read through jsonSerialize().
+	 *
+	 * @return void
+	 */
+	public function testItReadsAnActionHandedBackAsASerialisableObject(): void {
+		$flowService = $this->flowServiceFake();
+		$action = new class implements \JsonSerializable {
+			/**
+			 * @return array<string, mixed> The stored action.
+			 */
+			public function jsonSerialize(): array {
+				return [
+					'tenantId' => 'tenant-a',
+					'slug' => 'send-decision-email',
+					'title' => 'Send decision email',
+					'type' => 'sendEmail',
+					'config' => '{"recipientRef":"email:loket@example.org","bodyTemplate":"Hallo"}',
+				];
+			}
+		};
+
+		$migrator = $this->migrator([$action], $flowService, ['openregister.send-email']);
+
+		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
+
+		$this->assertSame(1, $summary['total']);
+		$this->assertSame(1, $summary['created']);
+		$this->assertSame('dossiq:automaticAction:tenant-a:send-decision-email', $summary['rows'][0]['marker']);
+	}
+
+	/**
+	 * Without a configured action schema nothing is read, and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAnActionSchemaNothingIsMigrated(): void {
+		$this->appValues = ['automatic_action_schema' => ''];
+		$flowService = $this->flowServiceFake();
+		$migrator = $this->migrator(
+			[['tenantId' => 't', 'slug' => 's', 'title' => 'T', 'type' => 'sendEmail']],
+			$flowService,
+			['openregister.send-email'],
+		);
+
+		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
+
+		$this->assertSame(
+			['total' => 0, 'created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0, 'rows' => []],
+			$summary
+		);
+		$this->assertSame([], $flowService->saves);
+	}
+
+	/**
+	 * Every skip and failure row carries its exact wording.
+	 *
+	 * @return void
+	 */
+	public function testSkipAndFailureRowsKeepTheirWording(): void {
+		$flowService = $this->flowServiceFake();
+		$migrator = $this->migrator(
+			[
+				['title' => 'No identity', 'type' => 'sendEmail'],
+				['tenantId' => 't', 'slug' => 'pigeon', 'title' => 'Pigeon', 'type' => 'sendCarrierPigeon'],
+			],
+			$flowService,
+			['openregister.send-email'],
+		);
+
+		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: true);
+
+		$this->assertSame(
+			[
+				[
+					'outcome' => 'failed',
+					'marker' => '(unidentifiable)',
+					'detail' => 'the action carries no tenantId/slug pair, which the schema requires',
+				],
+				[
+					'outcome' => 'skipped',
+					'marker' => 'dossiq:automaticAction:t:pigeon',
+					'detail' => 'no node implements "dossiq.action.sendCarrierPigeon" (for "sendCarrierPigeon"); a flow around it would never run',
+				],
+			],
+			$summary['rows']
+		);
 	}
 
 	/**
