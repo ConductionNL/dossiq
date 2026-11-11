@@ -24,7 +24,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 
@@ -34,8 +34,6 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
  */
 class ComplaintAnalyticsService {
-
-	use SearchesObjects;
 
 	/**
 	 * Minimum complaints per employee slice before employee data is shown (privacy).
@@ -53,6 +51,13 @@ class ComplaintAnalyticsService {
 	private const SYSTEMIC_ISSUE_QOQ_THRESHOLD = 50;
 
 	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -64,6 +69,7 @@ class ComplaintAnalyticsService {
 		private readonly LoggerInterface $logger,
 		private readonly DayCount $days = new DayCount(),
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -348,22 +354,8 @@ class ComplaintAnalyticsService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	private function fetchComplaintsInRange(string $dateFrom, string $dateTo): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		return $this->rows->search(
+			schemaKey: 'complaint_schema',
 			filters: [
 				'ontvangstdatum>=' => $dateFrom,
 				'ontvangstdatum<=' => $dateTo,

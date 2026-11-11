@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\Support\CallerIdentity;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -38,6 +39,13 @@ use RuntimeException;
 class HearingService {
 
 	use SearchesObjects;
+
+	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
 
 	/**
 	 * Constructor.
@@ -53,6 +61,7 @@ class HearingService {
 		private readonly HearingCalendarService $calendarService,
 		private readonly TalkConversationBroker $talkBroker,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -158,22 +167,8 @@ class HearingService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function getHearingsForComplaint(string $complaintId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('hearing_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
+		return $this->rows->search(
+			schemaKey: 'hearing_schema',
 			filters: ['complaint' => $complaintId]
 		);
 	}//end getHearingsForComplaint()
