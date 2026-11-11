@@ -182,6 +182,61 @@ const STEP_LABELS = {
 	welcome_email: 'Welcome email',
 }
 
+/**
+ * The url of one onboarding route of a tenant.
+ *
+ * @param {string} tenantId The tenant (OpenRegister organisation) uuid.
+ * @param {string} path The route below `/onboarding/`, already encoded.
+ * @return {string} The url.
+ */
+function onboardingUrl(tenantId, path) {
+	return generateUrl(
+		'/apps/dossiq/api/saas/tenants/'
+			+ encodeURIComponent(tenantId)
+			+ '/onboarding/'
+			+ path,
+	)
+}
+
+/**
+ * What to say about a failed request: the server's message, the error's own,
+ * or the fallback sentence.
+ *
+ * @param {object} error The failure.
+ * @param {string} fallback The sentence when neither says anything.
+ * @return {string} The message.
+ */
+function failureMessage(error, fallback) {
+	return error?.response?.data?.message || error.message || fallback
+}
+
+/**
+ * The tenant options from OpenRegister's organisation list: a bare list or a
+ * `results` page, keeping the organisations that have a uuid.
+ *
+ * @param {Array|object} data The response body.
+ * @return {Array<{id: string, label: string}>} The options.
+ */
+function tenantOptionsFrom(data) {
+	const list = Array.isArray(data) ? data : data?.results || []
+	return list
+		.filter((org) => org && org.uuid)
+		.map((org) => ({
+			id: org.uuid,
+			label: org.name || org.slug || org.uuid,
+		}))
+}
+
+/**
+ * The go-live readiness the server returned inline, if any.
+ *
+ * @param {object|null} data The progress response body.
+ * @return {object|null} The readiness, or null.
+ */
+function reportedGoLive(data) {
+	return data?.goLive || data?.readiness || null
+}
+
 export default {
 	name: 'TenantOnboardingTab',
 	components: {
@@ -290,20 +345,9 @@ export default {
 				const res = await axios.get(
 					generateUrl('/apps/openregister/api/organisations'),
 				)
-				const list = Array.isArray(res.data)
-					? res.data
-					: res.data?.results || []
-				this.tenantOptions = list
-					.filter((org) => org && org.uuid)
-					.map((org) => ({
-						id: org.uuid,
-						label: org.name || org.slug || org.uuid,
-					}))
+				this.tenantOptions = tenantOptionsFrom(res.data)
 			} catch (e) {
-				this.error =
-					e?.response?.data?.message
-					|| e.message
-					|| t('dossiq', 'Failed to load tenants')
+				this.error = failureMessage(e, t('dossiq', 'Failed to load tenants'))
 			} finally {
 				this.loading = false
 			}
@@ -315,52 +359,39 @@ export default {
 			this.loading = true
 			this.error = null
 			try {
-				const res = await axios.get(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/progress',
-					),
-				)
+				const res = await axios.get(onboardingUrl(this.tenantId, 'progress'))
 				this.progress = res.data || null
 			} catch (e) {
-				if (e?.response?.status === 404) {
-					// Not initialised yet — offer to init.
-					await this.initialise()
-				} else {
-					this.error =
-						e?.response?.data?.message
-						|| e.message
-						|| t('dossiq', 'Failed to load progress')
-				}
+				await this.recoverProgress(e)
 			} finally {
 				this.loading = false
 			}
 		},
 
+		/**
+		 * After a failed progress read: initialise a tenant that has none yet
+		 * (404), else name the failure.
+		 *
+		 * @param {object} e The failure.
+		 * @return {Promise<void>}
+		 */
+		async recoverProgress(e) {
+			if (e?.response?.status === 404) {
+				// Not initialised yet — offer to init.
+				await this.initialise()
+				return
+			}
+			this.error = failureMessage(e, t('dossiq', 'Failed to load progress'))
+		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async initialise() {
 			try {
-				await axios.post(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/initialise',
-					),
-				)
-				const res = await axios.get(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/progress',
-					),
-				)
+				await axios.post(onboardingUrl(this.tenantId, 'initialise'))
+				const res = await axios.get(onboardingUrl(this.tenantId, 'progress'))
 				this.progress = res.data
 			} catch (e) {
-				this.error =
-					e?.response?.data?.message
-					|| e.message
-					|| t('dossiq', 'Failed to initialise')
+				this.error = failureMessage(e, t('dossiq', 'Failed to initialise'))
 			}
 		},
 
@@ -375,20 +406,11 @@ export default {
 			this.markingStep = step
 			try {
 				await axios.post(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/'
-							+ encodeURIComponent(step)
-							+ '/complete',
-					),
+					onboardingUrl(this.tenantId, encodeURIComponent(step) + '/complete'),
 				)
 				await this.loadProgress()
 			} catch (e) {
-				this.error =
-					e?.response?.data?.message
-					|| e.message
-					|| t('dossiq', 'Failed to mark step complete')
+				this.error = failureMessage(e, t('dossiq', 'Failed to mark step complete'))
 			} finally {
 				this.markingStep = ''
 			}
@@ -399,31 +421,28 @@ export default {
 			this.checkingGoLive = true
 			try {
 				const res = await axios.get(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/progress',
-					),
+					onboardingUrl(this.tenantId, 'progress'),
 					{ params: { check: 'go-live' } },
 				)
-				this.goLiveResult = res.data?.goLive || res.data?.readiness || null
-				// Fallback: if backend doesn't return goLive inline, derive ready=completedSteps===totalSteps.
-				if (!this.goLiveResult) {
-					this.goLiveResult = {
-						ready: this.completedSteps === this.totalSteps,
-						missing:
-							this.completedSteps === this.totalSteps
-								? []
-								: [t('dossiq', 'Open onboarding steps')],
-					}
-				}
+				this.goLiveResult = reportedGoLive(res.data) || this.derivedGoLive()
 			} catch (e) {
-				this.error =
-					e?.response?.data?.message
-					|| e.message
-					|| t('dossiq', 'Go-live check failed')
+				this.error = failureMessage(e, t('dossiq', 'Go-live check failed'))
 			} finally {
 				this.checkingGoLive = false
+			}
+		},
+
+		/**
+		 * Go-live readiness derived from the steps, for a backend that does
+		 * not return it inline: ready once every step is completed.
+		 *
+		 * @return {{ready: boolean, missing: Array<string>}} The readiness.
+		 */
+		derivedGoLive() {
+			const ready = this.completedSteps === this.totalSteps
+			return {
+				ready,
+				missing: ready ? [] : [t('dossiq', 'Open onboarding steps')],
 			}
 		},
 
@@ -431,20 +450,11 @@ export default {
 		async activate() {
 			this.activating = true
 			try {
-				await axios.post(
-					generateUrl(
-						'/apps/dossiq/api/saas/tenants/'
-							+ encodeURIComponent(this.tenantId)
-							+ '/onboarding/activate',
-					),
-				)
+				await axios.post(onboardingUrl(this.tenantId, 'activate'))
 				await this.loadProgress()
 				await this.checkGoLive()
 			} catch (e) {
-				this.error =
-					e?.response?.data?.message
-					|| e.message
-					|| t('dossiq', 'Activate failed')
+				this.error = failureMessage(e, t('dossiq', 'Activate failed'))
 			} finally {
 				this.activating = false
 			}
