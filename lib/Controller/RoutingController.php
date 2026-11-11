@@ -34,6 +34,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\CaseRouter;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\RowList;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -242,26 +243,7 @@ class RoutingController extends Controller {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function decodeSteps(mixed $value): array {
-		if (is_string($value) === true) {
-			$decoded = json_decode($value, true);
-			$value = [];
-			if (is_array($decoded) === true) {
-				$value = $decoded;
-			}
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$rows = [];
-		foreach ($value as $row) {
-			if (is_array($row) === true) {
-				$rows[] = $row;
-			}
-		}
-
-		return $rows;
+		return RowList::from(value: $value);
 	}//end decodeSteps()
 
 	/**
