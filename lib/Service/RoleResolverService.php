@@ -357,16 +357,46 @@ class RoleResolverService {
 			return [];
 		}
 
+		$source = $this->roleSource();
+		if ($source === null) {
+			return [];
+		}
+
+		return $this->rowsOf(records: $this->readRoles(source: $source, caseId: $caseId));
+	}//end loadCaseRoles()
+
+	/**
+	 * Where the case roles are read: the object service, register and role schema; null when any is missing.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The source.
+	 */
+	private function roleSource(): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return [];
+			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('role_schema');
 		if ($register === '' || $schema === '') {
-			return [];
+			return null;
 		}
+
+		return [$objectService, $register, $schema];
+	}//end roleSource()
+
+	/**
+	 * The stored role records of one case; refused when the register cannot be read.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $source The object service, register and role schema.
+	 * @param string                                 $caseId The case UUID.
+	 *
+	 * @return mixed What the register answered.
+	 *
+	 * @throws RefusedException When the role register could not be read at all.
+	 */
+	private function readRoles(array $source, string $caseId): mixed {
+		[$objectService, $register, $schema] = $source;
 
 		// OpenRegister's ObjectService::findAll() takes ONE config array. This
 		// call used to pass ($register, $schema, $filters) positionally, which
@@ -375,21 +405,22 @@ class RoleResolverService {
 		// roles were never loaded and rule resolution silently fell through to
 		// its other sources. An empty role list is also how a routing rule
 		// resolves to nobody, which is why the read now refuses instead.
-		$records = $this->readOrRefuse(
-			read: fn (): mixed => $objectService->findAll(
-				[
-					'filters' => [
-						'register' => $register,
-						'schema' => $schema,
-						'case' => $caseId,
-					],
-				]
-			),
+		return $this->readOrRefuse(
+			read: fn (): mixed => $objectService->findAll(['filters' => ['register' => $register, 'schema' => $schema, 'case' => $caseId]]),
 			what: 'the roles on case ' . $caseId,
 			rule: 'case-roles-unreadable',
 			sentence: 'The roles on this case could not be read, so the routing cannot be worked out right now.',
 		);
+	}//end readRoles()
 
+	/**
+	 * The records as rows; one that reads as nothing is left out.
+	 *
+	 * @param mixed $records What the register answered.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function rowsOf(mixed $records): array {
 		$rows = [];
 		foreach ((array)$records as $record) {
 			$row = $this->toArray(value: $record);
@@ -399,7 +430,7 @@ class RoleResolverService {
 		}
 
 		return $rows;
-	}//end loadCaseRoles()
+	}//end rowsOf()
 
 	/**
 	 * Coerce ObjectService return to plain array.
