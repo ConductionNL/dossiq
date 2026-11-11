@@ -65,15 +65,12 @@ final class WorkflowTemplateBinding {
 			)
 		);
 
-		if ($chosen === []) {
-			$case['workflowTemplate'] = null;
-			$case['workflowVersion'] = null;
-
-			return $case;
+		$case['workflowTemplate'] = null;
+		$case['workflowVersion'] = null;
+		if ($chosen !== []) {
+			$case['workflowTemplate'] = $this->store->rowId(row: $chosen);
+			$case['workflowVersion'] = (int)($chosen['version'] ?? 1);
 		}
-
-		$case['workflowTemplate'] = $this->store->rowId(row: $chosen);
-		$case['workflowVersion'] = (int)($chosen['version'] ?? 1);
 
 		return $case;
 	}//end bind()
