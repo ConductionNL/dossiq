@@ -24,7 +24,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Registry;
 
-use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -88,13 +87,10 @@ class BagObjectReader {
 	 * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
 	 */
 	public function read(string $type, string $identificatie): array {
-		if (FleetAppId::isInstalled(appManager: $this->appManager, canonical: 'integriq') === false) {
-			return self::unanswered(reason: self::REASON_NO_INTEGRIQ);
-		}
-
-		$reader = FleetAppId::getService(container: $this->container, canonical: 'integriq', relative: self::INTEGRIQ_READER);
-		if ($reader === null || method_exists($reader, 'read') === false) {
-			return self::unanswered(reason: self::REASON_NO_READER);
+		$leaf = new IntegriqLeaf(container: $this->container, appManager: $this->appManager);
+		$reader = $leaf->readerOr(relative: self::INTEGRIQ_READER, missing: self::REASON_NO_READER);
+		if (is_string($reader) === true) {
+			return self::unanswered(reason: $reader);
 		}
 
 		try {
@@ -127,10 +123,7 @@ class BagObjectReader {
 		$simulated = (($answer['simulated'] ?? true) !== false);
 
 		if ($answer['available'] === false) {
-			$reason = self::REASON_UNREACHABLE;
-			if (is_string($answer['reason'] ?? null) === true && $answer['reason'] !== '') {
-				$reason = $answer['reason'];
-			}
+			$reason = IntegriqLeaf::unavailableReason(answer: $answer);
 
 			return ['available' => false, 'reason' => $reason, 'found' => false, 'simulated' => $simulated];
 		}
