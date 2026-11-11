@@ -99,8 +99,8 @@ class HearingCalendarService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function createEvent(array $data): string {
-		$participants = $data['participants'] ?? [];
-		if (is_array($participants) === false || $participants === []) {
+		$participants = $this->plannedParticipants(data: $data);
+		if ($participants === []) {
 			return '';
 		}
 
@@ -125,18 +125,11 @@ class HearingCalendarService {
 			return '';
 		}
 
-		$written = 0;
-		foreach ($this->principalsFor(organiser: $organiser, attendees: $attendees) as $principal) {
-			if ($this->writeToCalendar(principal: $principal, uid: $uid, ics: $ics) === true) {
-				$written++;
-			}
-		}
-
+		$written = $this->writeForAll(
+			event: new HearingCalendarEvent(uid: $uid, ics: $ics),
+			principals: $this->principalsFor(organiser: $organiser, attendees: $attendees)
+		);
 		if ($written === 0) {
-			$this->logger->warning(
-				'No writable calendar found for the hearing, event not stored',
-				['app' => Application::APP_ID],
-			);
 			return '';
 		}
 
@@ -147,6 +140,48 @@ class HearingCalendarService {
 
 		return $uid;
 	}//end createEvent()
+
+	/**
+	 * The participants a hearing plans, empty when it plans none or stores them in another shape.
+	 *
+	 * @param array<string, mixed> $data Hearing data.
+	 *
+	 * @return array<int|string, mixed> Participants as stored.
+	 */
+	private function plannedParticipants(array $data): array {
+		$participants = $data['participants'] ?? [];
+		if (is_array($participants) === false) {
+			return [];
+		}
+
+		return $participants;
+	}//end plannedParticipants()
+
+	/**
+	 * Write one event for every principal, and report when no calendar took it.
+	 *
+	 * @param HearingCalendarEvent $event      The event.
+	 * @param array<int, string>   $principals Principal URIs, each one once.
+	 *
+	 * @return int How many calendars took the event.
+	 */
+	private function writeForAll(HearingCalendarEvent $event, array $principals): int {
+		$written = 0;
+		foreach ($principals as $principal) {
+			if ($this->writeToCalendar(principal: $principal, uid: $event->uid, ics: $event->ics) === true) {
+				$written++;
+			}
+		}
+
+		if ($written === 0) {
+			$this->logger->warning(
+				'No writable calendar found for the hearing, event not stored',
+				['app' => Application::APP_ID],
+			);
+		}
+
+		return $written;
+	}//end writeForAll()
 
 	/**
 	 * Read the hearing's start moment, or nothing when the date is unreadable.
@@ -284,29 +319,39 @@ class HearingCalendarService {
 	private function resolveParticipants(array $participants): array {
 		$resolved = [];
 		foreach ($participants as $participant) {
-			if (is_string($participant) === false || trim($participant) === '') {
-				continue;
+			$attendee = $this->attendeeFor(participant: $participant);
+			if ($attendee !== []) {
+				$resolved[] = $attendee;
 			}
-
-			$user = $this->userManager->get(trim($participant));
-			if ($user === null) {
-				continue;
-			}
-
-			$email = (string)$user->getEMailAddress();
-			if ($email === '') {
-				continue;
-			}
-
-			$resolved[] = [
-				'uid' => $user->getUID(),
-				'email' => $email,
-				'name' => $user->getDisplayName(),
-			];
 		}
 
 		return $resolved;
 	}//end resolveParticipants()
+
+	/**
+	 * One participant as an addressable attendee: an account id whose account has an address.
+	 *
+	 * @param mixed $participant The participant as stored.
+	 *
+	 * @return array{uid: string, email: string, name: string}|array{} The attendee, empty when it cannot be invited.
+	 */
+	private function attendeeFor(mixed $participant): array {
+		if (is_string($participant) === false || trim($participant) === '') {
+			return [];
+		}
+
+		$user = $this->userManager->get(trim($participant));
+		if ($user === null) {
+			return [];
+		}
+
+		$email = (string)$user->getEMailAddress();
+		if ($email === '') {
+			return [];
+		}
+
+		return ['uid' => $user->getUID(), 'email' => $email, 'name' => $user->getDisplayName()];
+	}//end attendeeFor()
 
 	/**
 	 * Write one ICS into the first writable calendar a principal owns.
@@ -331,17 +376,7 @@ class HearingCalendarService {
 		}
 
 		foreach ($calendars as $calendar) {
-			if (($calendar instanceof ICreateFromString) === false) {
-				continue;
-			}
-
-			// ICreateFromString extends ICalendar, so isDeleted() is always
-			// there: a calendar in the trash must not take a new hearing.
-			if ($calendar->isDeleted() === true) {
-				continue;
-			}
-
-			if ($calendar instanceof ICalendarIsWritable && $calendar->isWritable() === false) {
+			if ($this->takesHearings(calendar: $calendar) === false) {
 				continue;
 			}
 
@@ -358,6 +393,29 @@ class HearingCalendarService {
 
 		return false;
 	}//end writeToCalendar()
+
+	/**
+	 * Whether a calendar can take a new hearing: it takes ICS, is not in the trash and is writable.
+	 *
+	 * @param mixed $calendar A calendar of the principal.
+	 *
+	 * @return bool
+	 *
+	 * @psalm-assert-if-true ICreateFromString $calendar
+	 */
+	private function takesHearings(mixed $calendar): bool {
+		if (($calendar instanceof ICreateFromString) === false) {
+			return false;
+		}
+
+		// ICreateFromString extends ICalendar, so isDeleted() is always
+		// there: a calendar in the trash must not take a new hearing.
+		if ($calendar->isDeleted() === true) {
+			return false;
+		}
+
+		return ($calendar instanceof ICalendarIsWritable && $calendar->isWritable() === false) === false;
+	}//end takesHearings()
 
 	/**
 	 * Describe the hearing in the body of the calendar event.
@@ -386,22 +444,29 @@ class HearingCalendarService {
 			$lines[] = 'Gespreksruimte: ' . $talkUrl;
 		}
 
-		$names = [];
-		foreach ($participants as $participant) {
-			if (is_string($participant) === false) {
-				continue;
-			}
-
-			$name = trim($participant);
-			if ($name !== '') {
-				$names[] = $name;
-			}
-		}
-
+		$names = $this->participantNames(participants: $participants);
 		if ($names !== []) {
 			$lines[] = 'Deelnemers: ' . implode(', ', $names);
 		}
 
 		return implode("\n", $lines);
 	}//end describeHearing()
+
+	/**
+	 * The trimmed, non-empty names of the participants stored as text.
+	 *
+	 * @param array<int, mixed> $participants Participants as stored.
+	 *
+	 * @return array<int, string>
+	 */
+	private function participantNames(array $participants): array {
+		$names = [];
+		foreach ($participants as $participant) {
+			if (is_string($participant) === true && trim($participant) !== '') {
+				$names[] = trim($participant);
+			}
+		}
+
+		return $names;
+	}//end participantNames()
 }//end class
