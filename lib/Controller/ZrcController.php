@@ -819,28 +819,9 @@ class ZrcController extends ZgwController {
 		}
 
 		try {
-			$query = $this->zgwService->getObjectService()->buildSearchQuery(
-				requestParams: ['case' => $zaakUuid],
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+			$rows = $this->decisionRowsOfCase(zaakUuid: $zaakUuid, mappingConfig: $mappingConfig);
 
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, 'besluiten', 'besluiten');
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = [];
-			foreach (($result['results'] ?? []) as $object) {
-				$objectData = $this->objectToArray(row: $object);
-
-				$mapped[] = $this->zgwService->applyOutboundMapping(
-					objectData: $objectData,
-					mapping: $outboundMapping,
-					mappingConfig: $mappingConfig,
-					baseUrl: $baseUrl
-				);
-			}
-
-			return new JSONResponse(data: $mapped);
+			return new JSONResponse(data: $this->mapDecisionRows(rows: $rows, mappingConfig: $mappingConfig));
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'ZRC zaakbesluiten error: ' . $e->getMessage(),
@@ -852,6 +833,49 @@ class ZrcController extends ZgwController {
 			);
 		}//end try
 	}//end zaakbesluitenIndex()
+
+	/**
+	 * The stored besluiten of a zaak.
+	 *
+	 * @param string $zaakUuid      The zaak UUID
+	 * @param array  $mappingConfig The besluiten mapping
+	 *
+	 * @return array The hits, arrays or entities
+	 */
+	private function decisionRowsOfCase(string $zaakUuid, array $mappingConfig): array {
+		$query = $this->zgwService->getObjectService()->buildSearchQuery(
+			requestParams: ['case' => $zaakUuid],
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+
+		return ($result['results'] ?? []);
+	}//end decisionRowsOfCase()
+
+	/**
+	 * The stored besluiten as BRC besluiten, each with its URL.
+	 *
+	 * @param array $rows          The hits, arrays or entities
+	 * @param array $mappingConfig The besluiten mapping
+	 *
+	 * @return array The mapped besluiten
+	 */
+	private function mapDecisionRows(array $rows, array $mappingConfig): array {
+		$baseUrl = $this->zgwService->buildBaseUrl($this->request, 'besluiten', 'besluiten');
+		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
+		$mapped = [];
+		foreach ($rows as $object) {
+			$mapped[] = $this->zgwService->applyOutboundMapping(
+				objectData: $this->objectToArray(row: $object),
+				mapping: $outboundMapping,
+				mappingConfig: $mappingConfig,
+				baseUrl: $baseUrl
+			);
+		}
+
+		return $mapped;
+	}//end mapDecisionRows()
 
 	/**
 	 * Search zaken (POST /zaken/v1/zaken/_zoek).
@@ -1000,18 +1024,12 @@ class ZrcController extends ZgwController {
 		}
 
 		$lezenAuths = $this->readAuthorisations(autorisaties: $autorisaties);
-		$data = $response->getData();
 		if ($lezenAuths === []) {
 			// No zaken.lezen scope at all — return empty.
-			if (is_array($data) === true) {
-				$data['count'] = 0;
-				$data['results'] = [];
-				$response->setData($data);
-			}
-
-			return $response;
+			return $this->emptiedList(response: $response);
 		}
 
+		$data = $response->getData();
 		if (is_array($data) === false || isset($data['results']) === false) {
 			return $response;
 		}
@@ -1029,6 +1047,24 @@ class ZrcController extends ZgwController {
 
 		return $response;
 	}//end filterCasesByAuthorisation()
+
+	/**
+	 * A list response emptied: no results and a count of zero; anything that is not a list object is left alone.
+	 *
+	 * @param JSONResponse $response The zaken list response.
+	 *
+	 * @return JSONResponse
+	 */
+	private function emptiedList(JSONResponse $response): JSONResponse {
+		$data = $response->getData();
+		if (is_array($data) === true) {
+			$data['count'] = 0;
+			$data['results'] = [];
+			$response->setData($data);
+		}
+
+		return $response;
+	}//end emptiedList()
 
 	/**
 	 * The consumer's autorisaties that grant zaken.lezen.
