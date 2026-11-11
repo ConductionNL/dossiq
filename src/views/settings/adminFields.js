@@ -503,15 +503,6 @@ export function archivalFields(t) {
  * @spec openspec/specs/admin-settings/spec.md
  */
 export function contactCentreFields(t) {
-	const number = (key, label, fallback, hint = '') => ({
-		key,
-		label,
-		type: 'number',
-		min: 0,
-		default: fallback,
-		placeholder: String(fallback),
-		...(hint ? { hint } : {}),
-	})
 	return [
 		{
 			key: 'kcc-scope',
@@ -521,54 +512,118 @@ export function contactCentreFields(t) {
 				'Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by Integriq and pipelinq respectively; only the Dossiq-side behaviour is configured here.',
 			),
 		},
-		{
-			key: 'identification_method',
-			label: t('dossiq', 'Identification method'),
-			type: 'select',
-			required: true,
-			default: 'both',
-			options: [
-				{ value: 'digid', label: 'DigiD' },
-				{ value: 'bsn_questions', label: t('dossiq', 'Identification questions') },
-				{ value: 'both', label: t('dossiq', 'Both') },
-			],
-			hint: t(
-				'dossiq',
-				'Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.',
-			),
-		},
-		{
-			...number(
-				'identification_score_threshold',
-				t('dossiq', 'Identification score threshold (0.6 - 1.0)'),
-				0.8,
-				t(
+		identificationMethodField(t),
+		identificationThresholdField(t),
+		...contactCentreNumberFields(t),
+		sentimentTriggerWordsField(t),
+	]
+}
+
+/**
+ * A number setting of the KCC bridge, its default doubling as the placeholder.
+ *
+ * @param {{key: string, label: string, hint?: string}} setting The setting, its label and an optional hint.
+ * @param {number} fallback The server's default.
+ * @return {object} The field.
+ */
+function contactCentreNumber(setting, fallback) {
+	return {
+		key: setting.key,
+		label: setting.label,
+		type: 'number',
+		min: 0,
+		default: fallback,
+		placeholder: String(fallback),
+		...(setting.hint ? { hint: setting.hint } : {}),
+	}
+}
+
+/**
+ * How a caller is identified: DigiD, identification questions, or both.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function identificationMethodField(t) {
+	return {
+		key: 'identification_method',
+		label: t('dossiq', 'Identification method'),
+		type: 'select',
+		required: true,
+		default: 'both',
+		options: [
+			{ value: 'digid', label: 'DigiD' },
+			{ value: 'bsn_questions', label: t('dossiq', 'Identification questions') },
+			{ value: 'both', label: t('dossiq', 'Both') },
+		],
+		hint: t(
+			'dossiq',
+			'Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.',
+		),
+	}
+}
+
+/**
+ * The match score from which a caller is linked and sees the full case information.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function identificationThresholdField(t) {
+	return {
+		...contactCentreNumber(
+			{
+				key: 'identification_score_threshold',
+				label: t('dossiq', 'Identification score threshold (0.6 - 1.0)'),
+				hint: t(
 					'dossiq',
 					'Minimum identificatievragen match score to link a burger and reveal full zaaksinfo. Below the threshold, only openbare zaaksinformatie is shown.',
 				),
-			),
-			max: 1,
-		},
-		number('sentiment_polling_interval', t('dossiq', 'Sentiment polling interval (seconds)'), 5),
-		number('specialist_availability_polling_interval', t('dossiq', 'Specialist availability polling interval (seconds)'), 30),
-		number('max_zaken_voorblad', t('dossiq', 'Max open zaken in voorblad'), 10),
-		number('max_contactmomenten_history', t('dossiq', 'Max contactmomenten in history'), 5),
-		number('belplan_overflow_threshold_wachttijd', t('dossiq', 'Belplan overflow threshold: wachttijd (seconds)'), 180),
-		number('belplan_overflow_threshold_wachtrij_lengte', t('dossiq', 'Belplan overflow threshold: wachtrij lengte'), 5),
-		{
-			key: 'sentiment_trigger_words',
-			label: t('dossiq', 'Sentiment trigger words (one per line)'),
-			type: 'lines',
-			saveAs: 'json',
-			rows: 5,
-			wide: true,
-			placeholder: 'klacht\nadvocaat\nwethouder\nmedia',
-			hint: t(
-				'dossiq',
-				'Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.',
-			),
-		},
+			},
+			0.8,
+		),
+		max: 1,
+	}
+}
+
+/**
+ * How often sentiment and availability are read, how much the voorblad and
+ * history show, and when a call plan overflows.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {Array<object>} The fields.
+ */
+function contactCentreNumberFields(t) {
+	return [
+		contactCentreNumber({ key: 'sentiment_polling_interval', label: t('dossiq', 'Sentiment polling interval (seconds)') }, 5),
+		contactCentreNumber({ key: 'specialist_availability_polling_interval', label: t('dossiq', 'Specialist availability polling interval (seconds)') }, 30),
+		contactCentreNumber({ key: 'max_zaken_voorblad', label: t('dossiq', 'Max open zaken in voorblad') }, 10),
+		contactCentreNumber({ key: 'max_contactmomenten_history', label: t('dossiq', 'Max contactmomenten in history') }, 5),
+		contactCentreNumber({ key: 'belplan_overflow_threshold_wachttijd', label: t('dossiq', 'Belplan overflow threshold: wachttijd (seconds)') }, 180),
+		contactCentreNumber({ key: 'belplan_overflow_threshold_wachtrij_lengte', label: t('dossiq', 'Belplan overflow threshold: wachtrij lengte') }, 5),
 	]
+}
+
+/**
+ * The words that flag negative sentiment, one per line.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @return {object} The field.
+ */
+function sentimentTriggerWordsField(t) {
+	return {
+		key: 'sentiment_trigger_words',
+		label: t('dossiq', 'Sentiment trigger words (one per line)'),
+		type: 'lines',
+		saveAs: 'json',
+		rows: 5,
+		wide: true,
+		placeholder: 'klacht\nadvocaat\nwethouder\nmedia',
+		hint: t(
+			'dossiq',
+			'Dutch words that flag negative sentiment and trigger an escalation recommendation. One word or phrase per line.',
+		),
+	}
 }
 
 /**
@@ -628,38 +683,42 @@ export function backgroundAccountFields(t) {
  */
 export function aiFields(t) {
 	const on = { key: 'ai_enabled', equals: true }
-	const cloud = { key: 'ai_model_type', equals: 'cloud' }
-	const features = [
-		['ai_feature_classification', t('dossiq', 'Document classification')],
-		['ai_feature_extraction', t('dossiq', 'Data extraction')],
-		['ai_feature_qa', t('dossiq', 'Knowledge base Q&A')],
-		['ai_feature_summary', t('dossiq', 'Auto-summarization')],
-		['ai_feature_routing', t('dossiq', 'Routing suggestions')],
-		['ai_feature_decision_support', t('dossiq', 'Decision support')],
-	]
 	const fields = [
 		{ key: 'ai_enabled', label: t('dossiq', 'Switch on AI-assisted processing'), type: 'switch' },
-		{
-			key: 'ai_model_type',
-			label: t('dossiq', 'Kind of model'),
-			type: 'radio',
-			default: 'local',
-			options: [
-				{ value: 'local', label: t('dossiq', 'Local (Ollama)'), description: t('dossiq', 'Data stays on your own servers') },
-				{ value: 'cloud', label: t('dossiq', 'Cloud'), description: t('dossiq', 'A provider outside your organisation') },
-			],
-			visibleWhen: on,
-		},
-		{
-			key: 'cloud-warning',
-			type: 'status',
-			tone: 'warning',
-			text: t(
-				'dossiq',
-				'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.',
-			),
-			visibleWhen: [on, cloud],
-		},
+		...aiModelFields(t, on),
+		...aiFeatureFields(t, on),
+		...aiPrivacyFields(t, on),
+		...aiConnectionTestFields(t, on),
+	]
+	// The card lays its fields out in two columns, model address beside model
+	// name as board DqBeheerinstellingen draws them; a switch or a choice
+	// keeps a row of its own.
+	return fields.map(widenOwnRowField)
+}
+
+/**
+ * A switch or a choice keeps a row of its own; any other field is left as it is.
+ *
+ * @param {object} field The field.
+ * @return {object} The field, wide when it is a switch or a choice.
+ */
+function widenOwnRowField(field) {
+	return field.type === 'switch' || field.type === 'radio' ? { ...field, wide: true } : field
+}
+
+/**
+ * The model the AI steps run on: local or cloud, its address and name, and
+ * for a cloud model the warning and the API key.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiModelFields(t, on) {
+	const cloud = { key: 'ai_model_type', equals: 'cloud' }
+	return [
+		aiModelKindField(t, on),
+		aiCloudWarningField(t, [on, cloud]),
 		{ key: 'ai_model_url', label: t('dossiq', 'Address of the model'), visibleWhen: on },
 		{ key: 'ai_model_name', label: t('dossiq', 'Model name'), placeholder: 'llama3.1', visibleWhen: on },
 		{
@@ -669,33 +728,135 @@ export function aiFields(t) {
 			setKey: 'ai_api_key_set',
 			visibleWhen: [on, cloud],
 		},
+	]
+}
+
+/**
+ * The choice between a local and a cloud model.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {object} The field.
+ */
+function aiModelKindField(t, on) {
+	return {
+		key: 'ai_model_type',
+		label: t('dossiq', 'Kind of model'),
+		type: 'radio',
+		default: 'local',
+		options: [
+			{ value: 'local', label: t('dossiq', 'Local (Ollama)'), description: t('dossiq', 'Data stays on your own servers') },
+			{ value: 'cloud', label: t('dossiq', 'Cloud'), description: t('dossiq', 'A provider outside your organisation') },
+		],
+		visibleWhen: on,
+	}
+}
+
+/**
+ * The warning that a cloud model sends case data outside the organisation.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {Array<object>} visibleWhen While AI is on and the model is a cloud one.
+ * @return {object} The field.
+ */
+function aiCloudWarningField(t, visibleWhen) {
+	return {
+		key: 'cloud-warning',
+		type: 'status',
+		tone: 'warning',
+		text: t(
+			'dossiq',
+			'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.',
+		),
+		visibleWhen,
+	}
+}
+
+/**
+ * The heading and one switch per AI feature.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiFeatureFields(t, on) {
+	const features = [
+		['ai_feature_classification', t('dossiq', 'Document classification')],
+		['ai_feature_extraction', t('dossiq', 'Data extraction')],
+		['ai_feature_qa', t('dossiq', 'Knowledge base Q&A')],
+		['ai_feature_summary', t('dossiq', 'Auto-summarization')],
+		['ai_feature_routing', t('dossiq', 'Routing suggestions')],
+		['ai_feature_decision_support', t('dossiq', 'Decision support')],
+	]
+	return [
 		{ key: 'heading-features', label: t('dossiq', 'Features'), type: 'heading', advanced: true, visibleWhen: on },
-		...features.map(([key, label]) => ({ key, label, type: 'switch', advanced: true, visibleWhen: on })),
+		...features.map(([key, label]) => advancedSwitch({ key, label }, on)),
+	]
+}
+
+/**
+ * A switch among the advanced AI settings, shown while AI is on.
+ *
+ * @param {{key: string, label: string}} setting The setting and its label.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {object} The field.
+ */
+function advancedSwitch(setting, on) {
+	return { key: setting.key, label: setting.label, type: 'switch', advanced: true, visibleWhen: on }
+}
+
+/**
+ * Privacy and compliance: stripping personal data, the DPIA acknowledgement
+ * and the warning while it is missing.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiPrivacyFields(t, on) {
+	return [
 		{ key: 'heading-privacy', label: t('dossiq', 'Privacy and compliance'), type: 'heading', advanced: true, visibleWhen: on },
-		{
-			key: 'ai_pii_stripping',
-			label: t('dossiq', 'Strip PII (BSN, financial data) from AI prompts'),
-			type: 'switch',
-			advanced: true,
-			visibleWhen: on,
-		},
-		{
-			key: 'ai_dpia_acknowledged',
-			label: t('dossiq', 'DPIA (Data Protection Impact Assessment) has been completed'),
-			type: 'switch',
-			advanced: true,
-			visibleWhen: on,
-		},
-		{
-			key: 'dpia-warning',
-			type: 'status',
-			tone: 'warning',
-			text: t(
-				'dossiq',
-				'A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.',
-			),
-			visibleWhen: [on, { key: 'ai_dpia_acknowledged', equals: false }],
-		},
+		advancedSwitch(
+			{ key: 'ai_pii_stripping', label: t('dossiq', 'Strip PII (BSN, financial data) from AI prompts') },
+			on,
+		),
+		advancedSwitch(
+			{ key: 'ai_dpia_acknowledged', label: t('dossiq', 'DPIA (Data Protection Impact Assessment) has been completed') },
+			on,
+		),
+		aiDpiaWarningField(t, [on, { key: 'ai_dpia_acknowledged', equals: false }]),
+	]
+}
+
+/**
+ * The warning that a DPIA is required before AI meets personal data.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {Array<object>} visibleWhen While AI is on and the DPIA is not acknowledged.
+ * @return {object} The field.
+ */
+function aiDpiaWarningField(t, visibleWhen) {
+	return {
+		key: 'dpia-warning',
+		type: 'status',
+		tone: 'warning',
+		text: t(
+			'dossiq',
+			'A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.',
+		),
+		visibleWhen,
+	}
+}
+
+/**
+ * The heading and the button that tests the connection to the model.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The app's translate.
+ * @param {object} on The condition under which AI is switched on.
+ * @return {Array<object>} The fields.
+ */
+function aiConnectionTestFields(t, on) {
+	return [
 		{ key: 'heading-test', label: t('dossiq', 'Connection test'), type: 'heading', visibleWhen: on },
 		{
 			key: 'test-connection',
@@ -706,10 +867,6 @@ export function aiFields(t) {
 			visibleWhen: on,
 		},
 	]
-	// The card lays its fields out in two columns, model address beside model
-	// name as board DqBeheerinstellingen draws them; a switch or a choice
-	// keeps a row of its own.
-	return fields.map((field) => (field.type === 'switch' || field.type === 'radio' ? { ...field, wide: true } : field))
 }
 
 /**
