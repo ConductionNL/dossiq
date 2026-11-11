@@ -121,48 +121,81 @@ class InspectionTemplateMapper {
 		$items = [];
 		$unresolved = [];
 		foreach ($this->rawItems(value: ($checklist['items'] ?? [])) as $index => $raw) {
-			$item = $raw;
-			$id = '';
-			if (is_string($raw) === true) {
-				$id = $raw;
-				$item = ($rows[$raw] ?? null);
-			}
-
-			if (is_array($item) === false) {
+			$resolved = self::resolvedItem(raw: $raw, rows: $rows);
+			if (is_array($resolved['item']) === false) {
 				$unresolved[] = (string)$raw;
 				continue;
 			}
 
-			if ($id === '') {
-				$id = (string)($item['id'] ?? $item['uuid'] ?? ('item-' . ((int)$index + 1)));
-			}
+			$items[] = $this->stackCItem(resolved: $resolved, index: (int)$index);
+		}
 
-			$items[] = $this->item(
-				item: $item,
-				id: $id,
-				label: (string)($item['question'] ?? $item['label'] ?? ''),
-				type: (string)($item['type'] ?? ''),
-				order: (int)$index
-			);
-		}//end foreach
+		return ['template' => $this->stackCTemplate(checklist: $checklist, items: $items), 'unresolved' => $unresolved];
+	}//end fromStackC()
 
+	/**
+	 * A stack C item as posted: a `checklistItem` uuid looked up in `$rows`, or an inline item.
+	 *
+	 * @param mixed                               $raw  The uuid or the inline item.
+	 * @param array<string, array<string, mixed>> $rows `checklistItem` rows by uuid.
+	 *
+	 * @return array{item: mixed, id: string} The item (no array when unreadable) and the uuid it was read by, or ''.
+	 */
+	private static function resolvedItem(mixed $raw, array $rows): array {
+		if (is_string($raw) === true) {
+			return ['item' => ($rows[$raw] ?? null), 'id' => $raw];
+		}
+
+		return ['item' => $raw, 'id' => ''];
+	}//end resolvedItem()
+
+	/**
+	 * One readable stack C item onto a template item; an inline item without id is numbered by position.
+	 *
+	 * @param array{item: array<string, mixed>, id: string} $resolved The item and the uuid it was read by.
+	 * @param integer                                       $index    Its position in the list.
+	 *
+	 * @return array<string, mixed> The template item.
+	 */
+	private function stackCItem(array $resolved, int $index): array {
+		$item = $resolved['item'];
+		$id = $resolved['id'];
+		if ($id === '') {
+			$id = (string)($item['id'] ?? $item['uuid'] ?? ('item-' . ($index + 1)));
+		}
+
+		return $this->item(
+			item: $item,
+			id: $id,
+			label: (string)($item['question'] ?? $item['label'] ?? ''),
+			type: (string)($item['type'] ?? ''),
+			order: $index
+		);
+	}//end stackCItem()
+
+	/**
+	 * The template a stack C checklist becomes, with its items.
+	 *
+	 * @param array<string, mixed>             $checklist The stack C object.
+	 * @param array<int, array<string, mixed>> $items     The template items.
+	 *
+	 * @return array<string, mixed> The template.
+	 */
+	private function stackCTemplate(array $checklist, array $items): array {
 		$status = 'retired';
 		if (($checklist['active'] ?? false) === true) {
 			$status = 'active';
 		}
 
-		return [
-			'template' => $this->template(
-				source: $checklist,
-				name: (string)($checklist['name'] ?? ''),
-				caseType: (string)($checklist['caseTypeRef'] ?? $checklist['caseType'] ?? ''),
-				status: $status,
-				items: $items,
-				legacyRef: 'inspectionChecklist/' . $this->idOf(object: $checklist)
-			),
-			'unresolved' => $unresolved,
-		];
-	}//end fromStackC()
+		return $this->template(
+			source: $checklist,
+			name: (string)($checklist['name'] ?? ''),
+			caseType: (string)($checklist['caseTypeRef'] ?? $checklist['caseType'] ?? ''),
+			status: $status,
+			items: $items,
+			legacyRef: 'inspectionChecklist/' . $this->idOf(object: $checklist)
+		);
+	}//end stackCTemplate()
 
 	/**
 	 * The settings editor's flat view onto a template.
