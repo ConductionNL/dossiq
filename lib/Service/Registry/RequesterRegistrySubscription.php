@@ -97,30 +97,13 @@ class RequesterRegistrySubscription {
 			return ['requested' => false, 'reason' => 'the case names no requester'];
 		}
 
-		$registry = $this->settings->getOpenRegisterClass(class: self::REGISTRY_SERVICE);
-		$schemas = $this->settings->getOpenRegisterClass(class: self::SCHEMA_MAPPER);
-		$objects = $this->settings->getObjectService();
-		if ($registry === null || $schemas === null || $objects === null) {
+		$run = $this->subscriptionRun(objectUuid: $objectUuid);
+		if ($run === null) {
 			return ['requested' => false, 'reason' => 'this OpenRegister has no registry subscriptions'];
 		}
 
 		try {
-			$object = $objects->find(id: $objectUuid);
-			if (is_object($object) === false) {
-				return ['requested' => false, 'reason' => 'the requester could not be read'];
-			}
-
-			$schema = $schemas->find($object->getSchema());
-			if ($registry->annotationFor($schema) === null) {
-				// A Nextcloud contact, or any record no registry owns.
-				return ['requested' => false, 'reason' => 'the requester is not kept by a source register'];
-			}
-
-			if ($this->isLive(state: $registry->stateFor($objectUuid)) === true) {
-				return ['requested' => false, 'reason' => 'already subscribed'];
-			}
-
-			$registry->requestSubscription($object, $schema);
+			return $this->requestFor(run: $run);
 		} catch (Throwable $e) {
 			// No identity value, an unreachable row, a refused request: the
 			// case is saved either way, and the reason is logged once here.
@@ -131,9 +114,59 @@ class RequesterRegistrySubscription {
 
 			return ['requested' => false, 'reason' => $e->getMessage()];
 		}//end try
+	}//end subscribe()
+
+	/**
+	 * OpenRegister's registry service, schema mapper and object service for one requester, or null when one is missing.
+	 *
+	 * @param string $objectUuid The requester's object UUID.
+	 *
+	 * @return SubscriptionRun|null The run.
+	 */
+	private function subscriptionRun(string $objectUuid): ?SubscriptionRun {
+		$registry = $this->settings->getOpenRegisterClass(class: self::REGISTRY_SERVICE);
+		$schemas = $this->settings->getOpenRegisterClass(class: self::SCHEMA_MAPPER);
+		$objects = $this->settings->getObjectService();
+		if ($registry === null || $schemas === null || $objects === null) {
+			return null;
+		}
+
+		$run = new SubscriptionRun();
+		$run->registry = $registry;
+		$run->schemas = $schemas;
+		$run->objects = $objects;
+		$run->objectUuid = $objectUuid;
+
+		return $run;
+	}//end subscriptionRun()
+
+	/**
+	 * Ask the source register to keep the requester, unless no register owns it or it is already subscribed.
+	 *
+	 * @param SubscriptionRun $run The request.
+	 *
+	 * @return array{requested: bool, reason: string} The outcome.
+	 */
+	private function requestFor(SubscriptionRun $run): array {
+		$object = $run->objects->find(id: $run->objectUuid);
+		if (is_object($object) === false) {
+			return ['requested' => false, 'reason' => 'the requester could not be read'];
+		}
+
+		$schema = $run->schemas->find($object->getSchema());
+		if ($run->registry->annotationFor($schema) === null) {
+			// A Nextcloud contact, or any record no registry owns.
+			return ['requested' => false, 'reason' => 'the requester is not kept by a source register'];
+		}
+
+		if ($this->isLive(state: $run->registry->stateFor($run->objectUuid)) === true) {
+			return ['requested' => false, 'reason' => 'already subscribed'];
+		}
+
+		$run->registry->requestSubscription($object, $schema);
 
 		return ['requested' => true, 'reason' => ''];
-	}//end subscribe()
+	}//end requestFor()
 
 	/**
 	 * Whether a subscription state is one that needs no new request.
