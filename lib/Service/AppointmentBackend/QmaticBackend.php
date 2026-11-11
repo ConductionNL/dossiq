@@ -23,12 +23,31 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\AppointmentBackend;
 
+use OCP\Http\Client\IClientService;
+use Psr\Log\LoggerInterface;
+
 /**
  * Qmatic Orchestra REST API backend for appointment scheduling.
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class QmaticBackend extends RestAppointmentBackend {
+	/**
+	 * Constructor.
+	 *
+	 * @param IClientService $clientService The HTTP client service.
+	 * @param LoggerInterface $logger The logger.
+	 * @param string $apiUrl The Qmatic API base URL.
+	 * @param string $apiKey The Qmatic API auth token.
+	 */
+	public function __construct(
+		protected IClientService $clientService,
+		protected LoggerInterface $logger,
+		protected string $apiUrl,
+		protected string $apiKey,
+	) {
+	}//end __construct()
+
 	/**
 	 * Fetch available timeslots from the Qmatic API.
 	 *

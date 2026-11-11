@@ -37,34 +37,32 @@ use Psr\Log\LoggerInterface;
  */
 abstract class RestAppointmentBackend implements AppointmentBackendInterface {
 	/**
-	 * Constructor.
+	 * The HTTP client service.
 	 *
-	 * @param IClientService $clientService The HTTP client service.
-	 * @param LoggerInterface $logger The logger.
-	 * @param string $apiUrl The vendor API base URL.
-	 * @param string $apiKey The vendor API key.
+	 * @var IClientService
 	 */
-	public function __construct(
-		protected IClientService $clientService,
-		protected LoggerInterface $logger,
-		protected string $apiUrl,
-		protected string $apiKey,
-	) {
-	}//end __construct()
+	protected IClientService $clientService;
 
 	/**
-	 * The vendor name the error log lines start with.
+	 * The logger.
 	 *
-	 * @return string
+	 * @var LoggerInterface
 	 */
-	abstract protected function vendor(): string;
+	protected LoggerInterface $logger;
 
 	/**
-	 * The headers that authenticate a call to the vendor API.
+	 * The vendor API base URL.
 	 *
-	 * @return array<string, string>
+	 * @var string
 	 */
-	abstract protected function authHeaders(): array;
+	protected string $apiUrl;
+
+	/**
+	 * The vendor API key.
+	 *
+	 * @var string
+	 */
+	protected string $apiKey;
 
 	/**
 	 * Book an appointment via the vendor API.
@@ -135,4 +133,18 @@ abstract class RestAppointmentBackend implements AppointmentBackendInterface {
 			return [];
 		}
 	}//end getJson()
+
+	/**
+	 * The vendor name the error log lines start with.
+	 *
+	 * @return string
+	 */
+	abstract protected function vendor(): string;
+
+	/**
+	 * The headers that authenticate a call to the vendor API.
+	 *
+	 * @return array<string, string>
+	 */
+	abstract protected function authHeaders(): array;
 }//end class
