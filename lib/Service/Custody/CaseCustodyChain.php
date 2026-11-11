@@ -115,7 +115,53 @@ class CaseCustodyChain {
 		string $movedBy,
 		string $movedAt = '',
 	): array {
-		$caseId = trim($caseId);
+		return $this->moveCase(
+			move: new CustodyMove(caseId: $caseId, organisationUnit: $organisationUnit, handler: $handler, reason: $reason, movedBy: $movedBy, at: $movedAt),
+		);
+	}//end move()
+
+	/**
+	 * Move the case into a new holding, closing the one that was open.
+	 *
+	 * Writes the next holding before closing the previous one, for the reason
+	 * given on {@see move()}.
+	 *
+	 * @param CustodyMove $move The change of hands.
+	 *
+	 * @return array<string, mixed> The holding that is now open.
+	 *
+	 * @throws RefusedException When the move names no case or the chain cannot be written.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function moveCase(CustodyMove $move): array {
+		$caseId = $this->requireCaseId(move: $move);
+		$moment = $this->moment(candidate: $move->at);
+		$previous = $this->openHoldingFor(caseId: $caseId);
+		$sequence = $this->sequenceAfter(previous: $previous);
+
+		$opened = $this->write(holding: $move->openHolding(from: $moment, sequence: $sequence), uuid: null);
+
+		if ($previous !== null) {
+			$this->close(holding: $previous, closedAt: $moment);
+		}
+
+		$this->logMove(move: $move, sequence: $sequence);
+
+		return $opened;
+	}//end moveCase()
+
+	/**
+	 * The trimmed case id of a move, refusing a move that names no case.
+	 *
+	 * @param CustodyMove $move The change of hands.
+	 *
+	 * @return string The case id.
+	 *
+	 * @throws RefusedException When the case id is empty.
+	 */
+	private function requireCaseId(CustodyMove $move): string {
+		$caseId = trim($move->caseId);
 		if ($caseId === '') {
 			throw new RefusedException(
 				rule: self::CUSTODY_UNWRITABLE,
@@ -124,44 +170,43 @@ class CaseCustodyChain {
 			);
 		}
 
-		$moment = $this->moment(candidate: $movedAt);
-		$previous = $this->openHoldingFor(caseId: $caseId);
-		$sequence = 1;
-		if ($previous !== null) {
-			$sequence = ((int)($previous['sequence'] ?? 0) + 1);
+		return $caseId;
+	}//end requireCaseId()
+
+	/**
+	 * The sequence of the holding that follows the open one, or one on an empty chain.
+	 *
+	 * @param array<string, mixed>|null $previous The holding that is open now, if any.
+	 *
+	 * @return int The next sequence.
+	 */
+	private function sequenceAfter(?array $previous): int {
+		if ($previous === null) {
+			return 1;
 		}
 
-		$opened = $this->write(
-			holding: [
-				'caseId' => $caseId,
-				'organisationUnit' => trim($organisationUnit),
-				'handler' => trim($handler),
-				'from' => $moment,
-				'until' => '',
-				'open' => true,
-				'reason' => trim($reason),
-				'movedBy' => trim($movedBy),
-				'sequence' => $sequence,
-			],
-			uuid: null,
-		);
+		return ((int)($previous['sequence'] ?? 0) + 1);
+	}//end sequenceAfter()
 
-		if ($previous !== null) {
-			$this->close(holding: $previous, closedAt: $moment);
-		}
-
+	/**
+	 * Record that a case changed hands.
+	 *
+	 * @param CustodyMove $move     The change of hands.
+	 * @param int         $sequence The sequence of the holding it opened.
+	 *
+	 * @return void
+	 */
+	private function logMove(CustodyMove $move, int $sequence): void {
 		$this->logger->info(
 			'Dossiq custody: a case changed hands',
 			[
-				'caseId' => $caseId,
-				'to' => $organisationUnit,
+				'caseId' => trim($move->caseId),
+				'to' => $move->organisationUnit,
 				'sequence' => $sequence,
-				'movedBy' => $movedBy,
+				'movedBy' => $move->movedBy,
 			],
 		);
-
-		return $opened;
-	}//end move()
+	}//end logMove()
 
 	/**
 	 * Open the first holding of a case, where the chain has none yet.
@@ -191,26 +236,30 @@ class CaseCustodyChain {
 		string $reason,
 		string $movedBy,
 	): ?array {
-		$caseId = trim($caseId);
+		return $this->beginCase(
+			move: new CustodyMove(caseId: $caseId, organisationUnit: $organisationUnit, handler: $handler, reason: $reason, movedBy: $movedBy, at: $from),
+		);
+	}//end begin()
+
+	/**
+	 * Open the first holding of a case, dated from the moment on the move.
+	 *
+	 * @param CustodyMove $move The first holding; its moment is when the holding began.
+	 *
+	 * @return array<string, mixed>|null The holding, or null when one was already open.
+	 *
+	 * @throws RefusedException When the chain cannot be written.
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	public function beginCase(CustodyMove $move): ?array {
+		$caseId = trim($move->caseId);
 		if ($caseId === '' || $this->openHoldingFor(caseId: $caseId) !== null) {
 			return null;
 		}
 
-		return $this->write(
-			holding: [
-				'caseId' => $caseId,
-				'organisationUnit' => trim($organisationUnit),
-				'handler' => trim($handler),
-				'from' => $this->moment(candidate: $from),
-				'until' => '',
-				'open' => true,
-				'reason' => trim($reason),
-				'movedBy' => trim($movedBy),
-				'sequence' => 1,
-			],
-			uuid: null,
-		);
-	}//end begin()
+		return $this->write(holding: $move->openHolding(from: $this->moment(candidate: $move->at), sequence: 1), uuid: null);
+	}//end beginCase()
 
 	/**
 	 * The holding that is running now, or null when the chain is empty.
@@ -254,22 +303,10 @@ class CaseCustodyChain {
 			return [];
 		}
 
-		try {
-			[$objectService, $register] = $this->dossierRegister()->context();
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->dossierRegister()->schema(key: 'case_custody_schema'),
-				filters: ['caseId' => $caseId, '_limit' => self::PAGE_SIZE],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq custody: the chain could not be read',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
-
-			return [];
-		}
+		$rows = (new CustodyRows(settingsService: $this->settingsService, logger: $this->logger))->find(
+			filters: ['caseId' => $caseId, '_limit' => self::PAGE_SIZE],
+			failure: 'Dossiq custody: the chain could not be read',
+		);
 
 		usort(
 			$rows,
@@ -330,33 +367,55 @@ class CaseCustodyChain {
 		unset($holding['@self'], $holding['id'], $holding['uuid']);
 
 		try {
-			[$objectService, $register] = $this->dossierRegister()->context();
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->dossierRegister()->schema(key: 'case_custody_schema'),
-				object: $holding,
-				uuid: $uuid,
-			);
+			$saved = $this->saveHolding(holding: $holding, uuid: $uuid);
 		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::CUSTODY_UNWRITABLE,
-				sentence: 'The chain of custody could not be written, so the case was not moved.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
+			throw $this->unwritable(previous: $e);
 		}
 
 		if ($saved === null) {
-			throw new RefusedException(
-				rule: self::CUSTODY_UNWRITABLE,
-				sentence: 'The chain of custody could not be written, so the case was not moved.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
+			throw $this->unwritable(previous: null);
 		}
 
 		return $saved;
 	}//end write()
+
+	/**
+	 * Save a holding in the custody schema.
+	 *
+	 * @param array<string, mixed> $holding The holding, without its identifiers.
+	 * @param string|null          $uuid    The uuid to update, or null to create.
+	 *
+	 * @return array<string, mixed>|null The stored holding, or null when nothing was stored.
+	 *
+	 * @throws Throwable When the register is unavailable or refuses the write.
+	 */
+	private function saveHolding(array $holding, ?string $uuid): ?array {
+		[$objectService, $register] = $this->dossierRegister()->context();
+
+		return $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $this->dossierRegister()->schema(key: 'case_custody_schema'),
+			object: $holding,
+			uuid: $uuid,
+		);
+	}//end saveHolding()
+
+	/**
+	 * The refusal for a chain that could not be written.
+	 *
+	 * @param Throwable|null $previous The failure underneath, when there was one.
+	 *
+	 * @return RefusedException The refusal.
+	 */
+	private function unwritable(?Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: self::CUSTODY_UNWRITABLE,
+			sentence: 'The chain of custody could not be written, so the case was not moved.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unwritable()
 
 	/**
 	 * A moment in ISO 8601: the one given, or now.
