@@ -137,25 +137,14 @@ class BackfillCaseLastActivity implements IRepairStep {
 			return;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$run = $this->configuredRun();
+		if ($run === null) {
 			$output->info('lastActivityAt backfill: OpenRegister or the case schema is not available, skipped.');
 			return;
 		}
 
-		try {
-			$tally = (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->backfill(objectService: $objectService, register: $register, schema: $schema)
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the lastActivityAt backfill could not read the cases',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
-			);
-			$output->info('lastActivityAt backfill: the cases could not be read, skipped.');
+		$tally = $this->backfillAsSystem(run: $run, output: $output);
+		if ($tally === null) {
 			return;
 		}
 
@@ -169,6 +158,49 @@ class BackfillCaseLastActivity implements IRepairStep {
 			$this->appConfig->setValueString(Application::APP_ID, self::CONFIG_KEY, self::DONE);
 		}
 	}//end run()
+
+	/**
+	 * The pass over the configured register and case schema, or null when OpenRegister or either is missing.
+	 *
+	 * @return CaseDatingRun|null The pass.
+	 */
+	private function configuredRun(): ?CaseDatingRun {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		$run = new CaseDatingRun(objectService: $objectService, register: $register);
+		$run->schema = $schema;
+
+		return $run;
+	}//end configuredRun()
+
+	/**
+	 * Run the backfill as the system where OpenRegister allows it; null, logged and reported, when the cases cannot be read.
+	 *
+	 * @param CaseDatingRun $run    The pass.
+	 * @param IOutput       $output The upgrade output.
+	 *
+	 * @return array<string, int>|null The tally, or null.
+	 */
+	private function backfillAsSystem(CaseDatingRun $run, IOutput $output): ?array {
+		try {
+			return (array)$this->runAsSystemIfAvailable(
+				objectService: $run->objectService,
+				operation: fn (): array => $this->backfill(run: $run)
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the lastActivityAt backfill could not read the cases',
+				['app' => Application::APP_ID, 'error' => $e->getMessage()]
+			);
+			$output->info('lastActivityAt backfill: the cases could not be read, skipped.');
+			return null;
+		}
+	}//end backfillAsSystem()
 
 	/**
 	 * The date a case without `lastActivityAt` should get, or '' when it has one.
@@ -207,59 +239,89 @@ class BackfillCaseLastActivity implements IRepairStep {
 	 * Writing while paging by offset can move a row between pages, so one case
 	 * would be seen twice and another not at all.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $schema        The case schema.
+	 * @param CaseDatingRun $run The pass.
 	 *
 	 * @return array{dated: int, failed: int, skipped: int} What happened.
 	 */
-	private function backfill(object $objectService, string $register, string $schema): array {
-		$tally = ['dated' => 0, 'failed' => 0, 'skipped' => 0];
-		$now = $this->dates->now();
-		$todo = [];
+	private function backfill(CaseDatingRun $run): array {
+		$run->now = $this->dates->now();
+		$this->collectUndated(run: $run);
+		foreach (array_keys($run->todo) as $uuid) {
+			$this->writeDate(run: $run, uuid: (string)$uuid);
+		}
+
+		return $run->tally;
+	}//end backfill()
+
+	/**
+	 * Page through every case, queueing the date of each one without a date.
+	 *
+	 * @param CaseDatingRun $run The pass.
+	 *
+	 * @return void
+	 */
+	private function collectUndated(CaseDatingRun $run): void {
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
 			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->schema,
 				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
 			);
 
 			foreach ($rows as $row) {
-				$date = $this->dateFor(case: $row, now: $now);
-				$uuid = (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));
-				if ($date === '' || $uuid === '') {
-					$tally['skipped']++;
-					continue;
-				}
-
-				$todo[$uuid] = $date;
+				$this->queueCase(run: $run, row: $row);
 			}
 
 			if (count($rows) < self::PAGE) {
 				break;
 			}
-		}//end for
+		}
+	}//end collectUndated()
 
-		foreach ($todo as $uuid => $date) {
-			try {
-				$this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: (string)$uuid,
-					changes: [CaseActivityStamp::FIELD => $date]
-				);
-				$tally['dated']++;
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: the lastActivityAt backfill failed for one case',
-					['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
-				);
-				$tally['failed']++;
-			}
+	/**
+	 * Queue one case's date, or count it skipped when it has one or no id.
+	 *
+	 * @param CaseDatingRun        $run The pass.
+	 * @param array<string, mixed> $row The stored case.
+	 *
+	 * @return void
+	 */
+	private function queueCase(CaseDatingRun $run, array $row): void {
+		$date = $this->dateFor(case: $row, now: $run->now);
+		$uuid = (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));
+		if ($date === '' || $uuid === '') {
+			$run->tally['skipped']++;
+			return;
 		}
 
-		return $tally;
-	}//end backfill()
+		$run->todo[$uuid] = $date;
+	}//end queueCase()
+
+	/**
+	 * Write one queued date, logging and counting a failure.
+	 *
+	 * @param CaseDatingRun $run  The pass.
+	 * @param string        $uuid The case.
+	 *
+	 * @return void
+	 */
+	private function writeDate(CaseDatingRun $run, string $uuid): void {
+		try {
+			$this->patchObjectAsArray(
+				objectService: $run->objectService,
+				register: $run->register,
+				schema: $run->schema,
+				id: $uuid,
+				changes: [CaseActivityStamp::FIELD => $run->todo[$uuid]]
+			);
+			$run->tally['dated']++;
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: the lastActivityAt backfill failed for one case',
+				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
+			);
+			$run->tally['failed']++;
+		}
+	}//end writeDate()
 }//end class
