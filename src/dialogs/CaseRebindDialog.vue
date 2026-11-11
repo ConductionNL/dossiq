@@ -374,29 +374,67 @@ export default {
 			}
 			// Only the newest answer counts: a slow reply to an older question
 			// must not overwrite the groups for the current one.
-			const seq = ++this.previewSeq
+			await this.askPreview(++this.previewSeq)
+		},
+
+		/**
+		 * Ask the preview for question `seq`, and keep its answer only while it
+		 * is still the newest question.
+		 *
+		 * @param {number} seq The number of this question.
+		 * @return {Promise<void>}
+		 */
+		async askPreview(seq) {
 			this.previewing = true
 			try {
-				const { data } = await axios.get(this.endpoint(), {
-					params: {
-						target: this.target,
-						status: this.status,
-						remap: this.remap,
-						properties: this.answers,
-					},
-				})
+				const { data } = await axios.get(this.endpoint(), { params: this.previewParams() })
 				if (seq === this.previewSeq) {
 					this.preview = data?.preview ?? null
 					this.error = ''
 				}
 			} catch (e) {
-				if (seq === this.previewSeq) {
-					this.error = this.refusalOf(e)
-				}
+				this.keepPreviewRefusal(seq, e)
 			} finally {
-				if (seq === this.previewSeq) {
-					this.previewing = false
-				}
+				this.endPreview(seq)
+			}
+		},
+
+		/**
+		 * What the preview is asked: the chosen type and status, the mapping and the answers.
+		 *
+		 * @return {object} The query parameters.
+		 */
+		previewParams() {
+			return {
+				target: this.target,
+				status: this.status,
+				remap: this.remap,
+				properties: this.answers,
+			}
+		},
+
+		/**
+		 * Show a refused preview, while it is still the newest question.
+		 *
+		 * @param {number} seq The number of the refused question.
+		 * @param {object} e The axios error.
+		 * @return {void}
+		 */
+		keepPreviewRefusal(seq, e) {
+			if (seq === this.previewSeq) {
+				this.error = this.refusalOf(e)
+			}
+		},
+
+		/**
+		 * Stop the busy state, once the newest question has an answer.
+		 *
+		 * @param {number} seq The number of the answered question.
+		 * @return {void}
+		 */
+		endPreview(seq) {
+			if (seq === this.previewSeq) {
+				this.previewing = false
 			}
 		},
 
