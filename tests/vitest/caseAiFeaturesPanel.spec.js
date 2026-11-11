@@ -63,13 +63,14 @@ const SUMMARY = {
 /**
  * Mount the panel with template t/n and light stubs.
  *
+ * @param {object} [props] The panel props.
  * @return {object} The wrapper.
  */
-function mountPanel() {
+function mountPanel(props = { objectId: 'c-1' }) {
 	const fill = (text, vars = {}) =>
 		text.replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match)
 	return mount(CaseAiFeaturesPanel, {
-		props: { objectId: 'c-1' },
+		props,
 		global: {
 			mocks: {
 				t: (app, text, vars) => fill(text, vars),
@@ -441,4 +442,86 @@ describe('CaseAiFeaturesPanel', () => {
 			suggestion: 'Tweede.',
 		})
 	})
+
+	it('reads nothing for a panel without a case', async () => {
+		const wrapper = mountPanel({ objectId: '' })
+		await flushPromises()
+
+		expect(fetchCaseFeatures).not.toHaveBeenCalled()
+		expect(fetchCasePrompts).not.toHaveBeenCalled()
+		expect(wrapper.vm.features).toBeNull()
+		expect(wrapper.vm.loading).toBe(false)
+		expect(wrapper.vm.runs).toEqual({})
+	})
+
+	it('starts an empty run per feature and reads documents only when one is offered', async () => {
+		const OFF = { ...SUMMARY, slug: 'off-feature', available: false }
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([SUMMARY, OFF])
+		vi.mocked(fetchCasePrompts).mockResolvedValue(null)
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		const empty = { documentReference: '', instruction: '', busy: false, refusal: null, failed: false, output: '' }
+		expect(wrapper.vm.runs).toEqual({ 'document-summary': empty, 'off-feature': empty })
+		expect(wrapper.vm.prompts).toEqual([])
+		expect(fetchCaseDocuments).toHaveBeenCalledWith('c-1')
+		expect(wrapper.vm.documents).toEqual([{ id: '42', title: 'besluit.pdf' }])
+		expect(wrapper.vm.loading).toBe(false)
+
+		vi.mocked(fetchCaseDocuments).mockClear()
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([OFF])
+		await wrapper.vm.load()
+		expect(fetchCaseDocuments).not.toHaveBeenCalled()
+		expect(wrapper.vm.documents).toEqual([])
+
+		vi.mocked(fetchCaseFeatures).mockResolvedValue(null)
+		await wrapper.vm.load()
+		expect(wrapper.vm.runs).toEqual({})
+		expect(wrapper.vm.documents).toEqual([])
+		expect(wrapper.vm.features).toBeNull()
+	})
+
+	it('says the assistant did not answer when the failure carries no reason, and shows no empty answer', async () => {
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([])
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		vi.mocked(converse).mockRejectedValueOnce(new Error('network'))
+		await wrapper.vm.ask({ prompt: 'Vraag?' })
+		expect(wrapper.vm.answerFailed).toBe('The assistant did not answer.')
+		expect(wrapper.vm.asking).toBe(false)
+
+		vi.mocked(converse).mockResolvedValueOnce({})
+		await wrapper.vm.ask({ prompt: 'Vraag?' })
+		expect(wrapper.vm.answer).toBe('')
+		expect(wrapper.vm.answerFailed).toBe('')
+		wrapper.unmount()
+		await flushPromises()
+		expect(decisions()).toHaveLength(0)
+	})
+
+	it('marks a failed run apart from a refusal and clears the previous output', async () => {
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([SUMMARY])
+		const wrapper = mountPanel()
+		await flushPromises()
+		const state = wrapper.vm.runs['document-summary']
+		state.documentReference = '42'
+
+		axios.post.mockResolvedValueOnce({ data: { output: 'Eerste.' } })
+		await wrapper.vm.run(SUMMARY)
+		expect(state.output).toBe('Eerste.')
+
+		axios.post.mockResolvedValueOnce({ data: {} })
+		await wrapper.vm.run(SUMMARY)
+		expect(state).toMatchObject({ output: '', busy: false, failed: true, refusal: null })
+
+		axios.post.mockResolvedValueOnce({ data: { output: 'Tweede.' } })
+		await wrapper.vm.run(SUMMARY)
+		expect(state).toMatchObject({ output: 'Tweede.', busy: false, failed: false, refusal: null })
+
+		axios.post.mockRejectedValueOnce(new Error('network'))
+		await wrapper.vm.run(SUMMARY)
+		expect(state).toMatchObject({ output: '', busy: false, failed: true, refusal: null })
+	})
 })
+
