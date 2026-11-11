@@ -1,0 +1,57 @@
+{
+    "not signed in": {
+        "status": 403,
+        "body": {
+            "message": "Only an administrator can hand over somebody's work.",
+            "error": "not-an-administrator"
+        },
+        "calls": []
+    },
+    "not an administrator": {
+        "status": 403,
+        "body": {
+            "message": "Only an administrator can hand over somebody's work.",
+            "error": "not-an-administrator"
+        },
+        "calls": []
+    },
+    "handed over": {
+        "status": 200,
+        "body": {
+            "moved": 4
+        },
+        "calls": [
+            "execute [\"leaver\",\"stayer\",\"admin\"]"
+        ]
+    },
+    "handed over without names": {
+        "status": 200,
+        "body": {
+            "moved": 4
+        },
+        "calls": [
+            "execute [\"\",\"\",\"admin\"]"
+        ]
+    },
+    "incomplete": {
+        "status": 400,
+        "body": {
+            "message": "Name the person who is leaving and the person receiving the work.",
+            "error": "leaver-handover-incomplete"
+        },
+        "calls": [
+            "execute [\"leaver\",\"stayer\",\"admin\"]"
+        ]
+    },
+    "broke": {
+        "status": 500,
+        "body": {
+            "message": "The handover could not be completed.",
+            "error": "leaver-handover-failed"
+        },
+        "calls": [
+            "execute [\"leaver\",\"stayer\",\"admin\"]",
+            "error: LeaverHandoverController: execute failed {\"exception\":\"register offline\"}"
+        ]
+    }
+}
