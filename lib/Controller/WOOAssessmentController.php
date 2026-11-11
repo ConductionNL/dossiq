@@ -127,10 +127,7 @@ class WOOAssessmentController extends Controller {
 
 		$this->requireCaseMutationAccess(caseId: $id, user: $user);
 
-		$assessments = $this->request->getParam('assessments', []);
-		if (is_string($assessments) === true) {
-			$assessments = json_decode($assessments, true) ?? [];
-		}
+		$assessments = $this->jsonParam(name: 'assessments');
 
 		try {
 			$result = $this->assessmentService->bulkUpsert(
@@ -251,10 +248,7 @@ class WOOAssessmentController extends Controller {
 
 		$this->requireCaseMutationAccess(caseId: $id, user: $user);
 
-		$decisionData = $this->request->getParam('decision', []);
-		if (is_string($decisionData) === true) {
-			$decisionData = json_decode($decisionData, true) ?? [];
-		}
+		$decisionData = $this->jsonParam(name: 'decision');
 
 		// A chosen letter must be a document of this case, checked before anything is written.
 		$letter = trim((string)$this->request->getParam('letter', ''));
@@ -265,11 +259,7 @@ class WOOAssessmentController extends Controller {
 				decisionData: $decisionData,
 				letter: $letter,
 			);
-			if ($this->letters !== null) {
-				$result['letter'] = $this->letters->linkDecision(result: $result, letter: $letter);
-			}
-
-			return new JSONResponse($result);
+			return new JSONResponse($this->withLinkedLetter(result: $result, letter: $letter));
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		} catch (RefusedException $e) {
@@ -289,6 +279,38 @@ class WOOAssessmentController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end createDecision()
+
+	/**
+	 * A request parameter that may arrive as JSON text, decoded; unreadable text reads as an empty list.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return mixed The value, `[]` when absent.
+	 */
+	private function jsonParam(string $name): mixed {
+		$value = $this->request->getParam($name, []);
+		if (is_string($value) === true) {
+			$value = json_decode($value, true) ?? [];
+		}
+
+		return $value;
+	}//end jsonParam()
+
+	/**
+	 * The assembled decision with its chosen letter linked, when letters can be linked here.
+	 *
+	 * @param array<string, mixed> $result The assembled decision.
+	 * @param string               $letter The chosen letter's document id, '' for none.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withLinkedLetter(array $result, string $letter): array {
+		if ($this->letters !== null) {
+			$result['letter'] = $this->letters->linkDecision(result: $result, letter: $letter);
+		}
+
+		return $result;
+	}//end withLinkedLetter()
 
 	/**
 	 * Publish an assembled WOO decision to OpenCatalogi.
@@ -440,10 +462,7 @@ class WOOAssessmentController extends Controller {
 		$this->requireCaseMutationAccess(caseId: $id, user: $user);
 
 		$decision = (string)$this->request->getParam('decision', '');
-		$editedSpans = $this->request->getParam('spans', null);
-		if (is_array($editedSpans) === false) {
-			$editedSpans = null;
-		}
+		$editedSpans = $this->editedSpans();
 
 		try {
 			$result = $this->anonymisationAssist->reviewProposal(
@@ -463,6 +482,20 @@ class WOOAssessmentController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end reviewRedactionProposal()
+
+	/**
+	 * The spans a reviewer edited, or null when the request carries no list of them.
+	 *
+	 * @return array<int|string, mixed>|null
+	 */
+	private function editedSpans(): ?array {
+		$spans = $this->request->getParam('spans', null);
+		if (is_array($spans) === false) {
+			return null;
+		}
+
+		return $spans;
+	}//end editedSpans()
 
 	/**
 	 * The service's answer as a response: 200 when it went through, the
