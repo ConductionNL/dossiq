@@ -173,19 +173,15 @@ class AutomaticActionFlowMigrator {
 	 */
 	private function migrateAll(object $flowService, bool $dryRun): array {
 		$actions = $this->fetchActions();
-		$existing = $this->existingByMarker(flowService: $flowService);
+		$run = new ActionMigrationRun(
+			flowService: $flowService,
+			existing: $this->existingByMarker(flowService: $flowService),
+		);
+		$run->dryRun = $dryRun;
 
-		$summary = $this->emptySummary(note: '');
-		$summary['total'] = count($actions);
-		unset($summary['note']);
-
+		$summary = $this->startSummary(total: count($actions));
 		foreach ($actions as $action) {
-			$row = $this->migrateOne(
-				action: $action,
-				existing: $existing,
-				flowService: $flowService,
-				dryRun: $dryRun,
-			);
+			$row = $this->migrateOne(action: $action, run: $run);
 			$summary[$row['outcome']] = ($summary[$row['outcome']] + 1);
 			$summary['rows'][] = $row;
 		}
@@ -194,16 +190,29 @@ class AutomaticActionFlowMigrator {
 	}//end migrateAll()
 
 	/**
+	 * The summary a run starts from, before any action is tallied.
+	 *
+	 * @param int $total How many actions the run walks.
+	 *
+	 * @return array<string, mixed> The summary.
+	 */
+	private function startSummary(int $total): array {
+		$summary = $this->emptySummary(note: '');
+		$summary['total'] = $total;
+		unset($summary['note']);
+
+		return $summary;
+	}//end startSummary()
+
+	/**
 	 * Project one action, returning the row that describes what happened.
 	 *
 	 * @param array<string, mixed> $action The stored automaticAction.
-	 * @param array<string, string> $existing Marker → flow uuid.
-	 * @param object $flowService OpenRegister's FlowService.
-	 * @param bool $dryRun Report only.
+	 * @param ActionMigrationRun $run The pass this action is part of.
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
 	 */
-	private function migrateOne(array $action, array $existing, object $flowService, bool $dryRun): array {
+	private function migrateOne(array $action, ActionMigrationRun $run): array {
 		$marker = $this->marker(action: $action);
 		if ($marker === null) {
 			return [
@@ -213,43 +222,143 @@ class AutomaticActionFlowMigrator {
 			];
 		}
 
-		$type = (string)($action['type'] ?? '');
-		try {
-			$steps = $this->steps(type: $type, config: $this->config(action: $action));
-		} catch (UnmappableStep $e) {
-			return [
-				'outcome' => 'skipped',
-				'marker' => $marker,
-				'detail' => '"' . $type . '" cannot become a flow step: ' . $e->getMessage(),
-			];
+		$projected = new ProjectedAction(action: $action, marker: $marker);
+		$refusal = $this->resolveSteps(projected: $projected);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
+		return $this->writeProjection(projected: $projected, run: $run);
+	}//end migrateOne()
+
+	/**
+	 * Resolve the steps an action becomes, or the row that skips it.
+	 *
+	 * Skipped when the action has no faithful equivalent, or when a step names
+	 * a node nothing implements: a flow around it would never run.
+	 *
+	 * @param ProjectedAction $projected The identified action; receives its steps.
+	 *
+	 * @return array{outcome: string, marker: string, detail: string}|null The skip row, or null to go on.
+	 */
+	private function resolveSteps(ProjectedAction $projected): ?array {
+		$type = $projected->type();
+		try {
+			$projected->steps = $this->steps(type: $type, config: $this->config(action: $projected->action));
+		} catch (UnmappableStep $e) {
+			return $this->skippedRow(
+				marker: $projected->marker,
+				detail: '"' . $type . '" cannot become a flow step: ' . $e->getMessage(),
+			);
+		}
+
+		return $this->missingNodeRefusal(projected: $projected);
+	}//end resolveSteps()
+
+	/**
+	 * The row that skips an action one of whose steps no node implements.
+	 *
+	 * @param ProjectedAction $projected The action with its resolved steps.
+	 *
+	 * @return array{outcome: string, marker: string, detail: string}|null The skip row, or null when every node exists.
+	 */
+	private function missingNodeRefusal(ProjectedAction $projected): ?array {
+		$missing = $this->firstMissingNode(steps: $projected->steps);
+		if ($missing === null) {
+			return null;
+		}
+
+		return $this->skippedRow(
+			marker: $projected->marker,
+			detail: 'no node implements "' . $missing . '" (for "' . $projected->type() . '"); a flow around it would never run',
+		);
+	}//end missingNodeRefusal()
+
+	/**
+	 * The first step whose node no registry entry answers to.
+	 *
+	 * @param array<int, array{type: string, config: array<string, mixed>}> $steps The steps.
+	 *
+	 * @return string|null The missing node id, or null when every node exists.
+	 */
+	private function firstMissingNode(array $steps): ?string {
 		foreach ($steps as $step) {
 			if ($this->nodeExists(nodeType: $step['type']) === false) {
-				return [
-					'outcome' => 'skipped',
-					'marker' => $marker,
-					'detail' => 'no node implements "' . $step['type'] . '" (for "' . $type . '"); a flow around it would never run',
-				];
+				return $step['type'];
 			}
 		}
 
-		$uuid = ($existing[$marker] ?? null);
-		if ($dryRun === true) {
-			return [
-				'outcome' => $this->outcomeFor(uuid: $uuid),
-				'marker' => $marker,
-				'detail' => 'dry run — no write',
-			];
+		return null;
+	}//end firstMissingNode()
+
+	/**
+	 * A row reporting an action that was left alone.
+	 *
+	 * @param string $marker The action's provenance marker.
+	 * @param string $detail Why it was skipped.
+	 *
+	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
+	 */
+	private function skippedRow(string $marker, string $detail): array {
+		return [
+			'outcome' => 'skipped',
+			'marker' => $marker,
+			'detail' => $detail,
+		];
+	}//end skippedRow()
+
+	/**
+	 * Write the action's flow, or report what a dry run would have done.
+	 *
+	 * @param ProjectedAction $projected The action with its steps.
+	 * @param ActionMigrationRun $run The pass this action is part of.
+	 *
+	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
+	 */
+	private function writeProjection(ProjectedAction $projected, ActionMigrationRun $run): array {
+		$uuid = ($run->existing[$projected->marker] ?? null);
+		if ($run->dryRun === true) {
+			return $this->dryRunRow(marker: $projected->marker, uuid: $uuid);
 		}
 
 		return $this->writeFlow(
-			flowService: $flowService,
-			document: (new AutomaticActionFlowDocument())->build(action: $action, marker: $marker, steps: $steps),
-			marker: $marker,
+			flowService: $run->flowService,
+			document: $this->flowDocument(projected: $projected),
+			marker: $projected->marker,
 			uuid: $uuid,
 		);
-	}//end migrateOne()
+	}//end writeProjection()
+
+	/**
+	 * The row a dry run reports for an action it would have written.
+	 *
+	 * @param string      $marker The action's provenance marker.
+	 * @param string|null $uuid   The existing flow uuid, or null.
+	 *
+	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
+	 */
+	private function dryRunRow(string $marker, ?string $uuid): array {
+		return [
+			'outcome' => $this->outcomeFor(uuid: $uuid),
+			'marker' => $marker,
+			'detail' => 'dry run — no write',
+		];
+	}//end dryRunRow()
+
+	/**
+	 * The flow document an action with its steps becomes.
+	 *
+	 * @param ProjectedAction $projected The action with its steps.
+	 *
+	 * @return array<string, mixed> The flow document.
+	 */
+	private function flowDocument(ProjectedAction $projected): array {
+		return (new AutomaticActionFlowDocument())->build(
+			action: $projected->action,
+			marker: $projected->marker,
+			steps: $projected->steps,
+		);
+	}//end flowDocument()
 
 	/**
 	 * Write (or rewrite) the flow, converting a throw into a failed row.
@@ -391,17 +500,42 @@ class AutomaticActionFlowMigrator {
 			return [];
 		}
 
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$schema = $this->appConfig->getValueString(Application::APP_ID, 'automatic_action_schema', '');
-		if ($register === '' || $schema === '') {
+		$filters = $this->actionFilters();
+		if ($filters === null) {
 			return [];
 		}
 
-		$results = $objectService->findAll(['filters' => ['register' => $register, 'schema' => $schema]]);
+		$results = $objectService->findAll(['filters' => $filters]);
 		if (is_array($results) === false) {
 			return [];
 		}
 
+		return $this->actionRows(results: $results);
+	}//end fetchActions()
+
+	/**
+	 * The register/schema filter the actions live under, or null when unconfigured.
+	 *
+	 * @return array{register: string, schema: string}|null The filters.
+	 */
+	private function actionFilters(): ?array {
+		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
+		$schema = $this->appConfig->getValueString(Application::APP_ID, 'automatic_action_schema', '');
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['register' => $register, 'schema' => $schema];
+	}//end actionFilters()
+
+	/**
+	 * Turn the search results into plain action arrays.
+	 *
+	 * @param array<int, mixed> $results The objects the search returned.
+	 *
+	 * @return array<int, array<string, mixed>> The actions.
+	 */
+	private function actionRows(array $results): array {
 		$out = [];
 		foreach ($results as $entry) {
 			if (is_object($entry) === true && method_exists($entry, 'jsonSerialize') === true) {
@@ -412,5 +546,5 @@ class AutomaticActionFlowMigrator {
 		}
 
 		return $out;
-	}//end fetchActions()
+	}//end actionRows()
 }//end class
