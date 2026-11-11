@@ -1,0 +1,79 @@
+{
+    "anonymous": {
+        "status": 403,
+        "body": {
+            "error": "Not authenticated"
+        },
+        "calls": []
+    },
+    "not a coordinator": {
+        "status": 403,
+        "body": {
+            "error": "Only a coordinator may release a caseload"
+        },
+        "calls": [
+            "isCoordinator clerk"
+        ]
+    },
+    "released, every case type": {
+        "status": 201,
+        "body": {
+            "released": 3
+        },
+        "calls": [
+            "isCoordinator boss",
+            "release [\"leaver\",\"stayer\",\"leave\",null,\"boss\"]"
+        ]
+    },
+    "released, one case type": {
+        "status": 201,
+        "body": {
+            "released": 3
+        },
+        "calls": [
+            "isCoordinator boss",
+            "release [\"leaver\",\"stayer\",\"leave\",{\"caseType\":\"bezwaar\"},\"boss\"]"
+        ]
+    },
+    "released, a blank case type": {
+        "status": 201,
+        "body": {
+            "released": 3
+        },
+        "calls": [
+            "isCoordinator boss",
+            "release [\"leaver\",\"stayer\",\"leave\",null,\"boss\"]"
+        ]
+    },
+    "no parameters": {
+        "status": 201,
+        "body": {
+            "released": 3
+        },
+        "calls": [
+            "isCoordinator boss",
+            "release [\"\",\"\",\"\",null,\"boss\"]"
+        ]
+    },
+    "refused by the service": {
+        "status": 400,
+        "body": {
+            "error": "toUser is required"
+        },
+        "calls": [
+            "isCoordinator boss",
+            "release [\"leaver\",\"stayer\",\"leave\",null,\"boss\"]"
+        ]
+    },
+    "service breaks": {
+        "status": 500,
+        "body": {
+            "error": "The caseload could not be released"
+        },
+        "calls": [
+            "isCoordinator boss",
+            "release [\"leaver\",\"stayer\",\"leave\",null,\"boss\"]",
+            "error: Caseload release failed {\"error\":\"register offline\"}"
+        ]
+    }
+}
