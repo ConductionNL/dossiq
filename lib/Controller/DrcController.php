@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\Zgw\RelationSearch;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
@@ -68,6 +69,17 @@ class DrcController extends ZgwController {
 	 * @var string
 	 */
 	private const EIO_RESOURCE = 'enkelvoudiginformatieobjecten';
+
+	/**
+	 * The API and resource of each mapping that holds relations to a document: OIO, ZIO and BIO.
+	 *
+	 * @var array<int, array{0: string, 1: string}>
+	 */
+	private const DOCUMENT_RELATIONS = [
+		[self::ZGW_API, 'objectinformatieobjecten'],
+		['zaken', 'zaakinformatieobjecten'],
+		['besluiten', 'besluitinformatieobjecten'],
+	];
 
 	/**
 	 * Default chunk size for bestandsdelen (10 MB).
@@ -1213,43 +1225,9 @@ class DrcController extends ZgwController {
 			return [];
 		}
 
-		// Check OIO, ZIO, and BIO schemas for references to this EIO.
-		$schemasToCheck = [];
-
-		// OIO (ObjectInformatieObject) — DRC register.
-		$oioConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'objectinformatieobjecten');
-		if ($oioConfig !== null) {
-			$schemasToCheck[] = [
-				'register' => $oioConfig['sourceRegister'],
-				'schema' => $oioConfig['sourceSchema'],
-			];
-		}
-
-		// ZIO (ZaakInformatieObject) — ZRC register.
-		$zioConfig = $this->zgwService->loadMappingConfig('zaken', 'zaakinformatieobjecten');
-		if ($zioConfig !== null) {
-			$schemasToCheck[] = [
-				'register' => $zioConfig['sourceRegister'],
-				'schema' => $zioConfig['sourceSchema'],
-			];
-		}
-
-		// BIO (BesluitInformatieObject) — BRC register.
-		$bioConfig = $this->zgwService->loadMappingConfig('besluiten', 'besluitinformatieobjecten');
-		if ($bioConfig !== null) {
-			$schemasToCheck[] = [
-				'register' => $bioConfig['sourceRegister'],
-				'schema' => $bioConfig['sourceSchema'],
-			];
-		}
-
-		foreach ($schemasToCheck as $schemaInfo) {
-			$ids = $this->searchRelationsInSchema(
-				objectService: $objectService,
-				eioUuid: $eioUuid,
-				register: $schemaInfo['register'],
-				schema: $schemaInfo['schema']
-			);
+		$lookup = new EioRelationLookup(objectService: $objectService, eioUuid: $eioUuid);
+		foreach ($this->relationSchemas() as $schemaInfo) {
+			$ids = $this->searchRelationsInSchema(lookup: $lookup, schemaInfo: $schemaInfo);
 			if (empty($ids) === false) {
 				return $ids;
 			}
@@ -1259,50 +1237,81 @@ class DrcController extends ZgwController {
 	}//end findOioRelationsForEio()
 
 	/**
+	 * The schemas that hold relations to a document: OIO, ZIO and BIO, as far as they are mapped.
+	 *
+	 * Every mapping is read before any of them is searched.
+	 *
+	 * @return array<int, array{register: mixed, schema: mixed}> The register and schema of each.
+	 */
+	private function relationSchemas(): array {
+		$schemasToCheck = [];
+		foreach (self::DOCUMENT_RELATIONS as [$zgwApi, $resource]) {
+			$config = $this->zgwService->loadMappingConfig($zgwApi, $resource);
+			if ($config !== null) {
+				$schemasToCheck[] = [
+					'register' => $config['sourceRegister'],
+					'schema' => $config['sourceSchema'],
+				];
+			}
+		}
+
+		return $schemasToCheck;
+	}//end relationSchemas()
+
+	/**
 	 * Search for document relations in a specific schema.
 	 *
-	 * @param object $objectService The object service
-	 * @param string $eioUuid The EIO UUID to search for
-	 * @param string $register The register ID
-	 * @param string $schema The schema ID
+	 * @param EioRelationLookup $lookup     The lookup: the object service and the document UUID.
+	 * @param array             $schemaInfo The register and schema to search.
 	 *
 	 * @return array List of related object IDs. Empty means the search ran and found none.
 	 *
 	 * @throws \Throwable When the schema cannot be searched.
 	 */
-	private function searchRelationsInSchema(
-		object $objectService,
-		string $eioUuid,
-		string $register,
-		string $schema,
-	): array {
+	private function searchRelationsInSchema(EioRelationLookup $lookup, array $schemaInfo): array {
 		// Try exact UUID match (OIO may store just the UUID).
-		$query = $objectService->buildSearchQuery(
-			requestParams: ['document' => $eioUuid, '_limit' => 1],
-			register: $register,
-			schema: $schema
-		);
-		$result = $objectService->searchObjectsPaginated(query: $query);
-		$ids = $this->extractIdsFromResults(result: $result);
+		$exact = $this->relationSearch(schemaInfo: $schemaInfo, requestParams: ['document' => $lookup->eioUuid, '_limit' => 1]);
+		$ids = $this->relationIdsMatching(lookup: $lookup, search: $exact);
 		if (empty($ids) === false) {
 			return $ids;
 		}
 
 		// Fallback: full-text search by UUID (document field stores
 		// the full URL, and field-specific LIKE is not supported).
-		$query = $objectService->buildSearchQuery(
-			requestParams: ['_search' => $eioUuid, '_limit' => 1],
-			register: $register,
-			schema: $schema
-		);
-		$result = $objectService->searchObjectsPaginated(query: $query);
-		$ids = $this->extractIdsFromResults(result: $result);
-		if (empty($ids) === false) {
-			return $ids;
-		}
+		$fullText = $this->relationSearch(schemaInfo: $schemaInfo, requestParams: ['_search' => $lookup->eioUuid, '_limit' => 1]);
 
-		return [];
+		return $this->relationIdsMatching(lookup: $lookup, search: $fullText);
 	}//end searchRelationsInSchema()
+
+	/**
+	 * One relation search in a schema.
+	 *
+	 * @param array $schemaInfo    The register and schema to search.
+	 * @param array $requestParams The search parameters.
+	 *
+	 * @return RelationSearch
+	 */
+	private function relationSearch(array $schemaInfo, array $requestParams): RelationSearch {
+		return new RelationSearch(register: $schemaInfo['register'], schema: $schemaInfo['schema'], requestParams: $requestParams);
+	}//end relationSearch()
+
+	/**
+	 * The ids of the relations one search finds.
+	 *
+	 * @param EioRelationLookup $lookup The lookup: the object service.
+	 * @param RelationSearch    $search The register, schema and parameters to search with.
+	 *
+	 * @return array The ids found, [] when none.
+	 */
+	private function relationIdsMatching(EioRelationLookup $lookup, RelationSearch $search): array {
+		$query = $lookup->objectService->buildSearchQuery(
+			requestParams: $search->requestParams,
+			register: $search->register,
+			schema: $search->schema
+		);
+
+		return $this->extractIdsFromResults(result: $lookup->objectService->searchObjectsPaginated(query: $query));
+	}//end relationIdsMatching()
 
 	/**
 	 * Extract IDs from a search result set.
