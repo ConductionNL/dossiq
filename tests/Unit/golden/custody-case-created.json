@@ -1,0 +1,21 @@
+{
+    "not a created event": [],
+    "another schema": [],
+    "a case without an id": [],
+    "a case named by its uuid": [
+        "begin [\"case-2\",\"\",\"\",\"2026-03-01\",\"Registered\",\"\"]"
+    ],
+    "a new case": [
+        "begin [\"case-1\",\"vergunningen\",\"alice\",\"2026-03-02\",\"Registered\",\"bob\"]"
+    ],
+    "a new case dated by its creation": [
+        "begin [\"case-3\",\"\",\"\",\"\",\"Registered\",\"\"]"
+    ],
+    "a new case without any date": [
+        "begin [\"case-4\",\"\",\"\",\"\",\"Registered\",\"\"]"
+    ],
+    "the chain cannot be written": [
+        "begin [\"case-1\",\"vergunningen\",\"alice\",\"2026-03-02\",\"Registered\",\"bob\"]",
+        "warning: Dossiq custody: a new case did not get its first holding {\"case\":\"case-1\",\"exception\":\"register offline\"}"
+    ]
+}
