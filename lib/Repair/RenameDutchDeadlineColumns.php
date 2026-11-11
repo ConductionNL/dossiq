@@ -67,6 +67,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Repair\Support\ColumnMove;
+use OCA\Dossiq\Repair\Support\ColumnMoveTally;
 use OCA\Dossiq\Repair\Support\ReadsRegisterShards;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
@@ -215,54 +217,56 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 			return;
 		}
 
-		$renamed = 0;
-		$copied = 0;
-		$refused = 0;
-
-		foreach ($tables as $table) {
-			$columns = $this->columnsOf(table: $table);
-			$qTable = $this->quote(identifier: $table);
-
-			foreach (self::COLUMN_MAP as $old => $new) {
-				if (in_array($old, $columns, true) === false) {
-					// Already migrated, or this schema never had the property.
-					continue;
-				}
-
-				if ($this->hasCollision(table: $table, columns: $columns, target: $new) === true) {
-					$refused++;
-					continue;
-				}
-
-				$qOld = $this->quote(identifier: $old);
-				$qNew = $this->quote(identifier: $new);
-
-				if (in_array($new, $columns, true) === false) {
-					$sql = 'ALTER TABLE ' . $qTable . ' RENAME COLUMN ' . $qOld . ' TO ' . $qNew;
-					if ($this->exec(sql: $sql) === true) {
-						$renamed++;
-					}
-
-					continue;
-				}
-
-				// The mapper already added an empty English column: back-fill and
-				// leave the Dutch one, so this stays reversible.
-				$sql = 'UPDATE ' . $qTable . ' SET ' . $qNew . ' = ' . $qOld
-					. ' WHERE ' . $qNew . ' IS NULL AND ' . $qOld . ' IS NOT NULL';
-				if ($this->exec(sql: $sql) === true) {
-					$copied++;
-				}
-			}//end foreach
-		}//end foreach
-
+		$tally = $this->moveColumnsOfAll(tables: $tables);
 		$output->info(
-			'RenameDutchDeadlineColumns: ' . $renamed . ' column(s) renamed, '
-			. $copied . ' back-filled, ' . $refused . ' refused for ambiguity, across '
+			'RenameDutchDeadlineColumns: ' . $tally->renamed . ' column(s) renamed, '
+			. $tally->copied . ' back-filled, ' . $tally->refused . ' refused for ambiguity, across '
 			. count($tables) . ' dossiq shard table(s).'
 		);
 
 	}//end run()
+
+	/**
+	 * Move the Dutch columns of every shard table, counting what was done.
+	 *
+	 * @param array<int, string> $tables The shard tables.
+	 *
+	 * @return ColumnMoveTally The counts.
+	 */
+	private function moveColumnsOfAll(array $tables): ColumnMoveTally {
+		$tally = new ColumnMoveTally();
+		foreach ($tables as $table) {
+			$this->moveColumnsOf(table: $table, tally: $tally);
+		}
+
+		return $tally;
+	}//end moveColumnsOfAll()
+
+	/**
+	 * Move every Dutch column one shard table carries to its English name.
+	 *
+	 * @param string          $table The shard table.
+	 * @param ColumnMoveTally $tally The counts of this run.
+	 *
+	 * @return void
+	 */
+	private function moveColumnsOf(string $table, ColumnMoveTally $tally): void {
+		$columns = $this->columnsOf(table: $table);
+		foreach (self::COLUMN_MAP as $old => $new) {
+			if (in_array($old, $columns, true) === false) {
+				// Already migrated, or this schema never had the property.
+				continue;
+			}
+
+			if ($this->hasCollision(table: $table, columns: $columns, target: $new) === true) {
+				$tally->refused++;
+				continue;
+			}
+
+			$move = new ColumnMove(old: $old, new: $new, targetExists: in_array($new, $columns, true));
+			$tally->count(outcome: $this->moveColumn(table: $table, move: $move));
+		}
+	}//end moveColumnsOf()
 
 	/**
 	 * Whether two Dutch columns in this table both target one English name.
