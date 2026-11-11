@@ -215,6 +215,30 @@ class MunicipalRoleSetService {
 	 */
 	public function adopt(): array {
 		$roles = $this->shippedRoles();
+		$refusal = $this->adoptRefusal(roles: $roles);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$user = $this->session->getUser();
+		$adopted = $this->wakeRoles(roles: ($roles ?? []));
+		if ($this->recordAdoption(user: $user) === null) {
+			return ['ok' => false, 'reason' => 'write_failed', 'adopted' => $adopted];
+		}
+
+		$this->logger->info('Dossiq starter: the municipal role set was adopted', ['roles' => $adopted]);
+
+		return ['ok' => true, 'reason' => '', 'adopted' => $adopted];
+	}//end adopt()
+
+	/**
+	 * Why the set cannot be adopted now, or null when it can.
+	 *
+	 * @param array<int, array<string, mixed>>|null $roles The shipped roles, null when unreachable.
+	 *
+	 * @return array{ok: bool, reason: string, adopted: int}|null The refusal.
+	 */
+	private function adoptRefusal(?array $roles): ?array {
 		if ($roles === null) {
 			return ['ok' => false, 'reason' => 'unavailable', 'adopted' => 0];
 		}
@@ -223,21 +247,38 @@ class MunicipalRoleSetService {
 			return ['ok' => false, 'reason' => 'already_adopted', 'adopted' => 0];
 		}
 
-		$user = $this->session->getUser();
+		return null;
+	}//end adoptRefusal()
+
+	/**
+	 * Take every shipped role out of dormancy.
+	 *
+	 * @param array<int, array<string, mixed>> $roles The shipped roles.
+	 *
+	 * @return int How many were saved.
+	 */
+	private function wakeRoles(array $roles): int {
 		$adopted = 0;
 		foreach ($roles as $role) {
 			$role['dormant'] = false;
-			$saved = $this->shippedRoles->store->save(
-				configKey: self::ROLE_TYPES,
-				payload: $role,
-				id: $this->shippedRoles->store->idOf(row: $role),
-			);
+			$saved = $this->shippedRoles->store->save(configKey: self::ROLE_TYPES, payload: $role, id: $this->shippedRoles->store->idOf(row: $role));
 			if ($saved !== null) {
 				$adopted++;
 			}
 		}
 
-		$record = $this->shippedRoles->store->save(
+		return $adopted;
+	}//end wakeRoles()
+
+	/**
+	 * Record who adopted the set, and when.
+	 *
+	 * @param IUser|null $user Who adopted it.
+	 *
+	 * @return array<string, mixed>|null The record, or null when it could not be written.
+	 */
+	private function recordAdoption(?IUser $user): ?array {
+		return $this->shippedRoles->store->save(
 			configKey: self::ADOPTIONS,
 			payload: [
 				'set' => ShippedSets::MUNICIPAL_ROLES,
@@ -246,18 +287,7 @@ class MunicipalRoleSetService {
 				'adoptedAt' => gmdate('c'),
 			],
 		);
-
-		if ($record === null) {
-			return ['ok' => false, 'reason' => 'write_failed', 'adopted' => $adopted];
-		}
-
-		$this->logger->info(
-			'Dossiq starter: the municipal role set was adopted',
-			['roles' => $adopted]
-		);
-
-		return ['ok' => true, 'reason' => '', 'adopted' => $adopted];
-	}//end adopt()
+	}//end recordAdoption()
 
 	/**
 	 * Put the set back to dormant, while nothing is granted against it.

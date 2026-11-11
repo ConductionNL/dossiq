@@ -111,16 +111,42 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 			return;
 		}
 
+		if ($this->alreadyHandled(objectId: $objectId) === true) {
+			return;
+		}
+
+		$this->makeCase(objectId: $objectId, object: $object);
+	}//end handle()
+
+	/**
+	 * Whether this record was handled before in this process; marks it handled when not.
+	 *
+	 * @param string $objectId The record's uuid
+	 *
+	 * @return bool True for a duplicate event, which is logged and skipped
+	 */
+	private function alreadyHandled(string $objectId): bool {
 		if (isset(self::$processedIds[$objectId]) === true) {
 			$this->logger->info(
 				'Dossiq DSO listener: skipping duplicate event for vergunningaanvraag ' . $objectId,
 				['app' => Application::APP_ID]
 			);
-			return;
+			return true;
 		}
 
 		self::$processedIds[$objectId] = true;
+		return false;
+	}//end alreadyHandled()
 
+	/**
+	 * Make the case from the record, as the service account when nobody is signed in.
+	 *
+	 * @param string               $objectId The record's uuid
+	 * @param array<string, mixed> $object   The record
+	 *
+	 * @return void
+	 */
+	private function makeCase(string $objectId, array $object): void {
 		try {
 			$this->serviceAccount->runAsWhenNobodyIsSignedIn(
 				operation: fn () => $this->dsoCaseService->createZaakFromVergunningaanvraag(
@@ -140,16 +166,28 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 			// Already logged as an error and told to the admins; nothing was written.
 			return;
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq DSO listener: failed to create zaak for vergunningaanvraag ' . $objectId . ': ' . $e->getMessage(),
-				[
-					'app' => Application::APP_ID,
-					'objectId' => $objectId,
-					'exception' => $e->getMessage(),
-				]
-			);
+			$this->caseFailed(objectId: $objectId, exception: $e);
 		}//end try
-	}//end handle()
+	}//end makeCase()
+
+	/**
+	 * Log a case that could not be made from the record.
+	 *
+	 * @param string     $objectId  The record's uuid
+	 * @param \Throwable $exception The failure
+	 *
+	 * @return void
+	 */
+	private function caseFailed(string $objectId, \Throwable $exception): void {
+		$this->logger->error(
+			'Dossiq DSO listener: failed to create zaak for vergunningaanvraag ' . $objectId . ': ' . $exception->getMessage(),
+			[
+				'app' => Application::APP_ID,
+				'objectId' => $objectId,
+				'exception' => $exception->getMessage(),
+			]
+		);
+	}//end caseFailed()
 
 	/**
 	 * The id of the intake record, when this write is one to make a case from.
@@ -162,18 +200,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 	 * @return string The record's uuid, or ''
 	 */
 	private function readyIntakeId(array $object): string {
-		$schemaId = $this->resolveSchemaId(object: $object);
-		if ($schemaId === '') {
-			return '';
-		}
-
-		$configuredSchemaId = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'dso_vergunningaanvraag_schema',
-			default: ''
-		);
-
-		if ($configuredSchemaId === '' || $schemaId !== $configuredSchemaId) {
+		if ($this->onIntakeSchema(object: $object) === false) {
 			return '';
 		}
 
@@ -192,6 +219,28 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 
 		return $objectId;
 	}//end readyIntakeId()
+
+	/**
+	 * Whether the object is on the intake schema this app makes cases from.
+	 *
+	 * @param array<string, mixed> $object The written object
+	 *
+	 * @return bool
+	 */
+	private function onIntakeSchema(array $object): bool {
+		$schemaId = $this->resolveSchemaId(object: $object);
+		if ($schemaId === '') {
+			return false;
+		}
+
+		$configuredSchemaId = $this->appConfig->getValueString(
+			app: Application::APP_ID,
+			key: 'dso_vergunningaanvraag_schema',
+			default: ''
+		);
+
+		return $configuredSchemaId !== '' && $schemaId === $configuredSchemaId;
+	}//end onIntakeSchema()
 
 	/**
 	 * Extract the object payload from a create or update event as an array.

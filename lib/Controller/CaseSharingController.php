@@ -45,6 +45,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -88,49 +89,71 @@ class CaseSharingController extends Controller {
 		}
 
 		$caseId = $this->request->getParam('caseId');
-		$shareType = $this->request->getParam('shareType', 'token');
-		$permissionLevel = $this->request->getParam('permissionLevel', 'bekijken');
-		$label = $this->request->getParam('label', '');
+		$refusal = $this->shareRefusal(caseId: $caseId, user: $user);
+		if ($refusal !== null) {
+			return $refusal;
+		}
 
-		// C2: Verify the caller has access to this case before allowing share creation.
-		if (empty($caseId) === false) {
-			if ($this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
-				return new JSONResponse(
-					['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-					Http::STATUS_FORBIDDEN
-				);
-			}
+		if ($this->request->getParam('shareType', 'token') === 'partner') {
+			return $this->partnerShare(
+				caseId: $caseId,
+				permissionLevel: (string)$this->request->getParam('permissionLevel', 'bekijken'),
+				createdBy: $user->getUID(),
+			);
+		}
+
+		return $this->tokenShare(caseId: $caseId, user: $user);
+	}//end createShare()
+
+	/**
+	 * Refuse a share by a caller not assigned to the case (403) or without a case (400).
+	 *
+	 * C2: the caller must have access to the case before a share is created;
+	 * the access check runs first, as it always did.
+	 *
+	 * @param mixed $caseId The requested case.
+	 * @param IUser $user   The caller.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the share may be made.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function shareRefusal(mixed $caseId, IUser $user): ?JSONResponse {
+		if (empty($caseId) === false && $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
+			return $this->notAssigned();
 		}
 
 		if (empty($caseId) === true) {
 			return new JSONResponse(['success' => false, 'error' => 'caseId is required'], 400);
 		}
 
-		if ($shareType === 'partner') {
-			return $this->partnerShare(
-				caseId: $caseId,
-				permissionLevel: (string)$permissionLevel,
-				createdBy: $user->getUID(),
-			);
-		}
+		return null;
+	}//end shareRefusal()
 
-		// A public case link is an OpenRegister access link (#3817). It owns
-		// the anchor, the expiry, the password check and the revoke; dossiq
-		// stores none of them. The C2 owner/handler guard above is the authz
-		// scope for publishing a case (ADR-005).
-		$expiresAt = $this->request->getParam('expiresAt');
-		$password = $this->request->getParam('password');
-		$capabilities = $this->request->getParam('capabilities');
-		$documents = $this->request->getParam('sharedDocuments');
-
+	/**
+	 * Mint a public case link, or say why it was not minted.
+	 *
+	 * A public case link is an OpenRegister access link (#3817). It owns
+	 * the anchor, the expiry, the password check and the revoke; dossiq
+	 * stores none of them. The C2 owner/handler guard is the authz
+	 * scope for publishing a case (ADR-005).
+	 *
+	 * @param mixed $caseId The case.
+	 * @param IUser $user   The caller, who owns the link.
+	 *
+	 * @return JSONResponse The share and its url, or the refusal.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function tokenShare(mixed $caseId, IUser $user): JSONResponse {
 		$share = $this->caseSharingService->createTokenShare(
 			caseId: $caseId,
-			label: (string)$label,
+			label: (string)$this->request->getParam('label', ''),
 			createdBy: $user->getUID(),
-			expiresAt: $expiresAt,
-			capabilities: $this->asList(value: $capabilities, fallback: CaseAccessLinkService::DEFAULT_CAPABILITIES),
-			password: $this->optionalText(value: $password),
-			sharedDocuments: $this->asList(value: $documents, fallback: []),
+			expiresAt: $this->request->getParam('expiresAt'),
+			capabilities: $this->asList(value: $this->request->getParam('capabilities'), fallback: CaseAccessLinkService::DEFAULT_CAPABILITIES),
+			password: $this->optionalText(value: $this->request->getParam('password')),
+			sharedDocuments: $this->asList(value: $this->request->getParam('sharedDocuments'), fallback: []),
 		);
 
 		if (isset($share['error']) === true) {
@@ -138,7 +161,7 @@ class CaseSharingController extends Controller {
 		}
 
 		return new JSONResponse(['success' => true, 'share' => $share['share'], 'url' => $share['url']]);
-	}//end createShare()
+	}//end tokenShare()
 
 	/**
 	 * Share a case with a partner organisation, or say why it did not leave.
@@ -178,11 +201,25 @@ class CaseSharingController extends Controller {
 			return new JSONResponse(['success' => true, 'share' => $partnerShare]);
 		}
 
-		// A REFUSAL IS NOT AN UPSTREAM FAILURE. 502 says OpenRegister broke; a
-		// missing or lapsed consent is this instance deciding, correctly, that
-		// the case does not leave. The rule slug is carried so the caller can
-		// tell the two apart and say which of case, receiver or period was the
-		// one that did not match.
+		return $this->refusedPartnerShare(partnerShare: $partnerShare);
+	}//end partnerShare()
+
+	/**
+	 * The answer when a partner share did not leave.
+	 *
+	 * A REFUSAL IS NOT AN UPSTREAM FAILURE. 502 says OpenRegister broke; a
+	 * missing or lapsed consent is this instance deciding, correctly, that
+	 * the case does not leave. The rule slug is carried so the caller can
+	 * tell the two apart and say which of case, receiver or period was the
+	 * one that did not match.
+	 *
+	 * @param array<string, mixed> $partnerShare What the sharing service answered.
+	 *
+	 * @return JSONResponse The 409 for a refusal, the 502 for an upstream failure.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-partner-organisation-handover-is-out-of-scope-for-the-shares-leaf
+	 */
+	private function refusedPartnerShare(array $partnerShare): JSONResponse {
 		if (isset($partnerShare['rule']) === true && $partnerShare['rule'] !== '') {
 			return new JSONResponse(
 				['success' => false, 'error' => $partnerShare['error'], 'rule' => $partnerShare['rule']],
@@ -194,7 +231,7 @@ class CaseSharingController extends Controller {
 			['success' => false, 'error' => $partnerShare['error']],
 			Http::STATUS_BAD_GATEWAY
 		);
-	}//end partnerShare()
+	}//end refusedPartnerShare()
 
 	/**
 	 * The answer when a link share was not minted.
@@ -329,12 +366,7 @@ class CaseSharingController extends Controller {
 		}
 
 		$caseId = $this->request->getParam('caseId');
-		$sourceOrganization = $this->request->getParam('sourceOrganization', '');
-		$targetOrganization = $this->request->getParam('targetOrganization');
-		$reason = $this->request->getParam('reason', '');
-		$requestedDate = $this->request->getParam('requestedDate', date('Y-m-d'));
-
-		if (empty($caseId) === true || empty($targetOrganization) === true) {
+		if (empty($caseId) === true || empty($this->request->getParam('targetOrganization')) === true) {
 			return new JSONResponse(
 				['success' => false, 'error' => 'caseId and targetOrganization are required'],
 				400
@@ -343,27 +375,34 @@ class CaseSharingController extends Controller {
 
 		// C2: Verify the caller has access to this case before allowing a transfer.
 		if ($this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->notAssigned();
 		}
 
-		// Federated (cross-instance) transfer when a remote cloud id is
-		// supplied; local-only transfer otherwise.
-		$remoteCloudId = $this->request->getParam('remoteCloudId');
-		if (empty($remoteCloudId) === true) {
-			$remoteCloudId = null;
-		}
+		return $this->startTransfer(caseId: $caseId, user: $user);
+	}//end initiateTransfer()
 
+	/**
+	 * Start the transfer the request asks for, and answer with it.
+	 *
+	 * Federated (cross-instance) when a remote cloud id is supplied;
+	 * local-only otherwise.
+	 *
+	 * @param mixed $caseId The case.
+	 * @param IUser $user   The caller, who initiates it.
+	 *
+	 * @return JSONResponse The transfer, or the 502 when it could not start.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function startTransfer(mixed $caseId, IUser $user): JSONResponse {
 		$transfer = $this->caseTransferService->initiateTransfer(
 			$caseId,
-			$sourceOrganization,
-			$targetOrganization,
-			$reason,
-			$requestedDate,
+			$this->request->getParam('sourceOrganization', ''),
+			$this->request->getParam('targetOrganization'),
+			$this->request->getParam('reason', ''),
+			$this->request->getParam('requestedDate', date('Y-m-d')),
 			$user->getUID(),
-			$remoteCloudId,
+			$this->nonEmptyOrNull(value: $this->request->getParam('remoteCloudId')),
 		);
 
 		if (isset($transfer['error']) === true) {
@@ -371,7 +410,22 @@ class CaseSharingController extends Controller {
 		}
 
 		return new JSONResponse(['success' => true, 'transfer' => $transfer]);
-	}//end initiateTransfer()
+	}//end startTransfer()
+
+	/**
+	 * A value, or null when it is empty.
+	 *
+	 * @param mixed $value The request value.
+	 *
+	 * @return mixed
+	 */
+	private function nonEmptyOrNull(mixed $value): mixed {
+		if (empty($value) === true) {
+			return null;
+		}
+
+		return $value;
+	}//end nonEmptyOrNull()
 
 	/**
 	 * Handle a transfer request (accept or reject) — local session path.
@@ -399,15 +453,24 @@ class CaseSharingController extends Controller {
 		// A transfer whose case cannot be resolved is refused like one without access.
 		$caseId = $this->caseTransferService->getCaseIdForTransfer($transferId);
 		if ($caseId === null || $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-				Http::STATUS_FORBIDDEN
-			);
+			return $this->notAssigned();
 		}
 
-		$action = $this->request->getParam('action');
+		return $this->transferAnswer(result: $this->decideTransfer(transferId: $transferId, user: $user));
+	}//end handleTransfer()
 
-		$result = match ($action) {
+	/**
+	 * Accept or reject the transfer as the request's `action` says.
+	 *
+	 * @param string $transferId The transfer.
+	 * @param IUser  $user       The caller, who decides it.
+	 *
+	 * @return array<string, mixed>|null The outcome, or null for any other action.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function decideTransfer(string $transferId, IUser $user): ?array {
+		return match ($this->request->getParam('action')) {
 			'accept' => $this->caseTransferService->acceptTransfer(transferId: $transferId, actingUser: $user->getUID()),
 			'reject' => $this->caseTransferService->rejectTransfer(
 				transferId: $transferId,
@@ -416,7 +479,18 @@ class CaseSharingController extends Controller {
 			),
 			default => null,
 		};
+	}//end decideTransfer()
 
+	/**
+	 * The answer to a decided transfer: 400 for an unknown action, 409 when it could not be decided.
+	 *
+	 * @param array<string, mixed>|null $result The outcome.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function transferAnswer(?array $result): JSONResponse {
 		if ($result === null) {
 			return new JSONResponse(
 				['success' => false, 'error' => 'Action must be accept or reject'],
@@ -429,5 +503,17 @@ class CaseSharingController extends Controller {
 		}
 
 		return new JSONResponse(['success' => true, 'transfer' => $result]);
-	}//end handleTransfer()
+	}//end transferAnswer()
+
+	/**
+	 * The 403 for a caller not assigned to the case.
+	 *
+	 * @return JSONResponse
+	 */
+	private function notAssigned(): JSONResponse {
+		return new JSONResponse(
+			['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
+			Http::STATUS_FORBIDDEN
+		);
+	}//end notAssigned()
 }//end class

@@ -115,55 +115,93 @@ class SubstitutionService {
 		string $createdBy = '',
 		string $comment = '',
 	): array {
-		$absentee = trim($absentee);
-		$substitute = trim($substitute);
+		$request = new SubstitutionRequest();
+		$request->absentee = trim($absentee);
+		$request->substitute = trim($substitute);
+		$request->startDate = $startDate;
+		$request->endDate = $endDate;
+		$request->scope = $scope;
+		$request->scopeRefs = $scopeRefs;
+		$request->reason = $reason;
+		$request->createdBy = $createdBy;
+		$request->comment = $comment;
 
-		[$start, $end] = $this->validator->validateCreate(
-			absentee: $absentee,
-			substitute: $substitute,
-			startDate: $startDate,
-			endDate: $endDate,
-			scope: $scope,
-			scopeRefs: $scopeRefs,
-			reason: $reason
-		);
+		$row = $this->substitutionRow(request: $request, period: $this->validatedPeriod(request: $request));
+		$saved = $this->saveSubstitution(row: $row);
+		$this->activeCache = [];
+
+		return ($saved ?? $row);
+	}//end create()
+
+	/**
+	 * Validate the request and refuse a same-period overlapping full-scope substitution.
+	 *
+	 * @param SubstitutionRequest $request The substitution to create.
+	 *
+	 * @return array{0: DateTimeImmutable, 1: DateTimeImmutable} The inclusive start and end.
+	 *
+	 * @throws \InvalidArgumentException On any validation failure.
+	 */
+	private function validatedPeriod(SubstitutionRequest $request): array {
+		[$start, $end] = $this->validator->validateCreate(request: $request);
 
 		$this->validator->assertNoOverlappingFullScope(
-			absentee: $absentee,
-			scope: $scope,
+			absentee: $request->absentee,
+			scope: $request->scope,
 			start: $start,
 			end: $end
 		);
 
-		$createdByValue = $absentee;
-		if ($createdBy !== '') {
-			$createdByValue = $createdBy;
+		return [$start, $end];
+	}//end validatedPeriod()
+
+	/**
+	 * The stored row of a validated substitution; the absentee created it unless somebody else is named.
+	 *
+	 * @param SubstitutionRequest                               $request The substitution to create.
+	 * @param array{0: DateTimeImmutable, 1: DateTimeImmutable} $period  The validated start and end.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function substitutionRow(SubstitutionRequest $request, array $period): array {
+		$createdByValue = $request->absentee;
+		if ($request->createdBy !== '') {
+			$createdByValue = $request->createdBy;
 		}
 
-		$row = [
-			'absentee' => $absentee,
-			'substitute' => $substitute,
-			'startDate' => $start->format('Y-m-d'),
-			'endDate' => $end->format('Y-m-d'),
-			'scope' => $scope,
-			'scopeRefs' => array_values($scopeRefs),
-			'reason' => $reason,
-			'comment' => $comment,
+		return [
+			'absentee' => $request->absentee,
+			'substitute' => $request->substitute,
+			'startDate' => $period[0]->format('Y-m-d'),
+			'endDate' => $period[1]->format('Y-m-d'),
+			'scope' => $request->scope,
+			'scopeRefs' => array_values($request->scopeRefs),
+			'reason' => $request->reason,
+			'comment' => $request->comment,
 			'status' => 'active',
 			'createdBy' => $createdByValue,
 		];
+	}//end substitutionRow()
 
+	/**
+	 * Save a substitution row.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<string, mixed>|null The saved object.
+	 *
+	 * @throws \RuntimeException When OpenRegister is unavailable.
+	 */
+	private function saveSubstitution(array $row): ?array {
 		[$objectService, $register, $schema] = $this->requireContext();
-		$saved = $this->saveObjectAsArray(
+
+		return $this->saveObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
 			object: $row
 		);
-		$this->activeCache = [];
-
-		return ($saved ?? $row);
-	}//end create()
+	}//end saveSubstitution()
 
 	/**
 	 * Revoke a substitution immediately (status -> revoked).
@@ -228,9 +266,28 @@ class SubstitutionService {
 			return $this->activeCache[$cacheKey];
 		}
 
+		$active = $this->activeRowsFor(userId: $userId, refDay: $refDay);
+		if ($active === null) {
+			return [];
+		}
+
+		$this->activeCache[$cacheKey] = $active;
+
+		return $active;
+	}//end getActiveSubstitutionsFor()
+
+	/**
+	 * The user's substitutions as they apply on the reference day, or null without a store.
+	 *
+	 * @param string $userId The substitute (user id), trimmed.
+	 * @param string $refDay Reference day (Y-m-d).
+	 *
+	 * @return array<int, array<string, mixed>>|null
+	 */
+	private function activeRowsFor(string $userId, string $refDay): ?array {
 		[$objectService, $register, $schema] = $this->resolveContext();
 		if ($objectService === null) {
-			return [];
+			return null;
 		}
 
 		$rows = $this->searchObjectsAsArrays(
@@ -252,10 +309,8 @@ class SubstitutionService {
 			}
 		}
 
-		$this->activeCache[$cacheKey] = $active;
-
 		return $active;
-	}//end getActiveSubstitutionsFor()
+	}//end activeRowsFor()
 
 	/**
 	 * One substitution row as it applies on the reference day, or null.
@@ -293,9 +348,6 @@ class SubstitutionService {
 			return null;
 		}
 
-		$start = (string)($row['startDate'] ?? '');
-		$end = (string)($row['endDate'] ?? '');
-
 		// The leave, when humaniq knows of one, sets the period outright. It is
 		// read before the typed dates are applied, because the case it exists
 		// for is exactly the one the typed dates would have excluded.
@@ -310,6 +362,7 @@ class SubstitutionService {
 		}
 
 		// Lazy expiry: past endDate and no leave behind it -> ended, excluded.
+		$end = (string)($row['endDate'] ?? '');
 		if ($end !== '' && $refDay > $end) {
 			$this->markEnded(
 				objectService: $objectService,
@@ -319,14 +372,27 @@ class SubstitutionService {
 			return null;
 		}
 
+		return $this->startedRow(row: $row, refDay: $refDay);
+	}//end activeRowOn()
+
+	/**
+	 * The row with its typed end as `_activeUntil`, or null before its typed start.
+	 *
+	 * @param array<string, mixed> $row    The substitution row, not past its typed end.
+	 * @param string               $refDay Reference day (Y-m-d).
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function startedRow(array $row, string $refDay): ?array {
+		$start = (string)($row['startDate'] ?? '');
 		if ($start !== '' && $refDay < $start) {
 			return null;
 		}
 
-		$row['_activeUntil'] = $end;
+		$row['_activeUntil'] = (string)($row['endDate'] ?? '');
 
 		return $row;
-	}//end activeRowOn()
+	}//end startedRow()
 
 	/**
 	 * Resolve the substituted open cases and tasks routed to a waarnemer.
@@ -376,25 +442,49 @@ class SubstitutionService {
 		?string $caseType = null,
 		?DateTimeImmutable $date = null,
 	): ?array {
-		if ($actorId === '' || $absentee === '' || $actorId === $absentee) {
+		if ($this->actsForSomebodyElse(actorId: $actorId, absentee: $absentee) === false) {
 			return null;
 		}
 
-		foreach ($this->getActiveSubstitutionsFor(userId: $actorId, date: $date) as $sub) {
-			if ((string)($sub['absentee'] ?? '') !== $absentee) {
-				continue;
-			}
+		$covering = array_filter(
+			$this->getActiveSubstitutionsFor(userId: $actorId, date: $date),
+			static fn (array $sub): bool => (string)($sub['absentee'] ?? '') === $absentee
+		);
 
+		return $this->firstCovering(substitutions: $covering, probe: ['caseType' => $caseType, 'id' => $caseId]);
+	}//end resolveActingCapacity()
+
+	/**
+	 * Whether an actor acts on the work of another, named person.
+	 *
+	 * @param string $actorId  The acting user id.
+	 * @param string $absentee The item's current assignee.
+	 *
+	 * @return bool
+	 */
+	private function actsForSomebodyElse(string $actorId, string $absentee): bool {
+		return $actorId !== '' && $absentee !== '' && $actorId !== $absentee;
+	}//end actsForSomebodyElse()
+
+	/**
+	 * The first substitution whose scope covers the item.
+	 *
+	 * @param array<int, array<string, mixed>>         $substitutions The actor's active substitutions for the absentee.
+	 * @param array{caseType: string|null, id: string} $probe         The item: its case type and case id.
+	 *
+	 * @return array<string, mixed>|null The covering substitution, or null.
+	 */
+	private function firstCovering(array $substitutions, array $probe): ?array {
+		foreach ($substitutions as $sub) {
 			$scope = (string)($sub['scope'] ?? 'all');
 			$scopeRefs = array_map('strval', (array)($sub['scopeRefs'] ?? []));
-			$probe = ['caseType' => $caseType, 'id' => $caseId];
 			if ($this->workResolver->caseInScope(case: $probe, scope: $scope, scopeRefs: $scopeRefs) === true) {
 				return $sub;
 			}
 		}
 
 		return null;
-	}//end resolveActingCapacity()
+	}//end firstCovering()
 
 	/**
 	 * Best-effort lazy persistence of the `ended` status.

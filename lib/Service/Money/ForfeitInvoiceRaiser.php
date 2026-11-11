@@ -84,43 +84,101 @@ class ForfeitInvoiceRaiser {
 	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-005)
 	 */
 	public function raise(array $action): ?string {
-		$caseId = (string)($action['case'] ?? '');
-		$case = $this->read(schemaKey: 'case_schema', id: $caseId, caseId: $caseId);
-		$caseType = $this->read(schemaKey: 'case_type_schema', id: (string)($case['caseType'] ?? ''), caseId: $caseId);
-		if (($caseType['forfeitRaisesInvoice'] ?? false) !== true) {
+		$run = $this->forfeitRun(action: $action);
+		if (($run->caseType['forfeitRaisesInvoice'] ?? false) !== true) {
 			return null;
 		}
 
-		$payer = $this->payerOn(caseId: $caseId, roleType: (string)($caseType['forfeitPayerRoleType'] ?? ''));
+		$leaf = $this->readyLeaf(run: $run);
+		if ($leaf === null) {
+			return null;
+		}
+
+		return $this->requestInvoice(run: $run, leaf: $leaf);
+	}//end raise()
+
+	/**
+	 * Read the payer into the run and the finance app's leaf; null, said in the log, when either is missing.
+	 *
+	 * @param ForfeitInvoiceRun $run The run.
+	 *
+	 * @return object|null The payment leaf, or null when no invoice can be asked for.
+	 */
+	private function readyLeaf(ForfeitInvoiceRun $run): ?object {
+		$run->payer = $this->payerOn(caseId: $run->caseId, roleType: (string)($run->caseType['forfeitPayerRoleType'] ?? ''));
 		$leaf = $this->payments->paymentLeaf();
-		if ($payer === null || $leaf === null || method_exists($leaf, 'createAsApp') === false) {
-			$this->logger->info('Dossiq: a forfeited penalty raised no invoice: no payer with an email address, or no finance app', ['case' => $caseId]);
+		if ($run->payer === null || $leaf === null || method_exists($leaf, 'createAsApp') === false) {
+			$this->logger->info('Dossiq: a forfeited penalty raised no invoice: no payer with an email address, or no finance app', ['case' => $run->caseId]);
 			return null;
 		}
 
+		return $leaf;
+	}//end readyLeaf()
+
+	/**
+	 * The act with its case and case type read.
+	 *
+	 * @param array<string, mixed> $action The forfeiting act.
+	 *
+	 * @return ForfeitInvoiceRun The run.
+	 *
+	 * @throws ForfeitInvoiceNotRaisedException When the store cannot be read.
+	 */
+	private function forfeitRun(array $action): ForfeitInvoiceRun {
+		$run = new ForfeitInvoiceRun();
+		$run->action = $action;
+		$run->caseId = (string)($action['case'] ?? '');
+		$run->openCase = $this->read(schemaKey: 'case_schema', id: $run->caseId, caseId: $run->caseId);
+		$run->caseType = $this->read(schemaKey: 'case_type_schema', id: (string)($run->openCase['caseType'] ?? ''), caseId: $run->caseId);
+
+		return $run;
+	}//end forfeitRun()
+
+	/**
+	 * Ask the finance app for the invoice; refused when it refuses.
+	 *
+	 * @param ForfeitInvoiceRun $run  The run, with its payer.
+	 * @param object            $leaf The finance app's payment leaf.
+	 *
+	 * @return string The payment request id, or ''.
+	 *
+	 * @throws ForfeitInvoiceNotRaisedException When the finance app refuses.
+	 */
+	private function requestInvoice(ForfeitInvoiceRun $run, object $leaf): string {
 		try {
 			$created = $leaf->createAsApp(
 				Application::APP_ID,
 				CasePaymentReader::CASE_REGISTER,
 				CasePaymentReader::CASE_SCHEMA,
-				$caseId,
-				[
-					'requestType' => (string)($caseType['forfeitRequestType'] ?? 'dwangsom'),
-					'amount' => (float)($action['penaltyPaymentAmount'] ?? 0),
-					'currency' => 'EUR',
-					'description' => trim($this->l10n->t('Forfeited penalty %s', [(string)($case['identifier'] ?? '')])),
-					'debtor' => $payer,
-					'invoiceRequested' => true,
-					'administrationId' => (string)($caseType['forfeitAdministration'] ?? ''),
-					'subjectType' => 'case',
-				]
+				$run->caseId,
+				$this->invoiceOf(run: $run)
 			);
 		} catch (Throwable $e) {
-			throw new ForfeitInvoiceNotRaisedException(reasonCode: ForfeitInvoiceNotRaisedException::FINANCE_REFUSED, caseId: $caseId, previous: $e);
+			throw new ForfeitInvoiceNotRaisedException(reasonCode: ForfeitInvoiceNotRaisedException::FINANCE_REFUSED, caseId: $run->caseId, previous: $e);
 		}
 
 		return (string)($created['id'] ?? '');
-	}//end raise()
+	}//end requestInvoice()
+
+	/**
+	 * The invoice the finance app is asked for.
+	 *
+	 * @param ForfeitInvoiceRun $run The run, with its payer.
+	 *
+	 * @return array<string, mixed> The payment request.
+	 */
+	private function invoiceOf(ForfeitInvoiceRun $run): array {
+		return [
+			'requestType' => (string)($run->caseType['forfeitRequestType'] ?? 'dwangsom'),
+			'amount' => (float)($run->action['penaltyPaymentAmount'] ?? 0),
+			'currency' => 'EUR',
+			'description' => trim($this->l10n->t('Forfeited penalty %s', [(string)($run->openCase['identifier'] ?? '')])),
+			'debtor' => $run->payer,
+			'invoiceRequested' => true,
+			'administrationId' => (string)($run->caseType['forfeitAdministration'] ?? ''),
+			'subjectType' => 'case',
+		];
+	}//end invoiceOf()
 
 	/**
 	 * The person on the case in the payer role, as a debtor, or null when nobody can be billed.

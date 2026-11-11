@@ -87,35 +87,59 @@ final class EscalationRuleValidator {
 			return [$this->error(path: $path, code: 'malformed_escalation_rule', message: 'escalationRule must be an object')];
 		}
 
-		$errors = [];
+		return array_merge(
+			$this->slaErrors(sla: $sla, path: $path),
+			$this->validateTiming(rule: $rule, path: $path),
+			$this->validatePreBreachOffset(rule: $rule, sla: $sla, path: $path),
+			$this->validateRoles(rule: $rule, roleTypes: $roleTypes, path: $path),
+			$this->openIncidentErrors(rule: $rule, path: $path)
+		);
+	}//end validate()
 
-		// Rule 6: escalationRule requires an SLA.
-		if ($sla === null) {
-			$errors[] = $this->error(
+	/**
+	 * Rule 6: an escalationRule requires an SLA.
+	 *
+	 * @param mixed  $sla  The step's SLA.
+	 * @param string $path The JSON path of the rule.
+	 *
+	 * @return array<int, array<string, string>> The error, or none.
+	 */
+	private function slaErrors(mixed $sla, string $path): array {
+		if ($sla !== null) {
+			return [];
+		}
+
+		return [
+			$this->error(
 				path: $path,
 				code: 'escalation_requires_sla',
 				message: 'escalationRule cannot be set without a sla'
-			);
+			),
+		];
+	}//end slaErrors()
+
+	/**
+	 * An openIncident flag, when given, must be a boolean.
+	 *
+	 * @param array<string, mixed> $rule The escalation rule.
+	 * @param string               $path The JSON path of the rule.
+	 *
+	 * @return array<int, array<string, string>> The error, or none.
+	 */
+	private function openIncidentErrors(array $rule, string $path): array {
+		$openIncident = ($rule['openIncident'] ?? null);
+		if ($openIncident === null || is_bool($openIncident) === true) {
+			return [];
 		}
 
-		$errors = array_merge($errors, $this->validateTiming(rule: $rule, path: $path));
-		$errors = array_merge($errors, $this->validatePreBreachOffset(rule: $rule, sla: $sla, path: $path));
-		$errors = array_merge(
-			$errors,
-			$this->validateRoles(rule: $rule, roleTypes: $roleTypes, path: $path)
-		);
-
-		$openIncident = ($rule['openIncident'] ?? null);
-		if ($openIncident !== null && is_bool($openIncident) === false) {
-			$errors[] = $this->error(
+		return [
+			$this->error(
 				path: $path . '.openIncident',
 				code: 'malformed_open_incident',
 				message: 'escalationRule.openIncident must be a boolean'
-			);
-		}
-
-		return $errors;
-	}//end validate()
+			),
+		];
+	}//end openIncidentErrors()
 
 	/**
 	 * Validate the trigger / offset / offsetUnit triplet of an escalationRule.

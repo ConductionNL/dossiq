@@ -1,0 +1,90 @@
+{
+    "bad-url": {
+        "valid": false,
+        "status": 400,
+        "detail": "De communicatiekanaal URL is ongeldig.",
+        "invalidParams": [
+            {
+                "name": "communicatiekanaal",
+                "code": "bad-url",
+                "reason": "De communicatiekanaal URL is ongeldig."
+            }
+        ],
+        "enrichedBody": []
+    },
+    "no-resource": {
+        "valid": false,
+        "status": 400,
+        "detail": "De communicatiekanaal URL is ongeldig.",
+        "invalidParams": [
+            {
+                "name": "communicatiekanaal",
+                "code": "invalid-resource",
+                "reason": "De communicatiekanaal URL wijst niet naar een geldig object."
+            }
+        ],
+        "enrichedBody": []
+    },
+    "opschorting": {
+        "valid": false,
+        "status": 400,
+        "detail": "Opschorting vereist indicatie en reden.",
+        "invalidParams": [
+            {
+                "name": "opschorting.reden",
+                "code": "required",
+                "reason": "Reden is vereist bij opschorting."
+            }
+        ],
+        "enrichedBody": []
+    },
+    "opschorting-leeg": {
+        "valid": false,
+        "status": 400,
+        "detail": "Opschorting vereist indicatie en reden.",
+        "invalidParams": [
+            {
+                "name": "opschorting.indicatie",
+                "code": "required",
+                "reason": "Indicatie is vereist bij opschorting."
+            },
+            {
+                "name": "opschorting.reden",
+                "code": "required",
+                "reason": "Reden is vereist bij opschorting."
+            }
+        ],
+        "enrichedBody": []
+    },
+    "verlenging": {
+        "valid": false,
+        "status": 400,
+        "detail": "Verlenging vereist reden en duur.",
+        "invalidParams": [
+            {
+                "name": "verlenging.reden",
+                "code": "required",
+                "reason": "Reden is vereist bij verlenging."
+            },
+            {
+                "name": "verlenging.duur",
+                "code": "required",
+                "reason": "Duur is vereist bij verlenging."
+            }
+        ],
+        "enrichedBody": []
+    },
+    "betaling": {
+        "valid": false,
+        "status": 400,
+        "detail": "Als betalingsindicatie \"nvt\" is, mag laatsteBetaaldatum niet gezet worden.",
+        "invalidParams": [
+            {
+                "name": "laatsteBetaaldatum",
+                "code": "betaling-nvt",
+                "reason": "Als betalingsindicatie \"nvt\" is, mag laatsteBetaaldatum niet gezet worden."
+            }
+        ],
+        "enrichedBody": []
+    }
+}

@@ -4,9 +4,10 @@
  * Test stub for OCA\OpenRegister\Event\FlowTimerFiredEvent.
  *
  * Mirrors the REAL constructor and getter signatures of the engine event
- * (a stub that agrees with the caller cannot fail): timer, kind, named
- * transition, rung key, recipients, priority, message. Self-skips when
- * the real class is present.
+ * (a stub that agrees with the caller cannot fail): the timer, a
+ * TimerFiring (kind, named transition, rung key) and an optional
+ * EscalationNotice (recipients, priority, message, consequence). Self-skips
+ * when the real class is present.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -17,6 +18,8 @@ declare(strict_types=1);
 namespace OCA\OpenRegister\Event;
 
 use OCA\OpenRegister\Db\FlowTimer;
+use OCA\OpenRegister\Service\Flow\Timer\EscalationNotice;
+use OCA\OpenRegister\Service\Flow\Timer\TimerFiring;
 use OCP\EventDispatcher\Event;
 
 if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent', false) === false) {
@@ -32,28 +35,41 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent', false) === f
 
         public const KIND_EXPIRY = 'expiry';
 
+        private string $kind;
+
+        private string $transition;
+
+        private ?string $rungKey;
+
+        private array $recipients;
+
+        private ?string $priority;
+
+        private ?string $message;
+
+        private ?string $consequence;
+
         /**
          * Constructor, mirroring the engine's parameter names and order.
          *
          * @param FlowTimer $timer The timer that fired.
-         * @param string $kind `rung` or `expiry`.
-         * @param string $transition The named transition raised.
-         * @param string|null $rungKey The rung's stable key, for a rung fire.
-         * @param array $recipients The resolved addressees.
-         * @param string|null $priority The rung's priority.
-         * @param string|null $message The message identity.
+         * @param TimerFiring $firing The kind, the named transition raised and the rung key.
+         * @param EscalationNotice|null $notice Recipients, priority, message and consequence.
          */
         public function __construct(
             private readonly FlowTimer $timer,
-            private readonly string $kind,
-            private readonly string $transition,
-            private readonly ?string $rungKey,
-            private readonly array $recipients,
-            private readonly ?string $priority,
-            private readonly ?string $message,
-            private readonly ?string $consequence = null,
+            TimerFiring $firing,
+            ?EscalationNotice $notice = null,
         ) {
             parent::__construct();
+            $notice = $notice ?? new EscalationNotice();
+            $this->kind = $firing->kind;
+            $this->transition = $firing->transition;
+            $this->rungKey = $firing->rungKey;
+            $this->recipients = $notice->recipients;
+            $this->priority = $notice->priority;
+            $this->message = $notice->message;
+            $this->consequence = $notice->consequence;
         }//end __construct()
 
         /**

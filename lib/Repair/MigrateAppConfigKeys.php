@@ -185,52 +185,67 @@ class MigrateAppConfigKeys implements IRepairStep {
 			return;
 		}
 
-		$migrated = 0;
-		$alreadyPresent = 0;
-		$emptySource = 0;
-		$skippedReserved = 0;
-		$failed = 0;
-
+		$tally = ['migrated' => 0, 'alreadyPresent' => 0, 'emptySource' => 0, 'skippedReserved' => 0, 'failed' => 0];
 		foreach ($keys as $key) {
-			if (in_array($key, self::RESERVED_KEYS, strict: true) === true) {
-				$skippedReserved++;
-				continue;
-			}
-
-			// The READS live inside the try alongside the write, deliberately.
-			// A throwing getValueString() outside it would escape run() and
-			// abort the install — see the class docblock.
-			try {
-				$old = $this->appConfig->getValueString(self::OLD_APP_ID, $key, '');
-				if ($old === '') {
-					$emptySource++;
-					continue;
-				}
-
-				$existing = $this->appConfig->getValueString(Application::APP_ID, $key, '');
-				if ($existing !== '') {
-					$alreadyPresent++;
-					continue;
-				}
-
-				$this->appConfig->setValueString(Application::APP_ID, $key, $old);
-				$migrated++;
-			} catch (Throwable $e) {
-				$failed++;
-				$this->logger->warning(
-					'Dossiq: could not migrate one app config key; leaving it under the old namespace',
-					['key' => $key, 'exception' => $e->getMessage()]
-				);
-			}//end try
-		}//end foreach
+			$tally[$this->migrateKey(key: $key)]++;
+		}
 
 		$output->info(
-			'MigrateAppConfigKeys: ' . $migrated . ' key(s) migrated, ' . $alreadyPresent
-			. ' already present, ' . $emptySource . ' had no value to migrate, '
-			. $skippedReserved . ' skipped as Nextcloud-reserved, ' . $failed . ' failed.'
+			'MigrateAppConfigKeys: ' . $tally['migrated'] . ' key(s) migrated, ' . $tally['alreadyPresent']
+			. ' already present, ' . $tally['emptySource'] . ' had no value to migrate, '
+			. $tally['skippedReserved'] . ' skipped as Nextcloud-reserved, ' . $tally['failed'] . ' failed.'
 		);
-
 	}//end run()
+
+	/**
+	 * Copy one key into the new namespace, unless it is reserved, empty or already set there.
+	 *
+	 * The READS live inside the try alongside the write, deliberately. A
+	 * throwing getValueString() outside it would escape run() and abort the
+	 * install — see the class docblock.
+	 *
+	 * @param string $key The key under the old namespace.
+	 *
+	 * @return string 'migrated', 'alreadyPresent', 'emptySource', 'skippedReserved' or 'failed' (logged).
+	 */
+	private function migrateKey(string $key): string {
+		if (in_array($key, self::RESERVED_KEYS, strict: true) === true) {
+			return 'skippedReserved';
+		}
+
+		try {
+			return $this->copyValue(key: $key);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not migrate one app config key; leaving it under the old namespace',
+				['key' => $key, 'exception' => $e->getMessage()]
+			);
+			return 'failed';
+		}
+	}//end migrateKey()
+
+	/**
+	 * Copy one key's value, when it has one and the new namespace has none.
+	 *
+	 * @param string $key The key.
+	 *
+	 * @return string 'migrated', 'alreadyPresent' or 'emptySource'.
+	 */
+	private function copyValue(string $key): string {
+		$old = $this->appConfig->getValueString(self::OLD_APP_ID, $key, '');
+		if ($old === '') {
+			return 'emptySource';
+		}
+
+		$existing = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		if ($existing !== '') {
+			return 'alreadyPresent';
+		}
+
+		$this->appConfig->setValueString(Application::APP_ID, $key, $old);
+
+		return 'migrated';
+	}//end copyValue()
 
 	/**
 	 * Every key currently stored under the old app-config namespace.

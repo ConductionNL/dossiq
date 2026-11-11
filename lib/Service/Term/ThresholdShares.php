@@ -135,36 +135,11 @@ class ThresholdShares {
 
 		$rules = [];
 		foreach ($ladder as $rung) {
-			if (is_array($rung) === false) {
-				continue;
+			$rule = $this->ruleOf(rung: $rung, slaDays: $slaDays);
+			if ($rule !== null) {
+				$rules[] = $rule;
 			}
-
-			$offset = $this->offsetOf(rung: $rung, slaDays: $slaDays);
-			if ($offset === null) {
-				continue;
-			}
-
-			$priority = (string)($rung['priority'] ?? '');
-			if ($priority === '') {
-				$priority = 'medium';
-			}
-
-			$message = (string)($rung['message'] ?? '');
-			if ($message === '') {
-				$message = 'termijn-drempel';
-			}
-
-			$rules[] = [
-				'trigger' => self::TRIGGER,
-				'offset' => $offset,
-				'offsetUnit' => self::UNIT,
-				'notifyRole' => ['handler'],
-				'escalateToRole' => [],
-				'priority' => $priority,
-				'message' => $message,
-				'openIncident' => false,
-			];
-		}//end foreach
+		}
 
 		// Longest offset first, so a reader of the engine's own rule list sees
 		// the ladder in the order it fires.
@@ -172,6 +147,64 @@ class ThresholdShares {
 
 		return $rules;
 	}//end rulesFor()
+
+	/**
+	 * The engine rule one declared rung becomes, or null when it cannot be placed.
+	 *
+	 * @param mixed $rung    The declared rung.
+	 * @param int   $slaDays The whole term, in days.
+	 *
+	 * @return array<string, mixed>|null The rule.
+	 */
+	private function ruleOf(mixed $rung, int $slaDays): ?array {
+		if (is_array($rung) === false) {
+			return null;
+		}
+
+		$offset = $this->offsetOf(rung: $rung, slaDays: $slaDays);
+		if ($offset === null) {
+			return null;
+		}
+
+		return self::engineRule(rung: $rung, offset: $offset);
+	}//end ruleOf()
+
+	/**
+	 * The engine rule for a placed rung, with the priority and message it declares or the defaults.
+	 *
+	 * @param array<string, mixed> $rung   The declared rung.
+	 * @param int                  $offset Its offset before the end.
+	 *
+	 * @return array<string, mixed> The rule.
+	 */
+	private static function engineRule(array $rung, int $offset): array {
+		return [
+			'trigger' => self::TRIGGER,
+			'offset' => $offset,
+			'offsetUnit' => self::UNIT,
+			'notifyRole' => ['handler'],
+			'escalateToRole' => [],
+			'priority' => self::orDefault(value: (string)($rung['priority'] ?? ''), fallback: 'medium'),
+			'message' => self::orDefault(value: (string)($rung['message'] ?? ''), fallback: 'termijn-drempel'),
+			'openIncident' => false,
+		];
+	}//end engineRule()
+
+	/**
+	 * A declared value, or the fallback when it is empty.
+	 *
+	 * @param string $value    The declared value.
+	 * @param string $fallback The default.
+	 *
+	 * @return string The value to use.
+	 */
+	private static function orDefault(string $value, string $fallback): string {
+		if ($value === '') {
+			return $fallback;
+		}
+
+		return $value;
+	}//end orDefault()
 
 	/**
 	 * The default ladder's rungs that fit a term shorter than its longest rung,
@@ -215,21 +248,42 @@ class ThresholdShares {
 	 * @return int|null The offset, or null when the rung cannot be placed.
 	 */
 	private function offsetOf(array $rung, int $slaDays): ?int {
-		if (array_key_exists('days', $rung) === true && is_numeric($rung['days']) === true) {
-			$days = (int)$rung['days'];
-
-			if ($days < 0 || $days > $slaDays) {
-				return null;
-			}
-
-			return $days;
+		if (is_numeric($rung['days'] ?? null) === true) {
+			return self::daysOffset(days: (int)$rung['days'], slaDays: $slaDays);
 		}
 
-		if (array_key_exists('share', $rung) === false || is_numeric($rung['share']) === false) {
+		if (is_numeric($rung['share'] ?? null) === false) {
 			return null;
 		}
 
-		$share = (float)$rung['share'];
+		return self::shareOffset(share: (float)$rung['share'], slaDays: $slaDays);
+	}//end offsetOf()
+
+	/**
+	 * A days rung's offset, null when it lies outside the term.
+	 *
+	 * @param int $days    The declared days before the end.
+	 * @param int $slaDays The whole term, in days.
+	 *
+	 * @return int|null The offset.
+	 */
+	private static function daysOffset(int $days, int $slaDays): ?int {
+		if ($days < 0 || $days > $slaDays) {
+			return null;
+		}
+
+		return $days;
+	}//end daysOffset()
+
+	/**
+	 * A share rung's offset, null when the share lies outside the term.
+	 *
+	 * @param float $share   The declared share of the term elapsed.
+	 * @param int   $slaDays The whole term, in days.
+	 *
+	 * @return int|null The offset.
+	 */
+	private static function shareOffset(float $share, int $slaDays): ?int {
 		if ($share < 0.0 || $share > 1.0) {
 			return null;
 		}
@@ -239,5 +293,5 @@ class ThresholdShares {
 		$elapsed = (int)round($share * $slaDays);
 
 		return max(0, ($slaDays - $elapsed));
-	}//end offsetOf()
+	}//end shareOffset()
 }//end class

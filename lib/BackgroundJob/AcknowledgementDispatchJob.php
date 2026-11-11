@@ -109,21 +109,51 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 * @return void
 	 */
 	private function work(mixed $argument): void {
+		$job = $this->jobOf(argument: $argument);
+		if ($job === null) {
+			return;
+		}
+
+		$this->deliver(caseId: $job['caseId'], attempt: $job['attempt']);
+	}//end work()
+
+	/**
+	 * The case and attempt the job argument names, or null (with a warning) when it names none.
+	 *
+	 * @param mixed $argument The queued job argument.
+	 *
+	 * @return array{caseId: string, attempt: int}|null
+	 *
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 */
+	private function jobOf(mixed $argument): ?array {
 		if (is_array($argument) === false) {
 			$this->logger->warning('Dossiq acknowledgement: the job was queued without an argument');
 
-			return;
+			return null;
 		}
 
 		$caseId = (string)($argument['caseId'] ?? '');
-		$attempt = max(1, (int)($argument['attempt'] ?? 1));
-
 		if ($caseId === '') {
 			$this->logger->warning('Dossiq acknowledgement: the job names no case');
 
-			return;
+			return null;
 		}
 
+		return ['caseId' => $caseId, 'attempt' => max(1, (int)($argument['attempt'] ?? 1))];
+	}//end jobOf()
+
+	/**
+	 * Deliver the acknowledgement, and record a failed attempt (retrying where that is still allowed).
+	 *
+	 * @param string $caseId  The case.
+	 * @param int    $attempt Which attempt this is.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 */
+	private function deliver(string $caseId, int $attempt): void {
 		try {
 			$this->acknowledgement->acknowledge(caseId: $caseId, attempt: $attempt);
 		} catch (RefusedException $e) {
@@ -139,7 +169,7 @@ class AcknowledgementDispatchJob extends QueuedJob {
 				['case' => $caseId, 'attempt' => $attempt, 'reason' => $e->getMessage()],
 			);
 		}//end try
-	}//end work()
+	}//end deliver()
 
 	/**
 	 * Record the failed attempt, and queue the next one when one is due.

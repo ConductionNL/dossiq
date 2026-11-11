@@ -490,6 +490,40 @@ class SettingsServiceTest extends TestCase {
 		$this->assertStringContainsString('setSearchable', $result['message']);
 	}//end testLoadConfigurationReportsAnErrorRatherThanLettingItEscape()
 
+	/**
+	 * An unreachable ConfigurationService is answered, and a success names the mapped count.
+	 *
+	 * @return void
+	 */
+	public function testLoadConfigurationAnswersAnUnreachableServiceAndCountsTheMapping(): void {
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$this->appManager->method('isInstalled')->willReturn(true);
+
+		$configurationService = $this->createMock(DossiqConfigurationServiceStub::class);
+		$configurationService->method('importFromApp')->willReturn(['registers' => [], 'schemas' => []]);
+		$reachable = false;
+		$this->container->method('get')->willReturnCallback(
+			static function (string $class) use ($configurationService, &$reachable) {
+				if ($class === 'OCA\OpenRegister\Service\ConfigurationService' && $reachable === true) {
+					return $configurationService;
+				}
+
+				throw new \RuntimeException('not resolvable: ' . $class);
+			}
+		);
+
+		$this->assertSame(
+			['success' => false, 'message' => 'Could not access ConfigurationService: not resolvable: OCA\OpenRegister\Service\ConfigurationService'],
+			$this->service->loadConfiguration()
+		);
+
+		$reachable = true;
+		$result    = $this->service->loadConfiguration(force: true);
+		$this->assertSame(['success', 'message', 'version', 'configured', 'result'], array_keys($result));
+		$this->assertSame('Configuration imported and auto-configured (' . $result['configured'] . ' schemas mapped)', $result['message']);
+		$this->assertSame(['registers' => [], 'schemas' => []], $result['result']);
+	}//end testLoadConfigurationAnswersAnUnreachableServiceAndCountsTheMapping()
+
 
 	/**
 	 * Both Woo review reports are off on a fresh install, and their keys round-trip.

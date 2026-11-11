@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\CaseCaller;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\People\CaseSeats;
 use OCA\Dossiq\Service\People\CoordinatorRequirement;
@@ -177,16 +178,7 @@ class CaseSeatsController extends Controller {
 	 * @return IUser|null The caller, or null.
 	 */
 	private function writerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
+		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
 	}//end writerOf()
 
 	/**

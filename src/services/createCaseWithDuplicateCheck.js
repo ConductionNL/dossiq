@@ -152,43 +152,60 @@ export async function createCaseWithDuplicateCheck(payload, context) {
 	const store = useObjectStore()
 	const type = context?.type || 'case'
 	const candidate = await withRequester(payload)
+	const verdict = await duplicateVerdict(candidate)
+	if (verdict.affordances.show === false) {
+		return store.saveObject(type, candidate)
+	}
 
+	return store.saveObject(type, withDecision(candidate, await decisionOn(verdict)))
+}
+
+/**
+ * What OpenRegister found like the candidate, what its case type says about it, and what the warning may offer.
+ *
+ * @param {object} candidate The case to file.
+ * @return {Promise<{matches: Array<object>, policy: {policy: string, mayOverride: boolean}, affordances: object}>} The verdict.
+ */
+async function duplicateVerdict(candidate) {
 	const [{ matches, checked }, policy] = await Promise.all([
 		checkForDuplicates(candidateWithoutBlanks(candidate)),
 		duplicatePolicyFor(candidate.caseType),
 	])
+	const affordances = duplicateAffordances({ matches, checked, policy: policy.policy, mayOverride: policy.mayOverride })
 
-	const affordances = duplicateAffordances({
-		matches,
-		checked,
-		policy: policy.policy,
-		mayOverride: policy.mayOverride,
-	})
+	return { matches, policy, affordances }
+}
 
-	if (affordances.show === false) {
-		return store.saveObject(type, candidate)
-	}
-
-	const cases = await fetchMatchedCases(matches.map((match) => match.uuid))
-	const decision = await askAboutDuplicates({
-		matches,
-		cases,
-		policy: policy.policy,
-		mayOverride: policy.mayOverride,
-	})
-
+/**
+ * The handler's decision about the matches, after reading the matched cases.
+ *
+ * @param {{matches: Array<object>, policy: {policy: string, mayOverride: boolean}}} verdict The verdict.
+ * @return {Promise<{reason: string, over: Array<string>}>} The decision.
+ * @throws {Error} When the handler cancelled, so the dialog stays open.
+ */
+async function decisionOn(verdict) {
+	const cases = await fetchMatchedCases(verdict.matches.map((match) => match.uuid))
+	const decision = await askAboutDuplicates({ matches: verdict.matches, cases, policy: verdict.policy.policy, mayOverride: verdict.policy.mayOverride })
 	if (decision === null) {
 		// The library turns a throw into the dialog's error line and keeps the
 		// form open with everything still typed, which is what Cancel means
 		// here: go back and look at the case that already exists.
 		throw new Error(t('dossiq', 'The case was not filed.'))
 	}
+	return decision
+}
 
+/**
+ * The candidate carrying why it was filed over a warning, and what it was filed over.
+ *
+ * @param {object} candidate The case to file.
+ * @param {{reason: string, over: Array<string>}} decision The handler's decision.
+ * @return {object} The case to save.
+ */
+function withDecision(candidate, decision) {
 	if (decision.reason !== '') {
 		candidate[FIELD_REASON] = decision.reason
 	}
-
 	candidate[FIELD_OVER] = decision.over
-
-	return store.saveObject(type, candidate)
+	return candidate
 }

@@ -151,4 +151,21 @@ class DocumentGeneratedListenerTest extends TestCase {
 
 		$this->listener(filerThrows: true)->handle($this->event());
 	}//end testAFailedFilingIsNotSwallowed()
+
+	/**
+	 * Without a template name the document's name is the title, then "Document"; without a mime the type is octet-stream.
+	 *
+	 * @return void
+	 */
+	public function testTheTitleAndTypeFallBack(): void {
+		$listener = $this->listener();
+
+		$listener->handle($this->event(['template' => ['id' => 'inline', 'name' => '  ']]));
+		$listener->handle($this->event(['template' => [], 'name' => null, 'mime' => null]));
+
+		self::assertSame(
+			[['Besluit.pdf', 'application/pdf'], ['Document', 'application/octet-stream']],
+			array_map(static fn (array $filed): array => [$filed['title'], $filed['mime']], $this->filed)
+		);
+	}//end testTheTitleAndTypeFallBack()
 }//end class

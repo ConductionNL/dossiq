@@ -28,7 +28,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseType\CaseVersionMove;
 use OCA\OpenRegister\BulkAction\BulkActionInterface;
 use OCA\OpenRegister\BulkAction\BulkActionResult;
-use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\BulkAction\BulkStep;
 use OCP\IL10N;
 use OCP\IUser;
 use Throwable;
@@ -185,16 +185,17 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 * a code, because that sentence names the status that does not exist in the
 	 * target version, and the name is the only thing an operator can act on.
 	 *
-	 * @param ObjectEntity         $object     The case the job is walking.
-	 * @param array<string, mixed> $parameters The job parameters.
-	 * @param bool                 $commit     False to rehearse, true to write.
-	 * @param IUser|null           $actor      The user the job runs as.
+	 * @param BulkStep $step The member object, the parameters, whether to commit and who started the job.
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
 	 */
-	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult {
+	public function apply(BulkStep $step): BulkActionResult {
+		$object = $step->object;
+		$parameters = $step->parameters;
+		$commit = $step->commit;
+		$actor = $step->actor;
 		$caseId = $this->caseId(object: $object);
 		if ($caseId === '') {
 			return BulkActionResult::skipped(reason: 'no_case_id');

@@ -86,49 +86,71 @@ class WorkflowDefinitionController extends Controller {
 	public function publish(string $id): JSONResponse {
 		$result = $this->service->publish($id);
 		if ($result === null) {
-			// A refused task declaration says WHAT was missing and on WHICH
-			// task. Everything else keeps the message it had, because there
-			// is nothing more specific to say about it here.
-			$refusals = $this->guard->lastRefusals();
-			if ($refusals !== []) {
-				return new JSONResponse(
-					[
-						'success' => false,
-						'error' => 'task_declaration_unresolvable',
-						'message' => $refusals[0]['message'],
-						'errors' => $refusals,
-					],
-					422,
-				);
-			}
-
-			// A step whose SLA or escalation block does not hold names WHERE
-			// and WHAT by path and code. The validator's own message is an
-			// internal description the spec keeps out of the response.
-			$stepConfigErrors = $this->guard->lastStepConfigErrors();
-			if ($stepConfigErrors !== []) {
-				return new JSONResponse(
-					[
-						'success' => false,
-						'error' => 'step_config_invalid',
-						'message' => 'A step configuration is not valid. Each entry in errors names the step and field, and what is wrong with it.',
-						'errors' => array_map(
-							static fn (array $error): array => ['path' => $error['path'], 'code' => $error['code']],
-							$stepConfigErrors
-						),
-					],
-					422,
-				);
-			}
-
-			return new JSONResponse(
-				['success' => false, 'error' => 'Could not publish workflow definition'],
-				400,
-			);
+			return $this->publishRefusal();
 		}
 
 		return new JSONResponse(['success' => true, 'definition' => $result]);
 	}//end publish()
+
+	/**
+	 * Why the definition was not published.
+	 *
+	 * A refused task declaration says WHAT was missing and on WHICH task.
+	 * A step whose SLA or escalation block does not hold names WHERE and
+	 * WHAT by path and code. Everything else keeps the message it had,
+	 * because there is nothing more specific to say about it here.
+	 *
+	 * @return JSONResponse
+	 */
+	private function publishRefusal(): JSONResponse {
+		$refusals = $this->guard->lastRefusals();
+		if ($refusals !== []) {
+			return new JSONResponse(
+				[
+					'success' => false,
+					'error' => 'task_declaration_unresolvable',
+					'message' => $refusals[0]['message'],
+					'errors' => $refusals,
+				],
+				422,
+			);
+		}
+
+		$stepConfigErrors = $this->guard->lastStepConfigErrors();
+		if ($stepConfigErrors !== []) {
+			return $this->stepConfigRefusal(errors: $stepConfigErrors);
+		}
+
+		return new JSONResponse(
+			['success' => false, 'error' => 'Could not publish workflow definition'],
+			400,
+		);
+	}//end publishRefusal()
+
+	/**
+	 * The 422 for invalid step configuration: each error's path and code.
+	 *
+	 * The validator's own message is an internal description the spec keeps
+	 * out of the response.
+	 *
+	 * @param array<int, array<string, mixed>> $errors The validator's errors.
+	 *
+	 * @return JSONResponse
+	 */
+	private function stepConfigRefusal(array $errors): JSONResponse {
+		return new JSONResponse(
+			[
+				'success' => false,
+				'error' => 'step_config_invalid',
+				'message' => 'A step configuration is not valid. Each entry in errors names the step and field, and what is wrong with it.',
+				'errors' => array_map(
+					static fn (array $error): array => ['path' => $error['path'], 'code' => $error['code']],
+					$errors
+				),
+			],
+			422,
+		);
+	}//end stepConfigRefusal()
 
 	/**
 	 * Deprecate a published definition.
