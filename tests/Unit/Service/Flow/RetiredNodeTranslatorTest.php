@@ -445,6 +445,37 @@ class RetiredNodeTranslatorTest extends TestCase {
 	}//end testACreatedDocumentIsFiledUnderItsType()
 
 	/**
+	 * Both document steps file under their type with a default name, and a merge without a target field files too.
+	 *
+	 * @return void
+	 */
+	public function testDocumentsFiledWithTheirDefaultNames(): void {
+		$created = $this->translator()->translate(
+			translation: RetiredNodeMap::DOCUMENT_CREATE,
+			config: ['templateSlug' => 'Tekst', 'outputName' => ' ', 'documentType' => ' type-1 ']
+		);
+		$merged = $this->translator()->translate(
+			translation: RetiredNodeMap::DOCUMENT_MERGE,
+			config: ['templateSlug' => 'Tekst', 'name' => 'Brief', 'documentType' => 'type-2']
+		);
+		$unnamed = $this->translator()->translate(
+			translation: RetiredNodeMap::DOCUMENT_MERGE,
+			config: ['template' => 'Tekst', 'documentType' => 'type-3']
+		);
+
+		self::assertSame($created[0]['type'], $merged[0]['type']);
+		self::assertSame(
+			[['document', 'type-1', true], ['Brief', 'type-2', true], ['Document', 'type-3', true]],
+			[
+				[$created[0]['config']['filename'], $created[0]['config']['metadata']['informatieobjecttype'], $created[0]['config']['storeFile']],
+				[$merged[0]['config']['filename'], $merged[0]['config']['metadata']['informatieobjecttype'], $merged[0]['config']['storeFile']],
+				[$unnamed[0]['config']['filename'], $unnamed[0]['config']['metadata']['informatieobjecttype'], $unnamed[0]['config']['storeFile']],
+			]
+		);
+		self::assertSame(array_keys($created[0]['config']), array_keys($merged[0]['config']));
+	}//end testDocumentsFiledWithTheirDefaultNames()
+
+	/**
 	 * Text dossiq printed but Twig would run is refused.
 	 *
 	 * @return void
