@@ -79,7 +79,7 @@ class CaseCompleteness {
 			return null;
 		}
 
-		$items = $this->itemsOf(caseType: $this->caseTypes->effectiveCaseType(caseTypeId: $this->caseTypeIdOf(case: $case)));
+		$items = $this->itemsOfCase(case: $case);
 		if ($items === []) {
 			return ['items' => []];
 		}
@@ -119,6 +119,17 @@ class CaseCompleteness {
 
 		return $items;
 	}//end itemsOf()
+
+	/**
+	 * The declared items of the effective case type of a case.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function itemsOfCase(array $case): array {
+		return $this->itemsOf(caseType: $this->caseTypes->effectiveCaseType(caseTypeId: $this->caseTypeIdOf(case: $case)));
+	}//end itemsOfCase()
 
 	/**
 	 * The case type id of a case, whether stored flat or as a nested object.
