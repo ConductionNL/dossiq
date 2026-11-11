@@ -1081,17 +1081,27 @@ class ZgwService {
 		bool $hasForceer = true,
 		?bool $parentCaseTypeDraft = null,
 	): JSONResponse {
-		$route = new ResourceRoute(request: $request, api: $zgwApi, resource: $resource);
+		$flags = new RuleFlags(action: 'create', parentCaseTypeDraft: $parentCaseTypeDraft, caseClosed: $caseClosed, hasGeforceerd: $hasForceer);
+
+		return $this->createRoute(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource), flags: $flags);
+	}//end handleCreate()
+
+	/**
+	 * Create an object on a route, or answer why its store or mapping is missing.
+	 *
+	 * @param ResourceRoute $route The route.
+	 * @param RuleFlags     $flags The create action and parent state flags.
+	 *
+	 * @return JSONResponse The created object, or the refusal
+	 */
+	private function createRoute(ResourceRoute $route, RuleFlags $flags): JSONResponse {
 		$mappingConfig = $this->mappingOrRefusal(route: $route);
 		if ($mappingConfig instanceof JSONResponse) {
 			return $mappingConfig;
 		}
 
-		return $this->create(
-			draft: new ResourceWrite(route: $route, mapping: $mappingConfig),
-			flags: new RuleFlags(action: 'create', parentCaseTypeDraft: $parentCaseTypeDraft, caseClosed: $caseClosed, hasGeforceerd: $hasForceer)
-		);
-	}//end handleCreate()
+		return $this->create(draft: new ResourceWrite(route: $route, mapping: $mappingConfig), flags: $flags);
+	}//end createRoute()
 
 	/**
 	 * The mapping configuration of a route, or the answer when the store or the mapping is missing.
@@ -1607,21 +1617,27 @@ class ZgwService {
 	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function notifyDeleted(IRequest $request, string $zgwApi, string $resource, string $uuid): void {
+		$this->notifyRouteDeleted(route: new ResourceRoute(request: $request, api: $zgwApi, resource: $resource, uuid: $uuid));
+	}//end notifyDeleted()
+
+	/**
+	 * Announce that the object a route names was deleted; a failed announcement is logged, not raised.
+	 *
+	 * @param ResourceRoute $route The route, with the deleted object's id.
+	 *
+	 * @return void
+	 */
+	private function notifyRouteDeleted(ResourceRoute $route): void {
 		try {
-			$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
-			$this->publishNotification(
-				zgwApi: $zgwApi,
-				resource: $resource,
-				resourceUrl: $baseUrl . '/' . $uuid,
-				action: 'destroy'
-			);
+			$resourceUrl = $this->buildBaseUrl(request: $route->request, zgwApi: $route->api, resource: $route->resource) . '/' . $route->uuid;
+			$this->publishNotification(zgwApi: $route->api, resource: $route->resource, resourceUrl: $resourceUrl, action: 'destroy');
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ZGW delete of {resource} {uuid} happened, but its notification failed: ' . $e->getMessage(),
-				['resource' => $resource, 'uuid' => $uuid, 'exception' => $e]
+				['resource' => $route->resource, 'uuid' => $route->uuid, 'exception' => $e]
 			);
 		}
-	}//end notifyDeleted()
+	}//end notifyRouteDeleted()
 
 	/**
 	 * Handle audit trail index — proxies to OpenRegister's audit trail.
