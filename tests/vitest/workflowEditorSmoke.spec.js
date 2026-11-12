@@ -344,3 +344,113 @@ describe('WorkflowValidationBanner.vue — renders the blocking issues', () => {
 		expect(wrapper.find('.workflow-validation').exists()).toBe(false)
 	})
 })
+
+describe('WorkflowEditor.vue — deletes a status node', () => {
+	/**
+	 * Mount the editor holding the given status nodes, loaded and settled.
+	 *
+	 * @param {Array<object>} statusNodes The nodes the canvas holds.
+	 * @param {object} objectOverrides Overrides for the object store.
+	 * @return {Promise<object>} The wrapper with its stores.
+	 */
+	async function editorWith(statusNodes, objectOverrides = {}) {
+		const objectStore = buildMockObjectStore({
+			fetchCollection: vi.fn((schema) =>
+				Promise.resolve(schema === 'statusType' ? statusNodes : []),
+			),
+			...objectOverrides,
+		})
+		const workflowStore = buildMockWorkflowStore()
+		const wrapper = mountEditor(workflowStore, objectStore, {
+			caseTypeId: 'ct-1',
+			templateId: 'tpl-1',
+		})
+		await flushPromises()
+		return { wrapper, objectStore, workflowStore }
+	}
+
+	const NODES = [
+		{ id: 's1', name: 'Received', isFinal: false },
+		{ id: 's2', name: 'Handled', isFinal: true },
+		{ id: 's3', name: 'Withdrawn', isFinal: true },
+	]
+
+	it('does nothing for a status the canvas does not hold', async () => {
+		const confirmMock = vi.fn(() => true)
+		vi.stubGlobal('confirm', confirmMock)
+		const { wrapper, objectStore } = await editorWith(NODES)
+
+		await wrapper.vm.onDeleteStatusNode('nope')
+
+		expect(confirmMock).not.toHaveBeenCalled()
+		expect(objectStore.deleteObject).not.toHaveBeenCalled()
+		expect(wrapper.emitted('dirty')).toBeUndefined()
+		vi.unstubAllGlobals()
+	})
+
+	it('refuses to delete the last final status, without asking', async () => {
+		const confirmMock = vi.fn(() => true)
+		vi.stubGlobal('confirm', confirmMock)
+		const { wrapper, objectStore } = await editorWith(NODES.slice(0, 2))
+
+		await wrapper.vm.onDeleteStatusNode('s2')
+
+		expect(confirmMock).not.toHaveBeenCalled()
+		expect(objectStore.deleteObject).not.toHaveBeenCalled()
+		expect(wrapper.vm.validationErrors).toEqual([
+			{ type: 'error', message: 'At least one status must be marked as final' },
+		])
+		vi.unstubAllGlobals()
+	})
+
+	it('deletes nothing when the person does not confirm', async () => {
+		const confirmMock = vi.fn(() => false)
+		vi.stubGlobal('confirm', confirmMock)
+		const { wrapper, objectStore } = await editorWith(NODES)
+
+		await wrapper.vm.onDeleteStatusNode('s3')
+
+		expect(confirmMock).toHaveBeenCalledWith(
+			'Delete status "Withdrawn"? This also removes its steps and transitions.',
+		)
+		expect(objectStore.deleteObject).not.toHaveBeenCalled()
+		vi.unstubAllGlobals()
+	})
+
+	it('keeps the node and says so when the delete fails', async () => {
+		vi.stubGlobal('confirm', vi.fn(() => true))
+		const { wrapper, workflowStore } = await editorWith(NODES, {
+			deleteObject: vi.fn(() => Promise.resolve(false)),
+		})
+
+		await wrapper.vm.onDeleteStatusNode('s1')
+
+		expect(wrapper.vm.validationErrors).toEqual([
+			{ type: 'error', message: 'Failed to delete status' },
+		])
+		expect(workflowStore.removeStatusNode).not.toHaveBeenCalled()
+		expect(wrapper.vm.statusNodes.map((s) => s.id)).toEqual(['s1', 's2', 's3'])
+		expect(wrapper.emitted('dirty')).toBeUndefined()
+		vi.unstubAllGlobals()
+	})
+
+	it('drops a deleted node, clears its selection and marks the editor dirty', async () => {
+		vi.stubGlobal('confirm', vi.fn(() => true))
+		const { wrapper, objectStore, workflowStore } = await editorWith(NODES)
+		wrapper.vm.selectedNode = 's2'
+
+		await wrapper.vm.onDeleteStatusNode('s2')
+
+		expect(objectStore.deleteObject).toHaveBeenCalledWith('statusType', 's2')
+		expect(workflowStore.removeStatusNode).toHaveBeenCalledWith('s2')
+		expect(wrapper.vm.statusNodes.map((s) => s.id)).toEqual(['s1', 's3'])
+		expect(wrapper.vm.selectedNode).toBeNull()
+		expect(wrapper.emitted('dirty')).toHaveLength(1)
+
+		wrapper.vm.selectedNode = 's3'
+		await wrapper.vm.onDeleteStatusNode('s1')
+		expect(wrapper.vm.selectedNode).toBe('s3')
+		expect(wrapper.emitted('dirty')).toHaveLength(2)
+		vi.unstubAllGlobals()
+	})
+})

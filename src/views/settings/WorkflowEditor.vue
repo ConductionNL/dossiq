@@ -580,47 +580,65 @@ export default {
 			const target = this.statusNodes.find((s) => s.id === statusId)
 			if (!target) return
 
-			if (target.isFinal) {
-				const otherFinals = this.statusNodes.filter(
-					(s) => s.id !== statusId && s.isFinal,
-				)
-				if (otherFinals.length === 0) {
-					this.validationErrors = [
-						{
-							type: 'error',
-							message: t(
-								'dossiq',
-								'At least one status must be marked as final',
-							),
-						},
-					]
-					return
-				}
-			}
-
-			if (
-				!confirm(
-					t(
-						'dossiq',
-						'Delete status "{name}"? This also removes its steps and transitions.',
-						{ name: target.name },
-					),
-				)
-			) {
+			if (this.isLastFinalStatus(target)) {
+				this.showValidationError(t('dossiq', 'At least one status must be marked as final'))
 				return
 			}
+			if (!this.confirmStatusDelete(target)) return
 
 			const ok = await this.objectStore.deleteObject('statusType', statusId)
 			if (!ok) {
-				this.validationErrors = [
-					{
-						type: 'error',
-						message: t('dossiq', 'Failed to delete status'),
-					},
-				]
+				this.showValidationError(t('dossiq', 'Failed to delete status'))
 				return
 			}
+			this.dropStatusNode(statusId)
+		},
 
+		/**
+		 * Whether a status is the only final one left on the canvas.
+		 *
+		 * @param {object} target The status node.
+		 * @return {boolean} True when deleting it would leave no final status.
+		 */
+		isLastFinalStatus(target) {
+			if (!target.isFinal) return false
+			return !this.statusNodes.some((s) => s.id !== target.id && s.isFinal)
+		},
+
+		/**
+		 * Ask the person to confirm deleting a status and what hangs off it.
+		 *
+		 * @param {object} target The status node.
+		 * @return {boolean} True when confirmed.
+		 */
+		confirmStatusDelete(target) {
+			return confirm(
+				t(
+					'dossiq',
+					'Delete status "{name}"? This also removes its steps and transitions.',
+					{ name: target.name },
+				),
+			)
+		},
+
+		/**
+		 * Show one blocking error in the validation banner.
+		 *
+		 * @param {string} message The translated message.
+		 * @return {void}
+		 */
+		showValidationError(message) {
+			this.validationErrors = [{ type: 'error', message }]
+		},
+
+		/**
+		 * Drop a deleted status from the working copy and the canvas, clear
+		 * its selection and mark the editor dirty.
+		 *
+		 * @param {string} statusId UUID of the deleted status
+		 * @return {void}
+		 */
+		dropStatusNode(statusId) {
 			this.workflowStore.removeStatusNode(statusId)
 			this.statusNodes = this.statusNodes.filter((s) => s.id !== statusId)
 			if (this.selectedNode === statusId) {
