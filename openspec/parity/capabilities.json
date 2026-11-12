@@ -12161,7 +12161,11 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: the document intake inbox is filinq's"
-				}
+				},
+				"requirement": [
+					"filinq:openspec/changes/document-intake-inbox/specs/document-intake-inbox :: Assign or reject with server-side checks (REQ-DII-03)",
+					"filinq:openspec/changes/document-intake-inbox/specs/document-intake-inbox :: The intake inbox page (REQ-DII-04)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js:138 route /inbound -> InboundDocumentsView (nav src/App.vue:148); filled by lib/BackgroundJob/ProcessImportsJob.php:392 (folder and IMAP import into an inbox case); src/views/DocumentDetailView.vue:74,81 journaliser on an existing or a new case; :91 Slet. Reject is a delete with a confirm, no reason is recorded | round 2 drive: procest/opencase/round2/code-census.md:142 \"are moved to a case or a new case from `src/views/InboundDocumentsView.vue` (`MoveToCaseDialog`, `MoveToNewCaseDialog`)\"",
@@ -12202,7 +12206,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakEmail"
-				}
+				},
+				"requirement": "integriq:openspec/changes/archive/2026-09-28-mail-intake-creates-cases/specs/mail-intake :: A mailbox is a source and a message is an object (REQ-MAIL-001)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:54-60,117,186-199 IMAP import location reads unseen INBOX messages but imports only attachments (line 266 getAttachments) onto the system inbox case; the mail body and headers are not kept; registered unconditionally in lib/AppInfo/Application.php:242 | round 2 drive: procest/opencase/round2/code-census.md:112 \"inbound IMAP mailboxes as import locations (`lib/BackgroundJob/ProcessImportsJob.php:54`)\"",
@@ -12235,7 +12240,11 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: scan intake is filinq's"
-				}
+				},
+				"requirement": [
+					"filinq:openspec/changes/scan-intake-with-separator-sheets/specs/scan-intake :: Separator sheets are printed by filinq and read by filinq (REQ-SCI-02)",
+					"filinq:openspec/changes/scan-intake-from-a-watched-folder/specs/scan-intake :: filinq takes a scanned batch that integriq's watched folder hands over (REQ-SCW-001)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:38-52,112 folder import locations scanned on a timer, PDFs split on QR separation sheets into existing case, new case, inbox or attachment; lib/Service/SeparationSheetService.php generates the sheets | round 2 drive: procest/opencase/round2/code-census.md:189 \"Separation sheets and QR cover sheets for scanning :: yes :: lib/Service/SeparationSheetService.php\"",
@@ -12357,7 +12366,11 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: Office, Teams and Outlook add-ins belong to integriq"
-				}
+				},
+				"requirement": [
+					"integriq:openspec/changes/messaging-intake-routing-rules/specs/intake-channels :: An Outlook user sends the open message to intake from a task pane (REQ-IRE-004)",
+					"integriq:openspec/changes/messaging-intake-routing-rules/specs/intake-channels :: An administrator writes a routing rule on the intake routing page (REQ-IRE-001)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 docs/dokumenter/ms-office.md:8,50-62 (vendor docs, not code) Outlook task pane can create a new case and save the mail as a document, Enterprise only; appinfo/routes.php:70,91 login-flow helper and manifest download serve the add-in; the add-in source (msoffice/) is not in the public tree | round 2 drive: procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\" | open for the lab: On an Enterprise instance with the Outlook add-in installed, does the task pane offer Opret ny sag and create the case with the mail saved on it?",
@@ -12390,7 +12403,8 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: a save action in Files and Talk through the OpenRegister files leaf"
-				}
+				},
+				"requirement": "openregister:openspec/changes/files-leaf-save-to-object/specs/file-actions :: A Files action attaches a file to a register object"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/files-plugin.js:21-23 Save to OpenCase file action and src/talk-plugin.js:32 Talk message action, loaded by lib/Listener/FilesIntegrationListener.php:42 and TalkIntegrationListener.php:42; backend lib/Controller/FilesIntegrationController.php:48 and TalkController.php:48 | round 2 drive: procest/opencase/round2/code-census.md:191 \"Save any Nextcloud file or Talk chat to a case :: yes\"",
@@ -12423,7 +12437,11 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: payment at intake happens in the portal and shillinq"
-				}
+				},
+				"requirement": [
+					"shillinq:openspec/changes/leges-at-intake/specs/object-payment-requests :: The journey raises the request and renders the checkout (REQ-SOPR-007)",
+					"shillinq:openspec/changes/leges-at-intake/specs/object-payment-requests :: A fee schedule per type value (REQ-SOPR-006)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -il payment, betaling, mollie, stripe over lib and src returns nothing; no citizen intake exists to pay in | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -12551,7 +12569,8 @@
 						"DqZaak",
 						"DqZaken"
 					]
-				}
+				},
+				"requirement": "openregister:openspec/changes/generated-identifier/specs/computed-fields :: A property declares a generated identifier from a sequence and a format"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/CaseNumberService.php:12-29,55-59,74-88 admin mask (yyyy, yy, #...#) with a per-year sequence taken under SELECT FOR UPDATE; lib/Migration/Version000001Date20260729000000.php:306 unique index on case_number | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:15 \"From the mask `yyyy-#####` in Configuration.\"",
@@ -13399,7 +13418,11 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "PtVoorstelBeoordelen"
-				}
+				},
+				"requirement": [
+					"portaliq:openspec/specs/change-proposal-queue :: A change proposal is a queued object on its subject (REQ-CPQ-001)",
+					"portaliq:openspec/specs/change-proposal-queue :: Accept writes the subject as the reviewer (REQ-CPQ-003)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i proposal, forslag over src and lib finds no queue of proposed changes; writes apply directly | round 2 drive: procest/_round2/compare/M1-functionality.md:74 \"| 2.21 | Change proposals from colleagues or citizens queued for acceptance | no |\"",
@@ -13628,7 +13651,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakGerelateerd"
-				}
+				},
+				"requirement": "openregister:openspec/changes/relation-types-with-inverses/specs/referential-integrity :: A reference property declares how it reads from both sides"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/constants.py:99-111 aard_relatie vervolg, onderwerp, bijdrage on RelevanteZaakRelatie (models/zaken.py:715-760), one-sided; hoofdzaak and deelzaken are the only paired link",
@@ -13826,7 +13850,8 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: process engine in OpenRegister"
-				}
+				},
+				"requirement": "openregister:openspec/changes/flow-bpmn-interchange/specs/flow-bpmn-interchange :: BPMN is an interchange boundary, never an execution semantic"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ril bpmn over lib and src returns nothing; lib/Service/WorkflowService.php:46 the only workflow is a document review or approval with two fixed types | round 2 drive: procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
@@ -13960,7 +13985,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqTaak"
-				}
+				},
+				"requirement": "openregister:openspec/specs/flow-task-forms :: A task form is a declaration of existing fields, not a new form definition"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/WorkflowService.php:134-166 a workflow step is a review or approve action with a comment, opened from src/views/HomeView.vue:89-96 and the document Workflow tab (src/views/DocumentDetailView.vue:191); no configurable task form | round 2 drive: procest/opencase/round2/journeys.md:24 \"the only completable work item is a step in a document review or approval chain\"",
@@ -14275,7 +14301,11 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: the form builder is buildiq's"
-				}
+				},
+				"requirement": [
+					"buildiq:openspec/changes/registration-form-builder/specs/registration-form-builder :: The form builder groups questions per phase with rules and steps (REQ-OBRF-002)",
+					"buildiq:openspec/specs/form-editor-logic :: Steps manager authors multi-step wizards over the existing field list (REQ-OBFEL-001)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no forms engine; dialogs are fixed Vue components (src/components/*Dialog.vue); no citizen or step form | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -14317,7 +14347,12 @@
 						"DqUwWachtrij",
 						"DqZaakDocumenten"
 					]
-				}
+				},
+				"requirement": [
+					"decidiq:openspec/specs/approval-routes :: REQ-AR-004 A route is instantiated into stages",
+					"decidiq:openspec/specs/approval-routes :: REQ-AR-005 Recording an action advances the route",
+					"decidiq:openspec/changes/document-approval-chain-leaf/specs/approval-routes :: REQ-AR-010 The route is a render-surface leaf"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/WorkflowService.php:39-126,134-213 review or approval workflow on a document with ordered users, per-step deadlines, approve or reject with comment, notifications; src/views/DocumentDetailView.vue:191-194 Workflow tab with WorkflowPanel; appinfo/routes.php:193-198 | round 2 drive: procest/opencase/round2/code-census.md:208 \"Document review/approval workflow with ordered users and deadlines :: yes\"",
@@ -14431,7 +14466,8 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: migration of running cases between definition versions"
-				}
+				},
+				"requirement": "openregister:openspec/changes/migrate-run-between-versions/specs/flow-definition-versioning :: A run can be migrated to another version, explicitly and validated"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case types have no versions or definitions to migrate between (src/views/ConfigurationView.vue:229 code list only) | round 2 drive: procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\"",
@@ -14465,7 +14501,8 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: computed fields in OpenRegister"
-				}
+				},
+				"requirement": "openregister:openspec/specs/computed-fields :: String, Date, and Math Operations"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no formula or computed field; the only date arithmetic is the FOI deadline in lib/Service/AccessDeadlineService.php:20-28 and workflow step splitting | round 2 drive: procest/_round2/compare/M1-functionality.md:97 \"| 3.17 | Formula-based field fill and date calculation | no |\"",
@@ -14509,7 +14546,11 @@
 						"DqZaak",
 						"DqZaakTaken"
 					]
-				}
+				},
+				"requirement": [
+					"buildiq:openspec/changes/pages-task-panel-beside-case-tabs/specs/page-layout-task-panel :: A layout declares where the task panel sits (REQ-BQTP-001)",
+					"buildiq:openspec/changes/pages-task-panel-beside-case-tabs/specs/page-layout-task-panel :: The leaf serves the panel with the task list (REQ-BQTP-003)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue tabs only, no side panel; the case shows only a reminder banner (lines 24-32) | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:54 \"No tasks tab: work items are workflow steps on documents and reminders on the case.\"",
@@ -14550,7 +14591,11 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: partner tasks live in the portaliq partner portal"
-				}
+				},
+				"requirement": [
+					"portaliq:openspec/specs/partner-tasks-in-the-portal :: A handler raises an ask from the case (REQ-PTP-002)",
+					"portaliq:openspec/specs/partner-tasks-in-the-portal :: The answer lands on the case (REQ-PTP-003)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 workflow steps and reminders go to Nextcloud users only (lib/Service/WorkflowService.php:54-57 rejects unknown users); no external party task and no portal | round 2 drive: procest/_round2/compare/M1-functionality.md:99 \"| 3.19 | External (supply chain partner) task assignment | no |\"",
@@ -14598,7 +14643,8 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqZaakAssistent"
-				}
+				},
+				"requirement": "openregister:openspec/changes/macro-flows-with-next-item/specs/declared-actions :: A declared action may run a manual flow as a macro"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 grep -ri macro over src returns nothing; an API has no one-click action for a handler",
@@ -15236,7 +15282,11 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqDocumentenBeheer"
-				}
+				},
+				"requirement": [
+					"filinq:openspec/specs/document-merge :: The merge converts, orders, bookmarks and stores (REQ-DMG-02)",
+					"filinq:openspec/changes/specify-capability-rows/specs/document-merge :: A document is copied to another record the user may write (REQ-SCR-018)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/DocumentDetailView.vue:70-81 Journaliser på eksisterende or ny sag moves a document (MoveToCaseDialog.vue:70 moveDocumentToCase); copies only inside Kopier sag (CopyCaseDialog.vue:573 copyFilesToDocument); no merge into one PDF (Fpdi only reads separation sheets, ProcessImportsJob.php:798) | round 2 drive: procest/opencase/round2/code-census.md:110 \"PDF conversion via LibreOffice binary (`lib/Service/LibreOfficeService.php:64`)\"",
@@ -15344,7 +15394,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqKop"
-				}
+				},
+				"requirement": "openregister:openspec/changes/unified-search-file-content/specs/unified-search-file-content :: The unified-search provider MUST search extracted file text"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/IndexFileJob.php:22-23,139-143 sends file bytes to Elasticsearch; lib/Service/ElasticsearchService.php:78-102 ingest-attachment pipeline (Tika) extracts text into attachment.content (:169-172); searched from src/views/SearchView.vue | round 2 drive: procest/opencase/round2/code-census.md:250 \"Full-text search over file content (Elasticsearch, Danish analyzer) :: yes\" | open for the lab: Does a free-text search find a word that only appears inside an uploaded PDF (needs Elasticsearch with ingest-attachment)?",
@@ -15756,7 +15807,8 @@
 						"DqContact",
 						"DqOrganisatie"
 					]
-				}
+				},
+				"requirement": "openregister:openspec/changes/contacts-leaf-cases-panel/specs/integration-contacts :: The contacts leaf offers a detail surface with a cases panel"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CitizenSearchView.vue:178-234 citizen view with tabs Sager and Dokumenter; appinfo/routes.php:227-228 citizen cases and documents; CitizenController documents lists documents where the person is sender or recipient (findRawDocumentsByCpr), which is how OpenCase records correspondence; journal notes are not shown | round 2 drive: procest/opencase/round2/journeys.md:29 \"One match jumps straight to a citizen 360 view: card with masked CPR, tabs Cases (1) and Documents, Create case button.\"",
@@ -16040,7 +16092,8 @@
 					"reason": "backend: registry subscription connector in integriq"
 				},
 				"evidence": "integriq lib/Service/Registry (SubscriptionRequestHandler, BrpVolgindicatieProvider, KvkMutatieProvider) and RegistrySubscriptionPollJob answer openregister's RegistrySubscriptionRequestedEvent (openregister lib/Service/Registry/RegistrySubscriptionNotifier.php:75); no dossiq schema in lib/Settings declares x-openregister-registry, so no dossiq contact can request a subscription",
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"requirement": "openregister:openspec/changes/registry-subscriptions/specs/registry-subscriptions :: An object carries a subscription state a user can request or end"
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Db/CprEvent.php entity and lib/Service/AuditService.php:630,637 logCprEventReceived have no caller in the public tree; the CPR subscription and receiver sit in the enterprise package; not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:231 \"CPR event subscriptions :: partial (enterprise)\" | open for the lab: With the enterprise package, does a CPR change event for a party land on its cases as a log entry?",
@@ -16128,7 +16181,8 @@
 						"DqContact",
 						"DqOrganisatie"
 					]
-				}
+				},
+				"requirement": "openregister:openspec/changes/external-register-view-leaf/specs/object-source-providers :: An external register record renders on another object"
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 src/router/index.js routes search-citizen, search-company, search-estate and estate-detail show register data with the cases on it, but live CPR, CVR and BBR reads need EnterpriseClient classes absent from the public tree (lib/Controller/EstateController.php:95-110 falls back to local rows); not checked: enterprise package is closed source | round 2 drive: procest/_round2/compare/M1-functionality.md:145 \"| 5.13 | External register views embedded in the app | no |\" | open for the lab: With the enterprise package, does /estate/<bfe> show BBR building data fetched live?",
@@ -16346,7 +16400,8 @@
 						"DqZaakHistorie",
 						"DqZaakContact"
 					]
-				}
+				},
+				"requirement": "openregister:openspec/changes/activity-leaf/specs/integration-activity :: The activity leaf merges an object's feed from five sources"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 notes (Journalnotater tab), sent mail and digital post (as documents) and the audit Log tab (CaseAuditLog.vue) are separate; no merged communication view in src/views/CaseDetailView.vue tabs | round 2 drive: procest/_round2/compare/M1-functionality.md:154 \"| 6.4 | Unified communication timeline per case (notes, mail, messages) | no |\"",
@@ -16387,7 +16442,11 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqPostvak"
-				}
+				},
+				"requirement": [
+					"integriq:openspec/changes/archive/2026-09-28-mail-intake-creates-cases/specs/mail-intake :: A mailbox is a source and a message is an object (REQ-MAIL-001)",
+					"integriq:openspec/changes/archive/2026-09-28-mail-intake-creates-cases/specs/mail-intake :: A received message is offered to the owning app as a typed event (REQ-MAIL-003)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:55,253-266 imports attachments of unseen mails from IMAP import locations as documents on an inbox case; src/views/InboundDocumentsView.vue:26-29 organisation-wide list opens the document, whose Journaliser på eksisterende sag moves it to a case; the mails themselves are not kept as messages | round 2 drive: procest/opencase/round2/pages/IncomingDocuments.md:5 \"Inbox of documents that arrived from Digital Post, watched folders or IMAP mailboxes, to be journalised on an existing or new case.\"",
@@ -16568,7 +16627,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakEmail"
-				}
+				},
+				"requirement": "openregister:openspec/changes/send-at-on-the-messaging-leaf/specs/integration-message-dispatch :: A send may be scheduled and bound to an object"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i 'send_at|scheduled|planlagt|udskudt' near mail over lib and src returns nothing; lib/BackgroundJob holds import, index, export and access deadline jobs, no mail queue | round 2 drive: procest/_round2/compare/M1-functionality.md:159 \"| 6.9 | Scheduled or planned e-mails | no |\"",
@@ -16609,7 +16669,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakEmail"
-				}
+				},
+				"requirement": "integriq:openspec/changes/archive/2026-09-28-mail-intake-creates-cases/specs/mail-intake :: .eml and .msg files import into the same message shape (REQ-MAIL-002)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 docs/dokumenter/ms-office.md:8,52-60 Enterprise Outlook task pane saves the selected mail as a case document and registers the sender as contact (vendor docs, not code; msoffice/ is not in the public tree); lib/Controller/EmailController.php:373 only writes .eml for mail sent from the app | round 2 drive: procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\" | open for the lab: With the enterprise Outlook add-in, can a saved .msg or .eml file (not a mail open in Outlook) be imported into a case with its sender and attachments parsed?",
@@ -16692,7 +16753,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakContact"
-				}
+				},
+				"requirement": "openregister:openspec/changes/files-leaf-save-to-object/specs/file-actions :: A Talk action saves a conversation to a register object"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/talk-plugin.js:32-33,73 registers a Talk message action that posts to talk/save-chat, loaded by lib/Listener/TalkIntegrationListener.php:42; lib/Controller/TalkController.php:49,137 saves the transcript as a case document, PDF via LibreOffice | round 2 drive: procest/opencase/round2/code-census.md:238 \"Talk chat export to case :: yes\"",
@@ -18121,7 +18183,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqKop"
-				}
+				},
+				"requirement": "openregister:openspec/changes/content-search-index/specs/unified-search-provider :: The provider searches file content beside object data"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/ElasticsearchService.php:78-89 ingest-attachment pipeline extracts all file text, :169-176 attachment.content indexed with a Danish analyzer; lib/Service/SearchService.php:205-210 search page queries it; src/views/SearchView.vue:8 placeholder Søg i indhold | round 2 drive: procest/opencase/round2/search-anatomy.md:7 \"The only search that reads inside files.\"",
@@ -18246,7 +18309,8 @@
 						"DqKop",
 						"DqContacten"
 					]
-				}
+				},
+				"requirement": "openregister:openspec/changes/contacts-leaf-cases-panel/specs/integration-contacts :: The contacts leaf offers a name search"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js /search/citizen and /search/company; lib/Controller/CitizenController.php:143,158 GET /api/v1/citizen/search uses the CPR service when enterprise is on and a local fallback search (:106) when it is off; /api/v1/citizen/cases and /documents give the 360 view | round 2 drive: procest/opencase/round2/pages/Search-Citizen.md:5 \"Find a citizen by CPR, name or address and open a citizen 360 view with their cases and documents.\"",
@@ -18403,7 +18467,8 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqZoekresultaten"
-				}
+				},
+				"requirement": "openregister:openspec/changes/saved-view-count-alert/specs/saved-search-views :: A view alert fires once per crossing and re-arms"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 no saved searches and no threshold alerting in src/openzaak",
@@ -18609,7 +18674,8 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqZaakHistorie"
-				}
+				},
+				"requirement": "openregister:openspec/changes/audit-log-page/specs/audit-trail-immutable :: An instance-wide audit list with filters"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1268-1350 Transaktionslog tab with filters on user, from and to time, log source (searches and lookups or audit trail) and type, plus Eksporter til CSV (:2555); appinfo/routes.php:94-95 settings/transaction-log | round 2 drive: procest/opencase/round2/code-census.md:259 \"Transaction log viewer for admins :: yes\"",
@@ -18682,7 +18748,8 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqZoekresultaten"
-				}
+				},
+				"requirement": "openregister:openspec/changes/an-export-is-a-file-with-a-life/specs/data-import-export :: An exports area lists the runs"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no stored export area; the access request export streams a ZIP (src/views/AccessRequestDetailView.vue:449-451) and nothing lists past exports | round 2 drive: procest/_round2/compare/M1-functionality.md:220 \"| 10.7 | Export files area with expiry and download counts | no |\"",
@@ -18730,7 +18797,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakHistorie"
-				}
+				},
+				"requirement": "openregister:openspec/changes/activity-leaf/specs/integration-activity :: The feed filters by kind and period and exports"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CaseAuditLog.vue:153 lists the case audit log with paging only; no export control; lib/Controller/AuditController.php:48 has no export format | round 2 drive: procest/_round2/compare/M1-functionality.md:221 \"| 10.8 | Timeline export per case or contact | no |\"",
@@ -18810,7 +18878,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqDashboard"
-				}
+				},
+				"requirement": "nextcloud-vue:openspec/changes/a-saved-view-drives-a-widget/specs/saved-views-ui :: a saved view drives a dashboard widget"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no saved searches (9.3); the four dashboard widgets (lib/Dashboard) run fixed queries | round 2 drive: procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
@@ -19116,7 +19185,8 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: the BPMN modeller is OpenRegister's"
-				}
+				},
+				"requirement": "openregister:openspec/changes/visual-flow-builder/specs/flow-builder :: Visual flow authoring on a schema"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 package.json has no bpmn dependency; lib/Service/WorkflowService.php is a fixed review or approval step list on documents, not a process model | round 2 drive: procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
@@ -19149,7 +19219,8 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: case page layout is configured in buildiq"
-				}
+				},
+				"requirement": "buildiq:openspec/changes/case-page-layout-per-case-type/specs/page-layout-per-type :: A tab declares its kind, and an admin orders tabs per case type (REQ-OBPL-004)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:447,449,456,459,465 caseTabs() is a hard coded list (Info, Dokumenter, Filer, Parter, Journalnotater, Andre sagsbehandlere, Log, Adgang plus three data-driven extras), identical for every case type | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -19216,7 +19287,8 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: case page layout is configured in buildiq"
-				}
+				},
+				"requirement": "buildiq:openspec/changes/case-page-layout-per-case-type/specs/page-layout-per-type :: The header is its own slot, with fields and chips per case type (REQ-OBPL-007)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:15-117 header is one template (title, number, type, status badge, organisation, reminder banner, primary party) for every case type | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -19500,7 +19572,8 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: feature toggles are OpenRegister's"
-				}
+				},
+				"requirement": "openregister:openspec/changes/feature-toggle-surface/specs/apphost-settings-plane :: An app declares feature toggles and the plane administers them"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/Configuration.php:140 enterprise_version gate; src/views/ConfigurationView.vue:8-30 settings tab edits config keys; lib/Command/ConfigSetCommand.php and EnterpriseEnableCommand.php. A few switches, no feature flag framework | round 2 drive: procest/opencase/round2/code-census.md:4 \"gates it on `enterprise_version` (`lib/Service/Configuration.php:140`) and `ai_enabled`\"",
@@ -19662,7 +19735,8 @@
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: user, role and department administration is OpenRegister's"
-				}
+				},
+				"requirement": "openregister:openspec/changes/rbac-department-role-matrix/specs/rbac-scopes :: An admin edits the matrix as a grid with a per-user preview"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1034,1158,1173 Lokale brugere: search a Nextcloud user, set OpenCase user info and privilege groups, delete a privilege; lib/Controller/SettingsController.php:57-60 local-users endpoints; organisations come from the SF1500 sync or the Nextcloud groups | round 2 drive: procest/opencase/round2/code-census.md:69 \"Lokale brugere (local users and privileges)\"",
@@ -19854,7 +19928,8 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqInstellingenAlgemeen"
-				}
+				},
+				"requirement": "openregister:openspec/specs/auth-system :: CORS policy MUST be enforced per Consumer and prevent CSRF"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/ConfigurationView.vue:204 settings tab edits four keys (case number mask, search limits, history count) through lib/Controller/ConfigController.php:74,89; src/AdminSettings.vue holds integration settings; no notification or portal texts, CORS is Nextcloud's | round 2 drive: procest/opencase/round2/pages/Configuration-Settings.md:5 \"In-app configuration; the Settings section holds one value.\"",
@@ -19904,7 +19979,8 @@
 					"board": "DqZaaktypeVelden"
 				},
 				"readOn": "2026-10-07",
-				"reachedOn": "Settings > case type > status (StatusTypeForm, Field rules) and #CaseDetail status strip (CaseStatusDeclarationPanel)"
+				"reachedOn": "Settings > case type > status (StatusTypeForm, Field rules) and #CaseDetail status strip (CaseStatusDeclarationPanel)",
+				"requirement": "openregister:openspec/specs/row-field-level-security :: Field rules by state are enforced on save and published on read"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 authorisations are per component, scope, zaaktype and confidentiality (components/autorisaties); nothing hides or locks individual fields by role or status",
@@ -20160,7 +20236,11 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: Objecten API facade in integriq"
-				}
+				},
+				"requirement": [
+					"integriq:openspec/changes/objecten-api-facade/specs/objecten-api-facade :: The Objecten API reads objects in the standard's shape (REQ-OAF-003)",
+					"integriq:openspec/changes/objecten-api-facade/specs/objecten-api-facade :: The Objecttypen API serves the schema it stands for (REQ-OAF-002)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no Objecten or Objecttypen client in lib | round 2 drive: procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\"",
@@ -20346,7 +20426,11 @@
 					"board": null,
 					"reason": "backend: citizen login through integriq"
 				},
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"requirement": [
+					"integriq:openspec/changes/portal-idp-broker-config/specs/idp-broker-configuration :: An identity provider adapter is one of two vendor-neutral kinds (REQ-IDPC-001)",
+					"integriq:openspec/changes/portal-idp-broker-config/specs/idp-broker-configuration :: Substantial is the assurance floor (REQ-IDPC-006)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'digid|eherkenning|eidas|mitid|nemlog' over lib and src returns nothing; SAML is for staff (SamlController.php) | round 2 drive: procest/opencase/round2/code-census.md:181 \"The only unauthenticated surfaces are the mTLS receiver endpoints and the SAML endpoints\"",
@@ -20518,7 +20602,11 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaak"
-				}
+				},
+				"requirement": [
+					"shillinq:openspec/changes/case-payment-requests/specs/object-payment-requests :: A payment request may stand on an object (REQ-SOPR-001)",
+					"shillinq:openspec/changes/case-payment-requests/specs/object-payment-requests :: Settlement of an object request books a receipt (REQ-SOPR-002)"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'payment|betaling|mobilepay|nets' over lib and src returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:269 \"| 12.12 | Payments | no |\"",
@@ -20597,7 +20685,8 @@
 					"reason": "backend: event broker transport"
 				},
 				"readOn": "2026-10-07",
-				"reachedOn": "integriq > Events > subscription > action Broker (src/modals/EventSubscription/SubscriptionActionFields.vue:153)"
+				"reachedOn": "integriq > Events > subscription > action Broker (src/modals/EventSubscription/SubscriptionActionFields.vue:153)",
+				"requirement": "integriq:openspec/changes/archive/2026-09-29-event-broker-transport/specs/events-cloudevents :: A subscription's action dispatch MUST support a `broker` kind (REQ-013)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'rabbitmq|kafka|amqp' over lib returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:271 \"| 12.14 | Message broker or event streaming | no |\"",
@@ -21043,7 +21132,8 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: access policies in OpenRegister"
-				}
+				},
+				"requirement": "openregister:openspec/specs/row-field-level-security :: Schemas MUST support row-level security rules via conditional authorization matching"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:255,267,272 a user reaches a case through a profile matched on organisation, sensitivity and a KLE LIKE pattern; lib/Service/PermissionService.php:141,159 read follows the profile level | round 2 drive: procest/opencase/round2/code-census.md:128 \"Access profile = unique tuple (organisation, KLE classification code, sensitivity)\"",
@@ -21084,7 +21174,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakBetrokkenen"
-				}
+				},
+				"requirement": "openregister:openspec/changes/object-level-sharing-and-private-scope/specs/object-level-sharing :: Access can be granted on a single object"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:220,456 Adgang tab mounts CaseAccessPanel; src/components/CaseAccessPanel.vue:11,109 Giv adgang and Fjern adgang; src/services/api.js:587,596 POST and DELETE cases/{id}/grants; lib/Service/PermissionService.php:153,222 grants read in the access check | round 2 drive: procest/opencase/round2/pages/CaseDetail-Access.md:9 \"Grant access (user, Read or Write, Time-limited with Expires date); row Remove access\"",
@@ -21166,7 +21257,8 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqDocumentenBeheer"
-				}
+				},
+				"requirement": "openregister:openspec/changes/object-level-sharing-and-private-scope/specs/object-level-sharing :: Access can be granted on a single object"
 			},
 			"evidence": {
 				"opencase": "settled from source by the lane on 2026-09-26, no lab needed: PermissionService.php:274-279 honours a per-user deny override, but no screen writes one (grep -i deny over src finds none); DocumentShareDialog only widens access, which is the override this row asks for | source: opencase@1.1.0 src/views/DocumentDetailView.vue:241 opens DocumentShareDialog; src/components/DocumentShareDialog.vue:4,26,44 share one document to a user, read or edit, with expiry; lib/Service/PermissionService.php:274,280,365 per-user document override (read, write, deny) checked before case access | round 2 drive: procest/opencase/round2/code-census.md:281 \"Per-document user overrides (grant or deny) :: yes\"",
@@ -21208,7 +21300,8 @@
 				"screen": {
 					"board": null,
 					"reason": "backend: team visibility rule in OpenRegister"
-				}
+				},
+				"requirement": "openregister:openspec/changes/rbac-department-role-matrix/specs/rbac-scopes :: A schema declares a department by role matrix keyed on an object field"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:272,274 a privilege matches all organisations or the profile's own organisation unit; src/AdminSettings.vue:1237,1246 privilege form picks Organisationsenhed; lib/Db/Organisation (orgUuid, ncGroupId) ties units to Nextcloud groups | round 2 drive: procest/opencase/round2/code-census.md:79 \"`Organisation` (orgUuid, orgParentUuid, ncGroupId, groupfolderId)\"",
@@ -21368,7 +21461,8 @@
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakArchivering"
-				}
+				},
+				"requirement": "openregister:openspec/specs/retention-management :: The system MUST generate destruction lists via a background job"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ExportClosedCasesJob.php:36 and lib/Service/CaseExportService.php:117,162 export closed cases as XML; appinfo/routes.php has no case DELETE route and grep -ri 'retention|kassation|bevaring' over lib returns nothing | round 2 drive: procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\"",
@@ -21590,7 +21684,8 @@
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqZaaktypeOverzicht"
-				}
+				},
+				"requirement": "openregister:openspec/changes/rbac-department-role-matrix/specs/rbac-scopes :: An admin edits the matrix as a grid with a per-user preview"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1034,1188,1258 Lokale brugere section adds a privilege by type, sensitivity, KLE and organisation unit; appinfo/routes.php:104 delete privilege; lib/Controller/AdminController.php:222,239 revoke and bulk grant profiles | round 2 drive: procest/opencase/round2/code-census.md:177 \"Users and privileges: `/settings/local-users/{userId}/privileges`.\"",
