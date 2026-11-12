@@ -150,11 +150,7 @@ class CaseTimeline {
 		string $visibility = self::INTERNAL,
 		array $relatedCaseIds = [],
 	): string {
-		if (trim($caseId) === '' || trim($kind) === '') {
-			return '';
-		}
-
-		if ($this->isAvailable() === false) {
+		if ($this->canRecord(caseId: $caseId, kind: $kind) === false) {
 			return '';
 		}
 
@@ -194,6 +190,20 @@ class CaseTimeline {
 			return '';
 		}//end try
 	}//end record()
+
+	/**
+	 * Whether an entry can be written at all: it names a case and a kind, and the timeline is there.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param string $kind   The entry kind.
+	 *
+	 * @return bool
+	 */
+	private function canRecord(string $caseId, string $kind): bool {
+		return trim($caseId) !== ''
+			&& trim($kind) !== ''
+			&& $this->isAvailable() === true;
+	}//end canRecord()
 
 	/**
 	 * Write one entry on a case and its related cases.
