@@ -159,19 +159,9 @@ class SubstitutionController extends Controller {
 	#[NoAdminRequired]
 	public function releaseCaseload(): JSONResponse {
 		$actorId = $this->accessGuard->currentUid();
-		if ($actorId === '') {
-			return $this->accessGuard->forbidden(message: 'Not authenticated');
-		}
-
-		if ($this->accessGuard->isCoordinator(userId: $actorId) === false) {
-			return $this->accessGuard->forbidden(message: 'Only a coordinator may release a caseload');
-		}
-
-		$caseType = trim((string)$this->request->getParam('caseType', ''));
-
-		$filter = null;
-		if ($caseType !== '') {
-			$filter = ['caseType' => $caseType];
+		$refusal = $this->coordinatorRefusal(actorId: $actorId);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		try {
@@ -179,7 +169,7 @@ class SubstitutionController extends Controller {
 				fromUser: (string)$this->request->getParam('fromUser', ''),
 				toUser: (string)$this->request->getParam('toUser', ''),
 				justification: (string)$this->request->getParam('justification', ''),
-				filter: $filter,
+				filter: $this->caseTypeFilter(),
 				actorId: $actorId,
 			);
 		} catch (\InvalidArgumentException $e) {
@@ -195,6 +185,43 @@ class SubstitutionController extends Controller {
 
 		return new JSONResponse($released, Http::STATUS_CREATED);
 	}//end releaseCaseload()
+
+	/**
+	 * The 403 refusal for a caller who is not signed in or not a coordinator, else null.
+	 *
+	 * @param string $actorId The caller's uid, empty when not signed in.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	private function coordinatorRefusal(string $actorId): ?JSONResponse {
+		if ($actorId === '') {
+			return $this->accessGuard->forbidden(message: 'Not authenticated');
+		}
+
+		if ($this->accessGuard->isCoordinator(userId: $actorId) === false) {
+			return $this->accessGuard->forbidden(message: 'Only a coordinator may release a caseload');
+		}
+
+		return null;
+	}//end coordinatorRefusal()
+
+	/**
+	 * The case type filter the request asks for, or null for every case type.
+	 *
+	 * @return array{caseType: string}|null
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	private function caseTypeFilter(): ?array {
+		$caseType = trim((string)$this->request->getParam('caseType', ''));
+		if ($caseType === '') {
+			return null;
+		}
+
+		return ['caseType' => $caseType];
+	}//end caseTypeFilter()
 
 	/**
 	 * Revoke a substitution.

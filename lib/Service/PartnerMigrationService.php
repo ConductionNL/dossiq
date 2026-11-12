@@ -93,6 +93,19 @@ class PartnerMigrationService {
 	private const PARTNER_TYPE = 'partner';
 
 	/**
+	 * The summary of a run that migrated nothing.
+	 *
+	 * @var array{migrated:int, skipped:int, failed:int, total:int, mappings:array<int, mixed>}
+	 */
+	private const EMPTY_SUMMARY = [
+		'migrated' => 0,
+		'skipped' => 0,
+		'failed' => 0,
+		'total' => 0,
+		'mappings' => [],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService    $settingsService Register/schema configuration.
@@ -117,13 +130,7 @@ class PartnerMigrationService {
 	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
 	 */
 	public function migrate(): array {
-		$summary = [
-			'migrated' => 0,
-			'skipped' => 0,
-			'failed' => 0,
-			'total' => 0,
-			'mappings' => [],
-		];
+		$summary = self::EMPTY_SUMMARY;
 
 		$objectService = $this->settingsService->getObjectService();
 		$mapper = $this->getOrganisationMapper();
@@ -148,26 +155,23 @@ class PartnerMigrationService {
 		}
 
 		$summary['total'] = count($rows);
-
 		foreach ($rows as $row) {
-			$result = $this->migrateOne(mapper: $mapper, row: $this->toRow(value: $row));
-			if ($result === null) {
-				$summary['failed']++;
-				continue;
-			}
-
-			if ($result['created'] === false) {
-				$summary['skipped']++;
-				continue;
-			}
-
-			$summary['migrated']++;
-			$summary['mappings'][] = [
-				'partner' => $result['partnerUuid'],
-				'organisation' => $result['organisationUuid'],
-			];
+			$summary = self::tally(summary: $summary, result: $this->migrateOne(mapper: $mapper, row: $this->toRow(value: $row)));
 		}
 
+		$this->logComplete(summary: $summary);
+
+		return $summary;
+	}//end migrate()
+
+	/**
+	 * Log the counts of a finished run.
+	 *
+	 * @param array<string, mixed> $summary The finished run's summary.
+	 *
+	 * @return void
+	 */
+	private function logComplete(array $summary): void {
 		$this->logger->info(
 			'Dossiq: partner migration complete',
 			[
@@ -177,9 +181,35 @@ class PartnerMigrationService {
 				'failed' => $summary['failed'],
 			],
 		);
+	}//end logComplete()
+
+	/**
+	 * Count one row's result into the summary.
+	 *
+	 * @param array<string, mixed>      $summary The summary so far.
+	 * @param array<string, mixed>|null $result  The row's result, or null when it failed.
+	 *
+	 * @return array<string, mixed> The summary.
+	 */
+	private static function tally(array $summary, ?array $result): array {
+		if ($result === null) {
+			$summary['failed']++;
+			return $summary;
+		}
+
+		if ($result['created'] === false) {
+			$summary['skipped']++;
+			return $summary;
+		}
+
+		$summary['migrated']++;
+		$summary['mappings'][] = [
+			'partner' => $result['partnerUuid'],
+			'organisation' => $result['organisationUuid'],
+		];
 
 		return $summary;
-	}//end migrate()
+	}//end tally()
 
 	/**
 	 * Migrate one partner row.

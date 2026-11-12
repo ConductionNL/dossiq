@@ -168,14 +168,7 @@ class QueueViewPreferences {
 		// preference cannot grow one key per group per day for ever.
 		$stored = array_filter($stored, static fn (string $day): bool => ($day === $today));
 
-		$this->userConfig->setValueString(
-			$userId,
-			Application::APP_ID,
-			self::PREF_HIDDEN_GROUPS,
-			json_encode($stored, JSON_THROW_ON_ERROR)
-		);
-
-		return array_keys($stored);
+		return $this->saveHidden(userId: $userId, stored: $stored);
 	}//end hideForToday()
 
 	/**
@@ -194,6 +187,18 @@ class QueueViewPreferences {
 		unset($stored[$group]);
 		$stored = array_filter($stored, static fn (string $day): bool => ($day === $today));
 
+		return $this->saveHidden(userId: $userId, stored: $stored);
+	}//end showAgain()
+
+	/**
+	 * Store the hide-for-today map and answer the groups it hides.
+	 *
+	 * @param string                $userId The reader.
+	 * @param array<string, string> $stored Group key to the day it was hidden on.
+	 *
+	 * @return array<int, string> The hidden group keys.
+	 */
+	private function saveHidden(string $userId, array $stored): array {
 		$this->userConfig->setValueString(
 			$userId,
 			Application::APP_ID,
@@ -202,7 +207,7 @@ class QueueViewPreferences {
 		);
 
 		return array_keys($stored);
-	}//end showAgain()
+	}//end saveHidden()
 
 	/**
 	 * The stored hide-for-today map, group key to the date it was hidden on.
@@ -212,6 +217,8 @@ class QueueViewPreferences {
 	 * @return array<string, string> The map.
 	 *
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) JsonPreference is a stateless reader shared by the queue preference stores.
 	 */
 	private function storedHidden(string $userId): array {
 		try {
@@ -224,14 +231,7 @@ class QueueViewPreferences {
 			$raw = '';
 		}
 
-		if (trim($raw) === '') {
-			return [];
-		}
-
-		$decoded = json_decode($raw, true);
-		if (is_array($decoded) === false) {
-			return [];
-		}
+		$decoded = JsonPreference::decode(raw: $raw);
 
 		$map = [];
 		foreach ($decoded as $group => $day) {

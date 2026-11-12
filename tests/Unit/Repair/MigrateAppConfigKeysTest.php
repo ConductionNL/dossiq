@@ -299,6 +299,27 @@ final class MigrateAppConfigKeysTest extends TestCase {
 	}//end testOneUnreadableKeyDoesNotStopTheOthers()
 
 	/**
+	 * The summary counts every key once, under the outcome it had.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryCountsEveryOutcome(): void {
+		$this->store = [
+			self::OLD => ['register' => 'zaken', 'enabled' => 'yes', 'empty' => '', 'kept' => 'old', 'boom' => 'x'],
+			self::NEW => ['kept' => 'new'],
+		];
+		$this->throwOn = ['boom'];
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')->with(
+			'MigrateAppConfigKeys: 1 key(s) migrated, 1 already present, 1 had no value to migrate, 1 skipped as Nextcloud-reserved, 1 failed.'
+		);
+
+		$this->step()->run($output);
+
+		$this->assertSame(['kept' => 'new', 'register' => 'zaken'], $this->store[self::NEW]);
+	}//end testTheSummaryCountsEveryOutcome()
+
+	/**
 	 * A failing key is logged rather than swallowed silently.
 	 *
 	 * A migration that loses a value without saying so is the exact failure

@@ -1,0 +1,94 @@
+{
+    "teams cannot be read": {
+        "kept": [
+            {
+                "handler": "alice",
+                "openCaseCount": 4
+            },
+            {
+                "handler": "bob",
+                "openCaseCount": 2
+            },
+            {
+                "handler": "carol",
+                "openCaseCount": 1
+            }
+        ],
+        "log": [
+            "warning: WorkQueue: the reader's teams could not be read {\"error\":\"teams offline\"}"
+        ]
+    },
+    "in no team": {
+        "kept": [
+            {
+                "handler": "alice",
+                "openCaseCount": 4
+            },
+            {
+                "handler": "bob",
+                "openCaseCount": 2
+            },
+            {
+                "handler": "carol",
+                "openCaseCount": 1
+            }
+        ],
+        "log": []
+    },
+    "one team": {
+        "kept": [
+            {
+                "handler": "alice",
+                "openCaseCount": 4
+            },
+            {
+                "handler": "dave",
+                "openCaseCount": 0
+            }
+        ],
+        "log": []
+    },
+    "two teams sharing a member": {
+        "kept": [
+            {
+                "handler": "alice",
+                "openCaseCount": 4
+            },
+            {
+                "handler": "bob",
+                "openCaseCount": 2
+            },
+            {
+                "handler": "dave",
+                "openCaseCount": 0
+            }
+        ],
+        "log": []
+    },
+    "an empty team": {
+        "kept": [],
+        "log": []
+    },
+    "a team whose member uid reads as a number": {
+        "kept": [
+            {
+                "handler": 42,
+                "openCaseCount": 0
+            }
+        ],
+        "log": []
+    },
+    "a team row without a group": {
+        "kept": [
+            {
+                "handler": "alice",
+                "openCaseCount": 4
+            },
+            {
+                "handler": "bob",
+                "openCaseCount": 2
+            }
+        ],
+        "log": []
+    }
+}

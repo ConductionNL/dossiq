@@ -69,25 +69,6 @@ class CaseDefinitionExportService {
 	];
 
 	/**
-	 * The settings keys naming the schema each component reads.
-	 *
-	 * One map rather than a key repeated per method: a schema renamed in the
-	 * settings has one place to change, and a component naming a key nothing
-	 * answers to reads as a component with no rows, which is the defect this
-	 * whole change is about.
-	 *
-	 * @var array<string, string>
-	 */
-	private const SCHEMA_KEYS = [
-		'propertyDefinitions' => 'property_definition_schema',
-		'statusTypes' => 'status_type_schema',
-		'roleTypes' => 'role_type_schema',
-		'documentTypes' => 'document_type_schema',
-		'resultTypes' => 'result_type_schema',
-		'workflowTemplates' => 'workflow_template_schema',
-	];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig The Nextcloud app config service.
@@ -124,11 +105,35 @@ class CaseDefinitionExportService {
 		string $caseTypeId,
 		array $components = [],
 	): array {
+		$components = $this->requestedComponents(components: $components);
+		$this->logExport(caseTypeId: $caseTypeId, components: $components);
+
+		$export = new CaseDefinitionExport(caseTypeId: $caseTypeId, caseType: $this->existingCaseType(caseTypeId: $caseTypeId));
+		$export->components = $components;
+		$export->manifest = $this->buildManifest(export: $export);
+		$tempPath = $this->exportPath();
+		$this->writeArchive(tempPath: $tempPath, export: $export);
+
+		return [
+			'path' => $tempPath,
+			'filename' => $this->filenameOf(manifest: $export->manifest),
+		];
+	}//end exportCaseDefinition()
+
+	/**
+	 * The components asked for, all of them when none are named.
+	 *
+	 * @param string[] $components The components asked for.
+	 *
+	 * @return string[]
+	 *
+	 * @throws InvalidArgumentException When one of them is not a component.
+	 */
+	private function requestedComponents(array $components): array {
 		if (empty($components) === true) {
 			$components = self::COMPONENTS;
 		}
 
-		// Validate requested components.
 		$invalidComponents = array_diff($components, self::COMPONENTS);
 		if (empty($invalidComponents) === false) {
 			throw new InvalidArgumentException(
@@ -136,6 +141,18 @@ class CaseDefinitionExportService {
 			);
 		}
 
+		return $components;
+	}//end requestedComponents()
+
+	/**
+	 * Log what is exported.
+	 *
+	 * @param string   $caseTypeId The case type.
+	 * @param string[] $components The components.
+	 *
+	 * @return void
+	 */
+	private function logExport(string $caseTypeId, array $components): void {
 		$this->logger->info(
 			'Exporting case definition {caseTypeId} with components: {components}',
 			[
@@ -143,13 +160,25 @@ class CaseDefinitionExportService {
 				'components' => implode(', ', $components),
 			]
 		);
+	}//end logExport()
 
-		// 🔴 THE CASE TYPE IS READ BEFORE ANYTHING IS WRITTEN. A case type that
-		// does not resolve used to produce a perfectly formed ZIP of empty
-		// components, which an administrator carries to production and imports
-		// over nothing. An empty package and a package of a case type with no
-		// statuses look identical on disk, so the refusal has to happen here,
-		// before the archive exists.
+	/**
+	 * The case type to export.
+	 *
+	 * 🔴 THE CASE TYPE IS READ BEFORE ANYTHING IS WRITTEN. A case type that
+	 * does not resolve used to produce a perfectly formed ZIP of empty
+	 * components, which an administrator carries to production and imports
+	 * over nothing. An empty package and a package of a case type with no
+	 * statuses look identical on disk, so the refusal has to happen here,
+	 * before the archive exists.
+	 *
+	 * @param string $caseTypeId The case type.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When no case type answers to the id.
+	 */
+	private function existingCaseType(string $caseTypeId): array {
 		$caseType = $this->caseTypes->readCaseType(caseTypeId: $caseTypeId);
 		if ($caseType === []) {
 			throw new RuntimeException(
@@ -157,72 +186,73 @@ class CaseDefinitionExportService {
 			);
 		}
 
-		// Build the manifest.
-		$manifest = $this->buildManifest(
-			caseTypeId: $caseTypeId,
-			caseType: $caseType,
-			components: $components
-		);
+		return $caseType;
+	}//end existingCaseType()
 
-		// Create temporary ZIP file.
+	/**
+	 * A temporary file for the archive.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When none can be created.
+	 */
+	private function exportPath(): string {
 		$tempPath = tempnam(sys_get_temp_dir(), 'dossiq_export_');
 		if ($tempPath === false) {
 			throw new RuntimeException('Failed to create temporary file for export');
 		}
 
-		$this->writeArchive(
-			tempPath: $tempPath,
-			caseTypeId: $caseTypeId,
-			caseType: $caseType,
-			manifest: $manifest,
-			components: $components
-		);
+		return $tempPath;
+	}//end exportPath()
 
+	/**
+	 * The file name a package is offered under.
+	 *
+	 * @param array<string, mixed> $manifest The manifest.
+	 *
+	 * @return string
+	 */
+	private function filenameOf(array $manifest): string {
 		$slug = $manifest['caseType']['slug'] ?? 'unknown';
 		$version = $manifest['version'] ?? '1.0';
 
-		return [
-			'path' => $tempPath,
-			'filename' => "case-definition-{$slug}-v{$version}.zip",
-		];
-	}//end exportCaseDefinition()
+		return "case-definition-{$slug}-v{$version}.zip";
+	}//end filenameOf()
 
 	/**
 	 * Write the manifest and the selected components into the export archive.
 	 *
-	 * @param string $tempPath Path of the temporary ZIP file to write.
-	 * @param string $caseTypeId The case type ID being exported.
-	 * @param array<string, mixed> $caseType The case type object itself.
-	 * @param array<string, mixed> $manifest The manifest to store as manifest.json.
-	 * @param string[] $components The components to include.
+	 * @param string               $tempPath Path of the temporary ZIP file to write.
+	 * @param CaseDefinitionExport $export   The export, with its manifest.
 	 *
 	 * @return void
 	 *
 	 * @throws \RuntimeException If the ZIP archive cannot be created.
 	 */
-	private function writeArchive(
-		string $tempPath,
-		string $caseTypeId,
-		array $caseType,
-		array $manifest,
-		array $components,
-	): void {
+	private function writeArchive(string $tempPath, CaseDefinitionExport $export): void {
 		$zip = new ZipArchive();
 		$result = $zip->open($tempPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 		if ($result !== true) {
 			throw new RuntimeException('Failed to create ZIP archive: error code ' . $result);
 		}
 
-		// Add manifest.
-		$zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+		$zip->addFromString('manifest.json', json_encode($export->manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+		$this->addComponents(zip: $zip, export: $export);
+		$zip->close();
+	}//end writeArchive()
 
-		// Add selected components.
-		foreach ($components as $component) {
-			$data = $this->exportComponent(
-				caseTypeId: $caseTypeId,
-				caseType: $caseType,
-				component: $component
-			);
+	/**
+	 * Add the selected components to the archive.
+	 *
+	 * @param ZipArchive           $zip    The opened ZIP archive.
+	 * @param CaseDefinitionExport $export The export.
+	 *
+	 * @return void
+	 */
+	private function addComponents(ZipArchive $zip, CaseDefinitionExport $export): void {
+		$contents = new CaseDefinitionContents(caseTypes: $this->caseTypes);
+		foreach ($export->components as $component) {
+			$data = $contents->exportComponent(export: $export, component: $component);
 			if ($data === null) {
 				continue;
 			}
@@ -237,9 +267,7 @@ class CaseDefinitionExportService {
 				json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
 			);
 		}//end foreach
-
-		$zip->close();
-	}//end writeArchive()
+	}//end addComponents()
 
 	/**
 	 * Add one JSON entry per workflow under the archive's workflows/ directory.
@@ -261,68 +289,103 @@ class CaseDefinitionExportService {
 	/**
 	 * Build the manifest for a case definition export.
 	 *
-	 * @param string $caseTypeId The case type ID.
-	 * @param array<string, mixed> $caseType The case type object itself.
-	 * @param string[] $components The components included in this export.
+	 * @param CaseDefinitionExport $export The export.
 	 *
 	 * @return array<string, mixed> The manifest data.
 	 */
-	private function buildManifest(string $caseTypeId, array $caseType, array $components): array {
+	private function buildManifest(CaseDefinitionExport $export): array {
+		$versions = $this->bumpExportVersion(caseTypeId: $export->caseTypeId);
+
+		return [
+			'version' => $versions[0],
+			'previousVersion' => $versions[1],
+			'exportDate' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+			'sourceEnvironment' => $this->sourceEnvironment(),
+			'generator' => $this->generator(),
+			'caseType' => $this->manifestCaseType(export: $export),
+			'components' => $export->components,
+			'excludedComponents' => array_values(array_diff(self::COMPONENTS, $export->components)),
+			// Every object ref the package points at, so an importer can refuse
+			// a package whose references it cannot resolve rather than writing
+			// half of it and discovering the rest is missing afterwards.
+			'dependencies' => (new CaseDefinitionContents(caseTypes: $this->caseTypes))->dependenciesOf(export: $export),
+		];
+	}//end buildManifest()
+
+	/**
+	 * Store the next export version of a case type.
+	 *
+	 * @param string $caseTypeId The case type ID.
+	 *
+	 * @return array{0: string, 1: string|null} The new version, and the previous one (null on a first export).
+	 */
+	private function bumpExportVersion(string $caseTypeId): array {
 		$previousVersion = $this->appConfig->getValueString(
 			Application::APP_ID,
 			'export_version_' . $caseTypeId,
 			'0.0'
 		);
-
 		$newVersion = $this->incrementVersion(version: $previousVersion);
-
-		// Store the new version.
 		$this->appConfig->setValueString(
 			Application::APP_ID,
 			'export_version_' . $caseTypeId,
 			$newVersion
 		);
 
-		$excludedComponents = array_values(array_diff(self::COMPONENTS, $components));
-
-		$previousVersionValue = null;
-		if ($previousVersion !== '0.0') {
-			$previousVersionValue = $previousVersion;
+		if ($previousVersion === '0.0') {
+			return [$newVersion, null];
 		}
 
+		return [$newVersion, $previousVersion];
+	}//end bumpExportVersion()
+
+	/**
+	 * The environment this instance says it is.
+	 *
+	 * @return string
+	 */
+	private function sourceEnvironment(): string {
+		return $this->appConfig->getValueString(
+			Application::APP_ID,
+			'environment_name',
+			'unknown'
+		);
+	}//end sourceEnvironment()
+
+	/**
+	 * The app and version that wrote the package.
+	 *
+	 * @return string
+	 */
+	private function generator(): string {
+		return 'dossiq/' . $this->appConfig->getValueString(
+			'dossiq',
+			'installed_version',
+			'unknown'
+		);
+	}//end generator()
+
+	/**
+	 * The case type as the manifest names it.
+	 *
+	 * 🔑 THE SLUG COMES FROM THE OBJECT. It used to be the requested id echoed
+	 * back, so every package was named after the uuid it was exported from and
+	 * two packages of the same case type from two instances carried two
+	 * different slugs. `identifier` is ZGW's `identificatie`, which is what
+	 * makes two rows versions of one zaaktype, so it is the slug when the
+	 * object carries one.
+	 *
+	 * @param CaseDefinitionExport $export The export.
+	 *
+	 * @return array{id: string, slug: string, title: string}
+	 */
+	private function manifestCaseType(CaseDefinitionExport $export): array {
 		return [
-			'version' => $newVersion,
-			'previousVersion' => $previousVersionValue,
-			'exportDate' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-			'sourceEnvironment' => $this->appConfig->getValueString(
-				Application::APP_ID,
-				'environment_name',
-				'unknown'
-			),
-			'generator' => 'dossiq/' . $this->appConfig->getValueString(
-				'dossiq',
-				'installed_version',
-				'unknown'
-			),
-			// 🔑 THE SLUG COMES FROM THE OBJECT. It used to be the requested id
-			// echoed back, so every package was named after the uuid it was
-			// exported from and two packages of the same case type from two
-			// instances carried two different slugs. `identifier` is ZGW's
-			// `identificatie`, which is what makes two rows versions of one
-			// zaaktype, so it is the slug when the object carries one.
-			'caseType' => [
-				'id' => $caseTypeId,
-				'slug' => $this->slugOf(caseType: $caseType, caseTypeId: $caseTypeId),
-				'title' => $this->text->textOf(value: ($caseType['title'] ?? null)),
-			],
-			'components' => $components,
-			'excludedComponents' => $excludedComponents,
-			// Every object ref the package points at, so an importer can refuse
-			// a package whose references it cannot resolve rather than writing
-			// half of it and discovering the rest is missing afterwards.
-			'dependencies' => $this->dependenciesOf(caseTypeId: $caseTypeId, caseType: $caseType),
+			'id' => $export->caseTypeId,
+			'slug' => $this->slugOf(caseType: $export->caseType, caseTypeId: $export->caseTypeId),
+			'title' => $this->text->textOf(value: ($export->caseType['title'] ?? null)),
 		];
-	}//end buildManifest()
+	}//end manifestCaseType()
 
 
 	/**
@@ -358,197 +421,6 @@ class CaseDefinitionExportService {
 
 		return $caseTypeId;
 	}//end slugOf()
-
-
-	/**
-	 * Every object ref the exported components point at.
-	 *
-	 * The refs are the ids of the rows themselves plus the case type's own
-	 * outward references. An importer reads this list to decide whether it can
-	 * resolve the package before it writes any of it.
-	 *
-	 * @param string $caseTypeId The case type ID.
-	 * @param array<string, mixed> $caseType The case type object.
-	 *
-	 * @return array<int, string> The refs, unique and in a stable order.
-	 */
-	private function dependenciesOf(string $caseTypeId, array $caseType): array {
-		$refs = [$caseTypeId];
-
-		foreach (self::SCHEMA_KEYS as $schemaKey) {
-			foreach ($this->rowsOf(schemaKey: $schemaKey, caseTypeId: $caseTypeId) as $row) {
-				$refs[] = $this->caseTypes->rowId(row: $row);
-			}
-		}
-
-		foreach (['decisionTypes', 'relatedCaseTypes', 'subCaseTypes', 'parentCaseType', 'defaultInformatieobjecttype'] as $key) {
-			$value = ($caseType[$key] ?? null);
-			$entries = [$value];
-			if (is_array($value) === true) {
-				$entries = $value;
-			}
-
-			foreach ($entries as $entry) {
-				if (is_string($entry) === true && trim($entry) !== '') {
-					$refs[] = trim($entry);
-				}
-			}
-		}
-
-		$refs = array_values(array_unique(array_filter($refs, static fn (string $ref): bool => $ref !== '')));
-		sort($refs);
-
-		return $refs;
-	}//end dependenciesOf()
-
-
-	/**
-	 * The rows of one schema that belong to this case type.
-	 *
-	 * @param string $schemaKey The settings key naming the schema.
-	 * @param string $caseTypeId The case type ID.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 */
-	private function rowsOf(string $schemaKey, string $caseTypeId): array {
-		return $this->caseTypes->rowsOfType(schemaKey: $schemaKey, caseTypeId: $caseTypeId);
-	}//end rowsOf()
-
-	/**
-	 * Export a single component, from the register.
-	 *
-	 * 🔴 THIS USED TO RETURN A FIXED EMPTY SHAPE, for every case type on every
-	 * instance, under a comment saying "Placeholder: in a full implementation,
-	 * this would query OpenRegister". The endpoints answered, the ZIP was real,
-	 * the manifest was real and every component inside it was empty. Two things
-	 * hid it: `openspec/specs/case-types/spec.md` REQ-CT-17 and REQ-CT-18
-	 * already said SHALL, and the archived change ticked "Create
-	 * CaseDefinitionExportService with exportCaseDefinition() method", which is
-	 * true of the method and false of the feature.
-	 *
-	 * @param string $caseTypeId The case type ID.
-	 * @param array<string, mixed> $caseType The case type object itself.
-	 * @param string $component The component name.
-	 *
-	 * @return array<string, mixed>|null The component data, or null for a name
-	 *                                   this service does not know.
-	 *
-	 * @spec openspec/specs/case-types/spec.md
-	 */
-	private function exportComponent(string $caseTypeId, array $caseType, string $component): ?array {
-		return match ($component) {
-			'schema' => [
-				'caseTypeId' => $caseTypeId,
-				'caseType' => $caseType,
-				'propertyDefinitions' => $this->rowsOf(
-					schemaKey: self::SCHEMA_KEYS['propertyDefinitions'],
-					caseTypeId: $caseTypeId
-				),
-			],
-			'statuses' => [
-				'statusTypes' => $this->rowsOf(
-					schemaKey: self::SCHEMA_KEYS['statusTypes'],
-					caseTypeId: $caseTypeId
-				),
-				// The transitions are the workflow templates' own, because that
-				// is where they live: `statusType` declares no transition, and
-				// a `transitions: []` beside a populated `statusTypes` reads as
-				// a case type whose statuses connect to nothing.
-				'transitions' => $this->transitionsOf(caseTypeId: $caseTypeId),
-			],
-			'permissions' => [
-				'roleTypes' => $this->rowsOf(
-					schemaKey: self::SCHEMA_KEYS['roleTypes'],
-					caseTypeId: $caseTypeId
-				),
-				'rightsMatrix' => ($caseType['rightsMatrix'] ?? []),
-			],
-			'documents' => [
-				'documentTypes' => $this->rowsOf(
-					schemaKey: self::SCHEMA_KEYS['documentTypes'],
-					caseTypeId: $caseTypeId
-				),
-				'defaultInformatieobjecttype' => ($caseType['defaultInformatieobjecttype'] ?? null),
-			],
-			'metadata' => [
-				'resultTypes' => $this->rowsOf(
-					schemaKey: self::SCHEMA_KEYS['resultTypes'],
-					caseTypeId: $caseTypeId
-				),
-				// Decision types are a REFERENCE LIST on the case type rather
-				// than rows carrying a `caseType` back-reference, so they are
-				// read where they are written. Exporting them as rows would
-				// answer the empty set on every instance.
-				'decisionTypes' => ($caseType['decisionTypes'] ?? []),
-			],
-			'workflows' => $this->workflowsOf(caseTypeId: $caseTypeId),
-			default => null,
-		};
-	}//end exportComponent()
-
-
-	/**
-	 * The transitions the case type's workflow templates declare.
-	 *
-	 * @param string $caseTypeId The case type ID.
-	 *
-	 * @return array<int, array<string, mixed>> The transitions.
-	 */
-	private function transitionsOf(string $caseTypeId): array {
-		$transitions = [];
-		foreach ($this->rowsOf(schemaKey: self::SCHEMA_KEYS['workflowTemplates'], caseTypeId: $caseTypeId) as $template) {
-			$declared = ($template['transitions'] ?? []);
-			if (is_array($declared) === false) {
-				continue;
-			}
-
-			foreach ($declared as $transition) {
-				if (is_array($transition) === true) {
-					$transition['workflowTemplate'] = $this->caseTypes->rowId(row: $template);
-					$transitions[] = $transition;
-				}
-			}
-		}
-
-		return $transitions;
-	}//end transitionsOf()
-
-
-	/**
-	 * The workflow templates bound to the case type, keyed by archive entry name.
-	 *
-	 * The key becomes a filename, so it is derived from the title and falls
-	 * back to the id: two templates with the same title would otherwise write
-	 * one entry twice and the second would silently replace the first.
-	 *
-	 * @param string $caseTypeId The case type ID.
-	 *
-	 * @return array<string, array<string, mixed>> The templates by entry name.
-	 */
-	private function workflowsOf(string $caseTypeId): array {
-		$workflows = [];
-		foreach ($this->rowsOf(schemaKey: self::SCHEMA_KEYS['workflowTemplates'], caseTypeId: $caseTypeId) as $template) {
-			$id = $this->caseTypes->rowId(row: $template);
-			$title = trim((string)($template['title'] ?? ''));
-			$name = preg_replace('/[^A-Za-z0-9_-]+/', '-', $title);
-			$name = trim((string)$name, '-');
-			if ($name === '') {
-				$name = $id;
-			}
-
-			if ($name === '') {
-				continue;
-			}
-
-			if (array_key_exists($name, $workflows) === true) {
-				$name .= '-' . $id;
-			}
-
-			$workflows[$name] = $template;
-		}
-
-		return $workflows;
-	}//end workflowsOf()
 
 	/**
 	 * Increment a version string (e.g., "1.0" -> "1.1").

@@ -338,6 +338,15 @@ function archiveStateEntries(acts) {
 }
 
 /**
+ * The label and explainer of each act that depends on the case's own state.
+ */
+const STATE_ACTS = {
+	'release-hold': { label: 'Take off hold', explainer: 'You pick the case up again before its date.' },
+	hold: { label: 'Hold', explainer: 'Park it internally, the term keeps running.' },
+	promote: { label: 'Promote to case', explainer: 'The term starts now. The case leaves your drafts.' },
+}
+
+/**
  * Hold, release and promote, which depend on the case's own state.
  *
  * @param {object|null} acts The `/acts` answer.
@@ -345,42 +354,21 @@ function archiveStateEntries(acts) {
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 function stateEntries(acts) {
-	const held = yes(acts?.held)
-	const draft = yes(acts?.draft)
-	const entries = []
-
-	if (held) {
-		entries.push({
-			kind: 'state',
-			id: 'release-hold',
-			label: 'Take off hold',
-			explainer: 'You pick the case up again before its date.',
-			disabled: false,
-			reason: '',
-		})
-	} else {
-		entries.push({
-			kind: 'state',
-			id: 'hold',
-			label: 'Hold',
-			explainer: 'Park it internally, the term keeps running.',
-			disabled: false,
-			reason: '',
-		})
+	const entries = [stateEntry(yes(acts?.held) ? 'release-hold' : 'hold')]
+	if (yes(acts?.draft)) {
+		entries.push(stateEntry('promote'))
 	}
-
-	if (draft) {
-		entries.push({
-			kind: 'state',
-			id: 'promote',
-			label: 'Promote to case',
-			explainer: 'The term starts now. The case leaves your drafts.',
-			disabled: false,
-			reason: '',
-		})
-	}
-
 	return entries
+}
+
+/**
+ * One state act as a menu entry.
+ *
+ * @param {string} id The act, a key of STATE_ACTS.
+ * @return {object} The entry.
+ */
+function stateEntry(id) {
+	return { kind: 'state', id, label: STATE_ACTS[id].label, explainer: STATE_ACTS[id].explainer, disabled: false, reason: '' }
 }
 
 /**

@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\PreSaveCheck;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
@@ -47,7 +48,6 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Refuse a case type save whose parent descends from the type itself.
@@ -92,14 +92,7 @@ class CaseTypeParentCycleListener implements IEventListener {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getNewObject());
-		}
+		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->inspect(...));
 	}//end handle()
 
 	/**
@@ -116,21 +109,13 @@ class CaseTypeParentCycleListener implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity): void {
-		$payload = $this->payload(entity: $entity);
-		if ($payload === null || $this->isCaseTypeSchema(object: $payload) === false) {
-			return;
-		}
-
+		$payload = $this->caseTypePayload(entity: $entity);
 		$parent = $this->referenceId(value: ($payload['parentCaseType'] ?? null));
-		if ($parent === '') {
+		if ($payload === null || $parent === '') {
 			return;
 		}
 
-		$self = (string)($entity->getUuid() ?? '');
-		if ($self === '') {
-			$self = $this->referenceId(value: ($payload['@self'] ?? ($payload['id'] ?? null)));
-		}
-
+		$self = $this->selfId(entity: $entity, payload: $payload);
 		$names = $this->resolver->cycleFor(
 			caseTypeId: $self,
 			parentCaseTypeId: $parent,
@@ -140,6 +125,61 @@ class CaseTypeParentCycleListener implements IEventListener {
 			return;
 		}
 
+		$this->refuse(event: $event, names: $names);
+		$this->logger->info(
+			'Dossiq: refused a case type save whose parent chain returns to itself',
+			['caseType' => $self, 'parentCaseType' => $parent]
+		);
+	}//end inspect()
+
+	/**
+	 * The payload of a case type save, or null for anything else.
+	 *
+	 * @param ObjectEntity $entity The object being saved.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function caseTypePayload(ObjectEntity $entity): ?array {
+		$payload = (new PreSaveCheck(logger: $this->logger))->read(entity: $entity, check: 'case type cycle check');
+		if ($payload === null || (new CaseTypeSchema(settingsService: $this->settingsService))->contains(object: $payload) === false) {
+			return null;
+		}
+
+		return $payload;
+	}//end caseTypePayload()
+
+	/**
+	 * The id of the case type being saved: its uuid, or the id its payload carries.
+	 *
+	 * @param ObjectEntity         $entity  The object being saved.
+	 * @param array<string, mixed> $payload Its payload.
+	 *
+	 * @return string Empty for a new case type that names no id.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function selfId(ObjectEntity $entity, array $payload): string {
+		$self = (string)($entity->getUuid() ?? '');
+		if ($self === '') {
+			$self = $this->referenceId(value: ($payload['@self'] ?? ($payload['id'] ?? null)));
+		}
+
+		return $self;
+	}//end selfId()
+
+	/**
+	 * Stop the save and say which case types inherit from each other.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event The save.
+	 * @param array<string>                           $names The case types in the loop.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function refuse(ObjectCreatingEvent|ObjectUpdatingEvent $event, array $names): void {
 		$event->setErrors(
 			[
 				'message' => $this->l10n->t(
@@ -155,29 +195,7 @@ class CaseTypeParentCycleListener implements IEventListener {
 			]
 		);
 		$event->stopPropagation();
-		$this->logger->info(
-			'Dossiq: refused a case type save whose parent chain returns to itself',
-			['caseType' => $self, 'parentCaseType' => $parent]
-		);
-	}//end inspect()
-
-	/**
-	 * Read an entity's payload, or null when it cannot be read.
-	 *
-	 * @param ObjectEntity $entity The entity carried by the event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null.
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: case type cycle check could not read the payload: ' . $e->getMessage()
-			);
-			return null;
-		}
-	}//end payload()
+	}//end refuse()
 
 	/**
 	 * The id a reference carries, whether it arrived as a uuid or as a row.
@@ -197,25 +215,4 @@ class CaseTypeParentCycleListener implements IEventListener {
 
 		return trim($value);
 	}//end referenceId()
-
-	/**
-	 * Whether the supplied payload belongs to the `caseType` schema.
-	 *
-	 * @param array<string, mixed> $object Object payload (incl. `@self`).
-	 *
-	 * @return bool True when this is a case type.
-	 */
-	private function isCaseTypeSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('case_type_schema');
-		if ($expected === '') {
-			return false;
-		}
-
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
-		);
-	}//end isCaseTypeSchema()
 }//end class

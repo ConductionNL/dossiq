@@ -169,6 +169,43 @@ describe('the intake log', () => {
 		calls = []
 	})
 
+	it('reads the log with its filters and keeps what it answers, as before', async () => {
+		serve({ results: [entry()], filterOrder: ['bounce-notification'], junkRules: [{ id: 'r1' }] })
+		const wrapper = await mountLog()
+		const view = wrapper.vm
+		const stateOf = () => ({ loading: view.loading, forbidden: view.forbidden, entries: view.entries.length, filterOrder: view.filterOrder, junkRules: view.junkRules })
+		const states = [stateOf()]
+
+		view.sender = 'a@b.nl'
+		view.outcome = 'junk'
+		serve({})
+		await view.reload()
+		states.push(stateOf())
+		const asked = calls.map((call) => [call.url, call.options])
+
+		serve({}, 403)
+		await view.reload()
+		states.push(stateOf())
+
+		serve({ results: [entry()] })
+		await view.reload()
+		globalThis.fetch = vi.fn(async () => {
+			throw new Error('offline')
+		})
+		await view.reload()
+		states.push(stateOf())
+
+		expect({ states, asked }).toEqual({
+			states: [
+				{ loading: false, forbidden: false, entries: 1, filterOrder: ['bounce-notification'], junkRules: [{ id: 'r1' }] },
+				{ loading: false, forbidden: false, entries: 0, filterOrder: [], junkRules: [] },
+				{ loading: false, forbidden: true, entries: 0, filterOrder: [], junkRules: [] },
+				{ loading: false, forbidden: false, entries: 0, filterOrder: [], junkRules: [] },
+			],
+			asked: [['/index.php/apps/dossiq/api/mail-intake/log?sender=a%40b.nl&outcome=junk', { headers: { 'OCS-APIRequest': 'true' } }]],
+		})
+	})
+
 	it('names a check nobody made rather than leaving it blank', async () => {
 		serve({
 			results: [

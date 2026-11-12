@@ -51,10 +51,30 @@ function inWholeWeeks(iso) {
 	if (!parts) {
 		return null
 	}
-	if (!parts.years && !parts.months && !parts.weeks && parts.days > 0 && parts.days % 7 === 0) {
+	if (isWholeWeeksOfDays(parts)) {
 		return { years: 0, months: 0, weeks: parts.days / 7, days: 0 }
 	}
 	return parts
+}
+
+/**
+ * Whether duration parts are only days, and a whole number of weeks of them.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {boolean} True for 7, 14, 21, ... days and nothing else.
+ */
+function isWholeWeeksOfDays(parts) {
+	return countsOnlyDays(parts) && parts.days > 0 && parts.days % 7 === 0
+}
+
+/**
+ * Whether duration parts count no years, months or weeks.
+ *
+ * @param {{years: number, months: number, weeks: number, days: number}} parts The parts.
+ * @return {boolean} True when only days can be set.
+ */
+function countsOnlyDays(parts) {
+	return !parts.years && !parts.months && !parts.weeks
 }
 
 /**
@@ -66,6 +86,45 @@ function inWholeWeeks(iso) {
 function singleUnit(parts) {
 	const used = ['years', 'months', 'weeks', 'days'].filter((unit) => parts[unit] > 0)
 	return used.length === 1 ? { unit: used[0], count: parts[used[0]] } : null
+}
+
+/**
+ * The extension a case type allows, or '' when it allows none.
+ *
+ * @param {object|null|undefined} row The case type row.
+ * @return {string|undefined} The ISO extension period.
+ */
+function allowedExtension(row) {
+	return row?.extensionAllowed === false ? '' : row?.extensionPeriod
+}
+
+/**
+ * An extension in words after its processing time: a bare number when it is
+ * counted in the same unit as the term, else the duration in words.
+ *
+ * @param {object|null} base The term's parts in whole weeks, or null when it is not a duration.
+ * @param {string} extension The ISO extension period.
+ * @return {string} The words.
+ */
+function extensionWords(base, extension) {
+	const more = inWholeWeeks(extension)
+	if (!more) {
+		return formatDuration(extension)
+	}
+	const moreUnit = singleUnit(more)
+	return sharesUnit(base, moreUnit) ? String(moreUnit.count) : formatDuration(toIsoDuration(more))
+}
+
+/**
+ * Whether a term is counted in the one unit an extension is counted in.
+ *
+ * @param {object|null} base The term's parts, or null when it is not a duration.
+ * @param {{unit: string, count: number}|null} moreUnit The extension's one unit.
+ * @return {boolean} True when both use the same single unit.
+ */
+function sharesUnit(base, moreUnit) {
+	const baseUnit = base ? singleUnit(base) : null
+	return Boolean(baseUnit && moreUnit && baseUnit.unit === moreUnit.unit)
 }
 
 /**
@@ -81,6 +140,32 @@ function toIsoDuration(parts) {
 		+ (parts.weeks ? `${parts.weeks}W` : '')
 		+ (parts.days ? `${parts.days}D` : '')
 }
+/**
+ * The deelzaak store, or null when no store can be had (no active pinia).
+ *
+ * @return {object|null} The store.
+ */
+function deelzaakStoreOrNull() {
+	try {
+		return useDeelzaakStore()
+	} catch {
+		return null
+	}
+}
+
+/**
+ * A case's sub-case badge from the counts the store holds, queueing the
+ * case for the next batch count when it is not counted yet.
+ *
+ * @param {object} store The deelzaak pinia store.
+ * @param {string} uuid The parent case UUID.
+ * @return {string} The badge label, or '' while uncounted or without sub-cases.
+ */
+function countedBadge(store, uuid) {
+	queueSubCaseCount(store, uuid)
+	return subCaseCountBadge(store.subCaseCounts[uuid] || 0)
+}
+
 /**
  * Queue a parent UUID for the next batch sub-case-count fetch and schedule
  * the flush. No-ops when the count is already cached in the store.
@@ -135,39 +220,110 @@ function lookupRelatedName(type, uuid) {
 	} catch {
 		return uuid
 	}
-	const collection = store.collections[type]
+	const label = collectionLabel(store.collections[type], uuid)
+		|| (relatedLabels[type] && relatedLabels[type][uuid])
+	if (label) {
+		return label
+	}
+	if (!relatedFetchStarted[type] && canLookUp(store, type)) {
+		startRelatedLookup(store, type)
+	}
+	return uuid
+}
+
+/**
+ * The title or name of the row the shared collection holds for a uuid.
+ *
+ * @param {Array<object>|undefined} collection The store's collection for the type.
+ * @param {string} uuid The related object's UUID.
+ * @return {string|undefined} The label, when the row has one.
+ */
+function collectionLabel(collection, uuid) {
 	const hit = (collection || []).find(
 		(o) => o.id === uuid || (o['@self'] && o['@self'].id === uuid),
 	)
-	if (hit && (hit.title || hit.name)) {
-		return hit.title || hit.name
-	}
-	const known = relatedLabels[type] && relatedLabels[type][uuid]
-	if (known) {
-		return known
-	}
-	if (!relatedFetchStarted[type] && typeof store.fetchCollectionForOptions === 'function' && store.objectTypeRegistry && store.objectTypeRegistry[type]) {
-		relatedFetchStarted[type] = true
-		Promise.resolve(store.fetchCollectionForOptions(type, { _limit: 500 }))
-			.then((rows) => {
-				const labels = {}
-				for (const row of Array.isArray(rows) ? rows : []) {
-					const id = row && (row.id || (row['@self'] && row['@self'].id))
-					const label = row && (row.title || row.name)
-					if (id && label) {
-						labels[id] = label
-					}
-				}
-				relatedLabels[type] = labels
-				if (Object.keys(labels).length === 0) {
-					relatedFetchStarted[type] = false
-				}
-			})
-			.catch(() => {
+	return hit && (hit.title || hit.name) ? hit.title || hit.name : undefined
+}
+
+/**
+ * Whether the store can look up the labels of a type.
+ *
+ * @param {object} store The object store.
+ * @param {string} type Registered object type.
+ * @return {boolean} True when it has the lookup and knows the type.
+ */
+function canLookUp(store, type) {
+	return typeof store.fetchCollectionForOptions === 'function' && Boolean(store.objectTypeRegistry && store.objectTypeRegistry[type])
+}
+
+/**
+ * Look up every label of a type once, into the module's own label map. A
+ * lookup that answers nothing, or fails, may run again.
+ *
+ * @param {object} store The object store.
+ * @param {string} type Registered object type.
+ */
+function startRelatedLookup(store, type) {
+	relatedFetchStarted[type] = true
+	Promise.resolve(store.fetchCollectionForOptions(type, { _limit: 500 }))
+		.then((rows) => {
+			const labels = labelsById(rows)
+			relatedLabels[type] = labels
+			if (Object.keys(labels).length === 0) {
 				relatedFetchStarted[type] = false
-			})
+			}
+		})
+		.catch(() => {
+			relatedFetchStarted[type] = false
+		})
+}
+
+/**
+ * The label of each row, by its id; rows without either are skipped.
+ *
+ * @param {unknown} rows The looked-up rows.
+ * @return {Object<string, string>} The labels.
+ */
+function labelsById(rows) {
+	const labels = {}
+	for (const row of listOf(rows)) {
+		const id = lookedUpId(row)
+		const label = rowLabel(row)
+		if (id && label) {
+			labels[id] = label
+		}
 	}
-	return uuid
+	return labels
+}
+
+/**
+ * A looked-up answer as a list of rows; anything else as no rows.
+ *
+ * @param {unknown} rows The looked-up rows.
+ * @return {Array} The rows.
+ */
+function listOf(rows) {
+	return Array.isArray(rows) ? rows : []
+}
+
+/**
+ * The label of a looked-up row: its title, else its name.
+ *
+ * @param {object|null} row A looked-up row.
+ * @return {string|undefined} The label.
+ */
+function rowLabel(row) {
+	return row && (row.title || row.name)
+}
+
+/**
+ * The id of a looked-up row, from the row or its `@self`.
+ *
+ * @param {object|null} row A looked-up row.
+ * @return {string|undefined} The id.
+ */
+function lookedUpId(row) {
+	return row && (row.id || (row['@self'] && row['@self'].id))
 }
 
 /**
@@ -185,6 +341,50 @@ export function resetRelatedLabels() {
 }
 
 /**
+ * A stored count as a number, or null when it is unknown (empty) or not a
+ * count (negative, fractional or not a number).
+ *
+ * @param {unknown} value The stored count.
+ * @return {number|null} The count.
+ */
+function knownCount(value) {
+	if (isBlank(value)) {
+		return null
+	}
+	return asCount(Number(value))
+}
+
+/**
+ * Whether a stored value is empty: null, undefined or ''.
+ *
+ * @param {unknown} value The stored value.
+ * @return {boolean} True when nothing is stored.
+ */
+function isBlank(value) {
+	return value === null || value === undefined || value === ''
+}
+
+/**
+ * A number when it counts something (a whole number, zero or more), else null.
+ *
+ * @param {number} count The number.
+ * @return {number|null} The count.
+ */
+function asCount(count) {
+	return Number.isInteger(count) && count >= 0 ? count : null
+}
+
+/**
+ * A penalty's amount in whole euros, in the reader's locale ("€ 1.442").
+ *
+ * @param {object|null|undefined} row The row, with `penaltyEuros`.
+ * @return {string} The amount; an unreadable amount reads as zero.
+ */
+function penaltyAmount(row) {
+	return new Intl.NumberFormat(getCanonicalLocale(), { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(row?.penaltyEuros) || 0)
+}
+
+/**
  * A day as "7 Aug" in the reader's locale, or '' when it is not a day.
  *
  * @param {unknown} value The day (YYYY-MM-DD).
@@ -197,6 +397,88 @@ function shortDay(value) {
 	}
 	const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
 	return new Intl.DateTimeFormat(getCanonicalLocale(), { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(date)
+}
+
+/**
+ * The words for each moment a case sends a message on.
+ *
+ * @return {Object<string, string>} The words by moment.
+ */
+function outboundMoments() {
+	return {
+		acknowledgement: t('dossiq', 'Receipt confirmation'),
+		'information-request': t('dossiq', 'Information request'),
+		stage: t('dossiq', 'Status update'),
+		extension: t('dossiq', 'Extension'),
+		decision: t('dossiq', 'Decision'),
+		transfer: t('dossiq', 'Transfer'),
+	}
+}
+
+/**
+ * The words for each channel a message goes through; the portal by the name
+ * portaliq gives it.
+ *
+ * @return {Object<string, string>} The words by channel.
+ */
+function outboundChannels() {
+	return {
+		'portal-inbox': portalName() || t('dossiq', 'the portal'),
+		'digital-post': t('dossiq', 'digital post'),
+		email: t('dossiq', 'email'),
+	}
+}
+
+/**
+ * The format a message's sending time is written in ("3 Oct 14:32").
+ *
+ * @return {Intl.DateTimeFormat} The format.
+ */
+function outboundTimeFormat() {
+	return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
+/**
+ * One outbound message as a line: what it was, the channel and when.
+ *
+ * @param {object} entry The outbound communication.
+ * @param {{moments: object, channels: object, when: Intl.DateTimeFormat}} labels The words and time format, built once per list.
+ * @return {string} The line.
+ */
+function outboundLine(entry, labels) {
+	const moment = momentWords(entry, labels.moments)
+	if (!entry.channel) {
+		return t('dossiq', '{moment}, not sent', { moment })
+	}
+	const time = sentTime(entry.sentAt, labels.when)
+	const channel = labels.channels[entry.channel] ?? entry.channel
+	return time
+		? t('dossiq', '{moment} via {channel}, {time}', { moment, channel, time })
+		: t('dossiq', '{moment} via {channel}', { moment, channel })
+}
+
+/**
+ * What an outbound message was, in words; an unknown moment as it is stored.
+ *
+ * @param {object} entry The outbound communication.
+ * @param {Object<string, string>} moments The words by moment.
+ * @return {string} The words.
+ */
+function momentWords(entry, moments) {
+	return moments[entry.moment] ?? String(entry.moment ?? '')
+}
+
+/**
+ * When a message was sent, in the given format, or '' when it has no
+ * readable time.
+ *
+ * @param {unknown} value The stored sending time.
+ * @param {Intl.DateTimeFormat} when The format.
+ * @return {string} The time.
+ */
+function sentTime(value, when) {
+	const sentAt = value ? new Date(value) : null
+	return sentAt && !Number.isNaN(sentAt.getTime()) ? when.format(sentAt) : ''
 }
 
 export default {
@@ -243,7 +525,7 @@ export default {
 		if (value !== 'definitive' && value !== 'running') {
 			return t('dossiq', 'None')
 		}
-		const amount = new Intl.NumberFormat(getCanonicalLocale(), { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(row?.penaltyEuros) || 0)
+		const amount = penaltyAmount(row)
 		if (value === 'definitive') {
 			return t('dossiq', '{amount}, fixed', { amount })
 		}
@@ -353,11 +635,8 @@ export default {
 	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	caseTypeCount: (value) => {
-		if (value === null || value === undefined || value === '') {
-			return ''
-		}
-		const count = Number(value)
-		return Number.isInteger(count) && count >= 0 ? n('dossiq', '%n case type', '%n case types', count) : ''
+		const count = knownCount(value)
+		return count === null ? '' : n('dossiq', '%n case type', '%n case types', count)
 	},
 
 	/**
@@ -433,11 +712,8 @@ export default {
 	 * @spec openspec/specs/catalogue/spec.md
 	 */
 	propertyCount: (value) => {
-		if (value === null || value === undefined || value === '') {
-			return ''
-		}
-		const count = Number(value)
-		return Number.isInteger(count) && count >= 0 ? n('dossiq', '%n property', '%n properties', count) : ''
+		const count = knownCount(value)
+		return count === null ? '' : n('dossiq', '%n property', '%n properties', count)
 	},
 
 	/**
@@ -510,21 +786,11 @@ export default {
 	processingTime: (value, row) => {
 		const base = inWholeWeeks(value)
 		const time = base ? formatDuration(toIsoDuration(base)) : formatDuration(value)
-		const extension = row?.extensionAllowed === false ? '' : row?.extensionPeriod
+		const extension = allowedExtension(row)
 		if (!time || !extension) {
 			return time
 		}
-		const more = inWholeWeeks(extension)
-		if (!more) {
-			return t('dossiq', '{time}, +{extension}', { time, extension: formatDuration(extension) })
-		}
-		const baseUnit = base ? singleUnit(base) : null
-		const moreUnit = singleUnit(more)
-		const sameUnit = baseUnit && moreUnit && baseUnit.unit === moreUnit.unit
-		return t('dossiq', '{time}, +{extension}', {
-			time,
-			extension: sameUnit ? String(moreUnit.count) : formatDuration(toIsoDuration(more)),
-		})
+		return t('dossiq', '{time}, +{extension}', { time, extension: extensionWords(base, extension) })
 	},
 
 	/**
@@ -680,34 +946,10 @@ export default {
 		if (!Array.isArray(value)) {
 			return ''
 		}
-		const moments = {
-			acknowledgement: t('dossiq', 'Receipt confirmation'),
-			'information-request': t('dossiq', 'Information request'),
-			stage: t('dossiq', 'Status update'),
-			extension: t('dossiq', 'Extension'),
-			decision: t('dossiq', 'Decision'),
-			transfer: t('dossiq', 'Transfer'),
-		}
-		const channels = {
-			'portal-inbox': portalName() || t('dossiq', 'the portal'),
-			'digital-post': t('dossiq', 'digital post'),
-			email: t('dossiq', 'email'),
-		}
-		const when = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+		const labels = { moments: outboundMoments(), channels: outboundChannels(), when: outboundTimeFormat() }
 		return value
 			.filter((entry) => entry && typeof entry === 'object')
-			.map((entry) => {
-				const moment = moments[entry.moment] ?? String(entry.moment ?? '')
-				if (!entry.channel) {
-					return t('dossiq', '{moment}, not sent', { moment })
-				}
-				const sentAt = entry.sentAt ? new Date(entry.sentAt) : null
-				const time = sentAt && !Number.isNaN(sentAt.getTime()) ? when.format(sentAt) : ''
-				const channel = channels[entry.channel] ?? entry.channel
-				return time
-					? t('dossiq', '{moment} via {channel}, {time}', { moment, channel, time })
-					: t('dossiq', '{moment} via {channel}', { moment, channel })
-			})
+			.map((entry) => outboundLine(entry, labels))
 			.join('; ')
 	},
 
@@ -724,21 +966,18 @@ export default {
 	 * @spec openspec/changes/deelzaak-support/tasks.md#T10
 	 */
 	subCaseCount: (value, row) => {
-		const uuid = (row && (row.id || (row['@self'] && row['@self'].id))) || value
+		const uuid = lookedUpId(row) || value
 		if (!uuid) {
 			return ''
 		}
-		let store
-		try {
-			store = useDeelzaakStore()
-		} catch {
+		const store = deelzaakStoreOrNull()
+		if (store === null) {
 			return ''
 		}
 		// Sub-cases themselves never carry sub-cases (zrc-013c) — skip the count.
-		if (row && row.parentCase) {
+		if (row?.parentCase) {
 			return ''
 		}
-		queueSubCaseCount(store, uuid)
-		return subCaseCountBadge(store.subCaseCounts[uuid] || 0)
+		return countedBadge(store, uuid)
 	},
 }

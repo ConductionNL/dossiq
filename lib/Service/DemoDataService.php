@@ -253,12 +253,7 @@ class DemoDataService {
 			$curated = count($this->fragments->rawObjects());
 		}
 
-		$components = ($data['components'] ?? []);
-		if (is_array($components) === false || is_array(($components['objects'] ?? null)) === false) {
-			return $curated;
-		}
-
-		return count($components['objects']) + $curated;
+		return $this->requestedCount(data: $data) + $curated;
 
 	}//end shippedObjectCount()
 
@@ -295,6 +290,36 @@ class DemoDataService {
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 */
 	public function install(): array {
+		$data = $this->withFragments(data: $this->readDescriptor());
+
+		// The ASK: how many objects the shipped descriptor carries. Kept, but
+		// as one half of a comparison rather than as the answer.
+		$requested = $this->requestedCount(data: $data);
+
+		$result = $this->configurationService()->importFromApp(
+			appId: self::CONFIG_APP_ID,
+			data: $this->objectsOnly(data: $data),
+			version: $this->appManager->getAppVersion(Application::APP_ID),
+			force: true
+		);
+
+		$imported = $this->readLanding(result: $result, requested: $requested);
+		$this->assertSomethingSurvived(imported: $imported, requested: $requested);
+
+		$this->reportLanding(imported: $imported, requested: $requested);
+		$this->recordFragments();
+
+		return $imported;
+	}//end install()
+
+	/**
+	 * The shipped demo descriptor, decoded.
+	 *
+	 * @return array<string, mixed> The descriptor.
+	 *
+	 * @throws RuntimeException When the descriptor is missing, unreadable or not valid JSON.
+	 */
+	private function readDescriptor(): array {
 		$path = $this->descriptorPath();
 		if (is_file($path) === false) {
 			throw new RuntimeException('No demo dataset ships with this app (' . self::DESCRIPTOR . ' not found).');
@@ -310,41 +335,53 @@ class DemoDataService {
 			throw new RuntimeException('The demo dataset is not valid JSON: ' . $path);
 		}
 
-		$data = $this->withFragments(data: $data);
+		return $data;
+	}//end readDescriptor()
 
-		// The ASK: how many objects the shipped descriptor carries. Kept, but
-		// as one half of a comparison rather than as the answer.
-		$requested = 0;
+	/**
+	 * How many objects the descriptor carries.
+	 *
+	 * @param array<string, mixed> $data The descriptor, with its fragments.
+	 *
+	 * @return integer The object count, 0 when it carries none.
+	 */
+	private function requestedCount(array $data): int {
 		$components = ($data['components'] ?? []);
 		if (is_array($components) === true && is_array(($components['objects'] ?? null)) === true) {
-			$requested = count($components['objects']);
+			return count($components['objects']);
 		}
 
-		$result = $this->configurationService()->importFromApp(
-			appId: self::CONFIG_APP_ID,
-			data: $this->objectsOnly(data: $data),
-			version: $this->appManager->getAppVersion(Application::APP_ID),
-			force: true
-		);
+		return 0;
+	}//end requestedCount()
 
-		$imported = $this->readLanding(result: $result, requested: $requested);
-
-		// 🔴 AN IMPORT THAT STORED NOTHING IS NOT A SUCCESS, and this is the
-		// only place that can tell. Same shape as the seed steps of #1767 and
-		// #1769, which reported `success: true` with every counter at zero and
-		// recorded themselves as done. A descriptor that ships no objects at
-		// all is a different condition and stays a success: registers and
-		// schemas are a legitimate thing to ship on their own.
-		// STORING NOTHING IS NOT THE SAME AS FAILING. This read `objects === 0`
-		// alone, which refuses an import whose objects are already there, and
-		// that is the normal case on a second run. The step's own body promises
-		// it is "safe to run more than once", and an idempotent import
-		// necessarily stores zero the second time. Measured on CI, dossiq
-		// development, every run since 2026-09-03: 444 requested, 0 stored,
-		// reported as a hard failure on an install with nothing left to do.
-		//
-		// So the question is whether anything SURVIVED, not whether anything
-		// moved.
+	/**
+	 * Refuse an import of objects of which none was stored and none was already there.
+	 *
+	 * 🔴 AN IMPORT THAT STORED NOTHING IS NOT A SUCCESS, and this is the
+	 * only place that can tell. Same shape as the seed steps of #1767 and
+	 * #1769, which reported `success: true` with every counter at zero and
+	 * recorded themselves as done. A descriptor that ships no objects at
+	 * all is a different condition and stays a success: registers and
+	 * schemas are a legitimate thing to ship on their own.
+	 * STORING NOTHING IS NOT THE SAME AS FAILING. This read `objects === 0`
+	 * alone, which refuses an import whose objects are already there, and
+	 * that is the normal case on a second run. The step's own body promises
+	 * it is "safe to run more than once", and an idempotent import
+	 * necessarily stores zero the second time. Measured on CI, dossiq
+	 * development, every run since 2026-09-03: 444 requested, 0 stored,
+	 * reported as a hard failure on an install with nothing left to do.
+	 *
+	 * So the question is whether anything SURVIVED, not whether anything
+	 * moved.
+	 *
+	 * @param array<string, integer> $imported  The landing: objects, requested, refused, unchanged, registers, schemas.
+	 * @param integer                $requested How many objects the descriptor carries.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When objects were asked for and nothing survived.
+	 */
+	private function assertSomethingSurvived(array $imported, int $requested): void {
 		if ($requested > 0 && $imported['objects'] === 0 && $imported['unchanged'] === 0) {
 			throw new RuntimeException(
 				'The demo import stored 0 of ' . $requested . ' object(s) ('
@@ -356,12 +393,7 @@ class DemoDataService {
 				. 'instance still carrying the old `dossiq.demo` schema fork looks like.'
 			);
 		}
-
-		$this->reportLanding(imported: $imported, requested: $requested);
-		$this->recordFragments();
-
-		return $imported;
-	}//end install()
+	}//end assertSomethingSurvived()
 
 	/**
 	 * Read what the importer actually did, as counts.

@@ -1,0 +1,46 @@
+{
+    "another event": {
+        "modified": null,
+        "calls": []
+    },
+    "a create of another schema": {
+        "modified": {
+            "title": "x"
+        },
+        "calls": []
+    },
+    "a new case": {
+        "modified": {
+            "priority": "high",
+            "riskLevel": "low",
+            "attentionMarkers": [
+                "overdue"
+            ]
+        },
+        "calls": [
+            "contextFor \"\"",
+            "risk status=intake title=A case",
+            "markers {\"related\":\"\"}"
+        ]
+    },
+    "an updated case": {
+        "modified": {
+            "status": "review",
+            "riskLevel": "low",
+            "attentionMarkers": [
+                "overdue"
+            ]
+        },
+        "calls": [
+            "contextFor \"case-1\"",
+            "risk status=review title=A case",
+            "markers {\"related\":\"case-1\"}"
+        ]
+    },
+    "an update of another schema": {
+        "modified": {
+            "title": "x"
+        },
+        "calls": []
+    }
+}

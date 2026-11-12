@@ -145,17 +145,10 @@ class HouseholdCasesController extends Controller {
 		}
 
 		try {
-			$case      = $this->household->readCase(caseId: $caseId);
-			$bsns      = [];
-			$ownDomain = '';
-			if ($case !== null) {
-				$bsns      = $this->household->householdBsns(case: $case);
-				$ownDomain = $this->household->ownDomain(case: $case);
-			}
-
+			$household = $this->householdOf(caseId: $caseId);
 			$rows = $this->household->otherDomains(
-				bsns: $bsns,
-				ownDomain: $ownDomain,
+				bsns: $household['bsns'],
+				ownDomain: $household['ownDomain'],
 				ground: (string)$this->request->getParam('ground', ''),
 				requester: $user->getUID(),
 			);
@@ -168,6 +161,27 @@ class HouseholdCasesController extends Controller {
 			return $this->broke(op: 'household-lookup', e: $e);
 		}//end try
 	}//end lookUp()
+
+	/**
+	 * The BSNs of the case's household and the case's own domain; none of either when the case cannot be read.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array{bsns: array<mixed>, ownDomain: string}
+	 *
+	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 */
+	private function householdOf(string $caseId): array {
+		$read = $this->household->readCase(caseId: $caseId);
+		if ($read === null) {
+			return ['bsns' => [], 'ownDomain' => ''];
+		}
+
+		return [
+			'bsns' => $this->household->householdBsns(case: $read),
+			'ownDomain' => $this->household->ownDomain(case: $read),
+		];
+	}//end householdOf()
 
 	/**
 	 * Why this reader may not ask about this case, or null when they may.

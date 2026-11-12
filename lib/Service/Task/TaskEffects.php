@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
+use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -169,7 +170,7 @@ class TaskEffects {
 	public function run(array $effects, array $case, array $context): array {
 		$results = [];
 		foreach ($effects as $effect) {
-			$results[] = $this->runOne(effect: $effect, case: $case, context: $context);
+			$results[] = $this->runOne(run: new EffectRun(effect: $effect, case: $case, context: $context));
 		}
 
 		return $results;
@@ -178,54 +179,69 @@ class TaskEffects {
 	/**
 	 * Run one effect and say what happened.
 	 *
-	 * @param array<string, mixed> $effect  The effect.
-	 * @param array<string, mixed> $case    The case.
-	 * @param array<string, mixed> $context The dispatch context.
+	 * @param EffectRun $run The effect, its case and the dispatch context.
 	 *
 	 * @return array{type: string, ran: bool, error: string} The outcome.
 	 */
-	private function runOne(array $effect, array $case, array $context): array {
-		$type = trim((string)($effect['type'] ?? ''));
-		$handler = $this->handlers->getHandler(type: $type);
-		if ($handler === null && $this->retired !== null && $this->runsRetired(type: $type) === true) {
-			$row = $this->retired->run(type: $type, action: $effect, case: $case, context: $context);
-
-			return ['type' => $type, 'ran' => $row['ok'], 'error' => (string)($row['error'] ?? '')];
-		}
-
+	private function runOne(EffectRun $run): array {
+		$handler = $this->handlers->getHandler(type: $run->type);
 		if ($handler === null) {
-			// Reached only when a handler disappeared between the pre-check
-			// and the run, which is a deployment changing under a request.
-			// Loud, because the completion is already written.
-			$this->logger->error(
-				'Dossiq: a completed task declared an effect no handler answers to',
-				['effect' => $type, 'case' => ($context['caseId'] ?? ''), 'task' => ($context['taskId'] ?? '')]
-			);
-
-			return ['type' => $type, 'ran' => false, 'error' => 'unresolvable_effect'];
+			return $this->withoutHandler(run: $run);
 		}
 
+		return $this->handled(handler: $handler, run: $run);
+	}//end runOne()
+
+	/**
+	 * An effect no handler answers to: run as its replacement when it is retired, named otherwise.
+	 *
+	 * @param EffectRun $run The effect, its case and the dispatch context.
+	 *
+	 * @return array{type: string, ran: bool, error: string} The outcome.
+	 */
+	private function withoutHandler(EffectRun $run): array {
+		if ($this->retired !== null && $this->runsRetired(type: $run->type) === true) {
+			$row = $this->retired->run(type: $run->type, action: $run->effect, case: $run->case, context: $run->context);
+
+			return ['type' => $run->type, 'ran' => $row['ok'], 'error' => (string)($row['error'] ?? '')];
+		}
+
+		// Reached only when a handler disappeared between the pre-check
+		// and the run, which is a deployment changing under a request.
+		// Loud, because the completion is already written.
+		$this->logger->error(
+			'Dossiq: a completed task declared an effect no handler answers to',
+			['effect' => $run->type, 'case' => ($run->context['caseId'] ?? ''), 'task' => ($run->context['taskId'] ?? '')]
+		);
+
+		return ['type' => $run->type, 'ran' => false, 'error' => 'unresolvable_effect'];
+	}//end withoutHandler()
+
+	/**
+	 * Hand the effect to its handler, and say whether it ran, refused or failed.
+	 *
+	 * @param ActionHandlerInterface $handler The handler of the effect's type.
+	 * @param EffectRun              $run     The effect, its case and the dispatch context.
+	 *
+	 * @return array{type: string, ran: bool, error: string} The outcome.
+	 */
+	private function handled(ActionHandlerInterface $handler, EffectRun $run): array {
+		$task = ($run->context['taskId'] ?? '');
 		try {
-			$result = $handler->handle($effect, $case, $context);
+			$result = $handler->handle($run->effect, $run->case, $run->context);
 			if ($result->succeeded === true) {
-				return ['type' => $type, 'ran' => true, 'error' => ''];
+				return ['type' => $run->type, 'ran' => true, 'error' => ''];
 			}
 
-			$this->logger->warning(
-				'Dossiq: a task effect refused',
-				['effect' => $type, 'error' => $result->error, 'task' => ($context['taskId'] ?? '')]
-			);
+			$this->logger->warning('Dossiq: a task effect refused', ['effect' => $run->type, 'error' => $result->error, 'task' => $task]);
 
-			return ['type' => $type, 'ran' => false, 'error' => (string)$result->error];
+			return ['type' => $run->type, 'ran' => false, 'error' => (string)$result->error];
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: a task effect failed',
-				['effect' => $type, 'exception' => $e->getMessage(), 'task' => ($context['taskId'] ?? '')]
-			);
+			$this->logger->error('Dossiq: a task effect failed', ['effect' => $run->type, 'exception' => $e->getMessage(), 'task' => $task]);
 
-			return ['type' => $type, 'ran' => false, 'error' => $e->getMessage()];
+			return ['type' => $run->type, 'ran' => false, 'error' => $e->getMessage()];
 		}//end try
-	}//end runOne()
+	}//end handled()
 	/**
 	 * Whether an effect names a retired type that its replacement still runs.
 	 *

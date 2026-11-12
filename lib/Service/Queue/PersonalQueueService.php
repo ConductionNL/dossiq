@@ -80,52 +80,84 @@ class PersonalQueueService {
 	 */
 	public function forPerson(string $userId, ?DateTimeImmutable $now = null): array {
 		$now = ($now ?? new DateTimeImmutable());
-		$today = $now->format('Y-m-d');
+		$run = new PersonalQueueRun(userId: $userId, today: $now->format('Y-m-d'));
 
 		$resolved = $this->catalogue->resolve();
-		$unavailable = $resolved['unavailable'];
-
-		$items = [];
-		$closings = [];
+		$run->unavailable = $resolved['unavailable'];
 		foreach ($resolved['sources'] as $source) {
-			$closings[$source->name()] = [
-				'label' => $source->label(),
-				'closesWhen' => $source->closesWhen(),
-			];
-
-			try {
-				foreach ($source->itemsFor(userId: $userId) as $item) {
-					if ($this->hasClosed(item: $item, userId: $userId) === true) {
-						continue;
-					}
-
-					$items[] = $item;
-				}
-			} catch (Throwable $e) {
-				$this->logger->warning(
-					'Dossiq: the queue source ' . $source->name() . ' could not be read: ' . $e->getMessage()
-				);
-				$unavailable[] = [
-					'source' => $source->name(),
-					'label' => $source->label(),
-					'reason' => $e->getMessage(),
-				];
-			}
+			$this->readSource(run: $run, source: $source);
 		}
 
-		$ordered = $this->ordering->order(items: $items, now: $now);
-		$groupBy = $this->preferences->groupBy(userId: $userId);
-		$hidden = $this->preferences->hiddenGroups(userId: $userId, today: $today);
+		return $this->viewOf(run: $run, ordered: $this->ordering->order(items: $run->items, now: $now));
+	}//end forPerson()
+
+	/**
+	 * Read one source: its closing sentence, then its open items, or note it as unavailable.
+	 *
+	 * @param PersonalQueueRun $run    The queue being read.
+	 * @param QueueSource      $source The source.
+	 *
+	 * @return void
+	 */
+	private function readSource(PersonalQueueRun $run, QueueSource $source): void {
+		$run->closings[$source->name()] = [
+			'label' => $source->label(),
+			'closesWhen' => $source->closesWhen(),
+		];
+
+		try {
+			$this->collectOpenItems(run: $run, source: $source);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the queue source ' . $source->name() . ' could not be read: ' . $e->getMessage()
+			);
+			$run->unavailable[] = [
+				'source' => $source->name(),
+				'label' => $source->label(),
+				'reason' => $e->getMessage(),
+			];
+		}
+	}//end readSource()
+
+	/**
+	 * Add the source's items that still stand for this person.
+	 *
+	 * @param PersonalQueueRun $run    The queue being read.
+	 * @param QueueSource      $source The source.
+	 *
+	 * @return void
+	 */
+	private function collectOpenItems(PersonalQueueRun $run, QueueSource $source): void {
+		foreach ($source->itemsFor(userId: $run->userId) as $item) {
+			if ($this->hasClosed(item: $item, userId: $run->userId) === true) {
+				continue;
+			}
+
+			$run->items[] = $item;
+		}
+	}//end collectOpenItems()
+
+	/**
+	 * The queue as the reader sees it: the ordered items, their groups and the reader's view settings.
+	 *
+	 * @param PersonalQueueRun                 $run     The read queue.
+	 * @param array<int, array<string, mixed>> $ordered The ordered items.
+	 *
+	 * @return array<string, mixed> The queue.
+	 */
+	private function viewOf(PersonalQueueRun $run, array $ordered): array {
+		$groupBy = $this->preferences->groupBy(userId: $run->userId);
+		$hidden = $this->preferences->hiddenGroups(userId: $run->userId, today: $run->today);
 
 		return [
 			'items' => $ordered,
-			'groups' => $this->group(items: $ordered, groupBy: $groupBy, closings: $closings),
+			'groups' => $this->group(items: $ordered, groupBy: $groupBy, closings: $run->closings),
 			'groupBy' => $groupBy,
 			'hiddenGroups' => $hidden,
-			'unavailable' => $unavailable,
+			'unavailable' => $run->unavailable,
 			'total' => count($ordered),
 		];
-	}//end forPerson()
+	}//end viewOf()
 
 	/**
 	 * Whether an item has stopped standing for this person.

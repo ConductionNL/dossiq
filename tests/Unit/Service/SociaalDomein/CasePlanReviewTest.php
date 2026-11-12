@@ -191,4 +191,19 @@ class CasePlanReviewTest extends TestCase {
 
 		$this->review->record(planId: 'plan-404', reviewedBy: 'anna', changes: ['iets']);
 	}//end testAReviewOfAMissingPlanIsRefused()
+	/**
+	 * A review without a reviewer is refused, before what it changed is looked at.
+	 *
+	 * @return void
+	 */
+	public function testAReviewWithoutAReviewerIsRefusedFirst(): void {
+		try {
+			$this->review->record(planId: 'plan-1', reviewedBy: '  ', changes: []);
+			self::fail('A review without a reviewer must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('review-needs-a-reviewer', $e->getRule());
+		}
+
+		self::assertArrayNotHasKey('reviews', $this->objects->rowsOf('gezinsplan')[0]);
+	}//end testAReviewWithoutAReviewerIsRefusedFirst()
 }//end class

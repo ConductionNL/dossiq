@@ -58,12 +58,13 @@
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
-import { copiedCaseTypeId, publishRefusalMessage } from '../utils/caseTypePublish.js'
+import {
+	caseTypeRefusalMessages,
+	postAndLand,
+} from '../utils/caseTypeDialogs.js'
 
 export default {
 	name: 'CaseTypeDuplicateDialog',
@@ -92,25 +93,12 @@ export default {
 		/**
 		 * The sentences a refusal can carry, already translated.
 		 *
-		 * Built here, in literal t() calls, and handed to the helper: a string
-		 * that lives in the helper and passes through a translate callback is
-		 * invisible to `tests/l10n/check-l10n.js`, which extracts by finding a
-		 * literal inside a `t()` call for this app.
-		 *
 		 * @return {object} The messages.
 		 *
 		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		refusalMessages() {
-			return {
-				signIn: t('dossiq', 'Sign in again and retry.'),
-				forbidden: t('dossiq', 'Your account may not do this.'),
-				missing: t('dossiq', 'This case type no longer exists.'),
-				generic: t(
-					'dossiq',
-					'That did not work. Try again, or ask an administrator.',
-				),
-			}
+			return caseTypeRefusalMessages()
 		},
 
 		/**
@@ -136,33 +124,12 @@ export default {
 		 * @spec openspec/specs/workflow-import-export/spec.md
 		 */
 		async confirm() {
-			this.busy = true
-			try {
-				const { data } = await axios.post(
-					generateUrl(
-						`/apps/dossiq/api/case-definitions/${encodeURIComponent(this.id)}/copy`,
-					),
-				)
-				const copyId = copiedCaseTypeId(data)
-				this.$emit('close')
-				if (copyId) {
-					this.$router.push({
-						name: 'CaseTypeDetail',
-						params: { id: copyId },
-					})
-					return
-				}
-				// A copy that was made but cannot be located is still a copy:
-				// say nothing false, and leave the person where they were.
-				this.error = t(
-					'dossiq',
-					'The copy was made but could not be opened.',
-				)
-			} catch (e) {
-				this.error = publishRefusalMessage(e, this.refusalMessages)
-			} finally {
-				this.busy = false
-			}
+			// A copy that was made but cannot be located is still a copy:
+			// say nothing false, and leave the person where they were.
+			await postAndLand(this, {
+				action: 'copy',
+				lost: t('dossiq', 'The copy was made but could not be opened.'),
+			})
 		},
 	},
 }

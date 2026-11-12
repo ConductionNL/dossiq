@@ -89,21 +89,35 @@ class AreaRouting {
 	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	public function resolve(array $rule, array $case, ?array $caseType = null): array {
-		$roleType = (string)($rule['roleType'] ?? '');
-		$declaredTeam = trim((string)($rule['team'] ?? ''));
+		$team = $this->teamFor(rule: $rule, case: $case);
+		if ($team === null) {
+			return $this->fallback(rule: $rule, case: $case, caseType: $caseType);
+		}
 
+		return [
+			'roleType' => (string)($rule['roleType'] ?? ''),
+			'team' => $team,
+			'fallbackUsed' => false,
+			'reason' => '',
+		];
+	}//end resolve()
+
+	/**
+	 * The team a rule routes a case to without the fallback, or null when the area places it nowhere.
+	 *
+	 * @param array<string, mixed> $rule The routing rule.
+	 * @param array<string, mixed> $case The case, carrying its held area.
+	 *
+	 * @return string|null The team, or null when the fallback decides.
+	 */
+	private function teamFor(array $rule, array $case): ?string {
 		// A team written on the case itself wins. `districtTeam` is where a
 		// gemeente records that THIS case belongs to THAT area team, whatever
 		// the address resolved to, and a rule's map overruling it would make
 		// the field unusable the moment a rule existed.
 		$onTheCase = trim((string)($case[self::DISTRICT_TEAM] ?? ''));
 		if ($onTheCase !== '') {
-			return [
-				'roleType' => $roleType,
-				'team' => $onTheCase,
-				'fallbackUsed' => false,
-				'reason' => '',
-			];
+			return $onTheCase;
 		}
 
 		$map = ($rule['areaTeams'] ?? null);
@@ -111,33 +125,35 @@ class AreaRouting {
 			// The rule says nothing about area, so this is an ordinary rule
 			// and the fallback does not apply to it. Answering `fallbackUsed`
 			// here would mark every case in the gemeente.
-			return [
-				'roleType' => $roleType,
-				'team' => $declaredTeam,
-				'fallbackUsed' => false,
-				'reason' => '',
-			];
+			return trim((string)($rule['team'] ?? ''));
 		}
 
+		return $this->areaTeam(map: $map, held: $case);
+	}//end teamFor()
+
+	/**
+	 * The team the first area field the case holds maps to, or null when none maps.
+	 *
+	 * @param array<string, mixed> $map  The rule's area-to-team map.
+	 * @param array<string, mixed> $held The case, carrying its held area.
+	 *
+	 * @return string|null The team, or null.
+	 */
+	private function areaTeam(array $map, array $held): ?string {
 		foreach (self::AREA_FIELDS as $field) {
-			$value = trim((string)($case[$field] ?? ''));
+			$value = trim((string)($held[$field] ?? ''));
 			if ($value === '') {
 				continue;
 			}
 
 			$team = $this->lookup(map: $map, value: $value);
 			if ($team !== '') {
-				return [
-					'roleType' => $roleType,
-					'team' => $team,
-					'fallbackUsed' => false,
-					'reason' => '',
-				];
+				return $team;
 			}
 		}
 
-		return $this->fallback(rule: $rule, case: $case, caseType: $caseType);
-	}//end resolve()
+		return null;
+	}//end areaTeam()
 
 	/**
 	 * The team declared for one area value, matched without case sensitivity.
@@ -173,21 +189,7 @@ class AreaRouting {
 	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	private function fallback(array $rule, array $case, ?array $caseType): array {
-		$held = [];
-		foreach (self::AREA_FIELDS as $field) {
-			$value = trim((string)($case[$field] ?? ''));
-			if ($value !== '') {
-				$held[] = $value;
-			}
-		}
-
-		$reason = 'This case holds no area, so the case type\'s fallback was used.';
-		if ($held !== []) {
-			$reason = sprintf(
-				'No team is declared for %s, so the case type\'s fallback was used.',
-				implode(', ', $held)
-			);
-		}
+		$reason = self::fallbackReason(held: self::heldAreas(held: $case));
 
 		$declared = trim((string)($caseType[self::FALLBACK_ROLE_TYPE] ?? ''));
 		$roleType = (string)($rule['roleType'] ?? '');
@@ -206,4 +208,41 @@ class AreaRouting {
 			'reason' => $reason,
 		];
 	}//end fallback()
+
+	/**
+	 * The area values a case holds, in field order.
+	 *
+	 * @param array<string, mixed> $held The case, carrying its held area.
+	 *
+	 * @return array<int, string> The non-empty area values.
+	 */
+	private static function heldAreas(array $held): array {
+		$areas = [];
+		foreach (self::AREA_FIELDS as $field) {
+			$value = trim((string)($held[$field] ?? ''));
+			if ($value !== '') {
+				$areas[] = $value;
+			}
+		}
+
+		return $areas;
+	}//end heldAreas()
+
+	/**
+	 * Why the fallback was used: no area held, or no team declared for the areas held.
+	 *
+	 * @param array<int, string> $held The area values the case holds.
+	 *
+	 * @return string The reason.
+	 */
+	private static function fallbackReason(array $held): string {
+		if ($held === []) {
+			return 'This case holds no area, so the case type\'s fallback was used.';
+		}
+
+		return sprintf(
+			'No team is declared for %s, so the case type\'s fallback was used.',
+			implode(', ', $held)
+		);
+	}//end fallbackReason()
 }//end class

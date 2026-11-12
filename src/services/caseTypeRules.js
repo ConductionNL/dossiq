@@ -46,25 +46,87 @@ const PROPERTY_TYPES = {
 export function ruleFields({ propertyDefinitions = [], statusTypes = [], documentTypes = [] } = {}) {
 	const fields = propertyDefinitions
 		.filter((p) => p && p.name)
-		.map((p) => {
-			const field = { id: p.name, label: resolveTranslatable(p.title || p.label || wordsOf(p.name)).text, type: PROPERTY_TYPES[p.propertyType] || 'string' }
-			if (Array.isArray(p.enumValues) && p.enumValues.length > 0) {
-				field.options = p.enumValues.map((v) => ({ id: v, label: String(v) }))
-			}
-			if (/kosten|bedrag|amount|price|prijs/i.test(p.name) && field.type === 'number') {
-				field.format = 'currency'
-			}
-			return field
-		})
+		.map(propertyField)
 	if (statusTypes.length > 0) {
-		fields.push({ id: STATUS_FIELD, label: t('dossiq', 'status'), type: 'enum', options: statusTypes.map((s) => ({ id: s.id, label: resolveTranslatable(s.name || s.title || s.id).text })) })
+		fields.push(statusField(statusTypes))
 	}
+	fields.push(...documentFields(documentTypes))
+	return fields
+}
+
+/**
+ * The document types as condition fields, those without an id left out.
+ *
+ * @param {Array<object>} documentTypes The document types.
+ * @return {Array<object>} The fields.
+ */
+function documentFields(documentTypes) {
+	const fields = []
 	for (const d of documentTypes) {
 		if (d && d.id) {
-			fields.push({ id: DOCUMENT_FIELD_PREFIX + d.id, label: t('dossiq', 'Document {name}', { name: resolveTranslatable(d.name || d.title || d.id).text }), type: 'presence' })
+			fields.push(documentField(d))
 		}
 	}
 	return fields
+}
+
+/**
+ * One property definition as a condition field.
+ *
+ * @param {object} p The property definition.
+ * @return {{id: string, label: string, type: string, options?: Array, format?: string}} The field.
+ */
+function propertyField(p) {
+	const field = { id: p.name, label: resolveTranslatable(p.title || p.label || wordsOf(p.name)).text, type: PROPERTY_TYPES[p.propertyType] || 'string' }
+	addOptions(field, p)
+	addCurrencyFormat(field, p)
+	return field
+}
+
+/**
+ * Give a field the choices its property definition lists.
+ *
+ * @param {object} field The field, changed in place.
+ * @param {object} p The property definition.
+ * @return {void}
+ */
+function addOptions(field, p) {
+	if (Array.isArray(p.enumValues) && p.enumValues.length > 0) {
+		field.options = p.enumValues.map((v) => ({ id: v, label: String(v) }))
+	}
+}
+
+/**
+ * Mark a number field that holds money as currency.
+ *
+ * @param {object} field The field, changed in place.
+ * @param {object} p The property definition.
+ * @return {void}
+ */
+function addCurrencyFormat(field, p) {
+	if (/kosten|bedrag|amount|price|prijs/i.test(p.name) && field.type === 'number') {
+		field.format = 'currency'
+	}
+}
+
+/**
+ * The status as a condition field, with the case type's statuses as choices.
+ *
+ * @param {Array<object>} statusTypes The statuses.
+ * @return {object} The field.
+ */
+function statusField(statusTypes) {
+	return { id: STATUS_FIELD, label: t('dossiq', 'status'), type: 'enum', options: statusTypes.map((s) => ({ id: s.id, label: resolveTranslatable(s.name || s.title || s.id).text })) }
+}
+
+/**
+ * One document type as a condition field: it can only be filled in.
+ *
+ * @param {object} d The document type.
+ * @return {object} The field.
+ */
+function documentField(d) {
+	return { id: DOCUMENT_FIELD_PREFIX + d.id, label: t('dossiq', 'Document {name}', { name: resolveTranslatable(d.name || d.title || d.id).text }), type: 'presence' }
 }
 
 /**

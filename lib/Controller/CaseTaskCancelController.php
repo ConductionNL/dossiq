@@ -39,6 +39,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use RuntimeException;
 use Throwable;
@@ -93,13 +94,9 @@ class CaseTaskCancelController extends Controller {
 			return new JSONResponse(['message' => 'The task engine could not be reached', 'error' => 'storage_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
-		$caseId = (string)($task['objectUuid'] ?? '');
-		if ($task === null || $caseId === '') {
-			return new JSONResponse(['message' => 'That task could not be found', 'error' => 'task_not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		if ($this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(['message' => 'You may not act on this case', 'error' => 'not_authorized'], Http::STATUS_FORBIDDEN);
+		$refused = $this->refusalFor(task: $task, user: $user);
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		try {
@@ -111,13 +108,54 @@ class CaseTaskCancelController extends Controller {
 				)
 			);
 		} catch (RuntimeException $e) {
-			[, $why] = array_pad(explode(':', $e->getMessage(), 2), 2, '');
-			$notice  = $this->notices->cancelRefused(task: $this->tasks->titleOf(task: $task), reason: trim($why));
-
-			return new JSONResponse(
-				['message' => $notice['title'] . ' ' . $notice['text'], 'error' => 'cancel_refused', 'notice' => $notice],
-				Http::STATUS_CONFLICT
-			);
+			return $this->engineRefused(task: $task, e: $e);
 		}//end try
 	}//end cancel()
+
+	/**
+	 * The refusal for a task that is not found or whose case the caller may not change.
+	 *
+	 * A missing task has no case, so it is answered as not found too.
+	 *
+	 * @param array<string, mixed>|null $task The task, or null when not found.
+	 * @param IUser                     $user The caller.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may cancel the task.
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 */
+	private function refusalFor(?array $task, IUser $user): ?JSONResponse {
+		$caseId = (string)($task['objectUuid'] ?? '');
+		if ($caseId === '') {
+			return new JSONResponse(['message' => 'That task could not be found', 'error' => 'task_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if ($this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['message' => 'You may not act on this case', 'error' => 'not_authorized'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end refusalFor()
+
+	/**
+	 * The 409 answer, with a notice, when the engine refuses the cancel.
+	 *
+	 * The engine's message reads `<code>: <reason>`; the reason is shown.
+	 *
+	 * @param array<string, mixed> $task The task.
+	 * @param RuntimeException     $e    The engine's refusal.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 */
+	private function engineRefused(array $task, RuntimeException $e): JSONResponse {
+		[, $why] = array_pad(explode(':', $e->getMessage(), 2), 2, '');
+		$notice  = $this->notices->cancelRefused(task: $this->tasks->titleOf(task: $task), reason: trim($why));
+
+		return new JSONResponse(
+			['message' => $notice['title'] . ' ' . $notice['text'], 'error' => 'cancel_refused', 'notice' => $notice],
+			Http::STATUS_CONFLICT
+		);
+	}//end engineRefused()
 }//end class

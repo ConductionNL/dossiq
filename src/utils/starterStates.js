@@ -26,6 +26,17 @@ export const SHIPPED_STATES = {
 }
 
 /**
+ * The label of each shipped state that is not the administrator's own.
+ *
+ * @type {Map<string, function(): string>}
+ */
+const SHIPPED_LABELS = new Map([
+	[SHIPPED_STATES.shipped, () => t('dossiq', 'Shipped, unchanged')],
+	[SHIPPED_STATES.changed, () => t('dossiq', 'Shipped, changed here')],
+	[SHIPPED_STATES.removed, () => t('dossiq', 'Shipped, removed here')],
+])
+
+/**
  * What an administrator reads beside one seeded object.
  *
  * @param {object} row One row from GET /api/starter/shipped/{schema}.
@@ -34,20 +45,8 @@ export const SHIPPED_STATES = {
  */
 export function shippedLabel(row) {
 	const state = row && row.state ? row.state : SHIPPED_STATES.local
-
-	if (state === SHIPPED_STATES.shipped) {
-		return t('dossiq', 'Shipped, unchanged')
-	}
-
-	if (state === SHIPPED_STATES.changed) {
-		return t('dossiq', 'Shipped, changed here')
-	}
-
-	if (state === SHIPPED_STATES.removed) {
-		return t('dossiq', 'Shipped, removed here')
-	}
-
-	return t('dossiq', 'Yours')
+	const label = SHIPPED_LABELS.get(state)
+	return label ? label() : t('dossiq', 'Yours')
 }
 
 /**
@@ -86,7 +85,7 @@ export function adoptionLosesLocalChange(row) {
  * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
  */
 export function connectionLabel(result) {
-	if (!result || !result.state || result.state === 'not_tested') {
+	if (isUntested(result)) {
 		return {
 			state: 'not_tested',
 			label: t('dossiq', 'Not tested'),
@@ -96,14 +95,39 @@ export function connectionLabel(result) {
 	}
 
 	if (result.state === 'reachable') {
-		return {
-			state: 'reachable',
-			label: t('dossiq', 'Answered {status}', { status: result.status }),
-			type: 'success',
-			measuredAt: result.measuredAt || '',
-		}
+		return reachableConnectionLabel(result)
 	}
+	return failedConnectionLabel(result)
+}
 
+/**
+ * Whether nobody has tested the connection yet.
+ *
+ * @param {object|null} result The last test result, or null.
+ * @return {boolean} True when there is no result with a tested state.
+ */
+function isUntested(result) {
+	return !result || !result.state || result.state === 'not_tested'
+}
+
+/**
+ * @param {object} result A test result whose endpoint answered.
+ * @return {object} `{state, label, type, measuredAt}` for the note card.
+ */
+function reachableConnectionLabel(result) {
+	return {
+		state: 'reachable',
+		label: t('dossiq', 'Answered {status}', { status: result.status }),
+		type: 'success',
+		measuredAt: result.measuredAt || '',
+	}
+}
+
+/**
+ * @param {object} result A test result whose endpoint did not answer.
+ * @return {object} `{state, label, type, measuredAt}` for the note card.
+ */
+function failedConnectionLabel(result) {
 	return {
 		state: 'failed',
 		label: result.reason || t('dossiq', 'The endpoint did not answer'),

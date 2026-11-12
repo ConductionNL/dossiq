@@ -146,6 +146,26 @@ import { dialogNotice, dialogNoticeProps } from '../utils/dialogNotice.js'
 import { resolveCaseId } from '../utils/resolveCaseId.js'
 
 /**
+ * Whether an answer refused the letter: a 200 is not a delivery.
+ *
+ * @param {object|undefined} answer The answer.
+ * @return {boolean} True for a refusal.
+ */
+function isRefusedAnswer(answer) {
+	return answer?.success === false || answer?.message?.refused === true
+}
+
+/**
+ * The refusal code an answer carries, at the top or on its message.
+ *
+ * @param {object|undefined} answer The answer.
+ * @return {string|undefined} The code.
+ */
+function refusalCode(answer) {
+	return answer?.code || answer?.message?.code
+}
+
+/**
  * Compose one letter to a citizen's digital post, from the case.
  *
  * 🔴 NOTHING OPENED THIS FILE UNTIL NOW. It was referenced nowhere in dossiq:
@@ -490,49 +510,92 @@ export default {
 			this.sendError = null
 			this.sendCode = ''
 			try {
-				const answer = await sendMessage({
-					caseId: this.resolvedCaseId,
-					bsn: this.form.bsn,
-					subject: this.form.subject,
-					body: this.form.body,
-					berichtTypeCode: this.form.berichtTypeCode?.code || '',
-					// The category decides, not the channel: a besluit is always
-					// delivered, a case update respects the citizen's opt-out.
-					category: this.form.isBesluit ? 'besluit' : 'case-update',
-				})
-
-				// 🔴 A 200 IS NOT A DELIVERY. The endpoint answers 400 with the
-				// provider's sentence when integriq refused, which lands in the
-				// catch below, but it can also answer 200 for a message that was
-				// recorded without going out. Emitting `sent` on either would
-				// close this dialog over a letter nobody received, which is the
-				// whole failure this change is about, one layer up.
-				if (answer?.success === false || answer?.message?.refused === true) {
-					this.sendCode = String(answer?.code || answer?.message?.code || '')
-					this.sendError =
-						this.refusalText(answer?.code || answer?.message?.code)
-						|| answer?.error
-						|| answer?.message?.error
-						|| t(
-							'dossiq',
-							'This letter was not sent, and no reason was given.',
-						)
-					return
-				}
-
-				this.$emit('sent')
+				await this.deliver()
 			} catch (e) {
 				// The provider's OWN words, whenever there are any. "Sending
 				// failed" tells a handler nothing they can act on; "no
 				// PKIoverheid certificate is configured" tells them who to ask.
-				this.sendCode = String(e.response?.data?.code || '')
-				this.sendError =
-					this.refusalText(e.response?.data?.code)
-					|| e.response?.data?.error
-					|| t('dossiq', 'Failed to send message')
+				this.keepSendFailure(e.response?.data)
 			} finally {
 				this.sending = false
 			}
+		},
+
+		/**
+		 * Send the message and emit `sent` only for a letter that went out.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 */
+		async deliver() {
+			const answer = await sendMessage(this.messageToSend())
+
+			// 🔴 A 200 IS NOT A DELIVERY. The endpoint answers 400 with the
+			// provider's sentence when integriq refused, which lands in send's
+			// catch, but it can also answer 200 for a message that was
+			// recorded without going out. Emitting `sent` on either would
+			// close this dialog over a letter nobody received, which is the
+			// whole failure this change is about, one layer up.
+			if (isRefusedAnswer(answer)) {
+				this.keepRefusal(answer)
+				return
+			}
+
+			this.$emit('sent')
+		},
+
+		/**
+		 * The message the form describes.
+		 *
+		 * @return {object} The message to send.
+		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 */
+		messageToSend() {
+			return {
+				caseId: this.resolvedCaseId,
+				bsn: this.form.bsn,
+				subject: this.form.subject,
+				body: this.form.body,
+				berichtTypeCode: this.form.berichtTypeCode?.code || '',
+				// The category decides, not the channel: a besluit is always
+				// delivered, a case update respects the citizen's opt-out.
+				category: this.form.isBesluit ? 'besluit' : 'case-update',
+			}
+		},
+
+		/**
+		 * Keep the code and sentence of an answer that refused the letter.
+		 *
+		 * @param {object} answer The answer.
+		 * @return {void}
+		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 */
+		keepRefusal(answer) {
+			const code = refusalCode(answer)
+			this.sendCode = String(code || '')
+			this.sendError =
+				this.refusalText(code)
+				|| answer?.error
+				|| answer?.message?.error
+				|| t(
+					'dossiq',
+					'This letter was not sent, and no reason was given.',
+				)
+		},
+
+		/**
+		 * Keep the code and sentence of a send that failed.
+		 *
+		 * @param {object|undefined} data What the failed request answered.
+		 * @return {void}
+		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
+		 */
+		keepSendFailure(data) {
+			this.sendCode = String(data?.code || '')
+			this.sendError =
+				this.refusalText(data?.code)
+				|| data?.error
+				|| t('dossiq', 'Failed to send message')
 		},
 	},
 }

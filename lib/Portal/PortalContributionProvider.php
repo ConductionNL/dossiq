@@ -344,6 +344,91 @@ class PortalContributionProvider {
 	];
 
 	/**
+	 * The supplier's record collections, by id: each scoped by `supplierRef`
+	 * and listable, in the order portaliq shows them.
+	 *
+	 * @var array<string, array{schema: string, label: string}>
+	 */
+	private const SUPPLIER_COLLECTIONS = [
+		'tenders' => [
+			'schema' => 'supplierTender',
+			'label' => 'Aanbestedingen',
+		],
+		'contracts' => [
+			'schema' => 'supplierContract',
+			'label' => 'Contracten',
+		],
+		'invoices' => [
+			'schema' => 'caseSupplierInvoice',
+			'label' => 'Facturen',
+		],
+		// The supplier's own performance figures. `supplierKpi`
+		// shipped with the portal's schema foundation and no
+		// surface, so an instance computed a supplier's payment
+		// record and showed it to nobody, least of all the
+		// supplier it was about. Scoped by `supplierRef` like
+		// every collection here, so a supplier reads their own
+		// row and no one else's.
+		'performance' => [
+			'schema' => 'supplierKpi',
+			'label' => 'Prestaties',
+		],
+	];
+
+	/**
+	 * The inspector's collections, by id: each scoped by `assignedInspectorRef`,
+	 * listable at trust `low`, with the fields an inspector reads.
+	 *
+	 * @var array<string, array{schema: string, label: string, fields: array<int, string>}>
+	 */
+	private const INSPECTOR_COLLECTIONS = [
+		'inspectieRapporten' => [
+			'schema' => 'inspectieRapport',
+			'label' => 'Mijn inspecties',
+			'fields' => [
+				'case',
+				'checklist',
+				'inspectionDate',
+				'location',
+				'result',
+				'failedItems',
+				'remarks',
+				'followUpRequired',
+			],
+		],
+		'checklistRuns' => [
+			'schema' => 'inspectionChecklistRun',
+			'label' => 'Mijn checklists',
+			'fields' => [
+				'case',
+				'template',
+				'templateVersion',
+				'startedAt',
+				'completedAt',
+				'submittedAt',
+				'status',
+				'overallResult',
+				'followUpType',
+				'syncState',
+			],
+		],
+	];
+
+	/**
+	 * The fields an inspector's checklist submission may write.
+	 *
+	 * @var array<int, string>
+	 */
+	private const SUBMITTED_CHECKLIST_FIELDS = [
+		'responses',
+		'overallResult',
+		'followUpType',
+		'photos',
+		'completedAt',
+		'status',
+	];
+
+	/**
 	 * Builds the declared pages (no dependencies, so `new` still works).
 	 *
 	 * @var PortalPages
@@ -604,28 +689,18 @@ class PortalContributionProvider {
 	public function getContribution(array $subject): ?array {
 		$audience = ($subject['audience'] ?? '');
 
-		if ($audience === 'supplier') {
-			return $this->supplierContribution();
-		}
-
-		if ($audience === 'citizen' || $audience === 'client') {
-			return $this->citizenContribution();
-		}
-
-		// A COMPANY ON A MUNICIPAL PORTAL: the resident's manifest, worded for
-		// a company (site-business-and-authorisation D1). A portal that keeps
-		// portaliq's eHerkenning preset gets `supplier` instead, with the
-		// procurement pages and the case collection beside them.
-		if ($audience === 'business') {
-			return $this->citizenContribution(group: self::BUSINESS_GROUP, labels: self::BUSINESS_PAGE_LABELS);
-		}
-
-		if ($audience === 'inspector') {
-			return $this->inspectorContribution();
-		}
-
-		// Any audience Dossiq does not serve → null (fail-closed; ADR-005).
-		return null;
+		return match ($audience) {
+			'supplier' => $this->supplierContribution(),
+			'citizen', 'client' => $this->citizenContribution(),
+			// A COMPANY ON A MUNICIPAL PORTAL: the resident's manifest, worded for
+			// a company (site-business-and-authorisation D1). A portal that keeps
+			// portaliq's eHerkenning preset gets `supplier` instead, with the
+			// procurement pages and the case collection beside them.
+			'business' => $this->citizenContribution(group: self::BUSINESS_GROUP, labels: self::BUSINESS_PAGE_LABELS),
+			'inspector' => $this->inspectorContribution(),
+			// Any audience Dossiq does not serve → null (fail-closed; ADR-005).
+			default => null,
+		};
 	}//end getContribution()
 
 	/**
@@ -645,64 +720,7 @@ class PortalContributionProvider {
 	private function supplierContribution(): array {
 		$contribution = [
 			'label' => self::SUPPLIER_GROUP,
-			'collections' => [
-				[
-					'id' => 'tenders',
-					'register' => self::REGISTER,
-					'schema' => 'supplierTender',
-					'scopeField' => 'supplierRef',
-					'label' => 'Aanbestedingen',
-					'listable' => true,
-				],
-				[
-					'id' => 'contracts',
-					'register' => self::REGISTER,
-					'schema' => 'supplierContract',
-					'scopeField' => 'supplierRef',
-					'label' => 'Contracten',
-					'listable' => true,
-				],
-				[
-					'id' => 'invoices',
-					'register' => self::REGISTER,
-					'schema' => 'caseSupplierInvoice',
-					'scopeField' => 'supplierRef',
-					'label' => 'Facturen',
-					'listable' => true,
-				],
-				[
-					// The supplier's own performance figures. `supplierKpi`
-					// shipped with the portal's schema foundation and no
-					// surface, so an instance computed a supplier's payment
-					// record and showed it to nobody, least of all the
-					// supplier it was about. Scoped by `supplierRef` like
-					// every collection here, so a supplier reads their own
-					// row and no one else's.
-					'id' => 'performance',
-					'register' => self::REGISTER,
-					'schema' => 'supplierKpi',
-					'scopeField' => 'supplierRef',
-					'label' => 'Prestaties',
-					'listable' => true,
-				],
-				[
-					'id' => 'messages',
-					'kind' => 'inbox',
-					'register' => self::REGISTER,
-					'schema' => 'supplierMessage',
-					'scopeField' => 'supplierRef',
-					'label' => 'Berichten',
-					'listable' => true,
-					// The inbox reads its own names (portaliq#702). Mark-read
-					// writes the time to `readAt`'s field; without it a
-					// supplier's message stayed unread forever.
-					'messageFields' => [
-						'receivedAt' => 'sentAt',
-						'readAt' => 'readByRecipientAt',
-						'attachments' => 'attachmentRefs',
-					],
-				],
-			],
+			'collections' => $this->supplierCollections(),
 			'actions' => [],
 			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
 		];
@@ -717,6 +735,60 @@ class PortalContributionProvider {
 		return $contribution;
 
 	}//end supplierContribution()
+
+	/**
+	 * The supplier's record collections, then its message inbox.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
+	 */
+	private function supplierCollections(): array {
+		$collections = [];
+		foreach (self::SUPPLIER_COLLECTIONS as $id => $collection) {
+			$collections[] = [
+				'id' => $id,
+				'register' => self::REGISTER,
+				'schema' => $collection['schema'],
+				'scopeField' => 'supplierRef',
+				'label' => $collection['label'],
+				'listable' => true,
+			];
+		}
+
+		$collections[] = $this->supplierInbox();
+
+		return $collections;
+
+	}//end supplierCollections()
+
+	/**
+	 * The supplier's message inbox, scoped by `supplierRef`.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 */
+	private function supplierInbox(): array {
+		return [
+			'id' => 'messages',
+			'kind' => 'inbox',
+			'register' => self::REGISTER,
+			'schema' => 'supplierMessage',
+			'scopeField' => 'supplierRef',
+			'label' => 'Berichten',
+			'listable' => true,
+			// The inbox reads its own names (portaliq#702). Mark-read
+			// writes the time to `readAt`'s field; without it a
+			// supplier's message stayed unread forever.
+			'messageFields' => [
+				'receivedAt' => 'sentAt',
+				'readAt' => 'readByRecipientAt',
+				'attachments' => 'attachmentRefs',
+			],
+		];
+
+	}//end supplierInbox()
 
 	/**
 	 * Manifest for the `citizen` audience (the 'Mijn gemeente' portal).
@@ -856,71 +928,8 @@ class PortalContributionProvider {
 	private function inspectorContribution(): array {
 		$contribution = [
 			'label' => self::INSPECTOR_GROUP,
-			'collections' => [
-				[
-					'id' => 'inspectieRapporten',
-					'register' => self::REGISTER,
-					'schema' => 'inspectieRapport',
-					'scopeField' => 'assignedInspectorRef',
-					'label' => 'Mijn inspecties',
-					'listable' => true,
-					'minTrust' => 'low',
-					'fields' => [
-						'case',
-						'checklist',
-						'inspectionDate',
-						'location',
-						'result',
-						'failedItems',
-						'remarks',
-						'followUpRequired',
-					],
-				],
-				[
-					'id' => 'checklistRuns',
-					'register' => self::REGISTER,
-					'schema' => 'inspectionChecklistRun',
-					'scopeField' => 'assignedInspectorRef',
-					'label' => 'Mijn checklists',
-					'listable' => true,
-					'minTrust' => 'low',
-					'fields' => [
-						'case',
-						'template',
-						'templateVersion',
-						'startedAt',
-						'completedAt',
-						'submittedAt',
-						'status',
-						'overallResult',
-						'followUpType',
-						'syncState',
-					],
-				],
-			],
-			'actions' => [
-				[
-					'id' => 'submitChecklistRun',
-					'type' => 'update',
-					'label' => 'Checklist indienen',
-					'register' => self::REGISTER,
-					'schema' => 'inspectionChecklistRun',
-					'scopeField' => 'assignedInspectorRef',
-					'minTrust' => 'low',
-					'fields' => [
-						'responses',
-						'overallResult',
-						'followUpType',
-						'photos',
-						'completedAt',
-						'status',
-					],
-					// The transition is the server's. `status` is whitelisted only
-					// so this may write it; the value comes from here and never from
-					// the request.
-					'set' => ['status' => 'submitted'],
-				],
-			],
+			'collections' => $this->inspectorCollections(),
+			'actions' => [$this->submitChecklistRunAction()],
 			'notifications' => [],
 		];
 		$contribution['pages'] = $this->pages->forCollections(
@@ -932,6 +941,57 @@ class PortalContributionProvider {
 		return $contribution;
 
 	}//end inspectorContribution()
+
+	/**
+	 * The inspector's collections, scoped by `assignedInspectorRef` at trust `low`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
+	 */
+	private function inspectorCollections(): array {
+		$collections = [];
+		foreach (self::INSPECTOR_COLLECTIONS as $id => $collection) {
+			$collections[] = [
+				'id' => $id,
+				'register' => self::REGISTER,
+				'schema' => $collection['schema'],
+				'scopeField' => 'assignedInspectorRef',
+				'label' => $collection['label'],
+				'listable' => true,
+				'minTrust' => 'low',
+				'fields' => $collection['fields'],
+			];
+		}
+
+		return $collections;
+
+	}//end inspectorCollections()
+
+	/**
+	 * The inspector's one write: submit a checklist run they are assigned.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
+	 */
+	private function submitChecklistRunAction(): array {
+		return [
+			'id' => 'submitChecklistRun',
+			'type' => 'update',
+			'label' => 'Checklist indienen',
+			'register' => self::REGISTER,
+			'schema' => 'inspectionChecklistRun',
+			'scopeField' => 'assignedInspectorRef',
+			'minTrust' => 'low',
+			'fields' => self::SUBMITTED_CHECKLIST_FIELDS,
+			// The transition is the server's. `status` is whitelisted only
+			// so this may write it; the value comes from here and never from
+			// the request.
+			'set' => ['status' => 'submitted'],
+		];
+
+	}//end submitChecklistRunAction()
 
 	/**
 	 * The case type each filing action opens (decision 179, Q8).

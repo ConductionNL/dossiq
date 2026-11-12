@@ -1,0 +1,140 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`recording a search plan > asks, keeps, announces and refuses as before 1`] = `
+{
+  "busy": {
+    "busy": true,
+    "calls": [],
+    "error": "old",
+    "startedFrom": "",
+  },
+  "failed": {
+    "busy": false,
+    "calls": [
+      [
+        "put",
+        "/case/woo/plan",
+        {
+          "custodians": [
+            {
+              "function": "Jurist",
+              "name": "Jan",
+            },
+          ],
+          "periodFrom": "2026-01-01",
+          "periodTo": "2026-06-30",
+          "startedFrom": "tpl-2",
+          "systems": [
+            "files",
+          ],
+          "terms": "kap",
+        },
+      ],
+    ],
+    "error": "The search plan was not recorded.",
+    "startedFrom": "tpl-2",
+  },
+  "fromTemplate": {
+    "busy": false,
+    "calls": [
+      [
+        "put",
+        "/case/woo/plan",
+        {
+          "custodians": [
+            {
+              "function": "Jurist",
+              "name": "Jan",
+            },
+          ],
+          "periodFrom": "2026-01-01",
+          "periodTo": "2026-06-30",
+          "startedFrom": "tpl-1",
+          "systems": [
+            "files",
+          ],
+          "terms": "kap",
+        },
+      ],
+      [
+        "fill",
+        null,
+      ],
+      [
+        "emit",
+        "cn:page:refresh",
+        {},
+      ],
+    ],
+    "error": "",
+    "startedFrom": "",
+  },
+  "incomplete": {
+    "busy": false,
+    "calls": [],
+    "error": "old",
+    "startedFrom": "",
+  },
+  "recorded": {
+    "busy": false,
+    "calls": [
+      [
+        "put",
+        "/case/woo/plan",
+        {
+          "custodians": [
+            {
+              "function": "Jurist",
+              "name": "Jan",
+            },
+          ],
+          "periodFrom": "2026-01-01",
+          "periodTo": "2026-06-30",
+          "systems": [
+            "files",
+          ],
+          "terms": "kap",
+        },
+      ],
+      [
+        "fill",
+        {
+          "id": "p1",
+        },
+      ],
+      [
+        "emit",
+        "cn:page:refresh",
+        {},
+      ],
+    ],
+    "error": "",
+    "startedFrom": "",
+  },
+  "refused": {
+    "busy": false,
+    "calls": [
+      [
+        "put",
+        "/case/woo/plan",
+        {
+          "custodians": [
+            {
+              "function": "Jurist",
+              "name": "Jan",
+            },
+          ],
+          "periodFrom": "2026-01-01",
+          "periodTo": "2026-06-30",
+          "systems": [
+            "files",
+          ],
+          "terms": "kap",
+        },
+      ],
+    ],
+    "error": "No custodian",
+    "startedFrom": "",
+  },
+}
+`;

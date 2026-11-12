@@ -364,11 +364,23 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return AuthenticationResult::NONE;
 		}
 
-		$validator = $this->service(name: self::DKIM_SERVICE);
-		if ($validator === null || method_exists($validator, 'validateRaw') === false) {
+		$validator = $this->serviceWith(name: self::DKIM_SERVICE, method: 'validateRaw');
+		if ($validator === null) {
 			return AuthenticationResult::UNAVAILABLE;
 		}
 
+		return $this->validateDkim(validator: $validator, source: $source);
+	}//end dkimResult()
+
+	/**
+	 * Ask Mail's DKIM validator about a raw message.
+	 *
+	 * @param object $validator Mail's DKIM service.
+	 * @param string $source    The raw message source.
+	 *
+	 * @return string One of the {@see AuthenticationResult} values.
+	 */
+	private function validateDkim(object $validator, string $source): string {
 		try {
 			$valid = $validator->validateRaw($source);
 		} catch (Throwable $e) {
@@ -379,6 +391,19 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return AuthenticationResult::UNAVAILABLE;
 		}
 
+		return $this->dkimVerdictOf(valid: $valid);
+	}//end validateDkim()
+
+	/**
+	 * The DKIM verdict for the validator's answer.
+	 *
+	 * Only a boolean is an answer; anything else means the check did not run.
+	 *
+	 * @param mixed $valid The validator's answer.
+	 *
+	 * @return string One of the {@see AuthenticationResult} values.
+	 */
+	private function dkimVerdictOf(mixed $valid): string {
 		if (is_bool($valid) === false) {
 			return AuthenticationResult::UNAVAILABLE;
 		}
@@ -388,7 +413,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		}
 
 		return AuthenticationResult::FAIL;
-	}//end dkimResult()
+	}//end dkimVerdictOf()
 
 	/**
 	 * Whether Mail's trusted-sender list carries this address.
@@ -404,38 +429,71 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 */
 	public function isTrustedSender(string $email): bool {
 		$address = trim(strtolower($email));
-		if ($address === '') {
+		$service = $this->trustedSenderService(address: $address);
+		if ($service === null) {
 			return false;
 		}
 
-		$service = $this->service(name: self::TRUSTED_SENDER_SERVICE);
-		if ($service === null || method_exists($service, 'isTrusted') === false) {
-			return false;
-		}
-
-		foreach ($this->mailTables->allAccounts() as $account) {
-			$owner = $this->mailTables->ownerOf(accountId: (int)$account['id']);
-			if ($owner === '') {
-				continue;
+		foreach ($this->trustAnswers(service: $service, address: $address) as $trusted) {
+			if ($trusted === true) {
+				return true;
 			}
+		}
 
+		return false;
+	}//end isTrustedSender()
+
+	/**
+	 * Mail's trusted-sender service, when there is an address to ask about.
+	 *
+	 * @param string $address The normalised sender address.
+	 *
+	 * @return object|null The service, or null for an empty address or an absent service.
+	 */
+	private function trustedSenderService(string $address): ?object {
+		if ($address === '') {
+			return null;
+		}
+
+		return $this->serviceWith(name: self::TRUSTED_SENDER_SERVICE, method: 'isTrusted');
+	}//end trustedSenderService()
+
+	/**
+	 * Each mailbox owner's answer to whether the address is trusted, asked lazily.
+	 *
+	 * A lookup that fails is logged and yields nothing, so the next owner is asked.
+	 *
+	 * @param object $service Mail's trusted-sender service.
+	 * @param string $address The normalised sender address.
+	 *
+	 * @return iterable<int, mixed> The answers, in account order.
+	 */
+	private function trustAnswers(object $service, string $address): iterable {
+		foreach ($this->accountOwners() as $owner) {
 			try {
-				$trusted = $service->isTrusted($owner, $address);
+				yield $service->isTrusted($owner, $address);
 			} catch (Throwable $e) {
 				$this->logger->debug(
 					'Dossiq: the trusted-sender lookup failed',
 					['error' => $e->getMessage()]
 				);
-				continue;
 			}
+		}
+	}//end trustAnswers()
 
-			if ($trusted === true) {
-				return true;
+	/**
+	 * The owner of each Mail account that has one, read one account at a time.
+	 *
+	 * @return iterable<int, string> The owners, in account order.
+	 */
+	private function accountOwners(): iterable {
+		foreach ($this->mailTables->allAccounts() as $account) {
+			$owner = $this->mailTables->ownerOf(accountId: (int)$account['id']);
+			if ($owner !== '') {
+				yield $owner;
 			}
-		}//end foreach
-
-		return false;
-	}//end isTrustedSender()
+		}
+	}//end accountOwners()
 
 	/**
 	 * The attachments of a message.
@@ -564,20 +622,32 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return $unavailable;
 		}
 
-		$recipients = [];
-		foreach ((array)($message['to'] ?? []) as $address) {
-			$recipients[] = ['email' => (string)$address];
+		$send = new OutboxSend(account: $account, outbox: $outbox);
+		$send->accountId = $accountId;
+		if ($this->saveToOutbox(send: $send, message: $message) === false) {
+			return $unavailable;
 		}
 
-		$attachments = [];
-		foreach ((array)($message['attachments'] ?? []) as $path) {
-			$attachments[] = ['type' => 'cloud', 'fileName' => (string)$path];
-		}
+		return $this->sendFromOutbox(send: $send);
+	}//end sendMessage()
+
+	/**
+	 * Save the message in the account's outbox; false (with a warning) when
+	 * Mail would not take it.
+	 *
+	 * @param OutboxSend           $send    The send.
+	 * @param array<string, mixed> $message The message.
+	 *
+	 * @return bool Whether Mail took it.
+	 */
+	private function saveToOutbox(OutboxSend $send, array $message): bool {
+		$recipients = $this->recipientsOf(message: $message);
+		$attachments = $this->attachmentsOf(message: $message);
 
 		try {
-			$saved = $outbox->saveMessage(
-				$account,
-				$this->localMessage(accountId: $accountId, message: $message),
+			$send->saved = $send->outbox->saveMessage(
+				$send->account,
+				$this->localMessage(accountId: $send->accountId, message: $message),
 				$recipients,
 				[],
 				[],
@@ -586,28 +656,84 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: Nextcloud Mail did not take the message into its outbox',
-				['account' => $accountId, 'error' => $e->getMessage()]
+				['account' => $send->accountId, 'error' => $e->getMessage()]
 			);
-			return $unavailable;
+			return false;
 		}
 
+		$send->outboxId = $this->outboxIdOf(saved: $send->saved);
+
+		return true;
+	}//end saveToOutbox()
+
+	/**
+	 * The message's recipients, as Mail's outbox takes them.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 *
+	 * @return array<int, array{email: string}>
+	 */
+	private function recipientsOf(array $message): array {
+		$recipients = [];
+		foreach ((array)($message['to'] ?? []) as $address) {
+			$recipients[] = ['email' => (string)$address];
+		}
+
+		return $recipients;
+	}//end recipientsOf()
+
+	/**
+	 * The message's attachments: paths in the sender's own files.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 *
+	 * @return array<int, array{type: string, fileName: string}>
+	 */
+	private function attachmentsOf(array $message): array {
+		$attachments = [];
+		foreach ((array)($message['attachments'] ?? []) as $path) {
+			$attachments[] = ['type' => 'cloud', 'fileName' => (string)$path];
+		}
+
+		return $attachments;
+	}//end attachmentsOf()
+
+	/**
+	 * The saved outbox row's id, or null when Mail gave none.
+	 *
+	 * @param object $saved The saved outbox row.
+	 *
+	 * @return int|null
+	 */
+	private function outboxIdOf(object $saved): ?int {
 		$outboxId = (int)$this->call(entity: $saved, method: 'getId', fallback: 0);
 		if ($outboxId <= 0) {
-			$outboxId = null;
+			return null;
 		}
 
+		return $outboxId;
+	}//end outboxIdOf()
+
+	/**
+	 * Send the saved message; when Mail cannot send it now it stays queued.
+	 *
+	 * @param OutboxSend $send The send, with its saved row.
+	 *
+	 * @return array{state: string, outboxId: int|null}
+	 */
+	private function sendFromOutbox(OutboxSend $send): array {
 		try {
-			$sent = $outbox->sendMessage($saved, $account);
+			$sent = $send->outbox->sendMessage($send->saved, $send->account);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: Nextcloud Mail could not send the message now; it stays in the outbox',
-				['account' => $accountId, 'outboxId' => $outboxId, 'error' => $e->getMessage()]
+				['account' => $send->accountId, 'outboxId' => $send->outboxId, 'error' => $e->getMessage()]
 			);
-			return ['state' => OutboundState::QUEUED, 'outboxId' => $outboxId];
+			return ['state' => OutboundState::QUEUED, 'outboxId' => $send->outboxId];
 		}
 
-		return ['state' => $this->stateOf(sent: $sent), 'outboxId' => $outboxId];
-	}//end sendMessage()
+		return ['state' => $this->stateOf(sent: $sent), 'outboxId' => $send->outboxId];
+	}//end sendFromOutbox()
 
 	/**
 	 * Mail's outbox service, or null when Mail is absent or moved it.
@@ -816,11 +942,23 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return null;
 		}
 
-		$service = $this->service(name: self::ACCOUNT_SERVICE);
-		if ($service === null || method_exists($service, 'findById') === false) {
+		$service = $this->serviceWith(name: self::ACCOUNT_SERVICE, method: 'findById');
+		if ($service === null) {
 			return null;
 		}
 
+		return $this->findAccount(service: $service, accountId: $accountId);
+	}//end account()
+
+	/**
+	 * Read one Mail account through Mail's account service.
+	 *
+	 * @param object  $service   Mail's account service.
+	 * @param integer $accountId The account.
+	 *
+	 * @return object|null The account, or null when it cannot be read.
+	 */
+	private function findAccount(object $service, int $accountId): ?object {
 		try {
 			$account = $service->findById($accountId);
 		} catch (Throwable $e) {
@@ -836,5 +974,22 @@ class NextcloudMailGateway implements MailGatewayInterface {
 		}
 
 		return $account;
-	}//end account()
+	}//end findAccount()
+
+	/**
+	 * Resolve one of Mail's services that offers the given method.
+	 *
+	 * @param string $name   The fully qualified class name.
+	 * @param string $method The method the caller is about to use.
+	 *
+	 * @return object|null The service, or null when Mail is absent or the method is gone.
+	 */
+	private function serviceWith(string $name, string $method): ?object {
+		$service = $this->service(name: $name);
+		if ($service === null || method_exists($service, $method) === false) {
+			return null;
+		}
+
+		return $service;
+	}//end serviceWith()
 }//end class

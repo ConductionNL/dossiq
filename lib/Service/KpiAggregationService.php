@@ -141,22 +141,11 @@ class KpiAggregationService {
 			return $this->emptyKpis();
 		}
 
-		$now = new DateTimeImmutable('today');
-		$today = $now->format('Y-m-d');
-		$monthStart = $now->format('Y-m-01');
-		$monthEnd = $now->format('Y-m-t');
-
-		$closed = $this->closedThisMonth(ids: $ids, monthStart: $monthStart, monthEnd: $monthEnd);
-		$openCases = $this->rows(
-			ids: $ids,
-			schema: $ids['case'],
-			filters: self::OPEN_WORK
-		);
-
+		$run = $this->kpiRun(ids: $ids, userId: $userId);
 		$queue = $this->sources->queueFigures->foldFor(
 			userId: $userId,
-			openCases: $openCases,
-			today: $now,
+			openCases: $run->openCases,
+			today: $run->now,
 			typeTitles: $this->caseTypeTitles(ids: $ids)
 		);
 		$oldestNote = (new QueueOldestNote(l10n: $this->l10n))->line(
@@ -164,42 +153,120 @@ class KpiAggregationService {
 			dueDays: $queue['queueOldestDueDays']
 		);
 
-		return ($queue + [
-			'queueOldestNote' => $oldestNote,
-			'openCount' => $this->countCases(ids: $ids, filters: self::OPEN_WORK),
-			'newToday' => $this->countCases(ids: $ids, filters: (self::OPEN_WORK + ['startDate' => $today])),
-			'overdueCount' => $this->countCases(
-				ids: $ids,
-				filters: (self::OPEN_WORK + ['deadline' => ['lt' => $today]])
-			),
-			'completedCount' => count($closed),
-			// The reader's OWN closed cases, this month and last, for the My
-			// work tile "Closed in <month>" and its "<last month>: n" line.
-			'myCompletedCount' => $this->myClosed(ids: $ids, userId: $userId, from: $monthStart, to: $monthEnd),
-			'myCompletedLastMonth' => $this->myClosed(
-				ids: $ids,
-				userId: $userId,
-				from: $now->modify('first day of last month')->format('Y-m-d'),
-				to: $now->modify('last day of last month')->format('Y-m-d')
-			),
-			'thisMonthName' => $this->monthName(date: $now),
-			'lastMonthName' => $this->monthName(date: $now->modify('first day of last month')),
-			// The ENGINE counts, and it counts server-side. Both tiles used
-			// to be object counts over `caseTask`; the terminality split and
-			// the due window are now predicates the engine understands, so
-			// dossiq neither derives overdue-ness nor counts a page.
-			'taskCount' => $this->sources->engineTasks->countOpenForAssignee(actor: $userId),
-			'tasksDueToday' => $this->sources->engineTasks->countOpenForAssignee(
-				actor: $userId,
-				dueAfter: ($today . 'T00:00:00+00:00'),
-				dueBefore: ($today . 'T23:59:59+00:00')
-			),
-			'statusBreakdown' => $this->breakdown(rows: $openCases, field: 'status', label: 'status'),
-			'typeBreakdown' => $this->breakdown(rows: $openCases, field: 'caseType', label: 'type'),
-			'avgProcessingDays' => $this->averageProcessingDays(closed: $closed),
-			'slaCompliance' => $this->slaCompliance(closed: $closed),
-		]);
+		return ($queue + ['queueOldestNote' => $oldestNote]
+			+ $this->caseCounts(run: $run)
+			+ $this->myClosedCounts(run: $run)
+			+ $this->taskCounts(run: $run)
+			+ $this->openWorkShape(run: $run));
 	}//end computeKpis()
+
+	/**
+	 * Today's dates, and the closed and open cases, read once.
+	 *
+	 * @param array<string, mixed> $ids    The register and schema ids.
+	 * @param string               $userId The reader.
+	 *
+	 * @return KpiRun
+	 */
+	private function kpiRun(array $ids, string $userId): KpiRun {
+		$run = new KpiRun();
+		$run->ids = $ids;
+		$run->userId = $userId;
+		$run->now = new DateTimeImmutable('today');
+		$run->today = $run->now->format('Y-m-d');
+		$run->monthStart = $run->now->format('Y-m-01');
+		$run->monthEnd = $run->now->format('Y-m-t');
+		$run->closed = $this->closedThisMonth(ids: $ids, monthStart: $run->monthStart, monthEnd: $run->monthEnd);
+		$run->openCases = $this->rows(
+			ids: $ids,
+			schema: $ids['case'],
+			filters: self::OPEN_WORK
+		);
+
+		return $run;
+	}//end kpiRun()
+
+	/**
+	 * The case counts: open, new today, overdue and closed this month.
+	 *
+	 * @param KpiRun $run The computation.
+	 *
+	 * @return array<string, int>
+	 */
+	private function caseCounts(KpiRun $run): array {
+		return [
+			'openCount' => $this->countCases(ids: $run->ids, filters: self::OPEN_WORK),
+			'newToday' => $this->countCases(ids: $run->ids, filters: (self::OPEN_WORK + ['startDate' => $run->today])),
+			'overdueCount' => $this->countCases(
+				ids: $run->ids,
+				filters: (self::OPEN_WORK + ['deadline' => ['lt' => $run->today]])
+			),
+			'completedCount' => count($run->closed),
+		];
+	}//end caseCounts()
+
+	/**
+	 * The reader's OWN closed cases, this month and last, for the My work tile
+	 * "Closed in <month>" and its "<last month>: n" line.
+	 *
+	 * @param KpiRun $run The computation.
+	 *
+	 * @return array<string, int|string>
+	 */
+	private function myClosedCounts(KpiRun $run): array {
+		$lastMonth = $run->now->modify('first day of last month');
+
+		return [
+			'myCompletedCount' => $this->myClosed(ids: $run->ids, userId: $run->userId, from: $run->monthStart, to: $run->monthEnd),
+			'myCompletedLastMonth' => $this->myClosed(
+				ids: $run->ids,
+				userId: $run->userId,
+				from: $lastMonth->format('Y-m-d'),
+				to: $run->now->modify('last day of last month')->format('Y-m-d')
+			),
+			'thisMonthName' => $this->monthName(date: $run->now),
+			'lastMonthName' => $this->monthName(date: $lastMonth),
+		];
+	}//end myClosedCounts()
+
+	/**
+	 * The reader's open engine tasks, and those due today.
+	 *
+	 * The ENGINE counts, and it counts server-side. Both tiles used to be
+	 * object counts over `caseTask`; the terminality split and the due window
+	 * are now predicates the engine understands, so dossiq neither derives
+	 * overdue-ness nor counts a page.
+	 *
+	 * @param KpiRun $run The computation.
+	 *
+	 * @return array<string, int>
+	 */
+	private function taskCounts(KpiRun $run): array {
+		return [
+			'taskCount' => $this->sources->engineTasks->countOpenForAssignee(actor: $run->userId),
+			'tasksDueToday' => $this->sources->engineTasks->countOpenForAssignee(
+				actor: $run->userId,
+				dueAfter: ($run->today . 'T00:00:00+00:00'),
+				dueBefore: ($run->today . 'T23:59:59+00:00')
+			),
+		];
+	}//end taskCounts()
+
+	/**
+	 * The shape of the open work and of this month's closed cases.
+	 *
+	 * @param KpiRun $run The computation.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function openWorkShape(KpiRun $run): array {
+		return [
+			'statusBreakdown' => $this->breakdown(rows: $run->openCases, field: 'status', label: 'status'),
+			'typeBreakdown' => $this->breakdown(rows: $run->openCases, field: 'caseType', label: 'type'),
+			'avgProcessingDays' => $this->averageProcessingDays(closed: $run->closed),
+			'slaCompliance' => $this->slaCompliance(closed: $run->closed),
+		];
+	}//end openWorkShape()
 
 	/**
 	 * Every case type's title, by id.

@@ -270,42 +270,61 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function saveIntervention(string $planId): JSONResponse {
 		try {
-			$status = $this->planAccess->planWrite(
-				planId: $planId,
-				recordSchema: CasePlanInterventions::SCHEMA,
-				recordId: trim((string)$this->request->getParam('id', ''))
-			);
-			if ($status === Http::STATUS_OK) {
-				$status = $this->planAccess->goalOnPlan(planId: $planId, goalId: trim((string)$this->request->getParam('goal', '')));
-			}
-
+			$status = $this->interventionAccess(planId: $planId);
 			if ($status !== Http::STATUS_OK) {
 				return $this->denied(status: $status);
 			}
 
-			return new JSONResponse(
-				$this->interventions->save(
-					intervention: [
-						'id' => trim((string)$this->request->getParam('id', '')),
-						'plan' => $planId,
-						'goal' => trim((string)$this->request->getParam('goal', '')),
-						'title' => (string)$this->request->getParam('title', ''),
-						'description' => (string)$this->request->getParam('description', ''),
-						'provider' => (string)$this->request->getParam('provider', ''),
-						'providerName' => (string)$this->request->getParam('providerName', ''),
-						'startDate' => (string)$this->request->getParam('startDate', ''),
-						'targetDate' => (string)$this->request->getParam('targetDate', ''),
-						'state' => (string)$this->request->getParam('state', 'planned'),
-						'outcome' => (string)$this->request->getParam('outcome', ''),
-					]
-				)
-			);
+			return new JSONResponse($this->interventions->save(intervention: $this->interventionOf(planId: $planId)));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'case-plan-intervention', e: $e);
 		} catch (Throwable $e) {
 			return $this->broke(op: 'case-plan-intervention', e: $e);
 		}
 	}//end saveIntervention()
+
+	/**
+	 * Whether the caller may write this intervention on the plan, for a goal of that plan.
+	 *
+	 * @param string $planId The plan.
+	 *
+	 * @return int 200 when allowed, else the refusal's status.
+	 */
+	private function interventionAccess(string $planId): int {
+		$status = $this->planAccess->planWrite(
+			planId: $planId,
+			recordSchema: CasePlanInterventions::SCHEMA,
+			recordId: trim((string)$this->request->getParam('id', ''))
+		);
+		if ($status === Http::STATUS_OK) {
+			$status = $this->planAccess->goalOnPlan(planId: $planId, goalId: trim((string)$this->request->getParam('goal', '')));
+		}
+
+		return $status;
+	}//end interventionAccess()
+
+	/**
+	 * The intervention the request describes, on the plan.
+	 *
+	 * @param string $planId The plan.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function interventionOf(string $planId): array {
+		return [
+			'id' => trim((string)$this->request->getParam('id', '')),
+			'plan' => $planId,
+			'goal' => trim((string)$this->request->getParam('goal', '')),
+			'title' => (string)$this->request->getParam('title', ''),
+			'description' => (string)$this->request->getParam('description', ''),
+			'provider' => (string)$this->request->getParam('provider', ''),
+			'providerName' => (string)$this->request->getParam('providerName', ''),
+			'startDate' => (string)$this->request->getParam('startDate', ''),
+			'targetDate' => (string)$this->request->getParam('targetDate', ''),
+			'state' => (string)$this->request->getParam('state', 'planned'),
+			'outcome' => (string)$this->request->getParam('outcome', ''),
+		];
+	}//end interventionOf()
 
 	/**
 	 * Record a review of a plan.

@@ -114,8 +114,34 @@ class WithheldListRecorder {
 			return ['status' => 'not-recorded', 'reason' => self::REASON_FAILED];
 		}
 
+		return self::recorded(answer: $answer);
+	}//end record()
+
+	/**
+	 * What opencatalogi recorded: how many entries, and each refused one with why.
+	 *
+	 * @param mixed $answer What opencatalogi's record() answered.
+	 *
+	 * @return array{status: string, recorded: int, refused: array<int, array{position: int, code: string, reason: string}>} The outcome.
+	 */
+	private static function recorded(mixed $answer): array {
+		return [
+			'status' => 'recorded',
+			'recorded' => (int)($answer['recorded'] ?? 0),
+			'refused' => self::refusedRows(rows: (array)($answer['refused'] ?? [])),
+		];
+	}//end recorded()
+
+	/**
+	 * The refused entries, in the shape the case shows them.
+	 *
+	 * @param array<int|string, mixed> $rows What opencatalogi refused.
+	 *
+	 * @return array<int, array{position: int, code: string, reason: string}> The refused entries.
+	 */
+	private static function refusedRows(array $rows): array {
 		$refused = [];
-		foreach ((array)($answer['refused'] ?? []) as $row) {
+		foreach ($rows as $row) {
 			if (is_array($row) === true) {
 				$refused[] = [
 					'position' => (int)($row['position'] ?? 0),
@@ -125,12 +151,8 @@ class WithheldListRecorder {
 			}
 		}
 
-		return [
-			'status' => 'recorded',
-			'recorded' => (int)($answer['recorded'] ?? 0),
-			'refused' => $refused,
-		];
-	}//end record()
+		return $refused;
+	}//end refusedRows()
 
 	/**
 	 * The one sentence the case shows about its withheld list, '' when all went in.

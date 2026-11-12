@@ -41,6 +41,7 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
+use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -85,7 +86,15 @@ class ObjectListenerRegistrar {
 			listener: WooRefusalGroundDeleteGuard::class
 		);
 		$context->registerEventListener(
+			event: ObjectLeavingEvent::class,
+			listener: WooRefusalGroundDeleteGuard::class
+		);
+		$context->registerEventListener(
 			event: ObjectDeletingEvent::class,
+			listener: CaseTypeDeleteGuard::class
+		);
+		$context->registerEventListener(
+			event: ObjectLeavingEvent::class,
 			listener: CaseTypeDeleteGuard::class
 		);
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $templateEvent) {
@@ -128,6 +137,10 @@ class ObjectListenerRegistrar {
 	private function registerCaseDeleteGuard(IRegistrationContext $context): void {
 		$context->registerEventListener(
 			event: ObjectDeletingEvent::class,
+			listener: CaseDeleteGuardListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectLeavingEvent::class,
 			listener: CaseDeleteGuardListener::class
 		);
 	}//end registerCaseDeleteGuard()

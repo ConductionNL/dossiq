@@ -111,66 +111,7 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		try {
-			$statusName = trim((string)($actionConfig['status'] ?? ''));
-			$statusRole = trim((string)($actionConfig['role'] ?? ''));
-			if ($statusName === '' && $statusRole === '') {
-				return new ActionResult(succeeded: false, error: 'set_status_missing_status');
-			}
-
-			$caseTypeId = (string)($case['caseType'] ?? '');
-			if ($caseTypeId === '') {
-				return new ActionResult(succeeded: false, error: 'case_has_no_case_type');
-			}
-
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return new ActionResult(succeeded: false, error: 'storage_unavailable');
-			}
-
-			$register = $this->settingsService->getConfigValue(key: 'register');
-			$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-			if ($register === '' || $caseSchema === '') {
-				return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
-			}
-
-			// The RESOLVE and the WRITE run under one identity. On the flow
-			// path that identity is the run's acting identity: the engine's
-			// RegistryStepDispatcher executes this handler inside
-			// `ObjectService::runAs()` (openregister#3332), which is what
-			// un-stranded the cases FlowRunWorker refused as 'Anonymous'. On
-			// the interactive path the ambient session user answers the
-			// permission checks. No local runAs wrap is needed here any more.
-			//
-			// ONLY `status` is written. `$case` is a SNAPSHOT of the flow
-			// item, not the stored case; full-saving it here is what erased
-			// `besluitDocument` one step after the document step wrote it
-			// (measured live: case a53cfc92/dc16d6dd, audits 512→515 and
-			// 725→728, same second). The writer applies this handler's field
-			// to the STORED case and touches nothing else.
-			$statusId = $this->resolve(caseTypeId: $caseTypeId, role: $statusRole, name: $statusName);
-			if ($statusId === '') {
-				return $this->unresolved(
-					actionConfig: $actionConfig,
-					case: $case,
-					caseTypeId: $caseTypeId,
-					role: $statusRole,
-					name: $statusName
-				);
-			}
-
-			$this->caseWriter->write(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				case: $case,
-				changes: ['status' => $statusId]
-			);
-
-			return new ActionResult(
-				succeeded: true,
-				data: ['status' => $statusId, 'statusName' => $statusName, 'statusRole' => $statusRole],
-				caseChanges: ['status' => $statusId]
-			);
+			return $this->move(move: new StatusMove(actionConfig: $actionConfig, case: $case));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'SetStatusHandler failed',
@@ -180,6 +121,89 @@ class SetStatusHandler implements ActionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'set_status_failed');
 		}//end try
 	}//end handle()
+
+	/**
+	 * Check the step and the storage, then move the case.
+	 *
+	 * @param StatusMove $move The status the step asks for.
+	 *
+	 * @return ActionResult Success with the resolved status, or a named failure.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function move(StatusMove $move): ActionResult {
+		$refusal = $move->refusal();
+		if ($refusal !== null) {
+			return new ActionResult(succeeded: false, error: $refusal);
+		}
+
+		$store = new ConfiguredCaseStore(settings: $this->settingsService);
+		$refusal = $store->refusal();
+		if ($refusal !== null) {
+			return new ActionResult(succeeded: false, error: $refusal);
+		}
+
+		return $this->moveTo(move: $move, store: $store);
+	}//end move()
+
+	/**
+	 * Resolve the status within the case's own case type and write it.
+	 *
+	 * The RESOLVE and the WRITE run under one identity. On the flow path that
+	 * identity is the run's acting identity: the engine's
+	 * RegistryStepDispatcher executes this handler inside
+	 * `ObjectService::runAs()` (openregister#3332), which is what un-stranded
+	 * the cases FlowRunWorker refused as 'Anonymous'. On the interactive path
+	 * the ambient session user answers the permission checks. No local runAs
+	 * wrap is needed here any more.
+	 *
+	 * ONLY `status` is written. The case is a SNAPSHOT of the flow item, not
+	 * the stored case; full-saving it here is what erased `besluitDocument`
+	 * one step after the document step wrote it (measured live: case
+	 * a53cfc92/dc16d6dd, audits 512→515 and 725→728, same second). The writer
+	 * applies this handler's field to the STORED case and touches nothing else.
+	 *
+	 * @param StatusMove          $move  The status the step asks for.
+	 * @param ConfiguredCaseStore $store Where the case is written.
+	 *
+	 * @return ActionResult Success with the resolved status, or a named failure.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function moveTo(StatusMove $move, ConfiguredCaseStore $store): ActionResult {
+		$statusId = $this->resolve(move: $move);
+		if ($statusId === '') {
+			return $this->unresolved(move: $move);
+		}
+
+		$this->caseWriter->write(
+			objectService: $store->objectService,
+			register: $store->register,
+			schema: $store->schema,
+			case: $move->case,
+			changes: ['status' => $statusId]
+		);
+
+		return self::moved(move: $move, statusId: $statusId);
+	}//end moveTo()
+
+	/**
+	 * The answer for a case moved to its status.
+	 *
+	 * @param StatusMove $move     The status the step asked for.
+	 * @param string     $statusId The statusType it resolved to.
+	 *
+	 * @return ActionResult Success with the resolved status.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private static function moved(StatusMove $move, string $statusId): ActionResult {
+		return new ActionResult(
+			succeeded: true,
+			data: ['status' => $statusId, 'statusName' => $move->name, 'statusRole' => $move->role],
+			caseChanges: ['status' => $statusId]
+		);
+	}//end moved()
 
 	/**
 	 * The statusType this step means, within this case's own case type.
@@ -192,24 +216,22 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 * "In behandeling" on DIFFERENT statuses is telling us the role is the
 	 * deliberate one.
 	 *
-	 * @param string $caseTypeId The case's own case type.
-	 * @param string $role       The role the step named, or ''.
-	 * @param string $name       The literal name the step named, or ''.
+	 * @param StatusMove $move The status the step asks for.
 	 *
 	 * @return string The statusType UUID, or '' when neither direction resolves.
 	 *
 	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
 	 */
-	private function resolve(string $caseTypeId, string $role, string $name): string {
-		if ($role !== '') {
-			$byRole = $this->statuses->idForRole(caseTypeId: $caseTypeId, role: $role);
+	private function resolve(StatusMove $move): string {
+		if ($move->role !== '') {
+			$byRole = $this->statuses->idForRole(caseTypeId: $move->caseTypeId, role: $move->role);
 			if ($byRole !== '') {
 				return $byRole;
 			}
 		}
 
-		if ($name !== '') {
-			return $this->statuses->idForName(caseTypeId: $caseTypeId, statusName: $name);
+		if ($move->name !== '') {
+			return $this->statuses->idForName(caseTypeId: $move->caseTypeId, statusName: $move->name);
 		}
 
 		return '';
@@ -225,61 +247,56 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 * failure and the cost of a wrongly-optional one is a case that never moves
 	 * and says nothing.
 	 *
-	 * @param array  $actionConfig The step config, carrying `required`.
-	 * @param array  $case         The case being walked.
-	 * @param string $caseTypeId   The case's own case type.
-	 * @param string $role         The role the step named, or ''.
-	 * @param string $name         The literal name the step named, or ''.
+	 * The log says what was ACTUALLY tried, both directions when both were
+	 * given: "no status with role X" alone would send an operator looking for
+	 * a role on a case type whose name never matched either, and the fix
+	 * differs.
+	 *
+	 * @param StatusMove $move The status the step asks for.
 	 *
 	 * @return ActionResult A recorded skip, or a named failure.
 	 *
 	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
 	 */
-	private function unresolved(
-		array $actionConfig,
-		array $case,
-		string $caseTypeId,
-		string $role,
-		string $name,
-	): ActionResult {
-		// Says what was ACTUALLY tried, both directions when both were given:
-		// "no status with role X" alone would send an operator looking for a
-		// role on a case type whose name never matched either, and the fix
-		// differs.
-		$tried = [];
-		if ($role !== '') {
-			$tried[] = 'role "' . $role . '"';
-		}
+	private function unresolved(StatusMove $move): ActionResult {
+		$context = ['caseType' => $move->caseTypeId, 'case' => ($move->case['id'] ?? null)];
 
-		if ($name !== '') {
-			$tried[] = 'name "' . $name . '"';
-		}
-
-		$wanted = implode(' or ', $tried);
-		$context = ['caseType' => $caseTypeId, 'case' => ($case['id'] ?? null)];
-
-		if (($actionConfig['required'] ?? true) === false) {
-			$this->logger->info(
-				'Dossiq setStatus: skipping an optional phase; this case type models no status with ' . $wanted,
-				$context
-			);
-
-			return new ActionResult(
-				succeeded: true,
-				data: [
-					'skipped' => true,
-					'reason' => 'case_type_models_no_such_phase',
-					'statusRole' => $role,
-					'statusName' => $name,
-				]
-			);
+		if ($move->optional === true) {
+			return $this->skipped(move: $move, context: $context);
 		}
 
 		// Named, not generic: an operator reading the run history has to be
 		// able to see WHICH status could not be found, because the fix is
 		// almost always a missing status on the case type.
-		$this->logger->warning('Dossiq setStatus: the case type has no status with ' . $wanted, $context);
+		$this->logger->warning('Dossiq setStatus: the case type has no status with ' . $move->tried(), $context);
 
 		return new ActionResult(succeeded: false, error: 'status_not_found_on_case_type');
 	}//end unresolved()
+
+	/**
+	 * Record an optional phase this case type does not model as skipped.
+	 *
+	 * @param StatusMove $move    The status the step asks for.
+	 * @param array      $context The log context: case type and case.
+	 *
+	 * @return ActionResult The recorded skip.
+	 *
+	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 */
+	private function skipped(StatusMove $move, array $context): ActionResult {
+		$this->logger->info(
+			'Dossiq setStatus: skipping an optional phase; this case type models no status with ' . $move->tried(),
+			$context
+		);
+
+		return new ActionResult(
+			succeeded: true,
+			data: [
+				'skipped' => true,
+				'reason' => 'case_type_models_no_such_phase',
+				'statusRole' => $move->role,
+				'statusName' => $move->name,
+			]
+		);
+	}//end skipped()
 }//end class

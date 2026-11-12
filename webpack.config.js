@@ -1,3 +1,7 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
 const webpackConfig = require('@nextcloud/webpack-vue-config')
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')

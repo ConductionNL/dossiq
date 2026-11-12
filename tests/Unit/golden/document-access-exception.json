@@ -1,0 +1,147 @@
+{
+    "not signed in": {
+        "update": {
+            "status": 401,
+            "body": {
+                "error": "Not authenticated"
+            },
+            "calls": []
+        },
+        "destroy": {
+            "status": 401,
+            "body": {
+                "error": "Not authenticated"
+            },
+            "calls": []
+        }
+    },
+    "may not change a case of the document": {
+        "update": {
+            "status": 403,
+            "body": {
+                "error": "You may not change a case this document belongs to; nothing was changed",
+                "documentId": "doc-1",
+                "caseId": "case-9"
+            },
+            "calls": [
+                "refusedCase doc-1"
+            ]
+        },
+        "destroy": {
+            "status": 403,
+            "body": {
+                "error": "You may not change a case this document belongs to; nothing was changed",
+                "documentId": "doc-1",
+                "caseId": "case-9"
+            },
+            "calls": [
+                "refusedCase doc-1"
+            ]
+        }
+    },
+    "document not readable": {
+        "update": {
+            "status": 404,
+            "body": {
+                "error": "Not found"
+            },
+            "calls": [
+                "refusedCase doc-1",
+                "loadReadable doc-1"
+            ]
+        },
+        "destroy": {
+            "status": 404,
+            "body": {
+                "error": "Not found"
+            },
+            "calls": [
+                "refusedCase doc-1",
+                "loadReadable doc-1"
+            ]
+        }
+    },
+    "invalid exception": {
+        "update": {
+            "status": 400,
+            "body": {
+                "error": "Give at least one user or group"
+            },
+            "calls": [
+                "refusedCase doc-1",
+                "loadReadable doc-1",
+                "validated {\"users\":[\"u-1\"],\"groups\":[\"g-1\"],\"reason\":\"privacy\"}"
+            ]
+        },
+        "destroy": {
+            "status": 200,
+            "body": {
+                "removed": true
+            },
+            "calls": [
+                "refusedCase doc-1",
+                "loadReadable doc-1",
+                "remove doc-1 by behandelaar because privacy"
+            ]
+        }
+    },
+    "store fails": {
+        "update": {
+            "status": 503,
+            "body": {
+                "error": "The access exception was not set: register offline"
+            },
+            "calls": [
+                "refusedCase doc-1",
+                "loadReadable doc-1",
+                "validated {\"users\":[\"u-1\"],\"groups\":[\"g-1\"],\"reason\":\"privacy\"}",
+                "set doc-1 by behandelaar"
+            ]
+        },
+        "destroy": {
+            "status": 503,
+            "body": {
+                "error": "The access exception was not removed: register offline"
+            },
+            "calls": [
+                "refusedCase doc-1",
+                "loadReadable doc-1",
+                "remove doc-1 by behandelaar because privacy"
+            ]
+        }
+    },
+    "allowed": {
+        "update": {
+            "status": 200,
+            "body": {
+                "accessException": {
+                    "users": [
+                        "u-1"
+                    ],
+                    "groups": [
+                        "g-1"
+                    ],
+                    "reason": "privacy",
+                    "setBy": "behandelaar"
+                }
+            },
+            "calls": [
+                "refusedCase doc-1",
+                "loadReadable doc-1",
+                "validated {\"users\":[\"u-1\"],\"groups\":[\"g-1\"],\"reason\":\"privacy\"}",
+                "set doc-1 by behandelaar"
+            ]
+        },
+        "destroy": {
+            "status": 200,
+            "body": {
+                "removed": true
+            },
+            "calls": [
+                "refusedCase doc-1",
+                "loadReadable doc-1",
+                "remove doc-1 by behandelaar because privacy"
+            ]
+        }
+    }
+}
