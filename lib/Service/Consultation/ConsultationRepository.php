@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Consultation;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaRows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -57,6 +58,13 @@ class ConsultationRepository {
 	use SearchesObjects;
 
 	/**
+	 * Reads a configured schema, or answers an empty list when it cannot.
+	 *
+	 * @var ConfiguredSchemaRows
+	 */
+	private readonly ConfiguredSchemaRows $rows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -66,6 +74,7 @@ class ConsultationRepository {
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->rows = new ConfiguredSchemaRows(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -78,23 +87,9 @@ class ConsultationRepository {
 	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getConsultationsForCase(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('consultation_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['parentCase' => $caseId, '_limit' => 100],
+		return $this->rows->search(
+			schemaKey: 'consultation_schema',
+			filters: ['parentCase' => $caseId, '_limit' => 100]
 		);
 	}//end getConsultationsForCase()
 
