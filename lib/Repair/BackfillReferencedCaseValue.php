@@ -139,47 +139,96 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	 * @spec openspec/specs/case-management/spec.md#REQ-CM-77
 	 */
 	public function run(IOutput $output): void {
-		$field = $this->field();
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			$output->info('OpenRegister unavailable, skipping the ' . $field . ' backfill.');
-			return;
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$targetSchema = (string)$this->settingsService->getConfigValue($this->targetSchemaKey());
-		if ($register === '' || $caseSchema === '' || $targetSchema === '') {
-			$output->info($field . ' backfill: ' . $this->schemasWhat() . ' is not configured, skipped.');
+		$backfill = $this->configuredBackfill(output: $output);
+		if ($backfill === null) {
 			return;
 		}
 
 		try {
 			$tally = (array)$this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): array => $this->backfill(
-					objectService: $objectService,
-					register: $register,
-					caseSchema: $caseSchema,
-					targetSchema: $targetSchema
-				)
+				objectService: $backfill->objectService,
+				operation: fn (): array => $this->backfill(backfill: $backfill)
 			);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the ' . $field . ' backfill could not read the cases',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
-			);
-			$output->info($field . ' backfill: the cases could not be read, skipped.');
+			$this->reportUnreadableCases(output: $output, error: $e);
 			return;
 		}
 
-		$output->info(
-			$field . ' backfill: ' . (int)($tally['filled'] ?? 0) . ' filled, '
+		$output->info($this->tallyLine(tally: $tally));
+	}//end run()
+
+	/**
+	 * Where this step reads and writes, or null when it cannot run; the reason is said in the output.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 *
+	 * @return CaseValueBackfill|null The backfill.
+	 */
+	private function configuredBackfill(IOutput $output): ?CaseValueBackfill {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			$output->info('OpenRegister unavailable, skipping the ' . $this->field() . ' backfill.');
+			return null;
+		}
+
+		return $this->backfillIn(objectService: $objectService, output: $output);
+	}//end configuredBackfill()
+
+	/**
+	 * The backfill over the configured register and schemas, or null when one is not configured.
+	 *
+	 * @param object  $objectService The OpenRegister object service.
+	 * @param IOutput $output        The upgrade output.
+	 *
+	 * @return CaseValueBackfill|null The backfill.
+	 */
+	private function backfillIn(object $objectService, IOutput $output): ?CaseValueBackfill {
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		$targetSchema = (string)$this->settingsService->getConfigValue($this->targetSchemaKey());
+		if ($register === '' || $caseSchema === '' || $targetSchema === '') {
+			$output->info($this->field() . ' backfill: ' . $this->schemasWhat() . ' is not configured, skipped.');
+			return null;
+		}
+
+		return new CaseValueBackfill(
+			objectService: $objectService,
+			register: $register,
+			caseSchema: $caseSchema,
+			targetSchema: $targetSchema
+		);
+	}//end backfillIn()
+
+	/**
+	 * Say that the cases could not be read, in the log and in the output.
+	 *
+	 * @param IOutput   $output The upgrade output.
+	 * @param Throwable $error  Why the read failed.
+	 *
+	 * @return void
+	 */
+	private function reportUnreadableCases(IOutput $output, Throwable $error): void {
+		$field = $this->field();
+		$this->logger->warning(
+			'Dossiq: the ' . $field . ' backfill could not read the cases',
+			['app' => Application::APP_ID, 'error' => $error->getMessage()]
+		);
+		$output->info($field . ' backfill: the cases could not be read, skipped.');
+	}//end reportUnreadableCases()
+
+	/**
+	 * The line that says what the step did.
+	 *
+	 * @param array<string, mixed> $tally What happened.
+	 *
+	 * @return string The line.
+	 */
+	private function tallyLine(array $tally): string {
+		return $this->field() . ' backfill: ' . (int)($tally['filled'] ?? 0) . ' filled, '
 			. (int)($tally['unconfirmed'] ?? 0) . ' written but not confirmed, '
 			. (int)($tally['failed'] ?? 0) . ' failed, '
-			. (int)($tally['skipped'] ?? 0) . ' already right or without ' . $this->missingWhat() . '.'
-		);
-	}//end run()
+			. (int)($tally['skipped'] ?? 0) . ' already right or without ' . $this->missingWhat() . '.';
+	}//end tallyLine()
 
 	/**
 	 * The value a case should carry, or an empty string when it needs no write.
@@ -195,17 +244,7 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	 * @spec openspec/specs/case-management/spec.md#REQ-CM-77
 	 */
 	public function valueToWrite(array $case, array $values): string {
-		$reference = ($case[$this->referenceField()] ?? null);
-		if (is_array($reference) === true) {
-			// An extended read hands the referred row over whole.
-			$reference = ($reference['id'] ?? ($reference['uuid'] ?? null));
-		}
-
-		if (is_string($reference) === false || $reference === '') {
-			return '';
-		}
-
-		$value = ($values[strtolower($reference)] ?? '');
+		$value = $this->referredValue(reference: $this->referenceOf(case: $case), values: $values);
 		if ($value === '' || ($case[$this->field()] ?? null) === $value) {
 			return '';
 		}
@@ -214,18 +253,48 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	}//end valueToWrite()
 
 	/**
+	 * The uuid the case refers to, whether the reference is a uuid or the referred row itself.
+	 *
+	 * @param array<string, mixed> $case The stored case.
+	 *
+	 * @return mixed The reference.
+	 */
+	private function referenceOf(array $case): mixed {
+		$reference = ($case[$this->referenceField()] ?? null);
+		if (is_array($reference) === true) {
+			// An extended read hands the referred row over whole.
+			$reference = ($reference['id'] ?? ($reference['uuid'] ?? null));
+		}
+
+		return $reference;
+	}//end referenceOf()
+
+	/**
+	 * The value the referred row carries, or '' when the case refers to nothing.
+	 *
+	 * @param mixed                 $reference The reference.
+	 * @param array<string, string> $values    Value by referred row uuid (lower-cased).
+	 *
+	 * @return string The value, or ''.
+	 */
+	private function referredValue(mixed $reference, array $values): string {
+		if (is_string($reference) === false || $reference === '') {
+			return '';
+		}
+
+		return ($values[strtolower($reference)] ?? '');
+	}//end referredValue()
+
+	/**
 	 * Walk every case and write the value where it is missing or stale.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $caseSchema    The case schema.
-	 * @param string $targetSchema  The schema of the referred rows.
+	 * @param CaseValueBackfill $backfill Where the step reads and writes.
 	 *
 	 * @return array{filled: int, unconfirmed: int, failed: int, skipped: int} What happened.
 	 */
-	private function backfill(object $objectService, string $register, string $caseSchema, string $targetSchema): array {
+	private function backfill(CaseValueBackfill $backfill): array {
 		$tally = ['filled' => 0, 'unconfirmed' => 0, 'failed' => 0, 'skipped' => 0];
-		$values = $this->valuesByRow(objectService: $objectService, register: $register, schema: $targetSchema);
+		$values = $this->valuesByRow(backfill: $backfill);
 		if ($values === []) {
 			return $tally;
 		}
@@ -233,44 +302,55 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 		// The cases are read first and written after. Writing while paging by
 		// offset can move a row between pages, and then one case is seen twice
 		// and another not at all.
-		$todo = [];
-		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
-			);
-
-			foreach ($rows as $row) {
-				$value = $this->valueToWrite(case: $row, values: $values);
-				$uuid = (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));
-				if ($value === '' || $uuid === '') {
-					$tally['skipped']++;
-					continue;
-				}
-
-				$todo[$uuid] = $value;
-			}
-
-			if (count($rows) < self::PAGE) {
-				break;
-			}
-		}//end for
-
-		foreach ($todo as $uuid => $value) {
-			$outcome = $this->writeValue(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				uuid: (string)$uuid,
-				value: $value
-			);
-			$tally[$outcome]++;
+		$plan = $this->casesToWrite(backfill: $backfill, values: $values);
+		$tally['skipped'] = $plan['skipped'];
+		foreach ($plan['todo'] as $pending) {
+			$tally[$this->writeValue(backfill: $backfill, pending: $pending)]++;
 		}
 
 		return $tally;
 	}//end backfill()
+
+	/**
+	 * Every case that needs a write, by uuid, and how many need none.
+	 *
+	 * @param CaseValueBackfill     $backfill Where the step reads and writes.
+	 * @param array<string, string> $values   Value by referred row uuid (lower-cased).
+	 *
+	 * @return array{todo: array<string, PendingCaseValue>, skipped: int} The plan.
+	 */
+	private function casesToWrite(CaseValueBackfill $backfill, array $values): array {
+		$plan = ['todo' => [], 'skipped' => 0];
+		foreach ($this->rowsOf(backfill: $backfill, schema: $backfill->caseSchema) as $row) {
+			$pending = $this->pendingFor(case: $row, values: $values);
+			if ($pending === null) {
+				$plan['skipped']++;
+				continue;
+			}
+
+			$plan['todo'][$pending->uuid] = $pending;
+		}
+
+		return $plan;
+	}//end casesToWrite()
+
+	/**
+	 * The write one case needs, or null when it needs none or carries no uuid.
+	 *
+	 * @param array<string, mixed>  $case   The stored case.
+	 * @param array<string, string> $values Value by referred row uuid (lower-cased).
+	 *
+	 * @return PendingCaseValue|null The write.
+	 */
+	private function pendingFor(array $case, array $values): ?PendingCaseValue {
+		$value = $this->valueToWrite(case: $case, values: $values);
+		$uuid = $this->uuidOf(row: $case);
+		if ($value === '' || $uuid === '') {
+			return null;
+		}
+
+		return new PendingCaseValue(uuid: $uuid, value: $value);
+	}//end pendingFor()
 
 	/**
 	 * Re-save one case so OpenRegister materialises its value, and report how it went.
@@ -280,33 +360,20 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	 * the write went through and the answer does not carry it, which is a
 	 * store that dropped the field and worth a line in the output.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $schema        The case schema.
-	 * @param string $uuid          The case.
-	 * @param string $value         The value the save should materialise.
+	 * @param CaseValueBackfill $backfill Where the step writes.
+	 * @param PendingCaseValue  $pending  The case and the value the save should materialise.
 	 *
 	 * @return string `filled`, `unconfirmed` or `failed`.
 	 */
-	private function writeValue(object $objectService, string $register, string $schema, string $uuid, string $value): string {
-		$field = $this->field();
+	private function writeValue(CaseValueBackfill $backfill, PendingCaseValue $pending): string {
 		try {
-			$stored = $this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $uuid,
-				changes: []
-			);
+			$stored = $this->resave(backfill: $backfill, uuid: $pending->uuid);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: the ' . $field . ' backfill failed for one case',
-				['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $e->getMessage()]
-			);
+			$this->reportFailedWrite(uuid: $pending->uuid, error: $e);
 			return 'failed';
 		}
 
-		if (($stored[$field] ?? null) === $value) {
+		if (($stored[$this->field()] ?? null) === $pending->value) {
 			return 'filled';
 		}
 
@@ -314,38 +381,90 @@ abstract class BackfillReferencedCaseValue implements IRepairStep {
 	}//end writeValue()
 
 	/**
+	 * Log a case whose re-save refused; the step goes on with the next.
+	 *
+	 * @param string    $uuid  The case.
+	 * @param Throwable $error Why the save refused.
+	 *
+	 * @return void
+	 */
+	private function reportFailedWrite(string $uuid, Throwable $error): void {
+		$this->logger->error(
+			'Dossiq: the ' . $this->field() . ' backfill failed for one case',
+			['app' => Application::APP_ID, 'uuid' => $uuid, 'exception' => $error->getMessage()]
+		);
+	}//end reportFailedWrite()
+
+	/**
+	 * Save one case unchanged.
+	 *
+	 * @param CaseValueBackfill $backfill Where the step writes.
+	 * @param string            $uuid     The case.
+	 *
+	 * @return array<string, mixed>|null The stored case.
+	 */
+	private function resave(CaseValueBackfill $backfill, string $uuid): ?array {
+		return $this->patchObjectAsArray(
+			objectService: $backfill->objectService,
+			register: $backfill->register,
+			schema: $backfill->caseSchema,
+			id: $uuid,
+			changes: []
+		);
+	}//end resave()
+
+	/**
 	 * The value every referred row carries, by row uuid.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register      The dossiq register.
-	 * @param string $schema        The schema of the referred rows.
+	 * @param CaseValueBackfill $backfill Where the step reads.
 	 *
 	 * @return array<string, string> Value by lower-cased uuid; a row without a value is left out.
 	 */
-	private function valuesByRow(object $objectService, string $register, string $schema): array {
+	private function valuesByRow(CaseValueBackfill $backfill): array {
 		$property = $this->targetProperty();
 		$values = [];
-		for ($page = 0; $page < self::MAX_PAGES; $page++) {
-			$rows = $this->searchObjectsAsArraysUnscoped(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
-			);
-
-			foreach ($rows as $row) {
-				$uuid = (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));
-				$value = ($row[$property] ?? null);
-				if ($uuid !== '' && is_string($value) === true && $value !== '') {
-					$values[strtolower($uuid)] = $value;
-				}
-			}
-
-			if (count($rows) < self::PAGE) {
-				break;
+		foreach ($this->rowsOf(backfill: $backfill, schema: $backfill->targetSchema) as $row) {
+			$uuid = $this->uuidOf(row: $row);
+			$value = ($row[$property] ?? null);
+			if ($uuid !== '' && is_string($value) === true && $value !== '') {
+				$values[strtolower($uuid)] = $value;
 			}
 		}
 
 		return $values;
 	}//end valuesByRow()
+
+	/**
+	 * Every row of a schema, read a page at a time up to the paging ceiling.
+	 *
+	 * @param CaseValueBackfill $backfill Where the step reads.
+	 * @param string            $schema   The schema.
+	 *
+	 * @return iterable<int, array<string, mixed>> The rows, page after page.
+	 */
+	private function rowsOf(CaseValueBackfill $backfill, string $schema): iterable {
+		for ($page = 0; $page < self::MAX_PAGES; $page++) {
+			$rows = $this->searchObjectsAsArraysUnscoped(
+				objectService: $backfill->objectService,
+				register: $backfill->register,
+				schema: $schema,
+				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
+			);
+			yield from $rows;
+			if (count($rows) < self::PAGE) {
+				return;
+			}
+		}
+	}//end rowsOf()
+
+	/**
+	 * A row's uuid, wherever the read put it.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The uuid, or ''.
+	 */
+	private function uuidOf(array $row): string {
+		return (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));
+	}//end uuidOf()
 }//end class
