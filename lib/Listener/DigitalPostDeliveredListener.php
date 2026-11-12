@@ -47,6 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\EventGetters;
 use OCA\Dossiq\Service\BerichtenboxService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -121,17 +122,7 @@ class DigitalPostDeliveredListener implements IEventListener {
 	 * @return string The value, or ''.
 	 */
 	private function stringFrom(Event $event, string $method): string {
-		if (method_exists($event, $method) === false) {
-			return '';
-		}
-
-		$value = $event->$method();
-
-		if (is_scalar($value) === true) {
-			return trim((string)$value);
-		}
-
-		return '';
+		return (new EventGetters())->stringFrom(event: $event, method: $method);
 	}//end stringFrom()
 
 	/**
