@@ -394,6 +394,66 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 	}//end testFindAssessmentReturnsExistingRecord()
 
 	/**
+	 * FindAssessment asks once for the pair, answers the first match or null, and asks nothing unconfigured.
+	 *
+	 * @return void
+	 */
+	public function testFindAssessmentAsksForThePair(): void {
+		$store = new class {
+
+			/**
+			 * The searches asked.
+			 *
+			 * @var array<int, string>
+			 */
+			public array $asked = [];
+
+			/**
+			 * The rows answered.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $rows = [];
+
+			/**
+			 * Record the search and answer the rows.
+			 *
+			 * @param string               $register The register.
+			 * @param string               $schema   The schema.
+			 * @param array<string, mixed> $filters  The filters.
+			 *
+			 * @return array<int, array<string, mixed>> The rows.
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->asked[] = $register.'/'.$schema.' '.json_encode($filters);
+				return $this->rows;
+			}
+		};
+		$service = function (array $config) use ($store): WOODocumentAssessmentService {
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('getObjectService')->willReturn($store);
+			$settings->method('getConfigValue')->willReturnCallback(
+				static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
+			);
+
+			return new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger));
+		};
+		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment'];
+
+		$this->assertNull($service(['register' => 'dossiq'])->findAssessment('case-1', 'doc-1'));
+		$this->assertNull($service(['woo_assessment_schema' => 'wooDocumentAssessment'])->findAssessment('case-1', 'doc-1'));
+		$this->assertSame([], $store->asked);
+
+		$this->assertNull($service($config)->findAssessment('case-1', 'doc-1'));
+		$store->rows = [['id' => 'a-1'], ['id' => 'a-2']];
+		$this->assertSame(['id' => 'a-1'], $service($config)->findAssessment('case-1', 'doc-1'));
+		$this->assertSame(
+			array_fill(0, 2, 'dossiq/wooDocumentAssessment {"caseRef":"case-1","documentRef":"doc-1","_limit":1}'),
+			$store->asked
+		);
+	}//end testFindAssessmentAsksForThePair()
+
+	/**
 	 * SaveRedactionProposal throws when OpenRegister is unavailable.
 	 *
 	 * @return void
