@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Beschikking;
 
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\StoredArray;
 use OCP\IL10N;
 
 /**
@@ -115,18 +116,7 @@ class RemedyClauseDeclaration {
 	 * @spec openspec/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
 	 */
 	public function declarationFor(array $caseType): array {
-		$declared = ($caseType[self::DECLARATION] ?? null);
-		if (is_string($declared) === true) {
-			$decoded = json_decode($declared, true);
-			$declared = [];
-			if (is_array($decoded) === true) {
-				$declared = $decoded;
-			}
-		}
-
-		if (is_array($declared) === false) {
-			$declared = [];
-		}
+		$declared = StoredArray::from(value: ($caseType[self::DECLARATION] ?? null));
 
 		return [
 			'kind' => strtolower(trim((string)($declared['kind'] ?? ''))),
