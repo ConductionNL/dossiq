@@ -285,14 +285,27 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return false;
 		}
 
-		$account = $this->account(accountId: $accountId);
-		$manager = $this->service(name: self::MAIL_MANAGER);
-		if ($account === null || $manager === null || method_exists($manager, 'getByMessageId') === false) {
+		$found = $this->messagesWithId(accountId: $accountId, messageId: $bare);
+
+		return (is_array($found) === true && $found !== []);
+	}//end holdsMessageId()
+
+	/**
+	 * Ask Mail which messages of the account carry the id.
+	 *
+	 * @param integer $accountId The account.
+	 * @param string  $messageId The bare message id.
+	 *
+	 * @return mixed Mail's answer, or false when the lookup could not run.
+	 */
+	private function messagesWithId(int $accountId, string $messageId): mixed {
+		$lookup = $this->threadingLookup(accountId: $accountId);
+		if ($lookup === null) {
 			return false;
 		}
 
 		try {
-			$found = $manager->getByMessageId($account, $bare);
+			return $lookup->manager->getByMessageId($lookup->account, $messageId);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the threading lookup failed, so the claim stays unproven',
@@ -300,9 +313,24 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			);
 			return false;
 		}
+	}//end messagesWithId()
 
-		return (is_array($found) === true && $found !== []);
-	}//end holdsMessageId()
+	/**
+	 * The account and the manager a threading lookup asks, or null when either is missing.
+	 *
+	 * @param integer $accountId The account.
+	 *
+	 * @return ThreadingLookup|null The lookup.
+	 */
+	private function threadingLookup(int $accountId): ?ThreadingLookup {
+		$account = $this->account(accountId: $accountId);
+		$manager = $this->service(name: self::MAIL_MANAGER);
+		if ($account === null || $manager === null || method_exists($manager, 'getByMessageId') === false) {
+			return null;
+		}
+
+		return new ThreadingLookup(account: $account, manager: $manager);
+	}//end threadingLookup()
 
 	/**
 	 * File a message in another folder of the same account.
@@ -742,14 +770,25 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 */
 	private function outbox(): ?object {
 		$outbox = $this->service(name: self::OUTBOX_SERVICE);
-		if ($outbox === null || class_exists(self::LOCAL_MESSAGE) === false
-			|| method_exists($outbox, 'saveMessage') === false || method_exists($outbox, 'sendMessage') === false
-		) {
+		if ($outbox === null || $this->canQueue(outbox: $outbox) === false) {
 			return null;
 		}
 
 		return $outbox;
 	}//end outbox()
+
+	/**
+	 * Whether Mail's outbox can take a message: its row class exists and it offers both verbs.
+	 *
+	 * @param object $outbox Mail's outbox service.
+	 *
+	 * @return bool True when a message can be saved to it and sent from it.
+	 */
+	private function canQueue(object $outbox): bool {
+		return class_exists(self::LOCAL_MESSAGE) === true
+			&& method_exists($outbox, 'saveMessage') === true
+			&& method_exists($outbox, 'sendMessage') === true;
+	}//end canQueue()
 
 	/**
 	 * Build Mail's outbox row for one message.
