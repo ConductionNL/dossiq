@@ -24,7 +24,7 @@ CaseType
 └── subCaseTypes[]       — Allowed sub-case types
 ```
 
-**Standards**: CMMN 1.1 (CaseDefinition), ZGW Catalogi API (ZaakType), Schema.org (`PropertyValueSpecification`)
+**Standards**: CMMN 1.1 (CaseDefinition), ZGW Catalogi API (ZaakType), Schema.org (`PropertyValueSpecification`), OIO Sag og Dokument (Denmark)
 **Feature tier**: MVP (core type CRUD, statuses, deadlines, draft/published, validity), V1 (result types, role types, property definitions, document types, decision types, confidentiality, suspension/extension)
 
 ## Data Model
