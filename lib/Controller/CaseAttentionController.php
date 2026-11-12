@@ -54,6 +54,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -131,13 +132,9 @@ class CaseAttentionController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function raise(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notSignedIn();
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return $this->notYours();
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -162,13 +159,9 @@ class CaseAttentionController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function clear(string $caseId, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return $this->notSignedIn();
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return $this->notYours();
+		$user = $this->caseMutator(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		return $this->answer(
@@ -180,6 +173,26 @@ class CaseAttentionController extends Controller {
 			),
 		);
 	}//end clear()
+
+	/**
+	 * The signed-in user when they may change the case, else the refusal.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse The user, or 401 without a session user, or 403 without mutation access.
+	 */
+	private function caseMutator(string $caseId): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return $this->notYours();
+		}
+
+		return $user;
+	}//end caseMutator()
 
 	/**
 	 * Run a gesture and answer it, turning a refusal into its status.
