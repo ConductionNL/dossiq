@@ -281,6 +281,19 @@ class CaseRelationService {
 			return ['ok' => false, 'reason' => 'access_denied'];
 		}
 
+		return $this->hierarchyRefusal(pair: $pair)
+			?? $this->duplicateRefusal(pair: $pair, link: $link)
+			?? $this->subjectRefusal(pair: $pair, link: $link);
+	}//end refuseLink()
+
+	/**
+	 * The refusal for a pair the hoofdzaak/deelzaak hierarchy already links, or null.
+	 *
+	 * @param array{origin: array<string, mixed>, target: array<string, mixed>} $pair The two readable cases.
+	 *
+	 * @return array{ok: bool, reason: string, detail: string}|null The refusal.
+	 */
+	private function hierarchyRefusal(array $pair): ?array {
 		// Hierarchy-overlap guard — the parent/sub-case link already expresses
 		// the relation, so refuse to also peer-link the same pair.
 		if ($this->hierarchyGuard->areLinked(caseA: $pair['origin'], caseB: $pair['target']) === true) {
@@ -291,6 +304,18 @@ class CaseRelationService {
 			];
 		}
 
+		return null;
+	}//end hierarchyRefusal()
+
+	/**
+	 * The refusal for a link of a type either case already declares towards the other, or null.
+	 *
+	 * @param array{origin: array<string, mixed>, target: array<string, mixed>} $pair The two readable cases.
+	 * @param array{from: string, to: string, type: string}                     $link The link.
+	 *
+	 * @return array{ok: bool, reason: string}|null The refusal.
+	 */
+	private function duplicateRefusal(array $pair, array $link): ?array {
 		// A link now has a near end and a far end, so the same type declared
 		// from both cases is two contradictory statements rather than one
 		// relation seen twice: A follows B and B follows A cannot both be
@@ -302,12 +327,24 @@ class CaseRelationService {
 			return ['ok' => false, 'reason' => 'duplicate'];
 		}
 
+		return null;
+	}//end duplicateRefusal()
+
+	/**
+	 * The subject rule's refusal for a `subject` link, or null for every other type.
+	 *
+	 * @param array{origin: array<string, mixed>, target: array<string, mixed>} $pair The two readable cases.
+	 * @param array{from: string, to: string, type: string}                     $link The link.
+	 *
+	 * @return array{ok: bool, reason: string, detail?: string}|null The refusal.
+	 */
+	private function subjectRefusal(array $pair, array $link): ?array {
 		if ($link['type'] === 'subject') {
 			return $this->subjectRule->refusal(pair: $pair, link: $link);
 		}
 
 		return null;
-	}//end refuseLink()
+	}//end subjectRefusal()
 
 	/**
 	 * Write a link once, on the case that declared it.
@@ -510,6 +547,18 @@ class CaseRelationService {
 			return false;
 		}
 
+		return $this->stripLinksTo(counterpart: $counterpart, caseId: $caseId);
+	}//end stripCounterpart()
+
+	/**
+	 * Remove every relation and typed link to a case from a counterpart, saving only when one went.
+	 *
+	 * @param array<string, mixed> $counterpart The counterpart.
+	 * @param string               $caseId      The case being deleted.
+	 *
+	 * @return bool True when the counterpart was written.
+	 */
+	private function stripLinksTo(array $counterpart, string $caseId): bool {
 		$relations = $this->codec->decode(case: $counterpart);
 		$stripped  = $this->codec->removeAllForCase(relations: $relations, caseId: $caseId);
 		$links     = $this->codec->typedLinks(case: $counterpart);
@@ -521,7 +570,7 @@ class CaseRelationService {
 		$this->store->persistRelations(case: $counterpart, relations: $stripped, typedLinks: $unlinked);
 
 		return true;
-	}//end stripCounterpart()
+	}//end stripLinksTo()
 
 	/**
 	 * Every case that has to be touched when one case is deleted.
@@ -540,20 +589,10 @@ class CaseRelationService {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	private function counterpartIdsOf(string $caseId): array {
-		$ids = [];
-
-		// Even when the case is already gone we still scan counterparts: the
-		// relation entries on OTHER cases are what must be cleaned up.
-		$deleted = $this->store->fetchCase(caseUuid: $caseId);
-		if ($deleted !== null) {
-			foreach ($this->codec->decode(case: $deleted) as $relation) {
-				$ids[] = (string)($relation['caseId'] ?? '');
-			}
-		}
-
-		foreach ($this->store->relationRows(caseUuid: $caseId, incoming: true) as $row) {
-			$ids[] = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-		}
+		$ids = array_merge(
+			$this->declaredCounterpartIds(caseId: $caseId),
+			$this->incomingCounterpartIds(caseId: $caseId)
+		);
 
 		return array_values(
 			array_unique(
@@ -564,6 +603,45 @@ class CaseRelationService {
 			)
 		);
 	}//end counterpartIdsOf()
+
+	/**
+	 * The cases a case's own relation list names.
+	 *
+	 * @param string $caseId The case being deleted.
+	 *
+	 * @return array<int, string> The ids, possibly empty or repeated.
+	 */
+	private function declaredCounterpartIds(string $caseId): array {
+		// Even when the case is already gone we still scan counterparts: the
+		// relation entries on OTHER cases are what must be cleaned up.
+		$deleted = $this->store->fetchCase(caseUuid: $caseId);
+		if ($deleted === null) {
+			return [];
+		}
+
+		$ids = [];
+		foreach ($this->codec->decode(case: $deleted) as $relation) {
+			$ids[] = (string)($relation['caseId'] ?? '');
+		}
+
+		return $ids;
+	}//end declaredCounterpartIds()
+
+	/**
+	 * The cases that declared a link towards a case, read from `/used`.
+	 *
+	 * @param string $caseId The case being deleted.
+	 *
+	 * @return array<int, string> The ids, possibly empty or repeated.
+	 */
+	private function incomingCounterpartIds(string $caseId): array {
+		$ids = [];
+		foreach ($this->store->relationRows(caseUuid: $caseId, incoming: true) as $row) {
+			$ids[] = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+		}
+
+		return $ids;
+	}//end incomingCounterpartIds()
 
 	/**
 	 * Promote a direct write to `relatedCases` into typed links (e.g. ZGW inbound).
@@ -586,22 +664,69 @@ class CaseRelationService {
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
 	public function normalise(string $caseId): void {
-		$case = null;
-		if ($caseId !== '') {
-			$case = $this->store->fetchCase(caseUuid: $caseId);
-		}
-
+		$case = $this->caseToNormalise(caseId: $caseId);
 		if ($case === null) {
 			return;
 		}
 
+		$normalised = $this->normalisedRelations(case: $case, caseId: $caseId);
+		if ($normalised['changed'] === true) {
+			$this->store->persistRelations(
+				case: $case,
+				relations: $normalised['relations'],
+				typedLinks: $normalised['typedLinks']
+			);
+		}
+	}//end normalise()
+
+	/**
+	 * The case whose relations are to be normalised, or null when there is none.
+	 *
+	 * @param string $caseId Case UUID, possibly empty.
+	 *
+	 * @return array<string, mixed>|null The case.
+	 */
+	private function caseToNormalise(string $caseId): ?array {
+		if ($caseId === '') {
+			return null;
+		}
+
+		return $this->store->fetchCase(caseUuid: $caseId);
+	}//end caseToNormalise()
+
+	/**
+	 * The case's relation list and typed links once every list entry is promoted.
+	 *
+	 * @param array<string, mixed> $case   The case.
+	 * @param string               $caseId The case's own id.
+	 *
+	 * @return array{relations: array<int, array<string, mixed>>, typedLinks: array<string, array<int, string>>, changed: bool}
+	 *         What to store, and whether it differs from what the case holds.
+	 */
+	private function normalisedRelations(array $case, string $caseId): array {
 		$relations = $this->codec->decode(case: $case);
 		$links     = $this->codec->typedLinks(case: $case);
 		$promoted  = $this->promotedLinks(case: $case, caseId: $caseId);
+		$kept      = $this->keptRelations(relations: $relations);
 
+		return [
+			'relations' => $kept,
+			'typedLinks' => $promoted,
+			'changed' => ([$promoted, count($kept)] !== [$links, count($relations)]),
+		];
+	}//end normalisedRelations()
+
+	/**
+	 * The list entries that stay in `relatedCases` once promoted.
+	 *
+	 * @param array<int, array<string, mixed>> $relations The decoded list.
+	 *
+	 * @return array<int, array<string, mixed>> The entries kept, re-indexed.
+	 */
+	private function keptRelations(array $relations): array {
 		// A waits-on entry written into `relatedCases` before the pair moved
 		// onto the primitive is promoted and dropped from the list here.
-		$kept = array_values(
+		return array_values(
 			array_filter(
 				$relations,
 				fn (array $relation): bool => $this->isPrimitiveOnly(
@@ -609,15 +734,7 @@ class CaseRelationService {
 				) === false
 			)
 		);
-
-		if ([$promoted, count($kept)] !== [$links, count($relations)]) {
-			$this->store->persistRelations(
-				case: $case,
-				relations: $kept,
-				typedLinks: $promoted
-			);
-		}
-	}//end normalise()
+	}//end keptRelations()
 
 	/**
 	 * The case's typed links with every valid entry of its list added.
@@ -630,21 +747,33 @@ class CaseRelationService {
 	private function promotedLinks(array $case, string $caseId): array {
 		$promoted = $this->codec->typedLinks(case: $case);
 		foreach ($this->codec->decode(case: $case) as $relation) {
-			$targetId = (string)($relation['caseId'] ?? '');
-			$natureRelationship = (string)($relation['aardRelatie'] ?? '');
-			if (in_array($targetId, ['', $caseId], true) === true
-				|| in_array($natureRelationship, self::RELATION_TYPES, true) === false
-			) {
+			if ($this->isPromotable(relation: $relation, caseId: $caseId) === false) {
 				continue;
 			}
 
 			$promoted = $this->codec->withTypedLink(
 				links: $promoted,
-				natureRelationship: $natureRelationship,
-				targetId: $targetId
+				natureRelationship: (string)($relation['aardRelatie'] ?? ''),
+				targetId: (string)($relation['caseId'] ?? '')
 			);
 		}
 
 		return $promoted;
 	}//end promotedLinks()
+
+	/**
+	 * Whether a list entry becomes a typed link: it names another case and a known type.
+	 *
+	 * @param array<string, mixed> $relation The list entry.
+	 * @param string               $caseId   The case's own id, never linked to itself.
+	 *
+	 * @return bool True when the entry is promoted.
+	 */
+	private function isPromotable(array $relation, string $caseId): bool {
+		$targetId = (string)($relation['caseId'] ?? '');
+		$natureRelationship = (string)($relation['aardRelatie'] ?? '');
+
+		return in_array($targetId, ['', $caseId], true) === false
+			&& in_array($natureRelationship, self::RELATION_TYPES, true) === true;
+	}//end isPromotable()
 }//end class
