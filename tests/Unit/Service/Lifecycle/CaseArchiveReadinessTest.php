@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseArchiveReadiness
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Lifecycle\DossierDocumentStore
  */
 class CaseArchiveReadinessTest extends TestCase {
 

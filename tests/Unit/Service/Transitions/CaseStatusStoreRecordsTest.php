@@ -36,6 +36,7 @@ use RuntimeException;
  * Characterisation tests for CaseStatusStore::findStatusRecords().
  *
  * @covers \OCA\Dossiq\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class CaseStatusStoreRecordsTest extends TestCase {
 

@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\FrozenRecord\FrozenRecordGuard
  * @covers \OCA\Dossiq\Service\FrozenRecord\FreezeDefinition
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\FrozenRecord\CanonicalValue
  */
 class FrozenRecordGuardTest extends TestCase {
 

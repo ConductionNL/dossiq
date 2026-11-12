@@ -29,6 +29,20 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\AppInfo\Registrar\ImmutabilityListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseAccessListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseActivityListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseLinkListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseRequesterListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\ContactListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\DocumentListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\ForfeitInvoiceListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\OnboardingListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
  */
 class ImmutabilityListenerRegistrarTest extends TestCase {
 

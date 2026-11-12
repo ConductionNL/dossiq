@@ -37,6 +37,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\CaseTypeResolver
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Listener\CaseTypeSchema
  */
 class CaseTypeParentCycleListenerTest extends TestCase {
 

@@ -86,6 +86,7 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Dossiq\Service\ZgwRulesBase
  * @uses   \OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses \OCA\Dossiq\Service\Transitions\DocumentCounts
  */
 class WorkflowGuardConformanceTest extends TestCase {
 

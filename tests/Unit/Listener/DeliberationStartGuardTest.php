@@ -54,6 +54,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker
  * @uses \OCA\Dossiq\Service\InternalWriteMarker
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @uses \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class DeliberationStartGuardTest extends TestCase {
 	use MakesBezwaarAuditTrail;

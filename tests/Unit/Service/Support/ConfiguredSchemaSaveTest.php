@@ -43,6 +43,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Mandaat\MandaatRepository
  * @covers \OCA\Dossiq\Service\MandaatEscalatieService
  * @covers \OCA\Dossiq\Service\Money\AccrualNoticeService
+ * @uses \OCA\Dossiq\Service\Support\ConfiguredSchemaWriter
  *
  * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
  */

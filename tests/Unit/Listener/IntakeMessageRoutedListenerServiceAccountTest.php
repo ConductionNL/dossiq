@@ -53,6 +53,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  * @uses \OCA\Dossiq\Service\CommunicationChannel
+ * @uses \OCA\Dossiq\Listener\Support\EventGetters
  */
 class IntakeMessageRoutedListenerServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

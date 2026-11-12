@@ -48,6 +48,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Hearing\NewSession
  * @uses \OCA\Dossiq\Service\Hearing\SessionPatch
  * @uses \OCA\Dossiq\Service\Hearing\SessionStore
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class HearingServiceTest extends TestCase {
 	use MakesBezwaarAuditTrail;

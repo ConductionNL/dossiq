@@ -19,6 +19,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\AppInfo\Registrar\AppHostRegistrar
+ * @uses \OCA\Dossiq\AppInfo\OpenRegisterAutoloader
+ * @uses \OCA\Dossiq\AppInfo\Registrar\DashboardWidgetList
  */
 class AppHostRegistrarTest extends TestCase {
 

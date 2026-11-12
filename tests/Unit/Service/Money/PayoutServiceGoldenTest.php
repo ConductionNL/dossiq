@@ -37,6 +37,8 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Money\PayoutService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Money\MoneyStore
+ * @uses \OCA\Dossiq\Service\Money\PayoutCallback
  */
 class PayoutServiceGoldenTest extends TestCase {
 	use MakesCaseDateNormaliser;

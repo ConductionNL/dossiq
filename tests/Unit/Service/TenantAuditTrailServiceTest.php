@@ -32,6 +32,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TenantAuditTrailService
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class TenantAuditTrailServiceTest extends TestCase {
 	use MakesTenantAnchors;

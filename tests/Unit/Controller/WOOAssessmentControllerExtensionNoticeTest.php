@@ -93,6 +93,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
  */
 class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 	use MakesCaseDateNormaliser;

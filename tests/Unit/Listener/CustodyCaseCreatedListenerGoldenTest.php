@@ -39,6 +39,7 @@ use RuntimeException;
  * Golden test for CustodyCaseCreatedListener::handle.
  *
  * @covers \OCA\Dossiq\Listener\CustodyCaseCreatedListener
+ * @uses \OCA\Dossiq\Listener\Support\EventObjectPayload
  */
 class CustodyCaseCreatedListenerGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
