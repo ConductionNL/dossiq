@@ -3,8 +3,10 @@
 /**
  * HearingCalendarService Unit Tests
  *
- * Pins what writing a hearing into the calendars of its participants builds,
- * writes, skips and logs.
+ * The hearing calendar write used to be a log line saying "Calendar
+ * invitations queued" and nothing else. These tests exist to make that
+ * impossible to ship again: each one fails if the event stops reaching a
+ * calendar, and none of them can pass on a log line.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -15,6 +17,9 @@
  *
  * @link https://conduction.nl
  *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
  * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
  */
 
@@ -23,9 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\HearingCalendarService;
-use OCP\Calendar\ICalendar;
 use OCP\Calendar\ICalendarEventBuilder;
-use OCP\Calendar\ICalendarIsWritable;
 use OCP\Calendar\ICreateFromString;
 use OCP\Calendar\IManager as ICalendarManager;
 use OCP\IUser;
@@ -35,256 +38,250 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * A calendar that takes ICS and says whether it is writable.
- */
-interface HearingWritableCalendar extends ICreateFromString, ICalendarIsWritable {
-}//end interface
-
-/**
+ * Unit tests for HearingCalendarService.
+ *
  * @covers \OCA\Dossiq\Service\HearingCalendarService
+ *
+ * @uses \OCA\Dossiq\AppInfo\Application
  */
 class HearingCalendarServiceTest extends TestCase {
 
 	/**
-	 * Every builder call, in order.
-	 *
-	 * @var array<int, array<int, mixed>>
+	 * @var ICalendarManager|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private array $built = [];
+	private ICalendarManager $calendarManager;
 
 	/**
-	 * Every log call, in order.
-	 *
-	 * @var array<int, array<int, mixed>>
+	 * @var IUserManager|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private array $logged = [];
+	private IUserManager $userManager;
 
 	/**
-	 * Every calendar write, in order.
-	 *
-	 * @var array<int, string>
+	 * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private array $writes = [];
+	private IUserSession $userSession;
 
 	/**
-	 * A user stub.
-	 *
-	 * @param string $uid   The uid.
-	 * @param string $email The address.
-	 *
-	 * @return IUser
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private function user(string $uid, string $email): IUser {
+	private LoggerInterface $logger;
+
+	/**
+	 * @var HearingCalendarService
+	 */
+	private HearingCalendarService $service;
+
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->calendarManager = $this->createMock(ICalendarManager::class);
+		$this->userManager = $this->createMock(IUserManager::class);
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+
+		$this->service = new HearingCalendarService(
+			calendarManager: $this->calendarManager,
+			userManager: $this->userManager,
+			userSession: $this->userSession,
+			logger: $this->logger,
+		);
+	}//end setUp()
+
+	/**
+	 * A calendar whose writes are captured, and a manager that records which
+	 * principals were asked for calendars.
+	 *
+	 * @param array<int, array{0: string, 1: string}> $captured Filled with (name, ics) per write.
+	 * @param array<int, string> $principals Filled with each principal asked.
+	 *
+	 * @return void
+	 */
+	private function acceptingCalendar(array &$captured, array &$principals): void {
+		$calendar = $this->createMock(ICreateFromString::class);
+		$calendar->method('createFromString')
+			->willReturnCallback(static function (string $name, string $ics) use (&$captured): void {
+				$captured[] = [$name, $ics];
+			});
+
+		$this->calendarManager->method('getCalendarsForPrincipal')
+			->willReturnCallback(static function (string $principal) use (&$principals, $calendar): array {
+				$principals[] = $principal;
+				return [$calendar];
+			});
+	}//end acceptingCalendar()
+
+	/**
+	 * A builder that serialises to a fixed ICS carrying the given UID.
+	 *
+	 * @param string $uid The UID the serialised event carries.
+	 *
+	 * @return ICalendarEventBuilder|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private function builderReturning(string $uid) {
+		$builder = $this->createMock(ICalendarEventBuilder::class);
+		$setters = [
+			'setSummary',
+			'setStartDate',
+			'setEndDate',
+			'setLocation',
+			'setDescription',
+			'setOrganizer',
+			'addAttendee',
+		];
+		foreach ($setters as $setter) {
+			$builder->method($setter)->willReturnSelf();
+		}
+
+		$builder->method('toIcs')->willReturn(
+			"BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:" . $uid . "\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+		);
+
+		return $builder;
+	}//end builderReturning()
+
+	/**
+	 * A user.
+	 *
+	 * @param string $uid Account id.
+	 * @param string $email Email address, empty for none.
+	 *
+	 * @return IUser|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private function userMock(string $uid, string $email) {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn($uid);
 		$user->method('getEMailAddress')->willReturn($email);
-		$user->method('getDisplayName')->willReturn('Name ' . $uid);
+		$user->method('getDisplayName')->willReturn(ucfirst($uid));
+
 		return $user;
-	}//end user()
+	}//end userMock()
 
 	/**
-	 * A calendar that records its writes.
+	 * The hearing reaches the organiser's calendar AND every participant that
+	 * resolves to an account, as one event with one UID.
 	 *
-	 * @param string          $label    Its label in the write log.
-	 * @param bool            $deleted  Whether it is in the trash.
-	 * @param bool            $writable Whether it is writable.
-	 * @param \Throwable|null $refusal  What createFromString throws.
-	 *
-	 * @return HearingWritableCalendar
-	 */
-	private function calendar(string $label, bool $deleted=false, bool $writable=true, ?\Throwable $refusal=null): HearingWritableCalendar {
-		$calendar = $this->createMock(HearingWritableCalendar::class);
-		$calendar->method('isDeleted')->willReturn($deleted);
-		$calendar->method('isWritable')->willReturn($writable);
-		$calendar->method('createFromString')->willReturnCallback(
-			function (string $name, string $data) use ($label, $refusal): void {
-				$this->writes[] = $label . ':' . $name . ':' . $data;
-				if ($refusal !== null) {
-					throw $refusal;
-				}
-			}
-		);
-		return $calendar;
-	}//end calendar()
-
-	/**
-	 * The service over recording stubs.
-	 *
-	 * @param IUser|null              $organiser The session user.
-	 * @param array<string, IUser>    $users     Accounts by id.
-	 * @param array<string, mixed>    $calendars Calendars by principal, or a Throwable to throw.
-	 * @param string                  $ics       What the builder serialises to.
-	 *
-	 * @return HearingCalendarService
-	 */
-	private function service(?IUser $organiser, array $users, array $calendars, string $ics): HearingCalendarService {
-		$builder = $this->createMock(ICalendarEventBuilder::class);
-		foreach (['setSummary', 'setStartDate', 'setEndDate', 'setDescription', 'setLocation', 'setOrganizer', 'addAttendee'] as $method) {
-			$builder->method($method)->willReturnCallback(
-				function (mixed ...$args) use ($method, $builder): ICalendarEventBuilder {
-					$this->built[] = array_merge([$method], array_map(static fn ($arg): mixed => ($arg instanceof \DateTimeInterface) ? $arg->format('c') : $arg, $args));
-					return $builder;
-				}
-			);
-		}
-
-		$builder->method('toIcs')->willReturn($ics);
-
-		$manager = $this->createMock(ICalendarManager::class);
-		$manager->method('createEventBuilder')->willReturn($builder);
-		$manager->method('getCalendarsForPrincipal')->willReturnCallback(
-			static function (string $principal) use ($calendars): array {
-				$answer = ($calendars[$principal] ?? []);
-				if ($answer instanceof \Throwable) {
-					throw $answer;
-				}
-
-				return $answer;
-			}
-		);
-
-		$userManager = $this->createMock(IUserManager::class);
-		$userManager->method('get')->willReturnCallback(static fn (string $uid): ?IUser => ($users[$uid] ?? null));
-
-		$session = $this->createMock(IUserSession::class);
-		$session->method('getUser')->willReturn($organiser);
-
-		$logger = $this->createMock(LoggerInterface::class);
-		foreach (['warning', 'info'] as $level) {
-			$logger->method($level)->willReturnCallback(
-				function (string $message, array $context=[]) use ($level): void {
-					$this->logged[] = [$level, $message, $context];
-				}
-			);
-		}
-
-		return new HearingCalendarService($manager, $userManager, $session, $logger);
-	}//end service()
-
-	/**
-	 * Without participants, or with an unreadable date, nothing is built or written.
+	 * createFromString() writes straight through CalDAV and does not run
+	 * sabre's scheduling plugin, so a single write into the organiser's
+	 * calendar would reach nobody else. That is why the per-attendee write is
+	 * asserted rather than assumed.
 	 *
 	 * @return void
 	 */
-	public function testNoParticipantsOrNoDateWritesNothing(): void {
-		$service = $this->service(organiser: null, users: [], calendars: [], ics: "UID:u-1\n");
+	public function testWritesOneEventToTheOrganiserAndEveryResolvableParticipant(): void {
+		$captured = [];
+		$principals = [];
+		$this->acceptingCalendar($captured, $principals);
+		$this->calendarManager->method('createEventBuilder')
+			->willReturn($this->builderReturning('hearing-uid-1'));
 
-		$this->assertSame('', $service->createEvent(['participants' => []]));
-		$this->assertSame('', $service->createEvent(['participants' => 'alice']));
-		$this->assertSame('', $service->createEvent(['date' => '2026-01-01T10:00:00+00:00']));
-		$this->assertSame([], $this->logged);
-		$this->assertSame('', $service->createEvent(['participants' => ['alice'], 'date' => 'not a date']));
+		$this->userSession->method('getUser')
+			->willReturn($this->userMock('behandelaar', 'behandelaar@gemeente.nl'));
+		$this->userManager->method('get')->willReturnMap([
+			['klager', $this->userMock('klager', 'klager@example.org')],
+			['Externe adviseur', null],
+		]);
 
-		$this->assertSame([], $this->built);
+		$uid = $this->service->createEvent([
+			'complaint' => 'complaint-uuid',
+			'date' => '2026-04-01T10:00:00',
+			'type' => 'fysiek',
+			'location' => 'Stadhuis kamer 12',
+			'participants' => ['klager', 'Externe adviseur'],
+		]);
+
+		$this->assertSame('hearing-uid-1', $uid);
 		$this->assertSame(
-			[['warning', 'Hearing has no readable date, no calendar event written: not a date', ['app' => 'dossiq']]],
-			$this->logged
+			['principals/users/behandelaar', 'principals/users/klager'],
+			$principals,
+			'Both the organiser and the resolvable participant must be written to.'
 		);
-	}//end testNoParticipantsOrNoDateWritesNothing()
+		$this->assertCount(2, $captured, 'One calendar write per principal.');
+		$this->assertSame('hearing-uid-1.ics', $captured[0][0]);
+		$this->assertStringContainsString('UID:hearing-uid-1', $captured[0][1]);
+		$this->assertSame($captured[0][1], $captured[1][1], 'Every copy is the same event.');
+	}//end testWritesOneEventToTheOrganiserAndEveryResolvableParticipant()
 
 	/**
-	 * An event that carries no UID is not written anywhere.
+	 * A hearing with no participants touches no calendar at all.
 	 *
 	 * @return void
 	 */
-	public function testAnEventWithoutUidIsNotWritten(): void {
-		$service = $this->service(organiser: null, users: ['alice' => $this->user('alice', 'a@x.nl')], calendars: [], ics: "BEGIN:VEVENT\n");
+	public function testWritesNothingWhenThereAreNoParticipants(): void {
+		$this->calendarManager->expects($this->never())->method('createEventBuilder');
+		$this->calendarManager->expects($this->never())->method('getCalendarsForPrincipal');
 
-		$this->assertSame('', $service->createEvent(['participants' => ['alice'], 'date' => '2026-01-01T10:00:00+00:00', 'complaint' => 'K']));
-		$this->assertSame([], $this->writes);
-		$this->assertSame([['warning', 'Calendar event for hearing carried no UID, nothing written', ['app' => 'dossiq']]], $this->logged);
-	}//end testAnEventWithoutUidIsNotWritten()
+		$this->assertSame('', $this->service->createEvent([
+			'complaint' => 'complaint-uuid',
+			'date' => '2026-04-01T10:00:00',
+			'type' => 'fysiek',
+		]));
+	}//end testWritesNothingWhenThereAreNoParticipants()
 
 	/**
-	 * The full path: one event built, written once per principal into the first calendar that takes it.
+	 * An unreadable date writes no event, rather than scheduling one at "now".
 	 *
 	 * @return void
 	 */
-	public function testTheHearingIsWrittenForTheOrganiserAndEveryAddressableParticipant(): void {
-		$organiser = $this->user('org', 'org@x.nl');
-		$users     = [
-			'alice' => $this->user('alice', 'alice@x.nl'),
-			'bob' => $this->user('bob', ''),
-			'org' => $organiser,
-		];
-		$plain     = $this->createMock(ICalendar::class);
-		$calendars = [
-			'principals/users/org' => [
-				$plain,
-				$this->calendar(label: 'trash', deleted: true),
-				$this->calendar(label: 'readonly', writable: false),
-				$this->calendar(label: 'refusing', refusal: new \RuntimeException('full')),
-				$this->calendar(label: 'org-main'),
-				$this->calendar(label: 'org-second'),
-			],
-			'principals/users/alice' => new \RuntimeException('dav down'),
-		];
-		$service = $this->service(organiser: $organiser, users: $users, calendars: $calendars, ics: "BEGIN:VEVENT\nUID: u-1 \nEND:VEVENT");
+	public function testWritesNothingWhenTheDateCannotBeRead(): void {
+		$this->calendarManager->expects($this->never())->method('createEventBuilder');
 
-		$uid = $service->createEvent(
-			[
-				'participants' => ['alice', ' ', 'Bare Name', 42, 'bob', 'carol', ' org '],
-				'date' => '2026-03-02T09:30:00+01:00',
-				'complaint' => 'K-7',
-				'type' => 'online',
-				'talkRoomUrl' => 'https://talk/x',
-				'location' => 'Stadhuis',
-			]
-		);
-
-		$this->assertSame('u-1', $uid);
-		$this->assertSame(
-			[
-				['setSummary', 'Hoorgesprek klacht K-7'],
-				['setStartDate', '2026-03-02T09:30:00+01:00'],
-				['setEndDate', '2026-03-02T10:30:00+01:00'],
-				['setDescription', "Hoorgesprek over klacht K-7\nVorm: online\nGespreksruimte: https://talk/x\nDeelnemers: alice, Bare Name, bob, carol, org"],
-				['setLocation', 'Stadhuis'],
-				['setOrganizer', 'org@x.nl', 'Name org'],
-				['addAttendee', 'alice@x.nl', 'Name alice'],
-				['addAttendee', 'org@x.nl', 'Name org'],
-			],
-			$this->built
-		);
-		$this->assertSame(
-			["refusing:u-1.ics:BEGIN:VEVENT\nUID: u-1 \nEND:VEVENT", "org-main:u-1.ics:BEGIN:VEVENT\nUID: u-1 \nEND:VEVENT"],
-			$this->writes
-		);
-		$this->assertSame(
-			[
-				['warning', 'Calendar refused the hearing event for principals/users/org: full', ['app' => 'dossiq']],
-				['warning', 'Could not read calendars for principals/users/alice: dav down', ['app' => 'dossiq']],
-				['info', 'Hearing written to 1 calendars for 7 participants', ['app' => 'dossiq', 'calendarEventId' => 'u-1']],
-			],
-			$this->logged
-		);
-	}//end testTheHearingIsWrittenForTheOrganiserAndEveryAddressableParticipant()
+		$this->assertSame('', $this->service->createEvent([
+			'complaint' => 'complaint-uuid',
+			'date' => 'volgende week dinsdag',
+			'type' => 'fysiek',
+			'participants' => ['klager'],
+		]));
+	}//end testWritesNothingWhenTheDateCannotBeRead()
 
 	/**
-	 * Without an organiser, location, type, room or names the event is bare, and no calendar taking it is reported.
+	 * When no calendar takes the event, the caller is told so with an empty id
+	 * rather than handed one that names nothing.
 	 *
 	 * @return void
 	 */
-	public function testABareHearingWithNoWritableCalendarIsReported(): void {
-		$service = $this->service(
-			organiser: null,
-			users: ['alice' => $this->user('alice', 'alice@x.nl')],
-			calendars: ['principals/users/alice' => [$this->calendar(label: 'ro', writable: false)]],
-			ics: "UID:u-2\n"
-		);
+	public function testReturnsNoIdWhenNoCalendarTakesTheEvent(): void {
+		$this->calendarManager->method('createEventBuilder')
+			->willReturn($this->builderReturning('hearing-uid-2'));
+		$this->calendarManager->method('getCalendarsForPrincipal')->willReturn([]);
+		$this->userSession->method('getUser')
+			->willReturn($this->userMock('behandelaar', 'behandelaar@gemeente.nl'));
+		$this->userManager->method('get')->willReturn(null);
 
-		$this->assertSame('', $service->createEvent(['participants' => [7, 'alice'], 'date' => '2026-03-02T09:30:00+00:00']));
-		$this->assertSame(
-			[
-				['setSummary', 'Hoorgesprek klacht '],
-				['setStartDate', '2026-03-02T09:30:00+00:00'],
-				['setEndDate', '2026-03-02T10:30:00+00:00'],
-				['setDescription', "Hoorgesprek over klacht \nDeelnemers: alice"],
-				['addAttendee', 'alice@x.nl', 'Name alice'],
-			],
-			$this->built
-		);
-		$this->assertSame([], $this->writes);
-		$this->assertSame([['warning', 'No writable calendar found for the hearing, event not stored', ['app' => 'dossiq']]], $this->logged);
-	}//end testABareHearingWithNoWritableCalendarIsReported()
+		$this->assertSame('', $this->service->createEvent([
+			'complaint' => 'complaint-uuid',
+			'date' => '2026-04-01T10:00:00',
+			'type' => 'fysiek',
+			'participants' => ['klager'],
+		]));
+	}//end testReturnsNoIdWhenNoCalendarTakesTheEvent()
+
+	/**
+	 * A participant without an email is not offered as an attendee: an ATTENDEE
+	 * line with no mailto is not an invitation.
+	 *
+	 * @return void
+	 */
+	public function testAParticipantWithoutAnEmailIsNotInvited(): void {
+		$captured = [];
+		$principals = [];
+		$this->acceptingCalendar($captured, $principals);
+
+		$builder = $this->builderReturning('hearing-uid-3');
+		$builder->expects($this->never())->method('addAttendee');
+		$this->calendarManager->method('createEventBuilder')->willReturn($builder);
+
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->userManager->method('get')->willReturn($this->userMock('klager', ''));
+
+		$this->assertSame('', $this->service->createEvent([
+			'complaint' => 'complaint-uuid',
+			'date' => '2026-04-01T10:00:00',
+			'type' => 'fysiek',
+			'participants' => ['klager'],
+		]));
+		$this->assertSame([], $principals, 'Nobody addressable means no calendar to write to.');
+	}//end testAParticipantWithoutAnEmailIsNotInvited()
 }//end class
