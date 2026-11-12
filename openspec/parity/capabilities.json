@@ -13786,8 +13786,8 @@
 		{
 			"id": "3.1",
 			"area": "tasks-and-phases",
-			"name": "BPMN process engine",
-			"name_nl": "BPMN-procesmotor",
+			"name": "BPMN processes imported into OpenRegister and run on its flow engine, with no engine of its own in dossiq",
+			"name_nl": "BPMN-processen geïmporteerd in OpenRegister en uitgevoerd op de flow-engine daarvan, zonder eigen motor in dossiq",
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
@@ -13822,11 +13822,15 @@
 				],
 				"evidence": "lib/Service/Cmmn/CaseModelEngine.php; openregister#3944 878de2cd; openregister#3948 de4079be; openregister lib/Service/Flow/Bpmn/FlowBpmnImporter.php:120 and appinfo/routes.php:825-826: BPMN is import and export only, run as a native flow on lib/Service/Flow/FlowEngine.php (openregister#4040)",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane).",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane). Decision 393: BPMN processes are imported into OpenRegister and run on its flow engine; dossiq has no engine of its own.",
 				"screen": {
 					"board": null,
 					"reason": "backend: process engine in OpenRegister"
-				}
+				},
+				"requirement": [
+					"openregister:openspec/changes/flow-bpmn-interchange/specs/flow-bpmn-interchange :: BPMN is an interchange boundary, never an execution semantic",
+					"openregister:openspec/changes/flow-bpmn-interchange/specs/flow-bpmn-interchange :: BPMN import accepts a documented subset and reports every loss"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ril bpmn over lib and src returns nothing; lib/Service/WorkflowService.php:46 the only workflow is a document review or approval with two fixed types | round 2 drive: procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
@@ -17582,8 +17586,8 @@
 		{
 			"id": "8.10",
 			"area": "deadlines",
-			"name": "Suspension term with automatic resume",
-			"name_nl": "Opschortingstermijn met automatisch hervatten",
+			"name": "Suspension term that resumes by itself when the pause ends, and tells the handler",
+			"name_nl": "Opschortingstermijn die vanzelf hervat als de pauze afloopt, en de behandelaar dat meldt",
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
@@ -17595,15 +17599,17 @@
 			"feature": "termijn-binding",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
-				"evidence": "lib/Service/DeadlinePauseService.php",
+				"state": "specified",
+				"evidence": "Not built: when the pause runs out, TermijnTimerFiredListener::handlePauseExpiry only records pause-expired and the term stays paused until a handler resumes it (REQ-TERM-002); decision 391 makes it resume by itself and tell the handler. Was: lib/Service/DeadlinePauseService.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/termijn-pause-extension",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqVolgendeStap"
-				}
+				},
+				"requirement": "openspec/changes/expired-pause-resumes-the-term/specs/termijn-pause-extension :: An expired pause SHALL resume the term by itself and tell the handler (REQ-TERM-080)",
+				"plan": "openspec/changes/expired-pause-resumes-the-term"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case status is open, closed or archived (src/views/CaseDetailView.vue:76-87); grep -ri 'suspend|pause' over lib and src finds no suspension | round 2 drive: procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\"",
@@ -19076,8 +19082,8 @@
 		{
 			"id": "11.5",
 			"area": "configuration",
-			"name": "BPMN modeller in the UI",
-			"name_nl": "BPMN-modelleerder in de gebruikersinterface",
+			"name": "Edit an imported BPMN process as a flow in the OpenRegister flow editor",
+			"name_nl": "Een geïmporteerd BPMN-proces als flow bewerken in de flow-editor van OpenRegister",
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
@@ -19112,11 +19118,12 @@
 				],
 				"evidence": "src/views/settings/WorkflowEditor.vue; WorkflowTab.vue; openregister#3944 878de2cd; openregister#3948 de4079be; openregister has no BPMN modeller page; BPMN only through appinfo/routes.php:825-826 (openregister#4040)",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane).",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane). Decision 393: dossiq uses OpenRegister as its BPMN engine; the flow editor edits the imported flow, and there is no separate BPMN modeller.",
 				"screen": {
 					"board": null,
 					"reason": "no dossiq screen: the BPMN modeller is OpenRegister's"
-				}
+				},
+				"requirement": "openregister:openspec/changes/visual-flow-builder/specs/flow-builder :: Visual flow authoring on a schema"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 package.json has no bpmn dependency; lib/Service/WorkflowService.php is a fixed review or approval step list on documents, not a process model | round 2 drive: procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
@@ -19833,8 +19840,8 @@
 		{
 			"id": "11.24",
 			"area": "configuration",
-			"name": "Instance configuration UI (notification texts, portal texts, CORS)",
-			"name_nl": "Beheerscherm voor de omgeving (meldingsteksten, portaalteksten, CORS)",
+			"name": "Instance configuration UI for notification texts and portal texts",
+			"name_nl": "Beheerscherm voor de omgeving (meldingsteksten, portaalteksten)",
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
@@ -19847,14 +19854,15 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "src/views/settings/tabs/GeneralTab.vue; lib/Controller/SettingsController.php",
+				"evidence": "src/views/settings/adminFields.js textsAndAccessFields(): email_from_name and portal_intro_text, used by lib/Service/Email/OutboundCaseMail.php and lib/Portal/CitizenManifest.php; lib/Controller/SettingsController.php. CORS is a pointer only: the allowed websites are set in the portal app and in Nextcloud (decision 391: CORS is an OpenRegister provider row, not built).",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/admin-settings",
 				"screen": {
 					"canvas": "design-system",
 					"board": "DqInstellingenAlgemeen"
-				}
+				},
+				"requirement": "openspec/changes/admin-message-and-portal-texts/specs/admin-settings :: An administrator SHALL set the message and portal texts in the admin settings"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/ConfigurationView.vue:204 settings tab edits four keys (case number mask, search limits, history count) through lib/Controller/ConfigController.php:74,89; src/AdminSettings.vue holds integration settings; no notification or portal texts, CORS is Nextcloud's | round 2 drive: procest/opencase/round2/pages/Configuration-Settings.md:5 \"In-app configuration; the Settings section holds one value.\"",
