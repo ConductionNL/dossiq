@@ -13936,8 +13936,8 @@
 					"reason": "backend: process engine in OpenRegister"
 				},
 				"requirement": [
-					"openregister:openspec/changes/flow-bpmn-interchange/specs/flow-bpmn-interchange :: BPMN is an interchange boundary, never an execution semantic",
-					"openregister:openspec/changes/flow-bpmn-interchange/specs/flow-bpmn-interchange :: BPMN import accepts a documented subset and reports every loss"
+					"openregister:openspec/specs/flow-bpmn-interchange :: BPMN is an interchange boundary, never an execution semantic",
+					"openregister:openspec/specs/flow-bpmn-interchange :: BPMN import accepts a documented subset and reports every loss"
 				],
 				"plan": [
 					"openspec/changes/retire-cmmn-caseplanstate"
@@ -15524,7 +15524,7 @@
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqKop"
 				},
-				"requirement": "openregister:openspec/changes/unified-search-file-content/specs/unified-search-file-content :: The unified-search provider MUST search extracted file text"
+				"requirement": "openregister:openspec/specs/unified-search-provider :: The unified-search provider MUST search extracted file text"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/IndexFileJob.php:22-23,139-143 sends file bytes to Elasticsearch; lib/Service/ElasticsearchService.php:78-102 ingest-attachment pipeline (Tika) extracts text into attachment.content (:169-172); searched from src/views/SearchView.vue | round 2 drive: procest/opencase/round2/code-census.md:250 \"Full-text search over file content (Elasticsearch, Danish analyzer) :: yes\" | open for the lab: Does a free-text search find a word that only appears inside an uploaded PDF (needs Elasticsearch with ingest-attachment)?",
