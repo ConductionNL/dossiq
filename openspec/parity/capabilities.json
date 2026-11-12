@@ -15916,7 +15916,7 @@
 			"feature": "parties-and-contacts",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/contacts-leaf-cases-panel",
 				"prs": [
 					{
@@ -15926,7 +15926,7 @@
 						"mergedAt": "2026-09-18T15:05:00Z"
 					}
 				],
-				"evidence": "src/manifest.json:7053,7145,7344,7436; dossiq#3083 19b334fb; openregister#3893 caf4fd43a",
+				"evidence": "Not built: the contact page lists the contact's documents (src/manifest.json contact-documents, over dispatch) and contact moments (contact-moments), but no row opens what it names: contact-moments has no rowRoute or row action, and contact-documents' only row action (open-case) opens the case, not the document, as REQ-CRS-04 requires. Was: src/manifest.json:7053,7145,7344,7436; dossiq#3083 19b334fb; openregister#3893 caf4fd43a",
 				"owner": "ConductionNL/openregister",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -15940,6 +15940,7 @@
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/party-pages :: The contact page lists the contact's documents and communication (REQ-CRS-04)"
 				],
 				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
 					"openspec/changes/contact-birth-longdate-social-history-stacked",
 					"openspec/changes/contact-persons-tab-in-actions",
 					"openspec/changes/contact-reachability",
@@ -16606,7 +16607,7 @@
 			"feature": "case-email-integration",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "integriq/mail-intake-creates-cases",
 				"prs": [
 					{
@@ -16616,7 +16617,7 @@
 						"mergedAt": "2026-09-18T12:00:00Z"
 					}
 				],
-				"evidence": "/api/mail-intake/log/{entryId}/file-on-case; appinfo/routes.php:787; dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8",
+				"evidence": "Not built: the Postvak page (src/manifest.d/88-postvak.json) lists the unfiled intake messages, but its Link to case action only navigates to a suggested case (visible only when suggestion.case is set) and New case opens the case list; no act files the message on a case the handler picks and takes it off the list, as REQ-CRS-18 requires. Was: /api/mail-intake/log/{entryId}/file-on-case; appinfo/routes.php:787; dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8",
 				"owner": "ConductionNL/integriq",
 				"screen": {
 					"canvas": "design-system",
@@ -16626,6 +16627,9 @@
 					"integriq:openspec/specs/mail-intake :: A mailbox is a source and a message is an object (REQ-MAIL-001)",
 					"integriq:openspec/specs/mail-intake :: A received message is offered to the owning app as a typed event (REQ-MAIL-003)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/intake-from-a-channel :: The organisation's mailbox lists every unfiled message and files one on a case (REQ-CRS-18)"
+				],
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability"
 				]
 			},
 			"evidence": {
@@ -17039,6 +17043,9 @@
 				"requirement": [
 					"openregister:openspec/specs/object-interactions :: Notes on Objects via ICommentsManager",
 					"openspec/specs/case-history-surface :: The case carries one timeline of everything said about it (REQ-TL-10)"
+				],
+				"plan": [
+					"openspec/changes/case-notes-stay-in-dossiq"
 				]
 			},
 			"evidence": {
@@ -21408,8 +21415,8 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"built": {
-				"state": "built",
-				"evidence": "CaseSharingTab on the case (src/manifest.json:3497-3502, src/registry.js:1213); lib/Service/Sharing/FederatedCaseShareService.php:96-172 shares a redacted snapshot over openregister's federation leaf and fails closed without it; PublicFederatedTransferPage (src/manifest.json:5372) receives a transfer",
+				"state": "specified",
+				"evidence": "Not built: accepting a transfer (lib/Service/CaseTransferService.php completeTransfer) only sets the transfer record's status and custody trail; it does not make the other organisation the case's owner or keep the sender's read, and the federated activity stream (lib/Service/CaseCollaborationService.php) holds only messages posted by hand on a share, not each act the receiver records, as REQ-CRS-42 requires. Sharing a redacted snapshot is built. Was: CaseSharingTab on the case (src/manifest.json:3497-3502, src/registry.js:1213); lib/Service/Sharing/FederatedCaseShareService.php:96-172 shares a redacted snapshot over openregister's federation leaf and fails closed without it; PublicFederatedTransferPage (src/manifest.json:5372) receives a transfer",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/federated-case-collaboration",
 				"screen": {
@@ -21424,6 +21431,9 @@
 					"openspec/specs/federated-case-collaboration :: The Case-Detail Sharing Surface Is Wired, Not Orphaned",
 					"openspec/specs/federated-case-collaboration :: Federated Case Share Is A Redacted Snapshot, Never The Live Case",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/federated-case-collaboration :: A transfer hands the case over, and the sender follows its activity (REQ-CRS-42)"
+				],
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability"
 				]
 			},
 			"evidence": {
@@ -21554,6 +21564,7 @@
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-access-control :: A handler grants and withdraws access to one case from its page (REQ-CRS-43)"
 				],
 				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
 					"openspec/changes/case-access-card-lists-team-and-group-grants",
 					"openspec/changes/people-tab-access-card",
 					"openspec/changes/woo-request-scoped-access"
