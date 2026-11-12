@@ -33,7 +33,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
  *  a named constructor, not a service call. It holds no state and exists so a
  *  caller cannot build a refusal with the wrong status on it.
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class TriageSleep {
 
@@ -126,7 +126,7 @@ class TriageSleep {
 	 *
 	 * @throws RefusedException When the date, the reason or the item refuses it.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function sleep(string $entryId, string $until, string $reason, string $actorId): array {
 		$why = $this->requiredReason(reason: $reason);
@@ -235,7 +235,7 @@ class TriageSleep {
 	 *
 	 * @return boolean True when its wake date is still ahead.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function isAsleep(array $entry): bool {
 		$until = $this->dates->toCalendarDateOrNull(value: (string)($entry[self::FIELD_UNTIL] ?? ''));
@@ -253,7 +253,7 @@ class TriageSleep {
 	 *
 	 * @return array<int, array<string, mixed>> The items a handler should see.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function awake(array $queue): array {
 		$awake = [];
@@ -275,7 +275,7 @@ class TriageSleep {
 	 *
 	 * @return array<int, string> The ids of the items that woke.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function wakeDue(): array {
 		$woken = [];
@@ -367,7 +367,7 @@ class TriageSleep {
 	 *
 	 * @return string The date as YYYY-MM-DD, or '' when it is not asleep.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function wakeDateOf(array $entry): string {
 		return (string)$this->dates->toCalendarDateOrNull(
@@ -382,7 +382,7 @@ class TriageSleep {
 	 *
 	 * @return boolean True when it parses.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function readsAsDate(string $value): bool {
 		return ($this->dates->toCalendarDateOrNull(value: $value) !== null);

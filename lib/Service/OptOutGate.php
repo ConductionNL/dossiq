@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+ * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
  * or the listener throws, a non-exempt message is refused with
  * `authority-unavailable` and an exempt one is sent without a link.
  *
- * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+ * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
  */
 class OptOutGate {
 
@@ -116,7 +116,7 @@ class OptOutGate {
 	 *
 	 * @return bool True when it is.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-a-handler-can-send-a-besluit-that-is-always-delivered-req-coo-002
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-a-handler-can-send-a-besluit-that-is-always-delivered-req-coo-002
 	 */
 	public static function isExempt(string $category): bool {
 		return in_array($category, self::EXEMPT, true);
@@ -132,7 +132,7 @@ class OptOutGate {
 	 *
 	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 */
 	public function ask(string $recipient, string $category, string $caseRef, string $channel = 'email'): array {
 		if ($this->isSwitchedOn() === false) {

@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Seeds dossiq's intake channels into OpenRegister's intake-sources register.
  *
- * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class SeedIntakeSources implements IRepairStep {
 
@@ -73,7 +73,7 @@ class SeedIntakeSources implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getName(): string {
 		return 'Seed dossiq intake channels into the OpenRegister intake-sources register';
@@ -86,7 +86,7 @@ class SeedIntakeSources implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {

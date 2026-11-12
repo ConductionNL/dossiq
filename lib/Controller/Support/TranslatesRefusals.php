@@ -51,7 +51,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return JSONResponse The translated refusal, carrying the refusal's own status.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	private function refused(string $op, RefusedException $e): JSONResponse {
 		$parts = explode('\\', static::class);
@@ -74,7 +74,7 @@ trait TranslatesRefusals {
 	 *
 	 * @return JSONResponse The rule slug, the sentence, and the refusal's own status.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	private function refusalResponse(RefusedException $e): JSONResponse {
 		return new JSONResponse(

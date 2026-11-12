@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Reads the five readiness items, and the tour steps that lost their surface.
  *
- * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 class FirstRunReadiness {
 
@@ -82,7 +82,7 @@ class FirstRunReadiness {
 	 *
 	 * @return array<int, array<string, mixed>> The declared items.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function declared(): array {
 		$parsed = self::readJsonFile(path: __DIR__ . '/../../Settings/first_run_readiness.json');
@@ -99,7 +99,7 @@ class FirstRunReadiness {
 	 *
 	 * @return array<int, array<string, mixed>> The reported items.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function report(): array {
 		$reported = [];
@@ -139,7 +139,7 @@ class FirstRunReadiness {
 	 *
 	 * @return array<int, array<string, mixed>> The broken and unverifiable steps.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function brokenTourSteps(?array $manifest = null): array {
 		$manifest = ($manifest ?? $this->manifest());
@@ -223,7 +223,7 @@ class FirstRunReadiness {
 	 *
 	 * @return array<int, string> The ids.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function declaredSurfaces(array $manifest): array {
 		$ids = [];
@@ -246,7 +246,7 @@ class FirstRunReadiness {
 	 *
 	 * @return array<string, mixed> The manifest, empty when it cannot be read.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function manifest(): array {
 		return self::readJsonFile(path: __DIR__ . '/../../../src/manifest.json');
@@ -284,7 +284,7 @@ class FirstRunReadiness {
 	 *
 	 * @return array{done: bool, failure: string} Whether it is satisfied.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function read(string $id): array {
 		try {
@@ -315,7 +315,7 @@ class FirstRunReadiness {
 	 *
 	 * @throws RuntimeException When OpenRegister cannot answer.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function hasOrganisation(): bool {
 		$mapper = $this->settingsService->getOpenRegisterClass(self::ORGANISATION_MAPPER_CLASS);
@@ -331,7 +331,7 @@ class FirstRunReadiness {
 	 *
 	 * @return bool True when one is configured.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function hasMailAccount(): bool {
 		return $this->appConfig->getValueString('dossiq', 'email_mail_account_id', '') !== '';
@@ -344,7 +344,7 @@ class FirstRunReadiness {
 	 *
 	 * @throws RuntimeException When the case types cannot be read.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function hasPublishedCaseType(): bool {
 		$rows = $this->search(schemaKey: 'case_type_schema', filters: ['isDraft' => false]);
@@ -359,7 +359,7 @@ class FirstRunReadiness {
 	 *
 	 * @throws RuntimeException When the roles cannot be read.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function hasRoleWithHolder(): bool {
 		foreach ($this->search(schemaKey: 'role_schema', filters: []) as $role) {
@@ -376,7 +376,7 @@ class FirstRunReadiness {
 	 *
 	 * @return bool True when the calendar service answers.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function hasWorkingCalendar(): bool {
 		return $this->settingsService->getOpenRegisterClass(self::CALENDAR_SERVICE_CLASS) !== null;
@@ -392,7 +392,7 @@ class FirstRunReadiness {
 	 *
 	 * @throws RuntimeException When OpenRegister is not configured for it.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function search(string $schemaKey, array $filters): array {
 		$objectService = $this->settingsService->getObjectService();

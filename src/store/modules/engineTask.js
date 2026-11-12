@@ -49,7 +49,7 @@ export const FLOW_TASKS_URL = '/apps/openregister/api/flow-tasks'
  * refuses when a required field is empty or a declared effect resolves to
  * nothing. Claiming and the rest are the engine's alone.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export const DOSSIQ_TASKS_URL = '/apps/dossiq/api/case-tasks'
 

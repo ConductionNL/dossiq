@@ -156,7 +156,7 @@ class DecisionService {
 	 *                          are unconfigured, or the payload is
 	 *                          invalid at draft time.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function draft(string $objectionId, array $payload): array {
 		$payload = array_diff_key($payload, CallerIdentity::KEYS);
@@ -465,7 +465,7 @@ class DecisionService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function applyToBezwaar(string $objectionId, string $decisionId): void {
 		$caseId = $this->caseOfObjection(objectionId: $objectionId);

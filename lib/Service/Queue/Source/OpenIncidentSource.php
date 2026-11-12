@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\IL10N;
 /**
  * The reports one person is working, wherever their cases sit.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class OpenIncidentSource implements QueueSource {
 
@@ -49,7 +49,7 @@ class OpenIncidentSource implements QueueSource {
 	 * @param IncidentStore $incidents Reads the incidents a person owns.
 	 * @param IL10N           $l10n      Translations.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly IncidentStore $incidents,
@@ -61,7 +61,7 @@ class OpenIncidentSource implements QueueSource {
 	 * The source's machine name.
 	 *
 	 * @return string The name.
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function name(): string {
 		return 'openIncidents';
@@ -71,7 +71,7 @@ class OpenIncidentSource implements QueueSource {
 	 * What a person reads this source as.
 	 *
 	 * @return string The label.
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function label(): string {
 		return $this->l10n->t('Reports assigned to you');
@@ -81,7 +81,7 @@ class OpenIncidentSource implements QueueSource {
 	 * What takes an item off this queue.
 	 *
 	 * @return string The sentence.
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function closesWhen(): string {
 		return $this->l10n->t('The report is settled, or handed to somebody else.');
@@ -91,7 +91,7 @@ class OpenIncidentSource implements QueueSource {
 	 * The mechanisms that put something here.
 	 *
 	 * @return array<int, string> The mechanisms.
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function mechanisms(): array {
 		return ['incident-assignment'];
@@ -104,7 +104,7 @@ class OpenIncidentSource implements QueueSource {
 	 *
 	 * @return array<int, QueueItem> The items.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function itemsFor(string $userId): array {
 		if ($userId === '') {

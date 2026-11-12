@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Registry of guard evaluators keyed by guard type.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T06
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T06
  */
 class GuardRegistry {
 
@@ -135,7 +135,7 @@ class GuardRegistry {
 	 *
 	 * @return bool True when the type is registered
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	public function knows(string $type): bool {
 		return isset($this->evaluators[$type]);

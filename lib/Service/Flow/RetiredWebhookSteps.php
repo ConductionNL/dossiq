@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+ * @spec openspec/specs/webhook-steps-through-integriq/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Builds `openconnector.source-call` steps from retired webhook steps.
  *
- * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+ * @spec openspec/specs/webhook-steps-through-integriq/spec.md
  */
 class RetiredWebhookSteps {
 
@@ -128,7 +128,7 @@ class RetiredWebhookSteps {
 	 *
 	 * @throws UnmappableStep When the step cannot be carried over.
 	 *
-	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function transition(array $config): array {
 		$body = ['case' => self::WHOLE_ITEM];
@@ -156,7 +156,7 @@ class RetiredWebhookSteps {
 	 *
 	 * @throws UnmappableStep When the step cannot be carried over.
 	 *
-	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function action(array $config): array {
 		$timeout = (int)($config['timeoutSec'] ?? self::CALL_WEBHOOK_TIMEOUT);

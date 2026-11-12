@@ -265,7 +265,7 @@ class SubstitutedWorkResolver {
 	 *
 	 * @return string The end date (`Y-m-d`), or '' when the record has none.
 	 *
-	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	private function routedUntil(array $sub): string {
 		$effective = (string)($sub['_activeUntil'] ?? '');

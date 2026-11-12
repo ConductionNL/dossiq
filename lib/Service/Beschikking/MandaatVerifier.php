@@ -122,7 +122,7 @@ class MandaatVerifier {
 	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function resolveMandaatRegeling(string $caseType): array {
 		$objectService = $this->settingsService->getObjectService();

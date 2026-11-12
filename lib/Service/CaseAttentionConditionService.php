@@ -37,7 +37,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use Throwable;
 /**
  * Whether the thing behind a marker is true of this case, and why.
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseAttentionConditionService {
 
@@ -109,7 +109,7 @@ class CaseAttentionConditionService {
 	 *
 	 * @return boolean True when the rows it reads were not fetched.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function unanswerable(string $condition, array $context): bool {
 		$needs = (string)(self::CONTEXT[$condition] ?? '');
@@ -132,7 +132,7 @@ class CaseAttentionConditionService {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The context.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function contextFor(string $caseId): array {
 		$caseId = trim($caseId);
@@ -180,7 +180,7 @@ class CaseAttentionConditionService {
 	 *
 	 * @return string The reason, or the empty string when the condition is false.
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function reasonFor(
 		string $condition,

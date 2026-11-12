@@ -37,7 +37,7 @@ use OCP\IUserSession;
 /**
  * Controller for milestone progress tracking.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class MilestoneController extends Controller {
 	/**
@@ -74,7 +74,7 @@ class MilestoneController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function caseProgress(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -103,7 +103,7 @@ class MilestoneController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function progress(string $caseId, string $caseTypeId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -133,7 +133,7 @@ class MilestoneController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function mark(string $caseId, string $milestoneId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -166,7 +166,7 @@ class MilestoneController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function reverse(string $caseId, string $milestoneId): JSONResponse {
 		$user = $this->userSession->getUser();

@@ -61,7 +61,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Finish, abort and archive, each with its own permission and its own record.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseEndingActs {
 	use LoadsCaseOrRefuses;
@@ -121,7 +121,7 @@ class CaseEndingActs {
 	 * @throws RefusedException When the caller may not finish, the case is already
 	 *                          ended, or no result can be named.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function finish(string $caseId, string $reason, string $resultTypeId, string $toStatus = ''): array {
 		return $this->end(
@@ -148,7 +148,7 @@ class CaseEndingActs {
 	 *
 	 * @throws RefusedException When the caller may not abort, or no result can be named.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function abort(string $caseId, string $reason, string $resultTypeId, string $toStatus = ''): array {
 		return $this->end(
@@ -172,7 +172,7 @@ class CaseEndingActs {
 	 *
 	 * @throws RefusedException When the caller may not archive, or the case is still open.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function archive(string $caseId, string $reason): array {
 		$case = $this->archivableCase(caseId: $caseId, reason: $reason);
@@ -354,7 +354,7 @@ class CaseEndingActs {
 	 * @throws RefusedException When the caller may not archive, the case is not
 	 *                          archived, or the platform refuses.
 	 *
-	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function unarchive(string $caseId, string $reason): array {
 		$case = $this->restorableCase(caseId: $caseId, reason: $reason);
@@ -435,7 +435,7 @@ class CaseEndingActs {
 	 * @return array<string, mixed> `act`, `at`, `by` and `reason`, empty when the
 	 *                              case was never ended by one of these acts.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function endingOf(array $case): array {
 		$entry = $this->journal->latest(case: $case, types: self::ENDING_TYPES);
@@ -483,7 +483,7 @@ class CaseEndingActs {
 	 *
 	 * @throws RefusedException When refused.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function end(string $act, array $request): array {
 		$case = $this->endableCase(act: $act, request: $request);
@@ -688,7 +688,7 @@ class CaseEndingActs {
 	 *
 	 * @throws RefusedException When the case type declares no terminal status.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function terminalStatus(string $caseTypeId, string $named): string {
 		$terminal = $this->terminalRows(caseTypeId: $caseTypeId);
@@ -743,7 +743,7 @@ class CaseEndingActs {
 	 *
 	 * @return list<string> The skipped phase names, in process order.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function skippedPhases(string $caseTypeId, string $fromStatus, string $toStatus): array {
 		$rows = $this->statuses->rowsOf(caseTypeId: $caseTypeId);
@@ -777,7 +777,7 @@ class CaseEndingActs {
 	 *
 	 * @return bool True when the case carries an ending.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isEnded(array $case): bool {
 		return (trim((string)($case[self::ENDING_FIELD] ?? '')) !== '');

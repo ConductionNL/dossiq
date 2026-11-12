@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Service for complaint analytics, frequency aggregation, and systemic-issue detection.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
  */
 class ComplaintAnalyticsService {
 
@@ -75,7 +75,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<string, int> Map of dimension value => complaint count
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getFrequencyByDimension(string $dimension, string $dateFrom, string $dateTo): array {
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
@@ -112,7 +112,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<string, int> Map of 'YYYY-MM' => complaint count
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getMonthlyTrend(string $dateFrom, string $dateTo): array {
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
@@ -145,7 +145,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<string, float> Map of categorie => average days to resolve
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getAverageResolutionTime(string $dateFrom, string $dateTo): array {
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
@@ -189,7 +189,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<int, array<string, mixed>> Systemic-issue records for flagged categories
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function detectSystemicIssues(int $year, int $quarter): array {
 		[$currentFrom, $currentTo] = $this->getQuarterRange(year: $year, quarter: $quarter);
@@ -244,7 +244,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<int, array<string, mixed>> Anonymized alert records (employee reference redacted)
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function checkEmployeeThresholdAlerts(): array {
 		$sixMonthsAgo = (new DateTimeImmutable('today'))->modify('-6 months')->format('Y-m-d');
@@ -300,7 +300,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<string, mixed> KPI summary
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	public function getKpiSummary(string $dateFrom, string $dateTo): array {
 		$complaints = $this->fetchComplaintsInRange(dateFrom: $dateFrom, dateTo: $dateTo);
@@ -345,7 +345,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array<int, array<string, mixed>> List of complaints
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	private function fetchComplaintsInRange(string $dateFrom, string $dateTo): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -380,7 +380,7 @@ class ComplaintAnalyticsService {
 	 *
 	 * @return array{0: string, 1: string} [from, to] ISO dates
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-05
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-05
 	 */
 	private function getQuarterRange(int $year, int $quarter): array {
 		$startMonth = ($quarter - 1) * 3 + 1;

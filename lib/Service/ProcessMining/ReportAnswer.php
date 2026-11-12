@@ -27,7 +27,7 @@ use OCP\IL10N;
  * Shapes a report as JSON, whole or narrowed to one view, or as the days per
  * phase CSV.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
  */
 final class ReportAnswer {
 
@@ -53,7 +53,7 @@ final class ReportAnswer {
 	 *
 	 * @return array<string, mixed> The JSON body.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T02
 	 */
 	public function json(array $report, mixed $view): array {
 		if (is_string($view) === true && $view !== '') {

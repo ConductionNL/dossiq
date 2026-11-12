@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Service\Transitions;
 /**
  * Registry of action handlers keyed by action type.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T09
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T09
  */
 class ActionHandlerRegistry {
 
@@ -55,7 +55,7 @@ class ActionHandlerRegistry {
 	 * @param BesluitvormingPublishHandler $decisionPublish DROP/LVBB publication handler
 	 * @param ResumeTermHandler $resumeTerm Lifts a paused term, as a task effect
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function __construct(
 		CreateTaskHandler $createTask,

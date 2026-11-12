@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use OCA\Dossiq\Service\TermijnNotificationService;
 /**
  * What a pause chase reads and sends through: the pause reasons, the chase schedule and the notifications.
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 final class PauseChaseSources {
 	/**

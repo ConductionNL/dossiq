@@ -28,7 +28,7 @@
  *
  * Pure: no axios, no Vue, no store.
  *
- * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 /** The column used when the platform answers without a channel axis. */
@@ -61,7 +61,7 @@ function withDefaults(options, defaults) {
  *
  * @param {object} entry - One entry from the platform.
  * @return {string} The id.
- * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function keyFor(entry) {
 	return `${String(entry?.schema ?? '')}-${String(entry?.notification ?? '')}`
@@ -76,7 +76,7 @@ export function keyFor(entry) {
  *   when the platform has no channel axis.
  *
  * @return {Array<object>} `{ id, label, configured, unconfiguredReason }`.
- * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function channelsFrom(options = {}) {
 	const call = withDefaults(options, { channels: [], singleChannelLabel: 'Notifications' })
@@ -201,7 +201,7 @@ function perChannel(channelIds, on) {
  * @param {Array<string>} [options.channelIds] - The columns, when the platform names its channels.
  *
  * @return {Array<object>} `{ id, label, group, groupLabel, appDefault, immediate }`.
- * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function eventsFrom(options = {}) {
 	const { entries, label, groupLabel, channelIds } = withDefaults(options, {
@@ -266,7 +266,7 @@ function appDefaultPerChannel(entry, channelIds) {
  * @param {Array<string>} [options.channelIds] - The columns, one per channel, when the platform names them.
  *
  * @return {object} `{ groupValues, personalValues, forcedValues, refusals }`.
- * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function valuesFrom(options = {}) {
 	const call = withDefaults(options, { entries: [], channelId: SINGLE_CHANNEL_ID, channelIds: [] })
@@ -394,7 +394,7 @@ function forcedPerColumn(run, forced) {
  * @param {(id: string) => string} [options.channelLabel] - What to call a channel column.
  *
  * @return {object} The component's props.
- * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function propsFor(options = {}) {
 	const call = withDefaults(options, { entries: [], channels: [], channelLabel: (id) => id })
@@ -449,7 +449,7 @@ function declaredChannels(axis, call) {
  * @return {?object} `{ schema, notification, enabled, scope, channels? }`, or null when
  *   the id is not one this screen made.
  *
- * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function writeFor(options = {}) {
 	const call = withDefaults(options, { scope: '', channelId: SINGLE_CHANNEL_ID, current: null })

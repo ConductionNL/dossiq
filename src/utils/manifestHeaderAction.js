@@ -4,7 +4,7 @@
  *
  * A page header action of the manifest, found by its id.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 /**
@@ -13,7 +13,7 @@
  * @param {object} manifest The manifest.
  * @param {string} id The action id.
  * @return {object|null} The action, or null when no page declares it.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function findHeaderAction(manifest, id) {
 	if (!id) {

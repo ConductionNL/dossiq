@@ -31,8 +31,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -81,8 +81,8 @@ use Throwable;
  *  collaborators inside the methods would make them untestable in exchange for a
  *  shorter signature.
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class IntakeTriageController extends Controller {
 
@@ -156,8 +156,8 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse The declaration, or 401 without a session.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	#[NoAdminRequired]
 	public function requirements(string $caseTypeId): JSONResponse {
@@ -197,7 +197,7 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse The refusal record, or the refusal of the refusal.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $caseId, string $reason = ''): JSONResponse {
@@ -243,7 +243,7 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse What was recorded, or the refusal.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	#[NoAdminRequired]
 	public function judgeAdmissibility(string $caseId, string $verdict = '', string $reason = ''): JSONResponse {
@@ -288,7 +288,7 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse The items a handler should see.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	#[NoAdminRequired]
@@ -325,7 +325,7 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return IUser|JSONResponse
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	private function handlerOf(string $caseId): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
@@ -369,7 +369,7 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse The sleep record, or the refusal.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	#[NoAdminRequired]
 	public function sleepItem(string $entryId, string $until = '', string $reason = ''): JSONResponse {
@@ -401,7 +401,7 @@ class IntakeTriageController extends Controller {
 	 *
 	 * @return JSONResponse What was created, and what was not.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	#[NoAdminRequired]
 	public function fanOut(

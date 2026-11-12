@@ -21,7 +21,7 @@
   second copy that drifts, and a ground on screen the service does not
   recognise is a choice a consulent makes and is then refused for.
 
-  @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+  @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 -->
 <template>
 	<CnDialog
@@ -219,7 +219,7 @@ export default {
 		 *
 		 * @return {boolean} True when it may.
 		 *
-		 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+		 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 		 */
 		canLookUp() {
 			return (
@@ -242,7 +242,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+		 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 		 */
 		async loadGrounds() {
 			try {
@@ -267,7 +267,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+		 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 		 */
 		async lookUp() {
 			if (!this.canLookUp) {

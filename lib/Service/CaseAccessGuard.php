@@ -131,7 +131,7 @@ class CaseAccessGuard {
 	 *
 	 * @return bool True when the user handles the case itself or is an admin.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function hasCaseMutationAccess(string $caseId, IUser $user): bool {
@@ -216,7 +216,7 @@ class CaseAccessGuard {
 	 *
 	 * @return bool True when the user works on the case, holds a grant on it, is in its handling team, or is an admin.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function hasCaseReadAccess(string $caseId, IUser $user): bool {
@@ -369,7 +369,7 @@ class CaseAccessGuard {
 	 *
 	 * @return bool True only when the platform affirmatively says so.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	private function holdsPlatformGrant(string $caseId, string $uid): bool {
 		$resolver = $this->settingsService->getObjectGrantResolver();

@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class HouseholdCasesController extends Controller {
 	use TranslatesRefusals;
@@ -92,7 +92,7 @@ class HouseholdCasesController extends Controller {
 	 *
 	 * @return JSONResponse `{ results }`.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
@@ -134,7 +134,7 @@ class HouseholdCasesController extends Controller {
 	 *
 	 * @return JSONResponse `{ results }`: the other-domain rows.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	#[NoAdminRequired]
 	public function lookUp(string $caseId): JSONResponse {
@@ -169,7 +169,7 @@ class HouseholdCasesController extends Controller {
 	 *
 	 * @return array{bsns: array<mixed>, ownDomain: string}
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	private function householdOf(string $caseId): array {
 		$read = $this->household->readCase(caseId: $caseId);

@@ -13,7 +13,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  *
  * @link https://conduction.nl
  */
@@ -31,7 +31,7 @@ use Throwable;
 /**
  * Migrate dossiq `partnerOrganization` objects to OR Organisations.
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  */
 class MigratePartnersCommand extends Command {
 
@@ -51,7 +51,7 @@ class MigratePartnersCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:migrate-partners')
@@ -66,7 +66,7 @@ class MigratePartnersCommand extends Command {
 	 *
 	 * @return int Symfony command exit code.
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The command takes no input;
 	 * Symfony's signature requires the parameter regardless.

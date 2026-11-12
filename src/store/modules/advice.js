@@ -116,7 +116,7 @@ export const useAdviceStore = defineStore('advice', {
 		 *
 		 * @param {object} state Store state
 		 * @return {Array} Pending requests
-		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		pendingRequests(state) {
 			return state.requests.filter((r) => r.status === 'requested')
@@ -127,7 +127,7 @@ export const useAdviceStore = defineStore('advice', {
 		 *
 		 * @param {object} state Store state
 		 * @return {Array} Overdue requests
-		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		overdueRequests(state) {
 			const now = new Date()
@@ -144,7 +144,7 @@ export const useAdviceStore = defineStore('advice', {
 		 *
 		 * @param {object} state Store state
 		 * @return {Array} Received requests
-		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		receivedRequests(state) {
 			return state.requests.filter((r) => r.status === 'received')
@@ -155,7 +155,7 @@ export const useAdviceStore = defineStore('advice', {
 		 *
 		 * @param {object} state Store state
 		 * @return {boolean} True if all received
-		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		allAdviceReceived(state) {
 			return (
@@ -173,7 +173,7 @@ export const useAdviceStore = defineStore('advice', {
 		 *
 		 * @param {string} caseId UUID of the case
 		 * @return {Promise<Array>} Advice requests
-		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		async fetchRequests(caseId) {
 			this.loading = true
@@ -203,7 +203,7 @@ export const useAdviceStore = defineStore('advice', {
 		 *
 		 * @param {object} requestData The request data
 		 * @return {Promise<object|null>} Created request
-		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		async createRequest(requestData) {
 			this.loading = true
@@ -225,7 +225,7 @@ export const useAdviceStore = defineStore('advice', {
 		 * @param {string} requestId     UUID of the request
 		 * @param {string} documentId    Nextcloud file ID of the advice document
 		 * @return {Promise<object|null>} Updated request
-		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		async markReceived(requestId, documentId) {
 			this.loading = true
@@ -261,7 +261,7 @@ export const useAdviceStore = defineStore('advice', {
 		 *
 		 * @param {string} requestId UUID of the request
 		 * @return {Promise<object|null>} Updated request
-		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		async markExpired(requestId) {
 			this.loading = true
@@ -280,7 +280,7 @@ export const useAdviceStore = defineStore('advice', {
 		 *
 		 * @param {object} request The advice request
 		 * @return {number} Positive = days remaining, negative = days overdue
-		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		getDaysToDeadline(request) {
 			if (!request.deadline) {

@@ -34,8 +34,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — four declarations decide
  *  one save, and each of them is injected so a test can drive exactly one.
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
  */
 class IntakeRequirementsListener implements IEventListener {
 
@@ -94,7 +94,7 @@ class IntakeRequirementsListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/specs/semantic-case-intake/spec.md
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
@@ -124,7 +124,7 @@ class IntakeRequirementsListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 */
 	private function inspect(ObjectCreatingEvent|ObjectUpdatingEvent $event, bool $creating): void {
 		$payload = $this->payloadOf(entity: $this->savedCase(event: $event));

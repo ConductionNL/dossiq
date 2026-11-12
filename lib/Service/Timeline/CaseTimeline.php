@@ -285,7 +285,7 @@ class CaseTimeline {
 	 *
 	 * @throws Throwable When the timeline could not be read at all.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function publicEntries(string $caseId, int $limit = 50): array {
 		if (trim($caseId) === '') {
@@ -354,7 +354,7 @@ class CaseTimeline {
 	 *
 	 * @return array<string, mixed> The projection.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function project(mixed $entry): array {
 		$row = $entry;

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Archival surface for emails linked to a case.
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T05
  */
 class EmailArchivalService {
 
@@ -77,7 +77,7 @@ class EmailArchivalService {
 	 *     pdfStatus: string,
 	 * }
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T05
 	 */
 	public function archiveLinkedEmail(string $caseId, array $metadata): array {
 		if ($caseId === '') {
@@ -157,7 +157,7 @@ class EmailArchivalService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T05
 	 */
 	public function markFailed(string $archivalId, string $errorMessage): bool {
 		$existing = $this->loadArchival(archivalId: $archivalId);
@@ -184,7 +184,7 @@ class EmailArchivalService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T09
 	 */
 	public function listFailedArchivals(int $limit = 50): array {
 		$objectService = $this->settingsService->getObjectService();

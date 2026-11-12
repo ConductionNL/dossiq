@@ -37,7 +37,7 @@ use OCP\IUserSession;
 /**
  * Controller exposing citizen appointment endpoints.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AppointmentController extends Controller {
 	/**
@@ -64,7 +64,7 @@ class AppointmentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function index(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -99,7 +99,7 @@ class AppointmentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function create(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -129,7 +129,7 @@ class AppointmentController extends Controller {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function requestedBooking(): array {
 		return [
@@ -153,7 +153,7 @@ class AppointmentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function cancel(string $appointmentId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -181,7 +181,7 @@ class AppointmentController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function noShow(string $appointmentId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -217,7 +217,7 @@ class AppointmentController extends Controller {
 	 * mutating routes (cancel/noShow) DO carry an appointment id and are guarded
 	 * by mayMutateAppointment() — this one has nothing of that shape.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function timeslots(): JSONResponse {
 		if ($this->userSession->getUser() === null) {

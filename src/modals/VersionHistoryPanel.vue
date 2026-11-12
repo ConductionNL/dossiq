@@ -110,7 +110,7 @@ import History from 'vue-material-design-icons/History.vue'
  * with no history and no file at all are two different sentences and only one
  * of them is about the document.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
  * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export default {
@@ -228,7 +228,7 @@ export default {
 		 * Whether the restore action is disabled (definitief documents).
 		 *
 		 * @return {boolean} True when restore must be blocked.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		restoreDisabled() {
 			return this.document.status === 'final'
@@ -262,7 +262,7 @@ export default {
 			 * Fetch versions the moment the modal opens.
 			 *
 			 * @param {boolean} isOpen Whether the modal is showing.
-			 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+			 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 			 */
 			handler(isOpen) {
 				if (isOpen) {
@@ -277,7 +277,7 @@ export default {
 		 * Fetch the document's versions from the Nextcloud versions API.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		async fetchVersions() {
 			if (this.resolvedFileId === 0 || !this.userId) {
@@ -331,7 +331,7 @@ export default {
 		 *
 		 * @param {string} xml The PROPFIND response body.
 		 * @return {Array} The parsed versions.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		parseVersions(xml) {
 			if (typeof xml !== 'string' || xml === '') {
@@ -391,7 +391,7 @@ export default {
 		 *
 		 * @param {string} dateStr The date string.
 		 * @return {string} The localised date.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
 		 */
 		formatDate(dateStr) {
 			if (!dateStr) {

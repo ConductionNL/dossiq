@@ -112,7 +112,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		childrenByParent() {
 			const map = {}
 			for (const r of this.roles) {
@@ -123,7 +123,7 @@ export default {
 			return map
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		roots() {
 			return (this.roles || []).filter((r) => !r.parentRole)
 		},
@@ -132,7 +132,7 @@ export default {
 		 * The roles as tree nodes, each under its parent role.
 		 *
 		 * @return {Array<object>} Root nodes `{ id, label, role, children }`.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		tree() {
 			const toNode = (role, seen) => ({
@@ -146,7 +146,7 @@ export default {
 			return this.roots.map((role) => toNode(role, new Set()))
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		parentOptions() {
 			return [
 				{ id: '', label: t('dossiq', '(top level)') },
@@ -154,7 +154,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		deleteBlockedReason() {
 			if (!this.deleting) return ''
 			const refsAsParent = this.roles.some(
@@ -174,7 +174,7 @@ export default {
 		 * Open every level whenever the roles change, as the hierarchy was
 		 * always shown whole.
 		 *
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		roles: {
 			immediate: true,
@@ -182,7 +182,7 @@ export default {
 			 * Expand every role id the list holds.
 			 *
 			 * @param {Array<object>} roles The roles.
-			 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+			 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 			 */
 			handler(roles) {
 				this.expandedIds = (roles || []).map((role) => role.id)
@@ -194,14 +194,14 @@ export default {
 		t,
 		/**
 		 * @param {object} role The role.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		openEditor(role) {
 			this.editingRole = role
 			this.editorOpen = true
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingRole = null
@@ -209,7 +209,7 @@ export default {
 
 		/**
 		 * @param {object} role The role.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		confirmDelete(role) {
 			this.deleting = role
@@ -217,7 +217,7 @@ export default {
 
 		/**
 		 * @param {object} payload The payload.
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		async onSave(payload) {
 			try {
@@ -242,7 +242,7 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-mandaat-matrix-07-admin-ui/tasks.md */
 		async doDelete() {
 			if (!this.deleting) return
 			try {

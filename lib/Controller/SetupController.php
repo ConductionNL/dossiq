@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use OCP\IRequest;
 /**
  * First-time setup status + actions for the abstract setup wizard.
  *
- * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 class SetupController extends Controller {
 
@@ -141,8 +141,8 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse `{ version, completed, registerReady, steps: { <id>: { done } } }`.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
@@ -279,7 +279,7 @@ class SetupController extends Controller {
 	 * @return array{readiness: array<int, array<string, mixed>>, tourSteps: array<int, array<string, mixed>>}
 	 *         The readiness items and the broken tour steps.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function firstRun(): array {
 		return [
@@ -293,7 +293,7 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse `{ success }`.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
@@ -387,7 +387,7 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse `{ success, message, detail }`.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
@@ -490,7 +490,7 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse The outcome, carrying the counts.
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function loadDataset(string $actionId): DataResponse {
 		// The card's Load button names its dataset in the body. An older wizard
@@ -526,7 +526,7 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse|null
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function postedRefusal(mixed $posted): ?DataResponse {
 		if ($posted === null) {
@@ -547,7 +547,7 @@ class SetupController extends Controller {
 	 *
 	 * @return string The dataset id, or '' when none was chosen.
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function chosenDataset(string $actionId, mixed $posted): string {
 		$picked = $this->config(key: self::DATASET_KEY);
@@ -567,7 +567,7 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function declineDataset(): DataResponse {
 		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataService::NONE_DATASET);
@@ -588,7 +588,7 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse The outcome, carrying the counts.
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function importDataset(string $picked): DataResponse {
 		try {
@@ -623,7 +623,7 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function importedAnswer(array $imported): DataResponse {
 		return new DataResponse(
@@ -648,7 +648,7 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse|null The refusal, or null when the dataset is known.
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function refuseDataset(mixed $value): ?DataResponse {
 		$named = 'that';

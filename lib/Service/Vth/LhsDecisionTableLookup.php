@@ -43,7 +43,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
  */
 

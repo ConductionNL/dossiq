@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $isPrivileged is the standard
  * cross-agent/own-record scoping flag used across the app's controllers.
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
  */
 class CallbackService {
 	/**
@@ -74,7 +74,7 @@ class CallbackService {
 	 *
 	 * @throws OCSBadRequestException When validation fails.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-05
 	 */
 	public function buildPayload(array $data, string $agentId): array {
 		$phone = trim((string)($data['customerPhone'] ?? ''));

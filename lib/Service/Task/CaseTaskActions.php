@@ -56,7 +56,7 @@ use RuntimeException;
  * to the gateway for the next is where the two paths start disagreeing about
  * who may do what.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 class CaseTaskActions {
 
@@ -84,7 +84,7 @@ class CaseTaskActions {
 	 *
 	 * @return boolean True when a task can be claimed.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function engineAnswersClaim(): bool {
 		return $this->engineTasks->supportsClaim();
@@ -97,7 +97,7 @@ class CaseTaskActions {
 	 *
 	 * @return array<string, mixed>|null The task.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function find(string $taskId): ?array {
 		return $this->engineTasks->find(taskId: $taskId);
@@ -117,7 +117,7 @@ class CaseTaskActions {
 	 *
 	 * @throws RuntimeException With the engine's own refusal.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function claim(string $taskId, string $actor): array {
 		if ($this->engineTasks->claim(taskId: $taskId, actor: $actor) === false) {
@@ -141,7 +141,7 @@ class CaseTaskActions {
 	 *                          `required_field:<field>`,
 	 *                          `unresolvable_effect:<type>`, `complete_failed`.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function complete(string $taskId, array $data, string $outcome, string $actor): array {
 		$task = $this->engineTasks->find(taskId: $taskId);
@@ -214,7 +214,7 @@ class CaseTaskActions {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	public function titleOf(array $task): string {
 		$title = trim((string)($task['title'] ?? ''));
@@ -239,7 +239,7 @@ class CaseTaskActions {
 	 *
 	 * @throws RuntimeException `cancel_refused:<the engine's reason>`.
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
 	 */
 	public function cancel(string $taskId, string $reason, string $actor): array {
 		$reasonOrNull = null;
@@ -267,7 +267,7 @@ class CaseTaskActions {
 	 *
 	 * @return string The field's name, or '' when nothing required is missing.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public static function missingRequiredField(array $task, array $data): string {
 		foreach (self::requiredFields(task: $task) as $name) {
@@ -286,7 +286,7 @@ class CaseTaskActions {
 	 *
 	 * @return array<int, string> The names.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private static function requiredFields(array $task): array {
 		$metadata = ($task['metadata'] ?? []);
@@ -330,7 +330,7 @@ class CaseTaskActions {
 	 *
 	 * @return boolean True when nothing was given.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private static function isBlank(mixed $answer): bool {
 		if ($answer === null || $answer === []) {

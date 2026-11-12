@@ -188,7 +188,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The versions, unordered.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function versionsWithIdentifier(string $identifier): array {
 		$identifier = trim($identifier);
@@ -230,7 +230,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The case types, unordered.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function everyCaseType(array $scope=[]): array {

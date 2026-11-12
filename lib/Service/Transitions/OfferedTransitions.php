@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCA\Dossiq\Service\Status\StatusDeclarations;
 /**
  * Builds the offered and withheld lists for one case.
  *
- * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class OfferedTransitions {
 
@@ -70,7 +70,7 @@ class OfferedTransitions {
 	 *
 	 * @return array{transitions: array<int, array<string, mixed>>, withheld: array<int, array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function from(array $transitions, array $case, string $currentId, string $userId): array {
 		$caseTypeId = (string)($case['caseType'] ?? '');
@@ -132,7 +132,7 @@ class OfferedTransitions {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function leadsFrom(mixed $transition, string $currentId, string $caseTypeId): bool {
 		if (is_array($transition) === false) {
@@ -187,7 +187,7 @@ class OfferedTransitions {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function offeredEntry(array $transition, array $eval, array $case): array {
 		$failed = array_values(

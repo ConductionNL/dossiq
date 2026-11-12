@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 /**
  * An informatieobject in OpenRegister.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
 final class StoredDocument {
 	/**

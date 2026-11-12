@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Project Dossiq workflow definitions onto OpenRegister flows.
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 class MigrateLhsToDecisionTablesCommand extends Command {
 	/**
@@ -65,7 +65,7 @@ class MigrateLhsToDecisionTablesCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:lhs:migrate-to-decision-tables')
@@ -89,7 +89,7 @@ class MigrateLhsToDecisionTablesCommand extends Command {
 	 *
 	 * @return int Symfony command exit code.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$console = new MigrationConsole();

@@ -70,7 +70,7 @@ class CaseTypeThroughputCalculator {
 	 *
 	 * @return string One of {@see WorkingClock}'s CLOCK_* constants.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function clock(): string {
 		if ($this->clock === null) {
@@ -342,7 +342,7 @@ class CaseTypeThroughputCalculator {
 	 *
 	 * @return float The working hours.
 	 *
-	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function workingHoursFor(array $caseData): float {
 		$start = ($caseData['_startDate'] ?? null);

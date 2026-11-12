@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Repair step that initializes Dossiq configuration via ConfigurationService.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class InitializeSettings implements IRepairStep {
 	/**
@@ -62,7 +62,7 @@ class InitializeSettings implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getName(): string {
 		return 'Initialize Dossiq register and schemas via ConfigurationService';
@@ -75,7 +75,7 @@ class InitializeSettings implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		$output->info('Initializing Dossiq configuration...');

@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for managing ZGW API mapping configurations.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwMappingController extends Controller {
 	/**
@@ -73,7 +73,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function index(): JSONResponse {
@@ -92,7 +92,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function show(string $resourceKey): JSONResponse {
@@ -122,7 +122,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::isSearchable() is a named
 	 *  constructor on a value object, not a service call. Injecting it would put a
 	 *  collaborator in four controllers to answer one question about their own config.
@@ -176,7 +176,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function destroy(string $resourceKey): JSONResponse {
@@ -196,7 +196,7 @@ class ZgwMappingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function reset(string $resourceKey): JSONResponse {

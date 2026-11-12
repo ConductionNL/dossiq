@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -61,7 +61,7 @@ use RuntimeException;
 /**
  * Service orchestrating LLM-assisted, human-reviewed redaction proposals.
  *
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
  */
 class WOOAnonymisationAssistService {
 	/**
@@ -107,7 +107,7 @@ class WOOAnonymisationAssistService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
 	 */
 	public function isLlmAssistAvailable(): bool {
 		return $this->hermiqClient->isAvailable();
@@ -135,7 +135,7 @@ class WOOAnonymisationAssistService {
 	 * @throws InvalidArgumentException (400) When `text` is empty or over the length cap.
 	 * @throws RuntimeException When the document has not yet been assessed (assess-first rule).
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
 	 */
 	public function proposeSpans(string $caseId, string $documentRef, string $text, string $userId): array {
 		$this->validateText(text: $text);
@@ -250,7 +250,7 @@ class WOOAnonymisationAssistService {
 	 * @throws InvalidArgumentException (400) On an invalid `decision`.
 	 * @throws RuntimeException When no `pending_review` proposal exists for this document.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-2
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-2
 	 */
 	public function reviewProposal(
 		string $caseId,
@@ -575,7 +575,7 @@ class WOOAnonymisationAssistService {
 	 *
 	 * @return array<int, array<string, mixed>> The merged, start-sorted span list.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-3
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-3
 	 */
 	private function mergeSpansRulesFloor(array $ruleSpans, array $llmSpans): array {
 		$merged = $ruleSpans;

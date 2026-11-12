@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 class SociaalDomeinStore {
 
@@ -238,7 +238,7 @@ class SociaalDomeinStore {
 	 *
 	 * @throws RefusedException When the store cannot be asked.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	public function rows(string $schema, array $filters = []): array {
 		$objectService = $this->objectService();
@@ -274,7 +274,7 @@ class SociaalDomeinStore {
 	 *
 	 * @throws RefusedException When the store cannot be asked.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	public function read(string $schema, string $id): ?array {
 		if (trim($id) === '') {
@@ -309,7 +309,7 @@ class SociaalDomeinStore {
 	 *
 	 * @throws RefusedException When the write fails.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 	 */
 	public function write(string $schema, array $object): array {
 		$objectService = $this->objectService();

@@ -25,7 +25,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
 class AdvisoryBodyController extends Controller {
 	/**
@@ -76,7 +76,7 @@ class AdvisoryBodyController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function listAdvisoryBodies(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -95,7 +95,7 @@ class AdvisoryBodyController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function searchAdvisoryBodies(): JSONResponse {
 		$user = $this->userSession->getUser();

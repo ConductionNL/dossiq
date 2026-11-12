@@ -19,7 +19,7 @@
  * empty name list would read as an approval waiting on nobody, which is the
  * one thing it never means.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 /**
@@ -32,7 +32,7 @@
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<{act: string, label: string, sentence: string, approvers: Array<string>, decisionRef: string}>}
  *   The outstanding approvals, in the order the server listed them.
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 export function awaitingApprovals(acts) {
 	const rows = Array.isArray(acts?.awaitingApproval) ? acts.awaitingApproval : []
@@ -58,7 +58,7 @@ export function awaitingApprovals(acts) {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {boolean} True when at least one approval is outstanding.
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 export function isAwaitingApproval(acts) {
 	return awaitingApprovals(acts).length > 0
@@ -69,7 +69,7 @@ export function isAwaitingApproval(acts) {
  *
  * @param {object} entry One row of {@link awaitingApprovals}.
  * @return {string} The names joined, or '' when decidiq named none.
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 export function approversLine(entry) {
 	const names = Array.isArray(entry?.approvers) ? entry.approvers : []
@@ -86,7 +86,7 @@ export function approversLine(entry) {
  *
  * @param {object} entry One row of {@link awaitingApprovals}.
  * @return {string} The heading.
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 export function approvalHeading(entry) {
 	const label = String(entry?.label ?? '').trim()

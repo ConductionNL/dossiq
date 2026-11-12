@@ -40,8 +40,8 @@ interface BerichtenboxAdapterInterface {
 	 *
 	 * @return array Result with messageId, status
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
 	 */
 	public function sendMessage(
 		string $bsn,

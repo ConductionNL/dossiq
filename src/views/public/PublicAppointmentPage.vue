@@ -57,7 +57,7 @@ export default {
 		return { loading: true, error: null, appointment: null, cancelled: false }
 	},
 
-	/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
+	/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-appointment-booking/tasks.md */
 	async mounted() {
 		try {
 			const url = generateUrl(
@@ -79,7 +79,7 @@ export default {
 		t,
 		/**
 		 * @param {string} dt The date-time to format.
-		 * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-appointment-booking/tasks.md
 		 */
 		formatDateTime(dt) {
 			if (!dt) return '-'
@@ -91,7 +91,7 @@ export default {
 
 		/**
 		 * @param {string} status The status.
-		 * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-appointment-booking/tasks.md
 		 */
 		statusLabel(status) {
 			const labels = {
@@ -103,7 +103,7 @@ export default {
 			return labels[status] || status
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-appointment-booking/tasks.md */
 		async cancelAppointment() {
 			try {
 				const url = generateUrl(

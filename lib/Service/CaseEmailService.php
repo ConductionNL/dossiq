@@ -44,7 +44,7 @@ use RuntimeException;
 /**
  * Service for case-integrated email functionality.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  * @spec openspec/specs/case-history-surface/spec.md
  */
 class CaseEmailService {
@@ -109,8 +109,8 @@ class CaseEmailService {
 	 * @throws \RuntimeException If the case cannot be read or the recipient is not allowed
 	 * @throws RecipientOptedOutException If integriq says this person may not be sent it
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function sendEmail(
@@ -277,7 +277,7 @@ class CaseEmailService {
 	 *
 	 * @return string The stored message id.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function recordSentEmail(
@@ -396,7 +396,7 @@ class CaseEmailService {
 	 *
 	 * @throws \RuntimeException If template not found or sending fails
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function sendFromTemplate(
 		string $caseId,
@@ -473,7 +473,7 @@ class CaseEmailService {
 	 *
 	 * @return string The resolved string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveVariables(string $template, array $data): string {
 		return $this->substituteVariables(
@@ -494,7 +494,7 @@ class CaseEmailService {
 	 *
 	 * @return string The resolved string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveVariablesRaw(string $template, array $data): string {
 		return $this->substituteVariables(
@@ -513,7 +513,7 @@ class CaseEmailService {
 	 *
 	 * @return string The resolved string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function substituteVariables(string $template, array $data, string $escaping): string {
 		return preg_replace_callback(
@@ -544,7 +544,7 @@ class CaseEmailService {
 	 *
 	 * @return array<string> List of unresolved variable names
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function findUnresolvedVariables(string $template, array $data): array {
 		$unresolved = [];
@@ -566,7 +566,7 @@ class CaseEmailService {
 	 *
 	 * @return string|null The extracted case identifier or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function extractCaseNumber(string $subject): ?string {
 		if (preg_match(self::CASE_NUMBER_PATTERN, $subject, $matches) === 1) {
@@ -587,7 +587,7 @@ class CaseEmailService {
 	 *
 	 * @return array<string, mixed> Processing result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function processInbound(
 		string $from,
@@ -642,7 +642,7 @@ class CaseEmailService {
 	 *
 	 * @return array<int, array<string, mixed>> List of templates
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getTemplatesForCaseType(string $caseTypeId): array {
 		return $this->repository->findTemplatesForCaseType(caseTypeId: $caseTypeId);

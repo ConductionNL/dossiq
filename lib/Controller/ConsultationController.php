@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -45,7 +45,7 @@ use OCP\IRequest;
  * Every endpoint carries the NoAdminRequired annotation and applies the
  * ConsultationAccessGuard (OWASP A01:2021, ADR-005 Rule 3).
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
  */
 class ConsultationController extends Controller {
 	/**
@@ -74,7 +74,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function index(string $caseId): JSONResponse {
 		$authError = $this->accessGuard->requireUser();
@@ -95,7 +95,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function show(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -113,7 +113,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function create(): JSONResponse {
 		$authError = $this->accessGuard->requireUser();
@@ -146,7 +146,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function updateStatus(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -176,7 +176,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function submitResponse(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -205,7 +205,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function delete(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -228,7 +228,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function overdue(): JSONResponse {
 		$authError = $this->accessGuard->requireUser();
@@ -249,7 +249,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function requestExtension(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -279,7 +279,7 @@ class ConsultationController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function approveExtension(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);

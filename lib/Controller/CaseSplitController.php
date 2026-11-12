@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Split a case, and read what its type allows a split to divide.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseSplitController extends Controller {
 
@@ -70,7 +70,7 @@ class CaseSplitController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -90,7 +90,7 @@ class CaseSplitController extends Controller {
 	 *
 	 * @return JSONResponse The new case and what moved, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	#[NoAdminRequired]
 	public function split(string $caseId): JSONResponse {
@@ -135,7 +135,7 @@ class CaseSplitController extends Controller {
 	 *
 	 * @return JSONResponse The parts, or the refusal.
 	 *
-	 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
 	 */
 	#[NoAdminRequired]
 	public function divisible(string $caseId): JSONResponse {

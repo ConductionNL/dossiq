@@ -34,7 +34,7 @@ namespace OCA\Dossiq\Service\Subsidie;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class SubsidieRegisterExporter {
 	/**
@@ -51,7 +51,7 @@ class SubsidieRegisterExporter {
 	 *
 	 * @return string The display name for the public register.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function publicOntvanger(array $request): string {
 		$kvk = (string)($request['applicantKvkRef'] ?? '');
@@ -72,7 +72,7 @@ class SubsidieRegisterExporter {
 	 *
 	 * @return array<string, mixed> The feed entry.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function toFeedEntry(array $request, array $regeling, array $decision): array {
 		$determined = (string)($decision['beschikkingtype'] ?? '') === 'vaststellingsbeschikking';
@@ -105,7 +105,7 @@ class SubsidieRegisterExporter {
 	 *
 	 * @return array<string, mixed> The feed document.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function buildFeed(array $entries, int $limit = 100, int $offset = 0): array {
 		$limit = max(1, $limit);

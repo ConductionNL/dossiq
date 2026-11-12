@@ -87,8 +87,8 @@ class BezwaarTermijnScheduler {
 	 *
 	 * @return array{endDate: string, herinnering: string} Both as `Y-m-d`.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function computeTermijn(string $bekendmaking, array $definitie = [], int $termDays = 0): array {
 		$span = new DateInterval('P6W');

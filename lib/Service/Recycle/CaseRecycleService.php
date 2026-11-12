@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use Throwable;
 /**
  * Lists deleted cases with their window, and restores one as a recorded act.
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseRecycleService {
 
@@ -160,7 +160,7 @@ class CaseRecycleService {
 	 * here instead would put an IGroupManager in a class whose whole job is to
 	 * read OpenRegister, and would make the scoping untestable without one.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function deletedCases(
 		int $limit = self::PAGE_SIZE,
@@ -315,7 +315,7 @@ class CaseRecycleService {
 	 *
 	 * @return array<string, mixed>|null The case payload, or null.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function liveCase(string $caseId): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -360,7 +360,7 @@ class CaseRecycleService {
 	 *
 	 * @throws RuntimeException `case_not_deleted` when the case is not in the recycle state.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function restore(string $caseId): array {
 		$entity = $this->findDeleted(caseId: $caseId);
@@ -387,7 +387,7 @@ class CaseRecycleService {
 	 *
 	 * @return object|null OpenRegister's object entity, or null.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function findDeleted(string $caseId): ?object {
 		$mapper = $this->settingsService->getOpenRegisterClass(class: self::MAGIC_MAPPER);
@@ -535,7 +535,7 @@ class CaseRecycleService {
 	 *
 	 * @return array<string, mixed>|null The window, or null when the row carries none.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function window(object $entity): ?array {
 		return $this->windowReader->windowFor(entity: $entity);
@@ -553,7 +553,7 @@ class CaseRecycleService {
 	 *
 	 * @return bool True when the row belongs in this caller's lens.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function maySee(object $entity, string $userId, bool $isAdmin): bool {
 		if ($isAdmin === true) {

@@ -32,7 +32,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 class ConsultationRepository {
 
@@ -75,7 +75,7 @@ class ConsultationRepository {
 	 *
 	 * @return array<int, array<string, mixed>> List of consultations
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getConsultationsForCase(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -105,7 +105,7 @@ class ConsultationRepository {
 	 *
 	 * @return array<string, mixed>|null The consultation data or null if not found
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getConsultation(string $consultationId): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -137,7 +137,7 @@ class ConsultationRepository {
 	 *
 	 * @throws \RuntimeException If OpenRegister is unavailable
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function deleteConsultation(string $consultationId): bool {
 		$objectService = $this->settingsService->getObjectService();
@@ -167,7 +167,7 @@ class ConsultationRepository {
 	 *
 	 * @return array<int, array<string, mixed>> List of overdue consultations
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getOverdueConsultations(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -268,7 +268,7 @@ class ConsultationRepository {
 	 *
 	 * @return string Generated consultation number (e.g. ADV-2026-0001)
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function nextConsultationNumber(
 		object $objectService,

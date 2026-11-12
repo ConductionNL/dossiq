@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IUserManager;
 /**
  * Resolves the responders a case type names to user ids.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class ResponderResolver {
 
@@ -69,7 +69,7 @@ class ResponderResolver {
 	 * @return array{ok: bool, users: array<string>, unresolved: array<string>}
 	 *         The user ids to pull in, and the names that did not resolve.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function resolve(string $caseTypeId): array {
 		$declared = $this->declaredResponders(caseTypeId: $caseTypeId);
@@ -110,7 +110,7 @@ class ResponderResolver {
 	 *
 	 * @return array<string> The declared names.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function declaredResponders(string $caseTypeId): array {
 		if ($caseTypeId === '') {
@@ -149,7 +149,7 @@ class ResponderResolver {
 	 *
 	 * @return array<string> The names.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function names(mixed $responders): array {
 		if (is_array($responders) === false) {
@@ -174,7 +174,7 @@ class ResponderResolver {
 	 *
 	 * @return array<string> User ids, empty when the name does not resolve.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function membersOf(string $responder): array {
 		if (str_starts_with($responder, 'group:') === true) {
@@ -195,7 +195,7 @@ class ResponderResolver {
 	 *
 	 * @return array<string> User ids, empty when the group is absent or empty.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function groupMembers(string $groupId): array {
 		if ($groupId === '') {

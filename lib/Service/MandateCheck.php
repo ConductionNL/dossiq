@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use DateTimeImmutable;
 /**
  * The state of one mandate check; it never leaves the service that built it.
  *
- * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
  */
 final class MandateCheck {
 

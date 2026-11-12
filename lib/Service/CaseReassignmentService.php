@@ -227,7 +227,7 @@ class CaseReassignmentService {
 	 * act somebody already decided. Splitting them into two methods would
 	 * duplicate the selection build, which is the part that must not drift.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function releaseCaseload(
 		string $fromUser,
@@ -254,7 +254,7 @@ class CaseReassignmentService {
 	 *
 	 * @throws InvalidArgumentException When a handler, the receiver or the reason is missing.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function release(CaseloadReleaseRun $run): array {
 		$this->assertReleasable(run: $run);
@@ -317,7 +317,7 @@ class CaseReassignmentService {
 	 *
 	 * @throws InvalidArgumentException When any of the three is missing.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function assertReleasable(CaseloadReleaseRun $run): void {
 		if ($run->fromUser === '' || $run->toUser === '') {
@@ -340,7 +340,7 @@ class CaseReassignmentService {
 	 *
 	 * @return array<int, string> The case uuids.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseIdsOf(array $cases): array {
 		$caseIds = [];
@@ -366,7 +366,7 @@ class CaseReassignmentService {
 	 *
 	 * @return array<string, mixed> The job, or an empty array when there was nothing to move.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function handOverCases(CaseloadReleaseRun $run): array {
 		if ($run->caseIds === []) {
@@ -388,7 +388,7 @@ class CaseReassignmentService {
 	 *
 	 * @return array<string, mixed> The previewed job.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function createJob(CaseloadReleaseRun $run): array {
 		return $this->handoff->create(

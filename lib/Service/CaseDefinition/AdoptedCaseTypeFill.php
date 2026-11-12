@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+ * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Which shipped fields an adopted case type lacks, and writing them.
  *
- * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+ * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
  */
 class AdoptedCaseTypeFill {
 
@@ -69,7 +69,7 @@ class AdoptedCaseTypeFill {
 	 *
 	 * @return array<string, mixed> The fields to add, with the package's values.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function lackedBy(array $shipped, array $stored): array {
 		$lacked = [];
@@ -99,7 +99,7 @@ class AdoptedCaseTypeFill {
 	 *
 	 * @return array<string, mixed> The row.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function pointedAt(array $row, array $ids): array {
 		if ($ids === []) {
@@ -134,7 +134,7 @@ class AdoptedCaseTypeFill {
 	 *
 	 * @return array<int, array<string, mixed>> The adopted rows.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function withFillsPointedAt(array $adopted, array $ids): array {
 		foreach ($adopted as $index => $entry) {
@@ -157,7 +157,7 @@ class AdoptedCaseTypeFill {
 	 *
 	 * @return array<int, string> The ids of the rows that were filled.
 	 *
-	 * @spec openspec/changes/package-adoption-fills-missing-case-type-fields/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-adopted-case-type-gets-the-fields-it-lacks-and-keeps-the-ones-it-has-req-ct-adopt-01
 	 */
 	public function write(array $adopted): array {
 		$objectService = $this->settings->getObjectService();

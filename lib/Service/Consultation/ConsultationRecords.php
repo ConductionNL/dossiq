@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use OCA\Dossiq\Service\Obligations\ObligationService;
 /**
  * Where consultations, their dependencies and the obligations they wait on are read and written.
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 final class ConsultationRecords {
 	/**

@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+ * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
  */
 class CaseMergedListener implements IEventListener {
 	/**
@@ -71,7 +71,7 @@ class CaseMergedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 * @spec openspec/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function handle(Event $event): void {
 		if (method_exists($event, 'getSurvivorUuid') === false

@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Built-in handler for `createSubCase` automatic actions.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T08
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T08
  */
 class CreateSubCaseHandler implements ActionHandlerInterface {
 	/**

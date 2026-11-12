@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ namespace OCA\Dossiq\Service;
 /**
  * What a case type declares about acknowledging receipt: the resolver, the store and the declaration.
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 final class AcknowledgementDeclaration {
 	/**

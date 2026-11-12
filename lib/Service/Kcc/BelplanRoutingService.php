@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Service\Kcc;
 /**
  * Belplan-driven KCC call routing.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 class BelplanRoutingService {
 	/**
@@ -72,7 +72,7 @@ class BelplanRoutingService {
 	 *
 	 * @return array<string, mixed>|null The matched belplan or null when none matches.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function getActiveBelplan(string $phoneNumber, array $belplannen): ?array {
 		$normalised = $this->normalisePhone(phoneNumber: $phoneNumber);
@@ -103,7 +103,7 @@ class BelplanRoutingService {
 	 *
 	 * @return string The vaardigheid, or '' when not resolvable.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function resolveVaardigheid(array $belplan, string|int $menuSelection): string {
 		$steps = $belplan['routingSteps'] ?? [];
@@ -157,7 +157,7 @@ class BelplanRoutingService {
 	 *               estimatedWaitTime: int, vaardigheid: string,
 	 *               candidatePool: int}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function routeCall(
 		string $vaardigheid,

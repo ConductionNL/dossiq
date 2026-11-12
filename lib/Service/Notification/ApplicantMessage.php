@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use Throwable;
 /**
  * Sends the message one declared moment owes the applicant, and says what happened.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 class ApplicantMessage {
 
@@ -89,7 +89,7 @@ class ApplicantMessage {
 	 *
 	 * @return bool True when the message is declared and on.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	public function declares(array $caseType, string $moment): bool {
 		foreach ($this->moments->momentsFor(caseType: $caseType) as $declared) {
@@ -113,7 +113,7 @@ class ApplicantMessage {
 	 * @return array{sent: bool, reason: string, recipient: string, template: string, sentAt: string}
 	 *         What happened, for the caller to record.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
 	 */
 	public function send(
 		array $case,

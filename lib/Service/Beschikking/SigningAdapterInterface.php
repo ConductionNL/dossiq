@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T23
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 /**
  * Signs a beschikking PDF via an eIDAS-qualified TSP (OpenConnector).
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T23
  */
 interface SigningAdapterInterface {
 	/**
@@ -44,7 +44,7 @@ interface SigningAdapterInterface {
 	 *
 	 * @return array<string, string> Signature metadata keyed by signedBestandId, validatieRapportId, certificaatSerienummer, tspProviderEidasId.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T23
 	 */
 	public function sign(string $fileId, string $signatory, string $tspProvider): array;
 
@@ -55,7 +55,7 @@ interface SigningAdapterInterface {
 	 *
 	 * @return array<string, mixed> The validatierapport contents.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T23
 	 */
 	public function fetchValidationReport(string $validationRapportId): array;
 }//end interface

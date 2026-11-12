@@ -87,7 +87,7 @@ class CrossAppListenerRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	private function registerOwnedStepListeners(IRegistrationContext $context): void {
 		if (class_exists(\OCA\Dossiq\Listener\FlowEmailSentListener::EVENT) === true) {

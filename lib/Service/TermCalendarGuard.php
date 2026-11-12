@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use Throwable;
 /**
  * Refusing a term whose named calendar does not resolve (REQ-TERM-060).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 class TermCalendarGuard {
 	/**
@@ -74,7 +74,7 @@ class TermCalendarGuard {
 	 *
 	 * @throws RefusedException When a NAMED calendar does not resolve.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function requireNamedCalendarResolves(
 		?string $calendarSlug,
@@ -113,7 +113,7 @@ class TermCalendarGuard {
 	 *
 	 * @return RefusedException The refusal to throw.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	private function refuse(string $slug, string $because, ?Throwable $previous = null): RefusedException {
 		$this->logger->warning(

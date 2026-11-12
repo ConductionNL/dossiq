@@ -29,7 +29,7 @@ function todayString() {
  * @param {object[]} completedCases Cases completed this month
  * @param {object[]} myTasks Tasks assigned to current user (available/active)
  * @return {object} KPI values
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function computeKpis(openCases, completedCases, myTasks) {
 	const today = todayString()
@@ -99,7 +99,7 @@ function leadDays(c) {
  * @param {object[]} openCases Cases with non-final status
  * @param {object[]} statusTypes All status types
  * @return {Array<{ name: string, count: number, statusIds: string[] }>} Sorted by status type order
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function aggregateByStatus(openCases, statusTypes) {
 	const orderMap = firstOrderByName(statusTypes)
@@ -185,7 +185,7 @@ function idsFor(idsMap, name) {
  * @param {object[]} cases All visible cases (with activity arrays)
  * @param {number} limit Max entries to return
  * @return {Array<{ date, type, description, user, caseIdentifier }>}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getRecentActivity(cases, limit = 10) {
 	const entries = []
@@ -237,7 +237,7 @@ function activityEntry(entry, c) {
  * @param {object[]} tasks Tasks assigned to current user (available/active)
  * @param {number} limit Max items to return
  * @return {Array<{ type, id, title, reference, deadline, daysText, isOverdue, priority }>}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getMyWorkItems(cases, tasks, limit = 5) {
 	const items = [
@@ -410,7 +410,7 @@ function endOfWeek() {
  * @param {object[]} cases Cases assigned to current user (non-final)
  * @param {object[]} normalizedTasks Already-normalized CalDAV task work items
  * @return {{ overdue: object[], dueThisWeek: object[], upcoming: object[], noDeadline: object[], totalCount: number }}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function getGroupedMyWorkItems(cases, normalizedTasks) {
 	const weekEnd = endOfWeek()
@@ -476,7 +476,7 @@ function urgencyGroup(item, weekEnd) {
  *
  * @param {string} dateString ISO date string
  * @return {string}
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-dashboard/tasks.md
  */
 export function formatRelativeTime(dateString) {
 	if (!dateString) return '—'

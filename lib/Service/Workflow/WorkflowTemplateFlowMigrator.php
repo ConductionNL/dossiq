@@ -46,7 +46,7 @@ use Throwable;
  * fires twice from the moment the migration runs. Adopting the flow stays a
  * deliberate act, which is also how the shipped `x-openregister-flows` arrive.
  *
- * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+ * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
 class WorkflowTemplateFlowMigrator {
 
@@ -96,7 +96,7 @@ class WorkflowTemplateFlowMigrator {
 	 *
 	 * @return array<string, mixed> The summary.
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	public function migrate(IUser $user, bool $dryRun): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -414,7 +414,7 @@ class WorkflowTemplateFlowMigrator {
 	 *
 	 * @return string The status name.
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	private function statusName(mixed $value, array $names): string {
 		$raw = trim((string)$value);
@@ -446,7 +446,7 @@ class WorkflowTemplateFlowMigrator {
 	 *
 	 * @return array<string, string> uuid => name, empty when unavailable.
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	private function statusNames(): array {
 		$store = $this->storeFor(schemaKey: 'status_type_schema');

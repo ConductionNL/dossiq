@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCA\Dossiq\AppInfo\Application;
 /**
  * Builds `filinq.generate-document` steps from retired document steps.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class RetiredDocumentSteps {
 
@@ -94,7 +94,7 @@ class RetiredDocumentSteps {
 	 *
 	 * @throws UnmappableStep When the step has no text or no document type.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function create(array $config): array {
 		$text = $this->syntax->inlineMergeFields(
@@ -138,7 +138,7 @@ class RetiredDocumentSteps {
 	 *
 	 * @throws UnmappableStep When the step has no text, or files a document without a type.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function merge(array $config): array {
 		$text = (string)($config['template'] ?? ($config['templateSlug'] ?? ''));

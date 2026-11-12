@@ -24,7 +24,7 @@
   forbids dividing documents and a task the engine cannot move are two different
   answers with two different ways out.
 
-  @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<CnDialog
@@ -194,7 +194,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md */
+		/** @spec openspec/specs/case-management/spec.md */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
@@ -206,7 +206,7 @@ export default {
 		 * case that their case type was the problem.
 		 *
 		 * @return {boolean} True when there is nothing to tick.
-		 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		nothingToDivide() {
 			return (
@@ -223,7 +223,7 @@ export default {
 		 * one of them.
 		 *
 		 * @return {boolean} True when the split can be asked for.
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		canConfirm() {
 			const contradicts = this.chosenParties.some((id) =>
@@ -249,7 +249,7 @@ export default {
 			 * Read what this case holds, and what its type allows.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+			 * @spec openspec/specs/case-management/spec.md
 			 */
 			handler() {
 				this.load()
@@ -266,7 +266,7 @@ export default {
 		 * @param {Array<string>} list The list being ticked into.
 		 * @param {string} id The id.
 		 * @return {void}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		toggle(list, id) {
 			const at = list.indexOf(id)
@@ -286,7 +286,7 @@ export default {
 		 * children.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async load() {
 			if (this.targetCaseId === '') {
@@ -317,7 +317,7 @@ export default {
 		 * enforced; it was just never said until after the attempt.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async readSplitRule() {
 			const { data: rules } = await axios.get(
@@ -332,7 +332,7 @@ export default {
 		 * Read the documents and parties, each only when the rule allows it.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async readSplitChildren() {
 			const [documents, parties] = await Promise.all([
@@ -356,7 +356,7 @@ export default {
 		 *
 		 * @param {object} loadError What the read threw.
 		 * @return {void}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		showLoadFailure(loadError) {
 			this.allowed = []
@@ -375,7 +375,7 @@ export default {
 		 *
 		 * @param {string} part One of documents, parties or tasks.
 		 * @return {boolean} True when it may be divided.
-		 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		allows(part) {
 			return this.allowed.includes(part)
@@ -387,7 +387,7 @@ export default {
 		 * @param {string} schema The schema slug.
 		 * @param {Array<string>} labelFields The fields a label is built from, in order.
 		 * @return {Promise<Array<object>>} The rows.
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async children(schema, labelFields) {
 			const { data } = await axios.get(
@@ -409,7 +409,7 @@ export default {
 		 * Ask the server to split, and keep the dialog open on a refusal.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 		 */
 		async confirm() {
 			if (!this.canConfirm || this.targetCaseId === '') {

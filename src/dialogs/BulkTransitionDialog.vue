@@ -24,7 +24,7 @@
 	declares the requirement and the server enforces it; the disabled button is
 	the half that says so before the click.
 
-	@spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	@spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<CnDialog
@@ -246,7 +246,7 @@ export default {
 		 * rehearsal, the per-case outcome and the skip list are deliberately
 		 * identical across all four.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		mode: {
 			type: String,
@@ -295,7 +295,7 @@ export default {
 		 *
 		 * @return {Array<{id: string, label: string}>} The options.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		transitionOptions() {
 			return this.transitions.map((tr) => ({
@@ -307,7 +307,7 @@ export default {
 		/**
 		 * @return {boolean} Whether this dialog is running a status transition.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		isTransition() {
 			return this.mode === 'transition'
@@ -320,7 +320,7 @@ export default {
 		 *
 		 * @return {string} The title.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		title() {
 			const count = this.caseIds.length
@@ -345,7 +345,7 @@ export default {
 		 *
 		 * @return {string} The eyebrow, empty for the other gestures.
 		 *
-		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
 		 */
 		eyebrow() {
 			return this.isTransition
@@ -359,7 +359,7 @@ export default {
 		 *
 		 * @return {boolean} Whether to show it.
 		 *
-		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
 		 */
 		showsChanges() {
 			return this.isTransition && this.scope === SCOPE_PAGE && this.changeRows.length > 0
@@ -368,7 +368,7 @@ export default {
 		/**
 		 * @return {string} The heading over the table of changes.
 		 *
-		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
 		 */
 		changesTitle() {
 			return t('dossiq', 'What changes: {count} cases', { count: this.changeRows.length })
@@ -377,7 +377,7 @@ export default {
 		/**
 		 * @return {string} The status the cases get, or a dash until one is picked.
 		 *
-		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
 		 */
 		becomes() {
 			return this.selectedTransition ? this.selectedTransition.label : '—'
@@ -388,7 +388,7 @@ export default {
 		 *
 		 * @return {boolean} True for the result panel.
 		 *
-		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-result-names-every-changed-case
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-result-names-every-changed-case
 		 */
 		allChanged() {
 			const job = this.job
@@ -401,7 +401,7 @@ export default {
 		/**
 		 * @return {string} The heading of the result panel.
 		 *
-		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-result-names-every-changed-case
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-result-names-every-changed-case
 		 */
 		resultTitle() {
 			return t('dossiq', '{applied} of {total} cases changed', { applied: this.job.counts.applied, total: this.job.total })
@@ -416,7 +416,7 @@ export default {
 		 *
 		 * @return {boolean} Whether the act can be rehearsed.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		canRehearse() {
 			if (this.starting === true || this.reason.trim().length === 0) {
@@ -438,7 +438,7 @@ export default {
 	 *
 	 * @return {Promise<void>} Resolves when the dialog is usable.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	async mounted() {
 		if (this.isTransition === false) {
@@ -458,7 +458,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the picker is filled.
 		 *
-		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
 		 */
 		async loadTransitions() {
 			this.loadingTransitions = true
@@ -488,7 +488,7 @@ export default {
 		 *
 		 * @return {Promise<{transitions: Array<object>, row: object}>} The offer and its table row.
 		 *
-		 * @spec openspec/changes/bulk-status-shows-what-changes/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
+		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-the-status-dialog-shows-what-changes
 		 */
 		async readCase(id) {
 			const safeId = encodeURIComponent(id)
@@ -511,7 +511,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the job has been rehearsed.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async rehearse() {
 			this.starting = true
@@ -542,7 +542,7 @@ export default {
 		 *
 		 * @return {object} The job parameters.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		parameters() {
 			if (isLifecycleGesture(this.mode) === true) {
@@ -570,7 +570,7 @@ export default {
 		 *
 		 * @return {string} What to show.
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		refusalSentence(err) {
 			const { reason, message, details } = readRefusal(err)
@@ -609,7 +609,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		onFinished() {
 			this.$emit('completed', this.job)
@@ -620,7 +620,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		onClose() {
 			this.$emit('close')

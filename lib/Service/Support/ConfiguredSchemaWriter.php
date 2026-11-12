@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 /**
  * One save to a configured schema, with the owner's failure report.
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 final class ConfiguredSchemaWriter {
 	use SearchesObjects;
@@ -61,7 +61,7 @@ final class ConfiguredSchemaWriter {
 	 * @return array<string, mixed> The saved object, or the payload when the
 	 *                              save could not be performed.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function save(string $schemaConfigKey, array $object): array {
 		$target = $this->target(schemaConfigKey: $schemaConfigKey);

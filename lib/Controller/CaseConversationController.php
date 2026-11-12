@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Psr\Log\LoggerInterface;
 /**
  * REST controller for live conversations, captures and major declarations.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseConversationController extends Controller {
 
@@ -102,7 +102,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The affordance and its reason.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function availability(): JSONResponse {
@@ -123,7 +123,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The conversation record, or a refusal.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function start(string $caseId, ?string $subject = null): JSONResponse {
@@ -161,7 +161,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The completed record, or a refusal.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function end(string $caseId, string $roomId = '', array $participants = [], int $durationSeconds = 0): JSONResponse {
@@ -197,7 +197,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The case document, or a refusal.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function capture(
@@ -237,7 +237,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The channel, or a refusal naming the group that did not resolve.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function declareMajor(string $caseId): JSONResponse {
@@ -268,7 +268,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse Whether a channel was closed, or a refusal.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function closeMajorChannel(string $caseId): JSONResponse {
@@ -291,7 +291,7 @@ class CaseConversationController extends Controller {
 	 *
 	 * @return JSONResponse The response.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function answer(array $result): JSONResponse {
 		if (($result['ok'] ?? false) === true) {

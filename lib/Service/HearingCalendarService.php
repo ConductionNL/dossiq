@@ -20,7 +20,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Writes the calendar event for a hearing.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 class HearingCalendarService {
 
@@ -96,7 +96,7 @@ class HearingCalendarService {
 	 *
 	 * @return string The event UID, or an empty string when nothing was written.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function createEvent(array $data): string {
 		$participants = $data['participants'] ?? [];
@@ -158,7 +158,7 @@ class HearingCalendarService {
 	 *
 	 * @return DateTimeImmutable|null
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function readStart(array $data): ?DateTimeImmutable {
 		$date = (string)($data['date'] ?? '');
@@ -184,7 +184,7 @@ class HearingCalendarService {
 	 *
 	 * @return string The event as ICS.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function buildEvent(
 		array $data,
@@ -229,7 +229,7 @@ class HearingCalendarService {
 	 *
 	 * @return string The UID, or an empty string when it carries none.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function readUid(string $ics): string {
 		$matches = [];
@@ -253,7 +253,7 @@ class HearingCalendarService {
 	 *
 	 * @return array<int, string> Principal URIs, each one once.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function principalsFor(?IUser $organiser, array $attendees): array {
 		$principals = [];
@@ -279,7 +279,7 @@ class HearingCalendarService {
 	 *
 	 * @return array<int, array{uid: string, email: string, name: string}>
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function resolveParticipants(array $participants): array {
 		$resolved = [];
@@ -317,7 +317,7 @@ class HearingCalendarService {
 	 *
 	 * @return bool True when a calendar took the event.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function writeToCalendar(string $principal, string $uid, string $ics): bool {
 		try {
@@ -371,7 +371,7 @@ class HearingCalendarService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function describeHearing(array $data, array $participants): string {
 		$lines = ['Hoorgesprek over klacht ' . (string)($data['complaint'] ?? '')];

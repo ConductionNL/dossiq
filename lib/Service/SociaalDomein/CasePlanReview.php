@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 class CasePlanReview {
 
@@ -77,7 +77,7 @@ class CasePlanReview {
 	 *
 	 * @return boolean True when it is due for review.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
 	 */
 	public function isDue(array $plan, string $today = ''): bool {
 		$due = trim((string)($plan['reviewDate'] ?? ''));
@@ -106,7 +106,7 @@ class CasePlanReview {
 	 *
 	 * @throws RefusedException When the plan cannot be read or nothing was recorded.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
+	 * @spec openspec/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
 	 */
 	public function record(
 		string $planId,

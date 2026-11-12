@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Burger notification template renderer + dispatcher.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 class TermijnNotificationService {
 	public const TEMPLATES = [
@@ -104,7 +104,7 @@ class TermijnNotificationService {
 	 *              wired (callers MAY fall back to synchronous send), or when
 	 *              the case type does not send this message.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	public function queueTermijnNotification(
 		string $type,
@@ -173,10 +173,10 @@ class TermijnNotificationService {
 	 *         not-sent result. A throw rather than a returned `not-sent`, because every
 	 *         caller already treats it as "nothing went out" and a caller that forgets to
 	 *         read a status cannot record a notice nobody received as sent.
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-mailed-after-integriq-allows-it-req-term-070
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
-	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function sendTermijnNotification(
 		string $type,
@@ -378,7 +378,7 @@ class TermijnNotificationService {
 	 *
 	 * @return array{subject:string, body:string, locale:string}
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	public function renderTemplate(string $type, array $instance, array $context): array {
 		return $this->notices->letters->render(type: $type, instance: $instance, context: $context);

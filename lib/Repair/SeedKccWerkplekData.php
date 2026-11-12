@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Repair step that seeds the KCC-werkplek defaults into OpenRegister.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
  */
 class SeedKccWerkplekData implements IRepairStep {
 	/**
@@ -60,7 +60,7 @@ class SeedKccWerkplekData implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
 	 */
 	public function getName(): string {
 		return 'Seed default KCC-werkplek quick-actions and example belplannen';
@@ -73,7 +73,7 @@ class SeedKccWerkplekData implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
 	 */
 	public function run(IOutput $output): void {
 		$output->info('Seeding KCC-werkplek defaults...');

@@ -157,7 +157,7 @@ class AdvisoryCommitteeService {
 	 *
 	 * @throws RuntimeException When OpenRegister unavailable or refs invalid
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function assignToCommittee(
 		string $objectionId,
@@ -340,7 +340,7 @@ class AdvisoryCommitteeService {
 	 * @throws RuntimeException When the transition is forbidden
 	 * @throws GuardFailedException When the independence check fails
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-dossiq
 	 */
@@ -588,7 +588,7 @@ class AdvisoryCommitteeService {
 	 *                                   null when no default committee
 	 *                                   is configured.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function autoAssignDefaultCommittee(string $objectionId): ?array {
 		$defaultId = $this->settingsService->getConfigValue(
@@ -629,7 +629,7 @@ class AdvisoryCommitteeService {
 	 *
 	 * @throws RuntimeException A BezwaarEntryNotWrittenException when the entry could not be written; the caller logs it with the entry.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function recordCouncilDeviation(

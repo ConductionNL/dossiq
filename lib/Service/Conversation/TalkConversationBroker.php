@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Throwable;
 /**
  * Opens and closes Nextcloud Talk rooms on behalf of a case.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class TalkConversationBroker {
 
@@ -71,7 +71,7 @@ class TalkConversationBroker {
 	 *
 	 * @return bool True when Talk is installed and its broker answers.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isAvailable(): bool {
 		return $this->broker() !== null;
@@ -95,7 +95,7 @@ class TalkConversationBroker {
 	 *
 	 * @throws RefusedException When Talk is present and refuses the room.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function createRoom(string $name, array $moderators = []): ?array {
 		$broker = $this->broker();
@@ -144,7 +144,7 @@ class TalkConversationBroker {
 	 *
 	 * @return bool True when Talk closed the room.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function closeRoom(string $roomId): bool {
 		$broker = $this->broker();
@@ -177,7 +177,7 @@ class TalkConversationBroker {
 	 *
 	 * @return array<IUser> The users that exist.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function resolveModerators(array $moderators): array {
 		$users = [];
@@ -204,7 +204,7 @@ class TalkConversationBroker {
 	 *
 	 * @return IBroker|null The broker, or null.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function broker(): ?IBroker {
 		if ($this->container->has(IBroker::class) === false) {

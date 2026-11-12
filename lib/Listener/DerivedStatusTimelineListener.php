@@ -233,7 +233,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 	 *
 	 * @return string The public label, or ''.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function publicLabel(string $statusTypeId): string {
 		if ($statusTypeId === '') {
