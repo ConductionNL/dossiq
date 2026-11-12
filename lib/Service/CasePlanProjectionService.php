@@ -782,19 +782,17 @@ class CasePlanProjectionService {
 			return null;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$modelSchema = $this->settingsService->getConfigValue(key: 'case_model_schema');
-		if ($objectService === null || $register === '' || $modelSchema === '') {
+		$scope = $this->modelSearchScope();
+		if ($scope === []) {
 			return null;
 		}
 
 		try {
-			$found = $objectService->searchObjects(
+			$found = $scope['objectService']->searchObjects(
 				[
 					'@self' => [
-						'register' => (int)$register,
-						'schema' => (int)$modelSchema,
+						'register' => (int)$scope['register'],
+						'schema' => (int)$scope['schema'],
 					],
 					'caseType' => $caseTypeId,
 					'lifecycleStatus' => 'published',
@@ -808,13 +806,40 @@ class CasePlanProjectionService {
 			return null;
 		}
 
+		return $this->publishedModelOf(found: $found);
+	}//end findPublishedModel()
+
+	/**
+	 * Where published caseModels are searched: the store, the register and the model schema; empty when any is missing.
+	 *
+	 * @return array{objectService: object, register: string, schema: string}|array{}
+	 */
+	private function modelSearchScope(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$modelSchema = $this->settingsService->getConfigValue(key: 'case_model_schema');
+		if ($objectService === null || $register === '' || $modelSchema === '') {
+			return [];
+		}
+
+		return ['objectService' => $objectService, 'register' => $register, 'schema' => $modelSchema];
+	}//end modelSearchScope()
+
+	/**
+	 * The first model a search answered, its planItems decoded, or null when it answered none.
+	 *
+	 * @param mixed $found Whatever `searchObjects()` answered.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function publishedModelOf(mixed $found): ?array {
 		$model = $this->firstAsArray(value: $found);
 		if ($model === null) {
 			return null;
 		}
 
 		return $this->decodePlanItems(model: $model);
-	}//end findPublishedModel()
+	}//end publishedModelOf()
 
 	/**
 	 * Decode `planItems` when OpenRegister hands it back as JSON text.
