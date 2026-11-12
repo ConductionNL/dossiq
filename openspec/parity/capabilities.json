@@ -3,12 +3,12 @@
 	"corpus": {
 		"repo": "ConductionNL/market-intelligence",
 		"file": "procest/_round4/tools/corpus-rows.json",
-		"rows": 240,
+		"rows": 242,
 		"pending": 164
 	},
 	"comparedOn": "2026-09-26",
-	"rowsAddedOn": "2026-10-07",
-	"reratedOn": "2026-10-07",
+	"rowsAddedOn": "2026-11-12",
+	"reratedOn": "2026-11-12",
 	"dossiqRevision": "024e93d0a",
 	"_rerated": [
 		{
@@ -930,6 +930,22 @@
 			"to": "partial",
 			"cause": "added",
 			"reason": "Spec round row (decision 79). Tenants can be created and moved through their lifecycle; quotas, provisioning and billing are not wired."
+		},
+		{
+			"id": "9.20",
+			"on": "2026-11-12",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Row for the open change case-page-and-list-as-a-place, which covered none. The case page steps through the list it was opened from and a person holds their own order; the summary of a reference in place is declared and not read by nextcloud-vue."
+		},
+		{
+			"id": "9.21",
+			"on": "2026-11-12",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "Row for the open change unread-state-on-the-case, which covered none. Cases carry OpenRegister's per-reader unread state in the list and as counts on the case tabs, marked unread by hand and read by opening."
 		}
 	],
 	"_competitorRerated": [
@@ -18758,6 +18774,98 @@
 				"zac": "zac@1.0.316 grep -riE 'threshold|drempel' over src/main finds only BpmnService.kt; signaleringen fire on case events, not on search counts"
 			},
 			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "9.20",
+			"area": "search",
+			"name": "Work through a case list from the case page: step to the next or previous case of that list, hold a personal order on it, and see a referenced record's summary in place",
+			"name_nl": "Een zaaklijst afwerken vanaf de zaakpagina: naar de volgende of vorige zaak van die lijst gaan, er een eigen volgorde op houden en de samenvatting van een verwijzing ter plekke zien",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "partial",
+				"evidence": "src/manifest.json:3420 CaseDetail declares listNavigation, which @conduction/nextcloud-vue 2.180.0 reads (src/composables/useListNavigation.js); src/manifest.json:1942 manualOrder holds a per-person order on Cases; src/personalSettings.js the per-person options; src/manifest.json:3419 referencePreview is declared but no nextcloud-vue 2.180.0 component reads it (only the schema and types name it)",
+				"owner": "ConductionNL/dossiq",
+				"change": "openspec/changes/case-page-and-list-as-a-place",
+				"screen": {
+					"board": [
+						"DqZaken",
+						"DqZaak",
+						"DqPersoonlijkeInstellingen"
+					]
+				},
+				"readOn": "2026-11-12",
+				"reachedOn": "the case page opened from Cases or Queue (previous and next), the Cases list (personal order), the user settings dialog",
+				"note": "Missing: the summary of a referenced record in place (REQ-CPL-03), which waits on nextcloud-vue reading referencePreview. Round 6 retired the split view: a row opens the case page, so the list keeping its position is the case page stepping through it.",
+				"source": "coverage follow-up 2026-11-12: a row for an open change that covered none; rated from code",
+				"requirement": [
+					"openspec/changes/case-page-and-list-as-a-place/specs/case-management/spec.md :: Next and previous walk the list the handler came from (REQ-CPL-02)",
+					"openspec/changes/case-page-and-list-as-a-place/specs/case-management/spec.md :: A reference shows its summary in place (REQ-CPL-03)",
+					"openspec/changes/case-page-and-list-as-a-place/specs/case-management/spec.md :: Each person sets their own interface options in one place (REQ-CPL-04)",
+					"openspec/changes/case-page-and-list-as-a-place/specs/case-management/spec.md :: A handler may hold their own order on a case list (REQ-CPL-05)"
+				]
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-11-12",
+			"feature": "case-search-and-lists",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "9.21",
+			"area": "search",
+			"name": "A case carries an unread state per person, shown in the case list and on the case's tabs, set back to unread by hand and cleared by opening it",
+			"name_nl": "Een zaak heeft per persoon een ongelezen-status, zichtbaar in de zaaklijst en op de tabbladen van de zaak, met de hand terug te zetten naar ongelezen en gewist door de zaak te openen",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "openregister",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:1950 the Unread column and the Unread lens (_unread, src/manifest.json:2982) on Cases from OpenRegister's per-reader @self.unread; src/manifest.json:2947 mark-unread and mark-read row actions; src/manifest.json:3746 case-panels badgeSource readState draws each tab's unread count and marks it read when the tab opens (tests/vitest/caseListUnread.spec.js, tests/vitest/caseTabMarkers.spec.js); the read state itself is OpenRegister's object-read-state (openregister#3734)",
+				"owner": "ConductionNL/dossiq",
+				"change": "openspec/changes/unread-state-on-the-case",
+				"screen": {
+					"board": [
+						"DqZaken",
+						"DqPersoonlijkeInstellingen"
+					]
+				},
+				"readOn": "2026-11-12",
+				"reachedOn": "the Cases and Queue lists (Unread column, lens and row marks) and the tabs of the case page",
+				"note": "Open in the change and outside this sentence: marking a single message read (1.2b) and narrowing the unread triggers per case type (3.1b), which waits on OpenRegister resolving the read-state annotation per object.",
+				"source": "coverage follow-up 2026-11-12: a row for an open change that covered none; rated from code",
+				"requirement": [
+					"openspec/changes/unread-state-on-the-case/specs/case-management/spec.md :: A case carries a per-user read state (REQ-URS-01)",
+					"openspec/changes/unread-state-on-the-case/specs/case-management/spec.md :: The case page says which of its panels holds the unread thing (REQ-URS-02)",
+					"openspec/changes/unread-state-on-the-case/specs/case-management/spec.md :: A notification clears when its subject is opened (REQ-URS-03)"
+				]
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-11-12 from dossiq's own change (coverage follow-up); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-11-12",
+			"feature": "case-search-and-lists",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "10.1",

@@ -10,8 +10,11 @@ specified there as `saved-view-as-a-place` extended. No PHP.
   selection (D-1, D-2, D-3).
   - `tests/vitest/caseListPlace.spec.js`
   - `@spec openspec/changes/case-page-and-list-as-a-place/specs/case-management/spec.md`
-- [ ] 1.2 Declare next and previous within the list, carrying the applied
+- [x] 1.2 Declare next and previous within the list, carrying the applied
   filters and ordering (D-4).
+  - `src/manifest.json` `#CaseDetail` `listNavigation`, read by
+    `@conduction/nextcloud-vue` 2.180.0 (`useListNavigation`)
+  - `tests/vitest/caseListPlace.spec.js`
 - [ ] 1.3 `#CaseDetail` declares the reference summary in place,
   disclosing only what the reader may see (D-2).
 - [x] 1.4 Declare nothing on the pages nobody triages from, and add a test
@@ -32,11 +35,10 @@ specified there as `saved-view-as-a-place` extended. No PHP.
 
 ## Not done, and why
 
-- 1.2 and 1.3 are declared but not reachable on
-  `@conduction/nextcloud-vue` 3.1.0. `listNavigation` is a `CnDetailPage`
-  prop that nothing passes, and `pages[].referencePreview` validates against
-  the schema and is read by no component. Both are nextcloud-vue's half of
-  cluster 58 and neither is a dossiq change. The declarations stay in the
-  manifest, the two scenarios are `test.fixme` in
-  `tests/e2e/case-page-and-list-as-a-place.spec.ts`, and the file's header
-  names the exact missing wiring.
+- 1.3 is declared but not reachable: `pages[].referencePreview` validates
+  against the schema and is read by no component in
+  `@conduction/nextcloud-vue` 2.180.0. It is nextcloud-vue's half of
+  cluster 58, not a dossiq change. The declaration stays in the manifest.
+  Both scenarios are still `test.fixme` in
+  `tests/e2e/case-page-and-list-as-a-place.spec.ts`; the next and previous
+  one (REQ-CPL-02) can run now that nextcloud-vue reads `listNavigation`.
