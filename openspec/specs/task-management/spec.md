@@ -196,7 +196,7 @@ The system MUST enforce the CMMN PlanItem lifecycle for task status transitions,
 
 ---
 
-### REQ-TASK-003: Task Assignment
+### Requirement: REQ-TASK-003: Task Assignment
 
 The system MUST support assigning tasks to Nextcloud users.
 

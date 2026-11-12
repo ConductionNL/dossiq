@@ -1,0 +1,52 @@
+## 1. Build and providers
+
+- [ ] 1.1 Row `1.4` (REQ-CRS-01): A document in the intake queue can be rejected with a reason. Provider filinq; today: the intake inbox reject act (filinq lib/Service/IntakeService.php); dossiq has no reject route.
+- [ ] 1.2 Row `10.5` (REQ-CRS-09): An administrator exports the filtered audit log. Provider openregister; today: the audit trail export (openregister appinfo/routes.php:1350) is admin-only; dossiq has only the AI audit export.
+- [ ] 1.3 Row `11.5` (REQ-CRS-10): A BPMN process file can be imported as a flow. Provider openregister; today: BPMN import into a flow (openregister lib/Service/Flow/Bpmn/FlowBpmnImporter.php, routes 825-826).
+- [ ] 1.4 Row `11.11` (REQ-CRS-11): An administrator lists, adds and edits document templates. Provider filinq; today: document templates are filinq's (lib/Service/Flow/RetiredDocumentSteps.php, "Filinq owns document generation"); lib/Controller/TemplateController.php only lists and activates case type templates.
+- [ ] 1.5 Row `11.17` (REQ-CRS-12): An administrator creates and edits an object type. Provider openregister; today: New object type opens OpenRegister's schema editor (src/manifest.d/64-catalogue.json).
+- [ ] 1.6 Row `11.24` (REQ-CRS-13): An administrator edits the text of each notification. In dossiq; today: no field for notification texts; src/views/settings/adminFields.js textsAndAccessFields() holds only email_from_name and portal_intro_text.
+- [ ] 1.7 Row `13.1` (REQ-CRS-14): Each application role states what its members may do. In dossiq; today: lib/Repair/ProvisionAssignedGroups.php provisions the groups, but nothing lists what each group may do.
+- [ ] 1.8 Row `13.16` (REQ-CRS-15): An administrator edits the role matrix as a grid. Provider openregister; today: the role matrix grid (openregister rbac-department-role-matrix).
+- [ ] 1.9 Row `3.18` (REQ-CRS-17): The case page shows its task panel beside the tabs. In dossiq; today: src/manifest.json #CaseDetail declares no task panel layout; buildiq's page-layout-task-panel is not adopted.
+- [ ] 1.10 Row `8.12` (REQ-CRS-20): An administrator maintains the working calendar in one place. Provider openregister; today: the working calendar is OpenRegister's WorkingCalendarService (lib/Service/TermijnTimerService.php CALENDAR_SERVICE_CLASS); dossiq has no settings entry for it.
+- [ ] 1.11 Row `12.6` (REQ-CRS-23): A person or company is looked up in the live registry when one is connected. Provider integriq; today: live registry lookups run through the registry providers; lib/Service/People/PersonNumberLookup.php searches the local brpPerson schema only.
+- [ ] 1.12 Row `12.23` (REQ-CRS-24): The assistant carries out a case action after the handler confirms it. In dossiq; today: no write-scoped tool in lib/Settings/dossiq_register.json x-openregister-mcp; lib/Controller/AssistantController.php only converses.
+- [ ] 1.13 Row `1.9` (REQ-CRS-25): A case can be started from a Word or Excel document. Provider integriq; today: the Office add-ins and their intake channel (integriq messaging-intake-routing-rules).
+- [ ] 1.14 Row `2.22` (REQ-CRS-27): An admin reads a case's flow variables and run log. Provider openregister; today: the flow runs page that #CaseDetail Inspect flow runs opens (src/manifest.json:6700).
+- [ ] 1.15 Row `3.12` (REQ-CRS-30): A multi-step form shows or skips a step by a condition. Provider buildiq; today: conditional steps in the form builder (buildiq form-editor-logic).
+- [ ] 1.16 Row `6.3` (REQ-CRS-33): A handler attaches case documents to a mail from the case. In dossiq; today: lib/Service/CaseEmailService.php accepts attachments, but no screen lets the handler pick case documents to attach.
+- [ ] 1.17 Row `10.1` (REQ-CRS-35): A dashboard can show a KPI as a gauge. In dossiq; today: no gauge widget type in src/manifest.json or src/dashboardWidgets.js; arranging the dashboard is REQ-DASH-030.
+- [ ] 1.18 Row `10.4` (REQ-CRS-36): Process analytics shows dwell time as a heatmap. In dossiq; today: no heatmap in src/manifest.json#ProcessMiningDashboard or lib/Service/ProcessMiningService.php.
+- [ ] 1.19 Row `10.7` (REQ-CRS-37): The exports area shows how often each export was downloaded. Provider openregister; today: the exports area (openregister lib/Db/ExportRun.php).
+- [ ] 1.20 Row `11.23` (REQ-CRS-39): You group templates in folders. In dossiq; today: no folder sidebar on the Templates page (src/manifest.d/64-catalogue.json WorkflowDefinitions); folders exist for case types and attributes only.
+- [ ] 1.21 Row `12.8` (REQ-CRS-40): A resident from another EU country logs in with eIDAS. Provider integriq; today: the identity broker adapters (integriq portal-idp-broker-config).
+- [ ] 1.22 Row `12.16` (REQ-CRS-41): The map can show layers from an ArcGIS service. In dossiq; today: no ArcGIS source anywhere in lib/ or src/.
+- [ ] 1.23 Row `13.10` (REQ-CRS-44): An approved destruction list destroys its cases. Provider openregister; today: retention destruction runs (openregister retention-management); lib/Listener/BezwaarLegalHoldListener.php only places holds.
+- [ ] 1.24 Row `16.2` (REQ-CRS-45): An inspector carries out an inspection without a connection. In dossiq; today: the offline leaf is configured in src/manifest.d/72-field-inspection.json but not placed, and the sync queue is never filled.
+
+## 2. Confirmed in the code
+
+- [x] 2.1 Row `3.9` (REQ-CRS-03): confirm a transition can generate a document from a template and open a related case. Confirmed in lib/Service/Flow/RetiredDocumentSteps.php (filinq.generate-document step, filed by lib/Listener/DocumentGeneratedListener.php); lib/Flow/DossiqTxCreateSubCaseNode.php and lib/Service/Transitions/CreateSubCaseHandler.php.
+- [x] 2.2 Row `5.4` (REQ-CRS-04): confirm the contact page lists the contact's documents and communication. Confirmed in src/manifest.json contact-documents and contact-moments widgets on the contact detail page.
+- [x] 2.3 Row `5.11` (REQ-CRS-05): confirm a person or company is taken over from its registry and keeps following it. Confirmed in lib/Settings/register.d/25-brp-kvk.json declares x-openregister-registry on brpPerson and kvkCompany; lib/Listener/RequesterRegistrySubscriptionListener.php requests the subscription.
+- [x] 2.4 Row `7.4` (REQ-CRS-06): confirm a decision letter can be generated as a step of the case's flow. Confirmed in lib/Service/Flow/RetiredDocumentSteps.php builds the filinq.generate-document step; lib/Listener/DocumentGeneratedListener.php files the result on the case.
+- [x] 2.5 Row `9.3` (REQ-CRS-08): confirm a handler saves a search as a view of their own. Confirmed in src/manifest.json allowSavedViews on #Cases and #Queue (OpenRegister saved views per user).
+- [x] 2.6 Row `3.11` (REQ-CRS-16): confirm a decision table's answer is written to the case. Confirmed in lib/Service/Flow/RetiredNodeTranslator.php decision() maps a table's outputs to case fields through outputMapping.
+- [x] 2.7 Row `6.5` (REQ-CRS-18): confirm the organisation's mailbox lists every unfiled message and files one on a case. Confirmed in src/manifest.d/88-postvak.json (Postvak page over /api/intake/triage with the link-to-case action).
+- [x] 2.8 Row `8.1` (REQ-CRS-19): confirm a lead time in days yields the case's target date. Confirmed in lib/Service/TermijnService.php binds the term; lib/Settings/register.d/60-termijnbewaking.json deadlineDefinition.
+- [x] 2.9 Row `9.9` (REQ-CRS-21): confirm a handler searches persons by BSN. Confirmed in lib/Service/People/PersonNumberLookup.php behind POST /api/people/lookup (appinfo/routes.php:152), used by the party picker in src/manifest.json.
+- [x] 2.10 Row `11.19` (REQ-CRS-22): confirm an administrator manages departments and assigns users to roles in the app. Confirmed in src/manifest.d/68-departments.json; src/views/settings/components/RoleTreeManager.vue and RoleAssignmentsTable.vue.
+- [x] 2.11 Row `2.15` (REQ-CRS-26): confirm a handler links an object to a case from its page. Confirmed in src/manifest.json Link object action on #CaseDetail (caseObject open-form).
+- [x] 2.12 Row `3.4` (REQ-CRS-29): confirm a person fills in and submits a task's form, and an invalid answer is refused. Confirmed in src/manifest.json task-question task-form widget on the task page; lib/Flow/DossiqAskPersonNode.php validates the form.
+- [x] 2.13 Row `4.12` (REQ-CRS-31): confirm the signed document comes back onto the case. Confirmed in lib/Service/Beschikking/LibresignSigningAdapter.php persists the signed PDF through ZgwDocumentService.
+- [x] 2.14 Row `5.10` (REQ-CRS-32): confirm a handler looks up an address object and links it to the case. Confirmed in src/dialogs/CaseLocationDialog.vue with lib/Service/PdokService.php and lib/Service/Registry/BagObjectReader.php.
+- [x] 2.15 Row `8.2` (REQ-CRS-34): confirm an overdue case is marked on its page and in the case list. Confirmed in src/manifest.json #CaseDetail case-tile-deadline ; src/utils/caseHelpers.js reads src/utils/deadlineCountdown.js for the list.
+- [x] 2.16 Row `11.20` (REQ-CRS-38): confirm an administrator writes a rule's conditions and actions. Confirmed in src/views/settings/tabs/RulesTab.vue Add rule with src/modals/CaseTypeRuleDialog.vue.
+- [x] 2.17 Row `12.28` (REQ-CRS-42): confirm a transfer hands the case over, and the sender follows its activity. Confirmed in lib/Service/CaseTransferService.php, lib/Controller/CaseFederationController.php and the caseFederatedActivity schema in lib/Settings/dossiq_register.json.
+- [x] 2.18 Row `13.3` (REQ-CRS-43): confirm a handler grants and withdraws access to one case from its page. Confirmed in src/views/cases/components/CaseSharingTab.vue creates and revokes the case's shares.
+
+## 3. Hand-over
+
+- [ ] 3.1 `@spec` tags and an e2e test or a reason-bearing `@e2e exclude` per scenario.
+- [ ] 3.2 Rows `2.13`, `8.7` and `3.1` go back to Ruben: the main spec contradicts the capability, so no requirement was written.
