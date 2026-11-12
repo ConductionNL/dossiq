@@ -6,7 +6,7 @@
  * The case list's bulk-action handlers (which dialog opens with which scope,
  * and what happens once it finishes), the mandate editor's defaults and
  * validation, the case copy dialog, the role assignments table, the ZGW
- * mapping dialog and the access link dialog.
+ * mapping dialog, the access link dialog, and the assignment and role dialogs.
  *
  * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
  */
@@ -32,7 +32,6 @@ vi.mock('vue', async (orig) => {
 vi.mock('@nextcloud/event-bus', () => ({ emit: (name, payload) => emitted.push([name, payload]), subscribe: () => {}, unsubscribe: () => {} }))
 vi.mock('../../src/dialogs/BulkTransitionDialog.vue', () => ({ default: stub('BulkTransitionDialog') }))
 vi.mock('../../src/dialogs/ReassignSelectionDialog.vue', () => ({ default: stub('ReassignSelectionDialog') }))
-vi.mock('../../src/dialogs/AddAssignmentDialog.vue', () => ({ default: stub('AddAssignmentDialog') }))
 vi.mock('../../src/dialogs/EndAssignmentDialog.vue', () => ({ default: stub('EndAssignmentDialog') }))
 vi.mock('../../src/services/bulkJobApi.js', () => ({ countMatchingCases: vi.fn(async () => 0) }))
 vi.mock('../../src/utils/casesChanged.js', () => ({ announceCasesChanged: vi.fn() }))
@@ -60,6 +59,8 @@ const { default: CaseCopyDialog } = await import('../../src/dialogs/CaseCopyDial
 const { default: RoleAssignmentsTable } = await import('../../src/views/settings/components/RoleAssignmentsTable.vue')
 const { default: ZgwMappingDialog } = await import('../../src/dialogs/ZgwMappingDialog.vue')
 const { default: CreateAccessLinkDialog } = await import('../../src/dialogs/CreateAccessLinkDialog.vue')
+const { default: AddAssignmentDialog } = await import('../../src/dialogs/AddAssignmentDialog.vue')
+const { default: RolEditorDialog } = await import('../../src/dialogs/RolEditorDialog.vue')
 
 globalThis.t = (app, text, vars = {}) => text.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m))
 
@@ -291,5 +292,42 @@ describe('CreateAccessLinkDialog', () => {
 		w.vm.createLink()
 		expect(w.emitted('created')[1][0]).toMatchObject({ capabilities: ['read', 'upload'], password: 'secret', label: 'Neighbour' })
 		expect(w.vm.saving).toBe(false)
+	})
+})
+
+describe('AddAssignmentDialog', () => {
+	it('starts a regular assignment from today and requires a person and a role', () => {
+		vi.useFakeTimers({ now: new Date('2026-05-15T12:00:00Z'), toFake: ['Date'] })
+		const w = shallowMount(AddAssignmentDialog, { props: { roleOptions: [{ id: 'r1', label: 'Lead' }] } })
+		expect([w.vm.form.vanaf, w.vm.selectedType.id, w.vm.selectedRole]).toEqual(['2026-05-15', 'reguliere', null])
+		w.vm.save()
+		expect([w.vm.errors, w.emitted('save')]).toEqual([{ persoonId: 'Person is required', roleId: 'Role is required' }, undefined])
+	})
+
+	it('saves the assignment once a person and a role are chosen', () => {
+		const w = shallowMount(AddAssignmentDialog, { props: { roleOptions: [{ id: 'r1', label: 'Lead' }] } })
+		Object.assign(w.vm.form, { persoonId: 'ann', roleId: 'r1', allocationType: 'odd' })
+		expect([w.vm.selectedRole, w.vm.selectedType.id, w.vm.typeOptions.length]).toEqual([{ id: 'r1', label: 'Lead' }, 'reguliere', 3])
+		w.vm.save()
+		expect([w.vm.errors, w.emitted('save')[0][0]]).toEqual([{}, expect.objectContaining({ persoonId: 'ann', roleId: 'r1' })])
+	})
+})
+
+describe('RolEditorDialog', () => {
+	it('starts a new employee role and requires a name', () => {
+		const w = shallowMount(RolEditorDialog, { props: { parentOptions: [{ id: 'p0' }, { id: 'p1' }] } })
+		expect([w.vm.title, w.vm.selectedType.id, w.vm.selectedParent.id, w.vm.form.mandateLevel]).toEqual(['New role', 'employee', 'p0', 1])
+		w.vm.save()
+		expect([w.vm.errors, w.emitted('save')]).toEqual([{ name: 'Naam is required' }, undefined])
+	})
+
+	it('edits a role and saves it', () => {
+		const role = { name: 'Head of permits', type: 'manager', parentRole: 'p1', department: 'VTH', mandateLevel: 3 }
+		const w = shallowMount(RolEditorDialog, { props: { role, parentOptions: [{ id: 'p0' }, { id: 'p1' }] } })
+		expect([w.vm.title, w.vm.selectedType.id, w.vm.selectedParent.id]).toEqual(['Edit role', 'manager', 'p1'])
+		w.vm.save()
+		expect(w.emitted('save')[0][0]).toEqual({ name: 'Head of permits', type: 'manager', parentRole: 'p1', department: 'VTH', team: '', mandateLevel: 3 })
+		w.vm.form.type = 'odd'
+		expect(w.vm.selectedType.id).toBe('employee')
 	})
 })
