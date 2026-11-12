@@ -437,18 +437,7 @@ class DsoCaseService {
 	 * @return array<string, mixed> The normalised array (empty when not coercible).
 	 */
 	private function normalizeToArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
+		return ($this->objectToArrayOrNull(value: $value) ?? []);
 	}//end normalizeToArray()
 
 	/**
