@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Service\CaseType;
 /**
  * The children of one owned sub-schema, copied onto the new case type.
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
 final class CaseTypeChildCopy {
 
@@ -54,7 +54,7 @@ final class CaseTypeChildCopy {
 	 *
 	 * @return self
 	 *
-	 * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
 	 */
 	public function forSchema(string $schema): self {
 		return new self(target: $this->target->forSchema(schema: $schema), configKey: $this->configKey, newCaseTypeId: $this->newCaseTypeId);

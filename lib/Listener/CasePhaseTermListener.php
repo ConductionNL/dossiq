@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use Throwable;
 /**
  * Starting and stopping a phase clock as the case moves (REQ-TERM-061).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
  * constants and four pure predicates over an array, with no state, no I/O and
@@ -86,7 +86,7 @@ class CasePhaseTermListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof ObjectUpdatedEvent) === false) {

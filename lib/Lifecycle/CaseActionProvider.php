@@ -125,7 +125,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly StatusTransitionService $transitionEngine,
@@ -354,7 +354,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @throws LifecycleProviderException When the engine could not answer at all.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function execute(array $object, string $userId, string $action, array $data): array {
 		$caseId = $this->requiredCaseId(object: $object);

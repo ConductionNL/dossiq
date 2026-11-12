@@ -19,7 +19,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#2.1
  *
  * @link https://conduction.nl
  */
@@ -45,7 +45,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ai-oversight-log/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#2.1
  */
 class AiAuditExportController extends Controller {
 	/**

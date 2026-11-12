@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 declare(strict_types=1);
@@ -113,7 +113,7 @@ class ScanVerdictReader {
 	 *
 	 * @return bool True when `files_antivirus` is installed.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	public function scannerPresent(): bool {
 		try {
@@ -137,7 +137,7 @@ class ScanVerdictReader {
 	 *         whether a scanner is installed, so the reader of this answer can
 	 *         tell "no scanner here" from "not reached yet".
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	public function verdictFor(int $fileId): array {
 		if ($this->scannerPresent() === false) {
@@ -182,7 +182,7 @@ class ScanVerdictReader {
 	 *
 	 * @return array<string, mixed>|null The recorded row, or null.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function recordedRow(int $fileId): ?array {
 		try {
@@ -217,7 +217,7 @@ class ScanVerdictReader {
 	 *
 	 * @return string|null The moment, or null.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function checkedAt(mixed $raw): ?string {
 		if (is_numeric($raw) === false) {
@@ -240,7 +240,7 @@ class ScanVerdictReader {
 	 * @return array{state: string, scannedAt: string|null, scannerPresent: bool}
 	 *         The not-scanned verdict.
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function notScanned(bool $present): array {
 		return [

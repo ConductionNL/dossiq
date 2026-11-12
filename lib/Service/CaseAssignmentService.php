@@ -35,7 +35,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use Throwable;
 /**
  * Who holds a case, and the two gestures that change that.
  *
- * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseAssignmentService {
 
@@ -84,7 +84,7 @@ class CaseAssignmentService {
 	 *
 	 * @throws RuntimeException With code `case_not_found` when the case does not resolve for this user.
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function state(string $caseId, string $userId): array {
 		return $this->describe(caseId: $caseId, userId: $userId, assignee: $this->readAssignee(caseId: $caseId));
@@ -100,7 +100,7 @@ class CaseAssignmentService {
 	 *
 	 * @throws RuntimeException With code `case_not_found`, `already_yours` or `already_assigned`.
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function claim(string $caseId, string $userId): array {
 		$assignee = $this->readAssignee(caseId: $caseId);
@@ -127,7 +127,7 @@ class CaseAssignmentService {
 	 *
 	 * @throws RuntimeException With code `case_not_found`, `not_assigned` or `not_yours`.
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function release(string $caseId, string $userId): array {
 		$assignee = $this->readAssignee(caseId: $caseId);
@@ -230,7 +230,7 @@ class CaseAssignmentService {
 	 *
 	 * @return array{caseId: string, assignee: string, mine: bool, claimable: bool, releasable: bool} The assignment.
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function describe(string $caseId, string $userId, string $assignee): array {
 		return [
@@ -256,7 +256,7 @@ class CaseAssignmentService {
 	 *
 	 * @throws RuntimeException With code `case_not_found`.
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function readAssignee(string $caseId): string {
 		[$objectService, $register, $schema] = $this->openRegister();
@@ -298,7 +298,7 @@ class CaseAssignmentService {
 	 *
 	 * @throws RuntimeException With code `assignment_write_failed`.
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function write(string $caseId, ?string $assignee, array $extra = []): void {
 		[$objectService, $register, $schema] = $this->openRegister();
@@ -327,7 +327,7 @@ class CaseAssignmentService {
 	 *
 	 * @throws RuntimeException With code `case_not_found` when OpenRegister or the schema is absent.
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function openRegister(): array {
 		$objectService = $this->settingsService->getObjectService();

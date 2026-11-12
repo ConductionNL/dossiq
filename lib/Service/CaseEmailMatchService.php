@@ -49,7 +49,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -70,7 +70,7 @@ use Throwable;
 /**
  * Automatic, idempotent attachment of Nextcloud Mail messages to cases.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 class CaseEmailMatchService {
 
@@ -120,7 +120,7 @@ class CaseEmailMatchService {
 	 *
 	 * @return bool True only for an explicit yes.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function isInstanceEnabled(): bool {
 		$value = strtolower(trim($this->settingsService->getConfigValue(self::INSTANCE_TOGGLE_KEY, 'no')));
@@ -135,7 +135,7 @@ class CaseEmailMatchService {
 	 *
 	 * @return array{linked: int, scanned: int} What the run did.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function runForUser(string $userId): array {
 		$run = $this->openRun(userId: $userId);
@@ -511,7 +511,7 @@ class CaseEmailMatchService {
 	 *
 	 * @return array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> The same cases, on their survivors.
 	 *
-	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
 	 */
 	private function onSurvivors(array $cases): array {
 		$resolved = [];

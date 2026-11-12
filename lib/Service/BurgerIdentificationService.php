@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Resolve and score burger identification for KCC contacts.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
  */
 class BurgerIdentificationService {
 	/**
@@ -80,7 +80,7 @@ class BurgerIdentificationService {
 	 *
 	 * @return float The identification score (0.0 - 1.0).
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
 	 */
 	public function calculateScore(array $matched): float {
 		$score = 0.0;
@@ -101,7 +101,7 @@ class BurgerIdentificationService {
 	 *
 	 * @return array{score: float, identified: bool, burgerId: ?string, method: string}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
 	 */
 	public function startIdentificatievragen(array $matched, string $burgerRef): array {
 		$score = $this->calculateScore(matched: $matched);
@@ -132,7 +132,7 @@ class BurgerIdentificationService {
 	 *
 	 * @return array{burgerId: string, method: string}
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
 	 */
 	public function resolveFromDigiD(string $bsn): array {
 		$bsn = trim($bsn);
@@ -161,7 +161,7 @@ class BurgerIdentificationService {
 	 *
 	 * @return string The burger reference, or empty string when not found.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
 	 */
 	public function lookupByIdentifier(string $identifier): string {
 		$identifier = trim($identifier);

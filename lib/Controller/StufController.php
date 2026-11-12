@@ -74,7 +74,7 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class StufController extends Controller {
 
@@ -128,7 +128,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -151,7 +151,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for cases(); behaviour covered by the cases() tests.
 	 */
@@ -167,7 +167,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -185,7 +185,7 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for persons(); behaviour covered by the persons() tests.
 	 */

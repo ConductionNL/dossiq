@@ -166,7 +166,7 @@ class ZtcPublishController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function publishZaaktype(string $uuid): JSONResponse {
@@ -184,7 +184,7 @@ class ZtcPublishController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function publishBesluittype(string $uuid): JSONResponse {
@@ -202,7 +202,7 @@ class ZtcPublishController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function publishInformatieobjecttype(string $uuid): JSONResponse {

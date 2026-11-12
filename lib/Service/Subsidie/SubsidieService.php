@@ -45,7 +45,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class SubsidieService {
 
@@ -115,7 +115,7 @@ class SubsidieService {
 	 *
 	 * @return bool True when the transition is allowed.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function isTransitionAllowed(string $from, string $to): bool {
 		$allowed = self::TRANSITIONS[$from] ?? null;
@@ -134,7 +134,7 @@ class SubsidieService {
 	 *
 	 * @return string The formatted beschikkingnummer.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function generateBeschikkingnummer(int $sequence, ?DateTimeImmutable $now = null): string {
 		$now = ($now ?? new DateTimeImmutable());
@@ -152,7 +152,7 @@ class SubsidieService {
 	 *
 	 * @return DateTimeImmutable The decision deadline, on a working day.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBeslistermijn(DateTimeImmutable $registration, int $weken, array $definitie = []): DateTimeImmutable {
 		$weken = max(1, $weken);
@@ -170,7 +170,7 @@ class SubsidieService {
 	 *
 	 * @return bool True when the schedule reconciles to the granted amount.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function voorschotSchemaReconciles(array $advanceSchema, float $grantedAmount): bool {
 		$sum = 0.0;
@@ -193,7 +193,7 @@ class SubsidieService {
 	 *
 	 * @return bool True when the voorschot is releasable.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function isVoorschotReleasable(array $voorschot, array $approvedReports): bool {
 		$voorwaarde = trim((string)($voorschot['voorwaarde'] ?? ''));
@@ -218,7 +218,7 @@ class SubsidieService {
 	 *
 	 * @return array<int, array<string, mixed>> The unmet conditions.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function unmetVerplichtingen(array $verplichtingen): array {
 		$unmet = [];

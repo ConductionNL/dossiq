@@ -31,7 +31,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCP\IL10N;
 /**
  * Open cases the reader coordinates.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class CoordinatorSeatSource extends RegisterBackedSource {
 	/**
@@ -58,7 +58,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		SettingsService $settings,
@@ -73,7 +73,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function name(): string {
 		return 'coordinator-seat';
@@ -84,7 +84,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function label(): string {
 		return $this->l10n->t('Cases you coordinate');
@@ -95,7 +95,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return string The closing condition.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function closesWhen(): string {
 		return $this->l10n->t('A case leaves when you hand the seat on, or when it is closed.');
@@ -106,7 +106,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return array<int, string> The mechanism ids.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/specs/add-work-queue/spec.md
 	 */
 	public function mechanisms(): array {
 		return ['flow:DossiqTxSetStatusNode', 'flow:DossiqTxCreateSubCaseNode'];
@@ -124,7 +124,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @return array<int, QueueItem> The items.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function itemsFor(string $userId): array {
 		$coordinated = $this->seats->casesCoordinatedBy(uid: $userId);

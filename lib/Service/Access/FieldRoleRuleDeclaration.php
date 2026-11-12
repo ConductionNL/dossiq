@@ -51,7 +51,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ namespace OCA\Dossiq\Service\Access;
 /**
  * Reads a case type's per-role field rules and writes them in OpenRegister's shapes.
  *
- * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ * @spec openspec/specs/security-hardening/spec.md
  */
 class FieldRoleRuleDeclaration {
 
@@ -132,7 +132,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The `fields` block, possibly empty.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function lifecycleFields(array $caseType, string $statusId = ''): array {
@@ -184,7 +184,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<string, array<string, array<int, array<string, string>>>> Blocks by property name.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function propertyAuthorization(array $caseType): array {
@@ -242,7 +242,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The block.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function foldInto(array $fields, array $roles): array {
 		foreach ($roles as $kind => $entries) {
@@ -268,7 +268,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, string> The field names.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function fieldsNamedUnder(array $entries): array {
 		$named = [];
@@ -298,7 +298,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, array<string, string>> The union.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	public function union(array $current, array $added): array {
 		$union = $current;
@@ -326,7 +326,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, array{field: string, rule: string, reason: string, groups: mixed, heldBy: mixed, statuses: array<int, string>}> The rules.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function rulesOf(array $caseType): array {
 		$declared = ($caseType[self::DECLARATION_KEY] ?? null);
@@ -366,7 +366,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, string> The group names.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function restrictedGroups(array $rule): array {
 		return $this->names(value: ($rule['groups'] ?? null));
@@ -382,7 +382,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, string> The group names.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function holdingGroups(array $rule): array {
 		$restricted = $this->restrictedGroups(rule: $rule);
@@ -402,7 +402,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<int, string> The names.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function names(mixed $value): array {
 		if (is_array($value) === false) {
@@ -435,7 +435,7 @@ class FieldRoleRuleDeclaration {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The block, ordered.
 	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
 	private function inPublishedOrder(array $block): array {
 		$ordered = [];

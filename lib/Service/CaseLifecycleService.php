@@ -102,7 +102,7 @@ class CaseLifecycleService {
 	 * @throws RuntimeException When the case cannot be read
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
+	 * @spec openspec/specs/template-library/spec.md
 	 */
 	public function state(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -251,7 +251,7 @@ class CaseLifecycleService {
 	 *                          unreadable or not after the current end date
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/specs/case-bulk-status-transition/spec.md
 	 */
 	public function extend(string $caseId, string $reason, string $newEndDate = ''): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -519,7 +519,7 @@ class CaseLifecycleService {
 	 * @throws RuntimeException When the named date is unreadable or not later,
 	 *                          or when no period is configured and none was named
 	 *
-	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/specs/case-bulk-status-transition/spec.md
 	 */
 	private function resolveNewEndDate(string $current, string $named, string $period): string {
 		if ($named !== '') {
@@ -544,7 +544,7 @@ class CaseLifecycleService {
 	 *
 	 * @throws RuntimeException When the date is unreadable or not later
 	 *
-	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/specs/case-bulk-status-transition/spec.md
 	 */
 	private function requireLaterDate(string $current, string $candidate): string {
 		try {

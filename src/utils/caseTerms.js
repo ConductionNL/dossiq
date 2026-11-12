@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 /** The order the clocks are read in on a case page. */
@@ -28,7 +28,7 @@ export const KIND_ORDER = ['statutory', 'planned', 'internal', 'phase']
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding, passed in so this module needs no global.
  *
  * @return {string} The label.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 export function kindLabel(kind, t) {
 	const labels = {
@@ -47,7 +47,7 @@ export function kindLabel(kind, t) {
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {string} The sentence, empty for a kind we do not know.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 export function kindHint(kind, t) {
 	const hints = {
@@ -73,7 +73,7 @@ export function kindHint(kind, t) {
  * @param {number} [warnWithin] How many days ahead reads as due soon.
  *
  * @return {string} One of `overdue`, `soon`, `ontime`, `unknown`.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 export function termTone(term, warnWithin = 5) {
 	if (hasNoEndDate(term)) {
@@ -116,7 +116,7 @@ function isDueWithin(term, warnWithin) {
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {string} The sentence.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 export function daysLeftSentence(term, t) {
 	if (hasNoDaysLeft(term)) {
@@ -142,7 +142,7 @@ export function daysLeftSentence(term, t) {
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {string} The sentence, empty when the clock is not suspended.
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 export function pauseSentence(term, t) {
 	if (!term || term.status !== 'paused') {
@@ -224,7 +224,7 @@ function explainedPauseSentence(term, t) {
  * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {Array} The rows to render.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 export function termRows(terms, t) {
 	if (!Array.isArray(terms)) {
@@ -251,7 +251,7 @@ export function termRows(terms, t) {
  * @param {object} progress The progress block the server answered.
  *
  * @return {boolean} True when any clock has run out.
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 export function needsAttention(progress) {
 	if (!progress || typeof progress !== 'object') {
@@ -291,7 +291,7 @@ function rank(kind) {
  * @param {(key: string, params?: object) => string} t - The bound translate.
  *
  * @return {Array<string>} One sentence per move, oldest first.
- * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 export function moveLines(term, t) {
 	if (!Array.isArray(term?.moves)) {

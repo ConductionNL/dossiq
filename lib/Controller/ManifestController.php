@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-001
+ * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-001
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\IUserSession;
 /**
  * Controller resolving the user's chosen case types into a menu delta.
  *
- * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-001
+ * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-001
  */
 class ManifestController extends Controller {
 
@@ -75,7 +75,7 @@ class ManifestController extends Controller {
 	 *
 	 * @return JSONResponse A `mergeStrategy: 'delta'` payload.
 	 *
-	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-001
+	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-001
 	 */
 	#[NoAdminRequired]
 	public function manifest(): JSONResponse {

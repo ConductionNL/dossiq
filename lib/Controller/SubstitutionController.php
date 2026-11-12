@@ -154,7 +154,7 @@ class SubstitutionController extends Controller {
 	 *
 	 * @return JSONResponse The previewed job, and what happened to the tasks.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function releaseCaseload(): JSONResponse {
@@ -193,7 +193,7 @@ class SubstitutionController extends Controller {
 	 *
 	 * @return JSONResponse|null
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function coordinatorRefusal(string $actorId): ?JSONResponse {
 		if ($actorId === '') {
@@ -212,7 +212,7 @@ class SubstitutionController extends Controller {
 	 *
 	 * @return array{caseType: string}|null
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseTypeFilter(): ?array {
 		$caseType = trim((string)$this->request->getParam('caseType', ''));

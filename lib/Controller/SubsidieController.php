@@ -46,7 +46,7 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
  */
 class SubsidieController extends Controller {
 	/**
@@ -77,7 +77,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function index(): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -106,7 +106,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function create(): JSONResponse {
 		$userId = $this->requireUser();
@@ -141,7 +141,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function transition(string $id): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -168,7 +168,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function createBeschikking(string $id): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -197,7 +197,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function publishBeschikking(string $decisionId): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -222,7 +222,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function signBeschikking(string $decisionId): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -256,7 +256,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function createTussenrapportage(string $uitvoeringId): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -284,7 +284,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function approveTussenrapportage(string $reportId): JSONResponse {
 		if ($this->requireUser() === null) {
@@ -326,7 +326,7 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function finalizeVaststelling(string $determinationId): JSONResponse {
 		if ($this->requireUser() === null) {

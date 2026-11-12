@@ -119,7 +119,7 @@ class PublicationChecks {
 	 *
 	 * @return array<int, string> The warnings, empty when nothing is off.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function warnings(string $caseTypeId): array {
 		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);

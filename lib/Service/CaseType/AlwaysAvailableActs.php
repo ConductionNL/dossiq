@@ -49,7 +49,7 @@ use OCA\Dossiq\Service\Transitions\RoleGuard;
  * Reads a case type's always-available acts and says which of them this
  * reader may take.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 class AlwaysAvailableActs {
 
@@ -82,7 +82,7 @@ class AlwaysAvailableActs {
 	 *
 	 * @return array<int, array{id: string, label: string, description: string, alwaysAvailable: bool, available: bool, reason: string}> The acts.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function forCase(string $caseId, string $userId): array {
 		$case = $this->readObject(schemaKey: 'case_schema', id: $caseId);

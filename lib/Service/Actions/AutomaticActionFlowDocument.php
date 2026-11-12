@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCA\Dossiq\AppInfo\Application;
 /**
  * Builds a migrated action's flow document.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class AutomaticActionFlowDocument {
 
@@ -49,7 +49,7 @@ class AutomaticActionFlowDocument {
 	 *
 	 * @return array<string, mixed> The flow document.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function build(array $action, string $marker, array $steps): array {
 		$nodes = [['id' => 'trigger', 'type' => 'openregister.trigger-manual']];

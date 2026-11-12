@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T04
  */
 import { defineStore } from 'pinia'
 import {
@@ -36,7 +36,7 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 	actions: {
 		/**
 		 * @param {string} parentCaseUuid UUID of the parent case.
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T01
+		 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
 		 */
 		async fetchSubCases(parentCaseUuid) {
 			this.loading = true
@@ -55,7 +55,7 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 
 		/**
 		 * @param {string} parentCaseUuid UUID of the parent case.
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T02
+		 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T02
 		 */
 		async fetchParentCase(parentCaseUuid) {
 			try {
@@ -69,7 +69,7 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 
 		/**
 		 * @param {Array} caseUuidArray The case array.
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T03
+		 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T03
 		 */
 		async fetchSubCaseCounts(caseUuidArray) {
 			if (!Array.isArray(caseUuidArray) || caseUuidArray.length === 0) {
@@ -82,7 +82,7 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 
 		/**
 		 * @param {object} params The params.
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+		 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
 		 */
 		async validateSubCase(params) {
 			return apiValidateSubCase(params)

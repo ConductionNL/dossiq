@@ -61,9 +61,9 @@ use RuntimeException;
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  *
- * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-ai-assistance/tasks.md
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
- * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+ * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
  */
 class AiService {
 	/**
@@ -149,7 +149,7 @@ class AiService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isEnabled(): bool {
 		return $this->flagEnabled(key: 'ai_enabled');
@@ -215,7 +215,7 @@ class AiService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isFeatureEnabled(string $feature): bool {
 		if ($this->isEnabled() === false) {
@@ -260,7 +260,7 @@ class AiService {
 	 *
 	 * @return array Classification result with suggestion and confidence
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function classifyDocument(string $caseId, string $documentId, string $userId): array {
 		return $this->operate(
@@ -282,7 +282,7 @@ class AiService {
 	 *
 	 * @return array Extraction result with field suggestions and confidence
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function extractData(string $caseId, ?string $documentId, string $userId): array {
 		return $this->operate(
@@ -304,7 +304,7 @@ class AiService {
 	 *
 	 * @return array Answer with source citations
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function askQuestion(string $caseId, string $question, string $userId): array {
 		// The one prompt carrying free text a person typed: the audit entry
@@ -329,7 +329,7 @@ class AiService {
 	 *
 	 * @return array Summary text
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function summarize(string $caseId, string $type, ?string $documentId, string $userId): array {
 		return $this->operate(
@@ -350,7 +350,7 @@ class AiService {
 	 *
 	 * @return array Routing suggestion with recommended case worker
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestRouting(string $caseId, string $userId): array {
 		return $this->operate(
@@ -371,7 +371,7 @@ class AiService {
 	 *
 	 * @return array Next-step suggestions
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestNextStep(string $caseId, string $userId): array {
 		return $this->operate(
@@ -399,7 +399,7 @@ class AiService {
 	 * @return array{healthy: bool, status: string, model: string, message: string, responseTimeMs: int}
 	 *                                                                                                   Health check result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function testHealth(): array {
 		$startTime = microtime(true);
@@ -431,7 +431,7 @@ class AiService {
 	 *
 	 * @return array AI settings (without sensitive data like API keys)
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getAiSettings(): array {
 		return [
@@ -478,7 +478,7 @@ class AiService {
 	 * @return array<int, array{start: int, end: int, category: string, text: string}>
 	 *                                                                                 Spans sorted by `start`, ascending.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-1-1
 	 */
 	public function detectDeterministicPiiSpans(string $text): array {
 		return $this->pii->detectSpans(text: $text);

@@ -25,7 +25,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 /**
  * What closing a silent case goes through: the case type's lifecycle rules, the ending acts and the case journal.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+ * @spec openspec/specs/case-status-machinery/spec.md
  */
 final class SilenceCloseSteps {
 	/**

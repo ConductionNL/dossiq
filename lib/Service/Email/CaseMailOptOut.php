@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
+ * @spec openspec/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\Mail\IMessage;
 /**
  * Asks before a case mail and places the link after.
  *
- * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
+ * @spec openspec/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
  */
 class CaseMailOptOut {
 
@@ -84,7 +84,7 @@ class CaseMailOptOut {
 	 *
 	 * @throws InvalidArgumentException If the category is not one a case mail can carry
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 */
 	public function assertCaseMailCategory(string $category): void {
 		if (in_array($category, self::CASE_MAIL_CATEGORIES, true) === false) {
@@ -101,7 +101,7 @@ class CaseMailOptOut {
 	 *
 	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 */
 	public function decide(string $recipient, string $category, string $caseId): array {
 		return $this->gate->ask(recipient: $recipient, category: $category, caseRef: $caseId);
@@ -120,7 +120,7 @@ class CaseMailOptOut {
 	 *
 	 * @return array{html: string, plain: string} The bodies.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
 	 */
 	public function bodies(string $body, ?array $unsubscribe, ?string $plain = null): array {
 		return [
@@ -139,7 +139,7 @@ class CaseMailOptOut {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
 	 */
 	public function dress(IMessage $message, string $body, ?array $unsubscribe, ?string $plain = null): void {
 		$bodies = $this->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain);
@@ -160,7 +160,7 @@ class CaseMailOptOut {
 	 *
 	 * @return string The body to send.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
 	 */
 	private function htmlWithLink(string $body, ?array $unsubscribe): string {
 		$url = $this->linkOf(unsubscribe: $unsubscribe);
@@ -183,7 +183,7 @@ class CaseMailOptOut {
 	 *
 	 * @return string The body to send.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
 	 */
 	private function plainWithLink(string $body, ?array $unsubscribe): string {
 		$url = $this->linkOf(unsubscribe: $unsubscribe);

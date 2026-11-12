@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCA\Dossiq\Service\Term\TermLetter;
 /**
  * The wording of every term notification.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 class TermLetters {
 
@@ -59,7 +59,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string, locale:string}
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
 	 */
 	public function render(string $type, array $instance, array $context): array {
@@ -119,7 +119,7 @@ class TermLetters {
 	 *
 	 * @return array{subject: string, body: string}
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	private function noticeOfDefaultReceipt(TermLetter $letter): array {
 		$graceEnd = (new LetterDays(language: 'nl'))->shown(value: (string)($letter->context['graceEnd'] ?? '–'));
@@ -140,7 +140,7 @@ class TermLetters {
 	 *
 	 * @return array{subject: string, body: string}
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	private function penaltyPayment(TermLetter $letter): array {
 		$amountCents = (int)($letter->context['bedragCents'] ?? 0);
@@ -198,7 +198,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function informationRequest(TermLetter $letter): array {
 		$items = array_values(array_filter(array_map('strval', (array)($letter->context['items'] ?? []))));
@@ -247,7 +247,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function informationReminder(TermLetter $letter): array {
 		$english = ($letter->locale === 'en');
@@ -303,7 +303,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function acknowledgement(TermLetter $letter): array {
 		if (($letter->context['contentWithheld'] ?? false) === true) {
@@ -447,7 +447,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
 	 */
 	private function doorzending(TermLetter $letter): array {
 		$destination = trim((string)($letter->context['destination'] ?? ''));
@@ -492,7 +492,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	private function inadmissible(TermLetter $letter): array {
 		$reason = rtrim(trim((string)($letter->context['reason'] ?? '')), '.');
@@ -534,7 +534,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function acknowledgementInEnglish(TermLetter $letter): array {
 		$term = "No statutory decision period applies to this application.\n";
@@ -569,7 +569,7 @@ class TermLetters {
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function acknowledgementWaiting(bool $english): array {
 		if ($english === true) {

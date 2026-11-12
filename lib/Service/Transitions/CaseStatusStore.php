@@ -404,7 +404,7 @@ class CaseStatusStore {
 	 *
 	 * @return string The description, or the empty string.
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function lookupStatusDescription(string $statusTypeId): string {
 		return $this->text->forReader(value: ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));

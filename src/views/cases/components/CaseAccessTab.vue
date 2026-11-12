@@ -38,7 +38,7 @@
   Registered in src/registry.js as `CaseAccessTab` and wired as a `component:`
   sidebar tab on CaseDetail in src/manifest.json.
 
-  @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+  @spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<div class="case-access-tab">
@@ -367,7 +367,7 @@ export default {
 		 * The reader's word for each field rule.
 		 *
 		 * @return {object} The labels, by rule id.
-		 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+		 * @spec openspec/specs/security-hardening/spec.md
 		 */
 		ruleLabels() {
 			return roleRuleLabels()
@@ -377,7 +377,7 @@ export default {
 		 * Today, so nobody asks the trail about a date that has not happened.
 		 *
 		 * @return {string} Today as `YYYY-MM-DD`.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		today() {
 			return new Date().toISOString().slice(0, 10)
@@ -387,7 +387,7 @@ export default {
 		 * Who wrote the rules that stood at the moment asked about.
 		 *
 		 * @return {string} One sentence.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		setBySentence() {
 			if (!this.asOf?.setBy) {
@@ -403,7 +403,7 @@ export default {
 		 * What changed the rights after the moment asked about.
 		 *
 		 * @return {string} One sentence.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		changedAfterwardsSentence() {
 			const change = this.asOf?.changedAfterwardsBy
@@ -420,7 +420,7 @@ export default {
 		 * What the deny switch means for the rows below.
 		 *
 		 * @return {string} One sentence, empty when the mode is unknown.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		enforcementSentence() {
 			if (this.enforcement === 'enforcing') {
@@ -450,7 +450,7 @@ export default {
 		 * @param {object} row One row from `fieldRoleRows`.
 		 *
 		 * @return {string} The sentence.
-		 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+		 * @spec openspec/specs/security-hardening/spec.md
 		 */
 		sentenceFor(row) {
 			return roleRuleSentence(row)
@@ -460,7 +460,7 @@ export default {
 		 * Ask OpenRegister, once, and render what came back.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async load() {
 			this.loading = true
@@ -488,7 +488,7 @@ export default {
 		 * panel without a case.
 		 *
 		 * @return {Promise<{status: number, set: object|null}>} The answer.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async readPermissions() {
 			return this.objectId
@@ -502,7 +502,7 @@ export default {
 		 *
 		 * @param {{set: object|null}} permissions The access set answer.
 		 * @return {Promise<object>} Each source's answer, null where it failed.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async readAccessSources(permissions) {
 			const [
@@ -530,7 +530,7 @@ export default {
 		 * @param {{set: object|null}} permissions The access set answer.
 		 * @param {object} reads Each other source's answer.
 		 * @return {void}
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		showAccessSources(permissions, reads) {
 			const missing = unreadableSources(permissions, reads)
@@ -552,7 +552,7 @@ export default {
 		 * @param {{status: number, set: object|null}} permissions What the object answered.
 		 *
 		 * @return {Promise<Array|null>} The grants, or null.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		fallbackGrants(permissions) {
 			if (permissions.set !== null || this.objectId === '') {
@@ -565,7 +565,7 @@ export default {
 		 * Ask the trail who held a right on the date the reader picked.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		async loadMoment() {
 			if (this.moment === '' || this.objectId === '') {
@@ -591,7 +591,7 @@ export default {
 		 * @param {object} row The row.
 		 *
 		 * @return {string} The sentence, empty when no role is named.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		roleHint(row) {
 			if (!row?.role) {
@@ -612,7 +612,7 @@ export default {
 		 * @param {object} row One row.
 		 *
 		 * @return {string} The sentence, or an empty string when nothing was inherited.
-		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 * @spec openspec/specs/deelzaak-support/spec.md
 		 */
 		inheritedHint(row) {
 			if (!row?.inheritedFrom) {
@@ -636,7 +636,7 @@ export default {
 		 * @param {object} row The row.
 		 *
 		 * @return {string} The sentence.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		endsHint(row) {
 			return t('dossiq', 'Written to end on {date}', { date: row.until })
@@ -648,7 +648,7 @@ export default {
 		 * @param {object} row The row.
 		 *
 		 * @return {string} The sentence, empty when the grant names no area.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		areaHint(row) {
 			const named = [
@@ -669,7 +669,7 @@ export default {
 		 * @param {string} right The verb.
 		 *
 		 * @return {string} The description, empty when the catalogue has none.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		describe(right) {
 			const entry = this.catalogue.find(
@@ -684,7 +684,7 @@ export default {
 		 * @param {string} source The source key.
 		 *
 		 * @return {string} The label, the raw key when it is one we do not know.
-		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		sourceLabel(source) {
 			const labels = {

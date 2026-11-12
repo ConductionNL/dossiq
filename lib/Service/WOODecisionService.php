@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -43,7 +43,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  */
 class WOODecisionService {
 
@@ -126,7 +126,7 @@ class WOODecisionService {
 	 * @throws \RuntimeException If OpenRegister unavailable or case not found
 	 * @throws \InvalidArgumentException If any document has not been assessed
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */

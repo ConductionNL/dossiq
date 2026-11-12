@@ -32,7 +32,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Service\Consultation;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 class ConsultationDependencyGraph {
 	/**
@@ -68,7 +68,7 @@ class ConsultationDependencyGraph {
 	 *
 	 * @return bool True if a cycle would be created
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function wouldCreateCycle(string $consultationId, array $dependsOn): bool {
 		// Quick self-reference check.

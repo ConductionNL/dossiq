@@ -41,7 +41,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
  * `contacts-domain`'s act, and doing it here would fill the People tab with
  * one row per newsletter.
  *
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 class DocumentCorrespondents {
 
@@ -84,7 +84,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return array{sender: bool, recipients: bool} Which fields are allowed.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-012-direction-decides-which-correspondent-a-document-may-carry
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-012-direction-decides-which-correspondent-a-document-may-carry
 	 */
 	public function allowedFor(string $direction): array {
 		return match (trim($direction)) {
@@ -104,7 +104,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return array{sender: string, recipients: array<int, string>} What may be stored.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	public function resolve(mixed $sender, mixed $recipients, array $parties, string $direction): array {
 		$allowed = $this->allowedFor(direction: $direction);
@@ -154,7 +154,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return string The party's identifier, or ''.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
 	 */
 	public function partyHolding(string $address, array $parties): string {
 		return $this->matchOne(value: $address, index: $this->indexOf(parties: $parties));
@@ -173,7 +173,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
 	public function nameOf(string $identifier, array $parties): string {
 		$wanted = trim($identifier);
@@ -224,7 +224,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return array{senderName: string, recipientNames: array<int, string>} The names.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
 	public function describe(array $document, array $parties): array {
 		$recipients = [];
@@ -252,7 +252,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return bool True when the document names that party.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
 	public function mentions(array $document, string $identifier): bool {
 		$wanted = trim($identifier);
@@ -322,7 +322,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return string The identifier, or ''.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
 	 */
 	public function identifierOf(array $party): string {
 		$uuid = trim((string)($party['partyUuid'] ?? ''));

@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Reads Mail accounts and messages for the case matcher.
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 class MailMessageSource {
 
@@ -74,7 +74,7 @@ class MailMessageSource {
 	 *
 	 * @return array<int, array{id: int, name: string, email: string}> The accounts, by name.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function accountsOf(string $userId): array {
 		if ($userId === '') {
@@ -157,7 +157,7 @@ class MailMessageSource {
 	 *
 	 * @return bool True only when the account row names this user.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function ownsAccount(int $accountId, string $userId): bool {
 		if ($accountId <= 0 || $userId === '') {
@@ -192,7 +192,7 @@ class MailMessageSource {
 	 *
 	 * @return int The highest message id, or 0 when the account holds none.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function maxMessageId(int $accountId): int {
 		try {
@@ -225,7 +225,7 @@ class MailMessageSource {
 	 *
 	 * @return array<int, array{id: int, uid: string, subject: string, preview: string}> The messages.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function listMessagesSince(int $accountId, int $sinceId, int $limit): array {
 		try {

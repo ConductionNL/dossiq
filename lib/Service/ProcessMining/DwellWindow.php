@@ -15,7 +15,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ use DateTimeImmutable;
 /**
  * Only visits entered within [start, end] count; a still-open visit ends at now.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 final class DwellWindow {
 

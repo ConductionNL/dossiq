@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
  * @spec openspec/specs/case-priority/spec.md
  */
 
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Threshold-aware escalation dispatcher for the daily termijn scan.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
  */
 class DeadlineEscalationService {
 	/**
@@ -91,7 +91,7 @@ class DeadlineEscalationService {
 	 *
 	 * @return array<int, int>
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
 	 */
 	public function thresholds(): array {
 		$keys = array_keys(self::DEFAULT_MATRIX);
@@ -108,7 +108,7 @@ class DeadlineEscalationService {
 	 *
 	 * @return int|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
 	 */
 	public function bucketFor(int $daysToDeadline): ?int {
 		if ($daysToDeadline <= 0) {
@@ -136,7 +136,7 @@ class DeadlineEscalationService {
 	 *
 	 * @return bool True if a notification was sent (i.e. not a duplicate).
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
 	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function notifyThreshold(array $instance, int $threshold): bool {
@@ -266,7 +266,7 @@ class DeadlineEscalationService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
 	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function matrix(): array {

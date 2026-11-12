@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCP\EventDispatcher\Event;
  *
  * Built by {@see DecisionConcludedListener} only; it never leaves it.
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 final class DecisionConcludedRun {
 

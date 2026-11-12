@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+ * @spec openspec/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\Notice\CaseActNotices;
 /**
  * Refuses a subject link the RGBZ forbids.
  *
- * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+ * @spec openspec/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
  */
 class SubjectLinkRule {
 
@@ -68,7 +68,7 @@ class SubjectLinkRule {
 	 *
 	 * @return array<string, mixed>|null `{ ok: false, reason, target, other, message, notice }`, or null.
 	 *
-	 * @spec openspec/changes/case-page-answers-in-card-notices/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-link-the-rgbz-forbids-is-refused-in-a-card-notice
 	 */
 	public function refusal(array $pair, array $link): ?array {
 		$target = $this->identifierOf(case: ($pair['target'] ?? []));

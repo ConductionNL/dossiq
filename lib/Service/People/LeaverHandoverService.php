@@ -49,7 +49,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 declare(strict_types=1);
@@ -69,7 +69,7 @@ use Throwable;
 /**
  * Previews and performs the handover of everything a leaver holds.
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 class LeaverHandoverService {
 
@@ -91,7 +91,7 @@ class LeaverHandoverService {
 	 * @param LoggerInterface         $logger       Records the act and what it could not reach.
 	 * @param TranslatedText          $text         Reads a translatable case type title in the reader's language.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+	 * @spec openspec/specs/people-on-the-case/spec.md
 	 */
 	public function __construct(
 		private readonly CaseReassignmentService $reassignment,
@@ -114,7 +114,7 @@ class LeaverHandoverService {
 	 *
 	 * @throws InvalidArgumentException When no person is named.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
 	public function preview(string $fromUser): array {
 		$fromUser = trim($fromUser);
@@ -155,7 +155,7 @@ class LeaverHandoverService {
 	 *
 	 * @throws InvalidArgumentException When a person is missing, or is their own successor.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
 	public function execute(string $fromUser, string $toUser, string $actor): array {
 		$fromUser = trim($fromUser);
@@ -365,7 +365,7 @@ class LeaverHandoverService {
 	 *
 	 * @return array<int, array<string, mixed>> The drafts, as `{id, title, schema}`.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
 	public function draftsOf(string $uid): array {
 		$uid = trim($uid);

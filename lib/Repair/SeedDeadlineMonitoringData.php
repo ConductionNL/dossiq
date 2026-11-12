@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
  */
 
 declare(strict_types=1);
@@ -82,7 +82,7 @@ class SeedDeadlineMonitoringData implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		$output->info('Seeding termijnbewaking definitions...');

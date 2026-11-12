@@ -38,7 +38,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
 /**
  * Reads the admissibility declaration, and ends the case on an inadmissible verdict.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 class AdmissibilityJudgement {
 
@@ -147,7 +147,7 @@ class AdmissibilityJudgement {
 	 *
 	 * @return array{enabled: bool, inadmissibleResultType: string, moment: string} The declaration.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
 	 */
 	public function declarationFor(array $caseType): array {
 		$declared = ($caseType[self::DECLARATION] ?? null);
@@ -182,7 +182,7 @@ class AdmissibilityJudgement {
 	 *
 	 * @return bool True when a verdict is asked for.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
 	 */
 	public function appliesTo(array $caseType): bool {
 		return $this->declarationFor(caseType: $caseType)['enabled'];
@@ -199,7 +199,7 @@ class AdmissibilityJudgement {
 	 *
 	 * @return bool True when the moment is declared and on.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
 	 */
 	public function tellsTheApplicant(array $caseType): bool {
 		return $this->letters->declares(
@@ -220,7 +220,7 @@ class AdmissibilityJudgement {
 	 *
 	 * @return array<int, string> The warnings, empty when there is nothing to say.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
 	 */
 	public function publicationWarnings(array $caseType): array {
 		$declaration = $this->declarationFor(caseType: $caseType);
@@ -263,7 +263,7 @@ class AdmissibilityJudgement {
 	 *                          not one of the two, the reason is empty, or the case
 	 *                          type names no result for an inadmissible aanvraag.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-an-inadmissible-verdict-ends-the-case-at-intake-req-dec-02
 	 */
 	public function judge(string $caseId, string $verdict, string $reason, string $judgedBy): array {
 		$verdict = trim($verdict);

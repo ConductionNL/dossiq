@@ -80,7 +80,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function publish(string $id): JSONResponse {
@@ -162,7 +162,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function deprecate(string $id): JSONResponse {
@@ -184,7 +184,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function cloneDefinition(string $id): JSONResponse {
@@ -208,7 +208,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function active(string $caseTypeId): JSONResponse {
@@ -231,7 +231,7 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function forCase(string $caseId): JSONResponse {

@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Narrows a dashboard payload to what the reader's widgets may show.
  *
- * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 class DashboardWidgetScope {
 	/**
@@ -92,7 +92,7 @@ class DashboardWidgetScope {
 	 *
 	 * @return array<string, mixed> The payload, narrowed.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function narrowFor(array $payload, string $userId): array {
 		$manifest = $this->manifest();
@@ -138,7 +138,7 @@ class DashboardWidgetScope {
 	 *
 	 * @return array<string, bool> Widget id to whether it is drawn.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function visibilityFor(string $userId): array {
 		$manifest = $this->manifest();

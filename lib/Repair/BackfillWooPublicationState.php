@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
 /**
  * Copies each Woo decision's publication state onto its case. Idempotent, non-fatal.
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
  */
 class BackfillWooPublicationState implements IRepairStep {
 
@@ -90,7 +90,7 @@ class BackfillWooPublicationState implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
 	 */
 	public function getName(): string {
 		return 'Show the Woo publication state on existing Woo cases';
@@ -103,7 +103,7 @@ class BackfillWooPublicationState implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
 	 */
 	public function run(IOutput $output): void {
 		if ($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '') === self::VERSION) {
@@ -147,7 +147,7 @@ class BackfillWooPublicationState implements IRepairStep {
 	 *
 	 * @return array<string, string> `wooPublicationStatus` and, when published, `wooPublicationUrl`.
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
 	 */
 	public function stateFor(array $decision): array {
 		if (empty($decision['wooSummary']) === true) {

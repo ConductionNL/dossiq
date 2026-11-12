@@ -162,7 +162,7 @@ class CaseFlowActions {
 	 *
 	 * @throws RuntimeException `flows_unavailable`, `invalid_date`, `invalid_recurrence`, `invalid_end`, `plan_failed`.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function plan(
 		string $caseId,
@@ -253,7 +253,7 @@ class CaseFlowActions {
 	 *     total: int
 	 * } The planned rows.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function planned(string $caseId): array {
 		$today = new DateTimeImmutable('today');
@@ -307,7 +307,7 @@ class CaseFlowActions {
 	 *
 	 * @throws RuntimeException `flows_unavailable`, `case_not_found`, `stop_failed`.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function stopSeries(string $caseId, string $flowId, string $uid): array {
 		return $this->ledger->stopSeries(caseId: $caseId, flowId: $flowId, uid: $uid);
@@ -320,7 +320,7 @@ class CaseFlowActions {
 	 *
 	 * @return integer How many flows were switched off.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function retireSpent(?DateTimeImmutable $today = null): int {
 		return $this->ledger->retireSpent(today: $today);

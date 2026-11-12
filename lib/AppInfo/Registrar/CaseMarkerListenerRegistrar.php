@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseMarkerListenerRegistrar {
 
@@ -63,7 +63,7 @@ class CaseMarkerListenerRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {

@@ -40,7 +40,7 @@
  * @link https://conduction.nl
  * @link https://kadaster.github.io/WOZ-bevragen/
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -58,7 +58,7 @@ use Throwable;
 /**
  * Live Kadaster Haal Centraal WOZ Bevragen API adapter (test / live tiers).
  *
- * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+ * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
  */
 class WozApiAdapter implements WozAdapterInterface {
 	/**
@@ -105,7 +105,7 @@ class WozApiAdapter implements WozAdapterInterface {
 	 *
 	 * @return WozLookupResult
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupAddress(
 		string $postcode,
@@ -143,7 +143,7 @@ class WozApiAdapter implements WozAdapterInterface {
 	 *
 	 * @return WozLookupResult
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByNummeraanduiding(string $addressDesignationId, array $context = []): WozLookupResult {
 		if ($addressDesignationId === '') {
@@ -254,7 +254,7 @@ class WozApiAdapter implements WozAdapterInterface {
 	 *
 	 * @return WozLookupResult
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByWozObjectNummer(string $wozobjectnummer, array $context = []): WozLookupResult {
 		if ($wozobjectnummer === '') {
@@ -308,7 +308,7 @@ class WozApiAdapter implements WozAdapterInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 * @spec openspec/changes/archive/2026-07-14-brk-woz-register-adapters/proposal.md
 	 */
 	public function isDormant(): bool {
 		return false;

@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Builds clearance-filtered dossier ZIP exports.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class DossierZipExporter {
 	/**
@@ -72,7 +72,7 @@ class DossierZipExporter {
 	 *
 	 * @throws \RuntimeException When the dossier cannot be read.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function collectDocuments(string $caseId, array $selectedIds): array {
 		$file = $this->fileService->getDossierForCase(caseId: $caseId);
@@ -114,7 +114,7 @@ class DossierZipExporter {
 	 *
 	 * @throws \Throwable When the archive cannot be written or read back.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function buildZipData(IUser $user, array $documents, bool $flatLayout): string {
 		$layout = ZipManifestBuilder::LAYOUT_PER_TYPE;

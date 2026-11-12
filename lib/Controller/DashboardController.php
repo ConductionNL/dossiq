@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ use OCP\Util;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
  */
 class DashboardController extends Controller {
 
@@ -142,7 +142,7 @@ class DashboardController extends Controller {
 	 *
 	 * @return TemplateResponse The rendered dossiq index template.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
@@ -155,7 +155,7 @@ class DashboardController extends Controller {
 	 *
 	 * @return TemplateResponse The rendered dossiq index template.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
@@ -174,7 +174,7 @@ class DashboardController extends Controller {
 	 *
 	 * @return TemplateResponse The rendered dossiq index template.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
 	 */
 	protected function renderIndex(): TemplateResponse {
 		$this->loadFilesSurfaces();
@@ -326,7 +326,7 @@ class DashboardController extends Controller {
 	 *
 	 * @return array<int, array<string, mixed>> The features from docs/features.json.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
 	 */
 	private function roadmapFeatures(): array {
 		if (is_readable(self::FEATURES_JSON) === false) {

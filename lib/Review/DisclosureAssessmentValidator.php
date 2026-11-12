@@ -76,7 +76,7 @@ class DisclosureAssessmentValidator {
 	 *
 	 * @throws RefusedException With 503 when the list of refusal grounds cannot be read.
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	public function validate(array $assessment): array {

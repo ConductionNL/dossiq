@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Composes the case-derived fields of a decision record.
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  */
 class DecisionRecordComposer {
 
@@ -64,7 +64,7 @@ class DecisionRecordComposer {
 	 *
 	 * @return array{caseTitle: string, assessmentCount: int, summary: array<string, int>, weigeringsgronden: array<int, mixed>}
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 */
 	public function compose(object $objectService, string $register, string $caseId): array {
 		$assessments = $this->collectAssessments(

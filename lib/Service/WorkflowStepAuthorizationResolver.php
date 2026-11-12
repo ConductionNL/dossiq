@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Resolve workflow step/transition roles to NC group ids for OR RBAC.
  *
- * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-2.1
+ * @spec openspec/changes/archive/2026-06-15-migrate-role-routing-to-or-rbac/tasks.md#P-2.1
  */
 class WorkflowStepAuthorizationResolver {
 
@@ -78,7 +78,7 @@ class WorkflowStepAuthorizationResolver {
 	 *
 	 * @return array<int, string> Distinct, non-empty NC group ids (may be empty when no role maps to a group).
 	 *
-	 * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-2.1
+	 * @spec openspec/changes/archive/2026-06-15-migrate-role-routing-to-or-rbac/tasks.md#P-2.1
 	 */
 	public function resolveGroupIds(array $entry): array {
 		$roleTypeIds = $this->collectRoleTypeIds(entry: $entry);

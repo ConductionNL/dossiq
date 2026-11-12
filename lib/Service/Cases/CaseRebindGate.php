@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use OCP\IGroupManager;
 /**
  * What refuses a rebind, and what the case still has to answer.
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindGate {
 
@@ -91,7 +91,7 @@ class CaseRebindGate {
 	 *
 	 * @return boolean True when they may.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function mayRebind(string $uid): bool {
 		if ($uid === '') {
@@ -111,7 +111,7 @@ class CaseRebindGate {
 	 *
 	 * @throws RefusedException When the caller may not rebind, or named no reason.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertMayRebind(string $actorUid, string $reason): string {
 		if ($this->mayRebind(uid: $actorUid) === false) {
@@ -145,7 +145,7 @@ class CaseRebindGate {
 	 *
 	 * @throws RefusedException When the target will not do.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertTarget(string $caseId, array $case, string $targetCaseTypeId): void {
 		if (trim($targetCaseTypeId) === '') {
@@ -197,7 +197,7 @@ class CaseRebindGate {
 	 *
 	 * @throws RefusedException When the status is absent or belongs elsewhere.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertStatus(string $targetCaseTypeId, string $targetStatusId): void {
 		if (trim($targetStatusId) === '') {
@@ -278,7 +278,7 @@ class CaseRebindGate {
 	 *
 	 * @throws RefusedException When anything is missing.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertNothingMissing(array $missing): void {
 		if ($missing === []) {
@@ -311,7 +311,7 @@ class CaseRebindGate {
 	 *
 	 * @return array{carried: bool, note: string} The verdict.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function resultCompatibility(array $case, string $targetCaseTypeId): array {
 		$resultId = $this->store->referenceId(value: ($case['result'] ?? ''));

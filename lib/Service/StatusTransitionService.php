@@ -60,7 +60,7 @@ use RuntimeException;
 /**
  * The status-transition engine.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T10
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T10
  */
 class StatusTransitionService {
 
@@ -240,7 +240,7 @@ class StatusTransitionService {
 	 *                          found, or a closing transition arrives without a result type
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function execute(
 		string $caseId,
@@ -339,7 +339,7 @@ class StatusTransitionService {
 	 * @return array{status: string, failedActions: array<int, array{type: string, error: string}>}
 	 *         `ok` with no failures, or `partial` with the failures in dispatch order.
 	 *
-	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function actionOutcome(array $dispatched, string $caseId): array {
 		$outcome = ['status' => 'ok', 'failedActions' => []];
@@ -506,7 +506,7 @@ class StatusTransitionService {
 	 * @throws RuntimeException When the caller is not in the admin group or the target is invalid
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function executeFreeForm(string $caseId, string $toStatusId, ?string $comment, ?string $userId = null): array {
 		$userId = $this->resolveUserId(explicit: $userId);

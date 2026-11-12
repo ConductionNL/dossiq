@@ -71,7 +71,7 @@ class ShillinqIntegrationService {
 	 *
 	 * @return array<string, array<int, array<string,mixed>>> Keyed by `<tenantId>:<month>`.
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
 	 */
 	public function groupForInvoicing(array $events): array {
 		$grouped = [];

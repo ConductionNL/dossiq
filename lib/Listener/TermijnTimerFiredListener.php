@@ -221,7 +221,7 @@ class TermijnTimerFiredListener implements IEventListener {
 	 *
 	 * @return bool True for a reminder rung.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function isChaseRung(string $rungKey): bool {
 		return (str_starts_with($rungKey, 'preBreach:') === true);
@@ -239,7 +239,7 @@ class TermijnTimerFiredListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function handleChase(array $instance): void {
 		$this->chases?->chaseIfDue(instance: $instance);

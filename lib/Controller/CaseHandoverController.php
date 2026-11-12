@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
 /**
  * The internal handover: hand on, accept, refuse back, and what is outstanding.
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseHandoverController extends Controller {
 
@@ -74,7 +74,7 @@ class CaseHandoverController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
@@ -94,7 +94,7 @@ class CaseHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The transfer record, or the refusal.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
 	 */
 	#[NoAdminRequired]
 	public function hand(string $caseId): JSONResponse {
@@ -137,7 +137,7 @@ class CaseHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The settled record, or the refusal.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	#[NoAdminRequired]
 	public function accept(string $caseId, string $transferId): JSONResponse {
@@ -165,7 +165,7 @@ class CaseHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The settled record, or the refusal.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $caseId, string $transferId): JSONResponse {
@@ -204,7 +204,7 @@ class CaseHandoverController extends Controller {
 	 *
 	 * @return JSONResponse The outstanding handovers.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	#[NoAdminRequired]
 	public function outstanding(string $team): JSONResponse {

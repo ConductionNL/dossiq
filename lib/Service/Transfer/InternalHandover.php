@@ -43,7 +43,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ use Throwable;
 /**
  * Initiates, accepts and refuses a handover between two teams of one organisation.
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class InternalHandover {
 
@@ -112,7 +112,7 @@ class InternalHandover {
 	 * @param DoorzendingNotifier $doorzending     Tells the applicant, when Awb 2:3 says we must.
 	 * @param LoggerInterface     $logger          Records every move and every refusal.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -136,7 +136,7 @@ class InternalHandover {
 	 *
 	 * @throws RefusedException When the case cannot be read or the team cannot be resolved.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `doorzending` is a
 	 * DECLARATION the handler makes, not a mode switch: it is the fact Awb 2:3
@@ -228,7 +228,7 @@ class InternalHandover {
 	 *
 	 * @throws RefusedException When the handover is unknown or already settled.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	public function accept(string $transferId, string $acceptedBy): array {
 		return $this->settle(
@@ -250,7 +250,7 @@ class InternalHandover {
 	 *
 	 * @throws RefusedException When the handover is unknown or already settled.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	public function refuse(string $transferId, string $reason, string $refusedBy): array {
 		return $this->settle(
@@ -273,7 +273,7 @@ class InternalHandover {
 	 *
 	 * @return array<int, array<string, mixed>> The outstanding handovers.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
 	public function outstandingFor(string $team): array {
 		$team = trim($team);

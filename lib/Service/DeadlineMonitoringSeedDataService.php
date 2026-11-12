@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ class DeadlineMonitoringSeedDataService {
 	 *
 	 * @return array<string, mixed> Result with 'success' and either 'message' or per-kind counts.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
 	 */
 	public function seed(): array {
 		$objectService = $this->settingsService->getObjectService();

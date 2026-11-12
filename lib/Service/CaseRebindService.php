@@ -43,7 +43,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -66,7 +66,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindService {
 
@@ -124,7 +124,7 @@ class CaseRebindService {
 	 *
 	 * @return boolean True when they may.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function mayRebind(string $uid): bool {
 		return $this->gate->mayRebind(uid: $uid);
@@ -144,8 +144,8 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function options(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -180,9 +180,9 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the case or the target cannot be read, or a remap cannot be made.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function preview(
 		string $caseId,
@@ -234,7 +234,7 @@ class CaseRebindService {
 	 *
 	 * @throws RefusedException When the rebind is refused, or a write fails.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function rebind(
@@ -306,7 +306,7 @@ class CaseRebindService {
 	 *
 	 * @return array<string, mixed> The case, re-pinned.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rebindTemplate(array $case, string $targetCaseTypeId): array {
 		$rows = $this->store->rowsOfType(

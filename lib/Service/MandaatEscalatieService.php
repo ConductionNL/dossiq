@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use RuntimeException;
 /**
  * Mandate escalation lifecycle.
  *
- * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
  */
 class MandaatEscalatieService {
 	use SearchesObjects;
@@ -72,7 +72,7 @@ class MandaatEscalatieService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function createEscalatie(string $caseId, string $decisionType, string $initiatorId, string $escalationReason): array {
 		$path = $this->resolveEscalatiePath(decisionType: $decisionType, escalationReason: $escalationReason);
@@ -116,7 +116,7 @@ class MandaatEscalatieService {
 	 *
 	 * @return array{mandaatId:string, userId:string}
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function resolveEscalatiePath(string $decisionType, string $escalationReason = ''): array {
 		$search = $this->escalationSearch();
@@ -292,7 +292,7 @@ class MandaatEscalatieService {
 	 *
 	 * @throws RuntimeException When unauthorized or escalation missing.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function approveEscalatie(string $escalationId, string $mandaathouderUserId): array {
 		$escalation = $this->findEscalation(escalationId: $escalationId);
@@ -323,7 +323,7 @@ class MandaatEscalatieService {
 	 *
 	 * @throws RuntimeException When the escalation is missing.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function rejectEscalatie(string $escalationId, string $reason): array {
 		$escalation = $this->findEscalation(escalationId: $escalationId);
@@ -349,7 +349,7 @@ class MandaatEscalatieService {
 	 *
 	 * @return int Number of rerouted escalations.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-03-escalation-engine/tasks.md
 	 */
 	public function autoRerouteOnPersonnelChange(string $oldUserId, string $newUserId): int {
 		$objectService = $this->settingsService->getObjectService();

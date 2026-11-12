@@ -46,7 +46,7 @@ use Throwable;
 /**
  * Controller for routing engine actions.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
  *
  * @psalm-suppress UnusedClass
  */
@@ -97,7 +97,7 @@ class RoutingController extends Controller {
 	 * IGroupManager::isAdmin() and this declaration states it rather than
 	 * contradicting it with @NoAdminRequired.
 	 *
-	 * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
 	 */
 	public function reroute(string $id): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -214,7 +214,7 @@ class RoutingController extends Controller {
 	 *
 	 * @throws RefusedException When a case's roles could not be read at all.
 	 *
-	 * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
 	 */
 	private function resolveSteps(array $steps, array $case): array {
 		$affected = [];

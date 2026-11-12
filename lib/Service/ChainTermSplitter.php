@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ namespace OCA\Dossiq\Service;
 /**
  * Splitting a chain term over its steps, and recomputing what is left (REQ-TERM-065).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 class ChainTermSplitter {
 	/**
@@ -65,7 +65,7 @@ class ChainTermSplitter {
 	 *
 	 * @return array<int, int> One day count per step, summing to $termDays.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function split(int $termDays, array $shares): array {
 		$steps = count($shares);
@@ -113,7 +113,7 @@ class ChainTermSplitter {
 	 *         What is left, the day count for each step still to come, and
 	 *         whether the chain has nothing left to give.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function recompute(int $termDays, array $shares, array $consumed): array {
 		$spent = 0;

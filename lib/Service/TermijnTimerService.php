@@ -166,7 +166,7 @@ class TermijnTimerService {
 	 *
 	 * @return DateTimeImmutable The day the term actually ends on.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function rollTermEnd(
 		DateTimeImmutable $date,
@@ -190,7 +190,7 @@ class TermijnTimerService {
 	 *
 	 * @return DateTimeImmutable The day the term actually ends on.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function rollTermEndFor(
 		DateTimeImmutable $date,
@@ -417,7 +417,7 @@ class TermijnTimerService {
 	 *
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function armHersteltermijn(array $instance, int $durationDays, array $chaseOffsets = []): ?string {
 		$instanceId = (string)($instance['id'] ?? '');
@@ -641,7 +641,7 @@ class TermijnTimerService {
 	 *
 	 * @return int|null The span.
 	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	private function spanFor(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
 		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS) {

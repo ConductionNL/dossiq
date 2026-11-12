@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Migrates subsidieRegeling objects onto caseType + propertyDefinition.
  *
- * @spec openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+ * @spec openspec/changes/archive/2026-09-09-subsidieregeling-is-a-casetype/proposal.md
  */
 class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -138,7 +138,7 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	 * @spec openspec/changes/archive/2026-09-09-subsidieregeling-is-a-casetype/proposal.md
 	 */
 	public function getName(): string {
 		return 'Dossiq: migrate subsidieregelingen onto case types';
@@ -151,7 +151,7 @@ class MigrateSubsidieRegelingToCaseType implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	 * @spec openspec/changes/archive/2026-09-09-subsidieregeling-is-a-casetype/proposal.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {

@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\AppFramework\OCS\OCSBadRequestException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
  */
 class RoutingRuleService {
 	/**
@@ -64,7 +64,7 @@ class RoutingRuleService {
 	 *
 	 * @return array<int, array<string, mixed>> The routing rules.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function listRules(): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
@@ -81,7 +81,7 @@ class RoutingRuleService {
 	 *
 	 * @throws OCSBadRequestException When validation fails.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function createRule(array $data): array {
 		$payload = $this->validateRule(data: $data);
@@ -99,7 +99,7 @@ class RoutingRuleService {
 	 *
 	 * @throws OCSBadRequestException When validation fails or not found.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function updateRule(string $id, array $data): array {
 		$payload = $this->validateRule(data: $data);
@@ -114,7 +114,7 @@ class RoutingRuleService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function deleteRule(string $id): void {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
@@ -129,7 +129,7 @@ class RoutingRuleService {
 	 *
 	 * @return array<string, mixed> The routing decision plus agent suggestions.
 	 *
-	 * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
 	 */
 	public function route(array $contactMoment, ?\DateTimeImmutable $now = null): array {
 		$rules = $this->listRules();
@@ -174,7 +174,7 @@ class RoutingRuleService {
 	 *
 	 * @return array<int, array<string, mixed>> The agents.
 	 *
-	 * @spec openspec/changes/kcc-routing-onto-or-decision-tables/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-routing-rules-evaluate-through-the-shared-decision-table-engine
 	 */
 	public function listAgents(): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaKey: 'kcc_agent_schema');

@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 
 declare(strict_types=1);
@@ -59,7 +59,7 @@ use Throwable;
 /**
  * Repair step restoring the LHS actorType axis vocabulary.
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 class RealignLhsActorTypeVocabulary implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -104,7 +104,7 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	public function getName(): string {
 		return 'Realign Dossiq LHS actorType vocabulary (government -> overheid)';
@@ -120,7 +120,7 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -165,7 +165,7 @@ class RealignLhsActorTypeVocabulary implements IRepairStep {
 	 *
 	 * @return integer The number of rows rewritten.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function rewriteRows(object $objectService): int {
 		$rows = $this->searchObjectsAsArrays(

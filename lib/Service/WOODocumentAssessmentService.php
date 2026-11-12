@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-5
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -45,7 +45,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-5
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
  */
 class WOODocumentAssessmentService {
 
@@ -126,7 +126,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @throws RuntimeException If OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function bulkUpsert(string $caseId, array $assessments): array {
@@ -265,7 +265,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return array<string, string> Validation errors keyed by field name; empty if valid
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	public function validate(array $assessment): array {
@@ -279,7 +279,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return array<string, mixed> Array with 'count' and 'documents' list of unassessed doc IDs
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 */
 	public function getOutstanding(string $caseId): array {
 		return $this->outstandingDocuments->forCase(caseId: $caseId);
@@ -307,7 +307,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return bool True if all documents are assessed
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 */
 	public function allDocumentsAssessed(string $caseId): bool {
 		$outstanding = $this->getOutstanding(caseId: $caseId);
@@ -327,7 +327,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return array<string, mixed>|null The assessment record, or null if not yet assessed.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-1
 	 */
 	public function findAssessment(string $caseId, string $documentRef): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -408,11 +408,7 @@ class WOODocumentAssessmentService {
 	 * @spec openspec/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
 	 */
 	public function partlyPublicWithoutCopy(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
+		$objectService = $this->requireObjectService();
 		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 		if (empty($assessmentSchema) === true) {
 			return ['partlyPublic' => 0, 'waiting' => []];
@@ -425,10 +421,38 @@ class WOODocumentAssessmentService {
 			filters: ['caseRef' => $caseId, 'classification' => 'deels_openbaar', '_limit' => 500],
 		);
 
+		return $this->redactionTally(rows: $rows, caseId: $caseId);
+	}//end partlyPublicWithoutCopy()
+
+	/**
+	 * OpenRegister's object service, or a refusal when it is not there.
+	 *
+	 * @return object The object service.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable.
+	 */
+	private function requireObjectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		return $objectService;
+	}//end requireObjectService()
+
+	/**
+	 * How many of the rows are the case's partly public documents, and which of them have no redacted copy.
+	 *
+	 * @param array<int, array<string, mixed>> $rows   The assessments read.
+	 * @param string                           $caseId The case UUID.
+	 *
+	 * @return array{partlyPublic: int, waiting: list<string>} The count and the documents still waiting.
+	 */
+	private function redactionTally(array $rows, string $caseId): array {
 		$partlyPublic = 0;
 		$waiting = [];
 		foreach ($rows as $row) {
-			if ((string)($row['caseRef'] ?? '') !== $caseId || (string)($row['classification'] ?? '') !== 'deels_openbaar') {
+			if ($this->isPartlyPublicOf(row: $row, caseId: $caseId) === false) {
 				continue;
 			}
 
@@ -439,7 +463,20 @@ class WOODocumentAssessmentService {
 		}
 
 		return ['partlyPublic' => $partlyPublic, 'waiting' => $waiting];
-	}//end partlyPublicWithoutCopy()
+	}//end redactionTally()
+
+	/**
+	 * Whether an assessment is on the case and judged its document partly public.
+	 *
+	 * @param array<string, mixed> $row    The assessment.
+	 * @param string               $caseId The case UUID.
+	 *
+	 * @return bool True for a partly public assessment of the case.
+	 */
+	private function isPartlyPublicOf(array $row, string $caseId): bool {
+		return (string)($row['caseRef'] ?? '') === $caseId
+			&& (string)($row['classification'] ?? '') === 'deels_openbaar';
+	}//end isPartlyPublicOf()
 
 	/**
 	 * Attach (or update) a `redactionProposal` on an EXISTING wooAssessment
@@ -461,7 +498,7 @@ class WOODocumentAssessmentService {
 	 * @throws RefusedException (403 `owned-by-another-reviewer`) When the case type keeps
 	 *                          assessments private and the caller neither made this one nor supervises.
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-1
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function saveRedactionProposal(string $caseId, string $documentRef, array $proposal): array {

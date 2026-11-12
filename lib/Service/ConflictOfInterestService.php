@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-06-temporal-and-conflict/tasks.md
  */
 
 declare(strict_types=1);
@@ -177,7 +177,7 @@ class ConflictOfInterestService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-06-temporal-and-conflict/tasks.md
 	 */
 	public function setRelationshipLookup(callable $lookup): void {
 		$this->relationshipLookup = $lookup;
@@ -365,7 +365,7 @@ class ConflictOfInterestService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-06-temporal-and-conflict/tasks.md
 	 */
 	public function registerConflict(string $caseId, string $reason): void {
 		$this->registered[$caseId] = $reason;

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use RuntimeException;
  * is the template domain itself — versioning, seeding and placeholder
  * resolution.
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T04
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
  */
 class EmailTemplateService {
 
@@ -107,7 +107,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<string, mixed> The saved object.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function createTemplate(string $caseTypeId, array $data): array {
 		$payload = [
@@ -133,7 +133,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function updateTemplate(string $templateId, array $data): array {
 		$existing = $this->repository->findTemplate(templateId: $templateId);
@@ -203,7 +203,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function listTemplates(string $caseTypeId): array {
 		return $this->repository->findActiveByCaseType(caseTypeId: $caseTypeId);
@@ -220,7 +220,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<string, array<int, string>>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
@@ -261,7 +261,7 @@ class EmailTemplateService {
 	 *
 	 * @throws \RuntimeException When the case is final or inputs are missing.
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function prefillDraft(string $caseId, string $templateId): array {
 		$template = $this->repository->findTemplate(templateId: $templateId);
@@ -310,7 +310,7 @@ class EmailTemplateService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function resolve(string $text, array $vars): string {
 		return (string)preg_replace_callback(
@@ -335,7 +335,7 @@ class EmailTemplateService {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T04
 	 */
 	public function collectUnresolved(string $text, array $vars): array {
 		if (preg_match_all('/{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/', $text, $matches) === false) {

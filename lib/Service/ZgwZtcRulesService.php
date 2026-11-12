@@ -63,7 +63,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwZtcRulesService extends ZgwRulesBase {
 	/**
@@ -154,7 +154,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @see ZtcConceptRules::checkConceptProtection()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function checkConceptProtection(
 		string $resource,
@@ -182,7 +182,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @see ZtcConceptRules::defaultConcept()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function defaultConcept(array $body, string $resource): array {
 		return $this->concept->defaultConcept(body: $body, resource: $resource);
@@ -199,7 +199,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @see ZtcConceptRules::preserveConcept()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function preserveConcept(array $body, string $resource, ?array $existingObject): array {
 		return $this->concept->preserveConcept(body: $body, resource: $resource, existingObject: $existingObject);
@@ -253,7 +253,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesZaaktypenCreate(array $body): array {
 		// Ztc-001: Validate selectielijstProcestype URL.
@@ -312,7 +312,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The validation result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesBesluittypenCreate(array $body): array {
 		// Resolve reference arrays by omschrijving/identificatie to UUIDs.
@@ -358,7 +358,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The validation result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesZaaktypeinformatieobjecttypenCreate(array $body): array {
 		// Resolve informatieobjecttype: omschrijving → UUID, or bare UUID → verify.

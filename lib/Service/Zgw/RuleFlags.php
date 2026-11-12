@@ -16,7 +16,7 @@ namespace OCA\Dossiq\Service\Zgw;
 /**
  * What the business rules are asked about a write: the action and the parent state flags.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 final class RuleFlags {
 	/**
@@ -40,7 +40,7 @@ final class RuleFlags {
 	 *
 	 * @return bool True for a patch.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isPatch(): bool {
 		return $this->action === 'patch';

@@ -48,7 +48,7 @@ use RuntimeException;
  * appointment records in OpenRegister. There is no local fallback — internal
  * scheduling lives in the OR calendar leaf.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AppointmentService {
 	/**
@@ -94,7 +94,7 @@ class AppointmentService {
 	 *
 	 * @return array<string, mixed> The stored appointment record or an error payload.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function bookAppointment(string $caseId, array $data): array {
 		// The keys of Support\CallerIdentity::KEYS, written out to keep this class's coupling down.
@@ -168,7 +168,7 @@ class AppointmentService {
 	 *
 	 * @return array<string, mixed> The updated appointment record.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function cancelAppointment(string $appointmentId): array {
 		$objectService = $this->getObjectService();
@@ -200,7 +200,7 @@ class AppointmentService {
 	 *
 	 * @return array<string, mixed> The updated appointment record.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function markNoShow(string $appointmentId): array {
 		$objectService = $this->getObjectService();
@@ -226,7 +226,7 @@ class AppointmentService {
 	 *
 	 * @return array<int, mixed> List of appointments for the case.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getAppointmentsForCase(string $caseId): array {
 		$objectService = $this->getObjectService();
@@ -249,7 +249,7 @@ class AppointmentService {
 	 *
 	 * @return array<string, mixed>|null The appointment data, or null if not found.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getAppointmentByToken(string $token): ?array {
 		$objectService = $this->getObjectService();

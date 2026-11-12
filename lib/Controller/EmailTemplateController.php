@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use OCP\IUserSession;
 /**
  * REST controller for email-template templating + IMAP settings.
  *
- * @spec openspec/changes/case-email-integration/tasks.md#T06
+ * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — this surface is the settings form
  *  for mail, so it names the mail gateway and the sender block list beside the
@@ -121,7 +121,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	public function listTemplates(string $caseTypeId): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -238,7 +238,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	public function prefillDraft(string $caseId, string $templateId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -272,7 +272,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function getSettings(): JSONResponse {
@@ -307,7 +307,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function saveSettings(): JSONResponse {
@@ -407,7 +407,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-email-integration/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-case-email-integration/tasks.md#T06
 	 */
 	public function variables(string $caseTypeId): JSONResponse {
 		if ($this->userSession->getUser() === null) {

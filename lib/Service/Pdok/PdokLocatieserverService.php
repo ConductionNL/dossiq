@@ -126,7 +126,7 @@ class PdokLocatieserverService {
 	 *
 	 * @return array Decoded JSON response or `[]` while degraded.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggest(string $query, array $filterQueries = [], int $rows = 10): array {
 		if ($this->isDegraded() === true) {
@@ -157,7 +157,7 @@ class PdokLocatieserverService {
 	 *
 	 * @return array Decoded JSON response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function free(string $query, array $filterQueries = []): array {
 		$params = ['q' => $query];
@@ -183,7 +183,7 @@ class PdokLocatieserverService {
 	 *
 	 * @return array Decoded JSON response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function lookup(string $id): array {
 		return $this->call(
@@ -205,7 +205,7 @@ class PdokLocatieserverService {
 	 *
 	 * @return array Decoded JSON response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function reverse(float $lat, float $lng): array {
 		return $this->call(
@@ -224,7 +224,7 @@ class PdokLocatieserverService {
 	 *
 	 * @return string `ok` when healthy, `degraded` during the cool-down.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function health(): string {
 		if ($this->isDegraded() === true) {

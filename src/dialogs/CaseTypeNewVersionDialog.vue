@@ -15,7 +15,7 @@
   type. A version is this case type later on: same name, same identifier, and
   the cases running today stay where they are.
 
-  @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+  @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
 	<NcDialog
@@ -104,7 +104,7 @@ export default {
 		 *
 		 * @return {object} The messages.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		refusalMessages() {
 			return caseTypeRefusalMessages()
@@ -115,7 +115,7 @@ export default {
 		 *
 		 * @return {string} The id.
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		id() {
 			return this.caseTypeId || String(this.$route?.params?.id ?? '')
@@ -130,7 +130,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async confirm() {
 			this.error = ''

@@ -17,8 +17,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 
 declare(strict_types=1);
@@ -33,8 +33,8 @@ use OCA\Dossiq\Service\Intake\IntakeRequirements;
 /**
  * What a case type declares about intake: its requirements, classification, assignee narrowing and duplicate policy.
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
- * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ * @spec openspec/specs/semantic-case-intake/spec.md
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 final class IntakeDeclarations {
 	/**

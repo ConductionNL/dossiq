@@ -126,7 +126,7 @@ class StatusMoveEntry {
 	 *
 	 * @return string `internal` or `public`.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function visibility(string $publicLabel): string {
 		if ($publicLabel === '') {

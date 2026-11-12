@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use RuntimeException;
 /**
  * Service for complaint disposition (oordeel) management.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
  */
 class DispositionService {
 
@@ -86,7 +86,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If validation fails or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function submitDisposition(string $complaintId, array $data): array {
 		return $this->createDisposition(
@@ -109,7 +109,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If validation fails or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function submitDispositionForApproval(string $complaintId, array $data): array {
 		return $this->createDisposition(
@@ -130,7 +130,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If validation fails or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	private function createDisposition(string $complaintId, array $data, string $approval): array {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
@@ -179,7 +179,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If disposition not found or not awaiting approval
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function approveDisposition(string $dispositionId, string $approverId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -225,7 +225,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function rejectDisposition(string $dispositionId, string $rejectorId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -268,7 +268,7 @@ class DispositionService {
 	 *
 	 * @return array<string, mixed>|null Disposition or null if not yet submitted
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function getDispositionForComplaint(string $complaintId): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -307,7 +307,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If Docudesk is not available
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	public function generateResponseLetter(string $complaintId, string $dispositionId): array {
 		// Docudesk integration: delegate to the template rendering service.
@@ -336,7 +336,7 @@ class DispositionService {
 	 *
 	 * @throws \RuntimeException If validation fails
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	private function validateDisposition(array $data): void {
 		$opinion = $data['opinion'] ?? '';

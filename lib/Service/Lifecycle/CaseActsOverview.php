@@ -36,7 +36,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 /**
  * The state of a case and the menu that goes with it.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseActsOverview {
 
@@ -74,7 +74,7 @@ class CaseActsOverview {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 * @spec openspec/specs/case-management/spec.md#requirement-finishing-or-aborting-a-case-picks-its-result-from-the-case-type-req-cm-80
 	 */
 	public function overview(string $caseId): array {
@@ -181,7 +181,7 @@ class CaseActsOverview {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function archiveReadiness(string $caseId): array {
 		$case = $this->store->loadCase(caseId: $caseId);

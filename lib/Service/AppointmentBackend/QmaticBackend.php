@@ -29,7 +29,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Qmatic Orchestra REST API backend for appointment scheduling.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class QmaticBackend extends RestAppointmentBackend {
 	/**
@@ -57,7 +57,7 @@ class QmaticBackend extends RestAppointmentBackend {
 	 *
 	 * @return array<int, array<string, mixed>> List of available timeslots.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getTimeslots(string $productId, string $locationId, string $date): array {
 		$data = $this->getJson(
@@ -103,7 +103,7 @@ class QmaticBackend extends RestAppointmentBackend {
 	 *
 	 * @return array<string, mixed> The new booking result.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rescheduleAppointment(string $externalId, string $newDateTime): array {
 		$this->cancelAppointment(externalId: $externalId);

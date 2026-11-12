@@ -18,7 +18,7 @@ use OCP\IRequest;
 /**
  * The request, API group, resource and object id a generic API handler acts on.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 final class ResourceRoute {
 	/**
@@ -42,7 +42,7 @@ final class ResourceRoute {
 	 *
 	 * @return string The resource and id.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function objectLabel(): string {
 		return $this->resource . ' ' . $this->uuid;

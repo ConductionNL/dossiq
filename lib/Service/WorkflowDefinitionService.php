@@ -238,7 +238,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null The definition or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getDefinitionForCase(string $caseId): ?array {
 		$case = $this->repository->findCase(caseId: $caseId);
@@ -267,7 +267,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<int, array<string, mixed>> The versions
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function listVersions(string $caseTypeId): array {
 		return $this->repository->listVersionsForCaseType(caseTypeId: $caseTypeId);
@@ -286,7 +286,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null Updated definition or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function publish(string $id): ?array {
 		$current = $this->publishableDraft(id: $id);
@@ -373,7 +373,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null Updated definition or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function deprecate(string $id): ?array {
 		$current = $this->repository->findById(id: $id);
@@ -402,7 +402,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null New draft definition or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function cloneDefinition(string $id): ?array {
 		$source = $this->repository->findById(id: $id);
@@ -455,7 +455,7 @@ class WorkflowDefinitionService {
 	 *
 	 * @return array<string, mixed>|null The created draft or null on failure
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function createDraft(array $payload): ?array {
 		$caseTypeId = (string)($payload['caseType'] ?? '');

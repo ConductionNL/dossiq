@@ -55,7 +55,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 /**
  * Begins a draft case and promotes it into a real one.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class DraftCaseActs {
 	use LoadsCaseOrRefuses;
@@ -102,7 +102,7 @@ class DraftCaseActs {
 	 *
 	 * @throws RefusedException When the case cannot be read or is already ended.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function begin(string $caseId): array {
 		$case = $this->load(caseId: $caseId);
@@ -137,7 +137,7 @@ class DraftCaseActs {
 	 *
 	 * @throws RefusedException When the case is not a draft.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function promote(string $caseId): array {
 		$case = $this->load(caseId: $caseId);
@@ -180,7 +180,7 @@ class DraftCaseActs {
 	 *
 	 * @return bool True when it is.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isDraft(array $case): bool {
 		return in_array(($case[self::DRAFT_FIELD] ?? false), [true, 1, '1', 'true'], true);

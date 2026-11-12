@@ -120,7 +120,7 @@ class CaseTypeReader {
 	 *
 	 * @return array{paymentRequiredBeforeHandling: bool}|null The rule, or null.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function paymentRule(string $caseTypeId): ?array {
 		if ($caseTypeId === '') {

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCP\IL10N;
 /**
  * Resolves a language map to one string in the reader's language.
  *
- * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class TranslatedText {
 
@@ -60,7 +60,7 @@ class TranslatedText {
 	 *
 	 * @return string The text, trimmed, or '' when there is none.
 	 *
-	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function forReader(mixed $value): string {

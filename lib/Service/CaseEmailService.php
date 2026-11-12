@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
+use OCA\Dossiq\Service\Email\ReceivedEmail;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
@@ -44,7 +45,7 @@ use RuntimeException;
 /**
  * Service for case-integrated email functionality.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  * @spec openspec/specs/case-history-surface/spec.md
  */
 class CaseEmailService {
@@ -109,8 +110,8 @@ class CaseEmailService {
 	 * @throws \RuntimeException If the case cannot be read or the recipient is not allowed
 	 * @throws RecipientOptedOutException If integriq says this person may not be sent it
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function sendEmail(
@@ -277,7 +278,7 @@ class CaseEmailService {
 	 *
 	 * @return string The stored message id.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function recordSentEmail(
@@ -396,7 +397,7 @@ class CaseEmailService {
 	 *
 	 * @throws \RuntimeException If template not found or sending fails
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function sendFromTemplate(
 		string $caseId,
@@ -473,7 +474,7 @@ class CaseEmailService {
 	 *
 	 * @return string The resolved string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveVariables(string $template, array $data): string {
 		return $this->substituteVariables(
@@ -494,7 +495,7 @@ class CaseEmailService {
 	 *
 	 * @return string The resolved string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveVariablesRaw(string $template, array $data): string {
 		return $this->substituteVariables(
@@ -513,7 +514,7 @@ class CaseEmailService {
 	 *
 	 * @return string The resolved string
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function substituteVariables(string $template, array $data, string $escaping): string {
 		return preg_replace_callback(
@@ -544,7 +545,7 @@ class CaseEmailService {
 	 *
 	 * @return array<string> List of unresolved variable names
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function findUnresolvedVariables(string $template, array $data): array {
 		$unresolved = [];
@@ -566,7 +567,7 @@ class CaseEmailService {
 	 *
 	 * @return string|null The extracted case identifier or null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function extractCaseNumber(string $subject): ?string {
 		if (preg_match(self::CASE_NUMBER_PATTERN, $subject, $matches) === 1) {
@@ -587,7 +588,7 @@ class CaseEmailService {
 	 *
 	 * @return array<string, mixed> Processing result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function processInbound(
 		string $from,
@@ -596,44 +597,75 @@ class CaseEmailService {
 		string $body,
 		string $inReplyTo = '',
 	): array {
-		$caseNumber = $this->extractCaseNumber(subject: $subject);
+		return $this->receive(
+			email: new ReceivedEmail(from: $from, to: $to, subject: $subject, body: $body, inReplyTo: $inReplyTo)
+		);
+	}//end processInbound()
 
-		if ($caseNumber !== null) {
-			// Auto-link to case.
-			$caseId = $this->repository->findCaseIdByIdentifier(identifier: $caseNumber);
-			if ($caseId !== null) {
-				$messageId = $this->repository->recordReceivedEmail(
-					caseId: $caseId,
-					from: $from,
-					recipient: $to,
-					subject: $subject,
-					body: $body,
-					inReplyTo: $inReplyTo,
-				);
-
-				$this->logger->info(
-					'Inbound email auto-linked to case ' . $caseId,
-					['app' => Application::APP_ID],
-				);
-
-				return [
-					'linked' => true,
-					'caseId' => $caseId,
-					'messageId' => $messageId,
-					'method' => 'auto',
-				];
-			}//end if
-		}//end if
+	/**
+	 * Link a received email to the case its subject names, or answer it unlinked.
+	 *
+	 * @param ReceivedEmail $email The email.
+	 *
+	 * @return array<string, mixed> Processing result
+	 */
+	private function receive(ReceivedEmail $email): array {
+		$caseNumber = $this->extractCaseNumber(subject: $email->subject);
+		$caseId = $this->caseNamed(caseNumber: $caseNumber);
+		if ($caseId !== null) {
+			return $this->linkToCase(email: $email, caseId: $caseId);
+		}
 
 		// Could not auto-link; add to unlinked queue.
 		return [
 			'linked' => false,
 			'caseNumber' => $caseNumber,
-			'from' => $from,
-			'subject' => $subject,
+			'from' => $email->from,
+			'subject' => $email->subject,
 			'method' => 'unlinked',
 		];
-	}//end processInbound()
+	}//end receive()
+
+	/**
+	 * The case a case number names, or null when it names none or there is none.
+	 *
+	 * @param string|null $caseNumber The case number, or null when the subject named none.
+	 *
+	 * @return string|null The case id.
+	 */
+	private function caseNamed(?string $caseNumber): ?string {
+		if ($caseNumber === null) {
+			return null;
+		}
+
+		return $this->repository->findCaseIdByIdentifier(identifier: $caseNumber);
+	}//end caseNamed()
+
+	/**
+	 * Record a received email on its case, and log the auto-link.
+	 *
+	 * @param ReceivedEmail $email  The email.
+	 * @param string        $caseId The case it names.
+	 *
+	 * @return array<string, mixed> Processing result
+	 */
+	private function linkToCase(ReceivedEmail $email, string $caseId): array {
+		$messageId = $this->repository->recordReceivedEmail(
+			caseId: $caseId,
+			from: $email->from,
+			recipient: $email->to,
+			subject: $email->subject,
+			body: $email->body,
+			inReplyTo: $email->inReplyTo,
+		);
+
+		$this->logger->info(
+			'Inbound email auto-linked to case ' . $caseId,
+			['app' => Application::APP_ID],
+		);
+
+		return ['linked' => true, 'caseId' => $caseId, 'messageId' => $messageId, 'method' => 'auto'];
+	}//end linkToCase()
 
 	/**
 	 * Get email templates for a case type.
@@ -642,7 +674,7 @@ class CaseEmailService {
 	 *
 	 * @return array<int, array<string, mixed>> List of templates
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getTemplatesForCaseType(string $caseTypeId): array {
 		return $this->repository->findTemplatesForCaseType(caseTypeId: $caseTypeId);

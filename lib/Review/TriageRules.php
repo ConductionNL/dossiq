@@ -209,30 +209,21 @@ class TriageRules {
 	public function apply(string $caseId): array {
 		$rules = $this->activeRules(caseId: $caseId);
 		$counts = array_fill_keys(array_map(static fn (array $rule): string => (string)$rule['name'], $rules), 0);
-		$considered = 0;
 		if ($rules === []) {
 			return ['counts' => $counts, 'marked' => 0, 'considered' => 0];
 		}
 
 		$created = 0;
 		$reviews = $this->reviews->forCase(caseId: $caseId);
-		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
-			$review = ($reviews[$documentId] ?? ['case' => $caseId, 'documentRef' => $documentId, 'relevance' => DocumentRelevance::UNMARKED]);
-			if ($this->isOpenToRules(review: $review) === false) {
-				continue;
-			}
-
-			$considered++;
+		$open = $this->reviewsOpenToRules(caseId: $caseId, reviews: $reviews);
+		$considered = count($open);
+		foreach ($open as [$documentId, $review]) {
 			$rule = $this->firstMatch(caseId: $caseId, documentId: $documentId, rules: $rules);
 			if ($rule === null) {
 				continue;
 			}
 
-			$review['relevance'] = (string)$rule['effect'];
-			$review['relevanceSource'] = 'rule';
-			$review['rule'] = (string)$rule['name'];
-			$review['markedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-			$this->reviews->save(review: $review);
+			$this->reviews->save(review: $this->markedByRule(review: $review, rule: $rule));
 			$counts[(string)$rule['name']]++;
 			if (isset($reviews[$documentId]) === false) {
 				$created++;
@@ -244,6 +235,43 @@ class TriageRules {
 
 		return ['counts' => $counts, 'marked' => array_sum($counts), 'considered' => $considered];
 	}//end apply()
+
+	/**
+	 * A review as the rule marks it: its effect, the rule as source and name, and the moment.
+	 *
+	 * @param array<string, mixed> $review The review.
+	 * @param array<string, mixed> $rule   The rule that matched.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function markedByRule(array $review, array $rule): array {
+		$review['relevance'] = (string)$rule['effect'];
+		$review['relevanceSource'] = 'rule';
+		$review['rule'] = (string)$rule['name'];
+		$review['markedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+
+		return $review;
+	}//end markedByRule()
+
+	/**
+	 * The documents of the case a rule may still mark, in order, each with its review (a new one when it has none).
+	 *
+	 * @param string                              $caseId  The case UUID.
+	 * @param array<string, array<string, mixed>> $reviews The case's reviews, by document.
+	 *
+	 * @return list<array{0: string, 1: array<string, mixed>}> Document id and review.
+	 */
+	private function reviewsOpenToRules(string $caseId, array $reviews): array {
+		$open = [];
+		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
+			$review = ($reviews[$documentId] ?? ['case' => $caseId, 'documentRef' => $documentId, 'relevance' => DocumentRelevance::UNMARKED]);
+			if ($this->isOpenToRules(review: $review) === true) {
+				$open[] = [$documentId, $review];
+			}
+		}
+
+		return $open;
+	}//end reviewsOpenToRules()
 
 	/**
 	 * Whether a rule may mark this review: unmarked, and never marked by a reviewer.

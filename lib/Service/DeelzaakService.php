@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Service for parent-child (deelzaak) case relations.
  *
- * @spec openspec/changes/deelzaak-support/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
  */
 class DeelzaakService {
 
@@ -102,7 +102,7 @@ class DeelzaakService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T01
 	 */
 	public function listSubCases(string $parentCaseUuid): array {
 		if ($parentCaseUuid === '') {
@@ -141,7 +141,7 @@ class DeelzaakService {
 	 *
 	 * @return array<string, int>
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T03
 	 */
 	public function getSubCaseCounts(array $parentUuids): array {
 		$counts = $this->initialiseCountBuckets(parentUuids: $parentUuids);
@@ -217,7 +217,7 @@ class DeelzaakService {
 	 *
 	 * @return array<string, mixed>|null The parent case, or null.
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T02
 	 */
 	public function getParentCase(string $childCaseUuid): ?array {
 		if ($childCaseUuid === '') {
@@ -254,7 +254,7 @@ class DeelzaakService {
 	 *
 	 * @return array{ok: bool, reason?: string}
 	 *
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
 	 */
 	public function validateCreate(string $parentCaseUuid, string $childCaseTypeId): array {
 		// `validateCreate` receives the PARENT's own UUID (the proposed

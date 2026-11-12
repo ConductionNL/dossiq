@@ -26,7 +26,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+ * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
  * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
  */
 
@@ -46,7 +46,7 @@ use OCP\IUserManager;
 /**
  * Reads and writes the per-user list of case types in the menu.
  *
- * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+ * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
  */
 class MenuCaseTypesService {
 
@@ -151,7 +151,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return array<int, array{id: string, title: string, icon?: string}> The offered case types.
 	 *
-	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
 	 */
 	public function offeredCaseTypes(string $userId): array {
@@ -192,7 +192,7 @@ class MenuCaseTypesService {
 	 * @return array<int, array{id: string, title: string, icon?: string}> The case types; empty when
 	 *   OpenRegister is unavailable or the register or schema is unconfigured.
 	 *
-	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 */
 	public function visibleCaseTypes(): array {
 		return array_map(
@@ -231,7 +231,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return array<int, array{id: string, title: string, identifier: string, icon: string, teams: array<int, string>}> The case types.
 	 *
-	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 * @spec openspec/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
 	 * @spec openspec/specs/case-type-navigation/spec.md
 	 */
@@ -335,7 +335,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return array<int, array{id: string, title: string}> The chosen case types in menu order.
 	 *
-	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 */
 	public function chosen(string $userId, array $visible): array {
 		$stored = $this->config->getUserValue(
@@ -367,7 +367,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return array<int, array{id: string, title: string}> The kept case types in order.
 	 *
-	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 */
 	private function keepVisible(array $ids, array $visible): array {
 		$byId = array_column($visible, null, 'id');
@@ -417,7 +417,7 @@ class MenuCaseTypesService {
 	 *
 	 * @return string|null The UUID, or null when none is resolvable.
 	 *
-	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 */
 	private function resolveUuid(array $object): ?string {
 		$self = ($object['@self'] ?? null);

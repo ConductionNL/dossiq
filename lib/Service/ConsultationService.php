@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -42,7 +42,7 @@ use RuntimeException;
  * status transitions, advice responses, deadline extensions, and dependency
  * cycle detection per Awb 3:5-3:9.
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
  */
 class ConsultationService {
 
@@ -132,7 +132,7 @@ class ConsultationService {
 	 *
 	 * @throws \RuntimeException If OpenRegister unavailable, required fields missing, or decidesk fails closed
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
@@ -217,7 +217,7 @@ class ConsultationService {
 	 *
 	 * @return array<int, array<string, mixed>> List of consultations
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getConsultationsForCase(string $caseId): array {
 		return $this->records->repository->getConsultationsForCase(caseId: $caseId);
@@ -230,7 +230,7 @@ class ConsultationService {
 	 *
 	 * @return array<string, mixed>|null The consultation data or null if not found
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getConsultation(string $consultationId): ?array {
 		return $this->records->repository->getConsultation(consultationId: $consultationId);
@@ -246,7 +246,7 @@ class ConsultationService {
 	 *
 	 * @throws \RuntimeException If invalid status, invalid transition, or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function updateStatus(string $consultationId, string $newStatus): array {
 		if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
@@ -307,7 +307,7 @@ class ConsultationService {
 	 *
 	 * @throws \RuntimeException If invalid response type or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function submitResponse(string $consultationId, array $response): array {
 		$advies = $response['advice'] ?? '';
@@ -357,7 +357,7 @@ class ConsultationService {
 	 *
 	 * @throws \RuntimeException If OpenRegister is unavailable
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function deleteConsultation(string $consultationId): bool {
 		return $this->records->repository->deleteConsultation(consultationId: $consultationId);
@@ -370,7 +370,7 @@ class ConsultationService {
 	 *
 	 * @return array<int, array<string, mixed>> List of overdue consultations
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getOverdueConsultations(?callable $mayRead = null): array {
 		$overdue = $this->records->repository->getOverdueConsultations();
@@ -391,7 +391,7 @@ class ConsultationService {
 	 *
 	 * @return array<int, array<string, mixed>> Blocking consultations
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function getBlockingConsultations(string $caseId): array {
 		$all = $this->getConsultationsForCase(caseId: $caseId);
@@ -419,7 +419,7 @@ class ConsultationService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	public function consultationBlocks(array $consultation): bool {
 		if (($consultation['mandatory'] ?? false) !== true) {
@@ -444,7 +444,7 @@ class ConsultationService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function settleAdviceObligation(string $consultationId, string $newStatus): void {
 		if ($this->consultationBlocks(consultation: ['mandatory' => true, 'status' => $newStatus]) === true) {
@@ -489,7 +489,7 @@ class ConsultationService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 * @spec openspec/specs/consultation-management/spec.md
 	 */
 	private function placeAdviceObligation(string $consultationId, array $data): void {
 		if (($data['mandatory'] ?? false) !== true) {
@@ -520,7 +520,7 @@ class ConsultationService {
 	 *
 	 * @return bool True if a cycle would be created
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function validateDependencyCycle(string $consultationId, array $dependsOn): bool {
 		return $this->records->dependencyGraph->wouldCreateCycle(
@@ -541,7 +541,7 @@ class ConsultationService {
 	 *
 	 * @throws \RuntimeException If OpenRegister is unavailable
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function requestExtension(string $consultationId, string $justification): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -582,7 +582,7 @@ class ConsultationService {
 	 *
 	 * @throws \RuntimeException If OpenRegister is unavailable or date format invalid
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-02
 	 */
 	public function approveExtension(string $consultationId, string $newDeadline): array {
 		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $newDeadline) !== 1) {

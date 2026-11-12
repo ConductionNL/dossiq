@@ -55,7 +55,7 @@ use Throwable;
  * REQ-ZV-02, and one performed across a selection with no reason recorded is
  * unauditable afterwards.
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) `BulkActionResult` is a value object
  * whose constructor is PRIVATE: `applied()`, `skipped()`, `refused()` and
@@ -72,7 +72,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public const ID = 'dossiq:move-case-type-version';
 
@@ -84,7 +84,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		private readonly CaseVersionMove $move,
@@ -97,7 +97,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -108,7 +108,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Move the cases to another version of their case type');
@@ -119,7 +119,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return string The description.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t(
@@ -132,7 +132,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return bool True.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return true;
@@ -147,7 +147,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return array<int, string> The homogeneity guard.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function getGuards(): array {
 		return [BulkActionInterface::GUARD_HOMOGENEITY];
@@ -166,7 +166,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @throws InvalidArgumentException When no target version or no reason is named.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		if (trim((string)($parameters['target'] ?? '')) === '') {
@@ -189,7 +189,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
 		$object = $step->object;
@@ -234,7 +234,7 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @throws RefusedException When the case or the target cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rehearse(string $caseId, string $target): BulkActionResult {
 		$preview = $this->move->preview(caseId: $caseId, targetCaseTypeId: $target);

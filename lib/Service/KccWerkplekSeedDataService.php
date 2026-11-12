@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Seeds the default KCC quick-actions and example belplannen into OpenRegister.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
  */
 class KccWerkplekSeedDataService {
 	use SearchesObjects;
@@ -60,7 +60,7 @@ class KccWerkplekSeedDataService {
 	 *
 	 * @return array<string, mixed> Result with 'success' and either 'message' or per-kind counts.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/specs.md
 	 */
 	public function seed(): array {
 		$objectService = $this->settingsService->getObjectService();

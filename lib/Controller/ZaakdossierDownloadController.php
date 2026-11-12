@@ -31,7 +31,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class ZaakdossierDownloadController extends Controller {
 	/**
@@ -111,7 +111,7 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function downloadZip(string $caseId): DataDownloadResponse|JSONResponse {
 		$user = $this->readerOf(caseId: $caseId);
@@ -149,7 +149,7 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @return IUser|JSONResponse
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	private function readerOf(string $caseId): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
@@ -176,7 +176,7 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $register, $schema and $fileId are
 	 * URL segments of the route
@@ -214,7 +214,7 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function downloadZgwDocumenten(string $uuid): RangeStreamResponse|JSONResponse {
 		$user = $this->userSession->getUser();

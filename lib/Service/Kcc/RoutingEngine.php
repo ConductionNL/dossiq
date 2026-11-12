@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use DateTimeImmutable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+ * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
  */
 class RoutingEngine {
 	/**
@@ -59,7 +59,7 @@ class RoutingEngine {
 	 *
 	 * @return array<string, mixed>|null The routing result, or null when unmatched.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function evaluate(array $rules, array $contactMoment, ?\DateTimeImmutable $now = null): ?array {
 		$now = ($now ?? new DateTimeImmutable());
@@ -89,7 +89,7 @@ class RoutingEngine {
 	 *
 	 * @return bool True when all conditions match.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function ruleMatches(array $rule, array $contactMoment, \DateTimeImmutable $now): bool {
 		$conditions = ($rule['matchConditions'] ?? []);
@@ -189,7 +189,7 @@ class RoutingEngine {
 	 *
 	 * @return array<int, array<string, mixed>> Ranked agents with motivation.
 	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
+	 * @spec openspec/changes/archive/2026-06-13-kcc-klantcontact-integratie/tasks.md#TASK-KCC-03
 	 */
 	public function rankAgents(array $agents, string $team, array $contactMoment, int $limit = 3): array {
 		$domain = strtolower((string)($contactMoment['assignedDomain'] ?? ''));

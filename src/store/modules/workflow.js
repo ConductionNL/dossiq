@@ -14,6 +14,134 @@ import { useEngineTaskStore } from './engineTask.js'
 import { useObjectStore } from './object.js'
 
 /**
+ * Post the publish of a workflow definition to dossiq's canonical write
+ * path.
+ *
+ * @param {string} templateId UUID of the template to publish.
+ * @return {Promise<Response>} The response.
+ */
+function requestPublish(templateId) {
+	return fetch(
+		generateUrl(`/apps/dossiq/api/workflow-definitions/${templateId}/publish`),
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				requesttoken: OC.requestToken,
+				'OCS-APIREQUEST': 'true',
+			},
+		},
+	)
+}
+
+/**
+ * Keep the definition a publish answered, or the reason it was refused.
+ *
+ * @param {object} store The workflow store.
+ * @param {Response} response The publish response.
+ * @return {Promise<object|null>} The published definition, or null.
+ */
+async function keepPublishedDefinition(store, response) {
+	const body = await response.json().catch(() => null)
+	if (!response.ok || !body?.success) {
+		store.error =
+			body?.error
+			|| t('dossiq', 'Could not publish workflow definition')
+		return null
+	}
+
+	store.currentTemplate = body.definition
+	store.validationErrors = []
+	return body.definition
+}
+
+/**
+ * The engine task a createTask action asks for, on the case the transition
+ * ran against.
+ *
+ * @param {object} action The task creation action.
+ * @param {object} caseData The case object.
+ * @return {object} The engine create payload.
+ */
+function createTaskPayload(action, caseData) {
+	return {
+		...taskTexts(action),
+		case: caseData.id,
+		status: 'available',
+		...taskRouting(action),
+	}
+}
+
+/**
+ * The title and description a createTask action gives its task, defaulted.
+ *
+ * @param {object} action The task creation action.
+ * @return {{title: string, description: string}} The texts.
+ */
+function taskTexts(action) {
+	return {
+		title: action.title || t('dossiq', 'New task'),
+		description: action.description || '',
+	}
+}
+
+/**
+ * The priority and assignee a createTask action gives its task, defaulted.
+ * The assignee stays '' rather than null: the engine's create payload drops
+ * empty strings and would send a literal "null".
+ *
+ * @param {object} action The task creation action.
+ * @return {{priority: string, assignee: string}} The routing.
+ */
+function taskRouting(action) {
+	return {
+		priority: action.priority || 'normal',
+		assignee: action.assignee || '',
+	}
+}
+
+/**
+ * The title and description of a new step, defaulted.
+ *
+ * @param {object} stepData Step properties.
+ * @return {{title: string, description: string}} The texts.
+ */
+function stepTexts(stepData) {
+	return {
+		title: stepData.title || t('dossiq', 'New step'),
+		description: stepData.description || '',
+	}
+}
+
+/**
+ * The role, requirement, checklist and automatic actions of a new step,
+ * defaulted.
+ *
+ * @param {object} stepData Step properties.
+ * @return {{assigneeRole: string|null, isRequired: boolean, checklist: Array, automaticActions: Array}} The rules.
+ */
+function stepRules(stepData) {
+	return {
+		assigneeRole: stepData.assigneeRole || null,
+		isRequired: stepData.isRequired || false,
+		checklist: stepData.checklist || [],
+		automaticActions: stepData.automaticActions || [],
+	}
+}
+
+/**
+ * Write the steps onto the current template, when there is one.
+ *
+ * @param {object|null} template The current workflow template.
+ * @param {Array} steps The steps.
+ */
+function writeSteps(template, steps) {
+	if (template) {
+		template.steps = JSON.stringify(steps)
+	}
+}
+
+/**
  * Generate a UUID v4.
  *
  * @return {string} A new UUID
@@ -399,39 +527,10 @@ export const useWorkflowStore = defineStore('workflow', {
 				return null
 			}
 
-			this.loading = true
-			try {
-				const response = await fetch(
-					generateUrl(
-						`/apps/dossiq/api/workflow-definitions/${templateId}/publish`,
-					),
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							requesttoken: OC.requestToken,
-							'OCS-APIREQUEST': 'true',
-						},
-					},
-				)
-
-				const body = await response.json().catch(() => null)
-				if (!response.ok || !body?.success) {
-					this.error =
-						body?.error
-						|| t('dossiq', 'Could not publish workflow definition')
-					return null
-				}
-
-				this.currentTemplate = body.definition
-				this.validationErrors = []
-				return body.definition
-			} catch (err) {
-				this.error = err.message
-				return null
-			} finally {
-				this.loading = false
-			}
+			return this.whileLoading(null, async () => {
+				const response = await requestPublish(templateId)
+				return keepPublishedDefinition(this, response)
+			})
 		},
 
 		/**
@@ -806,14 +905,9 @@ export const useWorkflowStore = defineStore('workflow', {
 			// all of them: the case pane, the widgets and the work queue
 			// all ask the engine.
 			const engineTasks = useEngineTaskStore()
-			const created = await engineTasks.create({
-				title: action.title || t('dossiq', 'New task'),
-				description: action.description || '',
-				case: caseData.id,
-				status: 'available',
-				priority: action.priority || 'normal',
-				assignee: action.assignee || '',
-			})
+			const created = await engineTasks.create(
+				createTaskPayload(action, caseData),
+			)
 
 			if (created === null) {
 				// LOUD. `dispatchActions` records a per-action result and
@@ -1161,19 +1255,13 @@ export const useWorkflowStore = defineStore('workflow', {
 			const stepsInStatus = steps.filter((s) => s.status === statusId)
 			const newStep = {
 				id: generateUUID(),
-				title: stepData.title || t('dossiq', 'New step'),
-				description: stepData.description || '',
+				...stepTexts(stepData),
 				status: statusId,
 				order: stepsInStatus.length + 1,
-				assigneeRole: stepData.assigneeRole || null,
-				isRequired: stepData.isRequired || false,
-				checklist: stepData.checklist || [],
-				automaticActions: stepData.automaticActions || [],
+				...stepRules(stepData),
 			}
 			steps.push(newStep)
-			if (this.currentTemplate) {
-				this.currentTemplate.steps = JSON.stringify(steps)
-			}
+			writeSteps(this.currentTemplate, steps)
 			return newStep
 		},
 

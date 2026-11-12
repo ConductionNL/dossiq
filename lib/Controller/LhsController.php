@@ -48,7 +48,7 @@ use Throwable;
 /**
  * Controller for LHS engine actions.
  *
- * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
  *
  * @psalm-suppress UnusedClass
  */
@@ -93,7 +93,7 @@ class LhsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
 	 */
 	public function recommend(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -137,7 +137,7 @@ class LhsController extends Controller {
 	 *
 	 * @return int|null
 	 *
-	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
 	 */
 	private function requestedVersion(): ?int {
 		$versionParam = $this->request->getParam('lhsVersion');
@@ -153,7 +153,7 @@ class LhsController extends Controller {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
 	 */
 	private function requestedInspection(): ?string {
 		$inspection = $this->request->getParam('inspection');
@@ -171,7 +171,7 @@ class LhsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
 	 */
 	private function recommendFailed(Throwable $exception): JSONResponse {
 		if ($exception instanceof RuntimeException) {
@@ -192,7 +192,7 @@ class LhsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
 	 */
 	private function badRequest(string $error): JSONResponse {
 		return new JSONResponse(['error' => $error], Http::STATUS_BAD_REQUEST);
@@ -205,7 +205,7 @@ class LhsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
 	 */
 	private function serverError(string $error): JSONResponse {
 		return new JSONResponse(['error' => $error], Http::STATUS_INTERNAL_SERVER_ERROR);
@@ -216,7 +216,7 @@ class LhsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
 	 */
 	private function unauthenticated(): JSONResponse {
 		return new JSONResponse(
@@ -295,7 +295,7 @@ class LhsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
 	 */
 	public function override(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -336,7 +336,7 @@ class LhsController extends Controller {
 	 *
 	 * @return string `manager` or `inspector`.
 	 *
-	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
 	 */
 	private function roleOf(IUser $user): string {
 		$declaredRole = (string)$this->request->getParam('userRole', '');
@@ -359,7 +359,7 @@ class LhsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-vth-module/tasks.md#task-8
 	 */
 	public function lookup(): JSONResponse {
 		$user = $this->userSession->getUser();

@@ -62,7 +62,7 @@ use Psr\Log\LoggerInterface;
  * document from the case folder is the follow-up, and it is OpenRegister's to
  * offer: see the DQ1 PR body.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
 class ZgwDocumentService {
 	/**
@@ -101,7 +101,7 @@ class ZgwDocumentService {
 	 *
 	 * @return int The file size in bytes
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function storeBase64(string $uuid, string $fileName, string $content): int {
 		$decoded = base64_decode(string: $content, strict: true);
@@ -125,7 +125,7 @@ class ZgwDocumentService {
 	 *
 	 * @return int The file size in bytes
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function storeRaw(string $uuid, string $fileName, string $content): int {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
@@ -145,7 +145,7 @@ class ZgwDocumentService {
 	 *
 	 * @throws NotFoundException If the file does not exist.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getContent(string $uuid, string $fileName): string {
 		return $this->locateFile(uuid: $uuid, fileName: $fileName)->getContent();
@@ -179,7 +179,7 @@ class ZgwDocumentService {
 	 *
 	 * @return bool True if the file exists
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function fileExists(string $uuid, string $fileName): bool {
 		try {
@@ -197,7 +197,7 @@ class ZgwDocumentService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function deleteFiles(string $uuid): void {
 		try {
@@ -232,7 +232,7 @@ class ZgwDocumentService {
 	 *
 	 * @throws NotFoundException If the file does not exist.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getMimeType(string $uuid, string $fileName): string {
 		return $this->locateFile(uuid: $uuid, fileName: $fileName)->getMimeType();
@@ -250,7 +250,7 @@ class ZgwDocumentService {
 	 *
 	 * @return int The chunk size in bytes
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function storeChunk(string $uuid, int $sequenceNumber, string $content): int {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
@@ -269,7 +269,7 @@ class ZgwDocumentService {
 	 *
 	 * @return array<int> List of volgnummers that have been uploaded
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getUploadedChunks(string $uuid, int $totalParts): array {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
@@ -301,7 +301,7 @@ class ZgwDocumentService {
 	 *
 	 * @throws InvalidArgumentException If not all chunks are present.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function mergeChunks(string $uuid, string $fileName, int $totalParts): int {
 		$folder = $this->getDocumentFolder(uuid: $uuid);

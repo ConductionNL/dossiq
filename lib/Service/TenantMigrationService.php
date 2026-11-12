@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+ * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
  *
  * @link https://conduction.nl
  */
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Migrates legacy procest `tenant` objects to OR Organisations.
  *
- * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+ * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
  */
 class TenantMigrationService {
 
@@ -215,7 +215,7 @@ class TenantMigrationService {
 	 *               mappings:array<int,array{tenant:string, organisation:string}>,
 	 *               collisions:array<int,array{tenant:string, slug:string, heldBy:string}>}
 	 *
-	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-tenant-to-or-tenant/tasks.md
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function migrate(string $mode = self::MODE_APPLY): array {

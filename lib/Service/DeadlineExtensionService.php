@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use RuntimeException;
 /**
  * AWB 4:14 verlenging engine on a TermijnInstance.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
  */
 class DeadlineExtensionService {
 	/**
@@ -108,7 +108,7 @@ class DeadlineExtensionService {
 	 * @throws RuntimeException With validation failures (cited AWB rule).
 	 * @throws RefusedException When the move is longer than the case type declares.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
 	public function requestExtension(
 		string $termInstanceId,
@@ -224,7 +224,7 @@ class DeadlineExtensionService {
 	 * @throws RuntimeException With validation failures (cited AWB rule).
 	 * @throws RefusedException When the move is longer than the case type declares.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
 	public function requestSupervisorExtension(
 		string $termInstanceId,
@@ -255,7 +255,7 @@ class DeadlineExtensionService {
 	 * @throws RuntimeException With validation failures (cited AWB rule).
 	 * @throws RefusedException When the move is longer than the case type declares.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md
 	 */
 	private function applyExtension(
@@ -464,7 +464,7 @@ class DeadlineExtensionService {
 	 *
 	 * @throws RefusedException When the move is longer than the declared period.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function assertWithinDeclaredPeriod(array $instance, int $days, string $mode): void {
 		if ($mode === self::MODE_SUPERVISOR || $this->declarations === null) {

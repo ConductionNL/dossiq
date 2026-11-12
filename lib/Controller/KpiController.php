@@ -46,7 +46,7 @@ use Psr\Log\LoggerInterface;
  * The `KpiCacheInvalidationListener` increments the version counter on any
  * OpenRegister object event, causing the next GET to compute fresh data.
  *
- * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T09
+ * @spec openspec/changes/archive/2026-05-11-add-server-side-kpi-aggregation/tasks.md#T09
  */
 class KpiController extends Controller {
 
@@ -106,7 +106,7 @@ class KpiController extends Controller {
 	 *
 	 * @return JSONResponse JSON response with KPI data
 	 *
-	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-05-11-add-server-side-kpi-aggregation/tasks.md#T09
 	 */
 	public function index(): JSONResponse {
 		$user = $this->userSession->getUser();

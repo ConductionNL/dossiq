@@ -36,7 +36,7 @@ use Throwable;
  *
  * The consuming class supplies MARKER_PREFIX, a logger and a container.
  *
- * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+ * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
 trait ProjectsOntoFlows {
 

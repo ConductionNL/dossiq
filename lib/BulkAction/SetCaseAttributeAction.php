@@ -48,7 +48,7 @@ use Throwable;
  * TYPE version the case runs on, and it is the second that carries the
  * vocabulary a handler is about to overwrite.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) `BulkActionResult` is a value object
  * whose constructor is PRIVATE: `applied()`, `skipped()`, `refused()` and
@@ -65,7 +65,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public const ID = 'dossiq:set-case-attribute';
 
@@ -80,7 +80,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @var array<int, string>
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private const NOT_WRITABLE = [
 		'id',
@@ -99,7 +99,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -112,7 +112,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -123,7 +123,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Set one field on the cases');
@@ -134,7 +134,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return string The description.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t('Writes one value into one field on every selected case, refusing a selection that spans two case type versions.');
@@ -145,7 +145,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return bool False.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return false;
@@ -156,7 +156,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @return array<int, string> The homogeneity guard.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getGuards(): array {
 		return [BulkActionInterface::GUARD_HOMOGENEITY];
@@ -171,7 +171,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @throws InvalidArgumentException When the property is absent, reserved, or no value is given.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		$property = trim((string)($parameters['property'] ?? ''));
@@ -198,7 +198,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The object service reads
 	 * the acting user from the session; the job runs as that user.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
 		$object = $step->object;
@@ -241,7 +241,7 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 *
 	 * @throws RuntimeException When OpenRegister or the case schema is not configured.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function write(string $caseId, array $case): void {
 		$objectService = $this->settingsService->getObjectService();

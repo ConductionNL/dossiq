@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
 
 declare(strict_types=1);
@@ -99,7 +99,7 @@ class TenantAuthenticationService {
 	 * @throws RefusedException When the matrix could not be read, so the answer is neither yes nor no.
 	 *
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
 		try {
@@ -183,7 +183,7 @@ class TenantAuthenticationService {
 	 * @throws RefusedException When the matrix store could not be read at all.
 	 *
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function loadActiveMatrix(string $tenantId): ?array {
 		$objectService = $this->getObjectService();

@@ -43,7 +43,7 @@ trait RefusesWhenIndeterminate {
 	 *
 	 * @throws RefusedException Always: that is the point of the call.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	private function refuseIndeterminate(string $rule, string $sentence, Throwable $previous): never {
 		throw new RefusedException(
@@ -71,7 +71,7 @@ trait RefusesWhenIndeterminate {
 	 *
 	 * @throws RefusedException When the read throws anything at all.
 	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	private function readOrRefuse(callable $read, string $what, string $rule, string $sentence): mixed {
 		try {

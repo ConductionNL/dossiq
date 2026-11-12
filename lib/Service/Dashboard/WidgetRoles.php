@@ -44,7 +44,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ namespace OCA\Dossiq\Service\Dashboard;
 /**
  * Reads the widget role declarations, and says what one reader may receive.
  *
- * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 class WidgetRoles {
 	/**
@@ -76,7 +76,7 @@ class WidgetRoles {
 	 *
 	 * @return array<int, array<string, mixed>> The widget definitions, in manifest order.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-every-dossiq-widget-declares-who-may-see-it-req-wrd-01
+	 * @spec openspec/specs/dashboard/spec.md#requirement-every-dossiq-widget-declares-who-may-see-it-req-wrd-01
 	 */
 	public function dashboardWidgets(array $manifest): array {
 		$widgets = [];
@@ -107,7 +107,7 @@ class WidgetRoles {
 	 * @param array<string, mixed> $page One manifest page.
 	 *
 	 * @return array<int, array<string, mixed>> The definitions.
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function definitionsOn(array $page): array {
@@ -156,7 +156,7 @@ class WidgetRoles {
 	 *
 	 * @return array<int, string> The roles, empty when it declares none.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-every-dossiq-widget-declares-who-may-see-it-req-wrd-01
+	 * @spec openspec/specs/dashboard/spec.md#requirement-every-dossiq-widget-declares-who-may-see-it-req-wrd-01
 	 */
 	public function rolesOf(array $widget): array {
 		$declared = ($widget[self::ROLES_KEY] ?? null);
@@ -189,7 +189,7 @@ class WidgetRoles {
 	 *
 	 * @return string One of `visible`, `hidden`, `unresolvable`.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function verdictFor(array $widget, array $held, array $known): string {
 		$roles = $this->rolesOf(widget: $widget);
@@ -227,7 +227,7 @@ class WidgetRoles {
 	 *
 	 * @return array<int, string> The field names.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function fieldsOf(array $widget): array {
 		$content = ($widget['content'] ?? ($widget['props']['content'] ?? []));
@@ -267,7 +267,7 @@ class WidgetRoles {
 	 * @return array{withhold: array<int, string>, unresolvable: array<int, string>}
 	 *         The fields to remove, and the widgets that could not be resolved.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function withheldFields(array $manifest, array $held, array $known): array {
 		$shown = [];
@@ -314,7 +314,7 @@ class WidgetRoles {
 	 *
 	 * @return array<string, mixed> The payload, narrowed.
 	 *
-	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 * @spec openspec/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
 	 */
 	public function narrow(array $payload, array $withhold): array {
 		foreach ($withhold as $field) {

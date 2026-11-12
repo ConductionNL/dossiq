@@ -36,7 +36,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use Throwable;
 /**
  * Reads and writes the handler and the coordinator on a case.
  *
- * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 class CaseSeats {
 
@@ -99,7 +99,7 @@ class CaseSeats {
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger          Says why a seat could not be read or written.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
+	 * @spec openspec/specs/people-on-the-case/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -116,7 +116,7 @@ class CaseSeats {
 	 *         The handler uid, the coordinator uid, and the uuid of the role
 	 *         record holding the coordinator seat ('' when the seat is empty).
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	public function seatsOf(array $case): array {
 		$caseId = $this->idOf(row: $case);
@@ -136,7 +136,7 @@ class CaseSeats {
 	 *
 	 * @return array<string, mixed> The role record, or [].
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	public function coordinatorBinding(string $caseId): array {
 		if ($caseId === '') {
@@ -168,7 +168,7 @@ class CaseSeats {
 	 *
 	 * @throws RuntimeException When the instance declares no coordinator role type.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	public function nameCoordinator(string $caseId, string $participant, string $displayName = ''): string {
 		$roleTypes = $this->coordinatorRoleTypes();
@@ -228,7 +228,7 @@ class CaseSeats {
 	 *
 	 * @return string The uid that came off the seat, '' when it was already empty.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	public function clearCoordinator(string $caseId): string {
 		$existing = $this->coordinatorBinding(caseId: $caseId);
@@ -267,7 +267,7 @@ class CaseSeats {
 	 *
 	 * @return array<int, string> The case uuids, in the order they were read.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	public function casesCoordinatedBy(string $uid): array {
 		$uid = trim($uid);
@@ -304,7 +304,7 @@ class CaseSeats {
 	 *
 	 * @return array<int, string> Their uuids.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
 	public function coordinatorRoleTypes(): array {
 		$types = [];

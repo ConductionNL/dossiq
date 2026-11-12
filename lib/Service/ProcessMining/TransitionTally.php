@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Service\ProcessMining;
 /**
  * The progress of one transition count; it never leaves the builder that built it.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 final class TransitionTally {
 

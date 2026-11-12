@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementOnCreateListener implements IEventListener {
 
@@ -81,7 +81,7 @@ class AcknowledgementOnCreateListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {

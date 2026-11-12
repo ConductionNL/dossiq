@@ -33,7 +33,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -64,7 +64,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseVersionController extends Controller {
 
@@ -84,7 +84,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -116,7 +116,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The versions, or 404 when the type is unreadable.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-the-case-type-page-shows-its-version-chain-req-zv-04
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-the-case-type-page-shows-its-version-chain-req-zv-04
 	 */
 	#[NoAdminRequired]
 	public function chain(string $id): JSONResponse {
@@ -140,7 +140,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The outcome, or 422 with what stood in the way.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-new-version-and-deprecate-are-actions-on-the-page-req-zv-05
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-new-version-and-deprecate-are-actions-on-the-page-req-zv-05
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function deprecate(string $id): JSONResponse {
@@ -173,7 +173,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The options, with the preview when a target is named.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	#[NoAdminRequired]
 	public function options(string $caseId): JSONResponse {
@@ -204,7 +204,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse What was applied, or the refusal naming the status.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	#[NoAdminRequired]
 	public function moveToVersion(string $caseId): JSONResponse {
@@ -240,7 +240,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return IUser|null The caller, or null when they may not.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function writerOf(string $caseId): ?IUser {
 		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
@@ -251,7 +251,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The 403.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function notYours(): JSONResponse {
 		return new JSONResponse(
@@ -268,7 +268,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The answer.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function broke(string $op, Throwable $e): JSONResponse {
 		$this->logger->error('CaseVersionController: ' . $op . ' failed', ['exception' => $e->getMessage()]);

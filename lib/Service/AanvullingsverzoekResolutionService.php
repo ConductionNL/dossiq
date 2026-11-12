@@ -44,7 +44,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Throwable;
 /**
  * The answer, the silence, and what each does to the clock.
  *
- * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 class AanvullingsverzoekResolutionService {
 
@@ -95,7 +95,7 @@ class AanvullingsverzoekResolutionService {
 	 * @throws RefusedException When nothing is open, or completion is claimed
 	 *                          with items still outstanding.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function recordAnswer(
 		string $caseId,
@@ -235,7 +235,7 @@ class AanvullingsverzoekResolutionService {
 	 *
 	 * @return boolean True when it has run out.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function hasRunOut(array $request, ?DateTimeImmutable $now = null): bool {
 		if ((string)($request['state'] ?? '') !== 'open') {
@@ -282,7 +282,7 @@ class AanvullingsverzoekResolutionService {
 	 * @return array<string, mixed>|null The expired request, or null when there
 	 *                                   was nothing open or it has not run out.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function expireIfRunOut(string $caseId, ?DateTimeImmutable $now = null): ?array {
 		$request = $this->requests->openFor(caseId: $caseId);
@@ -315,7 +315,7 @@ class AanvullingsverzoekResolutionService {
 	 *
 	 * @return array<int, array<string, mixed>> The items.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function markReceived(array $items, array $received, DateTimeImmutable $moment): array {
 		$marker = new ItemArrivalMarker(received: $received, moment: $moment);
@@ -336,7 +336,7 @@ class AanvullingsverzoekResolutionService {
 	 *
 	 * @return array<int, string> What is still outstanding.
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function outstanding(array $items): array {
 		$missing = [];

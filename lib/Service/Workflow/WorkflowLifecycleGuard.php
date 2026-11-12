@@ -106,7 +106,7 @@ class WorkflowLifecycleGuard {
 	 *
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function lastRefusals(): array {
 		return $this->lastRefusals;
@@ -405,7 +405,7 @@ class WorkflowLifecycleGuard {
 	 *
 	 * @return boolean True when every task declaration resolves.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function taskDeclarationsResolve(array $definition, string $id): bool {
 		$this->lastRefusals = [];

@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * Counts a series' firings and reads the cases it opened.
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 class PlannedSeriesLedger {
 
@@ -118,7 +118,7 @@ class PlannedSeriesLedger {
 	 *
 	 * @return integer The count including the firing just observed.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function firedCount(string $flowId, mixed $lastRunAt): int {
 		$stamp = '';
@@ -151,7 +151,7 @@ class PlannedSeriesLedger {
 	 *
 	 * @return array<int, array{id: string, title: string}> The occurrences.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function occurrencesOf(string $flowId, bool $single): array {
 		if ($single === true) {
@@ -298,7 +298,7 @@ class PlannedSeriesLedger {
 	 *
 	 * @throws RuntimeException `flows_unavailable`, `case_not_found`, `stop_failed`.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function stopSeries(string $caseId, string $flowId, string $uid): array {
 		$service = $this->optional(name: self::FLOW_SERVICE);
@@ -384,7 +384,7 @@ class PlannedSeriesLedger {
 	 *
 	 * @return integer How many flows were switched off.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function retireSpent(?DateTimeImmutable $today = null): int {
 		$service = $this->optional(name: self::FLOW_SERVICE);

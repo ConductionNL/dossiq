@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+ * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IUser;
 /**
  * Builds the completeness answer of one case.
  *
- * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+ * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 class CaseCompleteness {
 
@@ -71,7 +71,7 @@ class CaseCompleteness {
 	 *
 	 * @return array<string, mixed>|null The answer (see check()), or null when the case is not found.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function forCase(string $caseId, IUser $user): ?array {
 		$case = $this->cases->loadCase(caseId: $caseId);
@@ -101,7 +101,7 @@ class CaseCompleteness {
 	 *
 	 * @return array<int, array<string, string>> The items, malformed ones left out.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function itemsOf(array $caseType): array {
 		$declared = ($caseType[IntakeRequirements::PROPERTY]['completenessItems'] ?? []);
@@ -199,17 +199,14 @@ class CaseCompleteness {
 	 *
 	 * @return array<string, mixed> `{ items, present, total, missing, verdict }`, or `{ items: [] }` without items.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function check(array $items, array $case, array $documents, array $readable): array {
 		if ($items === []) {
 			return ['items' => []];
 		}
 
-		$readableIds = [];
-		foreach ($readable as $document) {
-			$readableIds[] = $this->documentId(document: $document);
-		}
+		$readableIds = $this->documentIds(documents: $readable);
 
 		$rows    = [];
 		$present = 0;
@@ -222,20 +219,48 @@ class CaseCompleteness {
 			$rows[] = $row;
 		}
 
-		$total   = count($rows);
-		$verdict = 'incomplete';
-		if ($present === $total) {
-			$verdict = 'complete';
-		}
+		$total = count($rows);
 
 		return [
 			'items' => $rows,
 			'present' => $present,
 			'total' => $total,
 			'missing' => ($total - $present),
-			'verdict' => $verdict,
+			'verdict' => $this->verdictOf(present: $present, total: $total),
 		];
 	}//end check()
+
+	/**
+	 * The ids of documents.
+	 *
+	 * @param array<int, array<string, mixed>> $documents The documents.
+	 *
+	 * @return array<int, string>
+	 */
+	private function documentIds(array $documents): array {
+		$ids = [];
+		foreach ($documents as $document) {
+			$ids[] = $this->documentId(document: $document);
+		}
+
+		return $ids;
+	}//end documentIds()
+
+	/**
+	 * The verdict: complete when every item is present.
+	 *
+	 * @param int $present How many items are present.
+	 * @param int $total   How many items there are.
+	 *
+	 * @return string `complete` or `incomplete`.
+	 */
+	private function verdictOf(int $present, int $total): string {
+		if ($present === $total) {
+			return 'complete';
+		}
+
+		return 'incomplete';
+	}//end verdictOf()
 
 	/**
 	 * One item, ticked against the documents and then the case field.

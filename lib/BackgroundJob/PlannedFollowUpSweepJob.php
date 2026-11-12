@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Psr\Log\LoggerInterface;
  * It runs as the background service account, because cron has no user and
  * OpenRegister refuses a write from nobody.
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 class PlannedFollowUpSweepJob extends TimedJob {
 
@@ -92,7 +92,7 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
@@ -108,7 +108,7 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	private function work(): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {

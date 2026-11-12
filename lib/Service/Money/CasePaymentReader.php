@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * Reads a case's payment state from shillinq, or says it could not.
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 class CasePaymentReader {
 	/**
@@ -111,7 +111,7 @@ class CasePaymentReader {
 	 *
 	 * @return array{paymentState: string, paymentStateCheckedAt: string} The projection.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function stateOf(string $caseId): array {
 		$now = $this->time->getDateTime()->format('c');

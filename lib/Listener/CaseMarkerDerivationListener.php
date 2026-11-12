@@ -35,7 +35,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -59,7 +59,7 @@ use Psr\Log\LoggerInterface;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseMarkerDerivationListener implements IEventListener {
 
@@ -86,7 +86,7 @@ class CaseMarkerDerivationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function handle(Event $event): void {
 		(new PreSaveCheck(logger: $this->logger))->inspect(event: $event, inspect: $this->apply(...));

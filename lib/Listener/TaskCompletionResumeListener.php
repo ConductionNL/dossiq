@@ -95,7 +95,7 @@ class TaskCompletionResumeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof TaskTerminalEvent) === false) {
@@ -157,7 +157,7 @@ class TaskCompletionResumeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private function recordRefusal(FlowSignalRefused $refusal, string $runUuid, array $task, ?string $uid): void {
 		if ($refusal->getReason() === FlowSignalRefused::NOT_ASSIGNEE) {

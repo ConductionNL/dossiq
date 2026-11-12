@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Loads active workflow templates with per-request memoisation.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T03
  */
 class WorkflowTemplateLoader {
 

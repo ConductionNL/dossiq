@@ -52,7 +52,7 @@ use Throwable;
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+ * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
  */
 class CitizenLookupRecorder {
 
@@ -102,7 +102,7 @@ class CitizenLookupRecorder {
 	 *
 	 * @return bool True when the row was written. Never throws.
 	 *
-	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 * @spec openspec/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	public function record(
 		string $employeeId,

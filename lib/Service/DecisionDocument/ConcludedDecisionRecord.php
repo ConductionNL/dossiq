@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Resolves the record and case of a concluded decision, and records an advice deviation.
  *
- * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 class ConcludedDecisionRecord {
 
@@ -68,7 +68,7 @@ class ConcludedDecisionRecord {
 	 *
 	 * @return array{0:string,1:string,2:array<string,mixed>|null} [caseId, besluitId, decisionRecord].
 	 *
-	 * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 * @spec openspec/changes/archive/2026-09-09-dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
 	public function resolveCaseAndDecision(
 		object $objectService,

@@ -53,7 +53,7 @@ use Throwable;
 /**
  * The per-act, per-case-type role gate, with the missing role named.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class LifecycleActorGate {
 
@@ -92,7 +92,7 @@ class LifecycleActorGate {
 	 *
 	 * @return string The group id.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function roleFor(string $act, array $case): string {
 		return $this->rules->roleFor(caseTypeId: (string)($case['caseType'] ?? ''), act: $act);
@@ -106,7 +106,7 @@ class LifecycleActorGate {
 	 *
 	 * @return bool True when the act is permitted.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function may(string $act, array $case): bool {
 		$user = $this->userSession->getUser();
@@ -162,7 +162,7 @@ class LifecycleActorGate {
 	 *
 	 * @throws RefusedException When the caller may not perform the act.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function require(string $act, array $case): void {
 		if ($this->may(act: $act, case: $case) === true) {
@@ -184,7 +184,7 @@ class LifecycleActorGate {
 	 *
 	 * @return string The sentence, naming the role when one is declared.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function refusalSentence(string $act, array $case): string {
 		$user = $this->userSession->getUser();

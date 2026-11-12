@@ -839,4 +839,36 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$this->assertSame([], $store->all('documentReview'));
 		$this->assertSame(2, $result['outstanding']['count']);
 	}//end testARefusedVerdictMarksNothing()
+
+	/**
+	 * The partly public documents of a case are counted, and those without a redacted copy named.
+	 *
+	 * @return void
+	 */
+	public function testPartlyPublicDocumentsWithoutACopyAreNamed(): void {
+		$register = new InMemoryRegister();
+		$register->seed('wooDocumentAssessment', 'a-1', ['caseRef' => 'case-1', 'classification' => 'deels_openbaar', 'documentRef' => 'doc-1']);
+		$register->seed('wooDocumentAssessment', 'a-2', ['caseRef' => 'case-1', 'classification' => 'deels_openbaar', 'documentRef' => 'doc-2', 'redactedDocumentRef' => 'red-2']);
+		$register->seed('wooDocumentAssessment', 'a-3', ['caseRef' => 'case-1', 'classification' => 'openbaar', 'documentRef' => 'doc-3']);
+		$register->seed('wooDocumentAssessment', 'a-4', ['caseRef' => 'case-2', 'classification' => 'deels_openbaar', 'documentRef' => 'doc-4']);
+		$register->seed('wooDocumentAssessment', 'a-5', ['caseRef' => 'case-1', 'classification' => 'deels_openbaar', 'redactedDocumentRef' => '']);
+
+		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment'];
+		$service = function (?object $objects, array $config): WOODocumentAssessmentService {
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('getObjectService')->willReturn($objects);
+			$settings->method('getConfigValue')->willReturnCallback(
+				static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
+			);
+
+			return new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger));
+		};
+
+		$this->assertSame(['partlyPublic' => 3, 'waiting' => ['doc-1', '']], $service($register, $config)->partlyPublicWithoutCopy('case-1'));
+		$this->assertSame(['partlyPublic' => 0, 'waiting' => []], $service($register, ['register' => 'dossiq'])->partlyPublicWithoutCopy('case-1'));
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('OpenRegister is not available');
+		$service(null, $config)->partlyPublicWithoutCopy('case-1');
+	}//end testPartlyPublicDocumentsWithoutACopyAreNamed()
 }//end class

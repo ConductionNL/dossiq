@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use OCP\IRequest;
 /**
  * Public, declarative health endpoint backed by the AppHost engine.
  *
- * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+ * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
  */
 class HealthController extends GenericHealthController {
 
@@ -82,7 +82,7 @@ class HealthController extends GenericHealthController {
 	 *
 	 * @return JSONResponse `{status, app, version, checks}` with HTTP code per policy.
 	 *
-	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
+	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.3
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

@@ -58,7 +58,7 @@ use RuntimeException;
 /**
  * Complete, claim and attach to a task from the case it is on.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 class CaseTaskController extends Controller {
 
@@ -106,7 +106,7 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse `{claim: bool}`.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function capabilities(): JSONResponse {
@@ -120,7 +120,7 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse What happened, or a refusal naming what was missing.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function complete(string $taskId): JSONResponse {
@@ -152,7 +152,7 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse The outcome, or a refusal.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function claim(string $taskId): JSONResponse {
@@ -173,7 +173,7 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse The files now held against that task.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function attach(string $caseId, string $taskId): JSONResponse {
@@ -204,7 +204,7 @@ class CaseTaskController extends Controller {
 	 *
 	 * @return JSONResponse The files still held against that task.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function detach(string $caseId, string $taskId, string $fileId): JSONResponse {
