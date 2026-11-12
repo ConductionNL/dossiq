@@ -60,6 +60,24 @@ class LhsMatrixDecisionTableMigrator {
 	use SearchesObjects;
 
 	/**
+	 * The three axes a projected table is looked up by, in the order of a rule's input entries.
+	 *
+	 * @var array<int, array{name: string, type: string}>
+	 */
+	private const TABLE_INPUTS = [
+		['name' => 'severity', 'type' => 'string'],
+		['name' => 'behaviour', 'type' => 'string'],
+		['name' => 'actorType', 'type' => 'string'],
+	];
+
+	/**
+	 * The one answer a projected table gives.
+	 *
+	 * @var array<int, array{name: string, type: string}>
+	 */
+	private const TABLE_OUTPUTS = [['name' => 'intervention', 'type' => 'string']];
+
+	/**
 	 * Provenance marker written into the projected table's description.
 	 *
 	 * Resolved by marker rather than by name: a name is editable, and a re-run
@@ -367,66 +385,144 @@ class LhsMatrixDecisionTableMigrator {
 	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function tableFor(array $matrix, string $marker): ?array {
-		$axes = [
-			'severity' => $this->decode(value: ($matrix['severityAxis'] ?? null)),
-			'behaviour' => $this->decode(value: ($matrix['behaviourAxis'] ?? null)),
-			'actorType' => $this->decode(value: ($matrix['actorTypeAxis'] ?? null)),
-		];
+		$axes = $this->axesOf(matrix: $matrix);
 		$cells = $this->decode(value: ($matrix['cells'] ?? null));
 		if ($cells === [] || in_array([], $axes, true) === true) {
 			return null;
 		}
 
+		$rules = $this->rulesFor(cells: $cells, axes: $axes);
+		if ($rules === null) {
+			return null;
+		}
+
+		$table = $this->tableShell(matrix: $matrix, marker: $marker);
+		$table['rules'] = $rules;
+
+		return $table;
+	}//end tableFor()
+
+	/**
+	 * The matrix's three axes, decoded.
+	 *
+	 * @param array<string, mixed> $matrix The stored matrix.
+	 *
+	 * @return array{severity: array<int, mixed>, behaviour: array<int, mixed>, actorType: array<int, mixed>} The axes.
+	 */
+	private function axesOf(array $matrix): array {
+		return [
+			'severity' => $this->decode(value: ($matrix['severityAxis'] ?? null)),
+			'behaviour' => $this->decode(value: ($matrix['behaviourAxis'] ?? null)),
+			'actorType' => $this->decode(value: ($matrix['actorTypeAxis'] ?? null)),
+		];
+	}//end axesOf()
+
+	/**
+	 * One rule per cell, or null when a cell is off its axes.
+	 *
+	 * @param array<int, mixed>                $cells The matrix cells.
+	 * @param array<string, array<int, mixed>> $axes  The allowed values per axis.
+	 *
+	 * @return array<int, array<string, mixed>>|null The rules.
+	 */
+	private function rulesFor(array $cells, array $axes): ?array {
 		$rules = [];
 		foreach ($cells as $cell) {
-			foreach ($axes as $key => $allowed) {
-				if (in_array(($cell[$key] ?? null), $allowed, true) === false) {
-					return null;
-				}
+			if ($this->isOnAxes(cell: $cell, axes: $axes) === false) {
+				return null;
 			}
 
-			$rules[] = [
-				'id' => sprintf('%s:%s:%s', $cell['severity'], $cell['behaviour'], $cell['actorType']),
-				'annotation' => (string)($cell['note'] ?? ''),
-				'inputEntries' => [
-					(string)$cell['severity'],
-					(string)$cell['behaviour'],
-					(string)$cell['actorType'],
-				],
-				'outputEntries' => [(string)($cell['intervention'] ?? '')],
-			];
-		}//end foreach
+			$rules[] = $this->ruleFor(cell: $cell);
+		}
 
+		return $rules;
+	}//end rulesFor()
+
+	/**
+	 * Whether every coordinate of a cell is a value its axis allows.
+	 *
+	 * @param mixed                            $cell The cell.
+	 * @param array<string, array<int, mixed>> $axes The allowed values per axis.
+	 *
+	 * @return bool True when the cell is on its axes.
+	 */
+	private function isOnAxes(mixed $cell, array $axes): bool {
+		foreach ($axes as $key => $allowed) {
+			if (in_array(($cell[$key] ?? null), $allowed, true) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end isOnAxes()
+
+	/**
+	 * The decision rule one cell becomes.
+	 *
+	 * @param array<string, mixed> $cell The cell, on its axes.
+	 *
+	 * @return array<string, mixed> The rule.
+	 */
+	private function ruleFor(array $cell): array {
+		return [
+			'id' => sprintf('%s:%s:%s', $cell['severity'], $cell['behaviour'], $cell['actorType']),
+			'annotation' => (string)($cell['note'] ?? ''),
+			'inputEntries' => [
+				(string)$cell['severity'],
+				(string)$cell['behaviour'],
+				(string)$cell['actorType'],
+			],
+			'outputEntries' => [(string)($cell['intervention'] ?? '')],
+		];
+	}//end ruleFor()
+
+	/**
+	 * The decision table for a matrix, everything but its rules.
+	 *
+	 * @param array<string, mixed> $matrix The stored matrix.
+	 * @param string               $marker The provenance marker.
+	 *
+	 * @return array<string, mixed> The table.
+	 */
+	private function tableShell(array $matrix, string $marker): array {
 		$version = (string)($matrix['version'] ?? '1');
 
 		return [
 			'name' => (string)($matrix['name'] ?? 'LHS'),
 			'key' => $this->tables->keyFor(key: LhsDecisionTableLookup::KEY_STEM . $version),
 			'owner' => Application::APP_ID,
-			'description' => sprintf(
-				'Projected from the LHS matrix "%s" (version %s). %s This table IS the enforcement '
-				. 'lookup: LhsRecommendationService evaluates it and only falls back to the matrix '
-				. 'where no projection exists. Edit it here; a re-run of the projection refuses to '
-				. 'overwrite changed rules rather than discarding them.',
-				(string)($matrix['name'] ?? ''),
-				$version,
-				$marker
-			),
+			'description' => $this->descriptionFor(matrix: $matrix, marker: $marker),
 			// UNIQUE: the matrix is a grid, so exactly one cell answers a
 			// triple. Declaring UNIQUE means an overlapping pair is REFUSED
 			// rather than silently resolved by declaration order, which is the
 			// property a hand-indexed dictionary quietly gave up.
 			'hitPolicy' => 'UNIQUE',
-			'inputs' => [
-				['name' => 'severity', 'type' => 'string'],
-				['name' => 'behaviour', 'type' => 'string'],
-				['name' => 'actorType', 'type' => 'string'],
-			],
-			'outputs' => [['name' => 'intervention', 'type' => 'string']],
-			'rules' => $rules,
+			'inputs' => self::TABLE_INPUTS,
+			'outputs' => self::TABLE_OUTPUTS,
 		];
+	}//end tableShell()
 
-	}//end tableFor()
+	/**
+	 * The table's description: where it came from, and that it is the enforcement lookup.
+	 *
+	 * @param array<string, mixed> $matrix The stored matrix.
+	 * @param string               $marker The provenance marker.
+	 *
+	 * @return string The description.
+	 */
+	private function descriptionFor(array $matrix, string $marker): string {
+		$version = (string)($matrix['version'] ?? '1');
+
+		return sprintf(
+			'Projected from the LHS matrix "%s" (version %s). %s This table IS the enforcement '
+			. 'lookup: LhsRecommendationService evaluates it and only falls back to the matrix '
+			. 'where no projection exists. Edit it here; a re-run of the projection refuses to '
+			. 'overwrite changed rules rather than discarding them.',
+			(string)($matrix['name'] ?? ''),
+			$version,
+			$marker
+		);
+	}//end descriptionFor()
 
 	/**
 	 * Decode a field the schema may store as a JSON string.
