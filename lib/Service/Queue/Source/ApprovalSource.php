@@ -122,34 +122,42 @@ class ApprovalSource extends RegisterBackedSource {
 	 * @spec openspec/changes/advice-and-consultation-on-the-case/specs/advice-management/spec.md#requirement-a-handler-asks-for-advice-from-the-case-req-adv-case-01
 	 */
 	public function itemsFor(string $userId): array {
-		$rows = $this->rows(schema: 'adviesAanvraag', filters: ['advisor' => $userId]);
-
+		$rows = new WaitingRequestRows(closedStatuses: self::CLOSED_STATUSES);
 		$items = [];
-		foreach ($rows as $row) {
+		foreach ($this->rows(schema: 'adviesAanvraag', filters: ['advisor' => $userId]) as $row) {
 			$id = $this->idOf(row: $row);
-			$status = strtolower(trim((string)($row['status'] ?? '')));
-			if ($id === '' || in_array($status, self::CLOSED_STATUSES, true) === true) {
-				continue;
+			if ($rows->isWaiting(id: $id, row: $row) === true) {
+				$items[] = $this->itemOf(row: $row, id: $id);
 			}
-
-			$case = trim((string)($row['case'] ?? ''));
-			$route = ['name' => 'Cases'];
-			if ($case !== '') {
-				$route = ['name' => 'CaseDetail', 'params' => ['id' => $case], 'hash' => '#' . self::ADVICE_TAB];
-			}
-
-			$items[] = new QueueItem(
-				source: $this->name(),
-				subjectType: 'advice',
-				subjectId: $id,
-				title: (string)($row['subject'] ?? $id),
-				priority: '',
-				dueAt: $this->dateOf(row: $row, key: 'deadline'),
-				coveredFor: null,
-				route: $route
-			);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * The queue item for one waiting advice request.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 * @param string               $id  The row's id.
+	 *
+	 * @return QueueItem
+	 */
+	private function itemOf(array $row, string $id): QueueItem {
+		$case = trim((string)($row['case'] ?? ''));
+		$route = WaitingRequestRows::routeOf(
+			case: $case,
+			caseRoute: ['name' => 'CaseDetail', 'params' => ['id' => $case], 'hash' => '#' . self::ADVICE_TAB]
+		);
+
+		return new QueueItem(
+			source: $this->name(),
+			subjectType: 'advice',
+			subjectId: $id,
+			title: (string)($row['subject'] ?? $id),
+			priority: '',
+			dueAt: $this->dateOf(row: $row, key: 'deadline'),
+			coveredFor: null,
+			route: $route
+		);
+	}//end itemOf()
 }//end class
