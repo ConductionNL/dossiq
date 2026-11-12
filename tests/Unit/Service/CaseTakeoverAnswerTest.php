@@ -237,6 +237,40 @@ class CaseTakeoverAnswerTest extends TestCase {
 	}//end testARequestOnAnotherCaseCannotBeAnsweredFromThisOne()
 
 	/**
+	 * Each refusal of an answer names its rule, its sentence and its status.
+	 *
+	 * @return void
+	 */
+	public function testEachRefusalOfAnAnswerIsExact(): void {
+		$refusal = function (callable $answer): array {
+			try {
+				$answer();
+			} catch (RefusedException $e) {
+				return [$e->getRule(), $e->getSentence(), $e->getStatus()];
+			}
+
+			return [];
+		};
+		$takeovers = $this->takeovers();
+		$unknown = [CaseTakeoverRequest::REQUEST_UNKNOWN, 'That request could not be found.', RefusedException::STATUS_UNPROCESSABLE];
+
+		self::assertSame($unknown, $refusal(fn () => $takeovers->accept(takeoverId: ' takeover-404 ', acceptedBy: 'jan', caseId: 'case-1')));
+		self::assertSame($unknown, $refusal(fn () => $takeovers->accept(takeoverId: $this->request['id'], acceptedBy: 'jan', caseId: 'case-2')));
+
+		$takeovers->refuse(takeoverId: $this->request['id'], reason: 'Nee', refusedBy: 'jan', caseId: ' case-1 ');
+		self::assertSame(
+			[CaseTakeoverRequest::ALREADY_ANSWERED, 'That request was already answered, so nothing was changed.', RefusedException::STATUS_UNPROCESSABLE],
+			$refusal(fn () => $takeovers->accept(takeoverId: $this->request['id'], acceptedBy: 'jan', caseId: 'case-1'))
+		);
+
+		$this->store->refusedToCaller = ['caseTakeover'];
+		self::assertSame(
+			[CaseTakeoverRequest::REQUEST_UNKNOWN, 'We could not read that request, so nothing was changed.', RefusedException::STATUS_INDETERMINATE],
+			$refusal(fn () => $takeovers->accept(takeoverId: $this->request['id'], acceptedBy: 'jan', caseId: 'case-1'))
+		);
+	}//end testEachRefusalOfAnAnswerIsExact()
+
+	/**
 	 * The takeover service under test.
 	 *
 	 * @return CaseTakeoverRequest The service.
