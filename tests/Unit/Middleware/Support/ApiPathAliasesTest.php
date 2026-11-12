@@ -37,9 +37,9 @@ class ApiPathAliasesTest extends TestCase {
 	 */
 	public static function successors(): array {
 		return [
-			'api path'         => ['/api/things/7', '/api/v1/things/7'],
-			'request path'     => ['/index.php/apps/dossiq/api/things', '/index.php/apps/dossiq/api/v1/things'],
-			'already v1'       => ['/api/v1/things', null],
+			'api path'         => ['/api/things/7/parts', '/api/v1/things/7/parts'],
+			'request path'     => ['/index.php/apps/dossiq/api/things/7/parts', '/index.php/apps/dossiq/api/v1/things/7/parts'],
+			'already v1'       => ['/api/v1/things/7/parts', null],
 			'versioned family' => ['/api/zgw/zaken/v1/zaken', null],
 			'protocol'         => ['/api/zgw/zaken/v1/zaken', null],
 			'page'             => ['/apps/dossiq/things', null],
@@ -61,16 +61,18 @@ class ApiPathAliasesTest extends TestCase {
 	}//end testTheSuccessorOfAPath()
 
 	/**
-	 * Aliases come before the originals, which stay exactly as they were.
+	 * Aliases come right after the routes already declared under `/api/v1/`, and
+	 * the declared routes stay exactly as they were.
 	 *
 	 * @return void
 	 */
-	public function testAliasesComeBeforeTheOriginals(): void {
+	public function testAliasesComeAfterTheDeclaredVersionedRoutes(): void {
 		$original = [
 			'routes' => [
-				['name' => 'things#index', 'url' => '/api/things/{id}', 'verb' => 'GET', 'requirements' => ['id' => '\d+']],
-				['name' => 'things#update', 'url' => 'api/things', 'verb' => 'PUT', 'postfix' => 'put'],
-				['name' => 'things#versioned', 'url' => '/api/v1/other', 'verb' => 'GET'],
+				['name' => 'things#versioned', 'url' => '/api/v1/other/x/y', 'verb' => 'GET'],
+				['name' => 'things#index', 'url' => '/api/things/{id}/parts', 'verb' => 'GET', 'requirements' => ['id' => '\d+']],
+				['name' => 'things#update', 'url' => 'api/things/all/parts', 'verb' => 'PUT', 'postfix' => 'put'],
+				['name' => 'other#legacy', 'url' => '/api/other/x/y', 'verb' => 'GET'],
 				['name' => 'dashboard#page', 'url' => '/', 'verb' => 'GET'],
 			],
 		];
@@ -79,88 +81,140 @@ class ApiPathAliasesTest extends TestCase {
 
 		$this->assertSame(
 			expected: [
-				['name' => 'things#index', 'url' => '/api/v1/things/{id}', 'verb' => 'GET', 'requirements' => ['id' => '\d+'], 'postfix' => 'v1'],
-				['name' => 'things#update', 'url' => '/api/v1/things', 'verb' => 'PUT', 'postfix' => 'putv1'],
+				$original['routes'][0],
+				['name' => 'things#index', 'url' => '/api/v1/things/{id}/parts', 'verb' => 'GET', 'requirements' => ['id' => '\d+'], 'postfix' => 'v1'],
+				['name' => 'things#update', 'url' => '/api/v1/things/all/parts', 'verb' => 'PUT', 'postfix' => 'putv1'],
 			],
-			actual: array_slice($declared['routes'], 0, 2)
+			actual: array_slice($declared['routes'], 0, 3)
 		);
-		$this->assertSame(expected: $original['routes'], actual: array_slice($declared['routes'], 2));
-	}//end testAliasesComeBeforeTheOriginals()
+		$this->assertSame(expected: array_slice($original['routes'], 1), actual: array_slice($declared['routes'], 3));
+	}//end testAliasesComeAfterTheDeclaredVersionedRoutes()
 
 	/**
-	 * The shipped routes.php serves every unversioned API route under `/api/v1/`
-	 * too, with the same controller, requirements and defaults, under a new name.
+	 * The API fallback gets no alias: it already answers the versioned paths no route does.
 	 *
 	 * @return void
 	 */
-	public function testEveryShippedApiRouteHasAVersionedTwin(): void {
+	public function testTheApiFallbackHasNoAlias(): void {
+		$fallback = ['name' => 'apiFallback#notFound', 'url' => '/api/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']];
+		$slug     = ['name' => 'things#show', 'url' => '/api/{slug}', 'verb' => 'GET'];
+
+		$this->assertTrue(condition: ApiPathAliases::isApiFallback(route: $fallback));
+		$this->assertFalse(condition: ApiPathAliases::isApiFallback(route: $slug));
+		$this->assertSame(
+			expected: ['/api/v1/{slug}', '/api/{path}', '/api/{slug}'],
+			actual: array_column(ApiPathAliases::withVersionedAliases(routes: ['routes' => [$fallback, $slug]])['routes'], 'url')
+		);
+	}//end testTheApiFallbackHasNoAlias()
+
+	/**
+	 * Every deprecated route of the shipped routes.php has a `/api/v1/` twin with
+	 * the same controller, requirements and defaults, and a request on the twin's
+	 * path reaches it, or an alias that already answered the original path first.
+	 *
+	 * @return void
+	 */
+	public function testEveryDeprecatedRouteHasAReachableTwin(): void {
 		$routes = self::shippedRoutes();
-		$byKey  = [];
 		$names  = [];
 		foreach ($routes as $route) {
-			$byKey[$route['verb'].' '.self::url(route: $route)] = $route;
 			$names[] = strtolower($route['name'].($route['postfix'] ?? ''));
 		}
 
 		$twins = 0;
 		foreach ($routes as $route) {
 			$url = self::url(route: $route);
-			if (ApiPathAliases::isDeprecated(path: $url) === false) {
+			if (ApiPathAliases::isDeprecated(path: $url) === false || ApiPathAliases::isApiFallback(route: $route) === true) {
 				continue;
 			}
 
-			$twin = ($byKey[$route['verb'].' /api/v1'.substr($url, 4)] ?? null);
+			$path   = '/api/v1'.substr($url, 4);
+			$twin   = self::find(routes: $routes, verb: $route['verb'], url: $path, name: $route['name']);
+			$sample = self::sample(route: $route);
 			$this->assertNotNull(actual: $twin, message: $route['verb'].' '.$url.' has no /api/v1/ twin');
-			$this->assertSame(expected: $route['name'], actual: $twin['name']);
 			$this->assertSame(expected: ($route['requirements'] ?? null), actual: ($twin['requirements'] ?? null));
 			$this->assertSame(expected: ($route['defaults'] ?? null), actual: ($twin['defaults'] ?? null));
+			if ($sample !== null) {
+				$first = self::firstMatch(routes: $routes, verb: $route['verb'], path: '/api/v1'.substr($sample, 4));
+				$this->assertTrue(
+					condition: self::isAlias(route: $first),
+					message: $route['verb'].' '.$path.' is answered by '.($first['name'] ?? 'no route').', not by the twin of '.$route['name']
+				);
+			}
+
 			$twins++;
 		}
 
 		$this->assertGreaterThan(expected: 0, actual: $twins);
 		$this->assertSame(expected: count($names), actual: count(array_unique($names)), message: 'a route name is registered twice');
-	}//end testEveryShippedApiRouteHasAVersionedTwin()
+	}//end testEveryDeprecatedRouteHasAReachableTwin()
 
 	/**
-	 * No alias answers a request meant for a route that was already versioned.
-	 *
-	 * Routes match in declaration order, so for each versioned route the first
-	 * route that matches a sample of its path must be that route, or an alias
-	 * standing in for an earlier unversioned route exactly as before.
+	 * No alias answers a request meant for a route the app declares under `/api/v1/`.
 	 *
 	 * @return void
 	 */
-	public function testNoAliasTakesARequestMeantForAnotherRoute(): void {
-		$routes  = self::shippedRoutes();
-		$checked = 0;
+	public function testNoAliasTakesARequestMeantForADeclaredVersionedRoute(): void {
+		$routes = self::shippedRoutes();
+		$taken  = [];
 		foreach ($routes as $route) {
-			$url    = self::url(route: $route);
 			$sample = self::sample(route: $route);
-			if (str_starts_with($url, '/api/v1/') === false || $sample === null) {
+			if (str_starts_with(self::url(route: $route), '/api/v1/') === false || self::isAlias(route: $route) === true || $sample === null) {
 				continue;
 			}
 
-			$first = $route;
-			foreach ($routes as $candidate) {
-				if ($candidate['verb'] === $route['verb'] && preg_match(self::pattern(route: $candidate), $sample) === 1) {
-					$first = $candidate;
-					break;
-				}
+			$first = self::firstMatch(routes: $routes, verb: $route['verb'], path: $sample);
+			if (self::isAlias(route: $first) === true) {
+				$taken[] = $route['verb'].' '.$sample.' is meant for '.$route['name'].' but the alias of '.$first['name'].' answers it';
 			}
-
-			$checked++;
-			if ($first === $route || self::isAlias(route: $route) === true) {
-				continue;
-			}
-
-			$this->assertFalse(
-				condition: self::isAlias(route: $first),
-				message: $route['verb'].' '.$sample.' is meant for '.$route['name'].' but the alias of '.$first['name'].' answers it'
-			);
 		}
 
-		$this->assertGreaterThan(expected: 0, actual: $checked);
-	}//end testNoAliasTakesARequestMeantForAnotherRoute()
+		$this->assertSame(expected: [], actual: $taken);
+	}//end testNoAliasTakesARequestMeantForADeclaredVersionedRoute()
+
+	/**
+	 * The route registered for a verb and url, preferring the one with the given name.
+	 *
+	 * @param array<int,array<string,mixed>> $routes The routes.
+	 * @param string                         $verb   The verb.
+	 * @param string                         $url    The url.
+	 * @param string                         $name   The preferred route name.
+	 *
+	 * @return array<string,mixed>|null The route, or null when none is registered there.
+	 */
+	private static function find(array $routes, string $verb, string $url, string $name): ?array {
+		$found = null;
+		foreach ($routes as $route) {
+			if ($route['verb'] === $verb && self::url(route: $route) === $url) {
+				if ($route['name'] === $name) {
+					return $route;
+				}
+
+				$found = ($found ?? $route);
+			}
+		}
+
+		return $found;
+	}//end find()
+
+	/**
+	 * The first route, in declaration order, that answers a request.
+	 *
+	 * @param array<int,array<string,mixed>> $routes The routes.
+	 * @param string                         $verb   The verb.
+	 * @param string                         $path   The request path.
+	 *
+	 * @return array<string,mixed> The route, or an empty array when none answers.
+	 */
+	private static function firstMatch(array $routes, string $verb, string $path): array {
+		foreach ($routes as $route) {
+			if ($route['verb'] === $verb && preg_match(self::pattern(route: $route), $path) === 1) {
+				return $route;
+			}
+		}
+
+		return [];
+	}//end firstMatch()
 
 	/**
 	 * The routes the app declares, with the aliases.
@@ -192,7 +246,8 @@ class ApiPathAliasesTest extends TestCase {
 	 * @return bool True for an alias.
 	 */
 	private static function isAlias(array $route): bool {
-		return str_ends_with((string) ($route['postfix'] ?? ''), 'v1') === true
+		return $route !== []
+			&& str_ends_with((string) ($route['postfix'] ?? ''), 'v1') === true
 			&& str_starts_with(self::url(route: $route), '/api/v1/') === true;
 	}//end isAlias()
 

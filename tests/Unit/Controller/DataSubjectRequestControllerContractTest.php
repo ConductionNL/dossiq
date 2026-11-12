@@ -89,7 +89,7 @@ class DataSubjectRequestControllerContractTest extends TestCase {
 		$routes = (include __DIR__ . '/../../../appinfo/routes.php')['routes'];
 		$named = [];
 		foreach ($routes as $route) {
-			if (str_starts_with((string)($route['name'] ?? ''), 'dataSubjectRequest#') === true) {
+			if (str_starts_with((string)($route['name'] ?? ''), 'dataSubjectRequest#') === true && str_starts_with((string)$route['url'], '/api/v1/') === false) {
 				$named[] = ['name' => $route['name'], 'url' => $route['url'], 'verb' => $route['verb']];
 			}
 		}

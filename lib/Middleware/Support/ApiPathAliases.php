@@ -54,6 +54,15 @@ final class ApiPathAliases {
 	public const DEPRECATED_SINCE = '@1794441600';
 
 	/**
+	 * Unversioned paths that keep no successor, because a route the app already
+	 * declares under `/api/v1/` answers their versioned form with something else.
+	 *
+	 * @var array<string,string>
+	 */
+	public const WITHOUT_SUCCESSOR = [
+	];
+
+	/**
 	 * The pattern of a path that already names a version.
 	 *
 	 * @var string
@@ -75,6 +84,12 @@ final class ApiPathAliases {
 		$relative = StandardProtocolPaths::appRelative(path: $path);
 		if (str_starts_with($relative, '/api/') === false || preg_match(self::VERSIONED, $relative) === 1) {
 			return false;
+		}
+
+		foreach (self::WITHOUT_SUCCESSOR as $pattern) {
+			if (preg_match($pattern, $relative) === 1) {
+				return false;
+			}
 		}
 
 		return StandardProtocolPaths::matches(path: $relative) === false;
@@ -105,10 +120,12 @@ final class ApiPathAliases {
 	/**
 	 * A routes.php declaration with an `/api/v1/` alias of every unversioned API route.
 	 *
-	 * The aliases come BEFORE the original routes. Routes match in declaration
-	 * order, so an unversioned route with a placeholder as its first segment
-	 * (`/api/{slug}/...`) can never answer a `/api/v1/` request meant for an alias.
-	 * Among themselves the aliases keep the order of the routes they copy.
+	 * Routes match in declaration order. The aliases come right after the last
+	 * route the app already declares under `/api/v1/`, so those keep answering
+	 * their paths, and before every other route, so an unversioned route with a
+	 * placeholder as its first segment (`/api/{slug}/...`) or a catch-all can
+	 * never answer a `/api/v1/` request meant for an alias. Among themselves the
+	 * aliases keep the order of the routes they copy.
 	 *
 	 * @param array<string,array<array-key,mixed>> $routes The declaration.
 	 *
@@ -117,24 +134,74 @@ final class ApiPathAliases {
 	 * @spec openspec/specs/api-contract/spec.md
 	 */
 	public static function withVersionedAliases(array $routes): array {
-		$aliases = [];
-		foreach (($routes['routes'] ?? []) as $route) {
-			$url = '/'.ltrim((string) ($route['url'] ?? ''), '/');
-			if (self::isDeprecated(path: $url) === true) {
-				$aliases[] = array_merge(
-					$route,
-					[
-						'url'     => self::versioned(path: $url),
-						'postfix' => ($route['postfix'] ?? '').'v1',
-					]
-				);
+		$declared = [];
+		$insertAt = 0;
+		foreach (array_values($routes['routes'] ?? []) as $index => $route) {
+			$declared[self::key(route: $route)] = true;
+			if (str_starts_with('/'.ltrim((string) ($route['url'] ?? ''), '/'), self::VERSION_PREFIX.'/') === true) {
+				$insertAt = ($index + 1);
 			}
 		}
 
-		$routes['routes'] = array_merge($aliases, ($routes['routes'] ?? []));
+		$aliases = [];
+		foreach (($routes['routes'] ?? []) as $route) {
+			$url = '/'.ltrim((string) ($route['url'] ?? ''), '/');
+			if (self::isDeprecated(path: $url) === false || self::isApiFallback(route: $route) === true) {
+				continue;
+			}
+
+			$alias = array_merge(
+				$route,
+				[
+					'url'     => self::versioned(path: $url),
+					'postfix' => ($route['postfix'] ?? '').'v1',
+				]
+			);
+			if (isset($declared[self::key(route: $alias)]) === false) {
+				$aliases[] = $alias;
+			}
+		}
+
+		$original         = array_values($routes['routes'] ?? []);
+		$routes['routes'] = array_merge(array_slice($original, 0, $insertAt), $aliases, array_slice($original, $insertAt));
 
 		return $routes;
 	}//end withVersionedAliases()
+
+	/**
+	 * Whether a route is the API fallback, a single placeholder after `/api/` that spans segments.
+	 *
+	 * It answers every API path no other route does, versioned ones included,
+	 * so it needs no alias, and an alias placed before the versioned routes
+	 * would take their requests.
+	 *
+	 * @param array<array-key,mixed> $route The route.
+	 *
+	 * @return bool True for the API fallback.
+	 *
+	 * @spec openspec/specs/api-contract/spec.md
+	 */
+	public static function isApiFallback(array $route): bool {
+		$url = '/'.ltrim((string) ($route['url'] ?? ''), '/');
+		if (preg_match('#^/api/\{(\w+)\}$#', $url, $match) !== 1) {
+			return false;
+		}
+
+		$requirement = (string) ($route['requirements'][$match[1]] ?? '[^/]+');
+
+		return preg_match('#^(?:'.$requirement.')$#', 'a/b') === 1;
+	}//end isApiFallback()
+
+	/**
+	 * The verb and path a route registers, which two routes cannot share.
+	 *
+	 * @param array<array-key,mixed> $route The route.
+	 *
+	 * @return string The verb and the path with one leading slash.
+	 */
+	private static function key(array $route): string {
+		return strtoupper((string) ($route['verb'] ?? 'GET')).' /'.ltrim((string) ($route['url'] ?? ''), '/');
+	}//end key()
 
 	/**
 	 * The `/api/v1/` form of an unversioned API path.
