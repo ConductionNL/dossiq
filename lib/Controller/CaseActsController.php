@@ -61,6 +61,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -133,16 +134,9 @@ class CaseActsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function acts(string $caseId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['message' => 'Sign in first.', 'error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-			return new JSONResponse(
-				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
-				Http::STATUS_FORBIDDEN,
-			);
+		$user = $this->reader(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$mayAct = $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user);
@@ -167,6 +161,25 @@ class CaseActsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function archiveReadiness(string $caseId): JSONResponse {
+		$user = $this->reader(caseId: $caseId);
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		return $this->answered(
+			caseId: $caseId,
+			run: fn (): array => $this->overview->archiveReadiness(caseId: $caseId),
+		);
+	}//end archiveReadiness()
+
+	/**
+	 * The signed-in caller who may read the case, or the refusal.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return IUser|JSONResponse The caller, or 401 for nobody signed in and 403 for a caller who may not read the case.
+	 */
+	private function reader(string $caseId): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'Sign in first.', 'error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -179,11 +192,8 @@ class CaseActsController extends Controller {
 			);
 		}
 
-		return $this->answered(
-			caseId: $caseId,
-			run: fn (): array => $this->overview->archiveReadiness(caseId: $caseId),
-		);
-	}//end archiveReadiness()
+		return $user;
+	}//end reader()
 
 	/**
 	 * The overview as a reader who may not act sees it: every act listed, none allowed.

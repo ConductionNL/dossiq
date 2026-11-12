@@ -207,18 +207,11 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 
 		try {
 			$entity = $mapper->find($register);
-			if (is_object($entity) === false
-				|| method_exists($entity, 'getConfiguration') === false
-				|| method_exists($entity, 'setConfiguration') === false
-			) {
+			if ($this->isConfigurable(entity: $entity) === false) {
 				return;
 			}
 
-			$config = ($entity->getConfiguration() ?? []);
-			if (is_array($config) === false) {
-				$config = [];
-			}
-
+			$config = $this->configurationOf(entity: $entity);
 			if (($config['tmloEnabled'] ?? false) === true) {
 				return;
 			}
@@ -236,6 +229,35 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	}//end enableTmlo()
 
 	/**
+	 * Whether a register entity carries a configuration that can be read and written.
+	 *
+	 * @param mixed $entity What the register mapper found.
+	 *
+	 * @return bool
+	 */
+	private function isConfigurable(mixed $entity): bool {
+		return is_object($entity) === true
+			&& method_exists($entity, 'getConfiguration') === true
+			&& method_exists($entity, 'setConfiguration') === true;
+	}//end isConfigurable()
+
+	/**
+	 * A register's configuration, empty when it has none or it is not a list.
+	 *
+	 * @param object $entity The register entity.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function configurationOf(object $entity): array {
+		$config = ($entity->getConfiguration() ?? []);
+		if (is_array($config) === false) {
+			return [];
+		}
+
+		return $config;
+	}//end configurationOf()
+
+	/**
 	 * Place an OR legal hold on every case whose OverdrachtTrigger was
 	 * suspended for a running Awb procedure.
 	 *
@@ -244,19 +266,16 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 	 * @return int Number of holds placed.
 	 */
 	private function placeHoldsForSuspendedTriggers(string $register): int {
-		$objectService = $this->settings->getObjectService();
-		$schema = (string)$this->settings->getConfigValue('overdracht_trigger_schema');
-		$legalHold = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
-		$objectMapper = $this->resolveOr(fqn: self::OBJECT_MAPPER);
-		if ($objectService === null || $schema === '' || $legalHold === null || $objectMapper === null) {
+		$tools = $this->holdTools();
+		if ($tools === []) {
 			return 0;
 		}
 
 		try {
 			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
+				objectService: $tools['objectService'],
 				register: $register,
-				schema: $schema,
+				schema: $tools['schema'],
 				filters: ['status' => 'opgeschort-juridische-procedure']
 			);
 		} catch (\Throwable $e) {
@@ -264,20 +283,45 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 			return 0;
 		}
 
+		return $this->placeHoldsOnRows(rows: $rows, tools: $tools);
+	}//end placeHoldsForSuspendedTriggers()
+
+	/**
+	 * The store, the trigger schema, the hold service and the object mapper, or nothing when any is missing.
+	 *
+	 * @return array{objectService: object, schema: string, legalHold: object, objectMapper: object}|array{}
+	 */
+	private function holdTools(): array {
+		$objectService = $this->settings->getObjectService();
+		$schema = (string)$this->settings->getConfigValue('overdracht_trigger_schema');
+		$legalHold = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
+		$objectMapper = $this->resolveOr(fqn: self::OBJECT_MAPPER);
+		if ($objectService === null || $schema === '' || $legalHold === null || $objectMapper === null) {
+			return [];
+		}
+
+		return ['objectService' => $objectService, 'schema' => $schema, 'legalHold' => $legalHold, 'objectMapper' => $objectMapper];
+	}//end holdTools()
+
+	/**
+	 * Place a hold on the case of every suspended trigger that names one.
+	 *
+	 * @param array<int, array<string, mixed>>                                                    $rows  The suspended triggers.
+	 * @param array{objectService: object, schema: string, legalHold: object, objectMapper: object} $tools The resolved collaborators.
+	 *
+	 * @return int Number of holds placed.
+	 */
+	private function placeHoldsOnRows(array $rows, array $tools): int {
 		$placed = 0;
 		foreach ($rows as $row) {
 			$caseId = (string)($row['caseId'] ?? '');
-			if ($caseId === '') {
-				continue;
-			}
-
-			if ($this->placeHoldOnCase(legalHold: $legalHold, objectMapper: $objectMapper, caseId: $caseId) === true) {
+			if ($caseId !== '' && $this->placeHoldOnCase(legalHold: $tools['legalHold'], objectMapper: $tools['objectMapper'], caseId: $caseId) === true) {
 				$placed++;
 			}
 		}
 
 		return $placed;
-	}//end placeHoldsForSuspendedTriggers()
+	}//end placeHoldsOnRows()
 
 	/**
 	 * Place an OR legal hold on a single case (idempotent, fail-safe).

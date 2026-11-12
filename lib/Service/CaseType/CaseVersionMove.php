@@ -89,6 +89,13 @@ class CaseVersionMove {
 		. 'definition version it started under, until openregister ships migrate-run-between-versions.';
 
 	/**
+	 * Binds a moved case to the workflow template of its new case type.
+	 *
+	 * @var WorkflowTemplateBinding
+	 */
+	private readonly WorkflowTemplateBinding $templates;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService      $settingsService Register/schema configuration and the object service.
@@ -104,6 +111,7 @@ class CaseVersionMove {
 		private readonly CaseVersionDiff $diff,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->templates = new WorkflowTemplateBinding(store: $store);
 	}//end __construct()
 
 	/**
@@ -303,34 +311,7 @@ class CaseVersionMove {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function rebindTemplate(array $case, string $targetCaseTypeId): array {
-		$rows = $this->store->rowsOfType(
-			schemaKey: 'workflow_template_schema',
-			caseTypeId: $targetCaseTypeId
-		);
-
-		$chosen = [];
-		foreach ($rows as $row) {
-			if (($row['isActive'] ?? false) === true) {
-				$chosen = $row;
-				break;
-			}
-
-			if ($chosen === []) {
-				$chosen = $row;
-			}
-		}
-
-		if ($chosen === []) {
-			$case['workflowTemplate'] = null;
-			$case['workflowVersion'] = null;
-
-			return $case;
-		}
-
-		$case['workflowTemplate'] = $this->store->rowId(row: $chosen);
-		$case['workflowVersion'] = (int)($chosen['version'] ?? 1);
-
-		return $case;
+		return $this->templates->bind(case: $case, targetCaseTypeId: $targetCaseTypeId);
 	}//end rebindTemplate()
 
 	/**

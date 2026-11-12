@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Relation;
 
 use InvalidArgumentException;
+use RuntimeException;
 use OCA\Dossiq\Service\Relation\OutcomeCascade;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
@@ -95,6 +96,22 @@ class OutcomeCascadeTest extends TestCase {
 						['set' => ['cascadeAction' => 'reopen']],
 						['transition' => 'reopen', 'via' => 'charge', 'viaSchema' => 'charge_schema'],
 					],
+				],
+				'odd'    => [
+					'target' => 'charge_schema',
+					'steps'  => [
+						['set' => ['status' => 'checked']],
+						['frobnicate' => true],
+					],
+				],
+				'nocase' => [
+					'target'    => 'charge_schema',
+					'caseField' => 'dossier',
+					'steps'     => [['transition' => 'reopen']],
+				],
+				'halfdep' => [
+					'target' => 'charge_schema',
+					'steps'  => [['setDependents' => ['schema' => 'instalment_schema', 'values' => ['status' => 'x']]]],
 				],
 			]
 		);
@@ -197,4 +214,40 @@ class OutcomeCascadeTest extends TestCase {
 		$this->expectExceptionMessage("No cascade 'release'");
 		$this->cascade->run(name: 'release', targetId: 'ch-1');
 	}//end testAnUnknownCascadeIsRefused()
+
+	/**
+	 * A step of no known kind is refused after the steps before it ran.
+	 *
+	 * @return void
+	 */
+	public function testAStepOfNoKnownKindIsRefusedAfterTheStepsBeforeIt(): void {
+		try {
+			$this->cascade->run(name: 'odd', targetId: 'ch-1');
+			self::fail('An unknown step kind must be refused.');
+		} catch (InvalidArgumentException $e) {
+			self::assertSame('A cascade step must be set, setDependents or transition.', $e->getMessage());
+		}
+
+		self::assertSame('checked', $this->store->row(schema: 'charge', uuid: 'ch-1')['status']);
+	}//end testAStepOfNoKnownKindIsRefusedAfterTheStepsBeforeIt()
+
+	/**
+	 * A transition without a case to run on, and a setDependents without a field, are refused.
+	 *
+	 * @return void
+	 */
+	public function testATransitionWithoutACaseAndAHalfDependentStepAreRefused(): void {
+		$this->transitions->expects($this->never())->method('execute');
+
+		try {
+			$this->cascade->run(name: 'nocase', targetId: 'ch-1');
+			self::fail('A transition without a case must be refused.');
+		} catch (RuntimeException $e) {
+			self::assertSame("Cascade transition 'reopen' found no case to run on.", $e->getMessage());
+		}
+
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('A setDependents step needs schema, field and values.');
+		$this->cascade->run(name: 'halfdep', targetId: 'ch-1');
+	}//end testATransitionWithoutACaseAndAHalfDependentStepAreRefused()
 }//end class

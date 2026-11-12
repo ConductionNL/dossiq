@@ -115,6 +115,37 @@ import { NcButton, NcDialog, NcNoteCard, NcSelect } from '@nextcloud/vue'
 import { classificationOptions as buildClassificationOptions } from '../utils/dossierHelpers.js'
 import { resolveCaseId } from '../utils/resolveCaseId.js'
 
+/**
+ * The gesture each named mode runs on the dialog; any other mode downloads the ZIP.
+ *
+ * @type {Map<string, function(object): Promise<void>>}
+ */
+const MODE_GESTURES = new Map([
+	['mark-final', (dialog) => dialog.runBulk(
+		'/apps/dossiq/api/informatieobjecten/bulk/status',
+		{ status: 'final' },
+	)],
+	['confidentiality', (dialog) => dialog.runBulk(
+		'/apps/dossiq/api/informatieobjecten/bulk/metadata',
+		{ metadata: { vertrouwelijkheidaanduiding: dialog.level } },
+	)],
+	['copy-to-case', (dialog) => dialog.runBulk(
+		'/apps/dossiq/api/informatieobjecten/bulk/copy',
+		{ targetCaseId: String(dialog.targetCase?.id ?? '') },
+	)],
+	['merge-pdf', (dialog) => dialog.mergePdf()],
+])
+
+/**
+ * The ZIP download, the dialog's gesture for every mode without its own.
+ *
+ * @param {object} dialog The dialog.
+ * @return {Promise<void>}
+ */
+function downloadZipGesture(dialog) {
+	return dialog.downloadZip()
+}
+
 export default {
 	name: 'BulkDocumentActionDialog',
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect },
@@ -261,23 +292,8 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async onConfirm() {
-			if (this.mode === 'mark-final')
-				return this.runBulk(
-					'/apps/dossiq/api/informatieobjecten/bulk/status',
-					{ status: 'final' },
-				)
-			if (this.mode === 'confidentiality')
-				return this.runBulk(
-					'/apps/dossiq/api/informatieobjecten/bulk/metadata',
-					{ metadata: { vertrouwelijkheidaanduiding: this.level } },
-				)
-			if (this.mode === 'copy-to-case')
-				return this.runBulk(
-					'/apps/dossiq/api/informatieobjecten/bulk/copy',
-					{ targetCaseId: String(this.targetCase?.id ?? '') },
-				)
-			if (this.mode === 'merge-pdf') return this.mergePdf()
-			return this.downloadZip()
+			const gesture = MODE_GESTURES.get(this.mode) ?? downloadZipGesture
+			return gesture(this)
 		},
 
 		/**

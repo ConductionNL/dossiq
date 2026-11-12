@@ -113,6 +113,65 @@ import History from 'vue-material-design-icons/History.vue'
  * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T07
  * @spec openspec/specs/document-zaakdossier/spec.md
  */
+/**
+ * The size units, smallest first, each 1024 times the one before.
+ *
+ * @type {Array<string>}
+ */
+const SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB']
+
+/**
+ * @param {number|null|undefined} bytes A candidate byte count.
+ * @return {boolean} Whether it is a finite, non-negative number.
+ */
+function isByteCount(bytes) {
+	return typeof bytes === 'number' && Number.isFinite(bytes) && bytes >= 0
+}
+
+/**
+ * A byte count scaled down to the largest unit it fills, up to TB.
+ *
+ * @param {number} bytes The byte count.
+ * @return {{value: number, unit: number}} The scaled value and its index in SIZE_UNITS.
+ */
+function scaledBytes(bytes) {
+	let value = bytes
+	let unit = 0
+	while (value >= 1024 && unit < SIZE_UNITS.length - 1) {
+		value /= 1024
+		unit += 1
+	}
+	return { value, unit }
+}
+
+/**
+ * The moment, author and size one multistatus response carries.
+ *
+ * 🔴 `author` USED TO BE THE LITERAL `''` HERE, and the template
+ * renders `version.author || 'Unknown'`. So every version of
+ * every document read Unknown, which looks exactly like a
+ * server that did not send an author and is really a field
+ * nobody ever parsed. REQ-ZAK-020 asks for the moment, the
+ * author and the size, and two of the three were never read.
+ *
+ * The author lives in Nextcloud's own namespace, not in DAV:.
+ * A server that does not send it still renders Unknown, which
+ * is now a real absence rather than a hardcoded one.
+ *
+ * @param {Element} node The DAV:response element.
+ * @return {{timestamp: string, author: string, size: (number|null)}} The properties.
+ */
+function versionProperties(node) {
+	const lastModified = node.getElementsByTagNameNS('DAV:', 'getlastmodified')[0]
+	const author = node.getElementsByTagNameNS('http://nextcloud.org/ns', 'version-author')[0]
+	const size = node.getElementsByTagNameNS('DAV:', 'getcontentlength')[0]
+	return {
+		timestamp: lastModified ? lastModified.textContent : '',
+		author: author ? author.textContent : '',
+		size: size ? Number(size.textContent) : null,
+	}
+}
+
 export default {
 	name: 'VersionHistoryPanel',
 	components: {
@@ -344,46 +403,34 @@ export default {
 			)
 			const versions = []
 			responses.forEach((node, index) => {
-				const href = node.getElementsByTagNameNS('DAV:', 'href')[0]
-				const lastModified = node.getElementsByTagNameNS(
-					'DAV:',
-					'getlastmodified',
-				)[0]
-				if (
-					!href
-					|| href.textContent.endsWith(
-						'/versions/' + this.resolvedFileId + '/',
-					)
-				) {
-					return
+				const version = this.versionFromResponse(node, responses.length - index)
+				if (version !== null) {
+					versions.push(version)
 				}
-				// 🔴 `author` USED TO BE THE LITERAL `''` HERE, and the template
-				// renders `version.author || 'Unknown'`. So every version of
-				// every document read Unknown, which looks exactly like a
-				// server that did not send an author and is really a field
-				// nobody ever parsed. REQ-ZAK-020 asks for the moment, the
-				// author and the size, and two of the three were never read.
-				//
-				// The author lives in Nextcloud's own namespace, not in DAV:.
-				// A server that does not send it still renders Unknown, which
-				// is now a real absence rather than a hardcoded one.
-				const author = node.getElementsByTagNameNS(
-					'http://nextcloud.org/ns',
-					'version-author',
-				)[0]
-				const size = node.getElementsByTagNameNS(
-					'DAV:',
-					'getcontentlength',
-				)[0]
-				versions.push({
-					id: href.textContent,
-					number: responses.length - index,
-					timestamp: lastModified ? lastModified.textContent : '',
-					author: author ? author.textContent : '',
-					size: size ? Number(size.textContent) : null,
-				})
 			})
 			return versions
+		},
+
+		/**
+		 * One version from one multistatus response, or null for a response
+		 * without an href and for the live node itself.
+		 *
+		 * @param {Element} node The DAV:response element.
+		 * @param {number} number The version's number, newest highest.
+		 * @return {object|null} The version.
+		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 */
+		versionFromResponse(node, number) {
+			const href = node.getElementsByTagNameNS('DAV:', 'href')[0]
+			if (
+				!href
+				|| href.textContent.endsWith(
+					'/versions/' + this.resolvedFileId + '/',
+				)
+			) {
+				return null
+			}
+			return { id: href.textContent, number, ...versionProperties(node) }
 		},
 
 		/**
@@ -416,18 +463,12 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		formatSize(bytes) {
-			if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0) {
+			if (!isByteCount(bytes)) {
 				return ''
 			}
-			const units = ['B', 'KB', 'MB', 'GB', 'TB']
-			let value = bytes
-			let unit = 0
-			while (value >= 1024 && unit < units.length - 1) {
-				value /= 1024
-				unit += 1
-			}
+			const { value, unit } = scaledBytes(bytes)
 			const rounded = unit === 0 ? value : Math.round(value * 10) / 10
-			return `${rounded} ${units[unit]}`
+			return `${rounded} ${SIZE_UNITS[unit]}`
 		},
 
 		/**

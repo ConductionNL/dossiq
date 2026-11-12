@@ -330,6 +330,27 @@ class WOODocumentAssessmentService {
 	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-1
 	 */
 	public function findAssessment(string $caseId, string $documentRef): ?array {
+		$location = $this->assessmentLocation();
+		if ($location === null) {
+			return null;
+		}
+
+		return $this->firstAssessment(
+			location: $location,
+			filters: [
+				'caseRef' => $caseId,
+				'documentRef' => $documentRef,
+				'_limit' => 1,
+			],
+		);
+	}//end findAssessment()
+
+	/**
+	 * Where the assessments are stored, or null when OpenRegister or its configuration is missing.
+	 *
+	 * @return WooAssessmentLocation|null The location.
+	 */
+	private function assessmentLocation(): ?WooAssessmentLocation {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -341,15 +362,23 @@ class WOODocumentAssessmentService {
 			return null;
 		}
 
+		return new WooAssessmentLocation(objectService: $objectService, register: $register, schema: $assessmentSchema);
+	}//end assessmentLocation()
+
+	/**
+	 * The first assessment matching the filters, or null when none does.
+	 *
+	 * @param WooAssessmentLocation $location Where the assessments are stored.
+	 * @param array<string, mixed>  $filters  The search filters.
+	 *
+	 * @return array<string, mixed>|null The assessment record.
+	 */
+	private function firstAssessment(WooAssessmentLocation $location, array $filters): ?array {
 		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $assessmentSchema,
-			filters: [
-				'caseRef' => $caseId,
-				'documentRef' => $documentRef,
-				'_limit' => 1,
-			],
+			objectService: $location->objectService,
+			register: $location->register,
+			schema: $location->schema,
+			filters: $filters,
 		);
 
 		if (count($existing) > 0) {
@@ -357,7 +386,7 @@ class WOODocumentAssessmentService {
 		}
 
 		return null;
-	}//end findAssessment()
+	}//end firstAssessment()
 
 	/**
 	 * The assessments of a case that judged their document partly public, as far as the caller may read them.

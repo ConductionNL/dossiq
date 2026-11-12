@@ -461,4 +461,28 @@ class TriageRulesTest extends TestCase {
 		$this->assertCount(2, $this->store->all('documentReview'), 'no second review for a document that has one');
 		$this->assertSame(1, $rules->forCase(caseId: 'case-x')[0]['decided']);
 	}//end testApplyHonoursReviewsTheCallerCannotRead()
+	/**
+	 * A rule keeps its own name when changed, gets the next order by default, and stays active unless switched off.
+	 *
+	 * @return void
+	 */
+	public function testARuleKeepsItsNameAndGetsItsOrderAndActivity(): void {
+		$rules = $this->rules();
+		$first = $rules->save(caseId: 'case-x', input: ['name' => ' Eerste ', 'conditions' => ['custodian' => 'A'], 'effect' => 'in-scope']);
+		$second = $rules->save(caseId: 'case-x', input: ['name' => 'Tweede', 'conditions' => ['custodian' => 'B'], 'effect' => 'out-of-scope', 'order' => '7', 'active' => 0]);
+
+		$this->assertSame('Eerste', $first['name']);
+		$this->assertSame(1, $first['order']);
+		$this->assertTrue($first['active']);
+		$this->assertSame(7, $second['order']);
+		$this->assertTrue($second['active']);
+
+		$renamed = $rules->save(caseId: 'case-x', input: ['name' => 'Eerste', 'order' => 'first', 'active' => false], ruleId: (string)$first['id']);
+		$this->assertSame('Eerste', $renamed['name']);
+		$this->assertSame(3, $renamed['order'], 'An order that is not a number falls back to after the last rule.');
+		$this->assertFalse($renamed['active']);
+
+		$third = $rules->save(caseId: 'case-x', input: ['name' => 'Derde', 'conditions' => ['custodian' => 'C'], 'effect' => 'in-scope', 'order' => null]);
+		$this->assertSame(3, $third['order']);
+	}//end testARuleKeepsItsNameAndGetsItsOrderAndActivity()
 }//end class
