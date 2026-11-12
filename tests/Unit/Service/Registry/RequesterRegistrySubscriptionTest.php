@@ -32,6 +32,11 @@ use RuntimeException;
  * the way the real one does, and the schemas are the shipped fragment
  * 25-brp-kvk.json, so a fragment without the annotation fails here.
  *
+ * @covers \OCA\Dossiq\Service\Registry\RequesterRegistrySubscription
+ * @covers \OCA\Dossiq\Listener\RequesterRegistrySubscriptionListener
+ * @uses \OCA\Dossiq\Service\Registry\SubscriptionRun
+ * @uses \OCA\Dossiq\Service\ObjectSchemaSlugResolver
+ *
  * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
  */
 class RequesterRegistrySubscriptionTest extends TestCase {
