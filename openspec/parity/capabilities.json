@@ -17043,7 +17043,8 @@
 				"evidence": "src/manifest.json case page integration \"notes\" (CnNotesTab over OpenRegister notes); openregister lib/Files/Service/NoteService.php and lib/Notifications/Controller/NotesController.php store a note as a Nextcloud comment on the case object. Was: dossiq#3116 fc7fc1bc8; dossiq#3086 6a1ab145; integriq#2070 fe1704f5f (note sync to an external register)",
 				"owner": "ConductionNL/openregister",
 				"screen": {
-					"board": null
+					"board": "DqZaakNotities",
+					"canvas": "design-system"
 				},
 				"note": "Decision 395(b), 12 Nov 2026: case notes stay in dossiq and are stored in OpenRegister as notes on the case; there is no sync to an external case register.",
 				"requirement": [
