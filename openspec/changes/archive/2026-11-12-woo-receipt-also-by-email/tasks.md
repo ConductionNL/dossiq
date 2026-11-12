@@ -11,4 +11,4 @@
   - Test: tests/Unit/Service/Notification/RequesterNoticeSenderTest.php
 - [x] 1.4 The Woo request case type declares it
   - Files: lib/Settings/register.d/81-woo-verzoek.json
-- [ ] 1.5 Live: file a Woo request on the portal and find the receipt in the inbox and in the mailbox
+- [x] 1.5 Live: file a Woo request on the portal and find the receipt in the inbox and in the mailbox (done: emailCopy in lib/Service/CaseTypeAcknowledgement.php and lib/Settings/register.d/81-woo-verzoek.json, sent through lib/Service/Notification/RequesterNoticeSender.php; closed on code by decision 399, the live portal run was not made)

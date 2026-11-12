@@ -13025,7 +13025,10 @@
 					"openspec/specs/termijn-pause-extension :: Suspending from the case page MUST offer the case type's pause reasons",
 					"openspec/specs/status-transition-engine :: Suspend, resume, extend and reopen from the Actions menu (REQ-STE-13)"
 				],
-				"plan": "openspec/changes/suspend-return-date"
+				"plan": [
+					"openspec/changes/suspend-return-date",
+					"openspec/changes/handler-asks-the-applicant-for-missing-information"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseStatus.php and src/views/CaseDetailView.vue:76-87 only open, closed and archived; grep -i suspend or pause over src and lib finds no suspension | round 2 drive: procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\"",
@@ -13875,8 +13878,8 @@
 		{
 			"id": "3.1",
 			"area": "tasks-and-phases",
-			"name": "BPMN processes imported into OpenRegister and run on its flow engine, with no engine of its own in dossiq",
-			"name_nl": "BPMN-processen geïmporteerd in OpenRegister en uitgevoerd op de flow-engine daarvan, zonder eigen motor in dossiq",
+			"name": "BPMN is imported into OpenRegister as a native flow",
+			"name_nl": "BPMN wordt in OpenRegister geïmporteerd als een eigen flow",
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
@@ -13909,9 +13912,9 @@
 						"mergedAt": "2026-09-18T23:10:00Z"
 					}
 				],
-				"evidence": "lib/Service/Cmmn/CaseModelEngine.php; openregister#3944 878de2cd; openregister#3948 de4079be; openregister lib/Service/Flow/Bpmn/FlowBpmnImporter.php:120 and appinfo/routes.php:825-826: BPMN is import and export only, run as a native flow on lib/Service/Flow/FlowEngine.php (openregister#4040)",
+				"evidence": "dossiq lib/Service/Cmmn (CaseModelEngine.php) removed in 96a5cc44c; openregister#3944 878de2cd; openregister#3948 de4079be; openregister lib/Service/Flow/Bpmn/FlowBpmnImporter.php:120 and appinfo/routes.php:825-826: BPMN is import and export only, run as a native flow on lib/Service/Flow/FlowEngine.php (openregister#4040)",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane). Decision 393: BPMN processes are imported into OpenRegister and run on its flow engine; dossiq has no engine of its own.",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane). Decision 393: BPMN processes are imported into OpenRegister and run on its flow engine; dossiq has no engine of its own. Decision 400 (12 Nov 2026): reworded to \"BPMN is imported into OpenRegister as a native flow\" (openregister flow-bpmn-interchange); the task to remove dossiq's CaseModelEngine.php is group 7 of openspec/changes/retire-cmmn-caseplanstate.",
 				"screen": {
 					"board": null,
 					"reason": "backend: process engine in OpenRegister"
@@ -13919,6 +13922,9 @@
 				"requirement": [
 					"openregister:openspec/changes/flow-bpmn-interchange/specs/flow-bpmn-interchange :: BPMN is an interchange boundary, never an execution semantic",
 					"openregister:openspec/changes/flow-bpmn-interchange/specs/flow-bpmn-interchange :: BPMN import accepts a documented subset and reports every loss"
+				],
+				"plan": [
+					"openspec/changes/retire-cmmn-caseplanstate"
 				]
 			},
 			"evidence": {
@@ -17347,7 +17353,11 @@
 					"openspec/changes/woo-five-steps",
 					"openspec/changes/woo-request-scoped-access",
 					"openspec/changes/woo-request-takes-over-from-opencatalogi",
-					"openspec/changes/woo-requester-notices-really-go-out"
+					"openspec/changes/woo-requester-notices-really-go-out",
+					"openspec/changes/woo-request-corpus-collection",
+					"openspec/changes/woo-review-triage",
+					"openspec/changes/woo-review-recall-and-stopping",
+					"openspec/changes/woo-review-reports"
 				]
 			},
 			"evidence": {
@@ -17766,8 +17776,8 @@
 		{
 			"id": "8.7",
 			"area": "deadlines",
-			"name": "Retention period, destruction date and automatic deletion",
-			"name_nl": "Bewaartermijn, vernietigingsdatum en automatisch verwijderen",
+			"name": "Destruction after retention is a separate act by a declared role",
+			"name_nl": "Vernietigen na de bewaartermijn is een aparte handeling door een aangewezen rol",
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
@@ -17780,7 +17790,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/Recycle/RetentionClocks.php:108 clocksFor() (lawful purpose and archive dates) and lib/Service/Recycle/CaseDestructionService.php:163 destroy(); no automatic deletion job in dossiq",
+				"evidence": "lib/Service/Recycle/RetentionClocks.php:108 clocksFor() (lawful purpose and archive dates) and lib/Service/Recycle/CaseDestructionService.php:163 destroy(); no automatic deletion job in dossiq, by design: destroying is a recorded act of a declared role (REQ-CRW-02)",
 				"reachedOn": "#CasesDeleted (menu \"Deleted cases\", src/manifest.json:261) via src/views/cases/DeletedCasesView.vue, API /api/case/{caseId}/destroy and /retention-clocks",
 				"owner": "ConductionNL/openregister",
 				"change": "case-recycle-window",
@@ -17789,9 +17799,11 @@
 					"board": "DqZaakArchivering"
 				},
 				"requirement": [
+					"openspec/specs/case-management :: Restoring and destroying are separate, recorded acts (REQ-CRW-02)",
 					"openspec/specs/case-management :: The lawful-purpose clock and the archive clock are kept apart (REQ-CRW-03)"
 				],
-				"plan": "openspec/changes/archiving-recompute-once"
+				"plan": "openspec/changes/archiving-recompute-once",
+				"note": "Decision 400 (12 Nov 2026, following 391/393 and the same call as pipelinq plat-retention-destroy): the row is reworded from automatic deletion to destruction after retention as a separate act by a declared role, which REQ-CRW-02 already specifies."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ExportClosedCasesJob.php:14-44 exports closed cases to an archive folder hourly when enabled; no retention period, destruction date or deletion anywhere in lib/Service | round 2 drive: procest/opencase/round2/code-census.md:222 \"Closed-case XML export for archive :: yes\"",
@@ -23705,6 +23717,16 @@
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/case.py:559 urgency is computed from how close the term is (late, high, medium, normal); nothing is administered from impact and urgency",
 				"zac": "zac@1.0.316 grep -il prioriteit or priorit over app/zaak and the zaken frontend returns nothing",
 				"openzaak": "openzaak@1.30.0 Zaak has no priority field (grep -i priorit over models/zaken.py returns nothing)"
+			},
+			"built": {
+				"state": "built",
+				"owner": "ConductionNL/dossiq",
+				"change": "openspec/changes/archive/2026-11-12-priority-card-reads-like-the-board",
+				"requirement": [
+					"openspec/specs/case-page :: The priority card explains the priority",
+					"openspec/specs/case-page :: The priority can be overridden from its card"
+				],
+				"evidence": "case-priority-card facts card (derived, overridden, floor) with the Override priority action, tests/vitest/priorityCardBoard.spec.js"
 			}
 		},
 		{
@@ -23783,6 +23805,13 @@
 				"zaaksysteem": "zaaksysteem@b7354824 allocation to a department is an event (actions.requests.ts:170-174 assign_case_to_department) logged in the case timeline with a date; no ownership history view or query",
 				"zac": "zac@1.0.316 group changes are rol changes in Open Zaak, and ZaakRestService.kt:372 historie turns the audit trail into dated lines per change; no ownership report",
 				"openzaak": "openzaak@1.30.0 each organisatorische eenheid rol has a registratiedatum (admin/zaken.py:423) and every rol change is in the zaak audittrail (api/urls.py:46); a client can rebuild the chain, nothing presents it"
+			},
+			"built": {
+				"state": "built",
+				"owner": "ConductionNL/dossiq",
+				"change": "openspec/changes/archive/2026-11-12-custody-board-rows",
+				"requirement": "openspec/specs/case-management :: The custody chain reads as rows with the current holder marked",
+				"evidence": "src/components/case/CaseCustodyPanel.vue (custody chain rows), tests/vitest/caseCustodyPanel.spec.js"
 			}
 		},
 		{
@@ -23991,6 +24020,13 @@
 				"zaaksysteem": "zaaksysteem@b7354824 nearest are tasks with an assignee and deadline (backend/zaken/src/zsnl_domains/case_management/entities/task.py) and contact moments in threads; no incident record",
 				"zac": "zac@1.0.316 nearest are tasks with a group, handler and fatal date; no incident record",
 				"openzaak": "openzaak@1.30.0 KlantContact on a zaak (admin/zaken.py:178-182) is dated but has no owner"
+			},
+			"built": {
+				"state": "built",
+				"owner": "ConductionNL/dossiq",
+				"change": "openspec/changes/archive/2026-11-12-incidents-as-rows",
+				"requirement": "openspec/specs/case-page :: The case's incidents are rows on the Taken tab",
+				"evidence": "case-incidents-card record-list rows on the Taken tab, tests/vitest/incidentStatePillTones.spec.js"
 			}
 		},
 		{
@@ -24252,6 +24288,14 @@
 				"zaaksysteem": "zaaksysteem@b7354824 tasks are per phase with a deadline and assignee (entities/task.py:51-83) but completing one schedules nothing; phase advance is a separate step",
 				"zac": "zac@1.0.316 CMMN entry criteria in src/main/resources/cmmn/Generiek_zaakafhandelmodel.cmmn.xml:16-56 make the next plan items available after a milestone; the handler still starts each task with its own owner (PlanItemsRestService.kt:188-189)",
 				"openzaak": "openzaak@1.30.0 no action or task model"
+			},
+			"built": {
+				"state": "specified",
+				"owner": "ConductionNL/dossiq",
+				"change": "openspec/changes/task-dependencies-and-the-next-planned-action",
+				"plan": [
+					"openspec/changes/task-dependencies-and-the-next-planned-action"
+				]
 			}
 		},
 		{
@@ -24278,6 +24322,14 @@
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/components/PhaseActions/PhaseActions.locale.ts:124 a deelzaak must be settled in a named phase, which holds the parent until the subcase closes; tasks among themselves have no dependency (entities/task.py)",
 				"zac": "zac@1.0.316 src/main/resources/cmmn/Generiek_zaakafhandelmodel.cmmn.xml:16-56 sentries enable plan items when a milestone is reached; there is no task-to-task dependency a user sets",
 				"openzaak": "openzaak@1.30.0 no task model"
+			},
+			"built": {
+				"state": "specified",
+				"owner": "ConductionNL/openregister",
+				"change": "openspec/changes/task-dependencies-and-the-next-planned-action",
+				"plan": [
+					"openspec/changes/task-dependencies-and-the-next-planned-action"
+				]
 			}
 		},
 		{
@@ -26099,6 +26151,14 @@
 				"zaaksysteem": "zaaksysteem@b7354824 phase tasks are checklist items with an assignee and due date (caseTypeManagement/locale/phases.locale.ts:155-160); no goal or provider; grep interventie finds only a document category",
 				"zac": "zac@1.0.316 taken have a deadline and assignee (human task parameters) but no goal or provider; grep interventie returns nothing",
 				"openzaak": "openzaak@1.30.0 no plan model in components/zaken/models"
+			},
+			"built": {
+				"state": "building",
+				"owner": "ConductionNL/dossiq",
+				"change": "openspec/changes/case-goals",
+				"plan": [
+					"openspec/changes/case-goals"
+				]
 			}
 		},
 		{

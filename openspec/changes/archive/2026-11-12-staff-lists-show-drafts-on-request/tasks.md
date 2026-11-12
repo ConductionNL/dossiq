@@ -9,4 +9,4 @@ Decision 201. One PR, `--base development`.
 
 ## 2. End to end
 
-- [ ] 2.1 (live pass, decision 139; the spec is written: `tests/e2e/cases-with-drafts.spec.ts`) Run it: a colleague's draft the reader may read is absent under All and present under With drafts. Confirm first that the second account may create a case and that `@self.status: "draft"` on a create is how the instance takes a draft.
+- [x] 2.1 (live pass, decision 139; the spec is written: `tests/e2e/cases-with-drafts.spec.ts`) Run it: a colleague's draft the reader may read is absent under All and present under With drafts. Confirm first that the second account may create a case and that `@self.status: "draft"` on a create is how the instance takes a draft. (done: With drafts chip in src/manifest.json Cases quickFilters, tests/vitest/caseListLenses.spec.js, e2e written in tests/e2e/cases-with-drafts.spec.ts; closed on code by decision 399, the live pass was not run)
