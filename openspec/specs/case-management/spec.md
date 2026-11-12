@@ -830,7 +830,7 @@ The system SHOULD support parent/child case hierarchies. A sub-case MUST be a fu
 
 ---
 
-### REQ-CM-19: Confidentiality Levels
+### Requirement: REQ-CM-19: Confidentiality Levels
 
 The system SHOULD support confidentiality levels on cases, defaulting from the case type. Cases MUST default their confidentiality from the case type.
 
