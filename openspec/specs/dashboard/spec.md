@@ -1002,50 +1002,29 @@ only. The full structure MUST keep every one of these pages as it was.
 - **THEN** the dashboard, the case page, the list and the board MUST equal what the manifest declares
 
 ### Requirement: My open work is a start page widget that any dashboard can render (REQ-DASH-023)
-dossiq MUST offer a dashboard widget "My open work" that lists the signed-in
-person's open cases and work items from the one personal queue, soonest due
-first, each linking to its case or task. The widget MUST answer through
-Nextcloud's widget item API, so a host that renders items shows it without
-dossiq's JavaScript. It MUST offer a button "Open my work" that leads to the My
-work page.
+dossiq MUST offer one dashboard widget "Mijn werk" (English source "My work") that summarises the signed-in person's open work from the one personal queue, as board DqNextcloudDashboard draws it: a row counting the open cases on their name, with how many they hold as substitute, and a row counting their open tasks, with how many are late and how many are due today. A kind with nothing open MUST be left out. Each row MUST link to the My work page. The widget MUST answer through Nextcloud's widget item API, so a host that renders items shows it without dossiq's JavaScript. It MUST offer a button "Naar Mijn werk" (English source "Go to My work") that leads to the My work page. dossiq MUST NOT offer separate My tasks or Overdue cases widgets beside it.
 
 #### Scenario: The start page shows my cases and leads to my work
 @e2e tests/e2e/my-open-work-widget.spec.ts
 
 - **GIVEN** a handler with two open cases assigned to them and one open task
-- **WHEN** they open a start page that holds the widget "My open work"
-- **THEN** the widget MUST list the two cases and the task, soonest due first
-- **AND** "Open my work" MUST open the My work page
+- **WHEN** they open a start page that holds the widget "Mijn werk"
+- **THEN** the widget MUST read "2 open zaken op uw naam" and "1 open taak"
+- **AND** "Naar Mijn werk" MUST open the My work page
 
 #### Scenario: Items reach a host without dossiq's bundle
 @e2e tests/e2e/my-open-work-widget.spec.ts
 
 - **GIVEN** the same handler
-- **WHEN** a client calls `/ocs/v2.php/apps/dashboard/api/v2/widget-items` for
-  the widget
-- **THEN** the response MUST carry the three items with their titles and links
+- **WHEN** a client calls `/ocs/v2.php/apps/dashboard/api/v2/widget-items` for the widget
+- **THEN** the response MUST carry the cases row and the tasks row, each linking to My work
 
 #### Scenario: More work than fits
-@e2e exclude Twelve items on the admin's shared queue cannot be seeded stably; covered by tests/Unit/Dashboard/QueueWidgetItemsTest.php and tests/Unit/Dashboard/MyOpenWorkWidgetTest.php.
+@e2e exclude The summary has at most two rows; tests/Unit/Dashboard/MyOpenWorkWidgetTest.php counts late, today and substitute work.
 
-- **GIVEN** a handler with twelve open items and a host that asks for seven
+- **GIVEN** a handler with twelve open items
 - **WHEN** the widget answers
-- **THEN** it MUST list six items and a seventh reading "6 more in My work"
-  that links to the My work page
-
-### Requirement: My tasks renders through the item API as well (REQ-DASH-024)
-The widget "My tasks" MUST keep its id and its dashboard rendering and MUST also
-answer its open tasks through Nextcloud's widget item API.
-
-#### Scenario: A start page that reads items shows my tasks
-@e2e tests/e2e/my-open-work-widget.spec.ts
-
-- **GIVEN** a handler with two open tasks
-- **WHEN** a client asks the widget item API for "My tasks"
-- **THEN** it MUST answer both tasks with a link to each
-<!-- Folded 2026-10-10 from archive 2026-09-20-a-dashboard-the-reader-arranges, whose archive step
-     folded nothing. That change named these REQ-DASH-023 and REQ-DASH-024; the ids now belong to
-     widgets-my-open-cases-on-the-start-page, so they are renumbered 030 and 031 here. -->
+- **THEN** it MUST still answer one row per kind, counting all twelve
 
 ### Requirement: REQ-DASH-030 A reader keeps their own arrangement of a dashboard
 

@@ -12,7 +12,7 @@ The part no scenario says can be neither built nor checked. This change writes t
 | `1.4` | A document in the intake queue can be rejected with a reason (REQ-CRS-01) in `intake-from-a-channel` | provider |
 | `2.13` | none, the main spec contradicts it | contradicted |
 | `3.9` | A transition can generate a document from a template and open a related case (REQ-CRS-03) in `automatic-actions` | built |
-| `5.4` | The contact page lists the contact's documents and communication (REQ-CRS-04) in `party-pages` | built |
+| `5.4` | The contact page lists the contact's documents and communication (REQ-CRS-04) in `party-pages` | not-built |
 | `5.11` | A person or company is taken over from its registry and keeps following it (REQ-CRS-05) in `brp-register` | built |
 | `7.4` | A decision letter can be generated as a step of the case's flow (REQ-CRS-06) in `vth-beschikking-generation` | built |
 | `8.7` | none, the main spec contradicts it | contradicted |
@@ -26,7 +26,7 @@ The part no scenario says can be neither built nor checked. This change writes t
 | `13.16` | An administrator edits the role matrix as a grid (REQ-CRS-15) in `role-routing-via-or-rbac` | provider |
 | `3.11` | A decision table's answer is written to the case (REQ-CRS-16) in `dmn-decision-tables` | built |
 | `3.18` | The case page shows its task panel beside the tabs (REQ-CRS-17) in `case-page` | not-built |
-| `6.5` | The organisation's mailbox lists every unfiled message and files one on a case (REQ-CRS-18) in `intake-from-a-channel` | built |
+| `6.5` | The organisation's mailbox lists every unfiled message and files one on a case (REQ-CRS-18) in `intake-from-a-channel` | not-built |
 | `8.1` | A lead time in days yields the case's target date (REQ-CRS-19) in `termijn-binding` | built |
 | `8.12` | An administrator maintains the working calendar in one place (REQ-CRS-20) in `termijnbewaking-schemas` | provider |
 | `9.9` | A handler searches persons by BSN (REQ-CRS-21) in `initiator-selection` | built |
@@ -50,8 +50,8 @@ The part no scenario says can be neither built nor checked. This change writes t
 | `11.23` | You group templates in folders (REQ-CRS-39) in `property-definition-management` | not-built |
 | `12.8` | A resident from another EU country logs in with eIDAS (REQ-CRS-40) in `zaakportaal-mijngemeente` | provider |
 | `12.16` | The map can show layers from an ArcGIS service (REQ-CRS-41) in `gis-integration` | not-built |
-| `12.28` | A transfer hands the case over, and the sender follows its activity (REQ-CRS-42) in `federated-case-collaboration` | built |
-| `13.3` | A handler grants and withdraws access to one case from its page (REQ-CRS-43) in `case-access-control` | built |
+| `12.28` | A transfer hands the case over, and the sender follows its activity (REQ-CRS-42) in `federated-case-collaboration` | not-built |
+| `13.3` | A handler grants and withdraws access to one case from its page (REQ-CRS-43) in `case-access-control` | not-built |
 | `13.10` | An approved destruction list destroys its cases (REQ-CRS-44) in `case-management` | provider |
 | `16.2` | An inspector carries out an inspection without a connection (REQ-CRS-45) in `inspection-checklists` | not-built |
 
@@ -63,6 +63,6 @@ The part no scenario says can be neither built nor checked. This change writes t
 
 ## Impact
 
-- 18 rows are already built; their tasks are ticked with the file that does it.
+- 14 rows are already built; their tasks are ticked with the file that does it. A spot-check on 12 Nov reopened `5.4`, `6.5`, `12.28` and `13.3`, whose code does only part of the requirement; their tasks name the rest.
 - 10 rows need work in dossiq and 14 rows wait on another repo (filinq, openregister, integriq, buildiq).
 - Specs touched: `intake-from-a-channel`, `automatic-actions`, `party-pages`, `brp-register`, `vth-beschikking-generation`, `case-search-and-lists`, `admin-settings`, `workflow-import-export`, `generate-fills-per-template`, `case-access-control`, `role-routing-via-or-rbac`, `dmn-decision-tables`, `case-page`, `termijn-binding`, `termijnbewaking-schemas`, `initiator-selection`, `ai-assistance`, `case-management`, `case-flow-human-steps`, `friendly-case-create-form`, `libresign-besluit-signing`, `case-email-integration`, `my-work`, `dashboard`, `process-mining-bottlenecks`, `case-list-export-via-or-export-leaf`, `status-transition-engine`, `property-definition-management`, `zaakportaal-mijngemeente`, `gis-integration`, `federated-case-collaboration`, `inspection-checklists`.

@@ -12034,6 +12034,14 @@
 				},
 				"requirement": [
 					"openspec/specs/leaf-integrations :: REQ-LEAF-103 — Forms citizen intake creates cases through the intake conventions"
+				],
+				"plan": [
+					"openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one",
+					"openspec/changes/a-portal-request-names-its-requester",
+					"openspec/changes/a-request-form-opens-the-case-at-once",
+					"openspec/changes/portal-submission-is-made-once",
+					"openspec/changes/resident-start-points-have-a-page",
+					"openspec/changes/woo-request-takes-over-from-opencatalogi"
 				]
 			},
 			"evidence": {
@@ -12213,7 +12221,8 @@
 				"requirement": [
 					"integriq:openspec/specs/mail-intake :: A mailbox is a source and a message is an object (REQ-MAIL-001)",
 					"openspec/specs/email-case-matching :: REQ-ECM-009 — An unmatched mail in the shared mailbox becomes a case"
-				]
+				],
+				"plan": "openspec/changes/inbound-mail-filters"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:54-60,117,186-199 IMAP import location reads unseen INBOX messages but imports only attachments (line 266 getAttachments) onto the system inbox case; the mail body and headers are not kept; registered unconditionally in lib/AppInfo/Application.php:242 | round 2 drive: procest/opencase/round2/code-census.md:112 \"inbound IMAP mailboxes as import locations (`lib/BackgroundJob/ProcessImportsJob.php:54`)\"",
@@ -12451,7 +12460,8 @@
 				"requirement": [
 					"shillinq:openspec/changes/leges-at-intake/specs/object-payment-requests :: The journey raises the request and renders the checkout (REQ-SOPR-007)",
 					"shillinq:openspec/changes/leges-at-intake/specs/object-payment-requests :: A fee schedule per type value (REQ-SOPR-006)"
-				]
+				],
+				"plan": "openspec/changes/case-money-is-configuration"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -il payment, betaling, mollie, stripe over lib and src returns nothing; no citizen intake exists to pay in | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -12493,7 +12503,8 @@
 				"requirement": [
 					"openspec/specs/kcc-routing :: A refused intake goes to a named department and role (REQ-TRIAGE-04)",
 					"openspec/specs/kcc-routing :: One submission opens several cases, tracked together (REQ-TRIAGE-06)"
-				]
+				],
+				"plan": "openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:100 one configured incoming_organisation for all imported documents (set under src/views/ConfigurationView.vue:217 Indkommende dokumenter); separation sheets carry per-sheet case metadata. No rule that routes a new case to a unit or role by type | round 2 drive: procest/opencase/round2/code-census.md:177 \"Indkommende dokumenter (defaults for inbound documents: organisation, sensitivity, KLE, facet, insight level)\"",
@@ -12664,6 +12675,10 @@
 					"openspec/specs/zaaktype-versioning :: You publish a draft after a validation check and a change note (REQ-ZV-01)",
 					"openspec/specs/zaaktype-versioning :: A case type is versioned, and a running case stays on its version (REQ-ZV-02)",
 					"openspec/specs/zaaktype-versioning :: Publishing closes the version it replaces (REQ-ZV-08)"
+				],
+				"plan": [
+					"openspec/changes/admin-tabs-carry-the-settings-board-blocks",
+					"openspec/changes/woo-five-steps"
 				]
 			},
 			"evidence": {
@@ -12716,7 +12731,8 @@
 					"openspec/specs/case-management :: You claim an unassigned case with one click (REQ-CM-33)",
 					"openspec/specs/case-management :: You release a case you hold (REQ-CM-34)",
 					"openspec/specs/reassignment-bulk-action :: REQ-RBA-001 A selection is reassigned as one act"
-				]
+				],
+				"plan": "openspec/changes/a-handling-team-opens-its-unclaimed-cases"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/EditCaseDialog.vue:55-62 the responsible user is changed only through the Edit dialog; NewCaseDialog.vue:599 makes it required, so a case cannot be unassigned; grep -i claim, overtag, assignToMe over src and lib finds no take-it-myself action | round 2 drive: procest/opencase/round2/code-census.md:130 \"responsible user (`setResponsibleUser`)\"",
@@ -12843,6 +12859,10 @@
 					"openspec/specs/case-types :: Status and result names are strong text, a status with its colour dot",
 					"openspec/specs/case-types :: The Statuses tab reads as the board",
 					"openspec/specs/case-types :: You give each status a colour and a list visibility (REQ-CT-19)"
+				],
+				"plan": [
+					"openspec/changes/case-type-status-field-lists-as-config",
+					"openspec/changes/status-type-phase"
 				]
 			},
 			"evidence": {
@@ -12965,7 +12985,8 @@
 					"openspec/specs/deelzaak-support :: Sub-case creation from parent case",
 					"openspec/specs/deelzaak-support :: Parent case breadcrumb navigation",
 					"openspec/specs/related-case-linking :: Peer relations MUST be bidirectionally consistent"
-				]
+				],
+				"plan": "openspec/changes/linked-case-with-a-role"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:225,257 Opret undersag opens CreateSubCaseDialog and the Sagshierarki tab renders CaseHierarchyTab; CaseEntity parentCaseId. Hierarchy only, no sideways related-case link | round 2 drive: procest/opencase/round2/pages/CaseDetail-CaseHierarchy.md:5 \"Tree of parent and sub-cases.\"",
@@ -13003,7 +13024,8 @@
 				"requirement": [
 					"openspec/specs/termijn-pause-extension :: Suspending from the case page MUST offer the case type's pause reasons",
 					"openspec/specs/status-transition-engine :: Suspend, resume, extend and reopen from the Actions menu (REQ-STE-13)"
-				]
+				],
+				"plan": "openspec/changes/suspend-return-date"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseStatus.php and src/views/CaseDetailView.vue:76-87 only open, closed and archived; grep -i suspend or pause over src and lib finds no suspension | round 2 drive: procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\"",
@@ -13131,6 +13153,10 @@
 				"requirement": [
 					"openspec/specs/case-map-via-maps-leaf :: Case Detail Renders Its Location Through The OR Maps Leaf",
 					"openspec/specs/pdok-integration :: Locatieserver Address Search"
+				],
+				"plan": [
+					"openspec/changes/location-dialog-map-layers",
+					"openspec/changes/locations-card-board"
 				]
 			},
 			"evidence": {
@@ -13172,6 +13198,10 @@
 				"requirement": [
 					"openspec/specs/case-management :: The case page lists its objects (REQ-CM-28)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-management :: A handler links an object to a case from its page (REQ-CRS-26)"
+				],
+				"plan": [
+					"openspec/changes/catalogue-object-types",
+					"openspec/changes/objects-index-like-cases"
 				]
 			},
 			"evidence": {
@@ -13253,7 +13283,8 @@
 					"board": "DqZaakMeer"
 				},
 				"spec": "openspec/specs/case-management",
-				"requirement": "openspec/specs/case-management :: A held case cannot be deleted, and you are told why (REQ-CM-35)"
+				"requirement": "openspec/specs/case-management :: A held case cannot be deleted, and you are told why (REQ-CM-35)",
+				"plan": "openspec/changes/deleted-cases-read-the-case-table"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php and lib/Controller/CaseController.php have DELETE routes for documents (routes.php:163), files (:177) and grants (CaseController.php:511) but none for a case; closing and archiving are the end states | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:22 \"Close case (Reopen case and Archive when closed)\"",
@@ -13350,6 +13381,10 @@
 				},
 				"requirement": [
 					"openspec/specs/case-management :: Following and recently opened are lenses and tiles (REQ-FAV-03)"
+				],
+				"plan": [
+					"openspec/changes/case-type-pins-are-views",
+					"openspec/changes/recent-tile-shows-when-you-opened"
 				]
 			},
 			"evidence": {
@@ -13578,7 +13613,8 @@
 				},
 				"requirement": [
 					"openspec/specs/friendly-case-create-form :: The create form warns about likely duplicates (REQ-FCF-10)"
-				]
+				],
+				"plan": "openspec/changes/ai-features-on-the-case-consume-hermiq"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 only identificatie uniqueness (models/identification.py unique constraint); no similarity check",
@@ -13626,7 +13662,8 @@
 				},
 				"requirement": [
 					"openspec/specs/termijn-pause-extension :: A pause names a reason that chases (REQ-TERM-011)"
-				]
+				],
+				"plan": "openspec/changes/termijn-notices-send"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 stores dates and sends ZGW notifications on change; no timed chasing",
@@ -13673,7 +13710,8 @@
 				"requirement": [
 					"openregister:openspec/changes/relation-types-with-inverses/specs/referential-integrity :: A reference property declares how it reads from both sides",
 					"openspec/specs/related-case-linking :: A case link says what it is called from each side (REQ-RCL-12)"
-				]
+				],
+				"plan": "openspec/changes/linked-case-with-a-role"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/constants.py:99-111 aard_relatie vervolg, onderwerp, bijdrage on RelevanteZaakRelatie (models/zaken.py:715-760), one-sided; hoofdzaak and deelzaken are the only paired link",
@@ -13755,7 +13793,10 @@
 				"reachedOn": "none: no page, menu entry or action reaches the complaint routes",
 				"note": "Rated no rather than the partial the reader proposed: the backend is complete and nothing a user can open reaches it, which is the rule this file applied to fourteen rows on 2026-09-25. Missing: a complaint page or case-type entry that starts and works a complaint.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"plan": "openspec/changes/complaints-are-a-case-type",
+				"plan": [
+					"openspec/changes/complaints-are-a-case-type",
+					"openspec/changes/case-session-with-parties-and-minutes"
+				],
 				"requirement": [
 					"openspec/changes/complaints-are-a-case-type/specs/complaint-management :: A complaint is a case of the shipped complaint case type (REQ-CMP-CT-01)",
 					"openspec/changes/complaints-are-a-case-type/specs/complaint-management :: Existing complaint records move onto cases once (REQ-CMP-CT-02)"
@@ -13811,7 +13852,10 @@
 				"reachedOn": "case Contract tab (shillinq) and the contract decision raised in decidiq",
 				"note": "Partial covers suppliers and the contract hand-offs only; the tender suite itself (publication, bids, evaluation, award) is not built. Missing: tenders, bids, evaluation, award, eForms/TED, thresholds and supplier pages.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"plan": "openspec/changes/tenders-run-on-the-tender-case-type",
+				"plan": [
+					"openspec/changes/tenders-run-on-the-tender-case-type",
+					"openspec/changes/screens-round12-domain-lists"
+				],
 				"requirement": [
 					"openspec/specs/dossiq-procurement-tender-management :: REQ-TND-001 — Tenders SHALL be modelled as dossiq cases (`schema:Project`), not as a parallel domain object",
 					"openspec/changes/tenders-run-on-the-tender-case-type/specs/dossiq-procurement-tender-management :: A tender is worked end to end on its case page (REQ-TND-CASE-01)"
@@ -14013,6 +14057,14 @@
 				"requirement": [
 					"openregister:openspec/specs/flow-task-forms :: A task form is a declaration of existing fields, not a new form definition",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-flow-human-steps :: A person fills in and submits a task's form, and an invalid answer is refused (REQ-CRS-29)"
+				],
+				"plan": [
+					"openspec/changes/task-case-card-handler-name",
+					"openspec/changes/task-description-in-side-card",
+					"openspec/changes/task-header-case-and-deadline",
+					"openspec/changes/task-holds-up-next-status",
+					"openspec/changes/task-list-states-in-task-words",
+					"openspec/changes/task-list-subject-links-its-case"
 				]
 			},
 			"evidence": {
@@ -14089,6 +14141,11 @@
 				},
 				"requirement": [
 					"openspec/specs/task-management :: A task shows its own number, due date and lock (REQ-TASK-046)"
+				],
+				"plan": [
+					"openspec/changes/task-header-case-and-deadline",
+					"openspec/changes/task-list-deadline-tones",
+					"openspec/changes/task-list-sorts-by-deadline"
 				]
 			},
 			"evidence": {
@@ -14137,7 +14194,10 @@
 					"openspec/specs/role-routing-via-or-rbac :: Cases and tasks carry a team assignment",
 					"openspec/specs/task-management :: A task reaches a team before it reaches a person (REQ-TASK-042)"
 				],
-				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/task-list-pooled-handler"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CreateWorkflowDialog.vue:31-44 users are picked once when a review or approval workflow is created, lib/Service/WorkflowService.php:153-159 only the step user may act; src/components/ReminderDialog.vue:22 responsible user on a reminder; no claim, unassign or team assignment | round 2 drive: procest/opencase/round2/pages/DocumentDetail-Workflow.md:9 \"Users in order with Add and reorder arrows\"",
@@ -14219,7 +14279,8 @@
 				"requirement": [
 					"openspec/specs/automatic-actions :: Automatic Action Framework",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/automatic-actions :: A transition can generate a document from a template and open a related case (REQ-CRS-03)"
-				]
+				],
+				"plan": "openspec/changes/case-type-messages-moment-channel"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 changeStatus from src/views/CaseDetailView.vue:76-87 only writes the status; grep over lib/Service for a status listener or automatic action returns none | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:51 \"No phase, progress bar, milestone or \"next step\" anywhere.\"",
@@ -14299,7 +14360,8 @@
 					"openspec/specs/dmn-decision-tables :: UNIQUE hit policy guarantees exactly one answer",
 					"openspec/specs/dmn-decision-tables :: FIRST hit policy returns the first matching rule in order",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/dmn-decision-tables :: A decision table's answer is written to the case (REQ-CRS-16)"
-				]
+				],
+				"plan": "openspec/changes/case-type-conditional-rules"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri 'rule|condition' over lib/Service finds only permission checks; case types carry no configuration (src/views/ConfigurationView.vue:229) | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -14456,7 +14518,8 @@
 				},
 				"requirement": [
 					"openspec/specs/termijn-reporting :: Progress and days left are computed at read time (REQ-TERM-068)"
-				]
+				],
+				"plan": "openspec/changes/task-holds-up-next-status"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue has no phase or progress element; the only progress bar is on a document's workflow (src/views/DocumentDetailView.vue:42-50) | round 2 drive: procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
@@ -14629,7 +14692,8 @@
 				"requirement": [
 					"portaliq:openspec/specs/partner-tasks-in-the-portal :: A handler raises an ask from the case (REQ-PTP-002)",
 					"portaliq:openspec/specs/partner-tasks-in-the-portal :: The answer lands on the case (REQ-PTP-003)"
-				]
+				],
+				"plan": "openspec/changes/an-aanvullingsverzoek-is-a-portal-task"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 workflow steps and reminders go to Nextcloud users only (lib/Service/WorkflowService.php:54-57 rejects unknown users); no external party task and no portal | round 2 drive: procest/_round2/compare/M1-functionality.md:99 \"| 3.19 | External (supply chain partner) task assignment | no |\"",
@@ -14724,7 +14788,12 @@
 				"reachedOn": "/my-queue (consultations waiting on you), /advice/:id (AdviceDetail, read-only), Settings > consultation tab",
 				"note": "Built by advice-and-consultation-on-the-case: the advice card on the case asks for internal or external advice (a consultation is the same request, decision 130) and lists each request with its advisor, deadline, answer state and Remind. Live pass pending (task 7).",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"plan": "openspec/changes/advice-and-consultation-on-the-case",
+				"plan": [
+					"openspec/changes/advice-and-consultation-on-the-case",
+					"openspec/changes/admin-dead-settings-cards-removed",
+					"openspec/changes/creating-into-deliberation-runs-the-panel-check",
+					"openspec/changes/every-move-into-deliberation-runs-the-panel-check"
+				],
 				"requirement": "openspec/changes/advice-and-consultation-on-the-case/specs/advice-management :: A handler asks for advice from the case (REQ-ADV-CASE-01)"
 			},
 			"evidence": {
@@ -14816,7 +14885,8 @@
 				},
 				"requirement": [
 					"openspec/specs/document-zaakdossier :: REQ-ZAK-001 Zaak objects MUST support linked documents via ZGW informatieobject and zaakinformatieobject"
-				]
+				],
+				"plan": "openspec/changes/a-file-written-without-a-user-is-projected-as-the-system"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 document record with case, number, type, status, dates, category; lib/Db/FileEntity.php:43 file rows point to a documentId; src/views/DocumentDetailView.vue:404 Filer tab lists the files of one document | round 2 drive: procest/opencase/round2/code-census.md:214 \"Document as a container of files with metadata and numbering :: yes\"",
@@ -14946,7 +15016,8 @@
 				},
 				"requirement": [
 					"openspec/specs/vth-beschikking-generation :: Template-based beschikking generation"
-				]
+				],
+				"plan": "openspec/changes/documents-on-the-case"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php:68,146 buildValues from case and document then mergeToTempFile; lib/Controller/FileController.php:225 files/from-template; src/services/api.js:190 called by NewFileFromTemplateDialog.vue; merge fields listed in src/views/TemplateFieldsView.vue | round 2 drive: procest/opencase/round2/code-census.md:216 \"New file from template with merge fields :: yes\"",
@@ -15050,7 +15121,8 @@
 				"requirement": [
 					"openspec/specs/document-zaakdossier :: REQ-ZAK-005 Upload MUST present a metadata dialog and require informatieobjecttype and vertrouwelijkheidaanduiding",
 					"openspec/specs/document-zaakdossier :: REQ-ZAK-012 Direction decides which correspondent a document may carry"
-				]
+				],
+				"plan": "openspec/changes/documents-on-the-case"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:47-56 type, status, insight level, document, received and registered dates, category; lib/Migration/SeedReferenceData.php:72-74 categories Indgående, Udgående, Intern (direction), :223-228 insight levels as confidentiality; edited in src/components/EditDocumentDialog.vue:10-39 | round 2 drive: procest/opencase/round2/code-census.md:78 \"`Document` (caseId, documentNumber, title, documentType, status, insightLevelId, documentDate, receivedDate, registeredDate, documentCategoryId\"",
@@ -15551,7 +15623,8 @@
 				},
 				"requirement": [
 					"openspec/specs/archief-edepot-handover :: SIP building and submission MUST run through the OpenRegister e-Depot pipeline"
-				]
+				],
+				"plan": "openspec/changes/archive-stage-opens-case-archive"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/CaseExportService.php:44-55 writes case.xml (validated against appinfo/schema/case-export.xsd), files and audit logs per closed case; occ opencase:export-closed-cases and ExportClosedCasesJob; admin tab Eksporter lukkede sager at src/AdminSettings.vue:1740-1741 | round 2 drive: procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\"",
@@ -15588,6 +15661,10 @@
 				},
 				"requirement": [
 					"openspec/specs/woo-publication-via-opencatalogi :: Publish a WOO decision to OpenCatalogi"
+				],
+				"plan": [
+					"openspec/changes/a-delivered-set-is-written-by-publishing-only",
+					"openspec/changes/woo-decision-records-what-was-withheld"
 				]
 			},
 			"evidence": {
@@ -15711,6 +15788,10 @@
 				"requirement": [
 					"openspec/specs/roles-decisions :: The case page shows who is on the case, in their roles (REQ-ROLE-014)",
 					"openspec/specs/people-on-the-case :: REQ-POC-001 A person linked to a case SHALL become a role record on that case"
+				],
+				"plan": [
+					"openspec/changes/a-portal-request-names-its-requester",
+					"openspec/changes/colleague-party"
 				]
 			},
 			"evidence": {
@@ -15755,6 +15836,16 @@
 				"requirement": [
 					"openspec/changes/contacts-domain/specs/initiator-display :: The Contacts index lists the people dossiq knows (REQ-ID-4)",
 					"openspec/specs/initiator-display :: The Organisations index lists the organisations dossiq knows (REQ-ID-6)"
+				],
+				"plan": [
+					"openspec/changes/contacts-list-columns-as-drawn",
+					"openspec/changes/organisation-contact-persons",
+					"openspec/changes/organisations-count-pills",
+					"openspec/changes/organisations-icon-tile",
+					"openspec/changes/organisations-legal-form-short",
+					"openspec/changes/organisations-list-cells-as-drawn",
+					"openspec/changes/person-chips",
+					"openspec/changes/screens-round12-relations"
 				]
 			},
 			"evidence": {
@@ -15798,7 +15889,8 @@
 					"openspec/specs/initiator-selection :: Cross-source initiator search returns unified results",
 					"openspec/specs/brp-register :: BRP person register schema exists in OpenRegister",
 					"openspec/specs/kvk-register :: KvK company register schema exists in OpenRegister"
-				]
+				],
+				"plan": "openspec/changes/brp-client-retired"
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Service/CprCvrLookupService.php:34-36,67-69 calls Datafordeler CitizenClient and CompanyClient only when enterprise_version is on and the class exists; those client classes are absent from the public tree (lib/Service/Datafordeler holds only DTOs); not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:226 \"CPR/CVR lookup (Datafordeler) :: partial (enterprise)\" | open for the lab: With the enterprise package enabled, does Søg Borger query CPR by number and return a person not yet on any case?",
@@ -15824,7 +15916,7 @@
 			"feature": "parties-and-contacts",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/contacts-leaf-cases-panel",
 				"prs": [
 					{
@@ -15834,7 +15926,7 @@
 						"mergedAt": "2026-09-18T15:05:00Z"
 					}
 				],
-				"evidence": "src/manifest.json:7053,7145,7344,7436; dossiq#3083 19b334fb; openregister#3893 caf4fd43a",
+				"evidence": "Not built: the contact page lists the contact's documents (src/manifest.json contact-documents, over dispatch) and contact moments (contact-moments), but no row opens what it names: contact-moments has no rowRoute or row action, and contact-documents' only row action (open-case) opens the case, not the document, as REQ-CRS-04 requires. Was: src/manifest.json:7053,7145,7344,7436; dossiq#3083 19b334fb; openregister#3893 caf4fd43a",
 				"owner": "ConductionNL/openregister",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -15846,6 +15938,26 @@
 				"requirement": [
 					"openregister:openspec/changes/contacts-leaf-cases-panel/specs/integration-contacts :: The contacts leaf offers a detail surface with a cases panel",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/party-pages :: The contact page lists the contact's documents and communication (REQ-CRS-04)"
+				],
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/contact-birth-longdate-social-history-stacked",
+					"openspec/changes/contact-persons-tab-in-actions",
+					"openspec/changes/contact-reachability",
+					"openspec/changes/contact-side-cards-from-moments",
+					"openspec/changes/identity-bsn-inline",
+					"openspec/changes/organisation-contact-persons",
+					"openspec/changes/organisation-contact-persons-tab",
+					"openspec/changes/organisation-header-open-cases",
+					"openspec/changes/organisation-side-lists-stacked",
+					"openspec/changes/organisation-side-open-ticket",
+					"openspec/changes/party-contact-moments-board-lines",
+					"openspec/changes/party-dates-longdate",
+					"openspec/changes/party-history-link",
+					"openspec/changes/party-overview-card-order",
+					"openspec/changes/party-tickets-all-with-reference",
+					"openspec/changes/party-tickets-link",
+					"openspec/changes/screens-round12-relations"
 				]
 			},
 			"evidence": {
@@ -15891,6 +16003,10 @@
 				"requirement": [
 					"openspec/specs/brp-register :: A BRP person carries the secrecy indication (REQ-BRP-003)",
 					"openspec/specs/initiator-display :: A protected person's number stays masked until you reveal it (REQ-ID-3)"
+				],
+				"plan": [
+					"openspec/changes/contacts-secrecy-pill",
+					"openspec/changes/screens-round12-relations"
 				]
 			},
 			"evidence": {
@@ -15936,6 +16052,10 @@
 				},
 				"requirement": [
 					"openspec/specs/security-hardening :: Sensitive fields are declared behind an extra group (REQ-SEC-SF-1)"
+				],
+				"plan": [
+					"openspec/changes/bsn-exact-lookup",
+					"openspec/changes/bsn-reveal-logged"
 				]
 			},
 			"evidence": {
@@ -16017,6 +16137,10 @@
 				"requirement": [
 					"openspec/specs/roles-decisions :: Every case type offers a Gemachtigde role (REQ-ROLE-009)",
 					"openspec/specs/roles-decisions :: The Parties tab shows who is represented (REQ-ROLE-010)"
+				],
+				"plan": [
+					"openspec/changes/mandated-case-steps-read-unscoped",
+					"openspec/changes/site-business-and-authorisation"
 				]
 			},
 			"evidence": {
@@ -16305,7 +16429,8 @@
 				"requirement": [
 					"openspec/specs/case-history-surface :: The case carries one timeline of everything said about it (REQ-TL-10)",
 					"openspec/specs/case-history-surface :: The standard notes are administered text, not retyped (REQ-TL-14)"
-				]
+				],
+				"plan": "openspec/changes/history-note-card"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/JournalNoteController.php:59,75,110,143,163 list, create, edit, delete and lock journal notes; src/views/CaseDetailView.vue:186 JournalNoteList on the Journalnotater tab | round 2 drive: procest/opencase/round2/code-census.md:234 \"Journal notes (rich text, lockable) :: yes\"",
@@ -16354,6 +16479,11 @@
 				"requirement": [
 					"openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption :: A contact moment logged on a case is appended to pipelinq's record (REQ-PLQ-02)",
 					"openspec/changes/contacts-domain/specs/kcc-klantcontact-integratie :: A contact moment names its contact and you log one from the contact page (REQ-KCC-011)"
+				],
+				"plan": [
+					"openspec/changes/contact-log-skips-automatic",
+					"openspec/changes/contact-side-cards-from-moments",
+					"openspec/changes/party-contact-moments-board-lines"
 				]
 			},
 			"evidence": {
@@ -16394,7 +16524,10 @@
 					"openspec/specs/case-email-integration :: The system SHALL prefill an NC Mail draft from a template — it SHALL NOT send mail itself",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-email-integration :: A handler attaches case documents to a mail from the case (REQ-CRS-33)"
 				],
-				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/case-mail-through-the-mail-account-with-rfc-8058"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/SendEmailDialog.vue:11-129 Fra, Til, Cc, Bcc, Emne, rich text Besked, Gem som dokument på sagen and the document's files as attachments; lib/Controller/EmailController.php:215-251 sends through the user's Mail app account; no mail templates | round 2 drive: procest/opencase/round2/code-census.md:112 \"E-mail: sending a document from the user's own Mail-app account\"",
@@ -16474,7 +16607,7 @@
 			"feature": "case-email-integration",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "integriq/mail-intake-creates-cases",
 				"prs": [
 					{
@@ -16484,7 +16617,7 @@
 						"mergedAt": "2026-09-18T12:00:00Z"
 					}
 				],
-				"evidence": "/api/mail-intake/log/{entryId}/file-on-case; appinfo/routes.php:787; dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8",
+				"evidence": "Not built: the Postvak page (src/manifest.d/88-postvak.json) lists the unfiled intake messages, but its Link to case action only navigates to a suggested case (visible only when suggestion.case is set) and New case opens the case list; no act files the message on a case the handler picks and takes it off the list, as REQ-CRS-18 requires. Was: /api/mail-intake/log/{entryId}/file-on-case; appinfo/routes.php:787; dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8",
 				"owner": "ConductionNL/integriq",
 				"screen": {
 					"canvas": "design-system",
@@ -16494,6 +16627,9 @@
 					"integriq:openspec/specs/mail-intake :: A mailbox is a source and a message is an object (REQ-MAIL-001)",
 					"integriq:openspec/specs/mail-intake :: A received message is offered to the owning app as a typed event (REQ-MAIL-003)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/intake-from-a-channel :: The organisation's mailbox lists every unfiled message and files one on a case (REQ-CRS-18)"
+				],
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability"
 				]
 			},
 			"evidence": {
@@ -16542,7 +16678,8 @@
 				},
 				"requirement": [
 					"openspec/specs/berichtenbox-integration :: Digital post is sent through integriq and never simulated by dossiq"
-				]
+				],
+				"plan": "openspec/changes/woo-requester-notices-really-go-out"
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Controller/DigitalPostController.php:64-73 returns 501 unless enterprise_version is on and Serviceplatformen PostForespoergClient exists; lib/Command/KombiPostAfsendCommand.php:32 needs DigitalPostSendClient; neither client is in the public tree (lib/Service/Serviceplatformen); not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:236 \"Digital post shipment with reply flag and status :: partial (enterprise)\" | open for the lab: With the enterprise package, does Forsendelse, Digital post on a document send it and show a shipment status?",
@@ -16592,7 +16729,11 @@
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakContact"
 				},
-				"plan": "openspec/changes/portal-conversation-live-pass",
+				"plan": [
+					"openspec/changes/portal-conversation-live-pass",
+					"openspec/changes/an-aanvullingsverzoek-is-a-portal-task",
+					"openspec/changes/woo-dossier-shared-with-the-requester"
+				],
 				"spec": "openspec/specs/portal-contribution",
 				"requirement": "openspec/changes/portal-conversation-live-pass/specs/portal-contribution :: A message goes round trip between the handler and the resident (REQ-PORTAL-RT-01)"
 			},
@@ -16902,6 +17043,9 @@
 				"requirement": [
 					"openregister:openspec/specs/object-interactions :: Notes on Objects via ICommentsManager",
 					"openspec/specs/case-history-surface :: The case carries one timeline of everything said about it (REQ-TL-10)"
+				],
+				"plan": [
+					"openspec/changes/case-notes-stay-in-dossiq"
 				]
 			},
 			"evidence": {
@@ -17056,7 +17200,8 @@
 					"openspec/specs/dmn-decision-tables :: Decision tables are OpenRegister-defined data",
 					"openspec/specs/dmn-decision-tables :: PRIORITY and ANY hit policies are evaluated by OpenRegister",
 					"openregister:openspec/specs/flow-decision-tables :: A decision-table step evaluates its table against every item"
-				]
+				],
+				"plan": "openspec/changes/decision-tables-live-in-openregister"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri 'dmn|decision table' over lib and src returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:171 \"| 7.2 | Decision tables (DMN) | no |\"",
@@ -17103,7 +17248,8 @@
 				"requirement": [
 					"openspec/specs/roles-decisions :: REQ-DECISION-001: Decision CRUD",
 					"openspec/specs/roles-decisions :: REQ-DECISION-005: Decisions Section on Case Detail"
-				]
+				],
+				"plan": "openspec/changes/beschikking-chain-on-the-case"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/AccessDecisionService.php:15,36-44,81 a decision record (decision text, complaint guidance, approved by, sent by) exists for FOI requests only; ordinary cases have no decision record | round 2 drive: procest/opencase/round2/code-census.md:82 \"Decisions: FOI only: `AccessRequest`\"",
@@ -17191,6 +17337,17 @@
 				"requirement": [
 					"openspec/specs/woo-case-type :: Per-document disclosure assessment",
 					"openspec/specs/woo-case-type :: Redaction via Docudesk integration"
+				],
+				"plan": [
+					"openspec/changes/a-delivered-set-is-written-by-publishing-only",
+					"openspec/changes/a-verdict-marks-its-document-in-scope",
+					"openspec/changes/resident-start-points-have-a-page",
+					"openspec/changes/woo-case-screens-and-objections",
+					"openspec/changes/woo-decision-records-what-was-withheld",
+					"openspec/changes/woo-five-steps",
+					"openspec/changes/woo-request-scoped-access",
+					"openspec/changes/woo-request-takes-over-from-opencatalogi",
+					"openspec/changes/woo-requester-notices-really-go-out"
 				]
 			},
 			"evidence": {
@@ -17241,6 +17398,14 @@
 				"requirement": [
 					"openspec/specs/bezwaar-beroep-workflow :: REQ-BBW-011 Bezwaar en beroep registers SHALL be reachable through the dossiq manifest navigation",
 					"openspec/specs/bezwaar-lifecycle :: Bezwaar Objection Object Schema"
+				],
+				"plan": [
+					"openspec/changes/case-session-with-parties-and-minutes",
+					"openspec/changes/creating-into-deliberation-runs-the-panel-check",
+					"openspec/changes/every-move-into-deliberation-runs-the-panel-check",
+					"openspec/changes/migrate-committees-to-decidiq",
+					"openspec/changes/only-the-advice-transition-sets-the-outcome",
+					"openspec/changes/woo-case-screens-and-objections"
 				]
 			},
 			"evidence": {
@@ -17283,7 +17448,8 @@
 					"openspec/specs/archief-edepot-handover :: Retention rules MUST be declared, not executed, by dossiq",
 					"openspec/specs/archief-edepot-handover :: The case page reads the archival facts openregister publishes (REQ-ARCH-10)",
 					"openspec/specs/roles-decisions :: REQ-RESULT-001: Case Result Recording"
-				]
+				],
+				"plan": "openspec/changes/archiving-recompute-once"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 there is no result; archiving is a status value 3 (src/views/CaseDetailView.vue:84-87) and a closed-case XML export (lib/Service/CaseExportService.php), with no retention rule | round 2 drive: procest/_round2/compare/M1-functionality.md:176 \"| 7.7 | Result drives archival nomination and retention | no |\"",
@@ -17370,6 +17536,13 @@
 					"openspec/specs/termijn-binding :: A case type's term is a lead time or a fixed date (REQ-TERM-064)",
 					"openspec/specs/termijn-binding :: An internal target is clocked apart and never shown to the citizen (REQ-TERM-063)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/termijn-binding :: A lead time in days yields the case's target date (REQ-CRS-19)"
+				],
+				"plan": [
+					"openspec/changes/a-request-form-opens-the-case-at-once",
+					"openspec/changes/intake-says-when-the-term-starts",
+					"openspec/changes/omgevingsvergunning-starts-its-term",
+					"openspec/changes/woo-request-takes-over-from-opencatalogi",
+					"openspec/changes/woo-term-is-computed-and-reported-right"
 				]
 			},
 			"evidence": {
@@ -17414,9 +17587,10 @@
 				},
 				"requirement": [
 					"openspec/changes/one-term-engine/specs/my-work :: One front-end helper decides days left and overdue (REQ-OTE-07)",
-					"openspec/changes/deadline-signals-on-the-dashboard/specs/signalering-widgets :: One deadlines table replaces the overdue and deadline alert tiles (REQ-SIG-004)",
+					"openspec/specs/signalering-widgets :: One deadlines table replaces the overdue and deadline alert tiles (REQ-SIG-004)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/my-work :: An overdue case is marked on its page and in the case list (REQ-CRS-34)"
-				]
+				],
+				"plan": "openspec/changes/task-list-deadline-tones"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:24-32,706-707 overdue styling on the next reminder in the case header; src/views/AccessRequestListView.vue:36 traffic-light AccessDeadlineBadge on FOI requests; the case lists (CaseListView.vue, MyCasesView.vue) show no deadline | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:19 \"Red when overdue (1 sep on a 7 sep instance).\"",
@@ -17575,7 +17749,11 @@
 					"board": null,
 					"reason": "backend: deadline e-mails"
 				},
-				"requirement": "openspec/specs/termijn-escalation :: Pro-actieve notificaties bij naderende deadlines (REQ-TERM-004)"
+				"requirement": "openspec/specs/termijn-escalation :: Pro-actieve notificaties bij naderende deadlines (REQ-TERM-004)",
+				"plan": [
+					"openspec/changes/case-mail-through-the-mail-account-with-rfc-8058",
+					"openspec/changes/termijn-notices-send"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/AccessDeadlineNotificationJob.php:22-80 would notify on FOI deadlines, but nothing schedules it (not in appinfo/info.xml, not added in lib/AppInfo/Application.php:172-245) and lib/Notification/FileShareNotifier.php:229 throws UnknownNotificationException for its access_deadline_* subjects; no e-mail path | round 2 drive: procest/opencase/round2/code-census.md:245 \"FOI statutory deadline with extension and notification job :: yes\"",
@@ -17612,7 +17790,8 @@
 				},
 				"requirement": [
 					"openspec/specs/case-management :: The lawful-purpose clock and the archive clock are kept apart (REQ-CRW-03)"
-				]
+				],
+				"plan": "openspec/changes/archiving-recompute-once"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ExportClosedCasesJob.php:14-44 exports closed cases to an archive folder hourly when enabled; no retention period, destruction date or deletion anywhere in lib/Service | round 2 drive: procest/opencase/round2/code-census.md:222 \"Closed-case XML export for archive :: yes\"",
@@ -17773,6 +17952,10 @@
 				"requirement": [
 					"openspec/specs/termijnbewaking-schemas :: A moved date shows its reason on the case (REQ-TERM-017)",
 					"openspec/specs/termijn-binding :: A term ends on a day, not at a moment (REQ-TERM-DAY-001)"
+				],
+				"plan": [
+					"openspec/changes/intake-says-when-the-term-starts",
+					"openspec/changes/woo-term-is-computed-and-reported-right"
 				]
 			},
 			"evidence": {
@@ -17820,7 +18003,8 @@
 					"openspec/specs/termijnbewaking-schemas :: Every working-day answer reads the administered calendar (REQ-TERM-026)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/termijnbewaking-schemas :: An administrator maintains the working calendar in one place (REQ-CRS-20)"
 				],
-				"note": "Closing round 12 Nov: the missing part is openregister's (the working calendar is OpenRegister's WorkingCalendarService (lib/Service/TermijnTimerService.php CALENDAR_SERVICE_CLASS); dossiq has no settings entry for it); specified in change capability-rows-say-the-whole-capability."
+				"note": "Closing round 12 Nov: the missing part is openregister's (the working calendar is OpenRegister's WorkingCalendarService (lib/Service/TermijnTimerService.php CALENDAR_SERVICE_CLASS); dossiq has no settings entry for it); specified in change capability-rows-say-the-whole-capability.",
+				"plan": "openspec/changes/woo-term-is-computed-and-reported-right"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 no calendar model in any component; the only mention is the TODO at src/openzaak/components/besluiten/models.py:172",
@@ -17977,7 +18161,11 @@
 				"reachedOn": "TermijnDashboard audit widget; BezwaarDetail dwangsom fields (display only)",
 				"note": "Built by notice-of-default-from-the-case. Not built yet: a notices list on the case page itself (task 3, second half).",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"plan": "openspec/changes/notice-of-default-from-the-case",
+				"plan": [
+					"openspec/changes/notice-of-default-from-the-case",
+					"openspec/changes/case-money-is-configuration",
+					"openspec/changes/penalty-is-a-stored-calculation"
+				],
 				"requirement": [
 					"openspec/specs/dwangsom-calculation :: Dwangsom-staffel berekening volgens AWB 4:17 (REQ-TERM-006)",
 					"openspec/changes/notice-of-default-from-the-case/specs/ingebrekestelling :: A handler registers a notice of default on the case (REQ-ING-CASE-01)",
@@ -18027,7 +18215,8 @@
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqKop"
 				},
-				"requirement": "openspec/changes/unified-search-opens-every-hit-in-dossiq/specs/case-search-via-or-unified-search :: A hit on a record with no page opens its case"
+				"requirement": "openspec/changes/unified-search-opens-every-hit-in-dossiq/specs/case-search-via-or-unified-search :: A hit on a record with no page opens its case",
+				"plan": "openspec/changes/case-search-declares-its-fields"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:36 nav entry to the search page; src/views/SearchView.vue:7,229 one box over content, titles and case numbers, dispatches the store search; lib/Controller/SearchController.php:61 GET /api/v1/search returns cases, documents and files; lib/AppInfo/Application.php:114-116 three Nextcloud unified search providers in the header | round 2 drive: procest/opencase/round2/search-anatomy.md:18 \"Query \"Lund\" grouped both cases under Cases with number and title, each linking to the case.\"",
@@ -18090,7 +18279,8 @@
 				"requirement": [
 					"openspec/specs/case-search-via-or-unified-search :: REQ-CTF-01 A case type says which of its fields are worth filtering on",
 					"openspec/specs/case-search-via-or-unified-search :: REQ-CTF-02 The case list filters on a case type's own fields"
-				]
+				],
+				"plan": "openspec/changes/case-search-declares-its-fields"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseFieldSearchView.vue:9-70 ten fixed fields (text, organisation, year, status, case type, KLE, sensitivity, facet, insight level, responsible), :277 api.getCases; no field varies with the case type | round 2 drive: procest/opencase/round2/search-anatomy.md:8 \"Ten fields on one form. No deadline or date-range filter on cases.\" | open for the lab: Does choosing a Sagstype in Søg sager add any case-type-specific field to the form?",
@@ -18131,6 +18321,10 @@
 				"requirement": [
 					"openspec/specs/case-search-and-lists :: A saved list of cases is a lens, not a place (REQ-CSL-05)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-search-and-lists :: A handler saves a search as a view of their own (REQ-CRS-08)"
+				],
+				"plan": [
+					"openspec/changes/case-type-pins-are-views",
+					"openspec/changes/saved-filters-manage-and-defaults"
 				]
 			},
 			"evidence": {
@@ -18380,7 +18574,8 @@
 				"requirement": [
 					"openregister:openspec/changes/contacts-leaf-cases-panel/specs/integration-contacts :: The contacts leaf offers a name search",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/initiator-selection :: A handler searches persons by BSN (REQ-CRS-21)"
-				]
+				],
+				"plan": "openspec/changes/bsn-exact-lookup"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js /search/citizen and /search/company; lib/Controller/CitizenController.php:143,158 GET /api/v1/citizen/search uses the CPR service when enterprise is on and a local fallback search (:106) when it is off; /api/v1/citizen/cases and /documents give the 360 view | round 2 drive: procest/opencase/round2/pages/Search-Citizen.md:5 \"Find a citizen by CPR, name or address and open a citizen 360 view with their cases and documents.\"",
@@ -18461,7 +18656,8 @@
 				},
 				"requirement": [
 					"openspec/specs/task-management :: REQ-TASK-021 The Tasks index has five search fields"
-				]
+				],
+				"plan": "openspec/changes/task-list-header-funnels"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/WorkflowController.php:92 GET /api/v1/me/workflow-tasks lists the user's document workflow tasks with no filter parameters; no task search view in src/router/index.js | round 2 drive: procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
@@ -18504,7 +18700,8 @@
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqKop"
 				},
-				"requirement": "openspec/changes/unified-search-opens-every-hit-in-dossiq/specs/case-search-via-or-unified-search :: Every dossiq schema is linked or kept out"
+				"requirement": "openspec/changes/unified-search-opens-every-hit-in-dossiq/specs/case-search-via-or-unified-search :: Every dossiq schema is linked or kept out",
+				"plan": "openspec/changes/case-search-declares-its-fields"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/AppInfo/Application.php:114-116 registers OpenCaseCasesSearchProvider, OpenCaseDocumentsSearchProvider and OpenCaseFilesSearchProvider; lib/Search/OpenCaseCasesSearchProvider.php:43-74 returns cases linking to case/{id} | round 2 drive: procest/opencase/round2/pages/NextcloudUnifiedSearch.md:5 \"Three OpenCase providers in unified search: Cases, Documents, Files.\"",
@@ -18714,7 +18911,10 @@
 					"openspec/specs/process-mining-bottlenecks :: Bottleneck ranking",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/process-mining-bottlenecks :: Process analytics shows dwell time as a heatmap (REQ-CRS-36)"
 				],
-				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/status-type-phase"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'heatmap|lead.?time|throughput' over src and lib returns nothing; no report or chart view in src/router/index.js | round 2 drive: procest/opencase/round2/code-census.md:258 \"Report pages or charts :: no\"",
@@ -18916,6 +19116,10 @@
 				"requirement": [
 					"openspec/specs/case-history-surface :: Change history is a case-detail sidebar tab, not a standalone page",
 					"openspec/specs/case-history-surface :: The case carries one timeline of everything said about it (REQ-TL-10)"
+				],
+				"plan": [
+					"openspec/changes/history-note-card",
+					"openspec/changes/task-side-history-in-words"
 				]
 			},
 			"evidence": {
@@ -19005,7 +19209,8 @@
 					]
 				},
 				"spec": "openspec/specs/case-hours-via-humaniq-leaf",
-				"requirement": "openspec/specs/case-hours-via-humaniq-leaf :: REQ-HRS-001, the hours surface on a case is a leaf placement"
+				"requirement": "openspec/specs/case-hours-via-humaniq-leaf :: REQ-HRS-001, the hours surface on a case is a leaf placement",
+				"plan": "openspec/changes/hours-card-board-look"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 the same grep over src/openzaak finds nothing; no time model in the ZGW Zaken API",
@@ -19092,6 +19297,10 @@
 				"requirement": [
 					"openspec/specs/case-types :: The Case types pages are the only case type editor (REQ-CT-EDIT-1)",
 					"openspec/specs/case-types :: A case type's statuses and fields are edited from its page (REQ-CT-PARTS-1)"
+				],
+				"plan": [
+					"openspec/changes/case-type-handler-label",
+					"openspec/changes/case-type-status-field-lists-as-config"
 				]
 			},
 			"evidence": {
@@ -19142,6 +19351,10 @@
 					"openspec/specs/case-types :: An exported case type carries its own configuration (REQ-CT-40)",
 					"openspec/specs/case-types :: The case type list exports its selection",
 					"openspec/specs/case-types :: An import writes the objects or says it did not (REQ-CT-42)"
+				],
+				"plan": [
+					"openspec/changes/case-definition-packages",
+					"openspec/changes/package-reinstall-applies-changed-content"
 				]
 			},
 			"evidence": {
@@ -19179,7 +19392,8 @@
 				},
 				"requirement": [
 					"openspec/specs/property-definition-management :: A case-type field can be every type the engine validates (REQ-PDM-10)"
-				]
+				],
+				"plan": "openspec/changes/case-type-fields-columns"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseEntity.php fixed columns only (caseNumber, title, casetypeId, statusId, KLE, facet, sensitivity, insightLevel, summary); grep -ri 'customfield|custom field|extra_field' over lib and src returns nothing; src/components/CaseInfoPanel.vue shows the same fixed fields for every case type | round 2 drive: procest/opencase/round2/journeys.md:37 \"No statuses, roles, deadlines, fields or workflow can be attached\"",
@@ -19304,7 +19518,8 @@
 					"board": null,
 					"reason": "no dossiq screen: case page layout is configured in buildiq"
 				},
-				"requirement": "buildiq:openspec/changes/case-page-layout-per-case-type/specs/page-layout-per-type :: A tab declares its kind, and an admin orders tabs per case type (REQ-OBPL-004)"
+				"requirement": "buildiq:openspec/changes/case-page-layout-per-case-type/specs/page-layout-per-type :: A tab declares its kind, and an admin orders tabs per case type (REQ-OBPL-004)",
+				"plan": "openspec/changes/case-menu-tabs-carry-icons"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:447,449,456,459,465 caseTabs() is a hard coded list (Info, Dokumenter, Filer, Parter, Journalnotater, Andre sagsbehandlere, Log, Adgang plus three data-driven extras), identical for every case type | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -19342,7 +19557,10 @@
 					"buildiq:openspec/changes/case-page-layout-per-case-type/specs/page-layout-per-type :: A widget tab holds a grid, each widget with a width and an order (REQ-OBPL-005)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-page :: A case type's page offers every widget kind the matrix names (REQ-CRS-46)"
 				],
-				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/overview-cards-per-case-type"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue tab bodies are fixed components (CaseInfoPanel.vue, DocumentList.vue, CaseParticipantList.vue); no widget model in lib/Db | round 2 drive: procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
@@ -19419,7 +19637,8 @@
 					"board": "DqZaaktypeVelden"
 				},
 				"spec": "openspec/specs/case-search-and-lists",
-				"requirement": "openspec/specs/case-search-and-lists :: The columns of a list follow the case type (REQ-CSL-04)"
+				"requirement": "openspec/specs/case-search-and-lists :: The columns of a list follow the case type (REQ-CSL-04)",
+				"plan": "openspec/changes/screens-round12-case-type-lists"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseListView.vue fixed columns Sagsnummer, Titel, Organisation, KLE-nummer, Status, Opdateret; no column chooser and nothing per case type | round 2 drive: procest/opencase/round2/code-census.md:173 \"Per-case-type column configuration: none.\"",
@@ -19502,7 +19721,8 @@
 					"openspec/specs/generate-fills-per-template :: A template names what it fills in",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/generate-fills-per-template :: An administrator lists, adds and edits document templates (REQ-CRS-11)"
 				],
-				"note": "Closing round 12 Nov: the missing part is filinq's (document templates are filinq's (lib/Service/Flow/RetiredDocumentSteps.php, \"Filinq owns document generation\"); lib/Controller/TemplateController.php only lists and activates case type templates); specified in change capability-rows-say-the-whole-capability."
+				"note": "Closing round 12 Nov: the missing part is filinq's (document templates are filinq's (lib/Service/Flow/RetiredDocumentSteps.php, \"Filinq owns document generation\"); lib/Controller/TemplateController.php only lists and activates case type templates); specified in change capability-rows-say-the-whole-capability.",
+				"plan": "openspec/changes/starter-content-and-templates"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:157,337 Administrer skabeloner for Administrator or Template Designer; src/router/index.js templates and templates/fields routes; lib/Controller/TemplateController.php:43,60,111,129 list, upload, delete, download; lib/Service/TemplateMergeService.php merges case and document fields | round 2 drive: procest/opencase/round2/pages/ManageTemplates.md:5 \"Upload, create and manage document templates that merge case, document and address fields.\"",
@@ -19540,7 +19760,8 @@
 				"requirement": [
 					"openspec/specs/case-email-integration :: The system SHALL provide `EmailTemplateAdmin.vue` for per-case-type template CRUD",
 					"openspec/specs/case-email-integration :: The system SHALL version email templates on edit — old versions are retained, not overwritten"
-				]
+				],
+				"plan": "openspec/changes/case-type-messages-moment-channel"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/EmailController.php sends a free-text mail from the user's Mail app account; grep -ri 'mailtemplate|emailtemplate' over lib and src returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:240 \"| 11.12 | E-mail template library | no |\"",
@@ -19668,7 +19889,8 @@
 					"board": null,
 					"reason": "no dossiq screen: feature toggles are OpenRegister's"
 				},
-				"requirement": "openregister:openspec/changes/feature-toggle-surface/specs/apphost-settings-plane :: An app declares feature toggles and the plane administers them"
+				"requirement": "openregister:openspec/changes/feature-toggle-surface/specs/apphost-settings-plane :: An app declares feature toggles and the plane administers them",
+				"plan": "openspec/changes/the-support-note-can-be-switched-off"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/Configuration.php:140 enterprise_version gate; src/views/ConfigurationView.vue:8-30 settings tab edits config keys; lib/Command/ConfigSetCommand.php and EnterpriseEnableCommand.php. A few switches, no feature flag framework | round 2 drive: procest/opencase/round2/code-census.md:4 \"gates it on `enterprise_version` (`lib/Service/Configuration.php:140`) and `ai_enabled`\"",
@@ -19874,7 +20096,8 @@
 				"requirement": [
 					"openspec/specs/status-transition-engine :: The rules of a case type are listed and tried in the editor (REQ-SDC-05)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/status-transition-engine :: An administrator writes a rule's conditions and actions (REQ-CRS-38)"
-				]
+				],
+				"plan": "openspec/changes/case-type-conditional-rules"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case types are code list rows (src/views/ConfigurationView.vue:230); lib/Service holds no rule or condition engine; document workflows (lib/Service/WorkflowService.php) are fixed review or approval steps | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -19997,7 +20220,11 @@
 					"openspec/specs/property-definition-management :: You group case types in folders (REQ-PDM-01)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/property-definition-management :: You group templates in folders (REQ-CRS-39)"
 				],
-				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/advanced-holds-the-catalogue-folders",
+					"openspec/changes/catalogue-object-types"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/ConfigurationView.vue:228-235 flat code lists; templates are a flat list at /templates | round 2 drive: procest/_round2/compare/M1-functionality.md:251 \"| 11.23 | Catalog with folders for case types, attributes, templates | no |\"",
@@ -20182,7 +20409,10 @@
 				"reachedOn": "Settings > Checklists; VTH case types available after install",
 				"note": "Missing: the VTH admin page (workflows, leges, beschikking templates, DSO), placing the VTH panels on the case, and callers for the VTH template and DSO intake.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"plan": "openspec/changes/vth-cases-run-end-to-end",
+				"plan": [
+					"openspec/changes/vth-cases-run-end-to-end",
+					"openspec/changes/case-definition-packages"
+				],
 				"requirement": [
 					"openspec/changes/vth-cases-run-end-to-end/specs/vth-admin-settings :: A package shows its configuration on its own admin tab (REQ-VAS-PKG-01)",
 					"openspec/changes/vth-cases-run-end-to-end/specs/vth-admin-settings :: A case that came in through DSO can be forwarded or shared from the case (REQ-VAS-DSO-01)"
@@ -20228,6 +20458,14 @@
 				"requirement": [
 					"openspec/specs/first-time-setup :: REQ-SETUP-PRO-001 — dossiq Declares Its Setup Steps In The Manifest",
 					"openspec/specs/first-time-setup :: The wizard opens with a welcome, then the example data"
+				],
+				"plan": [
+					"openspec/changes/example-set-installs-as-written",
+					"openspec/changes/example-set-pieter-reads-the-household",
+					"openspec/changes/package-examples",
+					"openspec/changes/starter-content-and-templates",
+					"openspec/changes/zuiddrecht-example-set",
+					"openspec/changes/zuiddrecht-staff-have-seen-the-tour"
 				]
 			},
 			"evidence": {
@@ -20276,7 +20514,8 @@
 					"openspec/specs/zgw-api-mapping :: DRC (Documenten API) resources MUST be mappable",
 					"openspec/specs/zgw-api-mapping :: ZTC (Catalogi API) resources MUST be fully mappable",
 					"openspec/specs/zgw-api-mapping :: BRC (Besluiten API) resources MUST be mappable"
-				]
+				],
+				"plan": "openspec/changes/guards-refuse-when-unsure"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'zgw|zaken.?api|catalogi' over lib and src returns nothing; the data lives in its own tables | round 2 drive: procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\"",
@@ -20392,6 +20631,11 @@
 					"openspec/specs/stuf-integration :: REQ-002: StUF-ZKN case handlers (zakLk01, zakLv01, edcLk01)",
 					"openspec/specs/stuf-integration :: REQ-003: StUF-BG person query handler (npsLv01)",
 					"openspec/specs/stuf-zkn-outbound :: Outbound orchestration"
+				],
+				"plan": [
+					"openspec/changes/stuf-onto-integriq",
+					"openspec/changes/stuf-provider-through-integriq",
+					"openspec/changes/stuf-writes-through-integriq"
 				]
 			},
 			"evidence": {
@@ -20474,7 +20718,8 @@
 					"openspec/specs/kvk-register :: KvK company register schema exists in OpenRegister",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/brp-register :: A person or company is looked up in the live registry when one is connected (REQ-CRS-23)"
 				],
-				"note": "Closing round 12 Nov: the missing part is integriq's (live registry lookups run through the registry providers; lib/Service/People/PersonNumberLookup.php searches the local brpPerson schema only); specified in change capability-rows-say-the-whole-capability."
+				"note": "Closing round 12 Nov: the missing part is integriq's (live registry lookups run through the registry providers; lib/Service/People/PersonNumberLookup.php searches the local brpPerson schema only); specified in change capability-rows-say-the-whole-capability.",
+				"plan": "openspec/changes/brp-client-retired"
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Controller/CitizenController.php:14,158-159 and lib/Service/CprCvrLookupService.php:7,35 use Datafordeler\\CitizenClient only when enterprise_version is 1 and the class exists; lib/Service/Datafordeler holds data classes but no CitizenClient or CompanyClient. Not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:103 \"Datafordeler (`lib/Service/Datafordeler/`: CPR CitizenData, CVR CompanyData, BBR/MAT estate data)\" | open for the lab: On an OpenCase enterprise instance, does Søg borger by CPR return a person from the CPR register?",
@@ -20828,7 +21073,8 @@
 			"built": {
 				"state": "decided-no",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: decided no: Open Register keeps a single built-in database search backend (ConductionNL/openregister openspec/architecture/adr-007-single-builtin-search-backend.md); competitor-parity-2026-09 marks this row a deliberate no."
+				"note": "OpenSpec pass 2026-09-27: decided no: Open Register keeps a single built-in database search backend (ConductionNL/openregister openspec/architecture/adr-007-single-builtin-search-backend.md); competitor-parity-2026-09 marks this row a deliberate no.",
+				"plan": "openspec/changes/admin-tabs-carry-the-settings-board-blocks"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/ElasticsearchService.php:16,26,78-89 Elasticsearch index with the ingest-attachment pipeline for file content | round 2 drive: procest/opencase/round2/code-census.md:107 \"Search: Elasticsearch with a `danish_content` analyzer\"",
@@ -20876,7 +21122,10 @@
 					"openspec/specs/gis-integration :: Cases-on-map endpoint MUST be clustered and access-guarded",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/gis-integration :: The map can show layers from an ArcGIS service (REQ-CRS-41)"
 				],
-				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/location-dialog-map-layers"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Controller/EstateController.php:30,100,147 live estate lookup from Datafordeler only with enterprise_version 1; lib/Service/Datafordeler EstateData, LandPlotData are data classes without a client in the open tree; no map. Not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/pages/EstateDetail.md:15 \"Enterprise edition fetches it from Datafordeler; Basic edition lets you type it.\" | open for the lab: On an enterprise instance, does Søg ejendom fetch BBR and cadastral data from Datafordeler?",
@@ -21136,7 +21385,13 @@
 					"openspec/specs/ai-assistance :: REQ-002: Human-in-the-loop action recording and audit-trail listing",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/ai-assistance :: The assistant carries out a case action after the handler confirms it (REQ-CRS-24)"
 				],
-				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/ai-activity-rows-and-download",
+					"openspec/changes/ai-features-on-the-case-consume-hermiq",
+					"openspec/changes/assistant-card-board",
+					"openspec/changes/hermiq-ai-tooling"
+				]
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 src/components/AiSidePanel.vue, AiActionsMenu.vue, AiPromptDialog.vue are the client; lib/Controller/PageController.php:71 passes ai_enabled; no AI route or service in appinfo/routes.php or lib. Not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:113 \"AI: chat side panel with a prompt library and executable actions\" | open for the lab: With AI enabled on an enterprise instance, can the side panel carry out an action on a case, such as creating a journal note?",
@@ -21160,8 +21415,8 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"built": {
-				"state": "built",
-				"evidence": "CaseSharingTab on the case (src/manifest.json:3497-3502, src/registry.js:1213); lib/Service/Sharing/FederatedCaseShareService.php:96-172 shares a redacted snapshot over openregister's federation leaf and fails closed without it; PublicFederatedTransferPage (src/manifest.json:5372) receives a transfer",
+				"state": "specified",
+				"evidence": "Not built: accepting a transfer (lib/Service/CaseTransferService.php completeTransfer) only sets the transfer record's status and custody trail; it does not make the other organisation the case's owner or keep the sender's read, and the federated activity stream (lib/Service/CaseCollaborationService.php) holds only messages posted by hand on a share, not each act the receiver records, as REQ-CRS-42 requires. Sharing a redacted snapshot is built. Was: CaseSharingTab on the case (src/manifest.json:3497-3502, src/registry.js:1213); lib/Service/Sharing/FederatedCaseShareService.php:96-172 shares a redacted snapshot over openregister's federation leaf and fails closed without it; PublicFederatedTransferPage (src/manifest.json:5372) receives a transfer",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/federated-case-collaboration",
 				"screen": {
@@ -21176,6 +21431,9 @@
 					"openspec/specs/federated-case-collaboration :: The Case-Detail Sharing Surface Is Wired, Not Orphaned",
 					"openspec/specs/federated-case-collaboration :: Federated Case Share Is A Redacted Snapshot, Never The Live Case",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/federated-case-collaboration :: A transfer hands the case over, and the sender follows its activity (REQ-CRS-42)"
+				],
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability"
 				]
 			},
 			"evidence": {
@@ -21219,7 +21477,11 @@
 					"openspec/specs/case-access-control :: A team is a Nextcloud group, a case type's handling team reads its cases, and the handler acts after claiming (REQ-ACC-10)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-access-control :: Each application role states what its members may do (REQ-CRS-14)"
 				],
-				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/admin-data-access",
+					"openspec/changes/case-type-rights-by-role"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/RoleService.php:18,21 privilege types map to the roles User, Administrator, Template Designer; lib/Migration/SeedReferenceData.php:259 seeds them; src/App.vue:166 Konfiguration menu gated on Administrator | round 2 drive: procest/opencase/round2/code-census.md:131 \"Roles: `User`, `Administrator`, `Template Designer`\"",
@@ -21254,7 +21516,8 @@
 					"board": null,
 					"reason": "backend: access policies in OpenRegister"
 				},
-				"requirement": "openregister:openspec/specs/row-field-level-security :: Schemas MUST support row-level security rules via conditional authorization matching"
+				"requirement": "openregister:openspec/specs/row-field-level-security :: Schemas MUST support row-level security rules via conditional authorization matching",
+				"plan": "openspec/changes/admin-data-access"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:255,267,272 a user reaches a case through a profile matched on organisation, sensitivity and a KLE LIKE pattern; lib/Service/PermissionService.php:141,159 read follows the profile level | round 2 drive: procest/opencase/round2/code-census.md:128 \"Access profile = unique tuple (organisation, KLE classification code, sensitivity)\"",
@@ -21299,6 +21562,12 @@
 				"requirement": [
 					"openregister:openspec/changes/object-level-sharing-and-private-scope/specs/object-level-sharing :: Access can be granted on a single object",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-access-control :: A handler grants and withdraws access to one case from its page (REQ-CRS-43)"
+				],
+				"plan": [
+					"openspec/changes/capability-rows-say-the-whole-capability",
+					"openspec/changes/case-access-card-lists-team-and-group-grants",
+					"openspec/changes/people-tab-access-card",
+					"openspec/changes/woo-request-scoped-access"
 				]
 			},
 			"evidence": {
@@ -21340,7 +21609,8 @@
 				"requirement": [
 					"openspec/specs/case-management :: A case type may say when a right it grants ends (REQ-CGP-08)",
 					"openspec/specs/case-management :: A grant that ends, or that reaches one area, says so (REQ-CGP-07)"
-				]
+				],
+				"plan": "openspec/changes/people-tab-access-card"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/GrantAccessDialog.vue:35,41 Tidsbegraenset adgang with an expiry date; lib/Service/PermissionService.php:154,183 expired grants give no read or write; src/components/CaseAccessPanel.vue:97,103 Udloebet or Permanent shown per grant | round 2 drive: procest/opencase/round2/code-census.md:280 \"Direct time-limited case grants :: yes\"",
@@ -21382,7 +21652,8 @@
 					"canvas": "design-system",
 					"board": "DqDocumentenBeheer"
 				},
-				"requirement": "openregister:openspec/changes/object-level-sharing-and-private-scope/specs/object-level-sharing :: Access can be granted on a single object"
+				"requirement": "openregister:openspec/changes/object-level-sharing-and-private-scope/specs/object-level-sharing :: Access can be granted on a single object",
+				"plan": "openspec/changes/document-access-exception"
 			},
 			"evidence": {
 				"opencase": "settled from source by the lane on 2026-09-26, no lab needed: PermissionService.php:274-279 honours a per-user deny override, but no screen writes one (grep -i deny over src finds none); DocumentShareDialog only widens access, which is the override this row asks for | source: opencase@1.1.0 src/views/DocumentDetailView.vue:241 opens DocumentShareDialog; src/components/DocumentShareDialog.vue:4,26,44 share one document to a user, read or edit, with expiry; lib/Service/PermissionService.php:274,280,365 per-user document override (read, write, deny) checked before case access | round 2 drive: procest/opencase/round2/code-census.md:281 \"Per-document user overrides (grant or deny) :: yes\"",
@@ -21425,7 +21696,11 @@
 					"board": null,
 					"reason": "backend: team visibility rule in OpenRegister"
 				},
-				"requirement": "openregister:openspec/changes/rbac-department-role-matrix/specs/rbac-scopes :: A schema declares a department by role matrix keyed on an object field"
+				"requirement": "openregister:openspec/changes/rbac-department-role-matrix/specs/rbac-scopes :: A schema declares a department by role matrix keyed on an object field",
+				"plan": [
+					"openspec/changes/a-handling-team-opens-its-unclaimed-cases",
+					"openspec/changes/case-access-card-lists-team-and-group-grants"
+				]
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:272,274 a privilege matches all organisations or the profile's own organisation unit; src/AdminSettings.vue:1237,1246 privilege form picks Organisationsenhed; lib/Db/Organisation (orgUuid, ncGroupId) ties units to Nextcloud groups | round 2 drive: procest/opencase/round2/code-census.md:79 \"`Organisation` (orgUuid, orgParentUuid, ncGroupId, groupfolderId)\"",
@@ -21551,6 +21826,10 @@
 				"requirement": [
 					"openspec/specs/avg-verwerkingenlogging :: Person-bearing schemas MUST opt into read logging with attribution",
 					"openspec/specs/case-history-surface :: Change history is a case-detail sidebar tab, not a standalone page"
+				],
+				"plan": [
+					"openspec/changes/bsn-reveal-logged",
+					"openspec/changes/social-history-people-and-files"
 				]
 			},
 			"evidence": {
@@ -21672,6 +21951,11 @@
 				"requirement": [
 					"openspec/specs/handler-vervanging-waarneming :: Substitution records MUST be first-class OpenRegister objects",
 					"openspec/specs/mandaat-matrix :: Real-Time Authorization Verdict"
+				],
+				"plan": [
+					"openspec/changes/admin-dead-settings-cards-removed",
+					"openspec/changes/case-type-rights-enforced",
+					"openspec/changes/delegated-authority-guard"
 				]
 			},
 			"evidence": {
@@ -21712,6 +21996,11 @@
 				},
 				"requirement": [
 					"openspec/specs/zaakportaal-mijngemeente :: Document access control — only citizen-addressable documents"
+				],
+				"plan": [
+					"openspec/changes/mandated-case-steps-read-unscoped",
+					"openspec/changes/site-business-and-authorisation",
+					"openspec/changes/woo-dossier-shared-with-the-requester"
 				]
 			},
 			"evidence": {
@@ -21815,7 +22104,8 @@
 				"requirement": [
 					"openregister:openspec/changes/rbac-department-role-matrix/specs/rbac-scopes :: An admin edits the matrix as a grid with a per-user preview",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/role-routing-via-or-rbac :: An administrator edits the role matrix as a grid (REQ-CRS-15)"
-				]
+				],
+				"plan": "openspec/changes/case-type-rights-by-role"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1034,1188,1258 Lokale brugere section adds a privilege by type, sensitivity, KLE and organisation unit; appinfo/routes.php:104 delete privilege; lib/Controller/AdminController.php:222,239 revoke and bulk grant profiles | round 2 drive: procest/opencase/round2/code-census.md:177 \"Users and privileges: `/settings/local-users/{userId}/privileges`.\"",
@@ -21951,7 +22241,15 @@
 				"reachedOn": "needs assessment, MDO, re-integration and data breach register pages; family-plan widget",
 				"note": "Missing: the consent and classification UI, wijkteam-only access, seeded Wmo, Jeugdwet and Participatiewet case types, and the anonymised export.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"plan": "openspec/changes/social-domain-consent-and-safeguards",
+				"plan": [
+					"openspec/changes/social-domain-consent-and-safeguards",
+					"openspec/changes/example-set-pieter-reads-the-household",
+					"openspec/changes/family-plan-by-case",
+					"openspec/changes/investigation-steps-in-the-case-type",
+					"openspec/changes/report-card-handler-name",
+					"openspec/changes/social-history-people-and-files",
+					"openspec/changes/social-people-stacked"
+				],
 				"requirement": [
 					"openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent :: Consent is recorded and revoked on the case (REQ-SDC-CONSENT-01)",
 					"openspec/changes/social-domain-consent-and-safeguards/specs/dossiq-sociaal-domein-avg-consent :: A case type can require a special-category classification and keep cases to its team (REQ-SDC-SAFE-01)",
@@ -22048,7 +22346,11 @@
 				"reachedOn": "Settings > Checklists; FieldEvidence and OfflineSync admin lists",
 				"note": "Missing: an inspection panel on the case that fills a checklist, takes photos and submits the result, and the offline path that feeds the sync queue. Pending proposal 16.1 covers offline.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"plan": "openspec/changes/inspection-checklists-onto-task",
+				"plan": [
+					"openspec/changes/inspection-checklists-onto-task",
+					"openspec/changes/inspection-conflict-card",
+					"openspec/changes/outbox-cards-with-summary"
+				],
 				"requirement": [
 					"openspec/specs/inspection-forms-via-forms-leaf :: Inspection Photos Are Stored Through The OR Photos Leaf",
 					"openspec/specs/inspection-checklists :: Inspection checklist schema",
@@ -22100,7 +22402,11 @@
 				"reachedOn": "Settings > Tenants (CRUD, lifecycle, onboarding tab)",
 				"note": "Missing: wiring provision and usage, enforcing quotas, and a billing view.",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
-				"plan": "openspec/changes/tenant-quotas-enforced-and-billing-shown",
+				"plan": [
+					"openspec/changes/tenant-quotas-enforced-and-billing-shown",
+					"openspec/changes/case-type-rights-enforced",
+					"openspec/changes/tenancy-onto-openregister-organisation"
+				],
 				"requirement": [
 					"openspec/specs/tenant-crud-lifecycle :: Tenant lifecycle state machine (REQ-001-A-LIFECYCLE)",
 					"openspec/changes/tenant-quotas-enforced-and-billing-shown/specs/tenant-quotas :: A tenant past its hard quota cannot create more (REQ-TQ-ENF-01)",
