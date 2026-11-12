@@ -83,6 +83,30 @@ export function conversationEnded(record) {
 }
 
 /**
+ * The hour and minute of a moment, on a 24-hour clock.
+ *
+ * @type {object}
+ */
+const TIME_OPTIONS = { hour: '2-digit', minute: '2-digit', hour12: false }
+
+/**
+ * The day options for a start: day and month, the year added outside the
+ * year of the reference moment.
+ *
+ * @param {Date} start The start of the conversation.
+ * @param {Date} [now] The reference moment (defaults to the current one).
+ * @return {object} Intl.DateTimeFormat options.
+ */
+function dayOptionsFor(start, now) {
+	const reference = now || new Date()
+	const dayOptions = { day: 'numeric', month: 'short' }
+	if (start.getFullYear() !== reference.getFullYear()) {
+		dayOptions.year = 'numeric'
+	}
+	return dayOptions
+}
+
+/**
  * The day and the times: "4 okt, 10:30 tot 10:42", the year added outside
  * the current one, only the start while it runs.
  *
@@ -98,20 +122,14 @@ export function conversationWhen(record, options = {}) {
 	if (start === null) {
 		return ''
 	}
-	const now = options.now || new Date()
 	const locale = options.locale || userLanguage()
-	const dayOptions = { day: 'numeric', month: 'short' }
-	if (start.getFullYear() !== now.getFullYear()) {
-		dayOptions.year = 'numeric'
-	}
-	const time = { hour: '2-digit', minute: '2-digit', hour12: false }
-	const date = format(locale, dayOptions, start).replace(/\.$/, '')
-	const from = format(locale, time, start)
+	const date = format(locale, dayOptionsFor(start, options.now), start).replace(/\.$/, '')
+	const from = format(locale, TIME_OPTIONS, start)
 	const end = endOf(record)
 	if (end === null) {
 		return `${date}, ${from}`
 	}
-	return t('dossiq', '{date}, {start} to {end}', { date, start: from, end: format(locale, time, end) })
+	return t('dossiq', '{date}, {start} to {end}', { date, start: from, end: format(locale, TIME_OPTIONS, end) })
 }
 
 /**
@@ -123,26 +141,64 @@ export function conversationWhen(record, options = {}) {
  * @spec openspec/specs/case-management/spec.md
  */
 export function conversationSummary(record, options = {}) {
-	const parts = []
-	const when = conversationWhen(record, options)
-	if (when !== '') {
-		parts.push(when)
+	const parts = [
+		conversationWhen(record, options),
+		participantList(record, options),
+		durationPart(record),
+	]
+	return parts.filter((part) => part !== '').join(' · ')
+}
+
+/**
+ * The people who joined, as a list in the locale ("A en B").
+ *
+ * @param {object} record The conversation record.
+ * @param {object} options Options, as for conversationWhen.
+ * @return {string} The list, or '' without named people.
+ */
+function participantList(record, options) {
+	const people = participantNames(record)
+	if (people.length === 0) {
+		return ''
 	}
-	const people = Array.isArray(record?.participants) ? record.participants.filter((name) => typeof name === 'string' && name !== '') : []
-	if (people.length > 0) {
-		const locale = options.locale || userLanguage()
-		let list
-		try {
-			list = new Intl.ListFormat(locale, { type: 'conjunction' }).format(people)
-		} catch {
-			list = people.join(', ')
-		}
-		parts.push(list)
+	return formatList(people, options.locale || userLanguage())
+}
+
+/**
+ * @param {object} record The conversation record.
+ * @return {string[]} The non-empty names among its participants.
+ */
+function participantNames(record) {
+	if (!Array.isArray(record?.participants)) {
+		return []
 	}
+	return record.participants.filter((name) => typeof name === 'string' && name !== '')
+}
+
+/**
+ * @param {string[]} people The names.
+ * @param {string|undefined} locale A BCP 47 tag.
+ * @return {string} The names as a conjunction list, or comma-joined when the locale cannot format one.
+ */
+function formatList(people, locale) {
+	try {
+		return new Intl.ListFormat(locale, { type: 'conjunction' }).format(people)
+	} catch {
+		return people.join(', ')
+	}
+}
+
+/**
+ * How long it lasted, in whole minutes and at least one.
+ *
+ * @param {object} record The conversation record.
+ * @return {string} The minutes, or '' without a positive duration.
+ */
+function durationPart(record) {
 	const seconds = Number(record?.durationSeconds)
-	if (Number.isFinite(seconds) && seconds > 0) {
-		const minutes = Math.max(1, Math.round(seconds / 60))
-		parts.push(n('dossiq', '%n minute', '%n minutes', minutes))
+	if (!Number.isFinite(seconds) || seconds <= 0) {
+		return ''
 	}
-	return parts.join(' · ')
+	const minutes = Math.max(1, Math.round(seconds / 60))
+	return n('dossiq', '%n minute', '%n minutes', minutes)
 }
