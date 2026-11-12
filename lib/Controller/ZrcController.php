@@ -253,11 +253,7 @@ class ZrcController extends ZgwController {
 			return $authError;
 		}
 
-		$requiredScope = 'zaken.bijwerken';
-		if ($resource === 'zaken') {
-			$requiredScope = 'zaken.aanmaken';
-		}
-
+		$requiredScope = $this->createScope(resource: $resource);
 		if ($this->zgwService->consumerHasScope($this->request, 'zrc', $requiredScope) === false) {
 			return $this->permissionDeniedResponse();
 		}
@@ -268,6 +264,21 @@ class ZrcController extends ZgwController {
 
 		return null;
 	}//end createRefusal()
+
+	/**
+	 * The scope a create of this resource needs: zaken.aanmaken for a zaak, zaken.bijwerken otherwise.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 *
+	 * @return string
+	 */
+	private function createScope(string $resource): string {
+		if ($resource === 'zaken') {
+			return 'zaken.aanmaken';
+		}
+
+		return 'zaken.bijwerken';
+	}//end createScope()
 
 	/**
 	 * Run the ZGW business rules for a create, knowing whether the zaak is closed.
@@ -317,29 +328,58 @@ class ZrcController extends ZgwController {
 	 */
 	private function beforeCreateSave(string $resource, array $originalBody, array $body): ?JSONResponse {
 		if ($resource === 'statussen') {
-			if ($this->statusEffects->isReopenAttempt(body: $originalBody) === true
-				&& $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.heropenen') === false
-			) {
-				return $this->permissionDeniedResponse();
-			}
-
-			$gebruiksrechtError = $this->statusEffects->unsetUsageRightsRefusal(body: $originalBody);
-			if ($gebruiksrechtError !== null) {
-				return new JSONResponse(data: $gebruiksrechtError, statusCode: Http::STATUS_BAD_REQUEST);
-			}
+			return $this->statusSaveRefusal(originalBody: $originalBody);
 		}
 
-		// Documents live on the case: a join names the case whose folder the
-		// document's file moves into, so a case without a folder refuses it.
 		if ($resource === 'zaakinformatieobjecten') {
-			$refusal = $this->joinHoming->refusal(caseUrl: $this->joinCaseUrl(originalBody: $originalBody, body: $body));
-			if ($refusal !== null) {
-				return new JSONResponse(data: ['detail' => $refusal], statusCode: Http::STATUS_UNPROCESSABLE_ENTITY);
-			}
+			return $this->joinSaveRefusal(originalBody: $originalBody, body: $body);
 		}
 
 		return null;
 	}//end beforeCreateSave()
+
+	/**
+	 * Why a status may not be saved: a reopen without zaken.heropenen (zrc-008c), or an
+	 * eindstatus over documents without indicatieGebruiksrecht (zrc-007q); else null.
+	 *
+	 * @param array $originalBody The body as received.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function statusSaveRefusal(array $originalBody): ?JSONResponse {
+		if ($this->statusEffects->isReopenAttempt(body: $originalBody) === true
+			&& $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.heropenen') === false
+		) {
+			return $this->permissionDeniedResponse();
+		}
+
+		$gebruiksrechtError = $this->statusEffects->unsetUsageRightsRefusal(body: $originalBody);
+		if ($gebruiksrechtError !== null) {
+			return new JSONResponse(data: $gebruiksrechtError, statusCode: Http::STATUS_BAD_REQUEST);
+		}
+
+		return null;
+	}//end statusSaveRefusal()
+
+	/**
+	 * Why a join may not be saved, or null.
+	 *
+	 * Documents live on the case: a join names the case whose folder the
+	 * document's file moves into, so a case without a folder refuses it.
+	 *
+	 * @param array $originalBody The body as received.
+	 * @param array $body         The body after the rules ran.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function joinSaveRefusal(array $originalBody, array $body): ?JSONResponse {
+		$refusal = $this->joinHoming->refusal(caseUrl: $this->joinCaseUrl(originalBody: $originalBody, body: $body));
+		if ($refusal !== null) {
+			return new JSONResponse(data: ['detail' => $refusal], statusCode: Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		return null;
+	}//end joinSaveRefusal()
 
 	/**
 	 * The side effects of a saved create: related zaken, status and result effects.
@@ -1116,15 +1156,7 @@ class ZrcController extends ZgwController {
 			}
 
 			// Zrc-015: Validate productenOfDiensten.
-			$producten = $body['productenOfDiensten'] ?? null;
-			$caseTypeUrl = $body['caseType'] ?? '';
-			if (is_array($producten) === true
-				&& empty($producten) === false
-				&& $this->zgwService->getObjectService() !== null
-				&& empty($caseTypeUrl) === false
-			) {
-				return $this->preValidateProductenOfDiensten(producten: $producten, caseTypeUrl: $caseTypeUrl);
-			}
+			return $this->productsRefusal(body: $body);
 		} catch (\Throwable $e) {
 			// Pre-validation is best-effort; fall through to handleUpdate.
 			$this->zgwService->getLogger()->debug(
@@ -1134,6 +1166,38 @@ class ZrcController extends ZgwController {
 
 		return null;
 	}//end preValidateCaseBody()
+
+	/**
+	 * The zrc-015 refusal of the productenOfDiensten in a body, or null when there is nothing to check.
+	 *
+	 * @param array $body The request body.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function productsRefusal(array $body): ?JSONResponse {
+		if ($this->hasProductsToCheck(body: $body) === false) {
+			return null;
+		}
+
+		return $this->preValidateProductenOfDiensten(producten: $body['productenOfDiensten'], caseTypeUrl: $body['caseType']);
+	}//end productsRefusal()
+
+	/**
+	 * Whether a body names products and a case type to check them against, with a store to read it from.
+	 *
+	 * @param array $body The request body.
+	 *
+	 * @return bool
+	 */
+	private function hasProductsToCheck(array $body): bool {
+		$producten = $body['productenOfDiensten'] ?? null;
+		$caseTypeUrl = $body['caseType'] ?? '';
+
+		return is_array($producten) === true
+			&& empty($producten) === false
+			&& $this->zgwService->getObjectService() !== null
+			&& empty($caseTypeUrl) === false;
+	}//end hasProductsToCheck()
 
 	/**
 	 * The zrc-010 refusal of a communicatiekanaal that is not a resource URL, or null.
@@ -1146,15 +1210,7 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null
 	 */
 	private function communicationChannelRefusal(mixed $channel): ?JSONResponse {
-		if ($channel === null || $channel === '') {
-			return null;
-		}
-
-		$code = 'bad-url';
-		if (filter_var($channel, FILTER_VALIDATE_URL) !== false) {
-			$code = $this->resourceUrlProblem(path: (string)parse_url($channel, PHP_URL_PATH));
-		}
-
+		$code = $this->communicationChannelProblem(channel: $channel);
 		if ($code === null) {
 			return null;
 		}
@@ -1173,6 +1229,28 @@ class ZrcController extends ZgwController {
 			statusCode: Http::STATUS_BAD_REQUEST
 		);
 	}//end communicationChannelRefusal()
+
+	/**
+	 * What is wrong with a communicatiekanaal: `bad-url`, `invalid-resource`, or null when nothing is.
+	 *
+	 * An absent or empty channel is not checked.
+	 *
+	 * @param mixed $channel The communicatiekanaal as received.
+	 *
+	 * @return string|null
+	 */
+	private function communicationChannelProblem(mixed $channel): ?string {
+		if ($channel === null || $channel === '') {
+			return null;
+		}
+
+		$code = 'bad-url';
+		if (filter_var($channel, FILTER_VALIDATE_URL) !== false) {
+			$code = $this->resourceUrlProblem(path: (string)parse_url($channel, PHP_URL_PATH));
+		}
+
+		return $code;
+	}//end communicationChannelProblem()
 
 	/**
 	 * What is wrong with a URL path that should end in a resource UUID, or null.
