@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T09
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ namespace OCA\Dossiq\Service\Beschikking;
  * The state of one send, built by BeschikkingService::verzend() and read by
  * BeschikkingService and BeschikkingSendRecorder only.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T09
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T09
  */
 final class BeschikkingSendRun {
 

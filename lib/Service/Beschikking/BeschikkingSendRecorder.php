@@ -72,7 +72,7 @@ final class BeschikkingSendRecorder {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
 	 */
 	public function delivered(BeschikkingSendRun $run, array $saved): void {
 		$caseId = trim((string)($saved['caseId'] ?? ''));
