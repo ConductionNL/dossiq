@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Service\CaseType;
 /**
  * The source of one duplicate or version.
  *
- * @spec openspec/changes/zaaktype-copy/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-13-zaaktype-copy/tasks.md#T01
  */
 final class CaseTypeDerivation {
 

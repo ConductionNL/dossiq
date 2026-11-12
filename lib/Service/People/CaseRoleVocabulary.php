@@ -278,7 +278,7 @@ class CaseRoleVocabulary {
 	 *
 	 * @return object|null The schema.
 	 *
-	 * @spec openspec/changes/case-roles-survive-a-schema-reimport/specs/people-on-the-case/spec.md#requirement-the-case-schemas-role-vocabulary-survives-a-rewrite-of-the-schema
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-the-case-schemas-role-vocabulary-survives-a-rewrite-of-the-schema
 	 */
 	private function caseSchema(): ?object {
 		try {

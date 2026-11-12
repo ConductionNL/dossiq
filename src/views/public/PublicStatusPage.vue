@@ -214,7 +214,7 @@ export default {
 		 * token-resolution controller. An unknown / revoked / expired token,
 		 * or an RBAC-denied object, resolves to a uniform 404.
 		 *
-		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.1
+		 * @spec openspec/changes/archive/2026-06-15-migrate-public-share-to-shares-leaf/tasks.md#P2.1
 		 */
 		async loadStatus() {
 			this.loading = true
@@ -238,7 +238,7 @@ export default {
 		 *
 		 * @param {object} data What the token resolved to.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.1
+		 * @spec openspec/changes/archive/2026-06-15-migrate-public-share-to-shares-leaf/tasks.md#P2.1
 		 */
 		async showStatus(data) {
 			const obj = await this.caseToShow(data)
@@ -264,7 +264,7 @@ export default {
 		 *
 		 * @param {object} data What the token resolved to.
 		 * @return {Promise<object>} The case.
-		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.1
+		 * @spec openspec/changes/archive/2026-06-15-migrate-public-share-to-shares-leaf/tasks.md#P2.1
 		 */
 		async caseToShow(data) {
 			const obj = data.object || {}
@@ -281,7 +281,7 @@ export default {
 		 * @param {object} data What the token resolved to.
 		 * @param {object} obj The merged case.
 		 * @return {Promise<object>} The case.
-		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.1
+		 * @spec openspec/changes/archive/2026-06-15-migrate-public-share-to-shares-leaf/tasks.md#P2.1
 		 */
 		async survivorOf(data, obj) {
 			const survivor = await fetch(
@@ -297,7 +297,7 @@ export default {
 
 		/**
 		 * @param {string} dateString The date, as an ISO 8601 string.
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 		 */
 		formatDate(dateString) {
 			if (!dateString) return ''

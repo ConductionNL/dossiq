@@ -80,7 +80,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function createShare(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -325,7 +325,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function revokeShare(string $shareId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -357,7 +357,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function initiateTransfer(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -392,7 +392,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse The transfer, or the 502 when it could not start.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function startTransfer(mixed $caseId, IUser $user): JSONResponse {
 		$transfer = $this->caseTransferService->initiateTransfer(
@@ -436,7 +436,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handleTransfer(string $transferId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -467,7 +467,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return array<string, mixed>|null The outcome, or null for any other action.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function decideTransfer(string $transferId, IUser $user): ?array {
 		return match ($this->request->getParam('action')) {
@@ -488,7 +488,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function transferAnswer(?array $result): JSONResponse {
 		if ($result === null) {

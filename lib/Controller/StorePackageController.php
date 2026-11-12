@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md
+ * @spec openspec/specs/dossiq-store-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\IRequest;
 /**
  * Lists the shipped packages and installs one.
  *
- * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md
+ * @spec openspec/specs/dossiq-store-surface/spec.md
  */
 class StorePackageController extends Controller {
 
@@ -68,7 +68,7 @@ class StorePackageController extends Controller {
 	 *
 	 * @return JSONResponse `{ packages }`.
 	 *
-	 * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md#requirement-the-marketplace-lists-the-shipped-packages
+	 * @spec openspec/specs/dossiq-store-surface/spec.md#requirement-the-marketplace-lists-the-shipped-packages
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
@@ -83,7 +83,7 @@ class StorePackageController extends Controller {
 	 *
 	 * @return JSONResponse 200 with the outcome; 400 for a malformed id; 404 for an id not on offer; 422 for a refusal.
 	 *
-	 * @spec openspec/changes/marketplace-lists-shipped-packages/specs/dossiq-store-surface/spec.md#requirement-an-administrator-installs-a-shipped-package
+	 * @spec openspec/specs/dossiq-store-surface/spec.md#requirement-an-administrator-installs-a-shipped-package
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function install(string $id): JSONResponse {

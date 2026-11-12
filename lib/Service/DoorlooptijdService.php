@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 /**
  * Computes throughput-time metrics for the case dashboard.
  *
- * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+ * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
  */
 class DoorlooptijdService {
 
@@ -77,7 +77,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array<string, mixed> The structured response body.
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function getMetrics(array $params): array {
 		$caseTypeFilter = null;
@@ -162,7 +162,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array{open: int, atRisk: int, overdue: int, onTimePercent: int}
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function computeKpi(array $cases, int $atRiskDays): array {
 		return $this->complianceCalculator->computeKpi(cases: $cases, atRiskDays: $atRiskDays);
@@ -178,7 +178,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array<int, array{month: string, onTime: int, late: int, percent: int}>
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function computeMonthlyCompliance(array $cases, string $period): array {
 		return $this->complianceCalculator->computeMonthlyCompliance(cases: $cases, period: $period);
@@ -194,7 +194,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array<int, array{id: string, title: string, avgDays: int, count: int}>
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function computeCaseTypeBreakdown(array $cases, array $caseTypes): array {
 		return $this->throughputCalculator->computeCaseTypeBreakdown(cases: $cases, caseTypes: $caseTypes);
@@ -210,7 +210,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function buildCaseList(array $cases, int $atRiskDays): array {
 		return $this->complianceCalculator->buildCaseList(cases: $cases, atRiskDays: $atRiskDays);
@@ -226,7 +226,7 @@ class DoorlooptijdService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-06-13-doorlooptijd-dashboard/tasks.md#T01
 	 */
 	public function enrichCases(array $cases, array $caseTypes): array {
 		return $this->caseEnricher->enrichCases(cases: $cases, caseTypes: $caseTypes);

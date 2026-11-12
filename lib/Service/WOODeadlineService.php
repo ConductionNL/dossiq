@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
  * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
  */
 class WOODeadlineService {
 
@@ -265,7 +265,7 @@ class WOODeadlineService {
 	 *
 	 * @return array<string, mixed> Warning status with daysRemaining and isOverdue flags
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
 	 */
 	public function checkAndWarn(string $caseId, string $handler): array {
 		$resolved = $this->resolveWarningDeadline(caseId: $caseId);
@@ -373,7 +373,7 @@ class WOODeadlineService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
 	 */
 	private function sendDeadlineNotification(
 		string $userId,

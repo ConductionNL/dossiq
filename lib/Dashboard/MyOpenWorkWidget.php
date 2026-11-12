@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use OCP\IL10N;
  * It reads the queue through the same service the My work page uses, so the
  * widget and the page cannot disagree about what is open.
  *
- * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget {
 
@@ -65,7 +65,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function __construct(
 		private readonly IL10N $l10n,
@@ -79,7 +79,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getId(): string {
 		// A new widget, so it takes the app's current id. The seven older ones
@@ -92,7 +92,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return string The title.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getTitle(): string {
 		return $this->l10n->t('My work');
@@ -103,7 +103,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return int The order.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getOrder(): int {
 		return 11;
@@ -114,7 +114,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return string The class.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getIconClass(): string {
 		return 'icon-dossiq-widget';
@@ -125,7 +125,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return string The address.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getIconUrl(): string {
 		return $this->summary->links()->iconUrl();
@@ -136,7 +136,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return string|null The address.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getUrl(): ?string {
 		return $this->summary->links()->myWorkUrl();
@@ -147,7 +147,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function load(): void {
 	}//end load()
@@ -164,7 +164,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return WidgetItems The items.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getItemsV2(string $userId, ?string $since = null, int $limit = 7): WidgetItems {
 		// The interface passes a cursor and a limit; the summary has at most two rows.
@@ -188,7 +188,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return list<WidgetButton> The buttons.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getWidgetButtons(string $userId): array {
 		// The button is the same for everyone.
@@ -203,7 +203,7 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return int Seconds.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function getReloadInterval(): int {
 		return self::RELOAD_SECONDS;

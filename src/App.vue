@@ -96,7 +96,7 @@ export default {
 		UserSettings,
 	},
 
-	/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+	/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 	provide() {
 		return {
 			// Provide/inject channel for index pages that auto-mount sidebar
@@ -245,7 +245,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 		permissions() {
 			// One source, shared with the router guard in `main.js`. It used
 			// to live here alone, and the router half of the same manifest
@@ -269,7 +269,7 @@ export default {
 		},
 	},
 
-	/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+	/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 	async created() {
 		// Pinia stores still need to come up so legacy custom components
 		// keep working through the manifest transition. CnAppRoot itself
@@ -324,7 +324,7 @@ export default {
 		 *
 		 * @param {string} key Translation key.
 		 * @return {string} Translated string (or the key on miss).
-		 * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-procest-app-scaffold/tasks.md
 		 */
 		translateForApp(key) {
 			return ncT('dossiq', key)

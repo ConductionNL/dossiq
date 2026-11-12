@@ -21,7 +21,7 @@ import { translate as t } from '@nextcloud/l10n'
  *
  * @param {number} count Number of sub-cases for the case.
  * @return {string} Badge label, or '' when no badge should be shown.
- * @spec openspec/changes/deelzaak-support/tasks.md#T10
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T10
  */
 export function subCaseCountBadge(count) {
 	const n = Number(count)
@@ -36,7 +36,7 @@ export function subCaseCountBadge(count) {
  *
  * @param {number} count Number of sub-cases for the case.
  * @return {boolean} True when count > 0.
- * @spec openspec/changes/deelzaak-support/tasks.md#T10
+ * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T10
  */
 export function hasSubCaseBadge(count) {
 	const n = Number(count)
@@ -58,7 +58,7 @@ export function hasSubCaseBadge(count) {
  *
  * @param {object} err The error the delete threw.
  * @return {string} The refusal sentence, or the generic fallback.
- * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function refusalMessage(err) {
 	const body = err?.response?.data ?? {}

@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+ * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Project Dossiq workflow definitions onto OpenRegister flows.
  *
- * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+ * @spec openspec/specs/workflow-definitions-to-flow/spec.md
  */
 class MigrateWorkflowDefinitionsToFlowsCommand extends Command {
 	/**
@@ -65,7 +65,7 @@ class MigrateWorkflowDefinitionsToFlowsCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:workflows:migrate-to-flows')
@@ -87,7 +87,7 @@ class MigrateWorkflowDefinitionsToFlowsCommand extends Command {
 	 *
 	 * @return int Symfony command exit code.
 	 *
-	 * @spec openspec/changes/workflow-definitions-to-flow/specs/workflow-definitions-to-flow/spec.md
+	 * @spec openspec/specs/workflow-definitions-to-flow/spec.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$console = new MigrationConsole();

@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use RuntimeException;
 /**
  * Decodes, screens and stores dossier document uploads.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class DossierUploadHandler {
 	/**
@@ -98,7 +98,7 @@ class DossierUploadHandler {
 	 *
 	 * @return array<string, mixed> The per-file result entry.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function uploadOne(string $caseId, array $file, array $metadata): array {
 		$name = (string)($file['name'] ?? '');
@@ -138,7 +138,7 @@ class DossierUploadHandler {
 	 *
 	 * @return array<string, mixed> The decoded metadata.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function decodeMetadata(mixed $raw): array {
 		if (is_array($raw) === true) {
@@ -162,7 +162,7 @@ class DossierUploadHandler {
 	 *
 	 * @return array<int, array<string, mixed>> A list of single-file arrays.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function normaliseUploadedFiles(mixed $uploaded): array {
 		if (is_array($uploaded) === false || isset($uploaded['name']) === false) {
@@ -196,7 +196,7 @@ class DossierUploadHandler {
 	 *
 	 * @return bool True when the file appears to be an executable.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 * @spec openspec/specs/document-redaction/spec.md#requirement-an-officer-can-upload-a-redacted-version-instead-req-drd-004
 	 */
 	public function isExecutable(string $name, string $tmpName): bool {
@@ -228,7 +228,7 @@ class DossierUploadHandler {
 	 *
 	 * @return bool True for a PE/DOS, ELF or shebang header.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	private function hasExecutableMagic(string $magic): bool {
 		if (str_starts_with($magic, 'MZ') === true) {

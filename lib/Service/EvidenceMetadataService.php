@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use InvalidArgumentException;
 /**
  * Validates and enriches offline field-evidence metadata.
  *
- * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
  *
  * @psalm-suppress UnusedClass
  */
@@ -91,7 +91,7 @@ class EvidenceMetadataService {
 	 *     location: array{lat: float|null, lon: float|null, accuracy: float|null, source: string}
 	 * }
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-7
 	 */
 	public function classifyGps(?array $reading, ?array $caseAddress = null): array {
 		// No sensor reading at all: fall back to the case address silently.
@@ -147,7 +147,7 @@ class EvidenceMetadataService {
 	 *
 	 * @return array<string, string> The EXIF context map.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	public function buildExifContext(array $context, ?string $capturedAt = null): array {
 		return [
@@ -166,7 +166,7 @@ class EvidenceMetadataService {
 	 *
 	 * @return bool True when within the 2 MB target.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	public function isPhotoWithinTarget(int $byteSize): bool {
 		return $byteSize > 0 && $byteSize <= self::MAX_PHOTO_BYTES;
@@ -179,7 +179,7 @@ class EvidenceMetadataService {
 	 *
 	 * @return bool True when within the 5-minute limit.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-9
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-9
 	 */
 	public function isVoiceMemoWithinLimit(int $durationSeconds): bool {
 		return $durationSeconds > 0 && $durationSeconds <= self::MAX_VOICE_MEMO_SECONDS;
@@ -200,7 +200,7 @@ class EvidenceMetadataService {
 	 *
 	 * @return array<string, mixed> The fieldEvidence payload.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	public function buildEvidencePayload(
 		string $inspectionRef,
@@ -265,7 +265,7 @@ class EvidenceMetadataService {
 	 *
 	 * @throws InvalidArgumentException When the capture is over its limit.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#task-8
 	 */
 	private function refuseCaptureOverItsLimit(string $type, array $extra): void {
 		if ($type === 'photo' && isset($extra['byteSize']) === true

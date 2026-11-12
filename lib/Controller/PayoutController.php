@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
  * REST surface that prepares a payout.
  *
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 class PayoutController extends Controller {
 	/**
@@ -78,7 +78,7 @@ class PayoutController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function prepare(string $id): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -134,7 +134,7 @@ class PayoutController extends Controller {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-001
+	 * @spec openspec/specs/payout/spec.md#REQ-PAY-001
 	 */
 	protected function jsonBody(): array {
 		$body = json_decode((string)file_get_contents('php://input'), true);

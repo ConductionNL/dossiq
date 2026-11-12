@@ -62,7 +62,7 @@ use Throwable;
 /**
  * Built-in handler for `createTask` automatic actions.
  *
- * @spec openspec/changes/status-transition-engine/tasks.md#T08
+ * @spec openspec/changes/archive/2026-05-11-status-transition-engine/tasks.md#T08
  */
 class CreateTaskHandler implements ActionHandlerInterface {
 	/**
@@ -358,7 +358,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return array<string, mixed> The task, with the declaration applied.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function declared(array $task, array $actionConfig): array {
 		$declaration = ($actionConfig['declaration'] ?? null);
@@ -399,7 +399,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return array<string, mixed> The metadata, empty when nothing is declared.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private static function declaredMetadata(array $declaration): array {
 		$metadata = [];
@@ -428,7 +428,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return string The ISO date-time, or '' when nothing declares one.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function declaredDueDate(array $declaration, array $task): string {
 		$leadTime = (int)($declaration['leadTimeDays'] ?? 0);
@@ -513,8 +513,8 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 *
 	 * @return string The principal, or '' when nothing names one.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private function resolveAssignee(array $actionConfig, array $case, string $title): string {
 		$assignee = $this->assignees->resolve(

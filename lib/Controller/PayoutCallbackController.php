@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use RuntimeException;
  * Public webhook endpoint for payout callbacks.
  *
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 class PayoutCallbackController extends Controller {
 	/**
@@ -85,7 +85,7 @@ class PayoutCallbackController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -128,7 +128,7 @@ class PayoutCallbackController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	private function unsigned(): JSONResponse {
 		if ($this->callback->hasSecret() === false) {
@@ -147,7 +147,7 @@ class PayoutCallbackController extends Controller {
 	 *
 	 * @return array<string, mixed>|JSONResponse The fields plus `paymentDate` (null when absent).
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	private function fieldsOf(string $rawBody): array|JSONResponse {
 		try {
@@ -174,7 +174,7 @@ class PayoutCallbackController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	private function unknownReference(array $fields, RuntimeException $e): JSONResponse {
 		if ($this->reader?->holds(reference: $fields['reference']) === true) {
@@ -194,7 +194,7 @@ class PayoutCallbackController extends Controller {
 	 *
 	 * @return string The raw body.
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-003
+	 * @spec openspec/specs/payout/spec.md#REQ-PAY-003
 	 */
 	protected function rawBody(): string {
 		return (string)file_get_contents('php://input');
@@ -208,7 +208,7 @@ class PayoutCallbackController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 *
 	 * @contract exclude Deprecated path alias for callback(); behaviour covered by the callback() tests.
 	 */

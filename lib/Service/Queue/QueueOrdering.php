@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCA\Dossiq\Service\WorkQueueService;
 /**
  * Scores and orders queue items so the next thing to do is first.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class QueueOrdering {
 	/**
@@ -53,7 +53,7 @@ class QueueOrdering {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly WorkQueueService $scorer,
@@ -69,7 +69,7 @@ class QueueOrdering {
 	 *
 	 * @return array<string, mixed> The scorer's verdict: deadline tier, days, score and breakdown.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function score(QueueItem $item, DateTimeImmutable $now, ?UrgencyProfile $profile = null): array {
@@ -93,7 +93,7 @@ class QueueOrdering {
 	 *
 	 * @return array<int, array<string, mixed>> The ordered items, each as its wire shape plus its score.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function order(array $items, DateTimeImmutable $now): array {
 		$profile = $this->scorer->adminProfile();

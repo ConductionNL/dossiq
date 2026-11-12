@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
 /**
  * Decides whether a deleted case may be destroyed, then has it destroyed.
  *
- * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseDestructionService {
 
@@ -129,7 +129,7 @@ class CaseDestructionService {
 	 *
 	 * @throws RuntimeException One of {@see self::REFUSALS}.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function preview(string $caseId): array {
 		$entity = $this->requireDeleted(caseId: $caseId);
@@ -160,7 +160,7 @@ class CaseDestructionService {
 	 * SAME act with the window explicitly set aside, and a second method would
 	 * duplicate the role check, both clocks and the record to express it.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function destroy(string $caseId, bool $waiveWindow = false): array {
 		$entity = $this->requireDeleted(caseId: $caseId);
@@ -196,7 +196,7 @@ class CaseDestructionService {
 	 *
 	 * @return bool True when the caller may destroy.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function mayDestroy(array $case): bool {
 		$user = $this->userSession->getUser();
@@ -232,7 +232,7 @@ class CaseDestructionService {
 	 *
 	 * @return string The group id, or an empty string when none is declared.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function declaredRole(array $case): string {
 		return trim((string)($this->caseType(case: $case)[self::CASE_TYPE_ROLE] ?? ''));
@@ -250,7 +250,7 @@ class CaseDestructionService {
 	 *
 	 * @return int|null The window in days, or null when the case type states none.
 	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function declaredWindowDays(array $case): ?int {
 		$days = ($this->caseType(case: $case)[self::CASE_TYPE_WINDOW] ?? null);

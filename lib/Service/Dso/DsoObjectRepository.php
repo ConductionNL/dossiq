@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Loads DSO zaken and samenwerkverzoeken from OpenRegister.
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  */
 class DsoObjectRepository {
 	use SearchesObjects;
@@ -66,7 +66,7 @@ class DsoObjectRepository {
 	 *
 	 * @return array<string,mixed>|null The zaak, or null when unresolvable.
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	public function findZaak(string $caseId): ?array {
 		try {
@@ -103,7 +103,7 @@ class DsoObjectRepository {
 	 *
 	 * @return array<string,mixed>|null The samenwerkverzoek, or null when unresolvable.
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	public function findSamenwerkverzoek(string $samenwerkId): ?array {
 		try {
@@ -147,7 +147,7 @@ class DsoObjectRepository {
 	 *
 	 * @return array{error: string|null, results: array<int,array<string,mixed>>} The query outcome.
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	public function fetchDashboard(
 		array $params,
@@ -195,7 +195,7 @@ class DsoObjectRepository {
 	 *
 	 * @return array<int,array<string,mixed>> The filtered zaken.
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	private function applyInMemoryFilters(
 		array $cases,

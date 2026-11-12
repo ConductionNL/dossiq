@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ namespace OCA\Dossiq\Service;
 /**
  * The kind a term instance carries (REQ-TERM-060).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 final class TermKind {
 	/**
@@ -126,7 +126,7 @@ final class TermKind {
 	 *
 	 * @return bool True when the vocabulary knows it.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function isKnown(string $kind): bool {
 		return in_array($kind, self::ALL, true);
@@ -144,7 +144,7 @@ final class TermKind {
 	 *
 	 * @return string One of the four kinds.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function ofInstance(array $instance): string {
 		$kind = (string)($instance['kind'] ?? '');
@@ -169,7 +169,7 @@ final class TermKind {
 	 *
 	 * @return bool True only for the statutory term.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function isCitizenVisible(string $kind): bool {
 		return $kind === self::STATUTORY;
@@ -182,7 +182,7 @@ final class TermKind {
 	 *
 	 * @return array<int, array<string, mixed>> The statutory ones, reindexed.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public static function citizenVisible(array $terms): array {
 		$visible = [];

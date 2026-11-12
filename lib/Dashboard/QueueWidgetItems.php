@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use OCP\IURLGenerator;
 /**
  * The My work widget's links, and today on the organisation's calendar.
  *
- * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 class QueueWidgetItems {
 	/**
@@ -42,7 +42,7 @@ class QueueWidgetItems {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function __construct(
 		private readonly IURLGenerator $url,
@@ -55,7 +55,7 @@ class QueueWidgetItems {
 	 *
 	 * @return string The address.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function myWorkUrl(): string {
 		return $this->appUrl(path: 'my-work');
@@ -66,7 +66,7 @@ class QueueWidgetItems {
 	 *
 	 * @return string The address.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function iconUrl(): string {
 		return $this->url->getAbsoluteURL($this->url->imagePath(Application::APP_ID, 'app-dark.svg'));
@@ -77,7 +77,7 @@ class QueueWidgetItems {
 	 *
 	 * @return string The date.
 	 *
-	 * @spec openspec/changes/one-mijn-werk-widget/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function today(): string {
 		return $this->dates->todayAsCalendarDate();

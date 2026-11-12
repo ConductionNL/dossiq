@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class EngineRunMigration {
 
@@ -121,7 +121,7 @@ class EngineRunMigration {
 	 *
 	 * @throws RefusedException When the engine was asked and refused.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function migrate(string $caseId, string $targetCaseTypeId, string $actorUid): array {
 		$service = $this->resolve();
@@ -166,7 +166,7 @@ class EngineRunMigration {
 	 *
 	 * @return string The reason, or '' when the migration can be asked for.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function reasonFor(): string {
 		if ($this->settings->isOpenRegisterAvailable() === false) {

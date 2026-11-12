@@ -100,7 +100,7 @@ final class StatusMove {
 	 *
 	 * @return string The words.
 	 *
-	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function tried(): string {
 		$tried = [];

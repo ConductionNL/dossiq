@@ -51,7 +51,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AiController extends Controller {
 	/**
@@ -98,7 +98,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function classify(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -126,7 +126,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function extract(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -154,7 +154,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function ask(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -182,7 +182,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function summarize(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -216,7 +216,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestRouting(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -243,7 +243,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggestNext(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -422,7 +422,7 @@ class AiController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.2
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.2
 	 */
 	public function auditIndex(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -456,7 +456,7 @@ class AiController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the trail may be read.
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.2
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.2
 	 */
 	private function auditRefusal(string $caseId, IUser $user): ?JSONResponse {
 		if ($caseId === '') {
@@ -477,7 +477,7 @@ class AiController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.2
+	 * @spec openspec/changes/archive/2026-07-12-ai-oversight-log/tasks.md#1.2
 	 */
 	private function auditPage(string $caseId): JSONResponse {
 		$result = $this->auditService->listAuditEntries(

@@ -58,7 +58,7 @@ use Throwable;
 /**
  * Holds a file against an open task and publishes it to the case on completion.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 class TaskAttachmentService {
 
@@ -91,7 +91,7 @@ class TaskAttachmentService {
 	 *
 	 * @return array<int, array<string, mixed>> The held files, in upload order.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function heldFor(array $case, string $taskId): array {
 		$wanted = trim($taskId);
@@ -116,7 +116,7 @@ class TaskAttachmentService {
 	 *
 	 * @throws RuntimeException When the case cannot be read or written.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function bind(string $caseId, string $taskId, array $file, string $uploader): array {
 		$fileId = trim((string)($file['file'] ?? ''));
@@ -151,7 +151,7 @@ class TaskAttachmentService {
 	 *
 	 * @throws RuntimeException When the case cannot be read or written.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function release(string $caseId, string $taskId, string $fileId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -182,7 +182,7 @@ class TaskAttachmentService {
 	 *
 	 * @return integer How many files were published.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function publish(string $caseId, string $taskId): int {
 		try {

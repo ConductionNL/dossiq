@@ -45,7 +45,7 @@ use OCP\IUserSession;
 /**
  * Reads and appends the case's lifecycle journal.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseJournal {
 
@@ -79,7 +79,7 @@ class CaseJournal {
 	 *
 	 * @return array<int, array<string, mixed>> The entries, oldest first.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function entries(array $case): array {
 		$raw = ($case[self::FIELD] ?? '');
@@ -115,7 +115,7 @@ class CaseJournal {
 	 *
 	 * @return array<string, mixed> The case with the entry appended.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function append(array $case, array $entry): array {
 		$entries = $this->entries(case: $case);
@@ -140,7 +140,7 @@ class CaseJournal {
 	 *
 	 * @return array<string, mixed> The entry, empty when the journal holds none.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function latest(array $case, array $types): array {
 		$entries = $this->entries(case: $case);
@@ -162,7 +162,7 @@ class CaseJournal {
 	 *
 	 * @return string The uid, or the empty string.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function actor(): string {
 		$user = $this->userSession->getUser();

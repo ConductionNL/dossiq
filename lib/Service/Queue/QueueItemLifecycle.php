@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Dossiq\Service\Queue;
 /**
  * Decides whether a queue item still stands.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class QueueItemLifecycle {
 	/**
@@ -67,7 +67,7 @@ class QueueItemLifecycle {
 	 *
 	 * @return string|null One of CLOSING_REASONS, or null when the item still stands.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function closingReason(QueueItem $item, ?array $subject, string $userId): ?string {
 		if ($subject === null) {
@@ -94,7 +94,7 @@ class QueueItemLifecycle {
 	 *
 	 * @return bool TRUE while the work is still waiting on them.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function stillStands(QueueItem $item, ?array $subject, string $userId): bool {
 		return ($this->closingReason(item: $item, subject: $subject, userId: $userId) === null);
@@ -112,7 +112,7 @@ class QueueItemLifecycle {
 	 *
 	 * @return array{removed: bool, reason: string|null, offer: string|null} What the queue does.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function onRemoveRequested(QueueItem $item, ?array $subject, string $userId): array {
 		$reason = $this->closingReason(item: $item, subject: $subject, userId: $userId);
@@ -134,7 +134,7 @@ class QueueItemLifecycle {
 	 *
 	 * @return bool TRUE when the subject is finished.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function isDone(array $subject): bool {
 		if (($subject['isFinalStatus'] ?? false) === true) {
@@ -165,7 +165,7 @@ class QueueItemLifecycle {
 	 *
 	 * @return bool TRUE when the work is still theirs.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function isStillOwedBy(QueueItem $item, array $subject, string $userId): bool {
 		$owner = trim((string)($subject['assignee'] ?? ''));

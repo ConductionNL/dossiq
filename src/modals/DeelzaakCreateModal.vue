@@ -13,8 +13,8 @@
   parent that cannot take a sub-case gets the reason instead of the form.
   After a create it refreshes the page and closes.
 
-  @spec openspec/changes/deelzaak-support/tasks.md#T08
-  @spec openspec/changes/deelzaak-support/tasks.md#T09
+  @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
+  @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T09
 -->
 <template>
 	<NcDialog
@@ -480,7 +480,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+		 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
 		 * Filter caseTypes to ONLY those listed on parentCaseType.subCaseTypes.
 		 */
 		effectiveParentCaseType() {
@@ -601,7 +601,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+		 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T08
 		 * Submit creates a `case` with `parentCase` set, optionally pre-checked
 		 * via the backend `/api/deelzaken/validate` endpoint.
 		 */

@@ -118,7 +118,7 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 * @return array<string, mixed> Either a tracked send, or a refusal with its reason.
 	 *
 	 * @spec openspec/specs/berichtenbox-integration/spec.md
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
 	 */
 	public function sendMessage(
 		string $bsn,

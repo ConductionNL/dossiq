@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
+ * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ interface TranscriberInterface {
 	 *
 	 * @throws \RuntimeException On transcription failure.
 	 *
-	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
+	 * @spec openspec/changes/archive/2026-06-13-mobiel-inspectie-offline/tasks.md#Task-9
 	 */
 	public function transcribe(string $blobRef, string $language): string;
 }//end interface

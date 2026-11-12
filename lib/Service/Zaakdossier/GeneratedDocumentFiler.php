@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use RuntimeException;
 /**
  * Turns a generated file into an informatieobject on the case.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class GeneratedDocumentFiler {
 	use AddressesTheCase;
@@ -95,7 +95,7 @@ class GeneratedDocumentFiler {
 	 *
 	 * @return bool True when it names a document type.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function wantsFiling(array $metadata): bool {
 		return trim((string)($metadata[self::TYPE] ?? '')) !== '';
@@ -114,7 +114,7 @@ class GeneratedDocumentFiler {
 	 *
 	 * @throws RuntimeException When the metadata names no type or the file cannot be read.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function file(string $caseId, int $fileId, string $title, string $mime, array $metadata): array {
 		$type = trim((string)($metadata[self::TYPE] ?? ''));

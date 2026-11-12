@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class AcknowledgementDispatchJob extends QueuedJob {
 
@@ -87,7 +87,7 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	protected function run($argument): void {
 		try {
@@ -124,7 +124,7 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 *
 	 * @return array{caseId: string, attempt: int}|null
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function jobOf(mixed $argument): ?array {
 		if (is_array($argument) === false) {
@@ -151,7 +151,7 @@ class AcknowledgementDispatchJob extends QueuedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	private function deliver(string $caseId, int $attempt): void {
 		try {

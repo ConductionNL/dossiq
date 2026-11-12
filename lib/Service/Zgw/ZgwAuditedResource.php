@@ -16,7 +16,7 @@ namespace OCA\Dossiq\Service\Zgw;
 /**
  * The resource an audit trail is read for: its name, its object id and its ZGW URL.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 final class ZgwAuditedResource {
 	/**
@@ -38,7 +38,7 @@ final class ZgwAuditedResource {
 	 *
 	 * @return array{hoofdObject: string, resource: string, resourceUrl: string, resourceWeergave: string}
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function zgwFields(): array {
 		return [

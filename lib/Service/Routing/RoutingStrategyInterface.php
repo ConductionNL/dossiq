@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service\Routing;
 /**
  * Common contract for routing strategies.
  *
- * @spec openspec/changes/role-based-step-routing/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T03
  */
 interface RoutingStrategyInterface {
 	/**

@@ -15,8 +15,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-5
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -60,8 +60,8 @@ use Psr\Log\LoggerInterface;
  * as CouplingBetweenObjects above); `woo-llm-anonymisation` adds one more
  * (`WOOAnonymisationAssistService`) to an already-wide, long-established list.
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-5
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 class WOOAssessmentController extends Controller {
@@ -115,7 +115,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
 	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	#[NoAdminRequired]
@@ -160,7 +160,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
 	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	#[NoAdminRequired]
@@ -237,7 +237,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 */
 	#[NoAdminRequired]
 	public function createDecision(string $id): JSONResponse {
@@ -402,7 +402,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-4
 	 */
 	#[NoAdminRequired]
 	public function proposeRedaction(string $id, string $documentRef): JSONResponse {
@@ -450,7 +450,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
-	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+	 * @spec openspec/changes/archive/2026-07-16-woo-llm-anonymisation/tasks.md#task-2-4
 	 */
 	#[NoAdminRequired]
 	public function reviewRedactionProposal(string $id, string $documentRef): JSONResponse {

@@ -24,7 +24,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+ * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IUser;
 /**
  * Builds the completeness answer of one case.
  *
- * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+ * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
  */
 class CaseCompleteness {
 
@@ -71,7 +71,7 @@ class CaseCompleteness {
 	 *
 	 * @return array<string, mixed>|null The answer (see check()), or null when the case is not found.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function forCase(string $caseId, IUser $user): ?array {
 		$case = $this->cases->loadCase(caseId: $caseId);
@@ -101,7 +101,7 @@ class CaseCompleteness {
 	 *
 	 * @return array<int, array<string, string>> The items, malformed ones left out.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function itemsOf(array $caseType): array {
 		$declared = ($caseType[IntakeRequirements::PROPERTY]['completenessItems'] ?? []);
@@ -199,7 +199,7 @@ class CaseCompleteness {
 	 *
 	 * @return array<string, mixed> `{ items, present, total, missing, verdict }`, or `{ items: [] }` without items.
 	 *
-	 * @spec openspec/changes/case-completeness-checklist/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
+	 * @spec openspec/specs/semantic-case-intake/spec.md#requirement-a-case-answers-how-complete-its-application-is
 	 */
 	public function check(array $items, array $case, array $documents, array $readable): array {
 		if ($items === []) {

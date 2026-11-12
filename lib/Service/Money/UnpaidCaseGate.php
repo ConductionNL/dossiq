@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ namespace OCA\Dossiq\Service\Money;
 /**
  * Reads a case type's payment rule, and says what it means for an act.
  *
- * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+ * @spec openspec/specs/financial-integration/spec.md
  */
 class UnpaidCaseGate {
 	/**
@@ -81,7 +81,7 @@ class UnpaidCaseGate {
 	 *
 	 * @return bool True when an unpaid case waits.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function requiresPayment(?array $caseType): bool {
 		if ($caseType === null) {
@@ -100,7 +100,7 @@ class UnpaidCaseGate {
 	 *
 	 * @return string The refusal, '' when nothing stands in the way.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function whyItWaits(array $case, ?array $caseType): string {
 		if ($this->requiresPayment(caseType: $caseType) === false) {

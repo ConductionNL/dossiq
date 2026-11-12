@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
  */
 
 declare(strict_types=1);
@@ -103,7 +103,7 @@ class PublicationService {
 	 * @throws \InvalidArgumentException When the requested publication channel is not supported.
 	 * @throws \RuntimeException When OR is unavailable or the case can't be loaded.
 	 *
-	 * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
 	 * @spec openspec/specs/contract-decision-delegation/spec.md
 	 */
 	public function publish(string $caseId, array $payload): array {

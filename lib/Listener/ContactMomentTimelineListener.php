@@ -37,7 +37,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class ContactMomentTimelineListener implements IEventListener {
 
@@ -93,7 +93,7 @@ class ContactMomentTimelineListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function handle(Event $event): void {
 		$payload = (new CreatedCaseRecord(slugResolver: $this->slugResolver, schema: self::SCHEMA))->of(event: $event);
@@ -137,7 +137,7 @@ class ContactMomentTimelineListener implements IEventListener {
 	 *
 	 * @return string `internal` or `public`.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function visibility(array $payload): string {
 		if (in_array(($payload['visibleToApplicant'] ?? false), [true, 1, '1', 'true'], true) === true) {

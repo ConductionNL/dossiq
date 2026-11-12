@@ -46,7 +46,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/subsidieverlening-keten/specs.md
+ * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
  */
 class TussenrapportageService {
 
@@ -97,7 +97,7 @@ class TussenrapportageService {
 	 *
 	 * @return DateTimeImmutable The assessment deadline, on a working day.
 	 *
-	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBeoordelingstermijn(DateTimeImmutable $periodEnd, int $termWeken): DateTimeImmutable {
 		$termWeken = max(1, $termWeken);
@@ -116,7 +116,7 @@ class TussenrapportageService {
 	 *
 	 * @return array<int, array{start: string, eind: string}> The reporting periods.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/archive/2026-06-13-subsidieverlening-keten/specs.md
 	 */
 	public function periodsForFrequentie(string $frequency, int $year): array {
 		if ($frequency === 'annually') {

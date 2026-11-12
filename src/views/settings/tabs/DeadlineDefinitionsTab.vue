@@ -264,7 +264,7 @@ export default {
 			return this.definitions.some((def) => Boolean(this.caseTypeOf(def)))
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		zaaktypeOptions() {
 			const seen = new Set()
 			const opts = []
@@ -288,7 +288,7 @@ export default {
 	 * they agreed.
 	 *
 	 * @return {void}
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 	 */
 	mounted() {
 		this.load()
@@ -297,7 +297,7 @@ export default {
 
 	methods: {
 		t,
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		async load() {
 			this.loading = true
 			this.error = null
@@ -327,7 +327,7 @@ export default {
 		 * failure warrants; an unanswered call simply leaves the line off.
 		 *
 		 * @return {Promise<void>} Nothing.
-		 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+		 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 		 */
 		async loadCalendar() {
 			try {
@@ -347,7 +347,7 @@ export default {
 		 *
 		 * @param {object} def The definition.
 		 * @return {boolean} True when it does.
-		 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+		 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 		 */
 		rollsToWorkingDay(def) {
 			return def?.rollToWorkingDay === true
@@ -363,7 +363,7 @@ export default {
 		 *
 		 * @param {object} def The definition.
 		 * @return {string} The label.
-		 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+		 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 		 */
 		countingModeLabel(def) {
 			return def?.countingMode === 'workingDays'
@@ -373,7 +373,7 @@ export default {
 
 		/**
 		 * @param {object} def The definition being edited.
-		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		isActive(def) {
 			const today = new Date().toISOString().slice(0, 10)
@@ -384,7 +384,7 @@ export default {
 
 		/**
 		 * @param {object} def The definition being edited.
-		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		formatDuur(def) {
 			const weeks = Number(def.standardDurationWeeks || 0)
@@ -417,7 +417,7 @@ export default {
 			return String(def?.caseType || def?.case_type || '')
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		openNew() {
 			this.editingDefinition = null
 			this.editorOpen = true
@@ -425,14 +425,14 @@ export default {
 
 		/**
 		 * @param {object} def The definition being edited.
-		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		openEdit(def) {
 			this.editingDefinition = def
 			this.editorOpen = true
 		},
 
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/** @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingDefinition = null
@@ -440,7 +440,7 @@ export default {
 
 		/**
 		 * @param {object} payload The payload.
-		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
 		 */
 		async onSave(payload) {
 			// Versioning: new version's validFrom=tomorrow, prior validUntil=today.

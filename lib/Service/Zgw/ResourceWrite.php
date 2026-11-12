@@ -16,7 +16,7 @@ namespace OCA\Dossiq\Service\Zgw;
 /**
  * A write on its way to the store: the route, its mapping, the stored object and the request body.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 final class ResourceWrite {
 	/**
@@ -42,7 +42,7 @@ final class ResourceWrite {
 	 *
 	 * @return self The write.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function withBody(array $body): self {
 		return new self(route: $this->route, mapping: $this->mapping, existing: $this->existing, body: $body);

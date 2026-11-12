@@ -21,7 +21,7 @@ export const useSettingsStore = defineStore('settings', {
 		getIsAdmin: (state) => state.isAdmin,
 	},
 	actions: {
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchSettings() {
 			return guarded(this, {
 				work: async () => {
@@ -39,7 +39,7 @@ export const useSettingsStore = defineStore('settings', {
 
 		/**
 		 * @param {object} settingsData The settings data.
-		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async saveSettings(settingsData) {
 			return guarded(this, {

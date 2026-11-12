@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCA\Dossiq\Service\Support\TranslatedText;
 /**
  * Builds the from→to transition matrix and detects rework loops.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class TransitionMatrixBuilder {
 	/**
@@ -65,7 +65,7 @@ class TransitionMatrixBuilder {
 	 * @return array{matrix: array<int, array{from: string, fromName: string, to: string,
 	 *                toName: string, count: int, reworkCount: int}>, reworkPercent: float, totalCount: int}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeTransitionMatrix(array $recordsByCase, array $statusTypeIndex): array {
 		$tally = new TransitionTally();
@@ -152,7 +152,7 @@ class TransitionMatrixBuilder {
 	 *
 	 * @return array<int, array{from: string, to: string, isRework: bool}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeCaseTransitions(array $sortedRecords): array {
 		$count = count($sortedRecords);

@@ -45,7 +45,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/gis-integration/spec.md
- * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
+ * @spec openspec/changes/archive/2026-06-14-migrate-pdok-to-openconnector/tasks.md
  */
 
 declare(strict_types=1);
@@ -120,7 +120,7 @@ class PdokService {
 	 *
 	 * @return array<int, array<string,mixed>> Normalised suggestion list.
 	 *
-	 * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-pdok-to-openconnector/tasks.md
 	 */
 	public function searchAddress(string $query, array $filters = [], int $rows = 10): array {
 		$this->lastWarning = null;
@@ -151,7 +151,7 @@ class PdokService {
 	 * @return array<string,mixed>|null The normalised address envelope,
 	 *                                  or null when not found / degraded.
 	 *
-	 * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
+	 * @spec openspec/changes/archive/2026-06-14-migrate-pdok-to-openconnector/tasks.md
 	 */
 	public function lookupAddress(string $id): ?array {
 		$this->lastWarning = null;

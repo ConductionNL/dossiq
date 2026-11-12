@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -49,7 +49,7 @@ use OCP\IUserSession;
 /**
  * Controller for the ZGW DRC zaakdossier.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class ZaakdossierController extends Controller {
 	/**
@@ -89,7 +89,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function listDossier(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -201,7 +201,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function linkExisting(string $caseId, string $infoObjectId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -239,7 +239,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function unlinkDocument(string $caseId, string $infoObjectId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -276,7 +276,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function updateMetadata(string $infoObjectId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -390,7 +390,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function transitionStatus(string $infoObjectId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -428,7 +428,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function bulkTransitionStatus(): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -457,7 +457,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function bulkUpdateMetadata(): JSONResponse {
 		$user = $this->userSession->getUser();

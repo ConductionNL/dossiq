@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
  */
 class PublicationController extends Controller {
 	/**
@@ -69,7 +69,7 @@ class PublicationController extends Controller {
 	 *
 	 * @return JSONResponse The publication record.
 	 *
-	 * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {

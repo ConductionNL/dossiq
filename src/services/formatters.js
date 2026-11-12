@@ -585,7 +585,7 @@ export default {
 	 *
 	 * @param {object|null} value The case's `routingNote`.
 	 * @return {string} The line.
-	 * @spec openspec/changes/case-routing-note/specs/kcc-routing/spec.md#requirement-the-team-queue-says-why-a-case-stands-there
+	 * @spec openspec/specs/kcc-routing/spec.md#requirement-the-team-queue-says-why-a-case-stands-there
 	 */
 	routingNote: (value) => routingNoteLabel(value),
 
@@ -863,7 +863,7 @@ export default {
 	 *
 	 * @param {object|string} value The verdict, or the bare state.
 	 * @return {string} The sentence.
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	scanVerdict: (value) => scanVerdictLabel(value),
 	// approval-chain-on-the-document REQ-BVL-005. The value is the marker the
@@ -896,7 +896,7 @@ export default {
 	 *
 	 * @param {string} value The confidentiality level.
 	 * @return {string} The label.
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	/**
 	 * Who a document's access exception names, as the Who can see this card reads it: "Only Pieter Jansen and
@@ -963,7 +963,7 @@ export default {
 	 * @param {unknown} value Unused (the column key is the case UUID via `row`).
 	 * @param {object} row The case object.
 	 * @return {string} Badge label, or '' when the case has no sub-cases.
-	 * @spec openspec/changes/deelzaak-support/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-06-13-deelzaak-support/tasks.md#T10
 	 */
 	subCaseCount: (value, row) => {
 		const uuid = lookedUpId(row) || value

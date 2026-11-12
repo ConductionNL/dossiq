@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use Throwable;
 /**
  * Reads a JSON request body and picks named fields from it.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
  */
 class JsonRequestBody {
 
@@ -46,7 +46,7 @@ class JsonRequestBody {
 	 *
 	 * @return array<string, mixed> The decoded body, or [] when it is empty or not an object.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
 	 */
 	public function read(IRequest $request): array {
 		// Prefer the request object's getContent() when reachable — test
@@ -90,7 +90,7 @@ class JsonRequestBody {
 	 *
 	 * @return array<string, mixed> The fields that were sent.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
 	 */
 	public function only(array $body, array $fields): array {
 		$taken = [];
@@ -111,7 +111,7 @@ class JsonRequestBody {
 	 *
 	 * @return string|null The text.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
 	 */
 	public function textOrNull(array $body, string $field): ?string {
 		$text = trim((string)($body[$field] ?? ''));

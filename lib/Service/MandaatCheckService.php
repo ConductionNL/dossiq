@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
  */
 
 declare(strict_types=1);
@@ -82,8 +82,8 @@ class MandaatCheckService {
 	 *
 	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
 	 */
 	public function isAuthorized(
@@ -238,8 +238,8 @@ class MandaatCheckService {
 	 *
 	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function getApplicableMandaten(string $decisionType, string $caseType, ?DateTimeImmutable $date = null): array {
 		$out = [];
@@ -402,8 +402,8 @@ class MandaatCheckService {
 	 *
 	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-08-user-ui/tasks.md
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function getApplicableForUser(string $userId, string $caseType = '', string $decisionType = ''): array {
 		$date = new DateTimeImmutable();
@@ -443,7 +443,7 @@ class MandaatCheckService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
 	 */
 	public function resolveUserRole(string $userId, DateTimeImmutable $date): ?array {
 		$rows = $this->roleAssignmentsOf(userId: $userId);
@@ -534,7 +534,7 @@ class MandaatCheckService {
 	 *
 	 * @return array{passed:bool, reason:string, failedConditions:array<int,string>}
 	 *
-	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-02-authorization-engine/tasks.md
 	 */
 	public function evaluateConditions(array $mandate, array $caseProperties): array {
 		$voorw = (array)($mandate['terms'] ?? []);

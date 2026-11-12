@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Starts live conversations on a case and records what they were.
  *
- * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseConversationService {
 
@@ -105,7 +105,7 @@ class CaseConversationService {
 	 *
 	 * @return array{available: bool, reason: string|null} The affordance and its reason.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function availability(): array {
 		if ($this->broker->isAvailable() === false) {
@@ -125,7 +125,7 @@ class CaseConversationService {
 	 * @return array{ok: bool, reason?: string, conversation?: array<string, mixed>}
 	 *         The conversation record, or a refusal naming its reason.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function startConversation(string $caseId, ?string $subject = null, ?string $startedBy = null): array {
 		$case = $this->cases->read(caseId: $caseId);
@@ -186,7 +186,7 @@ class CaseConversationService {
 	 * @return array{ok: bool, reason?: string, conversation?: array<string, mixed>}
 	 *         The completed record, or a refusal naming its reason.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function recordConversationEnd(
 		string $caseId,
@@ -230,7 +230,7 @@ class CaseConversationService {
 	 *
 	 * @return string The room name.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function roomName(array $case, ?string $subject): string {
 		if ($subject !== null && trim($subject) !== '') {
@@ -248,7 +248,7 @@ class CaseConversationService {
 	 *
 	 * @return array<string> User ids.
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function moderatorsOf(array $case, ?string $startedBy): array {
 		$moderators = [];

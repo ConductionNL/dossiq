@@ -80,7 +80,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — required by parent
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function run($argument): void {
 		$objectService = $this->objectService();
@@ -112,7 +112,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 *
 	 * @return object|null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function objectService(): ?object {
 		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
@@ -135,7 +135,7 @@ class ShareMaintenanceJob extends TimedJob {
 	 *
 	 * @return array{register: int, schema: int}|null
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	private function shareFilters(): ?array {
 		$register = $this->settingsService->getConfigValue('register');

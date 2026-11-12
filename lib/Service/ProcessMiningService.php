@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use OCA\Dossiq\Service\Support\LanguageMapText;
 /**
  * Computes process-mining bottleneck metrics from recorded status history.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 class ProcessMiningService {
 	/**
@@ -91,7 +91,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<string, mixed> The structured response body.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(array $params): array {
@@ -106,7 +106,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	private function buildReport(array $params): array {
 		$window = $this->windowOf(params: $params);
@@ -213,7 +213,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	private function caseTypeReport(array $group, array $run): array {
 		$recordsForThisGroup = array_intersect_key($run['recordsByCase'], array_flip(array_keys($group['cases'])));
@@ -288,7 +288,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<int, array{caseId: string, statusId: string, hours: float}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeDwellIntervals(
 		array $recordsByCase,
@@ -316,7 +316,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<int, array{statusId: string, statusName: string, visitCount: int, medianHours: float, p90Hours: float, meanHours: float}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function aggregateDwellStats(array $intervals, array $statusTypeIndex): array {
 		return $this->analysers->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
@@ -331,7 +331,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<int, array{statusId: string, statusName: string, visitCount: int, medianHours: float, score: float}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function rankBottlenecks(array $dwellStats): array {
 		return $this->analysers->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats);
@@ -348,7 +348,7 @@ class ProcessMiningService {
 	 * @return array{matrix: array<int, array{from: string, fromName: string, to: string,
 	 *                toName: string, count: int, reworkCount: int}>, reworkPercent: float, totalCount: int}
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeTransitionMatrix(array $recordsByCase, array $statusTypeIndex): array {
 		return $this->analysers->transitionBuilder->computeTransitionMatrix(
@@ -366,7 +366,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<int, array{from: string, to: string, isRework: bool}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeCaseTransitions(array $sortedRecords): array {
 		return $this->analysers->transitionBuilder->computeCaseTransitions(sortedRecords: $sortedRecords);
@@ -383,7 +383,7 @@ class ProcessMiningService {
 	 *
 	 * @return array<int, array{week: string, count: int}>
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function computeThroughputTrend(array $cases, DateTimeImmutable $from, DateTimeImmutable $to): array {
 		return $this->analysers->throughputCalculator->computeThroughputTrend(cases: $cases, from: $from, to: $to);

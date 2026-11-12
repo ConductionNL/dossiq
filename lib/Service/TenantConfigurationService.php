@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
  * owns configuration storage — read, merge, persist — plus locale and feature
  * flags.
  *
- * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
  */
 class TenantConfigurationService {
 	/**
@@ -117,7 +117,7 @@ class TenantConfigurationService {
 	 *
 	 * @return array<string,mixed>|null
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
 	 */
 	public function getConfig(string $tenantId): ?array {
 		$objectService = $this->getObjectService();
@@ -182,7 +182,7 @@ class TenantConfigurationService {
 	 *
 	 * @return array<string,mixed>
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-tenant-zaaksysteem-saas-08-configuration-branding/tasks.md
 	 */
 	public function setFeatureFlag(string $tenantId, string $flag, bool $enabled): array {
 		$current = $this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId, 'features' => []];

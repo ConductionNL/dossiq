@@ -102,7 +102,7 @@ class BezwaarDecisionListener implements IEventListener {
 	 * queue took to drain. The revert is a single bounded saveObject() on the
 	 * object already being written.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectUpdatedEvent === false) {

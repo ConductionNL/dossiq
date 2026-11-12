@@ -129,7 +129,7 @@ class SettingsService {
 	 * `publication`/`document`) so publishing works out of the box on a
 	 * default install; overridable per instance via getWooPublicationConfigValue().
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
 	 */
 	public const WOO_PUBLICATION_DEFAULTS = [
 		'woo_publication_register' => 'publication',
@@ -242,7 +242,7 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ObjectService or null when unavailable
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getObjectService(): ?object {
 		return $this->openRegister->objectService();
@@ -268,7 +268,7 @@ class SettingsService {
 	 *
 	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/deelzaak-support/spec.md
 	 */
 	public function getObjectGrantResolver(): ?object {
 		return $this->openRegister->objectGrantResolver();
@@ -293,7 +293,7 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
 	 *
-	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function getFileService(): ?object {
 		return $this->openRegister->fileService();
@@ -310,7 +310,7 @@ class SettingsService {
 	 *
 	 * @return object|null The resolved service, or null when unavailable
 	 *
-	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+	 * @spec openspec/changes/archive/2026-06-14-migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function getOpenRegisterClass(string $class): ?object {
 		return $this->openRegister->classNamed(class: $class);
@@ -325,7 +325,7 @@ class SettingsService {
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $force is a simple re-import toggle
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadConfiguration(bool $force = false): array {
 		return $this->import->loadConfiguration(force: $force);
@@ -340,7 +340,7 @@ class SettingsService {
 	 *
 	 * @return array
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getSettings(): array {
 		$config = [];
@@ -387,7 +387,7 @@ class SettingsService {
 	 *
 	 * @throws \OCA\Dossiq\Exception\RefusedException When the throughput report would go on without an existing reader group.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function updateSettings(array $data): array {
@@ -523,7 +523,7 @@ class SettingsService {
 	 *
 	 * @return string The schema id, or '' when decidiq or its schema is absent.
 	 *
-	 * @spec openspec/changes/the-besluit-resolves-to-decidiqs-decision/specs/zgw-brc/spec.md#requirement-the-besluit-resolves-to-decidiqs-decision-req-brc-020
+	 * @spec openspec/specs/zgw-brc/spec.md#requirement-the-besluit-resolves-to-decidiqs-decision-req-brc-020
 	 */
 	private function decidiqDecisionSchemaId(): string {
 		if ($this->appManager->isInstalled(self::DECIDIQ_APP_ID) === false) {
@@ -588,7 +588,7 @@ class SettingsService {
 	 *
 	 * @return string The configured value, or the documented default.
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+	 * @spec openspec/changes/archive/2026-07-13-woo-publication-via-opencatalogi/design.md#d1
 	 */
 	public function getWooPublicationConfigValue(string $key): string {
 		$default = (self::WOO_PUBLICATION_DEFAULTS[$key] ?? '');

@@ -281,7 +281,7 @@ class CaseActionList {
 	 *
 	 * @return list<array<string, mixed>> The moves, blocked when the work is elsewhere.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
 	 */
 	public function honourExternalHome(array $actions, array $object): array {
 		$sentence = $this->externalHome->whereTheWorkIs(case: $object);
@@ -308,7 +308,7 @@ class CaseActionList {
 	 *
 	 * @return list<array<string, mixed>> The moves, blocked when payment is owed.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function honourPaymentRule(array $actions, array $object, string $caseId): array {
 		$sentence = $this->whyPaymentBlocks(object: $object, caseId: $caseId);
@@ -340,7 +340,7 @@ class CaseActionList {
 	 *
 	 * @return string The refusal, '' when the money is not in the way.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	public function whyPaymentBlocks(array $object, string $caseId): string {
 		$rule = $this->caseTypes->paymentRule(caseTypeId: $this->caseTypeIdOf(object: $object));
@@ -373,7 +373,7 @@ class CaseActionList {
 	 *
 	 * @return string The case type uuid, '' when the case names none.
 	 *
-	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 * @spec openspec/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
 	 */
 	private function caseTypeIdOf(array $object): string {
 		$caseType = ($object['caseType'] ?? '');

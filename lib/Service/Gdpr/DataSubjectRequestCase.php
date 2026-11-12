@@ -43,7 +43,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+ * @spec openspec/specs/avg-processing-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ use OCA\Dossiq\Service\Transitions\FourEyesRule;
  *
  * @psalm-suppress UnusedClass Injected into DataSubjectRequestController.
  *
- * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+ * @spec openspec/specs/avg-processing-surface/spec.md
  */
 class DataSubjectRequestCase {
 
@@ -116,7 +116,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When the case names no subject, or the platform refuses.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function preview(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -245,7 +245,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When the approving act was not taken, or the platform refuses.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function run(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -319,7 +319,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When the case names no subject, or the platform refuses.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function requestExport(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -384,7 +384,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return array<string, mixed> `{exportId, downloadable, expiresAt, expired}`.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	public function exportState(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -423,7 +423,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When nobody approved, or the preparer approved themselves.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function approvingAct(string $caseId): array {
 		$records = (array)($this->cases->findStatusRecords(caseId: $caseId) ?? []);
@@ -463,7 +463,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function requireCase(string $caseId): array {
 		$case = $this->cases->loadCase(caseId: $caseId);
@@ -486,7 +486,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function writeExport(array $case, array $export): void {
 		$case['subjectExportId'] = (string)($export['uuid'] ?? '');
@@ -502,7 +502,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return int The withheld, refused and failed together.
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function leftBehind(array $outcome): int {
 		$total = 0;
@@ -521,7 +521,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function runSentence(array $outcome, int $withheld): string {
 		$destroyed = count((array)($outcome['destroyed'] ?? []));
@@ -542,7 +542,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function countSentence(array $counts): string {
 		return $this->bucketTotal(counts: $counts, bucket: 'erasable') . ' erasable, '
@@ -558,7 +558,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function bucketTotal(array $counts, string $bucket): int {
 		$total = 0;
@@ -576,7 +576,7 @@ class DataSubjectRequestCase {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	 * @spec openspec/specs/avg-processing-surface/spec.md
 	 */
 	private function optional(mixed $value): ?string {
 		$text = trim((string)($value ?? ''));

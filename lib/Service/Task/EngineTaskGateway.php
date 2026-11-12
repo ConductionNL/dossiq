@@ -578,7 +578,7 @@ class EngineTaskGateway {
      *
      * @return array<string, mixed> The payload, with whatever was declared.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+     * @spec openspec/specs/process-step-configuration/spec.md
      */
     private function withDeclaration(array $payload, array $task): array {
         foreach (['candidateGroups', 'candidateUsers'] as $key) {
@@ -784,7 +784,7 @@ class EngineTaskGateway {
      *
      * @return boolean True when a task can be claimed.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     public function supportsClaim(): bool {
         $service = $this->resolveService();
@@ -808,7 +808,7 @@ class EngineTaskGateway {
      *
      * @return boolean Whether the engine accepted it.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     public function claim(string $taskId, ?string $actor): bool {
         $id = trim($taskId);
@@ -861,7 +861,7 @@ class EngineTaskGateway {
      *
      * @return boolean Whether the engine accepted it.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     public function complete(string $taskId, array $data, string $outcome, ?string $actor): bool {
         $id = trim($taskId);
@@ -907,7 +907,7 @@ class EngineTaskGateway {
      *
      * @return boolean Whether the engine accepted it; on false `lastError()` holds the engine's reason.
      *
-     * @spec openspec/changes/case-page-answers-in-card-notices/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
+     * @spec openspec/specs/case-management/spec.md#requirement-an-action-on-the-case-page-answers-with-a-card-notice
      */
     public function cancel(string $taskId, ?string $reason, ?string $actor): bool {
         $id = trim($taskId);
@@ -949,7 +949,7 @@ class EngineTaskGateway {
      *
      * @return bool
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     private static function answers(object $task, string $getter): bool {
         if (method_exists($task, $getter) === true) {
@@ -967,7 +967,7 @@ class EngineTaskGateway {
      *
      * @return string The value.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     private static function stringFrom(object $task, string $getter): string {
         if (self::answers(task: $task, getter: $getter) === false) {
@@ -985,7 +985,7 @@ class EngineTaskGateway {
      *
      * @return string The value.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     private static function dateFrom(object $task, string $getter): string {
         if (self::answers(task: $task, getter: $getter) === false) {
@@ -1008,7 +1008,7 @@ class EngineTaskGateway {
      *
      * @return array<mixed> The value.
      *
-     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     * @spec openspec/specs/task-management/spec.md
      */
     private static function listFrom(object $task, string $getter): array {
         if (self::answers(task: $task, getter: $getter) === false) {

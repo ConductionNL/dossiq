@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
 class InformatieobjectStatusLifecycle {
 
@@ -101,7 +101,7 @@ class InformatieobjectStatusLifecycle {
 	 *
 	 * @return bool True when allowed.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function isTransitionAllowed(string $from, string $to): bool {
 		if ($from === $to) {
@@ -124,7 +124,7 @@ class InformatieobjectStatusLifecycle {
 	 * @throws RuntimeException When OpenRegister/config is unavailable or the document is missing.
 	 * @throws InvalidArgumentException When the status is unknown or the transition is not permitted.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function transition(string $infoObjectId, string $newStatus): array {
 		if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
@@ -304,7 +304,7 @@ class InformatieobjectStatusLifecycle {
 	 *
 	 * @return array<int, array<string, mixed>> Per-id results with `id`, `success`, optional `error`.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function transitionMany(array $infoObjectIds, string $newStatus): array {
 		$results = [];

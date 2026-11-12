@@ -51,7 +51,7 @@ use RuntimeException;
 /**
  * LHS recommendation engine.
  *
- * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+ * @spec openspec/changes/archive/2026-05-11-enforcement-lhs/tasks.md#T03
  *
  * @psalm-suppress UnusedClass
  */

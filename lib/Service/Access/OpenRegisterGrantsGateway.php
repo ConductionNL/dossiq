@@ -41,7 +41,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -59,7 +59,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class OpenRegisterGrantsGateway {
 
@@ -103,7 +103,7 @@ class OpenRegisterGrantsGateway {
 	 * @param SettingsService    $settingsService Holds the configured register and case schema.
 	 * @param LoggerInterface    $logger          Records why an answer could not be had.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -129,7 +129,7 @@ class OpenRegisterGrantsGateway {
 	 * @return array<string, array<string, mixed>>|null OpenRegister's answer, or null
 	 *                                                  when it could not be asked.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function provenanceForCase(string $caseId, array $actions, ?string $userId = null): ?array {
 		$handler = $this->permissionHandler();
@@ -179,7 +179,7 @@ class OpenRegisterGrantsGateway {
 	 * @return bool|null True when OpenRegister refused, false when it granted,
 	 *                   null when there is no record to read.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function refuses(?array $record): ?bool {
 		if ($record === null || array_key_exists('granted', $record) === false) {
@@ -217,7 +217,7 @@ class OpenRegisterGrantsGateway {
 	 *
 	 * @return bool True only when OpenRegister refused the write.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function refusesTheWrite(string $caseId, ?string $userId = null): bool {
 		$provenance = $this->provenanceForCase(
@@ -248,7 +248,7 @@ class OpenRegisterGrantsGateway {
 	 *
 	 * @return object|null The evaluator when it is there and carries the method.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function permissionHandler(): ?object {
 		if ($this->appManager->isInstalled('openregister') === false) {
@@ -284,7 +284,7 @@ class OpenRegisterGrantsGateway {
 	 *
 	 * @return object|null The schema, or null when it cannot be resolved.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseSchema(): ?object {
 		$slug = $this->settingsService->getConfigValue(key: 'case_schema');
@@ -332,7 +332,7 @@ class OpenRegisterGrantsGateway {
 	 *
 	 * @return object|null The object entity, or null.
 	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function caseObject(string $caseId): ?object {
 		$objectService = $this->settingsService->getObjectService();

@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Announces a doorzending to the applicant, and says nothing about an internal move.
  *
- * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class DoorzendingNotifier {
 
@@ -68,7 +68,7 @@ class DoorzendingNotifier {
 	 * @param CaseContactDirectory       $contacts      The addresses registered on a case.
 	 * @param LoggerInterface            $logger        Says why an announcement could not be made.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly TermijnNotificationService $notifications,
@@ -86,7 +86,7 @@ class DoorzendingNotifier {
 	 * @return array{announced: bool, reason?: string, payload?: array<string, mixed>}
 	 *         Whether a message went out, and why not when it did not.
 	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
 	 */
 	public function announce(array $case, array $transfer): array {
 		if ($this->isDoorzending(transfer: $transfer) === false) {

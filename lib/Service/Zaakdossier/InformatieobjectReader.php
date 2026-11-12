@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCP\IUser;
 /**
  * Resolves informatieobjecten behind the per-object clearance guard.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
  */
 class InformatieobjectReader {
 	/**
@@ -80,7 +80,7 @@ class InformatieobjectReader {
 	 *
 	 * @return array<string, mixed>|JSONResponse The document, or an error response.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function loadReadable(IUser $user, string $infoObjectId): array|JSONResponse {
 		try {
@@ -110,7 +110,7 @@ class InformatieobjectReader {
 	 *
 	 * @return array<int, array<string, mixed>> The documents the user may read.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function filterForUser(IUser $user, array $informatieobjecten): array {
 		return $this->accessGuard->filterDossierForUser(
@@ -127,7 +127,7 @@ class InformatieobjectReader {
 	 *
 	 * @return JSONResponse|null Null when readable, otherwise the error response.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function guardReadable(IUser $user, string $infoObjectId): ?JSONResponse {
 		$result = $this->loadReadable(user: $user, infoObjectId: $infoObjectId);
@@ -146,7 +146,7 @@ class InformatieobjectReader {
 	 *
 	 * @return string|null The content, or null when the file is missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T05
 	 */
 	public function contentFor(string $uuid, string $fileName): ?string {
 		try {
@@ -166,7 +166,7 @@ class InformatieobjectReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	public function withScanVerdicts(array $documents): array {
 		if ($this->verdicts === null) {

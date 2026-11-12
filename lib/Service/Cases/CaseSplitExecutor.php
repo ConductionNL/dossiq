@@ -38,7 +38,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ use Throwable;
 /**
  * Open the second case, move what the plan names, record what left.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseSplitExecutor {
 
@@ -125,7 +125,7 @@ class CaseSplitExecutor {
 	 * @param LoggerInterface  $logger          Records every split and every refusal.
 	 * @param CaseSplitStore   $store           Where a split reads and writes.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly CaseSplitPolicy $policy,
@@ -152,7 +152,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the case cannot be read, the case type refuses, or the write fails.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function split(string $caseId, string $title, array $chosen, string $actor): array {
 		$caseId = trim($caseId);
@@ -195,7 +195,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException Carrying the policy's own sentence.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
 	 */
 	private function refuseSelection(array $chosen, ?array $caseType): void {
 		$selected = array_values(
@@ -423,7 +423,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the write is refused.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	private function openSecondCase(array $source, string $title, string $actor): array {
 		$this->store->refuseUnreachableStatus(source: $source);
@@ -656,7 +656,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the case cannot be read.
 	 *
-	 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
+	 * @spec openspec/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
 	 */
 	public function divisibleParts(string $caseId): array {
 		$case = $this->store->requireCase(caseId: trim($caseId));

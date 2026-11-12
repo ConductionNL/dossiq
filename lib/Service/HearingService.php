@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use RuntimeException;
 /**
  * Service for hearing (hoorgesprek) management within the complaint workflow.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 class HearingService {
 
@@ -65,7 +65,7 @@ class HearingService {
 	 *
 	 * @throws \RuntimeException If required fields missing or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function scheduleHearing(string $complaintId, array $data): array {
 		$data = array_diff_key($data, CallerIdentity::KEYS);
@@ -125,7 +125,7 @@ class HearingService {
 	 *
 	 * @return array<string, mixed>|null Hearing data or null
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function getHearing(string $id): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -155,7 +155,7 @@ class HearingService {
 	 *
 	 * @return array<int, array<string, mixed>> List of hearings
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function getHearingsForComplaint(string $complaintId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -188,7 +188,7 @@ class HearingService {
 	 *
 	 * @throws \RuntimeException If verslag is missing or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function recordOutcome(string $id, array $outcome): array {
 		if (empty($outcome['minutes']) === true) {
@@ -237,7 +237,7 @@ class HearingService {
 	 *
 	 * @return string Talk room URL or empty string if Talk not available
 	 *
-	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function createTalkRoom(string $complaintId): string {
 		$roomName = 'Hoorgesprek klacht ' . $complaintId;

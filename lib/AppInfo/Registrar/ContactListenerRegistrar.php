@@ -36,7 +36,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * the create event exactly once, so the event is the one place the entry can be
  * written from without being written twice.
  *
- * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class ContactListenerRegistrar {
 
@@ -47,7 +47,7 @@ class ContactListenerRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		$context->registerEventListener(

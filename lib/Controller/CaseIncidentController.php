@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use Psr\Log\LoggerInterface;
 /**
  * List, record, assign and settle the incidents on a case.
  *
- * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseIncidentController extends Controller {
 
@@ -70,7 +70,7 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -90,7 +90,7 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @return JSONResponse The incidents, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
@@ -117,7 +117,7 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @return JSONResponse The stored incident, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	#[NoAdminRequired]
 	public function record(string $caseId): JSONResponse {
@@ -158,7 +158,7 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @return JSONResponse The stored incident, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
+	 * @spec openspec/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	#[NoAdminRequired]
 	public function assign(string $caseId, string $incidentId): JSONResponse {
@@ -186,7 +186,7 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @return JSONResponse The stored incident, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	#[NoAdminRequired]
 	public function settle(string $caseId, string $incidentId): JSONResponse {

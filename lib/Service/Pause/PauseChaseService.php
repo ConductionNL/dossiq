@@ -49,7 +49,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 
 declare(strict_types=1);
@@ -71,7 +71,7 @@ use Throwable;
 /**
  * Chasing while a case waits on somebody else (REQ-TERM-011).
  *
- * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The act joins five things that
  * already exist: the term store, the outbound route, the reason vocabulary, the
@@ -138,7 +138,7 @@ class PauseChaseService {
 	 *
 	 * @return array{chased: int, escalated: int} What the sweep did.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function sweep(?DateTimeImmutable $now = null): array {
 		$done = ['chased' => 0, 'escalated' => 0];
@@ -165,7 +165,7 @@ class PauseChaseService {
 	 *
 	 * @return bool True when a reminder actually went out.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function chaseIfDue(array $instance, ?DateTimeImmutable $now = null): bool {
 		$moment = ($now ?? new DateTimeImmutable());
@@ -191,7 +191,7 @@ class PauseChaseService {
 	 *
 	 * @return bool True when the escalation was recorded.
 	 *
-	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function escalateIfDue(array $instance, ?DateTimeImmutable $now = null): bool {
 		$moment = ($now ?? new DateTimeImmutable());

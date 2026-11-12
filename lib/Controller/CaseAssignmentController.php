@@ -34,7 +34,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use RuntimeException;
 /**
  * Take a case, and give it back.
  *
- * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseAssignmentController extends Controller {
 
@@ -103,7 +103,7 @@ class CaseAssignmentController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function state(string $caseId): JSONResponse {
@@ -128,7 +128,7 @@ class CaseAssignmentController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function claim(string $caseId): JSONResponse {
@@ -158,7 +158,7 @@ class CaseAssignmentController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function release(string $caseId): JSONResponse {
@@ -199,7 +199,7 @@ class CaseAssignmentController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the case is free to take.
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function requireClaimableCase(string $caseId, IUser $user): ?JSONResponse {
 		try {
@@ -238,7 +238,7 @@ class CaseAssignmentController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function answer(string $caseId, callable $run): JSONResponse {
 		try {
@@ -266,7 +266,7 @@ class CaseAssignmentController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function refusal(string $code, string $caseId): JSONResponse {
 		$this->logger->info(

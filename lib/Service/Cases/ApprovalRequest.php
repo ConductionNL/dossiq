@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use RuntimeException;
 /**
  * Raises the decidiq decision a gated act waits on, and links it to the case.
  *
- * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see ApprovalGateDeclaration} is a
  * reader over two arrays with no state and nothing to inject.
@@ -84,7 +84,7 @@ class ApprovalRequest {
 	 *
 	 * @throws RefusedException When the case is gone, the act is not gated, or decidiq cannot be reached.
 	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
 	 */
 	public function raise(string $caseId, string $act, string $userId): array {
 		$case = $this->store->loadCase(caseId: $caseId);

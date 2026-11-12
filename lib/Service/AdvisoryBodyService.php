@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -39,7 +39,7 @@ use RuntimeException;
  * can be consulted during case processing. This service exposes CRUD, weighted
  * specialization search, and secure-token issuance for external notification.
  *
- * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+ * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
  */
 class AdvisoryBodyService {
 	use SearchesObjects;
@@ -63,7 +63,7 @@ class AdvisoryBodyService {
 	 *
 	 * @return array<int, array<string, mixed>> List of advisory bodies
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function findAll(array $filters = []): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -95,7 +95,7 @@ class AdvisoryBodyService {
 	 *
 	 * @return array<string, mixed>|null The advisory body or null if not found
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function findById(string $id): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -134,7 +134,7 @@ class AdvisoryBodyService {
 	 *
 	 * @throws \RuntimeException If OpenRegister is unavailable or schema not configured
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function save(array $data, string $id = ''): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -186,7 +186,7 @@ class AdvisoryBodyService {
 	 *
 	 * @throws \RuntimeException If OpenRegister is unavailable
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function delete(string $id): bool {
 		$objectService = $this->settingsService->getObjectService();
@@ -222,7 +222,7 @@ class AdvisoryBodyService {
 	 *
 	 * @return array<int, array<string, mixed>> Ranked list of advisory bodies
 	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * @spec openspec/changes/archive/2026-06-13-consultation-management/tasks.md#TASK-CN-03
 	 */
 	public function searchBySpecialization(string $query): array {
 		$all = $this->findAll(filters: ['active' => true]);

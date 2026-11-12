@@ -49,7 +49,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 
 declare(strict_types=1);
@@ -65,7 +65,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+ * @spec openspec/specs/email-case-matching/spec.md
  */
 class AssigneeResolver {
 
@@ -119,8 +119,8 @@ class AssigneeResolver {
 	 *
 	 * @return string The rendered principal, or '' when nothing names anybody.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function resolve(string $primary, string $fallback, array $case): string {
 		$primary = trim($primary);
@@ -188,7 +188,7 @@ class AssigneeResolver {
 	 *
 	 * @return string The team id, or '' when neither the case nor its type names one.
 	 *
-	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function resolveTeam(array $case, array $caseType = []): string {
@@ -223,7 +223,7 @@ class AssigneeResolver {
 	 *
 	 * @return string The clause.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function refusalReason(string $fallback): string {
 		$fallback = trim($fallback);
@@ -241,7 +241,7 @@ class AssigneeResolver {
 	 *
 	 * @return string The id, or ''.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function caseId(array $case): string {
 		return $this->referenceId(value: ($case['id'] ?? ($case['uuid'] ?? '')));
@@ -262,7 +262,7 @@ class AssigneeResolver {
 	 *
 	 * @return string The id, or '' when there is none.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	public function referenceId(mixed $value): string {
 		if (is_array($value) === true) {
@@ -311,7 +311,7 @@ class AssigneeResolver {
 	 *     canonical rendering API and is published as a static, final class:
 	 *     there is no instance to inject.
 	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/specs/email-case-matching/spec.md
 	 */
 	private function renderPrincipal(string $raw, array $json): string {
 		if ($raw === '') {

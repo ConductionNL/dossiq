@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use RuntimeException;
 /**
  * Answers which days a recurrence fires on.
  *
- * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 class PlannedSeriesCalendar {
 
@@ -119,7 +119,7 @@ class PlannedSeriesCalendar {
 	 *
 	 * @throws RuntimeException `invalid_recurrence` when the token is not one of ours.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function recurrenceOf(string $recurrence): string {
 		$trimmed = trim($recurrence);
@@ -143,7 +143,7 @@ class PlannedSeriesCalendar {
 	 *
 	 * @return DateTimeImmutable|null The next occurrence, or null when there is none.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function nextOccurrence(string $recurrence, DateTimeImmutable $anchor, DateTimeImmutable $from): ?DateTimeImmutable {
 		$step = (int)(self::RECURRENCE_MONTHS[$recurrence] ?? 0);
@@ -179,7 +179,7 @@ class PlannedSeriesCalendar {
 	 *
 	 * @return DateTimeImmutable The occurrence.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function occurrence(string $recurrence, DateTimeImmutable $anchor, int $index): DateTimeImmutable {
 		$step = (int)(self::RECURRENCE_MONTHS[$recurrence] ?? 0);
@@ -209,7 +209,7 @@ class PlannedSeriesCalendar {
 	 *
 	 * @return boolean Whether the last day of the month is used.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function usesLastDay(string $recurrence, DateTimeImmutable $anchor): bool {
 		$shortest = 31;
@@ -228,7 +228,7 @@ class PlannedSeriesCalendar {
 	 *
 	 * @return array<int, int> The month numbers, ascending.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function monthsOf(string $recurrence, DateTimeImmutable $anchor): array {
 		$step = (int)(self::RECURRENCE_MONTHS[$recurrence] ?? 0);
@@ -292,7 +292,7 @@ class PlannedSeriesCalendar {
 	 *
 	 * @return string The interval.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function inWords(string $recurrence): string {
 		$words = [
@@ -314,7 +314,7 @@ class PlannedSeriesCalendar {
 	 *
 	 * @return string The date as `Y-m-d`, or an empty string when it cannot be read.
 	 *
-	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function nextDate(array $series, string $cron, ?DateTimeImmutable $from): string {
 		if ($series['anchor'] === '') {

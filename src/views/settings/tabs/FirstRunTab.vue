@@ -14,7 +14,7 @@
   administrator comes back, because the status endpoint asks the tree rather
   than reading a stored flag.
 
-  @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+  @spec openspec/specs/first-time-setup/spec.md
 -->
 <template>
 	<div class="first-run-tab">
@@ -107,7 +107,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+		 * @spec openspec/specs/first-time-setup/spec.md
 		 */
 		async reload() {
 			this.loading = true

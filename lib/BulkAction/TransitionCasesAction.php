@@ -44,7 +44,7 @@ use Throwable;
  * rehearsal asks the engine's read-only `getAvailableTransitions()`, which
  * evaluates every guard without writing.
  *
- * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) `BulkActionResult` is a value object
  * whose constructor is PRIVATE: `applied()`, `skipped()`, `refused()` and
@@ -61,7 +61,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @var string
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public const ID = 'dossiq:transition-cases';
 
@@ -73,7 +73,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly StatusTransitionService $engine,
@@ -86,7 +86,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -97,7 +97,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The label.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Move to another status');
@@ -108,7 +108,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The description.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t('Runs one status transition over every selected case, through the transition engine.');
@@ -119,7 +119,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @return bool False.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return false;
@@ -130,7 +130,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @return array<int, string> No guards.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getGuards(): array {
 		return [];
@@ -145,7 +145,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @throws InvalidArgumentException When no transition is named.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		if (trim((string)($parameters['transitionId'] ?? '')) === '') {
@@ -163,7 +163,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The engine reads the
 	 * acting user from the session; the job runs as that user.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function apply(BulkStep $step): BulkActionResult {
 		$object = $step->object;
@@ -218,7 +218,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The note, or an empty string when every action ran.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function missedActions(array $outcome): string {
 		$failed = ($outcome['failedActions'] ?? []);
@@ -249,7 +249,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @return BulkActionResult What would happen.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function rehearse(string $caseId, string $transitionId): BulkActionResult {
 		try {
@@ -283,7 +283,7 @@ class TransitionCasesAction implements BulkActionInterface {
 	 *
 	 * @return string The reason.
 	 *
-	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	private function firstGuardMessage(array $guards): string {
 		foreach ($guards as $guard) {

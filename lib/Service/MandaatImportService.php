@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use RuntimeException;
  * or write goes through {@see MandaatRepository}; what stays here is the import
  * decision — new vs changed vs removed — and the approval state machine.
  *
- * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
  */
 class MandaatImportService {
 	use SearchesObjects;
@@ -86,7 +86,7 @@ class MandaatImportService {
 	 *
 	 * @throws RuntimeException When the CSV is malformed or a rol cannot be resolved.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function importFromCsv(
 		string $decisionNumber,
@@ -274,7 +274,7 @@ class MandaatImportService {
 	 *
 	 * @return array<string, mixed> The mandaat object payload.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	private function buildMandatePayload(array $row, string $decisionId): array {
 		return [
@@ -325,7 +325,7 @@ class MandaatImportService {
 	 *
 	 * @return array<int, string> Changed field names; empty when unchanged.
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	private function collectChangedFields(array $existing, array $payload): array {
 		$changedFields = [];
@@ -373,7 +373,7 @@ class MandaatImportService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-mandaat-matrix-04-decidesk-import/tasks.md
 	 */
 	public function approveImport(string $decisionId): array {
 		$run = new MandateApproval();

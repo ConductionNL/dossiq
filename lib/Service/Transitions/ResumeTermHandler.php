@@ -41,7 +41,7 @@ use Throwable;
 /**
  * Built-in handler for the `resumeTerm` task effect.
  *
- * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 class ResumeTermHandler implements ActionHandlerInterface {
 
@@ -74,7 +74,7 @@ class ResumeTermHandler implements ActionHandlerInterface {
 	 *
 	 * @return ActionResult The outcome.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		$caseId = trim((string)($case['id'] ?? ($case['uuid'] ?? '')));

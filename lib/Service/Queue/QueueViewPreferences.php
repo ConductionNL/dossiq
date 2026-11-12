@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
 /**
  * The reader's own view settings for their queue.
  *
- * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ * @spec openspec/specs/my-work/spec.md
  */
 class QueueViewPreferences {
 	/**
@@ -75,7 +75,7 @@ class QueueViewPreferences {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function __construct(
 		private readonly IUserConfig $userConfig,
@@ -90,7 +90,7 @@ class QueueViewPreferences {
 	 *
 	 * @return string One of GROUPINGS.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function groupBy(string $userId): string {
 		try {
@@ -116,7 +116,7 @@ class QueueViewPreferences {
 	 *
 	 * @return string The grouping now stored.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function setGroupBy(string $userId, string $groupBy): string {
 		if (in_array($groupBy, self::GROUPINGS, true) === false) {
@@ -136,7 +136,7 @@ class QueueViewPreferences {
 	 *
 	 * @return array<int, string> The hidden group keys.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function hiddenGroups(string $userId, string $today): array {
 		$hidden = [];
@@ -158,7 +158,7 @@ class QueueViewPreferences {
 	 *
 	 * @return array<int, string> The groups hidden after this call.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function hideForToday(string $userId, string $group, string $today): array {
 		$stored = $this->storedHidden(userId: $userId);
@@ -180,7 +180,7 @@ class QueueViewPreferences {
 	 *
 	 * @return array<int, string> The groups hidden after this call.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	public function showAgain(string $userId, string $group, string $today): array {
 		$stored = $this->storedHidden(userId: $userId);
@@ -216,7 +216,7 @@ class QueueViewPreferences {
 	 *
 	 * @return array<string, string> The map.
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) JsonPreference is a stateless reader shared by the queue preference stores.
 	 */

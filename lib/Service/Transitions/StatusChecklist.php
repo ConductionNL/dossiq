@@ -217,7 +217,7 @@ class StatusChecklist {
 	 *
 	 * @return array<string, mixed> The declaration.
 	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	private function declarationFor(string $caseId, string $statusTypeId, string $title): array {
 		if ($this->declarations === null || $caseId === '') {

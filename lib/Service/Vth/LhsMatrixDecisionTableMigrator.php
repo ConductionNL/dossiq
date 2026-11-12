@@ -53,7 +53,7 @@ use Throwable;
  * longer has a settings page, so an overwrite would replace an administrator's
  * work with a source they cannot even read.
  *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/specs/lhs-decision-table/spec.md
  */
 class LhsMatrixDecisionTableMigrator {
 
@@ -95,7 +95,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return array<string, mixed> The summary.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	public function migrate(IUser $user, bool $dryRun): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -123,7 +123,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return array<string, mixed> The summary.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function emptySummary(string $note): array {
 		return ['note' => $note, 'created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0, 'rows' => []];
@@ -138,7 +138,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return array<string, mixed> The summary.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function migrateAll(object $objectService, bool $dryRun): array {
 		$register = (string)$this->settingsService->getConfigValue('register');
@@ -178,7 +178,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function migrateOne(array $matrix, object $objectService, string $register, string $tableSchema, bool $dryRun): array {
 		$id = (string)($matrix['id'] ?? ($matrix['@self']['id'] ?? ''));
@@ -263,7 +263,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return array<string, mixed>|null The existing table.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function existingTable(object $objectService, string $register, string $tableSchema, string $marker): ?array {
 		try {
@@ -317,7 +317,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return boolean True when the stored rules decide differently.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function rulesDiffer(array $existing, array $projected): bool {
 		$stored = $this->comparableRules(rules: $this->decode(value: ($existing['rules'] ?? null)));
@@ -334,7 +334,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return array<string, array<int, array<int, string>>> The comparable form.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function comparableRules(array $rules): array {
 		$comparable = [];
@@ -364,7 +364,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return array<string, mixed>|null The table.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function tableFor(array $matrix, string $marker): ?array {
 		$axes = [
@@ -435,7 +435,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return array<int, mixed> The list.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function decode(mixed $value): array {
 		if (is_string($value) === true) {
@@ -463,7 +463,7 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @return array<int, array<string, mixed>> The matrices.
 	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+	 * @spec openspec/specs/lhs-decision-table/spec.md
 	 */
 	private function fetchMatrices(object $objectService, string $register): array {
 		$schema = (string)$this->settingsService->getConfigValue('lhs_matrix_schema');

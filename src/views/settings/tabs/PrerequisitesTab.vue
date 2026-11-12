@@ -15,7 +15,7 @@
   (ADR-102). Only Open Register blocks; everything else says what it would
   have added, so an administrator can decide whether they want it.
 
-  @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+  @spec openspec/specs/admin-settings/spec.md
 -->
 <template>
 	<div class="prerequisites" data-testid="prerequisites-block">
@@ -120,7 +120,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array} The required apps this instance does not have.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		missingRequired() {
@@ -131,7 +131,7 @@ export default {
 		 * The apps in the order the table lists them, one body each: required, then optional.
 		 *
 		 * @return {Array<Array>} The required and the optional apps.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		appGroups() {
 			return [this.required, this.optional]
@@ -149,7 +149,7 @@ export default {
 		 *
 		 * @param {boolean} present Whether the item is there.
 		 * @return {string} The word.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		mark(present) {
 			return present === true ? t('dossiq', 'present') : t('dossiq', 'missing')
@@ -160,7 +160,7 @@ export default {
 		 *
 		 * @param {boolean} present Whether the item is there.
 		 * @return {string} The class.
-		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		markClass(present) {
 			return present === true

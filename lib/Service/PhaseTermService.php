@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Starting, stopping and splitting phase terms (REQ-TERM-061, REQ-TERM-065).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
  * constants and four pure predicates over an array, with no state, no I/O and
@@ -103,7 +103,7 @@ class PhaseTermService {
 	 * @return array<string, mixed>|null The started phase term, or null when the
 	 *         phase declares no clock and the chain declares no term either.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function enterPhase(
 		string $caseId,
@@ -148,7 +148,7 @@ class PhaseTermService {
 	 *
 	 * @return int How many clocks were stopped.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function stopRunningPhases(string $caseId, ?DateTimeImmutable $when = null, string $except = ''): int {
 		$moment = ($when ?? new DateTimeImmutable());
@@ -195,7 +195,7 @@ class PhaseTermService {
 	 *
 	 * @return int The phase's days, 0 when nothing declares any.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function daysForPhase(string $caseId, string $caseTypeId, string $statusTypeId): int {
 		$own = $this->declarations->forStatusType(statusTypeId: $statusTypeId);
@@ -228,7 +228,7 @@ class PhaseTermService {
 	 *
 	 * @return array{days: int, remainingDays: int, exhausted: bool, steps: array<int, int>}
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function chainPlan(
 		string $caseId,

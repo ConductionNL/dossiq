@@ -26,7 +26,7 @@
  * derivation would eventually offer a move the write refuses, and the handler
  * would meet that disagreement as a button that fails after they press it.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import {
@@ -178,7 +178,7 @@ function yes(value) {
  *
  * @param {Array<object>} transitions The `/available-transitions` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function transitionEntries(transitions) {
 	return (Array.isArray(transitions) ? transitions : [])
@@ -226,7 +226,7 @@ function resultChoices(rows) {
  *
  * @param {object|null} state The `/lifecycle` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function gestureEntries(state) {
 	// An unreadable state offers the gestures ENABLED rather than hiding them.
@@ -254,7 +254,7 @@ function gestureEntries(state) {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function endingEntries(acts) {
 	const verdicts = Array.isArray(acts?.acts) ? acts.acts : []
@@ -308,7 +308,7 @@ function endingEntries(acts) {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function archiveStateEntries(acts) {
 	if (!yes(acts?.archived)) {
@@ -351,7 +351,7 @@ const STATE_ACTS = {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 function stateEntries(acts) {
 	const entries = [stateEntry(yes(acts?.held) ? 'release-hold' : 'hold')]
@@ -418,7 +418,7 @@ export const ACT_ICONS = {
  *
  * @param {object} entry One menu entry.
  * @return {string} A registered icon name.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function iconFor(entry) {
 	if (entry?.kind === 'transition') {
@@ -446,7 +446,7 @@ export function iconFor(entry) {
  * @param {object|null} [answers.acts] The `/acts` answer, carrying both the
  *   role-gated ending acts and the case type's always-available ones.
  * @return {Array<object>} The menu entries.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function buildActsMenu({ transitions, state, acts } = {}) {
 	const rank = (entry) => {
@@ -516,7 +516,7 @@ function remedyEntries(acts) {
  *
  * @param {object|null} acts The `/acts` answer.
  * @return {Array<object>} The entries.
- * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 function alwaysAvailableEntries(acts) {
 	const declared = Array.isArray(acts?.alwaysAvailable) ? acts.alwaysAvailable : []
@@ -546,7 +546,7 @@ function alwaysAvailableEntries(acts) {
  *
  * @param {object} entry One menu entry.
  * @return {{reason: boolean, result: boolean, until: boolean, days: boolean}} What to ask for.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function inputsFor(entry) {
 	const id = String(entry?.id ?? '')
@@ -576,7 +576,7 @@ export function inputsFor(entry) {
  *
  * @param {object} entry One menu entry.
  * @return {string} The path after `/api/case/{id}/`, empty for a transition.
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 export function endpointFor(entry) {
 	if (!entry || entry.kind === 'transition') {

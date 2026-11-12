@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseTypeVersionWindow {
 
@@ -74,7 +74,7 @@ class CaseTypeVersionWindow {
 	 *
 	 * @return string The day.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function today(): string {
 		return $this->time->getDateTime()->format('Y-m-d');
@@ -91,7 +91,7 @@ class CaseTypeVersionWindow {
 	 *
 	 * @return array<string, mixed> The version, with its dates.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function open(array $caseType): array {
 		$today = $this->today();
@@ -144,7 +144,7 @@ class CaseTypeVersionWindow {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function closePrevious(array $caseType, string $caseTypeId, string $takesEffect): void {
 		$previousId = $this->store->referenceId(value: ($caseType['previousVersion'] ?? ''));
@@ -195,7 +195,7 @@ class CaseTypeVersionWindow {
 	 *
 	 * @return array{deprecated: bool, findings: array<int, string>, validUntil: ?string}
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function deprecate(string $caseTypeId): array {
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
@@ -222,7 +222,7 @@ class CaseTypeVersionWindow {
 	 *
 	 * @return string The finding, or '' when it may be closed.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function deprecationRefusal(array $caseType): string {
 		if ($caseType === []) {

@@ -79,8 +79,8 @@ class BerichtenboxService {
 	 *
 	 * @return array<string, mixed> The stored message record or an error payload.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
 	 */
 	public function sendMessage(
 		string $caseId,
@@ -401,7 +401,7 @@ class BerichtenboxService {
 	 *
 	 * @return array<int, mixed> List of stored Berichtenbox messages for the case.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getMessagesForCase(string $caseId): array {
 		$objectService = $this->getObjectService();
@@ -424,7 +424,7 @@ class BerichtenboxService {
 	 *
 	 * @return bool True when the BSN is a 9-digit number passing the 11-proef.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function validateBsn(string $bsn): bool {
 		if (preg_match('/^\d{9}$/', $bsn) !== 1) {

@@ -108,7 +108,7 @@ class PortalContributionProvider {
 	 * handler attaches to a message are listed and downloadable for the
 	 * resident who received it (`filesDownload`).
 	 *
-	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
 	 */
 	public const CITIZEN_INBOX = [
 		'fields' => [
@@ -603,7 +603,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, mixed>> The public entries, newest first.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function caseTimeline(string $caseId): array {
 		if ($this->timeline === null) {
@@ -669,7 +669,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, string> The field names.
 	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/specs/burger-notifications/spec.md
 	 */
 	public function citizenCaseFields(): array {
 		return self::CITIZEN_CASE_FIELDS;
@@ -715,7 +715,7 @@ class PortalContributionProvider {
 	 * @return array<string, mixed> The supplier manifest.
 	 *
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
-	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
 	 */
 	private function supplierContribution(): array {
 		$contribution = [
@@ -767,7 +767,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
 	 */
 	private function supplierInbox(): array {
 		return [
@@ -859,7 +859,7 @@ class PortalContributionProvider {
 	 * @return array<string, mixed> The citizen manifest.
 	 *
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
-	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/specs/friendly-case-create-form/spec.md
 	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
 	private function citizenContribution(string $group=self::CITIZEN_GROUP, array $labels=self::CITIZEN_PAGE_LABELS): array {

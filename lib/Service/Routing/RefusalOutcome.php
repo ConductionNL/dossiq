@@ -37,7 +37,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class RefusalOutcome {
 
@@ -120,7 +120,7 @@ class RefusalOutcome {
 	 *
 	 * @return array{department: string, role: string} The destination, blank when undeclared.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function destinationFor(array $caseType): array {
 		$declared = ($caseType[self::PROPERTY] ?? null);
@@ -141,7 +141,7 @@ class RefusalOutcome {
 	 *
 	 * @return boolean True when a department and a role are declared.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function canRefuse(array $caseType): bool {
 		$destination = $this->destinationFor(caseType: $caseType);
@@ -160,7 +160,7 @@ class RefusalOutcome {
 	 *
 	 * @throws RefusedException When there is no reason, no destination, or no readable case.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function refuse(string $caseId, string $reason, string $refusedBy): array {
 		$why = $this->requiredReason(reason: $reason);
@@ -290,7 +290,7 @@ class RefusalOutcome {
 	 *
 	 * @return array<string, mixed> The refusal record, empty when it was not refused.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	public function refusalOn(array $case): array {
 		$record = ($case[self::CASE_FIELD] ?? null);
@@ -338,7 +338,7 @@ class RefusalOutcome {
 	 *
 	 * @return string The Nextcloud group id, or '' when none resolves.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
 	 */
 	private function teamFor(array $destination): string {

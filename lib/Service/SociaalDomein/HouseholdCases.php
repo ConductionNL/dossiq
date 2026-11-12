@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCA\Dossiq\Service\Support\TrustedRevealRead;
 /**
  * Builds the household rows of a case.
  *
- * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class HouseholdCases {
 	/**
@@ -70,7 +70,7 @@ class HouseholdCases {
 	 *
 	 * @return array<int, string> The BSNs, or none without a plan.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function householdBsns(array $case): array {
 		$plan = $this->store->read(schema: 'gezinsplan', id: (string)($case['gezinsplanId'] ?? ''));
@@ -101,7 +101,7 @@ class HouseholdCases {
 	 *
 	 * @return string The domain.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function domainOf(string $category): string {
 		return $this->store->domainOfCategory(category: $category);
@@ -114,7 +114,7 @@ class HouseholdCases {
 	 *
 	 * @return string The domain.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function ownDomain(array $case): string {
 		$cache = [];
@@ -135,7 +135,7 @@ class HouseholdCases {
 	 *         `identifier`, `title`, `caseTypeTitle`, `statusLabel`,
 	 *         `statusRole`, `access` (`full`).
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function sameDomain(array $case, array $bsns, callable $canRead): array {
 		$caseTypes = [];
@@ -174,7 +174,7 @@ class HouseholdCases {
 	 *
 	 * @return array<string, mixed>|null The case, or null when it does not resolve.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function readCase(string $caseId): ?array {
 		return $this->store->read(schema: 'case', id: $caseId);
@@ -232,7 +232,7 @@ class HouseholdCases {
 	 *
 	 * @return array<int, array{exists: bool, domain: string, contact: string}> One row per domain and contact.
 	 *
-	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
 	 */
 	public function otherDomains(array $bsns, string $ownDomain, string $ground, string $requester): array {
 		$this->existence->assertGround(ground: $ground);

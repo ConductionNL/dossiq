@@ -146,7 +146,7 @@ export default {
 			immediate: true,
 			/**
 			 * @param {string|number|boolean|object} value The new value.
-			 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+			 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md
 			 */
 			handler(value) {
 				if (value) {
@@ -157,7 +157,7 @@ export default {
 	},
 
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		initFromMapping() {
 			const mapping = this.mapping || {}
 			this.form = {
@@ -188,7 +188,7 @@ export default {
 			this.jsonError = null
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/** @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		onSave() {
 			this.jsonError = null
 

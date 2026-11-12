@@ -98,7 +98,7 @@ class WooDossierReturn {
 	 *
 	 * @return bool Whether the resident was told.
 	 *
-	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
 	 */
 	public function tellTheResident(array $case, string $caseId, string $publicationId): bool {
 		if ($this->decisionNotice === null || (string)($case['wooPublicationUrl'] ?? '') !== '') {

@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Throwable;
 /**
  * Runs retired declared actions as their replacement nodes.
  *
- * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+ * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
  */
 class RetiredActionRunner {
 
@@ -110,7 +110,7 @@ class RetiredActionRunner {
 	 *
 	 * @return bool True when the type is retired.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function handles(string $type): bool {
 		return $type !== '' && $this->map->rowFor(type: self::NODE_PREFIX . $type) !== null;
@@ -121,7 +121,7 @@ class RetiredActionRunner {
 	 *
 	 * @return array<int, string> The declared types, such as `notify`.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 */
 	public function runnableTypes(): array {
 		$types = [];
@@ -145,8 +145,8 @@ class RetiredActionRunner {
 	 *
 	 * @return array{type: string, ok: bool, error?: string} The result row.
 	 *
-	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
-	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function run(string $type, array $action, array $case, array $context): array {
 		try {

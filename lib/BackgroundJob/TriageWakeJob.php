@@ -31,7 +31,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+ * @spec openspec/specs/kcc-routing/spec.md
  */
 class TriageWakeJob extends TimedJob {
 
@@ -90,7 +90,7 @@ class TriageWakeJob extends TimedJob {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — the parameter is
 	 *  `TimedJob::run()`'s, and a sweep takes no argument.
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	protected function run($argument): void {
 		// Without a usable account this runs nothing: that is already logged as an
@@ -104,7 +104,7 @@ class TriageWakeJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/specs/kcc-routing/spec.md
 	 */
 	private function work(): void {
 		try {

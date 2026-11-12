@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T14
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T14
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ use RuntimeException;
 /**
  * Beschikking lifecycle orchestrator.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md#T14
+ * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T14
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Fourteen, two over the
  * threshold. The last to join is `DocumentSeriesNumberer` (decision 167): the
@@ -156,7 +156,7 @@ class BeschikkingService {
 	 *
 	 * @throws RefusedException 503 when no number can be reserved for it.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T05
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function compose(string $caseId, ?string $templateId = null, array $overrides = []): array {
@@ -238,7 +238,7 @@ class BeschikkingService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T06
 	 */
 	public function find(string $decisionId): ?array {
 		return $this->repository->find(decisionId: $decisionId);
@@ -255,8 +255,8 @@ class BeschikkingService {
 	 * @throws RuntimeException On a missing beschikking, invalid transition, or insufficient mandaat.
 	 * @throws RefusedException When the mandate scheme could not be read, so the mandate cannot be checked.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T07
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T07
+	 * @spec openspec/specs/quality-gates/spec.md
 	 */
 	public function akkoord(string $decisionId, string $approvedBy): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
@@ -307,7 +307,7 @@ class BeschikkingService {
 	 *
 	 * @throws RuntimeException On a missing beschikking or invalid transition.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T08
 	 */
 	public function onderteken(string $decisionId, string $tspProvider, string $signatory): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
@@ -373,9 +373,9 @@ class BeschikkingService {
 	 * @throws RuntimeException On a missing beschikking or invalid transition.
 	 * @throws RefusedException When no transport took the beschikking.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T09
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
-	 * @spec openspec/changes/case-actions-placed-on-the-case-page/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-records-the-day-its-decision-was-sent-req-cap-001
 	 */
 	public function verzend(string $decisionId, string $actor): array {
 		$run = new BeschikkingSendRun(decisionId: $decisionId, actor: $actor);
@@ -526,7 +526,7 @@ class BeschikkingService {
 	 *
 	 * @throws RuntimeException 'immutable' when the beschikking is ondertekend or later and a content field is touched.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T11
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T11
 	 */
 	public function updateFields(string $decisionId, array $updates): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
@@ -555,7 +555,7 @@ class BeschikkingService {
 	 *
 	 * @return bool True when the level may sign this decision within its limit.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T14
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T14
 	 */
 	public function verifyMandaat(
 		array $regeling,
@@ -584,7 +584,7 @@ class BeschikkingService {
 	 *
 	 * @throws RuntimeException On a missing beschikking or when ZIP support is unavailable.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T10
 	 */
 	public function exportAuditPacket(string $decisionId): string {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
@@ -601,7 +601,7 @@ class BeschikkingService {
 	 *
 	 * @throws RuntimeException On a missing beschikking or invalid transition.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T13
+	 * @spec openspec/changes/archive/2026-06-13-beschikking-generatie/tasks.md#T13
 	 */
 	public function archive(string $decisionId): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);

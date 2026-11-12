@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Repair step projecting dossiq partners onto OpenRegister Organisations.
  *
- * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+ * @spec openspec/specs/partner-organisations/spec.md
  */
 class MigratePartnersToOrganisations implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -77,7 +77,7 @@ class MigratePartnersToOrganisations implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	public function getName(): string {
 		return 'Move Dossiq partner organisations onto OpenRegister Organisations';
@@ -102,7 +102,7 @@ class MigratePartnersToOrganisations implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/partners-are-organisations/specs/partner-organisations/spec.md
+	 * @spec openspec/specs/partner-organisations/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$summary = ['migrated' => 0, 'skipped' => 0, 'failed' => 0, 'total' => 0];

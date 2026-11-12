@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -57,9 +57,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
 class CaseTermsController extends Controller {
 	use TranslatesRefusals;
@@ -99,7 +99,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
@@ -134,7 +134,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	#[NoAdminRequired]
 	public function citizen(string $caseId): JSONResponse {
@@ -164,7 +164,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	#[NoAdminRequired]
 	public function requestInformation(string $caseId): JSONResponse {
@@ -237,7 +237,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	#[NoAdminRequired]
 	public function receiveInformation(string $caseId): JSONResponse {
@@ -286,7 +286,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	#[NoAdminRequired]
 	public function aanvullingsverzoeken(string $caseId): JSONResponse {
@@ -367,7 +367,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
 	#[NoAdminRequired]
 	public function workloadAge(): JSONResponse {
@@ -402,7 +402,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the caller may read it.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	private function refuseUnlessMayRead(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
@@ -430,7 +430,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the caller may change it.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	private function refuseUnlessMayChange(string $caseId): ?JSONResponse {
 		$user = $this->userSession->getUser();
@@ -519,7 +519,7 @@ class CaseTermsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 *
 	 * @contract exclude Deprecated path alias for workloadAge(); behaviour covered by the workloadAge() tests.
 	 */

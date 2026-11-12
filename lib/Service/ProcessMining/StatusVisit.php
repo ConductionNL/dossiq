@@ -15,7 +15,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -25,7 +25,7 @@ namespace OCA\Dossiq\Service\ProcessMining;
 /**
  * A status record and the next record of the same case, if any, read from the case's records.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
  */
 final class StatusVisit {
 
@@ -64,7 +64,7 @@ final class StatusVisit {
 	 *
 	 * @return string The statusType id.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function statusId(): string {
 		return (string)($this->record['statusType'] ?? '');
@@ -81,7 +81,7 @@ final class StatusVisit {
 	 *
 	 * @return string The actor.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function actor(): string {
 		return trim((string)($this->record['actor'] ?? ''));
@@ -92,7 +92,7 @@ final class StatusVisit {
 	 *
 	 * @return mixed The timestamp value, or null.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function enteredMoment(): mixed {
 		return $this->momentOf(record: $this->record);
@@ -103,7 +103,7 @@ final class StatusVisit {
 	 *
 	 * @return mixed The timestamp value, or null.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-14-process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function nextMoment(): mixed {
 		if ($this->next === null) {
