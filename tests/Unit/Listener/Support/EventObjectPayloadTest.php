@@ -40,6 +40,8 @@ use ReflectionMethod;
  * @covers \OCA\Dossiq\Listener\Support\EventObjectPayload
  * @uses \OCA\Dossiq\Listener\BezwaarLegalHoldListener
  * @uses \OCA\Dossiq\Listener\CustodyCaseCreatedListener
+ * @uses \OCA\Dossiq\Listener\CasePhaseTermListener
+ * @uses \OCA\Dossiq\Listener\PortalMessageTimelineListener
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */

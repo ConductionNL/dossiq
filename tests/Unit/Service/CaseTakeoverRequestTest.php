@@ -56,6 +56,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\Custody\TakeoverStore
  * @uses \OCA\Dossiq\Service\Custody\CustodyRows
  * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\Custody\CustodyMove
  *
  * @spec openspec/specs/case-management/spec.md
  */

@@ -49,6 +49,11 @@ use ReflectionMethod;
  * @uses \OCA\Dossiq\Listener\CaseRequesterProjectionListener
  * @uses \OCA\Dossiq\Listener\ChecklistRunImmutabilityListener
  * @uses \OCA\Dossiq\Listener\IntakeFormBindingListener
+ * @uses \OCA\Dossiq\Listener\ApplicantTermNoteListener
+ * @uses \OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener
+ * @uses \OCA\Dossiq\Listener\CaseInheritedDeadlineListener
+ * @uses \OCA\Dossiq\Listener\CasePriorityDerivationListener
+ * @uses \OCA\Dossiq\Listener\DerivedStatusListener
  *
  * @spec openspec/specs/case-management/spec.md
  */

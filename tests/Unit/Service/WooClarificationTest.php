@@ -44,6 +44,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\RequestWrite
+ * @uses \OCA\Dossiq\Service\AanvullingAnswerRun
+ * @uses \OCA\Dossiq\Service\ItemArrivalMarker
  */
 class WooClarificationTest extends TestCase {
 

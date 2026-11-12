@@ -34,6 +34,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\ContractDecisionDelegationService
  * @uses \OCA\Dossiq\Service\DelegatedDecisionRequest
+ * @uses \OCA\Dossiq\Service\DecisionStateRead
  */
 class DecisionDelegationGoldenTest extends TestCase {
 
