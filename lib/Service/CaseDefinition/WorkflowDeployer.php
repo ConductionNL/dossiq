@@ -52,6 +52,33 @@ class WorkflowDeployer {
 	private const STRATEGY_SKIP = 'skip';
 
 	/**
+	 * The answer when this instance has no workflow template schema to deploy into.
+	 *
+	 * @var array{status: string, message: string}
+	 */
+	private const NOT_CONFIGURED = [
+		'status' => 'error',
+		'message' => 'Workflows were not deployed: this instance has no workflow template schema configured.',
+	];
+
+	/**
+	 * The answer for a package that carries no workflow templates.
+	 *
+	 * @var array{status: string, message: string}
+	 */
+	private const NO_WORKFLOWS = [
+		'status' => 'skipped',
+		'message' => 'The package carries no workflows.',
+	];
+
+	/**
+	 * The id list each outcome other than `created` and `error` is counted in.
+	 *
+	 * @var array<string, string>
+	 */
+	private const OUTCOME_LISTS = ['skipped' => 'skipped', 'replaced' => 'replaced'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger   What a deployment writes about itself.
@@ -79,69 +106,89 @@ class WorkflowDeployer {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function deploy(\ZipArchive $zip, string $strategy): array {
-		$objectService = $this->settings->getObjectService();
-		$register = $this->settings->getConfigValue(key: 'register');
-		$schema = $this->settings->getConfigValue(key: 'workflow_template_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [
-				'status' => 'error',
-				'message' => 'Workflows were not deployed: this instance has no workflow template schema configured.',
-			];
+		$target = $this->workflowTarget(strategy: $strategy);
+		if ($target === null) {
+			return self::NOT_CONFIGURED;
 		}
 
 		$entries = $this->workflowEntries(zip: $zip);
 		if ($entries === []) {
-			return [
-				'status' => 'skipped',
-				'message' => 'The package carries no workflows.',
-			];
+			return self::NO_WORKFLOWS;
 		}
 
-		$created = [];
-		$replaced = [];
-		$skipped = [];
+		return $this->deployEntries(target: $target, entries: $entries);
+	}//end deploy()
 
-		foreach ($entries as $name => $content) {
-			$outcome = $this->deployWorkflow(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				name: (string)$name,
-				content: $content,
-				strategy: $strategy,
-			);
+	/**
+	 * Where the workflow templates go, or null when this instance has nowhere to put them.
+	 *
+	 * @param string $strategy What to do about a template already here.
+	 *
+	 * @return RowTarget|null The target.
+	 */
+	private function workflowTarget(string $strategy): ?RowTarget {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue(key: 'register');
+		$schema = $this->settings->getConfigValue(key: 'workflow_template_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
 
+		return new RowTarget(objectService: $objectService, register: $register, schema: $schema, strategy: $strategy);
+	}//end workflowTarget()
+
+	/**
+	 * Deploy every template in turn; the first that fails rolls back the ones created before it.
+	 *
+	 * @param RowTarget                    $target  Where the templates go.
+	 * @param array<string, WorkflowEntry> $entries The templates, by entry name.
+	 *
+	 * @return array{status: string, message: string, created?: array<int, string>, replaced?: array<int, string>}
+	 */
+	private function deployEntries(RowTarget $target, array $entries): array {
+		$ids = ['created' => [], 'replaced' => [], 'skipped' => []];
+		foreach ($entries as $entry) {
+			$outcome = $this->deployEntry(target: $target, entry: $entry);
 			if ($outcome['kind'] === 'error') {
 				// A workflow that cannot be read or written takes the whole
 				// deployment with it: half a set of templates is a case type
 				// whose process is missing steps nobody can see are missing.
-				$this->rollBack(objectService: $objectService, register: $register, ids: $created);
+				$this->rollBack(objectService: $target->objectService, register: $target->register, ids: $ids['created']);
 
 				return ['status' => 'error', 'message' => $outcome['message']];
 			}
 
-			if ($outcome['kind'] === 'skipped') {
-				$skipped[] = $outcome['id'];
-				continue;
-			}
+			$ids[(self::OUTCOME_LISTS[$outcome['kind']] ?? 'created')][] = $outcome['id'];
+		}
 
-			if ($outcome['kind'] === 'replaced') {
-				$replaced[] = $outcome['id'];
-				continue;
-			}
+		return $this->workflowOutcome(created: $ids['created'], replaced: $ids['replaced'], skipped: $ids['skipped']);
+	}//end deployEntries()
 
-			$created[] = $outcome['id'];
-		}//end foreach
-
-		return $this->workflowOutcome(created: $created, replaced: $replaced, skipped: $skipped);
-	}//end deploy()
+	/**
+	 * Deploy one template at the target.
+	 *
+	 * @param RowTarget     $target Where the template goes.
+	 * @param WorkflowEntry $entry  The template.
+	 *
+	 * @return array{kind: string, id: string, message: string} What became of it.
+	 */
+	private function deployEntry(RowTarget $target, WorkflowEntry $entry): array {
+		return $this->deployWorkflow(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schema,
+			name: $entry->name,
+			content: $entry->content,
+			strategy: $target->strategy,
+		);
+	}//end deployEntry()
 
 	/**
 	 * The workflow templates the archive carries, by entry name.
 	 *
 	 * @param \ZipArchive $zip The opened archive.
 	 *
-	 * @return array<string, string|false> The raw entries, by name.
+	 * @return array<string, WorkflowEntry> The entries, by name.
 	 */
 	private function workflowEntries(\ZipArchive $zip): array {
 		$entries = [];
@@ -151,7 +198,7 @@ class WorkflowDeployer {
 				continue;
 			}
 
-			$entries[$name] = $zip->getFromIndex($i);
+			$entries[$name] = new WorkflowEntry(name: $name, content: $zip->getFromIndex($i));
 		}
 
 		return $entries;
