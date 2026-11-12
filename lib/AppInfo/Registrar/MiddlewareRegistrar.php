@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Middleware\ApiContractMiddleware;
 use OCA\Dossiq\Middleware\MandateValidationMiddleware;
 use OCA\Dossiq\Middleware\ZgwAuthMiddleware;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -54,6 +55,10 @@ class MiddlewareRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+		// The API contract (version header, deprecation of unversioned paths,
+		// problem details). Registered first: Nextcloud runs afterController in
+		// reverse order, so it sees the final response of every other middleware.
+		$context->registerMiddleware(class: ApiContractMiddleware::class);
 		$context->registerMiddleware(class: ZgwAuthMiddleware::class);
 		// SaaS chain (member 06): mandate-matrix authorisation gate. Maps the
 		// HTTP verb (and URL hints like /transition) to a matrix action key
