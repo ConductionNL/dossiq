@@ -17414,7 +17414,7 @@
 				},
 				"requirement": [
 					"openspec/changes/one-term-engine/specs/my-work :: One front-end helper decides days left and overdue (REQ-OTE-07)",
-					"openspec/changes/deadline-signals-on-the-dashboard/specs/signalering-widgets :: One deadlines table replaces the overdue and deadline alert tiles (REQ-SIG-004)",
+					"openspec/specs/signalering-widgets :: One deadlines table replaces the overdue and deadline alert tiles (REQ-SIG-004)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/my-work :: An overdue case is marked on its page and in the case list (REQ-CRS-34)"
 				]
 			},
