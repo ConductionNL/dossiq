@@ -549,7 +549,7 @@ class DrcController extends ZgwController {
 		}
 
 		if ($resource === self::EIO_RESOURCE) {
-			return $this->handleEioUpdate(resource: $resource, uuid: $uuid, partial: false);
+			return $this->handleEioUpdate(run: new EioUpdateRun(resource: $resource, uuid: $uuid, partial: false));
 		}
 
 		return $this->zgwService->handleUpdate($this->request, self::ZGW_API, $resource, $uuid, false);
@@ -584,7 +584,7 @@ class DrcController extends ZgwController {
 		}
 
 		if ($resource === self::EIO_RESOURCE) {
-			return $this->handleEioUpdate(resource: $resource, uuid: $uuid, partial: true);
+			return $this->handleEioUpdate(run: new EioUpdateRun(resource: $resource, uuid: $uuid, partial: true));
 		}
 
 		return $this->zgwService->handleUpdate($this->request, self::ZGW_API, $resource, $uuid, true);
@@ -1905,84 +1905,35 @@ class DrcController extends ZgwController {
 	/**
 	 * Handle EIO-specific update with lock checking and inhoud handling.
 	 *
-	 * @param string $resource The ZGW resource name.
-	 * @param string $uuid The resource UUID.
-	 * @param bool $partial Whether this is a partial (PATCH) update.
+	 * @param EioUpdateRun $run The update: resource, uuid and whether it is partial.
 	 *
 	 * @return JSONResponse
 	 */
-	private function handleEioUpdate(string $resource, string $uuid, bool $partial): JSONResponse {
+	private function handleEioUpdate(EioUpdateRun $run): JSONResponse {
 		if ($this->zgwService->getObjectService() === null) {
 			return $this->zgwService->unavailableResponse();
 		}
 
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
+		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $run->resource);
 		if ($mappingConfig === null) {
-			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
+			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $run->resource);
 		}
 
+		$run->mappingConfig = $mappingConfig;
+
+		return $this->updateEioOrRefuse(run: $run);
+	}//end handleEioUpdate()
+
+	/**
+	 * Update the document, answering any failure as a 400 with its message.
+	 *
+	 * @param EioUpdateRun $run The update, its mapping loaded.
+	 *
+	 * @return JSONResponse
+	 */
+	private function updateEioOrRefuse(EioUpdateRun $run): JSONResponse {
 		try {
-			$body = $this->zgwService->getRequestBody($this->request);
-
-			// Check document lock (drc-009).
-			$lockError = $this->checkDocumentLock(
-				mappingConfig: $mappingConfig,
-				uuid: $uuid,
-				body: $body,
-				partial: $partial
-			);
-			if ($lockError !== null) {
-				return $lockError;
-			}
-
-			$action = 'update';
-			if ($partial === true) {
-				$action = 'partial_update';
-			}
-
-			$ruleResult = $this->zgwService->getBusinessRulesService()->validate(
-				zgwApi: self::ZGW_API,
-				resource: $resource,
-				action: $action,
-				body: $body,
-				objectService: $this->zgwService->getObjectService(),
-				mappingConfig: $mappingConfig
-			);
-			if ($ruleResult['valid'] === false) {
-				return new JSONResponse(
-					data: $this->zgwService->buildValidationError($ruleResult),
-					statusCode: $ruleResult['status']
-				);
-			}
-
-			$body = $ruleResult['enrichedBody'];
-
-			$inhoud = $body['inhoud'] ?? null;
-
-			$objectData = $this->saveEioKeepingItsLock(
-				uuid: $uuid,
-				englishData: $this->mapEioBody(body: $body, mappingConfig: $mappingConfig),
-				mappingConfig: $mappingConfig
-			);
-
-			$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? $uuid);
-
-			// Store file content.
-			if (empty($inhoud) === false && $objectUuid !== '') {
-				$objectData = $this->storeInhoud(objectData: $objectData, objectUuid: $objectUuid, inhoud: $inhoud, mappingConfig: $mappingConfig);
-			}
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$mapped = $this->mapEioOut(objectData: $objectData, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
-
-			$this->zgwService->publishNotification(
-				self::ZGW_API,
-				$resource,
-				$baseUrl . '/' . $objectUuid,
-				'update'
-			);
-
-			return new JSONResponse(data: $mapped);
+			return $this->updateEio(run: $run);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
 				'DRC update error: ' . $e->getMessage(),
@@ -1993,8 +1944,139 @@ class DrcController extends ZgwController {
 				data: ['detail' => $e->getMessage()],
 				statusCode: Http::STATUS_BAD_REQUEST
 			);
-		}//end try
-	}//end handleEioUpdate()
+		}
+	}//end updateEioOrRefuse()
+
+	/**
+	 * Check the lock and the business rules, then save, store and answer the document.
+	 *
+	 * @param EioUpdateRun $run The update, its mapping loaded.
+	 *
+	 * @return JSONResponse
+	 */
+	private function updateEio(EioUpdateRun $run): JSONResponse {
+		$run->body = $this->zgwService->getRequestBody($this->request);
+
+		// Check document lock (drc-009).
+		$lockError = $this->checkDocumentLock(run: $run);
+		if ($lockError !== null) {
+			return $lockError;
+		}
+
+		$ruleError = $this->applyUpdateRules(run: $run);
+		if ($ruleError !== null) {
+			return $ruleError;
+		}
+
+		return $this->respondUpdated(run: $run, objectData: $this->saveUpdatedEio(run: $run));
+	}//end updateEio()
+
+	/**
+	 * Validate the update against the business rules and take their enriched body.
+	 *
+	 * @param EioUpdateRun $run The update, its body read.
+	 *
+	 * @return JSONResponse|null The rules' refusal, or null when they accept.
+	 */
+	private function applyUpdateRules(EioUpdateRun $run): ?JSONResponse {
+		$ruleResult = $this->validateUpdate(run: $run);
+		if ($ruleResult['valid'] === false) {
+			return new JSONResponse(
+				data: $this->zgwService->buildValidationError($ruleResult),
+				statusCode: $ruleResult['status']
+			);
+		}
+
+		$run->body = $ruleResult['enrichedBody'];
+
+		return null;
+	}//end applyUpdateRules()
+
+	/**
+	 * What the business rules answer for this update.
+	 *
+	 * @param EioUpdateRun $run The update, its body read.
+	 *
+	 * @return array<string, mixed> The rule result.
+	 */
+	private function validateUpdate(EioUpdateRun $run): array {
+		$action = 'update';
+		if ($run->partial === true) {
+			$action = 'partial_update';
+		}
+
+		return $this->zgwService->getBusinessRulesService()->validate(
+			zgwApi: self::ZGW_API,
+			resource: $run->resource,
+			action: $action,
+			body: $run->body,
+			objectService: $this->zgwService->getObjectService(),
+			mappingConfig: $run->mappingConfig
+		);
+	}//end validateUpdate()
+
+	/**
+	 * Save the update keeping the stored lock, then store its inhoud.
+	 *
+	 * @param EioUpdateRun $run The update, its body accepted.
+	 *
+	 * @return array The saved document.
+	 */
+	private function saveUpdatedEio(EioUpdateRun $run): array {
+		$objectData = $this->saveEioKeepingItsLock(
+			uuid: $run->uuid,
+			englishData: $this->mapEioBody(body: $run->body, mappingConfig: $run->mappingConfig),
+			mappingConfig: $run->mappingConfig
+		);
+
+		$run->objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? $run->uuid);
+
+		return $this->storeUpdatedInhoud(run: $run, objectData: $objectData);
+	}//end saveUpdatedEio()
+
+	/**
+	 * Store the file content the update sent, if it sent any.
+	 *
+	 * @param EioUpdateRun $run        The update, its document saved.
+	 * @param array        $objectData The saved document.
+	 *
+	 * @return array The document, with fileSize and fileId when they were stamped.
+	 */
+	private function storeUpdatedInhoud(EioUpdateRun $run, array $objectData): array {
+		$inhoud = $run->body['inhoud'] ?? null;
+		if (empty($inhoud) === true || $run->objectUuid === '') {
+			return $objectData;
+		}
+
+		return $this->storeInhoud(
+			objectData: $objectData,
+			objectUuid: $run->objectUuid,
+			inhoud: $inhoud,
+			mappingConfig: $run->mappingConfig
+		);
+	}//end storeUpdatedInhoud()
+
+	/**
+	 * Announce the updated document and answer it in its ZGW shape.
+	 *
+	 * @param EioUpdateRun $run        The update, its document saved.
+	 * @param array        $objectData The saved document.
+	 *
+	 * @return JSONResponse
+	 */
+	private function respondUpdated(EioUpdateRun $run, array $objectData): JSONResponse {
+		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $run->resource);
+		$mapped = $this->mapEioOut(objectData: $objectData, mappingConfig: $run->mappingConfig, baseUrl: $baseUrl);
+
+		$this->zgwService->publishNotification(
+			self::ZGW_API,
+			$run->resource,
+			$baseUrl . '/' . $run->objectUuid,
+			'update'
+		);
+
+		return new JSONResponse(data: $mapped);
+	}//end respondUpdated()
 
 	/**
 	 * Save an updated document, keeping the lock state the stored one holds.
@@ -2037,95 +2119,119 @@ class DrcController extends ZgwController {
 	 * - drc-009d/e: Lock ID must be provided.
 	 * - drc-009h/i: Lock ID must match the stored lock.
 	 *
-	 * @param array $mappingConfig The mapping configuration.
-	 * @param string $uuid The document UUID.
-	 * @param array $body The request body.
-	 * @param bool $partial Whether this is a partial (PATCH) update.
+	 * @param EioUpdateRun $run The update: the document, its mapping, the body and whether it is partial.
 	 *
 	 * @return JSONResponse|null Error response if lock check fails, null if OK.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $partial distinguishes PUT vs PATCH lock semantics
 	 */
-	private function checkDocumentLock(
-		array $mappingConfig,
-		string $uuid,
-		array $body,
-		bool $partial = false,
-	): ?JSONResponse {
-		$objectService = $this->zgwService->getObjectService();
-
+	private function checkDocumentLock(EioUpdateRun $run): ?JSONResponse {
 		// Drc-009a/b: Document must be locked to allow updates.
 		// Try OpenRegister's LockHandler first, then check the object data
 		// blob (used by lockFallback in JWT-only contexts).
 		$storedLockId = $this->resolveStoredLockId(
-			objectService: $objectService,
-			mappingConfig: $mappingConfig,
-			uuid: $uuid
+			objectService: $this->zgwService->getObjectService(),
+			mappingConfig: $run->mappingConfig,
+			uuid: $run->uuid
 		);
 
 		if ($storedLockId === null) {
-			return new JSONResponse(
-				data: [
-					'detail' => $this->l10n->t('Only locked documents may be edited.'),
-					'invalidParams' => [
-						[
-							'name' => 'nonFieldErrors',
-							'code' => 'unlocked',
-							'reason' => $this->l10n->t('The document is not locked. Lock the document first.'),
-						],
-					],
-				],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->unlockedRefusal();
 		}
 
-		$providedLockId = $body['lock'] ?? '';
+		return $this->lockIdRefusal(run: $run, storedLockId: $storedLockId);
+	}//end checkDocumentLock()
+
+	/**
+	 * Refuse an update of a locked document whose lock ID is missing or does not match.
+	 *
+	 * @param EioUpdateRun $run          The update: the body and whether it is partial.
+	 * @param string       $storedLockId The document's lock ID.
+	 *
+	 * @return JSONResponse|null Error response if the lock ID is missing or wrong, null if it matches.
+	 */
+	private function lockIdRefusal(EioUpdateRun $run, string $storedLockId): ?JSONResponse {
+		$providedLockId = $run->body['lock'] ?? '';
 
 		// Drc-009d/e: Lock ID must be provided.
 		if ($providedLockId === '') {
-			// PUT (full update): lock is a required field (drc-009d).
-			// PATCH (partial): lock is missing for lock enforcement (drc-009e).
-			$errorName = 'nonFieldErrors';
-			$errorCode = 'missing-lock-id';
-			if ($partial === false) {
-				$errorName = 'lock';
-				$errorCode = 'required';
-			}
-
-			return new JSONResponse(
-				data: [
-					'detail' => $this->l10n->t('Lock ID is required for editing a locked document.'),
-					'invalidParams' => [
-						[
-							'name' => $errorName,
-							'code' => $errorCode,
-							'reason' => $this->l10n->t('Lock ID is missing from the request.'),
-						],
-					],
-				],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
-		}//end if
+			return $this->missingLockIdRefusal(run: $run);
+		}
 
 		// Drc-009h/i: Lock ID must match.
 		if ($providedLockId !== $storedLockId) {
-			return new JSONResponse(
-				data: [
-					'detail' => $this->l10n->t('Lock ID does not match.'),
-					'invalidParams' => [
-						[
-							'name' => 'nonFieldErrors',
-							'code' => 'incorrect-lock-id',
-							'reason' => $this->l10n->t('Lock ID does not match the stored lock.'),
-						],
-					],
-				],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
+			return $this->incorrectLockIdRefusal();
 		}
 
 		return null;
-	}//end checkDocumentLock()
+	}//end lockIdRefusal()
+
+	/**
+	 * Refuse an update of a locked document that names no lock ID.
+	 *
+	 * PUT (full update): lock is a required field (drc-009d). PATCH (partial):
+	 * lock is missing for lock enforcement (drc-009e).
+	 *
+	 * @param EioUpdateRun $run The update: whether it is partial.
+	 *
+	 * @return JSONResponse The refusal.
+	 */
+	private function missingLockIdRefusal(EioUpdateRun $run): JSONResponse {
+		$missing = ['name' => 'nonFieldErrors', 'code' => 'missing-lock-id'];
+		if ($run->partial === false) {
+			$missing = ['name' => 'lock', 'code' => 'required'];
+		}
+
+		return $this->lockRefusal(
+			detail: $this->l10n->t('Lock ID is required for editing a locked document.'),
+			invalidParam: $missing + ['reason' => $this->l10n->t('Lock ID is missing from the request.')]
+		);
+	}//end missingLockIdRefusal()
+
+	/**
+	 * Refuse an update of a document that is not locked (drc-009a/b).
+	 *
+	 * @return JSONResponse The refusal.
+	 */
+	private function unlockedRefusal(): JSONResponse {
+		return $this->lockRefusal(
+			detail: $this->l10n->t('Only locked documents may be edited.'),
+			invalidParam: [
+				'name' => 'nonFieldErrors',
+				'code' => 'unlocked',
+				'reason' => $this->l10n->t('The document is not locked. Lock the document first.'),
+			]
+		);
+	}//end unlockedRefusal()
+
+	/**
+	 * Refuse an update whose lock ID does not match the stored lock (drc-009h/i).
+	 *
+	 * @return JSONResponse The refusal.
+	 */
+	private function incorrectLockIdRefusal(): JSONResponse {
+		return $this->lockRefusal(
+			detail: $this->l10n->t('Lock ID does not match.'),
+			invalidParam: [
+				'name' => 'nonFieldErrors',
+				'code' => 'incorrect-lock-id',
+				'reason' => $this->l10n->t('Lock ID does not match the stored lock.'),
+			]
+		);
+	}//end incorrectLockIdRefusal()
+
+	/**
+	 * A 400 refusing an update for its lock, in the ZGW invalidParams envelope.
+	 *
+	 * @param string                $detail       The detail.
+	 * @param array<string, string> $invalidParam The one invalid param: name, code and reason.
+	 *
+	 * @return JSONResponse The refusal.
+	 */
+	private function lockRefusal(string $detail, array $invalidParam): JSONResponse {
+		return new JSONResponse(
+			data: ['detail' => $detail, 'invalidParams' => [$invalidParam]],
+			statusCode: Http::STATUS_BAD_REQUEST
+		);
+	}//end lockRefusal()
 
 	/**
 	 * Resolve the stored lock ID from either OpenRegister's LockHandler
