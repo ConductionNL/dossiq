@@ -46,7 +46,7 @@ class SignedPayoutCallback {
 	 *
 	 * @var string
 	 */
-	public const SECRET_KEY = MoneyConfigKeys::PAYOUT_CALLBACK_SECRET;
+	public const SECRET_KEY = MoneyConfigKeys::PAYOUT_CALLBACK_SECRET_KEY;
 
 	/**
 	 * The header the finance app signs with.
