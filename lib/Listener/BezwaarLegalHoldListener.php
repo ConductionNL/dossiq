@@ -127,9 +127,8 @@ class BezwaarLegalHoldListener implements IEventListener {
 		}
 
 		$schemaSlug = $this->resolveSchemaSlug(payload: $payload);
-		$opens = in_array($schemaSlug, self::PROCEEDING_OPENED_SCHEMAS, true);
-		$closes = in_array($schemaSlug, self::PROCEEDING_CLOSED_SCHEMAS, true);
-		if ($opens === false && $closes === false) {
+		$place = $this->holdDirection(schemaSlug: $schemaSlug);
+		if ($place === null) {
 			return;
 		}
 
@@ -138,21 +137,43 @@ class BezwaarLegalHoldListener implements IEventListener {
 			return;
 		}
 
-		if ($opens === true) {
-			$this->applyHold(
-				caseId: $caseId,
-				place: true,
-				reason: 'Awb-procedure (' . $schemaSlug . ') geregistreerd — archivering opgeschort'
-			);
-			return;
+		$this->applyHold(caseId: $caseId, place: $place, reason: $this->holdReason(schemaSlug: $schemaSlug, place: $place));
+	}//end handle()
+
+	/**
+	 * Whether a proceeding of this schema places a hold (true), releases one (false), or concerns no hold (null).
+	 *
+	 * @param string $schemaSlug The proceeding schema slug.
+	 *
+	 * @return bool|null
+	 */
+	private function holdDirection(string $schemaSlug): ?bool {
+		if (in_array($schemaSlug, self::PROCEEDING_OPENED_SCHEMAS, true) === true) {
+			return true;
 		}
 
-		$this->applyHold(
-			caseId: $caseId,
-			place: false,
-			reason: 'Awb-procedure (' . $schemaSlug . ') afgehandeld — archivering hervat'
-		);
-	}//end handle()
+		if (in_array($schemaSlug, self::PROCEEDING_CLOSED_SCHEMAS, true) === true) {
+			return false;
+		}
+
+		return null;
+	}//end holdDirection()
+
+	/**
+	 * The reason recorded on the hold: archiving suspended while a procedure runs, resumed once it is decided.
+	 *
+	 * @param string $schemaSlug The proceeding schema slug.
+	 * @param bool   $place      Whether the hold is placed.
+	 *
+	 * @return string
+	 */
+	private function holdReason(string $schemaSlug, bool $place): string {
+		if ($place === true) {
+			return 'Awb-procedure (' . $schemaSlug . ') geregistreerd — archivering opgeschort';
+		}
+
+		return 'Awb-procedure (' . $schemaSlug . ') afgehandeld — archivering hervat';
+	}//end holdReason()
 
 	/**
 	 * Place or release a legal hold on the case via OpenRegister.
