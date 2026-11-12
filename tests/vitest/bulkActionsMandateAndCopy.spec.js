@@ -8,7 +8,7 @@
  * validation, the case copy dialog, the role assignments table, the ZGW
  * mapping dialog, the access link dialog, and the assignment and role dialogs.
  *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
 
 import axios from '@nextcloud/axios'
