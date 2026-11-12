@@ -462,17 +462,9 @@ class ZrcController extends ZgwController {
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// Zrc-006b: Check zaken.lezen scope and vertrouwelijkheidaanduiding.
-		if ($resource === 'zaken') {
-			$scopeError = $this->checkCaseReadAccess(uuid: $uuid);
-			if ($scopeError !== null) {
-				return $scopeError;
-			}
+		$refusal = $this->showRefusal(resource: $resource, uuid: $uuid);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
@@ -484,6 +476,30 @@ class ZrcController extends ZgwController {
 
 		return $response;
 	}//end show()
+
+	/**
+	 * Why this consumer may not read this resource, or null.
+	 *
+	 * The token comes first; a zaak also needs zaken.lezen and a
+	 * vertrouwelijkheidaanduiding the consumer may read (zrc-006b).
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $uuid     The resource UUID
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function showRefusal(string $resource, string $uuid): ?JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
+
+		if ($resource !== 'zaken') {
+			return null;
+		}
+
+		return $this->checkCaseReadAccess(uuid: $uuid);
+	}//end showRefusal()
 
 	/**
 	 * Full update a resource.
@@ -670,11 +686,21 @@ class ZrcController extends ZgwController {
 			return $this->permissionDeniedResponse();
 		}
 
+		return $this->destroySubResource(resource: $resource, uuid: $uuid);
+	}//end destroy()
+
+	/**
+	 * Delete a sub-resource of a zaak the consumer may delete, and for a
+	 * ZaakInformatieObject also its ObjectInformatieObject in DRC (zrc-005b).
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $uuid     The resource UUID
+	 *
+	 * @return JSONResponse
+	 */
+	private function destroySubResource(string $resource, string $uuid): JSONResponse {
 		// Zrc-005b: Before deleting, capture ZIO data for OIO cleanup.
-		$zioData = null;
-		if ($resource === 'zaakinformatieobjecten') {
-			$zioData = $this->getZioDataForOioSync(uuid: $uuid);
-		}
+		$zioData = $this->zioDataBeforeDestroy(resource: $resource, uuid: $uuid);
 
 		[$caseClosed, $hasGeforceerd] = $this->resolveCaseClosedForExisting(resource: $resource, uuid: $uuid);
 
@@ -689,18 +715,43 @@ class ZrcController extends ZgwController {
 		);
 
 		// Zrc-005b: If ZIO deletion succeeded, also delete the OIO in DRC.
-		if ($resource === 'zaakinformatieobjecten'
-			&& $response->getStatus() === Http::STATUS_NO_CONTENT
-			&& $zioData !== null
-		) {
+		$this->syncOioAfterDestroy(response: $response, zioData: $zioData);
+
+		return $response;
+	}//end destroySubResource()
+
+	/**
+	 * The ZIO data an OIO cleanup needs, read before a ZaakInformatieObject is deleted; null for any other resource.
+	 *
+	 * @param string $resource The ZGW resource name
+	 * @param string $uuid     The resource UUID
+	 *
+	 * @return array|null The zaakUrl and ioUrl, or null
+	 */
+	private function zioDataBeforeDestroy(string $resource, string $uuid): ?array {
+		if ($resource !== 'zaakinformatieobjecten') {
+			return null;
+		}
+
+		return $this->getZioDataForOioSync(uuid: $uuid);
+	}//end zioDataBeforeDestroy()
+
+	/**
+	 * Delete the OIO in DRC once its ZaakInformatieObject was deleted (zrc-005b).
+	 *
+	 * @param JSONResponse $response The destroy response
+	 * @param array|null   $zioData  The ZIO data read before the delete, null when there is nothing to clean up
+	 *
+	 * @return void
+	 */
+	private function syncOioAfterDestroy(JSONResponse $response, ?array $zioData): void {
+		if ($response->getStatus() === Http::STATUS_NO_CONTENT && $zioData !== null) {
 			$this->syncDeleteObjectInformatieObject(
 				caseUrl: $zioData['zaakUrl'],
 				ioUrl: $zioData['ioUrl']
 			);
 		}
-
-		return $response;
-	}//end destroy()
+	}//end syncOioAfterDestroy()
 
 	/**
 	 * List zaakeigenschappen for a zaak.
@@ -1356,29 +1407,13 @@ class ZrcController extends ZgwController {
 		$objectService = $this->zgwService->getObjectService();
 
 		// Zrc-005b: Before deleting the zaak, sync-delete OIOs in DRC
-		// for any linked ZaakInformatieObjecten. This cross-component
-		// side-effect cannot be handled by OpenRegister's cascade delete.
-		$zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
-		$zioScope = ZgwSearchScope::fromMapping(mappingConfig: $zioConfig);
-		if ($zioConfig !== null && $zioScope === null) {
-			return $this->unsearchableZioRefusal(uuid: $uuid);
+		// for any linked ZaakInformatieObjecten.
+		$oioRefusal = $this->syncDeleteOiosBeforeCaseDelete(uuid: $uuid);
+		if ($oioRefusal !== null) {
+			return $oioRefusal;
 		}
 
-		if ($zioScope !== null) {
-			$this->syncDeleteOiosOfCase(uuid: $uuid, zioScope: $zioScope);
-		}
-
-		// Related-case-linking: strip this case's entries from every counterpart
-		// case's relatedCases BEFORE deletion so no dangling peer references
-		// survive (mirrors the deelzaak orphan cleanup). Run while the case is
-		// still readable so its own relation list can be dereferenced.
-		try {
-			$this->caseRelationService->cleanupForDeletedCase(caseId: $uuid);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'related-case-linking: relation cleanup failed for deleted zaak ' . $uuid . ': ' . $e->getMessage()
-			);
-		}
+		$this->cleanupRelationsOfDeletedCase(uuid: $uuid);
 
 		// Cascade delete of sub-resources (rol, status, resultaat, etc.)
 		// is handled by OpenRegister via onDelete: CASCADE in schema definitions.
@@ -1401,6 +1436,53 @@ class ZrcController extends ZgwController {
 
 		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 	}//end destroyCase()
+
+	/**
+	 * Delete the OIOs in DRC of a zaak's ZaakInformatieObjecten before the zaak goes (zrc-005b).
+	 *
+	 * This cross-component side-effect cannot be handled by OpenRegister's
+	 * cascade delete. A ZIO mapping that is configured but cannot be searched
+	 * refuses the delete instead of leaving the OIOs behind.
+	 *
+	 * @param string $uuid The zaak UUID
+	 *
+	 * @return JSONResponse|null The refusal, or null when the delete may go on
+	 */
+	private function syncDeleteOiosBeforeCaseDelete(string $uuid): ?JSONResponse {
+		$zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
+		$zioScope = ZgwSearchScope::fromMapping(mappingConfig: $zioConfig);
+		if ($zioConfig !== null && $zioScope === null) {
+			return $this->unsearchableZioRefusal(uuid: $uuid);
+		}
+
+		if ($zioScope !== null) {
+			$this->syncDeleteOiosOfCase(uuid: $uuid, zioScope: $zioScope);
+		}
+
+		return null;
+	}//end syncDeleteOiosBeforeCaseDelete()
+
+	/**
+	 * Strip a zaak's entries from the relatedCases of every counterpart before the zaak is deleted.
+	 *
+	 * Related-case-linking: no dangling peer references survive (mirrors the
+	 * deelzaak orphan cleanup). Runs while the case is still readable so its own
+	 * relation list can be dereferenced. A failed cleanup is logged and does not
+	 * stop the delete.
+	 *
+	 * @param string $uuid The zaak UUID
+	 *
+	 * @return void
+	 */
+	private function cleanupRelationsOfDeletedCase(string $uuid): void {
+		try {
+			$this->caseRelationService->cleanupForDeletedCase(caseId: $uuid);
+		} catch (\Throwable $e) {
+			$this->zgwService->getLogger()->warning(
+				'related-case-linking: relation cleanup failed for deleted zaak ' . $uuid . ': ' . $e->getMessage()
+			);
+		}
+	}//end cleanupRelationsOfDeletedCase()
 
 	/**
 	 * Why this zaak may not be deleted by this consumer, or null (C4).
