@@ -12157,7 +12157,7 @@
 						"mergedAt": "2026-09-19T03:15:00Z"
 					}
 				],
-				"evidence": "filinq src/views/intake/IntakeIndex.vue; filinq lib/Service/IntakeService.php; filinq appinfo/routes.php:77-79; filinq#1119; filinq#1132 e5580bbb4",
+				"evidence": "filinq src/views/intake/IntakeIndex.vue (Assign and Reject row actions); filinq src/dialogs/IntakeAssignDialog.vue; filinq lib/Service/IntakeService.php assign() and reject(); filinq appinfo/routes.php:83-85; filinq#1119; filinq#1132 e5580bbb4",
 				"owner": "ConductionNL/filinq",
 				"screen": {
 					"board": null,
@@ -12607,7 +12607,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "dossiq_register.json#propertyDefinition; src/views/settings/tabs/PropertiesTab.vue",
+				"evidence": "dossiq_register.json#propertyDefinition; src/manifest.json#CaseTypeDetail/case-type-fields-editor (fields typed against the property vocabulary, grouped by category); dossiq f65c2a235",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/property-definition-management",
@@ -12700,7 +12700,7 @@
 						"mergedAt": "2026-09-14T11:33:34Z"
 					}
 				],
-				"evidence": "src/manifest.json#Queue; #Cases/bulkActions.reassign; dossiq#2723 d7d8ec7c3",
+				"evidence": "src/manifest.json#CaseDetail/case-claim and case-release (_claimNote); #Cases rowActions claim and the team-queue view (the Queue page is now a view of the Cases list); #Cases/bulkActions.reassign; dossiq#2723 d7d8ec7c3",
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with case-claim-action (dossiq#2723). The partial rating predates it and is due a re-rate in the corpus.",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
@@ -12831,7 +12831,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "dossiq_register.json#statusType; src/views/settings/tabs/StatusesTab.vue; procest/_round4/discovery/casetype-configurability.md; StatusesTab.vue:47",
+				"evidence": "dossiq_register.json#statusType; src/manifest.json#CaseTypeDetail/case-type-statuses-editor (colour swatch, drag to reorder writes order); procest/_round4/discovery/casetype-configurability.md; dossiq f65c2a235",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/case-types",
@@ -13112,7 +13112,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "dossiq_register.json#case-location; src/manifest.json#CaseDetail/case-location-map; src/components/map/LocationPicker.vue",
+				"evidence": "dossiq_register.json#case-location; src/manifest.json#CaseDetail/case-location-map; src/dialogs/CaseLocationDialog.vue (CnAddressSearch and the map)",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -13245,7 +13245,7 @@
 						"mergedAt": "2026-09-14T11:50:06Z"
 					}
 				],
-				"evidence": "lib/Listener/BezwaarLegalHoldListener.php; src/modals/DeelzaakDeleteWarningModal.vue; dossiq#2729 022f821b7",
+				"evidence": "lib/Listener/CaseDeleteGuardListener.php (refuses a held case and names every rule; registered in lib/AppInfo/Registrar/ObjectListenerRegistrar.php); lib/Listener/BezwaarLegalHoldListener.php; dossiq#2729 022f821b7",
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with case-delete-guard (dossiq#2729). The partial rating predates it and is due a re-rate in the corpus.",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
@@ -13465,7 +13465,7 @@
 			"feature": "case-handling",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "admin-inspect-entry",
 				"prs": [
 					{
@@ -13475,7 +13475,7 @@
 						"mergedAt": "2026-09-18T11:55:00Z"
 					}
 				],
-				"evidence": "src/manifest.json#StatusRecordDetail; dossiq#2912 7146db3bc",
+				"evidence": "Not built: only the raw data is readable (src/manifest.json#CaseDetail/case-inspect-raw, CaseRawDataDialog); the Inspect flow runs action opens openregister #/flows/runs?subjectUuid=, a route openregister does not have (it serves /flows, /flows/:id and /flow-runs/:uuid), so an admin cannot read a case's flow variables and run log from it, and #StatusRecordDetail is the status-record page, not the inspection. Was: src/manifest.json#StatusRecordDetail; dossiq#2912 7146db3bc",
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with admin-inspect-entry (dossiq#2912). The partial rating predates it and is due a re-rate in the corpus. Closing round 12 Nov: the missing part is openregister's (the flow runs page that #CaseDetail Inspect flow runs opens (src/manifest.json:6700)); specified in change capability-rows-say-the-whole-capability.",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
@@ -13488,7 +13488,8 @@
 				"requirement": [
 					"openspec/specs/case-management :: An admin inspects a case from its page (REQ-CM-36)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-management :: An admin reads a case's flow variables and run log (REQ-CRS-27)"
-				]
+				],
+				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no admin view of a case's raw record; the admin Transaktionslog (lib/Controller/TransactionLogController.php) lists API and admin actions, not case data | round 2 drive: procest/opencase/round2/code-census.md:69 \"Admin settings (Nextcloud admin > OpenCase, `lib/Settings/AdminSettings.php`, `src/AdminSettings.vue`) sections: Serviceplatformen, Datafordeler\"",
@@ -13901,7 +13902,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "src/views/settings/tabs/StatusesTab.vue",
+				"evidence": "src/manifest.json#CaseTypeDetail/case-type-statuses-editor (statuses in order, reorder writes order); dossiq_register.json#statusType",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -14074,7 +14075,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/Task/TaskDeclaration.php (task.leadTimeDays); src/components/tabs/CaseTasksTab.vue:58 task.dueDate with the overdue mark",
+				"evidence": "lib/Service/Task/TaskDeclaration.php (task.leadTimeDays); src/manifest.json#CaseDetail/case-work-panel case-tasks (CnTasksWidget, each task with its deadline); src/manifest.json#TaskDetail (Edit sets the due date)",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/task-management",
@@ -14114,8 +14115,8 @@
 			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
-				"evidence": "src/views/tasks/TaskDetailView.vue:413 verbs() offers claim (Pick up) and unclaim (Hand back) through the engine; team shown read-only from candidateGroups at :364, set only by task declarations (lib/Service/Transitions/CreateTaskHandler.php)",
+				"state": "specified",
+				"evidence": "Not built: a task can only be picked up and handed back (the TaskDetail page's engine verbs in src/manifest.json); no action assigns it to another user or to a team, and the team (candidateGroups) is read-only, set only by the case type's task declarations (lib/Service/Transitions/CreateTaskHandler.php). Was: src/views/tasks/TaskDetailView.vue:413 verbs() offers claim (Pick up) and unclaim (Hand back) through the engine; team shown read-only from candidateGroups at :364, set only by task declarations (lib/Service/Transitions/CreateTaskHandler.php)",
 				"reachedOn": "#TaskDetail header buttons \"Pick up\" / \"Hand back\"",
 				"readOn": "2026-09-26",
 				"note": "Claim and unclaim only: verbs() at src/views/tasks/TaskDetailView.vue:413 offers Pick up when nobody holds the task and Hand back when someone does, plus Complete and Cancel. There is no verb to assign the task to another user, and the team (candidateGroups) is read-only on the page, set only by the case type's task declarations. Assign to someone else and assign to a team are missing: partial.",
@@ -14135,7 +14136,8 @@
 					"openspec/specs/task-management :: REQ-TASK-003: Task Assignment",
 					"openspec/specs/role-routing-via-or-rbac :: Cases and tasks carry a team assignment",
 					"openspec/specs/task-management :: A task reaches a team before it reaches a person (REQ-TASK-042)"
-				]
+				],
+				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CreateWorkflowDialog.vue:31-44 users are picked once when a review or approval workflow is created, lib/Service/WorkflowService.php:153-159 only the step user may act; src/components/ReminderDialog.vue:22 responsible user on a reminder; no claim, unassign or team assignment | round 2 drive: procest/opencase/round2/pages/DocumentDetail-Workflow.md:9 \"Users in order with Add and reorder arrows\"",
@@ -14206,7 +14208,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/Transitions/*Handler.php; lib/Flow/DossiqTx*Node.php; DossiqMergeTemplateNode.php",
+				"evidence": "lib/Service/Transitions/*Handler.php (CreateSubCaseHandler, CreateTaskHandler, SendTemplateMessageHandler, SetStatusHandler); lib/Flow/DossiqTx*Node.php; lib/Service/Flow/RetiredActionRunner.php and lib/Service/Flow/RetiredDocumentSteps.php (a declared template step runs as filinq's generate-document node); dossiq#3180 1d09a091e",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/automatic-actions",
@@ -14285,7 +14287,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Service/Dmn/DecisionTableService.php; src/views/settings/tabs/DecisionTablesTab.vue",
+				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Service/Dmn/StoredDecisionTables.php (tables stored and evaluated by OpenRegister's DecisionTableStore, openregister#4572); lib/Service/Flow/RetiredNodeTranslator.php (decision-table step carries tableRef); src/manifest.json#CaseTypeDetail/case-type-rules (OpenRegister rules on the case schema, with a try-it)",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/dmn-decision-tables",
@@ -14524,10 +14526,10 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/Dmn/DecisionTableService.php; lib/Service/TermijnService.php",
+				"evidence": "lib/Service/Dmn/StoredDecisionTables.php; lib/Service/TermijnService.php; openregister lib/Service/Dmn/DecisionTableStore.php",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/2026-06-14-computed-fields",
-				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-computed-fields (save-time computed fields with date arithmetic); dossiq's half is in lib/Service/Dmn/DecisionTableService.php and lib/Service/TermijnService.php, read at dossiq 96b8ef8f. The missing scalar functions are openregister's calc-engine-scalar-functions (corrected 2026-09-28).",
+				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-computed-fields (save-time computed fields with date arithmetic); dossiq's half is its decision tables, now stored and evaluated in OpenRegister through lib/Service/Dmn/StoredDecisionTables.php, and lib/Service/TermijnService.php. The missing scalar functions are openregister's calc-engine-scalar-functions (corrected 2026-09-28).",
 				"screen": {
 					"board": null,
 					"reason": "backend: computed fields in OpenRegister"
@@ -14617,7 +14619,7 @@
 						"mergedAt": "2026-09-18T22:45:00Z"
 					}
 				],
-				"evidence": "src/manifest.d/consultation-public.json#ExternalConsultationResponse",
+				"evidence": "lib/Service/Sharing/CaseAccessLinkService.php and src/dialogs/CreateAccessLinkDialog.vue (a read-and-comment link over the case, from the case Sharing tab src/views/cases/components/CaseSharingTab.vue); lib/Service/Consultation/ExternalConsultationLinkService.php (the partner's answer arrives as a comment, appinfo/routes.php:778-779); dossiq#2888 b37d3b72b",
 				"readOn": "2026-09-26",
 				"owner": "ConductionNL/portaliq",
 				"screen": {
@@ -14704,7 +14706,7 @@
 				"state": "built",
 				"change": "advice-and-consultation-on-the-case",
 				"builtEvidence": "src/menu-layout.simple.json CaseDetail Decisions tab, record-list case-advice-requests (Ask for advice, Remind) over adviesAanvraag, board DqZaakBesluiten; appinfo/routes.php /api/cases/{id}/advice-requests with the /api/vth/ address as advice#*LegacyPath; lib/Service/Queue/Source/ApprovalSource.php opens the case on #case-decisions-panel and drops received and expired requests",
-				"evidence": "lib/Service/AdviceService.php:110,359 and the ConsultationService routes (appinfo/routes.php:735-745) store requests, responses and deadlines; queue items link to CaseDetail tabs advice and consultations that do not exist; AdviceDetail is read-only; AdviesPanel and AdviceRequestPanel are registered and placed nowhere",
+				"evidence": "src/menu-layout.simple.json case-advice-requests (record-list over adviesAanvraag on the case's Decisions tab: Ask for advice open-form with advisor, type, deadline and questions; rows with status, deadline and received date; Remind row action); src/manifest.json#CaseDetail/advice-request (AdviceRequestDialog); lib/Service/AdviceService.php; appinfo/routes.php:436-437,743-748 (advice) and :766-779 (consultations); tests/e2e/advice-on-the-case.spec.ts",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
 					"openspec/specs/advice-management",
@@ -14720,7 +14722,7 @@
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "/my-queue (consultations waiting on you), /advice/:id (AdviceDetail, read-only), Settings > consultation tab",
-				"note": "Missing: a place on the case to request advice or a consultation and to read the answers (the advice and consultations tabs the queue links to). Pending proposal 3.32 covers outside advice.",
+				"note": "Built by advice-and-consultation-on-the-case: the advice card on the case asks for internal or external advice (a consultation is the same request, decision 130) and lists each request with its advisor, deadline, answer state and Remind. Live pass pending (task 7).",
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": "openspec/changes/advice-and-consultation-on-the-case",
 				"requirement": "openspec/changes/advice-and-consultation-on-the-case/specs/advice-management :: A handler asks for advice from the case (REQ-ADV-CASE-01)"
@@ -14931,7 +14933,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Flow/DossiqMergeTemplateNode.php; lib/Service/BeschikkingGenerationService.php; lib/Controller/TemplateController.php",
+				"evidence": "lib/Service/Flow/RetiredDocumentSteps.php (the template-merge step runs as filinq's generate-document node); src/dialogs/GenerateDocumentDialog.vue (src/manifest.json#CaseDetail, :6002); lib/Service/BeschikkingGenerationService.php; lib/Controller/TemplateController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -15111,7 +15113,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Settings/register.d/70-document-zaakdossier.json informatieobject.keywords (facetable, max 64 characters); edited in src/modals/DocumentMetadataDialog.vue:114-121 from the Files tab row action Document properties (src/manifest.json CaseDetail Files rowActions) and stored by lib/Controller/ZaakdossierController.php:282; collectKeywords() and filterGroupsByKeywords() in src/utils/dossierHelpers.js have no caller since the Documents tab was retired on 2026-09-13",
+				"evidence": "lib/Settings/register.d/70-document-zaakdossier.json informatieobject.keywords (facetable, max 64 characters); edited in src/modals/DocumentMetadataDialog.vue:114-121 from the Files tab row action Document properties and stored by lib/Controller/ZaakdossierController.php:282; shown as the Keywords column and the keywords facet of the case Files widget (src/manifest.json:4153-4161)",
 				"readOn": "2026-10-07",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/document-zaakdossier",
@@ -15120,7 +15122,7 @@
 					"board": "DqZaakDocumenten"
 				},
 				"reachedOn": "#CaseDetail Files tab > row > Document properties",
-				"note": "Rating moved yes to partial on 2026-10-07 (decision 82), found while writing its spec (document-zaakdossier REQ-ZAK-024): a handler tags a document, but the keywords are no longer shown on the row and the case page has no keyword filter. Missing: keyword chips and a keyword filter on the Files tab (nextcloud-vue files-browser-columns, the same gap as row 4.8).",
+				"note": "Rating moved yes to partial on 2026-10-07 (decision 82) because the keywords were not shown on the row and the case page had no keyword filter; the case Files widget now offers Keywords as a column and a keywords facet (case-files-list-columns).",
 				"requirement": [
 					"openspec/specs/document-zaakdossier :: REQ-ZAK-024 A document carries free keywords"
 				]
@@ -15264,7 +15266,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/WOORedactionService.php; WOOAnonymisationAssistService.php; src/dialogs/RedactionAssistDialog.vue",
+				"evidence": "lib/Service/Redaction/DocumentRedactionService.php and lib/Service/FilinqRedactionClient.php (detect, check, redact through filinq or upload; appinfo/routes.php:940-943); lib/Controller/DocumentRedactionController.php; lib/Service/WOOAnonymisationAssistService.php; src/dialogs/RedactionAssistDialog.vue; dossiq 2a14fff09",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/woo-llm-anonymisation",
@@ -15780,7 +15782,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/External/Brp/HaalCentraalBrpAdapter.php; External/Kvk/KvkApiAdapter.php; src/components/initiator/InitiatorPicker.vue",
+				"evidence": "src/modals/InitiatorPickerModal.vue (nextcloud-vue CnPartyPicker over the brpPerson and kvkCompany register sets); lib/Settings/register.d/25-brp-kvk.json x-openregister-registry brp and kvk; lib/Service/Registry/RequesterRegistrySubscription.php; integriq lib/PropertySource/Provider/BrpPropertySource.php and KvkPropertySource.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -15961,7 +15963,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "src/views/settings/components/OrganisatieRolManager.vue; RolNode.vue; register.d/61-mandaat-matrix.json#organisatieRol",
+				"evidence": "src/views/settings/components/RoleTreeManager.vue (role tree with parents, in src/views/settings/tabs/DelegationMatrixTab.vue on the admin page); register.d/61-mandaat-matrix.json#organisatieRol",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/mandaat-matrix",
@@ -16005,7 +16007,7 @@
 						"mergedAt": "2026-09-18T10:40:00Z"
 					}
 				],
-				"evidence": "lib/Service/People/GemachtigdeRoleTypeSeeder.php; src/services/roleTypeOptions.js; dossiq#2918 d1ab0af9",
+				"evidence": "lib/Service/People/GemachtigdeRoleTypeSeeder.php; lib/Settings/dossiq_register.json role.representedParty (:4660); src/manifest.json#CaseDetail parties widget (Represented by, :4410,4466); dossiq#2918 d1ab0af9",
 				"note": "Built 2026-10-09: the generic Gemachtigde role type (GemachtigdeRoleTypeSeeder, repair step SeedGemachtigdeRoleType) and Represented by (role.representedParty) are on development; task 3.7 was a stale note and the change is archived.",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
@@ -16079,7 +16081,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "dossiq_register.json#case-location; lib/Controller/BrkController.php; lib/Service/PdokService.php; src/components/map/AddressSearch.vue",
+				"evidence": "dossiq_register.json#case-location; lib/Controller/BrkController.php; lib/Service/PdokService.php; src/dialogs/CaseLocationDialog.vue (nextcloud-vue CnAddressSearch, BAG and cadastre/WOZ cards)",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -16528,7 +16530,7 @@
 						"mergedAt": "2026-09-18T22:55:00Z"
 					}
 				],
-				"evidence": "src/manifest.json:3347; lib/Service/DigitalPost/BerichtenboxProvider.php; PostexProvider.php; LogDigitalPostProvider.php; dossiq#3081 226b7e0b; integriq#2062 626d8dabc",
+				"evidence": "src/manifest.json#CaseDetail/send-digital-post (BerichtenboxComposeDialog, :6178); lib/Service/BerichtenboxAdapter/IntegriqAdapter.php; integriq lib/Service/DigitalPost/BerichtenboxProvider.php, PostexProvider.php, LogDigitalPostProvider.php; dossiq#3081 226b7e0b; integriq#2062 626d8dabc",
 				"owner": "ConductionNL/integriq",
 				"spec": [
 					"openspec/specs/berichtenbox-integration",
@@ -16746,7 +16748,7 @@
 			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/Transitions/WebhookHandler.php; lib/Controller/NrcController.php",
+				"evidence": "lib/Service/Flow/RetiredWebhookSteps.php (a webhook step runs as integriq's external call); lib/Controller/NrcController.php; integriq lib/Service/EventService.php (event subscriptions on case writes); dossiq#3180 1d09a091e",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -17004,7 +17006,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "dossiq_register.json#resultType; src/views/settings/tabs/ResultsTab.vue",
+				"evidence": "dossiq_register.json#resultType; src/menu-layout.simple.json case type page case-type-results (Add result, archival action and period, rowRoute ResultTypeDetail); src/manifest.d/68-case-type-parts.json#ResultTypeDetail",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/result-type-management",
@@ -17042,7 +17044,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Controller/DecisionTableController.php",
+				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Service/Dmn/StoredDecisionTables.php; lib/Repair/MoveDecisionTablesToOpenRegister.php; openregister lib/Service/Dmn/DecisionTableStore.php and DecisionTableEvaluator.php (openregister#4572, tables authored and evaluated in OpenRegister)",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/dmn-decision-tables",
@@ -17051,7 +17053,9 @@
 					"reason": "backend: decision tables evaluated by OpenRegister"
 				},
 				"requirement": [
-					"openspec/specs/dmn-decision-tables :: Decision tables are OpenRegister-defined data"
+					"openspec/specs/dmn-decision-tables :: Decision tables are OpenRegister-defined data",
+					"openspec/specs/dmn-decision-tables :: PRIORITY and ANY hit policies are evaluated by OpenRegister",
+					"openregister:openspec/specs/flow-decision-tables :: A decision-table step evaluates its table against every item"
 				]
 			},
 			"evidence": {
@@ -17126,7 +17130,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "src/dialogs/BeschikkingComposerDialog.vue; lib/Service/BeschikkingGenerationService.php; lib/Flow/DossiqRequestDecisionNode.php",
+				"evidence": "src/dialogs/GenerateDocumentDialog.vue; lib/Service/BeschikkingGenerationService.php; lib/Service/Flow/RetiredDocumentSteps.php (the flow's generate-document step is filinq's); lib/Listener/DocumentGeneratedListener.php (files the generated letter on the case); dossiq#3180 1d09a091e",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -17171,7 +17175,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/WOOAssessmentController.php; lib/Service/WOODocumentAssessmentService.php; src/views/doorlooptijd/widgets/DtWooWidget.vue",
+				"evidence": "lib/Controller/WOOAssessmentController.php (appinfo/routes.php:858-864); lib/Service/WOODocumentAssessmentService.php; src/manifest.json#CaseDetail files widget review-verdict column (:4106); lib/Service/Redaction/DocumentRedactionService.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/woo-case-type",
@@ -17350,7 +17354,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "register.d/60-termijnbewaking.json#deadlineDefinition; src/views/settings/tabs/TermijnDefinitiesTab.vue",
+				"evidence": "register.d/60-termijnbewaking.json#deadlineDefinition; src/views/settings/tabs/DeadlineDefinitionsTab.vue; src/modals/DeadlineDefinitionEditor.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -17439,7 +17443,7 @@
 			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/Task/TaskDeclaration.php (task.leadTimeDays); src/store/modules/engineTask.js; src/components/tabs/CaseTasksTab.vue:58",
+				"evidence": "lib/Service/Task/TaskDeclaration.php (task.leadTimeDays); src/store/modules/engineTask.js; src/manifest.json#CaseDetail/case-work-panel case-tasks (CnTasksWidget with the deadline)",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/task-management",
@@ -17488,7 +17492,7 @@
 						"mergedAt": "2026-09-18T12:15:00Z"
 					}
 				],
-				"evidence": "lib/Flow/DossiqScheduleReminderNode.php; #Dashboard/task-reminders; dossiq#2920 3e36eb6c",
+				"evidence": "src/manifest.json#CaseDetail/case-remind (RemindDialog: who, when, what; an engine task of kind reminder on the case for that colleague); the Tasks kind facet reminder (src/manifest.json:7313); dossiq#2920 3e36eb6c",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -17760,7 +17764,7 @@
 						"mergedAt": "2026-09-18T12:15:00Z"
 					}
 				],
-				"evidence": "lib/Service/Termijn/TermEndRoll.php; lib/Settings/register.d/60-termijnbewaking.json:66; src/views/settings/tabs/TermijnDefinitiesTab.vue; dossiq#2941 b72f2f3f",
+				"evidence": "lib/Service/Termijn/TermEndRoll.php; lib/Service/Termijn/WorkingDayRoll.php; lib/Settings/register.d/60-termijnbewaking.json:89 rollToWorkingDay; src/views/settings/tabs/DeadlineDefinitionsTab.vue; dossiq#2941 b72f2f3f",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"board": null,
@@ -17806,7 +17810,7 @@
 						"mergedAt": "2026-09-18T12:15:00Z"
 					}
 				],
-				"evidence": "dossiq#2941 b72f2f3f",
+				"evidence": "openregister lib/Service/Flow/Timer/WorkingCalendarService.php, lib/Controller/WorkingCalendarController.php and src/modals/settings/EditWorkingCalendarModal.vue (the one working calendar, administered in OpenRegister); lib/Service/TermijnTimerService.php CALENDAR_SERVICE_CLASS; dossiq#2941 b72f2f3f",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "design-system",
@@ -18656,7 +18660,7 @@
 			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
-				"evidence": "src/components/export/CaseListExportAction.vue",
+				"evidence": "src/manifest.json#Cases allowExport (:1946, the library Export menu, CSV and Excel, through OpenRegister's export leaf); lib/Settings/dossiq_register.json case exportable (:1931); dossiq 5f753957b",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/case-list-export-via-or-export-leaf",
@@ -19073,7 +19077,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "src/views/settings/CaseTypeDetail.vue",
+				"evidence": "src/manifest.json#CaseTypeDetail (the manifest case type page: core, terms, statuses, fields, workflow, messages, rules); src/manifest.d/68-case-type-parts.json; dossiq 64728c654",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/case-types",
@@ -19334,7 +19338,11 @@
 					"board": null,
 					"reason": "no dossiq screen: case page layout is configured in buildiq"
 				},
-				"requirement": "buildiq:openspec/changes/case-page-layout-per-case-type/specs/page-layout-per-type :: A widget tab holds a grid, each widget with a width and an order (REQ-OBPL-005)"
+				"requirement": [
+					"buildiq:openspec/changes/case-page-layout-per-case-type/specs/page-layout-per-type :: A widget tab holds a grid, each widget with a width and an order (REQ-OBPL-005)",
+					"openspec/changes/capability-rows-say-the-whole-capability/specs/case-page :: A case type's page offers every widget kind the matrix names (REQ-CRS-46)"
+				],
+				"plan": "openspec/changes/capability-rows-say-the-whole-capability"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue tab bodies are fixed components (CaseInfoPanel.vue, DocumentList.vue, CaseParticipantList.vue); no widget model in lib/Db | round 2 drive: procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
@@ -19482,7 +19490,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/TemplateController.php; lib/Service/TemplateLibraryService.php; lib/Controller/VTHTemplateController.php",
+				"evidence": "lib/Controller/TemplateController.php; lib/Service/TemplateLibraryService.php; lib/Service/Flow/RetiredDocumentSteps.php (filinq owns document generation)",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/template-library",
@@ -20070,7 +20078,7 @@
 						"mergedAt": "2026-09-16T10:09:00Z"
 					}
 				],
-				"evidence": "role half: field-rules-declared (row 13.8, fieldRoleRules, src/utils/fieldRoleRules.js); state half: a status declares fieldRules (lib/Settings/dossiq_register.json:922, edited in src/views/settings/components/StatusTypeForm.vue via src/utils/statusFieldRules.js), lib/Service/Status/CaseStateFieldRuleProjector.php:188 publishes them onto x-openregister-lifecycle.states.<status>.fields when the case type is published (lib/Service/CaseTypePublishService.php:72), and openregister field-rules-by-state (archived 2026-10-05) enforces them and returns @self.fieldRules (openregister lib/Service/Object/RenderObject.php:2421), which the case page reads (src/services/caseAccessApi.js:571, src/components/case/CaseStatusDeclarationPanel.vue)",
+				"evidence": "role half: field-rules-declared (row 13.8, fieldRoleRules, src/utils/fieldRoleRules.js); state half: a status declares fieldRules (lib/Settings/dossiq_register.json:1189), edited in src/manifest.json#CaseTypeDetail/case-type-statuses-editor, lib/Service/Status/CaseStateFieldRuleProjector.php:189 publishes them onto x-openregister-lifecycle.states.<status>.fields when the case type is published (lib/Service/CaseTypePublishService.php:182), and openregister field-rules-by-state (archived 2026-10-05) enforces them and returns @self.fieldRules (openregister lib/Service/Object/RenderObject.php), which the case page reads (src/services/caseAccessApi.js:757, src/manifest.json#CaseDetail/case-status-declaration)",
 				"owner": "ConductionNL/openregister",
 				"note": "Rating moved partial to yes on 2026-10-07 (decision 82): openregister archived field-rules-by-state on 2026-10-05 and dossiq declares, publishes and shows the rules (what-a-status-declares, still an open change here). Hidden, read-only and required apply per role and per status.",
 				"screen": {
@@ -20450,7 +20458,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/External/Brp/HaalCentraalBrpAdapter.php; External/Kvk/KvkApiAdapter.php",
+				"evidence": "lib/Settings/register.d/25-brp-kvk.json x-openregister-registry brp and kvk; lib/Service/Registry/RequesterRegistrySubscription.php; integriq lib/PropertySource/Provider/BrpPropertySource.php and KvkPropertySource.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -20782,10 +20790,10 @@
 			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
-				"evidence": "integriq lib/AppInfo/Application.php:287,297 listens to openregister ObjectCreatedEvent and ObjectUpdatedEvent, so every case write is an integriq event; lib/Service/EventService.php:1277 dispatches action.kind 'broker' through lib/Broker/BrokerTransportRegistry.php to Kafka REST, RabbitMQ HTTP or CloudEvents HTTP (lib/Broker/Transport/*); an administrator picks the broker in the event subscription modal (src/modals/EventSubscription/SubscriptionActionFields.vue:153)",
+				"evidence": "integriq lib/EventListener/EventListenerBindings.php:263,273 listens to openregister ObjectCreatedEvent and ObjectUpdatedEvent, so every case write is an integriq event; integriq lib/Service/EventService.php:1321,1972 dispatches action.kind 'broker' through lib/Broker/BrokerTransportRegistry.php to Kafka REST, RabbitMQ HTTP or CloudEvents HTTP (lib/Broker/Transport/*); an administrator picks the broker in the event subscription modal (src/modals/EventSubscription/SubscriptionActionFields.vue)",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/event-broker-transport",
-				"note": "Rating moved partial to yes on 2026-10-07 (decision 82): integriq archived event-broker-transport on 2026-09-29. dossiq's own lib/Service/Transitions/WebhookHandler.php stays the per-transition webhook; streaming case events to a broker is integriq's and dossiq consumes it without code of its own.",
+				"note": "Rating moved partial to yes on 2026-10-07 (decision 82): integriq archived event-broker-transport on 2026-09-29. Streaming case events to a broker is integriq's and dossiq consumes it without code of its own; dossiq's per-transition webhook step now runs as integriq's external call (lib/Service/Flow/RetiredWebhookSteps.php).",
 				"screen": {
 					"board": null,
 					"reason": "backend: event broker transport"
@@ -21570,10 +21578,10 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Listener/BezwaarLegalHoldListener.php",
+				"evidence": "lib/Service/Archival/ArchivalNominationDeriver.php:145 derive(); lib/Service/Transitions/CaseResultWriter.php; openregister lib/Service/Archival/DestructionApproval.php and lib/BackgroundJob/DestructionExecutionJob.php; lib/Listener/BezwaarLegalHoldListener.php",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/2026-06-14-retention-management",
-				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-retention-management (the destruction check job); dossiq's half, writing the retention onto the case at close, is built: lib/Service/Archival/ArchivalNominationDeriver.php:144 derive(), called from lib/Service/Transitions/CaseResultWriter.php and lib/Service/StatusTransitionService.php:567 on closing (row 7.7), read at dossiq 96b8ef8f (corrected 2026-09-28). Closing round 12 Nov: the missing part is openregister's (retention destruction runs (openregister retention-management); lib/Listener/BezwaarLegalHoldListener.php only places holds); specified in change capability-rows-say-the-whole-capability.",
+				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-retention-management: an approved destruction list destroys its cases (openregister lib/Service/Archival/DestructionApproval.php, lib/BackgroundJob/DestructionExecutionJob.php). dossiq's half, writing the retention onto the case at close, is lib/Service/Archival/ArchivalNominationDeriver.php derive(), called from lib/Service/Transitions/CaseResultWriter.php and lib/Service/Zgw/ZrcStatusEffects.php (row 7.7); lib/Listener/BezwaarLegalHoldListener.php places holds.",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakArchivering"
@@ -21843,7 +21851,7 @@
 						"mergedAt": "2026-09-14T11:02:17Z"
 					}
 				],
-				"evidence": "lib/Settings/register.d/62-handler-vervanging.json; src/views/admin/SubstitutionAdmin.vue; src/views/MyWorkCards.vue; dossiq#2719 6b59b276f",
+				"evidence": "lib/Settings/register.d/62-handler-vervanging.json; src/views/admin/SubstitutionAdmin.vue; src/manifest.json#Cases my-work view (includes the work the reader covers for an absent colleague, :2144,2199); dossiq#2719 6b59b276f",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -21891,7 +21899,7 @@
 						"mergedAt": "2026-09-17T01:20:55Z"
 					}
 				],
-				"evidence": "src/components/case/CaseFollowStrip.vue; src/components/case/CaseBannerStack.vue; src/manifest.json:2534,2922; openregister appinfo/routes.php:127-140; dossiq#2895 790c1bcf3",
+				"evidence": "the library Follow toggle in the case page header (DqZaak, dossiq#3640 010b94159); src/manifest.json#Cases rowActions follow (toggleCaseFollow, :2961) and the followed-cases lens over OpenRegister _watching (:1363,3009); openregister appinfo/routes.php:127-140; dossiq#2895 790c1bcf3",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
