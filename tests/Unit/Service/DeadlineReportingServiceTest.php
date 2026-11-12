@@ -38,6 +38,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Term\DayCount
  * @uses \OCA\Dossiq\Service\Money\PayoutReader
  * @uses \OCA\Dossiq\Service\Reporting\PerTypeRows
+ * @uses \OCA\Dossiq\Service\Termijn\TermLookups
  */
 class DeadlineReportingServiceTest extends TestCase {
 	private FakeTermijnStore $objects;

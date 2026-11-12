@@ -46,6 +46,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Recycle\CaseRecycleService
  * @uses \OCA\Dossiq\Service\Recycle\DeletionWindowReader
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class CaseRecycleServiceTest extends TestCase {
 

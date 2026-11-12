@@ -43,6 +43,12 @@ use ReflectionMethod;
  * Every listener's schema check answers the same table for the schema its setting names.
  *
  * @covers \OCA\Dossiq\Listener\Support\SchemaMembership
+ * @uses \OCA\Dossiq\Listener\BeschikkingImmutabilityListener
+ * @uses \OCA\Dossiq\Listener\BewijsstukImmutabilityListener
+ * @uses \OCA\Dossiq\Listener\CaseMarkerDerivationListener
+ * @uses \OCA\Dossiq\Listener\CaseRequesterProjectionListener
+ * @uses \OCA\Dossiq\Listener\ChecklistRunImmutabilityListener
+ * @uses \OCA\Dossiq\Listener\IntakeFormBindingListener
  *
  * @spec openspec/specs/case-management/spec.md
  */

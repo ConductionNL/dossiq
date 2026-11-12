@@ -68,6 +68,7 @@ require_once __DIR__ . '/../../../Support/Mail/LocalMessage.php';
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Email\OutboxSend
  */
 class OutboundThroughMailAccountTest extends TestCase {
 

@@ -40,6 +40,7 @@ use RuntimeException;
  *
  * @uses \OCA\Dossiq\Service\AssigneeResolver
  * @uses \OCA\Dossiq\Service\Transitions\ActionResult
+ * @uses \OCA\Dossiq\Service\Transitions\TaskAction
  */
 class CreateTaskHandlerTest extends TestCase {
 	/**

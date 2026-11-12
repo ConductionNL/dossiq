@@ -34,6 +34,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Woo\WooReportReadLog
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */

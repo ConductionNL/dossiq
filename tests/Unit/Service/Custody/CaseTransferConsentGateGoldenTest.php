@@ -38,6 +38,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
  * @uses   \OCA\Dossiq\Service\Custody\ConsentStanding
  * @uses   \OCA\Dossiq\Service\Custody\ConsentRefusal
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class CaseTransferConsentGateGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

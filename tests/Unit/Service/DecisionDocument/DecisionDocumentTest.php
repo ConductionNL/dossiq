@@ -80,6 +80,7 @@ class FixtureConditionEvaluator {
  * @uses   \OCA\Dossiq\Service\FrozenRecord\FreezeDefinition
  * @uses   \OCA\Dossiq\Service\FrozenRecord\FrozenRecordGuard
  * @uses   \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\FrozenRecord\CanonicalValue
  */
 class DecisionDocumentTest extends TestCase {
 

@@ -45,6 +45,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Assistant\HermiqAssistantClient
  *
  * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqPost
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqServiceCall
  */
 class HermiqAssistantClientTest extends TestCase {
 	/**

@@ -48,6 +48,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\FrozenRecord\RecordSeal
  * @uses   \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\AppInfo\Registrar\ImmutabilityListenerRegistrar
+ * @uses \OCA\Dossiq\Service\FrozenRecord\CanonicalValue
  */
 class FrozenRecordListenerTest extends TestCase {
 

@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
  * @uses \OCA\Dossiq\Service\External\Woz\WozLookupResult
  * @uses \OCA\Dossiq\Service\External\Woz\WozResponseMapper
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  */
 class WozAdapterTest extends TestCase {
 	/**

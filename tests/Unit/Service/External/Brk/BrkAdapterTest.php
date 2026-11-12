@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\External\Brk\BrkLookupResult
  * @uses \OCA\Dossiq\Service\External\Brk\BrkResponseMapper
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  */
 class BrkAdapterTest extends TestCase {
 	/**

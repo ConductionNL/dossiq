@@ -324,6 +324,7 @@ class DsoContractRequestStub implements IRequest {
  * Wire-contract tests for DsoController's dashboard/doorsturen/respond endpoints.
  *
  * @covers \OCA\Dossiq\Controller\DsoController
+ * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
  */
 class DsoControllerContractTest extends TestCase {
 

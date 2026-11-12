@@ -24,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Kcc\RoutingTableEvaluator
+ * @uses \OCA\Dossiq\Service\Kcc\RoutingRuleOrder
  */
 class RoutingTableEvaluatorTest extends TestCase {
 

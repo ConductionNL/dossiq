@@ -157,6 +157,9 @@ class LifecycleFakeSource implements QueueSource {
  * @uses \OCA\Dossiq\Service\Queue\QueueSource
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Task\EngineTaskInbox
+ * @uses \OCA\Dossiq\Service\Queue\JsonPreference
+ * @uses \OCA\Dossiq\Service\Queue\PersonalQueueRun
+ * @uses \OCA\Dossiq\Service\Queue\UrgencyScoreRun
  *
  * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
  */

@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\External\Brk\BrkResponseMapper
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  */
 class BrkResponseMapperTest extends TestCase {
 	/**

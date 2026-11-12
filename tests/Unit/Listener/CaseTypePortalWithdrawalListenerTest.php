@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\CaseType\RowOrigins
+ * @uses \OCA\Dossiq\Listener\CaseTypeSchema
  */
 class CaseTypePortalWithdrawalListenerTest extends TestCase {
 

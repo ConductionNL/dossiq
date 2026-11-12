@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\External\Woz\WozResponseMapper
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  */
 class WozResponseMapperTest extends TestCase {
 	/**

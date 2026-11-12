@@ -33,6 +33,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\ContractDecisionDelegationService
+ * @uses \OCA\Dossiq\Service\DelegatedDecisionRequest
  */
 class DecisionDelegationGoldenTest extends TestCase {
 

@@ -49,6 +49,9 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationLabels
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationStore
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Notice\CaseActNotices
+ * @uses \OCA\Dossiq\Service\Relation\RelationLabelRun
+ * @uses \OCA\Dossiq\Service\Relation\SubjectLinkRule
  */
 class CaseRelationServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;

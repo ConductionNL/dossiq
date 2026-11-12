@@ -82,6 +82,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
  * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
+ * @uses \OCA\Dossiq\Woo\WooPickRun
+ * @uses \OCA\Dossiq\Woo\WooPickedFile
  */
 class WooGatherAddTest extends TestCase {
 

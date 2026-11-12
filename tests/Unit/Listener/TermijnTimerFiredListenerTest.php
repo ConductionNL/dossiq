@@ -56,6 +56,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Listener\Support\TimerFire
  */
 class TermijnTimerFiredListenerTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -59,6 +59,7 @@ interface DrcLifecycleObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses \OCA\Dossiq\Service\Zgw\ZgwSearchScope
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Controller\EioUpdateRun
  */
 class DrcEioLifecycleTest extends TestCase {
 
