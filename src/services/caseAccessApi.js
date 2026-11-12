@@ -97,16 +97,37 @@ export const CASE_SCHEMA = 'case'
 async function readResult(path, params = {}) {
 	try {
 		const response = await axios.get(generateUrl(`/${path}`), { params })
-		// A non-JSON body arrives as a string, and a string has keys in
-		// JavaScript, so `body.rules` on it is undefined rather than an error.
-		// That would render as "no rules" instead of as a failed read.
-		if (typeof response?.data !== 'object' || response.data === null) {
-			return { status: response?.status || 0, data: null }
-		}
-		return { status: response.status || 200, data: response.data }
+		return answeredResult(response)
 	} catch (error) {
 		return { status: error?.response?.status || 0, data: null }
 	}
+}
+
+/**
+ * An answered read as its status and body.
+ *
+ * A non-JSON body arrives as a string, and a string has keys in JavaScript,
+ * so `body.rules` on it is undefined rather than an error. That would render
+ * as "no rules" instead of as a failed read, so such a body reads as none.
+ *
+ * @param {object|undefined} response The response.
+ * @return {{status: number, data: object|null}} The status and the body.
+ */
+function answeredResult(response) {
+	if (isObjectBody(response?.data) === false) {
+		return { status: response?.status || 0, data: null }
+	}
+	return { status: response.status || 200, data: response.data }
+}
+
+/**
+ * Whether a response body is a JSON object (or list), not a string or null.
+ *
+ * @param {unknown} data The body.
+ * @return {boolean} True for an object body.
+ */
+function isObjectBody(data) {
+	return typeof data === 'object' && data !== null
 }
 
 /**
@@ -355,12 +376,24 @@ function ruleRow(rule, refusal) {
 	return {
 		holder: principal,
 		right: rule?.action || '',
-		source: refusal ?? (rule?.level || 'object'),
+		source: ruleSource(rule, refusal),
 		detail: rule?.role || '',
 		...ruleOrigin(rule),
 		until,
 		scopedTo,
 	}
+}
+
+/**
+ * What a row says about its rule's source: the refusal for a rule that takes
+ * a right away, else the level it was granted on (`object` when unnamed).
+ *
+ * @param {object|null} rule    The rule.
+ * @param {string|null} refusal `deny`, `staged-deny`, or null for a grant.
+ * @return {string} The source.
+ */
+function ruleSource(rule, refusal) {
+	return refusal ?? (rule?.level || 'object')
 }
 
 /**
@@ -444,6 +477,17 @@ export function asOfRows(history) {
 		return unansweredAsOf(history)
 	}
 
+	return answeredAsOf(asOf, history)
+}
+
+/**
+ * The as-of answer when OpenRegister's trail reaches the moment.
+ *
+ * @param {object} asOf The set at that moment.
+ * @param {object|null} history The history, for the moment when the answer names none.
+ * @return {{answered: boolean, at: string, rows: Array<object>, setBy: string, changedAfterwardsBy: object|null}} The set at that moment.
+ */
+function answeredAsOf(asOf, history) {
 	return {
 		answered: true,
 		at: asOf.at || history?.at || '',
@@ -711,24 +755,29 @@ export async function fetchFieldRoleRules(caseId) {
 	}
 
 	const decided = caseObject['@self']?.fieldRules ?? null
-	const caseTypeId = referenceId(caseObject.caseType)
+	return { decided, declared: await fetchDeclaredFieldRoleRules(referenceId(caseObject.caseType)) }
+}
+
+/**
+ * The field rules a case type declares: null when there is no case type or
+ * it cannot be read, an empty list when it declares none.
+ *
+ * @param {string} caseTypeId The case type's id, or the empty string.
+ * @return {Promise<Array<object>|null>} The declared rules.
+ */
+async function fetchDeclaredFieldRoleRules(caseTypeId) {
 	if (!caseTypeId) {
-		return { decided, declared: null }
+		return null
 	}
 
 	const caseType = await read(
 		`apps/openregister/api/objects/${CASE_REGISTER}/${CASE_TYPE_SCHEMA}/${caseTypeId}`,
 	)
 	if (caseType === null) {
-		return { decided, declared: null }
+		return null
 	}
 
-	return {
-		decided,
-		declared: Array.isArray(caseType.fieldRoleRules)
-			? caseType.fieldRoleRules
-			: [],
-	}
+	return Array.isArray(caseType.fieldRoleRules) ? caseType.fieldRoleRules : []
 }
 
 /**
@@ -745,8 +794,18 @@ export async function fetchFieldRoleRules(caseId) {
  */
 function referenceId(value) {
 	if (value && typeof value === 'object') {
-		return String(value['@self']?.id ?? value.id ?? value.uuid ?? '')
+		return expandedReferenceId(value)
 	}
 
 	return String(value ?? '')
+}
+
+/**
+ * The id an expanded reference carries: its `@self` id, else its id or uuid.
+ *
+ * @param {object} value The expanded reference.
+ * @return {string} The id, or the empty string.
+ */
+function expandedReferenceId(value) {
+	return String(value['@self']?.id ?? value.id ?? value.uuid ?? '')
 }
