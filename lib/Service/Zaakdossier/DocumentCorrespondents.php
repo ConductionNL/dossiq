@@ -117,16 +117,31 @@ class DocumentCorrespondents {
 
 		$many = [];
 		if ($allowed['recipients'] === true) {
-			foreach ($this->asList(value: $recipients) as $candidate) {
-				$match = $this->matchOne(value: $candidate, index: $index);
-				if ($match !== '' && in_array($match, $many, true) === false) {
-					$many[] = $match;
-				}
-			}
+			$many = $this->matchMany(recipients: $recipients, index: $index);
 		}
 
 		return ['sender' => $one, 'recipients' => $many];
 	}//end resolve()
+
+	/**
+	 * The submitted recipients as identifiers of parties of the case, each once, unmatched ones left out.
+	 *
+	 * @param mixed                 $recipients The submitted recipients: a list, or one value.
+	 * @param array<string, string> $index      The index of the case's parties.
+	 *
+	 * @return array<int, string> The identifiers.
+	 */
+	private function matchMany(mixed $recipients, array $index): array {
+		$many = [];
+		foreach ($this->asList(value: $recipients) as $candidate) {
+			$match = $this->matchOne(value: $candidate, index: $index);
+			if ($match !== '' && in_array($match, $many, true) === false) {
+				$many[] = $match;
+			}
+		}
+
+		return $many;
+	}//end matchMany()
 
 	/**
 	 * The party of the case holding an e-mail address, '' when nobody does.
@@ -166,25 +181,36 @@ class DocumentCorrespondents {
 			return '';
 		}
 
-		foreach ($parties as $party) {
-			if (is_array($party) === false) {
-				continue;
-			}
-
-			if ($this->identifierOf(party: $party) !== $wanted) {
-				continue;
-			}
-
-			$name = trim((string)($party['displayName'] ?? ''));
-			if ($name !== '') {
-				return $name;
-			}
-
-			return trim((string)($party['contactUid'] ?? $wanted));
+		$party = $this->partyIdentifiedAs(identifier: $wanted, parties: $parties);
+		if ($party === []) {
+			return $wanted;
 		}
 
-		return $wanted;
+		$name = trim((string)($party['displayName'] ?? ''));
+		if ($name !== '') {
+			return $name;
+		}
+
+		return trim((string)($party['contactUid'] ?? $wanted));
 	}//end nameOf()
+
+	/**
+	 * The first party link stored under an identifier, empty when none is.
+	 *
+	 * @param string                           $identifier The trimmed, non-empty identifier.
+	 * @param array<int, array<string, mixed>> $parties    The party links of the case.
+	 *
+	 * @return array<string, mixed> The party link.
+	 */
+	private function partyIdentifiedAs(string $identifier, array $parties): array {
+		foreach ($parties as $party) {
+			if (is_array($party) === true && $this->identifierOf(party: $party) === $identifier) {
+				return $party;
+			}
+		}
+
+		return [];
+	}//end partyIdentifiedAs()
 
 	/**
 	 * A document's correspondents, named for a reader.
@@ -260,11 +286,7 @@ class DocumentCorrespondents {
 
 		$identifiers = [];
 		foreach ($stored as $entry) {
-			if (is_string($entry) === false && is_numeric($entry) === false) {
-				continue;
-			}
-
-			$identifier = trim((string)$entry);
+			$identifier = $this->storedIdentifier(entry: $entry);
 			if ($identifier !== '' && in_array($identifier, $identifiers, true) === false) {
 				$identifiers[] = $identifier;
 			}
@@ -272,6 +294,21 @@ class DocumentCorrespondents {
 
 		return $identifiers;
 	}//end storedRecipients()
+
+	/**
+	 * One stored recipient entry as a trimmed identifier, '' when it is not text or a number.
+	 *
+	 * @param mixed $entry The stored entry.
+	 *
+	 * @return string The identifier, or ''.
+	 */
+	private function storedIdentifier(mixed $entry): string {
+		if (is_string($entry) === false && is_numeric($entry) === false) {
+			return '';
+		}
+
+		return trim((string)$entry);
+	}//end storedIdentifier()
 
 	/**
 	 * The identifier a party link is stored under: its party uuid, else its
@@ -306,25 +343,37 @@ class DocumentCorrespondents {
 	private function indexOf(array $parties): array {
 		$index = [];
 		foreach ($parties as $party) {
-			if (is_array($party) === false) {
-				continue;
-			}
-
-			$identifier = $this->identifierOf(party: $party);
-			if ($identifier === '') {
-				continue;
-			}
-
-			foreach ([$identifier, (string)($party['contactUid'] ?? ''), (string)($party['email'] ?? '')] as $key) {
-				$key = mb_strtolower(trim($key));
-				if ($key !== '' && isset($index[$key]) === false) {
-					$index[$key] = $identifier;
-				}
+			if (is_array($party) === true) {
+				$index = $this->withKeysOf(index: $index, party: $party);
 			}
 		}
 
 		return $index;
 	}//end indexOf()
+
+	/**
+	 * The index with one party's names added: its identifier, contact uid and address, first holder wins.
+	 *
+	 * @param array<string, string> $index The index so far.
+	 * @param array<string, mixed>  $party The party link.
+	 *
+	 * @return array<string, string> Lowercased key to identifier.
+	 */
+	private function withKeysOf(array $index, array $party): array {
+		$identifier = $this->identifierOf(party: $party);
+		if ($identifier === '') {
+			return $index;
+		}
+
+		foreach ([$identifier, (string)($party['contactUid'] ?? ''), (string)($party['email'] ?? '')] as $key) {
+			$key = mb_strtolower(trim($key));
+			if ($key !== '' && isset($index[$key]) === false) {
+				$index[$key] = $identifier;
+			}
+		}
+
+		return $index;
+	}//end withKeysOf()
 
 	/**
 	 * One submitted value as the identifier of a party of the case, or ''.
@@ -335,19 +384,14 @@ class DocumentCorrespondents {
 	 * @return string The identifier, or '' when nothing matched.
 	 */
 	private function matchOne(mixed $value, array $index): string {
+		// A picker hands back the option object it was given, not its value.
+		if (is_array($value) === true) {
+			return $this->matchOption(option: $value, index: $index);
+		}
+
 		$wanted = '';
 		if (is_string($value) === true || is_numeric($value) === true) {
 			$wanted = mb_strtolower(trim((string)$value));
-		}
-
-		// A picker hands back the option object it was given, not its value.
-		if (is_array($value) === true) {
-			foreach (['partyUuid', 'id', 'contactUid', 'email'] as $key) {
-				$candidate = mb_strtolower(trim((string)($value[$key] ?? '')));
-				if ($candidate !== '' && isset($index[$candidate]) === true) {
-					return $index[$candidate];
-				}
-			}
 		}
 
 		if ($wanted === '') {
@@ -358,6 +402,25 @@ class DocumentCorrespondents {
 	}//end matchOne()
 
 	/**
+	 * A picker's option object as the identifier of a party of the case, or ''.
+	 *
+	 * @param array<string, mixed>  $option The option object.
+	 * @param array<string, string> $index  The index of the case's parties.
+	 *
+	 * @return string The identifier of the first key that matches, or ''.
+	 */
+	private function matchOption(array $option, array $index): string {
+		foreach (['partyUuid', 'id', 'contactUid', 'email'] as $key) {
+			$candidate = mb_strtolower(trim((string)($option[$key] ?? '')));
+			if ($candidate !== '' && isset($index[$candidate]) === true) {
+				return $index[$candidate];
+			}
+		}
+
+		return '';
+	}//end matchOption()
+
+	/**
 	 * A submitted recipients value as a list, whatever shape it arrived in.
 	 *
 	 * @param mixed $value One value, a list of them, or nothing.
@@ -366,11 +429,7 @@ class DocumentCorrespondents {
 	 */
 	private function asList(mixed $value): array {
 		if (is_array($value) === false) {
-			if ($value === null || $value === '') {
-				return [];
-			}
-
-			return [$value];
+			return $this->singleAsList(value: $value);
 		}
 
 		// An associative array is ONE option object, not a list of them.
@@ -380,4 +439,19 @@ class DocumentCorrespondents {
 
 		return $value;
 	}//end asList()
+
+	/**
+	 * One submitted value that is not an array as a list: empty for nothing, else the value alone.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array<int, mixed> The candidates.
+	 */
+	private function singleAsList(mixed $value): array {
+		if ($value === null || $value === '') {
+			return [];
+		}
+
+		return [$value];
+	}//end singleAsList()
 }//end class
